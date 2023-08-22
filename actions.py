@@ -3,6 +3,7 @@
 
 """Scripts related to the Qt QAction."""
 
+# Thirs-party
 from PySide2.QtGui import QIcon, QKeySequence
 from PySide2.QtWidgets import QAction, QWidget
 

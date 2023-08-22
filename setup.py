@@ -1,6 +1,21 @@
+#!/usr/bin/env python
+# -*- coding= utf-8 -*-
+
+"""PiPy setup script."""
+
+# Built-in
 from setuptools import setup, find_packages
 from pathlib import Path
 
+# Metadatas
+__author__ = "Valentin Beaumont"
+__email__ = "valentin.onze@gmail.com"
+
+
+###### CODE ####################################################################
+
+
+# Add `README.md` as project long description
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
