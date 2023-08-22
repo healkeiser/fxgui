@@ -30,6 +30,8 @@
 ## Table of Contents
 <!--ts-->
    * [About](#about)
+   * [Installation](#installation)
+   * [Example](#example)
    * [Contact](#contact)
 <!--te-->
 
@@ -37,7 +39,26 @@
 
 <!-- ABOUT -->
 ## About
+
 Custom Python classes and utilities tailored for PySide2 built UI, in VFX-oriented DCC applications.
+
+<!-- INSTALLATION -->
+## Installation
+
+``` shell
+pip install pyside2-vfx-template
+```
+
+
+
+<!-- EXAMPLE -->
+## Example
+
+After installing PySide2 VFX Template, you can run the demo:
+
+``` shell
+python example.py
+```
 
 
 
