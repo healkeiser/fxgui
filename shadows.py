@@ -18,8 +18,8 @@ def add_shadows(parent, shadow_object, color="#1a1a1a", blur=10, offset=0):
     """Apply shadows on chosen object.
 
     Args:
-        parent (Qt.QWidget): Parent object.
-        shadow_object (Qt.QWidget): Object to receive shadows.
+        parent (QWidget): Parent object.
+        shadow_object (QWidget): Object to receive shadows.
         color (str, optional): Color of the shadows. Defaults to "#000000".
         blur (float, optional): Blur level of the shadows. Defaults to 10.
         offset (float, optional): Offset of the shadow from the
