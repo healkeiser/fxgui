@@ -19,7 +19,6 @@ from PySide2.QtGui import *
 import style
 import shadows
 import actions
-import splashscreen
 
 # Metadatas
 __author__ = "Valentin Beaumont"
@@ -91,14 +90,6 @@ class VFXWindow(QMainWindow):
         self._switch_theme()
         self._check_documentation()
         self._add_shadows()
-
-        # TODO: temporary
-        self.ui.pushButton_2.clicked.connect(
-            lambda: self.set_status_bar_message("Error", 1)
-        )
-        self.ui.pushButton.clicked.connect(
-            lambda: self.set_status_bar_message("Success", 3)
-        )
 
     def _load_ui(self):
         if self.ui_file != None and os.path.isfile(self.ui_file):
@@ -572,17 +563,15 @@ class VFXWindow(QMainWindow):
         )
 
         if logger is not None:
-            log_message = message
-
             # Modify log level according to severity_type
             if severity_type == 0:
-                logger.critical(log_message)
+                logger.critical(message)
             if severity_type == 1:
-                logger.warning(log_message)
+                logger.warning(message)
             elif severity_type == 2:
-                logger.error(log_message)
+                logger.error(message)
             elif severity_type == 3 or severity_type == 4:
-                logger.info(log_message)
+                logger.info(message)
 
     def refresh(self):
         pass
