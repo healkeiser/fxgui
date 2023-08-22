@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>859</width>
+    <height>584</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>Tab 1</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="8" column="1" colspan="2">
+        <widget class="QFrame" name="frame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_2">
+            <property name="text">
+             <string>Error</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton">
+            <property name="text">
+             <string>Success</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Enabled</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="2">
+        <widget class="QLineEdit" name="lineEdit_3">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="placeholderText">
+          <string>Disabled...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLabel" name="label_2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Disabled</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
+       </item>
+       <item row="0" column="2">
+        <widget class="QComboBox" name="comboBox">
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QFontComboBox" name="fontComboBox"/>
+       </item>
+       <item row="3" column="2">
+        <widget class="QLineEdit" name="lineEdit_2">
+         <property name="placeholderText">
+          <string>Enabled...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="spinBox"/>
+       </item>
+       <item row="5" column="1" colspan="2">
+        <widget class="QScrollBar" name="horizontalScrollBar">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1" colspan="2">
+        <widget class="QPlainTextEdit" name="plainTextEdit">
+         <property name="plainText">
+          <string>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1" colspan="2">
+        <widget class="QSlider" name="horizontalSlider">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1" colspan="2">
+        <widget class="QProgressBar" name="progressBar_2">
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
+       <string>Tab 2</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0">
+        <widget class="QTreeWidget" name="treeWidget">
+         <property name="sortingEnabled">
+          <bool>true</bool>
+         </property>
+         <property name="animated">
+          <bool>true</bool>
+         </property>
+         <column>
+          <property name="text">
+           <string>New Column</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>New Column</string>
+          </property>
+         </column>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+          <item>
+           <property name="text">
+            <string>New Subitem</string>
+           </property>
+          </item>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+          <item>
+           <property name="text">
+            <string>New Subitem</string>
+           </property>
+           <item>
+            <property name="text">
+             <string>New Subitem</string>
+            </property>
+           </item>
+          </item>
+          <item>
+           <property name="text">
+            <string>New Subitem</string>
+           </property>
+          </item>
+         </item>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QListWidget" name="listWidget">
+         <property name="alternatingRowColors">
+          <bool>true</bool>
+         </property>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>New Item</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <widget class="QTableView" name="tableView"/>
+       </item>
+       <item row="2" column="0" colspan="2">
+        <widget class="QDialogButtonBox" name="buttonBox">
+         <property name="standardButtons">
+          <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+         </property>
+         <property name="centerButtons">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_3">
+      <attribute name="title">
+       <string>Tab 3</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="1" column="0" colspan="2">
+        <widget class="QTextBrowser" name="textBrowser">
+         <property name="html">
+          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QCheckBox" name="checkBox_3">
+         <property name="text">
+          <string>CheckBox</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QCheckBox" name="checkBox_2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>CheckBox</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="2">
+        <widget class="QProgressBar" name="progressBar">
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QRadioButton" name="radioButton_2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>RadioButton</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QCheckBox" name="checkBox">
+         <property name="text">
+          <string>CheckBox</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QRadioButton" name="radioButton">
+         <property name="text">
+          <string>RadioButton</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QRadioButton" name="radioButton_3">
+         <property name="text">
+          <string>RadioButton</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+        <widget class="QToolBox" name="toolBox">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="page">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>817</width>
+            <height>223</height>
+           </rect>
+          </property>
+          <attribute name="label">
+           <string>Page 1</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QGroupBox" name="groupBox">
+             <property name="title">
+              <string>GroupBox</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_2">
+              <item>
+               <widget class="QLineEdit" name="lineEdit"/>
+              </item>
+              <item>
+               <widget class="QListView" name="listView_2"/>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_2">
+             <property name="title">
+              <string>GroupBox</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_3">
+              <item>
+               <widget class="QListView" name="listView"/>
+              </item>
+              <item>
+               <widget class="QDialogButtonBox" name="buttonBox_2">
+                <property name="standardButtons">
+                 <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="page_2">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>98</width>
+            <height>28</height>
+           </rect>
+          </property>
+          <attribute name="label">
+           <string>Page 2</string>
+          </attribute>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

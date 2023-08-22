@@ -1,0 +1,79 @@
+{
+    // DCCs
+    "houdini": {
+        "main": "#ff6600"
+    },
+    "maya": {
+        "main": "#38a6cc"
+    },
+    "nuke": {
+        "main": "#fcb434"
+    },
+    "megascans": {
+        "main": "#8ecd4f",
+        "bridge": "#1aa9f3"
+    },
+    // Feedback
+    "feedback": {
+        "info": {
+            "light": "#7661f6",
+            "dark": "#5243aa",
+            "background": "#372d75"
+        },
+        "success": {
+            "light": "#8ac549",
+            "dark": "#007e33",
+            "background": "#466425"
+        },
+        "warning": {
+            "light": "#ffbb33",
+            "dark": "#ff8800",
+            "background": "#7b5918"
+        },
+        "error": {
+            "light": "#ff4444",
+            "dark": "#cc0000",
+            "background": "#7b2323"
+        }
+    },
+    // Grey
+    "grey": {
+        "10": "#d3d3d3",
+        "20": "#bebebe",
+        "30": "#a9a9a9",
+        "40": "#949494",
+        "50": "#7f7f7f",
+        "60": "#6a6a6a",
+        "70": "#545454",
+        "80": "#3f3f3f",
+        "90": "#2a2a2a",
+        "100": "#151515"
+    },
+    // QSS stylesheet
+    // All values are values of grey, except for the ones indicated being
+    // colored
+    "tableBackground": "#1a1a1a",
+    "inputHover": "#1a1a1a",
+    "inputFocus": "#1a1a1a",
+    "buttonBackgroundDisabled": "#202020",
+    "tableHeader": "#202020",
+    "mainBackground": "#242424",
+    "selectionHoverColor": "#242424",
+    "menuBackground": "#383838",
+    "buttonBackgroundDefault": "#383838",
+    "buttonBackgroundBright2": "#383838",
+    "buttonBackgroundBright1": "#434343",
+    "menuHoverBackground": "#575757",
+    "buttonBackgroundHover": "#575757",
+    "scrollHandleColor": "#575757",
+    "borders": "#5a5a5a",
+    "tableBorders": "#5a5a5a",
+    "selectionBackgroundHoverColor": "#787878",
+    "scrollHandleHoverColor": "#808080",
+    "white": "#c0c0c0",
+    "lightGrey": "#bebebe",
+    "disabledText": "#696969",
+    "selectionColor": "#ffffff",
+    "selectionBackgroundColor": "#196ebf", // ! Blue color
+    "menuSelectionbackground": "#196ebf" // ! Blue color
+}
