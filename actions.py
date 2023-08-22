@@ -1,20 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 """Scripts related to the Qt QAction."""
 
-# Built-in
-try:
-    from PySide2.QtCore import *  # type: ignore
-    from PySide2.QtGui import *  # type: ignore
-    from PySide2.QtWidgets import *  # type: ignore
-except ImportError:
-    from PySide6.QtCore import *
-    from PySide6.QtGui import *
-    from PySide6.QtWidgets import *
-
-# Reload
-# TODO: Disable for release
-# from importlib import reload
+from PySide2.QtGui import QIcon, QKeySequence
+from PySide2.QtWidgets import QAction, QWidget
 
 # Metadatas
 __author__ = "Valentin Beaumont"
