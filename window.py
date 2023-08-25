@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""_summary_"""
+"""VFXWindow module."""
 
 # Built-in
 import os
@@ -19,6 +19,7 @@ from PySide2.QtGui import *
 import style
 import shadows
 import actions
+import utils
 
 # Metadatas
 __author__ = "Valentin Beaumont"
@@ -26,6 +27,14 @@ __email__ = "valentin.onze@gmail.com"
 
 
 ###### CODE ####################################################################
+
+
+# Constants
+CRITICAL = 0
+ERROR = 1
+WARNING = 2
+SUCCESS = 3
+INFO = 4
 
 
 # TODO: Add the status bar color notification system (Fix)
@@ -43,9 +52,26 @@ class VFXWindow(QMainWindow):
             Defaults to `None`.
         documentation (str, optional): URL to the tool's documentation.
             Defaults to `None`.
-        version (str, optional): Version label for the window. Defaults to `None`.
+        version (str, optional): Version label for the window.
+            Defaults to `None`.
         ui_file (str, optional): Path to the UI file for loading.
             Defaults to `None`.
+
+    Example:
+        >>> app = QApplication(sys.argv)
+        >>> window = VFXWindow(
+        ...     icon="path_to_icon.png",
+        ...     title="My Custom Window",
+        ...     size=(800, 600),
+        ...     documentation="https://my_tool_docs.com",
+        ...     project="Awesome Project",
+        ...     version="v1.0.0",
+        ...     ui_file="path_to_ui_file.ui",
+        ...     light_theme=False,
+        ... )
+        >>> window.set_status_bar_message("Window initialized", window.INFO)
+        >>> window.show()
+        >>> sys.exit(app.exec_())
     """
 
     def __init__(
@@ -92,12 +118,8 @@ class VFXWindow(QMainWindow):
         self._add_shadows()
 
     def _load_ui(self):
-        if self.ui_file != None and os.path.isfile(self.ui_file):
-            loader = QUiLoader()
-            self.ui_file = QFile(self.ui_file)
-            self.ui_file.open(QFile.ReadOnly)
-            self.ui = loader.load(self.ui_file, self)
-            self.ui_file.close()
+        if self.ui_file != None:
+            self.ui = utils.load_ui(self, self.ui_file)
 
             # Add the loaded UI to the main window
             self.setCentralWidget(self.ui)
@@ -500,11 +522,34 @@ class VFXWindow(QMainWindow):
 
             self.status_bar.setStyleSheet(stylesheet)
 
-    # ' Placeholders
+    # ' Public
 
     def set_status_bar_message(
         self, message, severity_type=4, duration=2.5, time=True, logger=None
     ):
+        """Display a message in the status bar with a specified severity.
+
+        Args:
+            message (str): The message to be displayed.
+            severity_type (int, optional): The severity level of the message.
+                Should be one of `CRITICAL`, `ERROR`, `WARNING`, `SUCCESS`,
+                or `INFO`. Defaults to `INFO`.
+            duration (float, optional): The duration in seconds for which
+                the message should be displayed. Defaults to` 2.5`.
+            time (bool, optional): Whether to display the current time before
+                the message. Defaults to `True`.
+            logger: A logger object to log the message. Defaults to `None`.
+
+        Example:
+            >>> # To display a critical error message with a red background
+            >>> self.set_status_bar_message(
+            ...     "Critical error occurred!",
+            ...     severity_type=self.CRITICAL,
+            ...     duration=5,
+            ...     logger=my_logger,
+            ... )
+        """
+
         colors_dict = style.load_colors_from_jsonc()
         severity_colors = {
             0: (
@@ -572,6 +617,8 @@ class VFXWindow(QMainWindow):
                 logger.error(message)
             elif severity_type == 3 or severity_type == 4:
                 logger.info(message)
+
+    # ' Placeholders
 
     def refresh(self):
         pass

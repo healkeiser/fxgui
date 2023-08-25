@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding= utf-8 -*-
 
-"""PiPy setup script."""
+"""PyPI setup script."""
 
 # Built-in
 from setuptools import setup, find_packages

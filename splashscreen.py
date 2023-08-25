@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""_summary_"""
+"""VFXSplashscreen module."""
 
 # Built-in
 import os
@@ -41,6 +41,23 @@ class VFXSplashScreen(QSplashScreen):
         version (str, optional): Version information. Defaults to "v0.0.0".
         fade_in (bool, optional): Whether to apply a fade-in effect on the
             splash screen. Defaults to False.
+
+    Example:
+        >>> app = QApplication(sys.argv)
+        >>> splash = VFXSplashScreen(
+        ...     image_path="path_to_your_image.png",
+        ...     title="My Awesome App",
+        ...     information="Loading...",
+        ...     show_progress_bar=True,
+        ...     project="Cool Project",
+        ...     version="v1.2.3",
+        ...     fade_in=True,
+        ... )
+        >>> splash.progress(50)
+        >>> splash.show()
+        >>> splash.progress(100)
+        >>> splash.close()
+        >>> sys.exit(app.exec_())
     """
 
     def __init__(

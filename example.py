@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""_summary_"""
+"""Run a VFXSPlashscreen and VFXWindow instance as an example."""
 
 # Built-in
 import os
@@ -44,6 +44,7 @@ def main():
     splash.finish(win)
     app.processEvents()
 
+    win.set_status_bar_message("Window initialized", severity_type=window.INFO)
     win.show()
     app.processEvents()
 

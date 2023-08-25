@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Scripts related to the Qt QAction."""
+"""Scripts related to the QAction."""
 
 # Thirs-party
 from PySide2.QtGui import QIcon, QKeySequence
