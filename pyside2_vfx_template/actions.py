@@ -3,6 +3,9 @@
 
 """Scripts related to the QAction."""
 
+# Built-in
+from typing import Union
+
 # Thirs-party
 from PySide2.QtGui import QIcon, QKeySequence
 from PySide2.QtWidgets import QAction, QWidget
@@ -22,8 +25,8 @@ def create_action(
     trigger: "function",
     enable: "bool" = True,
     visible: "bool" = True,
-    shortcut: "bool" = None,
-) -> "None":
+    shortcut: "str" = None,
+) -> "Union[QAction, None]":
     """Creates a QACtion.
 
     Args:
@@ -35,6 +38,9 @@ def create_action(
         visible (bool, optional): Show/hide. Defaults to `True`.
         shortcut (str, optional): If not `None`, key sequence (hotkeys) to use.
             Defaults to `None`.
+
+    Returns:
+        Union[QAction, None]:
     """
 
     action = QAction(name, parent or None)
