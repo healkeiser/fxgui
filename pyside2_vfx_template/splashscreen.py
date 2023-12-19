@@ -1,7 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""VFXSplashscreen module."""
+"""VFXSplashscreen module.
+
+This module contains the VFXSplashScreen class, a customized QSplashScreen class.
+The VFXSplashScreen class provides a splash screen for your application. It allows
+for customization of the splash screen image, title, information text, and more.
+It also provides options for displaying a progress bar and applying a fade-in effect.
+
+Classes:
+    VFXSplashScreen: A class for creating a customized splash screen.
+
+Author:
+    Valentin Beaumont (valentin.onze@gmail.com)
+"""
 
 # Built-in
 import os
@@ -139,24 +151,25 @@ class VFXSplashScreen(QSplashScreen):
 
     def _grey_overlay(self) -> None:
         lorem_ipsum = (
-            "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis "
-            "praesentium voluptatum deleniti atque corrupti quos dolores et quas "
-            "molestias excepturi sint occaecati cupiditate non provident, similique "
-            "sunt in culpa qui officia deserunt mollitia animi, id est laborum et "
-            "dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. "
-            "Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil "
-            "impedit quo minus id quod maxime placeat facere possimus, omnis voluptas "
-            "assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut "
-            "officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates "
-            "repudiandae sint et molestiae non recusandae. Itaque earum rerum hic "
-            "tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias "
+            "At vero eos et accusamus et iusto odio dignissimos ducimus qui "
+            "blanditiis praesentium voluptatum deleniti atque corrupti quos "
+            "dolores et quas molestias excepturi sint occaecati cupiditate non "
+            "provident, similique sunt in culpa qui officia deserunt mollitia "
+            "animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis "
+            "est et expedita distinctio. Nam libero tempore, cum soluta nobis est "
+            "eligendi optio cumque nihil impedit quo minus id quod maxime placeat "
+            "facere possimus, omnis voluptas assumenda est, omnis dolor "
+            "repellendus. Temporibus autem quibusdam et aut officiis debitis aut "
+            "rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint "
+            "et molestiae non recusandae. Itaque earum rerum hic tenetur a "
+            "sapiente delectus, ut aut reiciendis voluptatibus maiores alias "
             "consequatur aut perferendis doloribus asperiores repellat."
         )
 
         # Main QFrame
         frame = QFrame(self)
         frame.setGeometry(0, 0, self.pixmap.width() // 2, self.pixmap.height())
-        # Eauivqlent to #1a1a1a with opacity
+        # Equivalent to #1a1a1a with opacity
         stylesheet = "background-color: @tableBackground;"
         stylesheet = style.replace_colors(stylesheet)
         frame.setStyleSheet(stylesheet)
@@ -167,11 +180,7 @@ class VFXSplashScreen(QSplashScreen):
         layout.setContentsMargins(50, 50, 50, 50)
 
         # Title QLabel with a slightly bigger font and bold
-        self.title_label = QLabel(
-            self.title
-            if self.title != None and len(self.title) >= 1
-            else "Untitled"
-        )
+        self.title_label = QLabel(self.title if self.title else "Untitled")
         title_font = QFont()
         title_font.setBold(True)
         self.title_label.setFont(title_font)
@@ -189,7 +198,7 @@ class VFXSplashScreen(QSplashScreen):
         # Information
         self.info_label = QLabel(
             self.information
-            if self.information != None and len(self.information) >= 1
+            if self.information is not None and len(self.information) >= 1
             else lorem_ipsum
         )
         self.info_label.setAlignment(Qt.AlignJustify)
@@ -214,8 +223,16 @@ class VFXSplashScreen(QSplashScreen):
         layout.addItem(spacer_c)
 
         # Copyright QLabel
+        project = (
+            self.project if self.project and len(self.project) >= 1 else "N/A"
+        )
+        version = (
+            self.version
+            if self.version and len(self.version) >= 1
+            else "v0.0.0"
+        )
         self.copyright_label = QLabel(
-            f"{self.project if self.project != None and len(self.project)>=1 else 'N/A'} | {self.version if self.version != None and len(self.version)>=1 else 'v0.0.0'} | \u00A9 Company Ltd."
+            f"{project} | {version} | \u00A9 Company Ltd."
         )
         self.copyright_label.setStyleSheet(
             "font-size: 8pt; qproperty-alignment: AlignBottom;"
