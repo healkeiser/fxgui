@@ -30,6 +30,7 @@ _pixmap = os.path.join(os.path.dirname(__file__), "images", "splash.png")
 
 
 def main():
+    # Initialize the QApplication
     app = QApplication(sys.argv)
 
     # Initialize window for splashscreen
@@ -51,7 +52,7 @@ def main():
     win.show()
     app.processEvents()
 
-    # Buttons in example `test.ui`
+    # Buttons in `test.ui` example
     win.ui.button_error.clicked.connect(
         lambda: win.set_status_bar_message("Error", window.ERROR)
     )
