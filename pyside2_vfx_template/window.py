@@ -5,6 +5,8 @@
 
 # Built-in
 import os
+import logging
+from typing import Union
 from datetime import datetime
 from webbrowser import open_new_tab
 from urllib.parse import urlparse
@@ -89,8 +91,9 @@ class VFXWindow(QMainWindow):
         super().__init__(parent)
 
         # Stylesheet
-        self.light_theme = not light_theme  # ! Invert value because of the
+        # ! Invert value because of the
         # !`self._switch_theme()` function call during construction
+        self.light_theme = not light_theme
 
         # Attributes
         self._default_icon = os.path.join(
@@ -117,32 +120,34 @@ class VFXWindow(QMainWindow):
         self._check_documentation()
         self._add_shadows()
 
-    def _load_ui(self):
+    # - Hidden methods
+
+    def _load_ui(self) -> None:
         if self.ui_file != None:
             self.ui = utils.load_ui(self, self.ui_file)
 
             # Add the loaded UI to the main window
             self.setCentralWidget(self.ui)
 
-    def _set_window_icon(self):
+    def _set_window_icon(self) -> None:
         if self.window_icon != None and os.path.isfile(self.window_icon):
             self.setWindowIcon(QIcon(self.window_icon))
         else:
             self.setWindowIcon(QIcon(self._default_icon))
 
-    def _set_window_title(self):
+    def _set_window_title(self) -> None:
         if self.window_title != None and len(self.window_title) >= 1:
             self.setWindowTitle(f"VFX | {self.window_title} *")
         else:
             self.setWindowTitle(f"VFX | Window *")
 
-    def _set_window_size(self):
+    def _set_window_size(self) -> None:
         if self.window_size != None and len(self.window_size) >= 1:
             self.resize(QSize(*self.window_size))
         else:
             self.resize(QSize(500, 600))
 
-    def _create_actions(self):
+    def _create_actions(self) -> None:
         # Main menu
         self.about_action = actions.create_action(
             self,
@@ -208,8 +213,8 @@ class VFXWindow(QMainWindow):
             "Switch Theme",
             None,
             self._switch_theme,
-            enable=True,
-            visible=True,
+            enable=False,  # TODO: Show when all is fixed
+            visible=False,  # TODO: Enable when all is fixed
         )
 
         self.window_on_top_action = actions.create_action(
@@ -292,11 +297,11 @@ class VFXWindow(QMainWindow):
 
     def _create_menu_bar(
         self,
-        native_menu_bar=False,
-        enable_logo_menu_bar=True,
-    ):
+        native_menu_bar: bool = False,
+        enable_logo_menu_bar: bool = True,
+    ) -> None:
         self.menu_bar = self.menuBar()
-        self.menu_bar.setNativeMenuBar(native_menu_bar)
+        self.menu_bar.setNativeMenuBar(native_menu_bar)  # Mostly for macOS
 
         # Icon menu
         if enable_logo_menu_bar:
@@ -353,7 +358,7 @@ class VFXWindow(QMainWindow):
             self.open_documentation_action
         )
 
-    def _create_toolbars(self):
+    def _create_toolbars(self) -> None:
         self.toolbar = QToolBar("Toolbar")
         self.toolbar.setIconSize(QSize(17, 17))
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
@@ -365,7 +370,7 @@ class VFXWindow(QMainWindow):
 
         self.toolbar.setMovable(True)
 
-    def _create_status_bar(self):
+    def _create_status_bar(self) -> None:
         self.status_bar = self.statusBar()
 
         if self.project != None and len(self.project) >= 1:
@@ -396,7 +401,7 @@ class VFXWindow(QMainWindow):
         # Connection to handle color change during feedback
         self.status_bar.messageChanged.connect(self._status_changed)
 
-    def _window_on_top(self):
+    def _window_on_top(self) -> None:
         flags = self.windowFlags()
         action_values = {
             True: (
@@ -420,7 +425,7 @@ class VFXWindow(QMainWindow):
         self.setWindowTitle(window_title)
         self.show()
 
-    def _move_window(self):
+    def _move_window(self) -> None:
         frame_geo = self.frameGeometry()
         desktop_geometry = QDesktopWidget().availableGeometry()
         center_point = desktop_geometry.center()
@@ -446,7 +451,7 @@ class VFXWindow(QMainWindow):
         frame_geo.moveCenter(moving_position)
         self.move(frame_geo.topLeft())
 
-    def _switch_theme(self):
+    def _switch_theme(self) -> None:
         if self.light_theme == False:
             self.setStyleSheet(style.load_stylesheet(light_theme=True))
             self.switch_theme_action.setText("Dark Theme")
@@ -460,7 +465,7 @@ class VFXWindow(QMainWindow):
         # Force the status bar to get the right colors
         # self._status_changed(args=None)
 
-    def _is_valid_url(self, url):
+    def _is_valid_url(self, url: str) -> bool:
         try:
             result = urlparse(url)
             return all([result.scheme, result.netloc])
@@ -474,25 +479,26 @@ class VFXWindow(QMainWindow):
         else:
             self.open_documentation_action.setEnabled(False)
 
-    def _add_shadows(self):
+    def _add_shadows(self) -> None:
         shadows.add_shadows(self, self.menu_bar)
         # shadows.add_shadows(self, self.toolbar)
         shadows.add_shadows(self, self.status_bar)
 
-    def _get_current_time(self, display_seconds=False, display_date=False):
+    def _get_current_time(
+        self, display_seconds: bool = False, display_date: bool = False
+    ) -> str:
         format_string = "%H:%M:%S" if display_seconds else "%H:%M"
         if display_date:
             format_string = "%Y-%m-%d " + format_string
         return datetime.now().strftime(format_string)
 
-    def _status_changed(self, args):
+    def _status_changed(self, args: str) -> None:
         # If there are no arguments (meaning the message is being removed),
         # then change the status bar background back to black.
 
         if not args:
             if self.light_theme:
-                # TODO: Call `style.replace_colors()`` instead of manually typing
-                # TODO: the color values
+                # TODO: Call `style.replace_colors()` instead of manually typing the color values
                 stylesheet = """
                     QStatusBar {
                         color: @white;
@@ -522,11 +528,16 @@ class VFXWindow(QMainWindow):
 
             self.status_bar.setStyleSheet(stylesheet)
 
-    # ' Public
+    # - Public methods
 
     def set_status_bar_message(
-        self, message, severity_type=4, duration=2.5, time=True, logger=None
-    ):
+        self,
+        message: str,
+        severity_type: int = 4,
+        duration: float = 2.5,
+        time: bool = True,
+        logger: logging.Logger = None,
+    ) -> None:
         """Display a message in the status bar with a specified severity.
 
         Args:
@@ -538,10 +549,11 @@ class VFXWindow(QMainWindow):
                 the message should be displayed. Defaults to` 2.5`.
             time (bool, optional): Whether to display the current time before
                 the message. Defaults to `True`.
-            logger: A logger object to log the message. Defaults to `None`.
+            logger (Logger, optional): A logger object to log the message.
+                Defaults to `None`.
 
         Example:
-            >>> # To display a critical error message with a red background
+            ... # To display a critical error message with a red background
             >>> self.set_status_bar_message(
             ...     "Critical error occurred!",
             ...     severity_type=self.CRITICAL,
@@ -618,12 +630,12 @@ class VFXWindow(QMainWindow):
             elif severity_type == 3 or severity_type == 4:
                 logger.info(message)
 
-    # ' Placeholders
+    # - Placeholders
 
-    def refresh(self):
+    def refresh(self) -> None:
         pass
 
-    # ' Events
+    # - Events
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         self.setParent(None)

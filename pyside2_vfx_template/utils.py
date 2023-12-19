@@ -9,6 +9,7 @@ import os
 # Third-party
 from PySide2.QtUiTools import QUiLoader
 from PySide2.QtCore import QFile
+from PySide2.QtWidgets import QWidget
 
 # Metadatas
 __author__ = "Valentin Beaumont"
@@ -18,8 +19,8 @@ __email__ = "valentin.onze@gmail.com"
 ###### CODE ####################################################################
 
 
-def load_ui(parent, ui_file):
-    """Load a `.ui` file and return the loaded UI as a QWidget.
+def load_ui(parent: QWidget, ui_file: str) -> QWidget:
+    """Load a UI file and return the loaded UI as a QWidget.
 
     Args:
         parent (QWidget): Parent object.
@@ -32,8 +33,8 @@ def load_ui(parent, ui_file):
         FileNotFoundError: If the specified UI file doesn't exist.
 
     Example:
-        >>> # To load a UI file located in the same directory as
-        >>> # the `.py` script:
+        ... # To load a UI file located in the same directory as
+        ... # the `.py` script:
         >>> from pathlib import Path
         >>> ui_path = Path(__file__).with_suffix('.ui')
         >>> loaded_ui = load_ui(self, ui_path)

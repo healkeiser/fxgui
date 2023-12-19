@@ -27,7 +27,7 @@ STYLE_FILE = os.path.join(os.path.dirname(__file__), "qss", "style.qss")
 COLORS_FILE = os.path.join(os.path.dirname(__file__), "style.jsonc")
 
 
-def _remove_comments(text):
+def _remove_comments(text: str) -> str:
     """Remove single-line and multi-line comments from the input text.
 
     Args:
@@ -47,7 +47,7 @@ def _remove_comments(text):
     )
 
 
-def load_colors_from_jsonc(jsonc_file=COLORS_FILE):
+def load_colors_from_jsonc(jsonc_file: str = COLORS_FILE) -> dict:
     """Load colors from a JSONC (JSON with comments) file.
 
     Args:
@@ -64,8 +64,23 @@ def load_colors_from_jsonc(jsonc_file=COLORS_FILE):
 
 
 def replace_colors(
-    stylesheet, colors_dict=load_colors_from_jsonc(COLORS_FILE), prefix=""
-):
+    stylesheet: str,
+    colors_dict: dict = load_colors_from_jsonc(COLORS_FILE),
+    prefix="",
+) -> str:
+    """_summary_
+
+    Args:
+        stylesheet (str): The stylesheet to replace the colors in.
+        colors_dict (dict, optional): The dict to use to search for colors to be
+            replaced. Defaults to `load_colors_from_jsonc(COLORS_FILE)`.
+        prefix (str, optional): The identifier prefix for colors to be replaced.
+            Defaults to `""`.
+
+    Returns:
+        str: The stylesheet with replaced colors.
+    """
+
     placeholders = {
         f"@{prefix}{key}": value
         for key, value in colors_dict.items()
@@ -76,8 +91,16 @@ def replace_colors(
     return stylesheet
 
 
-def _invert_color(hex_color):
-    """Invert a hex color value by subtracting each RGB component from 255."""
+def _invert_color(hex_color: str) -> str:
+    """Invert a hex color value by subtracting each RGB component from 255.
+
+    Args:
+        hex_color(str): The hex color to replace.
+
+    Returns:
+        str: The hex color value inverted as a string.
+    """
+
     rgb_values = [255 - int(hex_color[i : i + 2], 16) for i in (1, 3, 5)]
     inverted_color = "#{:02X}{:02X}{:02X}".format(*rgb_values)
     return inverted_color
@@ -95,12 +118,15 @@ def _invert_icons(stylesheet):
     return stylesheet
 
 
-def load_stylesheet(light_theme=False):
+def load_stylesheet(light_theme: bool = False):
     """Load and process the stylesheet.
 
     This function loads a stylesheet from a `style.qss` file and applies color
     replacements based on the definitions in `style.jsonc` file. It also
     replaces certain placeholders with their corresponding values.
+
+    Args:
+        light_theme(bool): Wheter to enable the light mode or not.
 
     Returns:
         str: The processed stylesheet content.

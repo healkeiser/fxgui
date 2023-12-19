@@ -59,14 +59,14 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_2">
+           <widget class="QPushButton" name="button_error">
             <property name="text">
              <string>Error</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton">
+           <widget class="QPushButton" name="button_success">
             <property name="text">
              <string>Success</string>
             </property>
@@ -399,8 +399,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>817</width>
-            <height>223</height>
+            <width>293</width>
+            <height>153</height>
            </rect>
           </property>
           <attribute name="label">

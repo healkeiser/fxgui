@@ -4,7 +4,7 @@
 """Scripts related to the QAction."""
 
 # Built-in
-from typing import Union
+from typing import Union, Callable
 
 # Thirs-party
 from PySide2.QtGui import QIcon, QKeySequence
@@ -19,21 +19,21 @@ __email__ = "valentin.onze@gmail.com"
 
 
 def create_action(
-    parent: "QWidget",
-    name: "str",
-    icon: "str",
-    trigger: "function",
-    enable: "bool" = True,
-    visible: "bool" = True,
-    shortcut: "str" = None,
-) -> "Union[QAction, None]":
+    parent: QWidget,
+    name: str,
+    icon: str,
+    trigger: Callable,
+    enable: bool = True,
+    visible: bool = True,
+    shortcut: str = None,
+) -> Union[QAction, None]:
     """Creates a QACtion.
 
     Args:
         parent (QWidget): Parent object.
         name (str): Name to display.
         icon (str): Icon path.
-        trigger (function): Function to trigger when clicked.
+        trigger (Callable): Function to trigger when clicked.
         enable (bool, optional): Enable/disable. Defaults to `True`.
         visible (bool, optional): Show/hide. Defaults to `True`.
         shortcut (str, optional): If not `None`, key sequence (hotkeys) to use.

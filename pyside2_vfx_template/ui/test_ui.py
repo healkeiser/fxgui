@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'test.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.1
+## Created by: Qt User Interface Compiler version 6.6.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -49,15 +49,15 @@ class Ui_Form(object):
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
 
-        self.pushButton_2 = QPushButton(self.frame)
-        self.pushButton_2.setObjectName(u"pushButton_2")
+        self.button_error = QPushButton(self.frame)
+        self.button_error.setObjectName(u"button_error")
 
-        self.horizontalLayout.addWidget(self.pushButton_2)
+        self.horizontalLayout.addWidget(self.button_error)
 
-        self.pushButton = QPushButton(self.frame)
-        self.pushButton.setObjectName(u"pushButton")
+        self.button_success = QPushButton(self.frame)
+        self.button_success.setObjectName(u"button_success")
 
-        self.horizontalLayout.addWidget(self.pushButton)
+        self.horizontalLayout.addWidget(self.button_success)
 
 
         self.gridLayout.addWidget(self.frame, 8, 1, 1, 2)
@@ -235,7 +235,7 @@ class Ui_Form(object):
         self.toolBox.setObjectName(u"toolBox")
         self.page = QWidget()
         self.page.setObjectName(u"page")
-        self.page.setGeometry(QRect(0, 0, 817, 223))
+        self.page.setGeometry(QRect(0, 0, 293, 153))
         self.horizontalLayout_2 = QHBoxLayout(self.page)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.groupBox = QGroupBox(self.page)
@@ -297,8 +297,8 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(QCoreApplication.translate("Form", u"Form", None))
-        self.pushButton_2.setText(QCoreApplication.translate("Form", u"Error", None))
-        self.pushButton.setText(QCoreApplication.translate("Form", u"Success", None))
+        self.button_error.setText(QCoreApplication.translate("Form", u"Error", None))
+        self.button_success.setText(QCoreApplication.translate("Form", u"Success", None))
         self.label.setText(QCoreApplication.translate("Form", u"Enabled", None))
         self.lineEdit_3.setPlaceholderText(QCoreApplication.translate("Form", u"Disabled...", None))
         self.label_2.setText(QCoreApplication.translate("Form", u"Disabled", None))

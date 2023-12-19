@@ -25,17 +25,19 @@ __email__ = "valentin.onze@gmail.com"
 ###### CODE ####################################################################
 
 
-__ui_file = os.path.join(os.path.dirname(__file__), "ui", "test.ui")
-__pixmap = os.path.join(os.path.dirname(__file__), "images", "splash.png")
+_ui_file = os.path.join(os.path.dirname(__file__), "ui", "test.ui")
+_pixmap = os.path.join(os.path.dirname(__file__), "images", "splash.png")
 
 
 def main():
     app = QApplication(sys.argv)
 
-    win = window.VFXWindow(ui_file=__ui_file, light_theme=False)
+    # Initialize window for splashscreen
+    win = window.VFXWindow(ui_file=_ui_file, light_theme=False)
     app.processEvents()
 
-    splash = splashscreen.VFXSplashScreen(image_path=__pixmap)
+    # Splashscreen
+    splash = splashscreen.VFXSplashScreen(image_path=_pixmap)
     app.processEvents()
 
     splash.show()
@@ -44,9 +46,18 @@ def main():
     splash.finish(win)
     app.processEvents()
 
+    # Window
     win.set_status_bar_message("Window initialized", severity_type=window.INFO)
     win.show()
     app.processEvents()
+
+    # Buttons in example `test.ui`
+    win.ui.button_error.clicked.connect(
+        lambda: win.set_status_bar_message("Error", window.ERROR)
+    )
+    win.ui.button_success.clicked.connect(
+        lambda: win.set_status_bar_message("Success", window.SUCCESS)
+    )
 
     sys.exit(app.exec_())
 
