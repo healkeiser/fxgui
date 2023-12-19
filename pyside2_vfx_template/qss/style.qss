@@ -1392,8 +1392,7 @@ QPushButton {
     border-radius: 4px;
 }
 
-QPushButton:hover,
-QPushButton:focus {
+QPushButton:hover {
     background-color: @buttonBackgroundHover;
     border-color: @lightGrey;
 }
