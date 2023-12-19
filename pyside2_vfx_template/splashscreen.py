@@ -104,7 +104,11 @@ class VFXSplashScreen(QSplashScreen):
     def showMessage(self, message):
         self.info_label.setText(message.capitalize())
 
-    def _resize_image(self, image_path, ideal_width=800, ideal_height=450):
+    # - Hidden methods
+
+    def _resize_image(
+        self, image_path: str, ideal_width: int = 800, ideal_height: int = 450
+    ) -> QPixmap:
         pixmap = QPixmap(image_path)
         width = pixmap.width()
         height = pixmap.height()
@@ -133,7 +137,7 @@ class VFXSplashScreen(QSplashScreen):
 
         return resized_pixmap
 
-    def _grey_overlay(self):
+    def _grey_overlay(self) -> None:
         lorem_ipsum = (
             "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis "
             "praesentium voluptatum deleniti atque corrupti quos dolores et quas "
@@ -218,7 +222,7 @@ class VFXSplashScreen(QSplashScreen):
         )
         layout.addWidget(self.copyright_label)
 
-    def _fade_in(self):
+    def _fade_in(self) -> None:
         opaqueness = 0.0
         step = 0.001
         self.setWindowOpacity(opaqueness)
@@ -236,7 +240,7 @@ class VFXSplashScreen(QSplashScreen):
         self.fade_timer.timeout.connect(update_opacity)
         self.fade_timer.start(100)
 
-    # ' Events
+    # - Events
 
     def mousePressEvent(self, event):
         pass
