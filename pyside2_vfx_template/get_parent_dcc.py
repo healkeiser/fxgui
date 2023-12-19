@@ -1,7 +1,15 @@
 #!/usr/bin/env python
 # -*- coding= utf-8 -*-
 
-"""Utility functions for retrieving main windows of DCC applications."""
+"""Utility functions for retrieving main windows of DCC applications.
+
+Note:
+    To avoid potential ModuleImportErrors, each DCC module (e.g., `hou`, `nuke`)
+    is imported within its own function. This approach ensures that attempting
+    to  use a function like `get_houdini_main_window` only triggers the import
+    of `hou`, even if the main program lacks access to other modules like
+    `nuke` or `OpenMayaUI`.
+"""
 
 # Built-in
 import shiboken2
@@ -24,7 +32,7 @@ def get_houdini_main_window() -> QtWidgets.QWidget:
         PySide2.QtWidgets.QWidget: 'QWidget' Houdini main window.
     """
 
-    import hou
+    import hou  # type:ignore
 
     return hou.qt.mainWindow()
 
@@ -36,11 +44,11 @@ def get_maya_main_window() -> QtWidgets.QWidget:
         PySide2.QtWidgets.QWidget: 'TmainWindow' Maya main window.
     """
 
-    import maya.OpenMayaUI as apiUI
+    import maya.OpenMayaUI as apiUI  # type:ignore
 
-    ptr = apiUI.MQtUtil.mainWindow()
-    if ptr is not None:
-        return shiboken2.wrapInstance(long(ptr), QtWidgets.QWidget)
+    window = apiUI.MQtUtil.mainWindow()
+    if window is not None:
+        return shiboken2.wrapInstance(long(window), QtWidgets.QWidget)
 
 
 def get_nuke_main_window() -> QtWidgets.QMainWindow:
@@ -50,7 +58,7 @@ def get_nuke_main_window() -> QtWidgets.QMainWindow:
         PySide2.QtWidgets.QMainWindow: 'DockMainWindow' Nuke main window.
     """
 
-    import nuke
+    import nuke  # type:ignore
 
     for widget in QtWidgets.QApplication.topLevelWidgets():
         if (
