@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""VFXWindow module."""
+"""This module defines the `VFXWindow` class which provides a custom window
+tailored for VFX-oriented DCC applications.
+
+The `VFXWindow` class uses PySide2 for the UI and includes various utilities
+and actions for a VFX workflow.
+
+This module also defines several constants for different types of notifications.
+
+Author:
+    Valentin Beaumont (valentin.onze@gmail.com)
+"""
 
 # Built-in
 import os
