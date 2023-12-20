@@ -9,14 +9,19 @@
 
 <div align="center">
 
-# PySide2 VFX Template
+  ![Logo](./docs/images/pyside2_vfx_template_logo_large_dark.svg#gh-light-mode-only)
+  ![Logo](./docs/images/pyside2_vfx_template_logo_large_light.svg#gh-dark-mode-only)
+  
+  <h3 align="center">PySide2 VFX Template</h3>
 
-[![Logo](./docs/images/pyside2_vfx_template_logo_large_dark.svg#gh-light-mode-only)](https://github.com/healkeiser/pyside2_vfx_template)
-[![Logo](./docs/images/pyside2_vfx_template_logo_large_light.svg#gh-dark-mode-only)](https://github.com/healkeiser/pyside2_vfx_template)
+  <p align="center">
+    Custom Python classes and utilities tailored for PySide2 built UI, in VFX-oriented DCC applications.
+    <br/>
+    <br/>
+    <br/>
+  </p>
 
 </div>
-
-<br/><br/><br/>
 
 
 
@@ -28,6 +33,7 @@
   - [About](#about)
   - [Installation](#installation)
   - [Example](#example)
+  - [Documentation](#documentation)
   - [Contact](#contact)
 <!--te-->
 
@@ -37,6 +43,8 @@
 ## About
 
 Custom Python classes and utilities tailored for PySide2 built UI, in VFX-oriented DCC applications.
+
+
 
 <!-- INSTALLATION -->
 ## Installation
@@ -71,6 +79,13 @@ Here's how it would like like launched from Houdini:
 
 > [!NOTE]
 > As you can see, you can still load the DCC stylesheet if you want, but the toolbar, menu bar and statusbar will remain with a custom stylesheet.
+
+
+
+<!-- DOCUMENTATION -->
+## Documentation
+
+Please read the full documentation [here](https://healkeiser.github.io/pyside2_vfx_template/).
 
 
 
