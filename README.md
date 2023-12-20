@@ -11,7 +11,7 @@
 
   ![Logo](./docs/images/pyside2_vfx_template_logo_large_dark.svg#gh-light-mode-only)
   ![Logo](./docs/images/pyside2_vfx_template_logo_large_light.svg#gh-dark-mode-only)
-  
+
   <h3 align="center">PySide2 VFX Template</h3>
 
   <p align="center">
@@ -28,13 +28,13 @@
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 <!--ts-->
-- [PySide2 VFX Template](#pyside2-vfx-template)
-  - [Table of Contents](#table-of-contents)
-  - [About](#about)
-  - [Installation](#installation)
-  - [Example](#example)
-  - [Documentation](#documentation)
-  - [Contact](#contact)
+- [Table of Contents](#table-of-contents)
+- [About](#about)
+- [Installation](#installation)
+- [Example](#example)
+- [Documentation](#documentation)
+- [Gallery](#gallery)
+- [Contact](#contact)
 <!--te-->
 
 
@@ -75,7 +75,7 @@ example.main()
 
 Here's how it would like like launched from Houdini:
 
-![Screenshot](./docs/images/LWpoFDJlzh.png)
+![Screenshot](./docs/images/qwZ0omKbe0.png)
 
 > [!NOTE]
 > As you can see, you can still load the DCC stylesheet if you want, but the toolbar, menu bar and statusbar will remain with a custom stylesheet.
@@ -86,6 +86,14 @@ Here's how it would like like launched from Houdini:
 ## Documentation
 
 Please read the full documentation [here](https://healkeiser.github.io/pyside2_vfx_template/).
+
+
+
+<!-- GALLERY -->
+## Gallery
+
+![Splash Screen](./docs/images/jxxZTVZy29.png)
+![Main Window](./docs/images/e72Hfw2ReZ.png)
 
 
 
