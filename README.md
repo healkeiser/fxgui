@@ -59,6 +59,12 @@ After installing PySide2 VFX Template, you can run the demo:
 ``` shell
 python example.py
 ```
+Or:
+``` python
+from pyside2_vfx_template import example
+
+example.main()
+```
 
 
 
