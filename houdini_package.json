@@ -1,0 +1,31 @@
+{
+    "path": [
+        "$PYSIDE2_VFX_TEMPLATE"
+    ],
+    "load_package_once": true,
+    "enable": true,
+    "version": "0.4.2",
+    "env": [
+        {
+            "PYSIDE2_VFX_TEMPLATE": [
+                {
+                    "houdini_os == 'windows'": "D:/Code/pyside2_vfx_template"
+                },
+                {
+                    "houdini_os == 'linux'": ""
+                },
+                {
+                    "houdini_os == 'macos'": ""
+                }
+            ]
+        },
+        {
+            "PYTHONPATH": [
+                "$PYSIDE2_VFX_TEMPLATE/pyside2_vfx_template",
+                {
+                    "method": "append"
+                }
+            ]
+        }
+    ]
+}

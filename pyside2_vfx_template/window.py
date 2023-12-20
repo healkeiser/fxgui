@@ -59,6 +59,7 @@ class VFXWindow(QMainWindow):
         title (str, optional): Title of the window. Defaults to `None`.
         size (Tuple[int, int], optional): Window size as width and height.
             Defaults to `None`.
+        flags: (Qt.WindowFlags, optional): Window flags. Defaults to `None`.
         documentation (str, optional): URL to the tool's documentation.
             Defaults to `None`.
         version (str, optional): Version label for the window.
@@ -89,6 +90,7 @@ class VFXWindow(QMainWindow):
         icon=None,
         title=None,
         size=None,
+        flags=None,
         documentation=None,
         project=None,
         version=None,
@@ -109,6 +111,7 @@ class VFXWindow(QMainWindow):
         self.window_icon = icon
         self.window_title = title
         self.window_size = size
+        self.window_flags = flags
         self.documentation = documentation
         self.project = project
         self.version = version
@@ -119,6 +122,7 @@ class VFXWindow(QMainWindow):
         self._set_window_icon()
         self._set_window_title()
         self._set_window_size()
+        self._set_window_flags()
         self._create_actions()
         self._create_menu_bar()
         self._create_toolbars()
@@ -130,29 +134,33 @@ class VFXWindow(QMainWindow):
     # - Hidden methods
 
     def _load_ui(self) -> None:
-        if self.ui_file != None:
+        if self.ui_file is not None:
             self.ui = utils.load_ui(self, self.ui_file)
 
             # Add the loaded UI to the main window
             self.setCentralWidget(self.ui)
 
     def _set_window_icon(self) -> None:
-        if self.window_icon != None and os.path.isfile(self.window_icon):
+        if self.window_icon is not None and os.path.isfile(self.window_icon):
             self.setWindowIcon(QIcon(self.window_icon))
         else:
             self.setWindowIcon(QIcon(self._default_icon))
 
     def _set_window_title(self) -> None:
-        if self.window_title != None and len(self.window_title) >= 1:
+        if self.window_title is not None and len(self.window_title) >= 1:
             self.setWindowTitle(f"VFX | {self.window_title} *")
         else:
             self.setWindowTitle(f"VFX | Window *")
 
     def _set_window_size(self) -> None:
-        if self.window_size != None and len(self.window_size) >= 1:
+        if self.window_size is not None and len(self.window_size) >= 1:
             self.resize(QSize(*self.window_size))
         else:
             self.resize(QSize(500, 600))
+
+    def _set_window_flags(self) -> None:
+        if self.window_flags is not None:
+            self.setWindowFlags(self.windowFlags() | self.window_flags)
 
     def _create_actions(self) -> None:
         # Main menu
@@ -380,12 +388,12 @@ class VFXWindow(QMainWindow):
     def _create_status_bar(self) -> None:
         self.status_bar = self.statusBar()
 
-        if self.project != None and len(self.project) >= 1:
+        if self.project is not None and len(self.project) >= 1:
             project_label = QLabel(self.project)
         else:
             project_label = QLabel("N/A")
 
-        if self.version != None and len(self.version) >= 1:
+        if self.version is not None and len(self.version) >= 1:
             version_label = QLabel(self.version)
         else:
             version_label = QLabel("v0.0.0")
@@ -426,7 +434,7 @@ class VFXWindow(QMainWindow):
         text, icon, window_title = action_values[stays_on_top]
         flags ^= Qt.WindowStaysOnTopHint
         self.window_on_top_action.setText(text)
-        if icon != None:
+        if icon is not None:
             self.window_on_top_action.setIcon(icon)
         self.setWindowFlags(flags)
         self.setWindowTitle(window_title)
