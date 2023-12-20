@@ -41,7 +41,7 @@ class VFXSplashScreen(QSplashScreen):
         image_path (str): Path to the image to be displayed on the splash
             screen.
         title (str, optional): Title text to be displayed. Defaults to
-            "Untitled".
+            `Untitled`.
         information (str, optional): Information text to be displayed.
             Defaults to a placeholder text.
         show_progress_bar (bool, optional): Whether to display a progress bar.
@@ -51,6 +51,27 @@ class VFXSplashScreen(QSplashScreen):
         company (str, optional): Company name. Defaults to `Company Ltd.`.
         fade_in (bool, optional): Whether to apply a fade-in effect on the
             splash screen. Defaults to False.
+
+    Attributes:
+        pixmap (QPixmap): The image to be displayed on the splash screen.
+        title (str, optional): Title text to be displayed. Defaults to
+            `Untitled`.
+        information (str, optional): Information text to be displayed.
+            Defaults to a placeholder text.
+        show_progress_bar (bool, optional): Whether to display a progress bar.
+            Defaults to `False`.
+        project (str, optional): Project name. Defaults to `N/A`.
+        version (str, optional): Version information. Defaults to `v0.0.0`.
+        company (str, optional): Company name. Defaults to `Company Ltd.`.
+        fade_in (bool, optional): Whether to apply a fade-in effect on the
+            splash screen. Defaults to `False`.
+        title_label (QLabel): Label for the title text.
+        info_label (QLabel): Label for the information text.
+        progress_bar (QProgressBar): Progress bar widget. Only created if
+            `show_progress_bar` is `True`.
+        copyright_label (QLabel): Label for the copyright information.
+        fade_timer (QTimer): Timer for the fade-in effect. Only created if
+            `fade_in` is `True`.
 
     Examples:
         >>> app = QApplication(sys.argv)
@@ -99,14 +120,14 @@ class VFXSplashScreen(QSplashScreen):
         self.setStyleSheet(style.load_stylesheet(light_theme=False))
 
         # Attributes
-        self.pixmap = image
-        self.title = title
-        self.information = information
-        self.show_progress_bar = show_progress_bar
-        self.project = project
-        self.version = version
-        self.company = company
-        self.fade_in = fade_in
+        self.pixmap: QPixmap = image
+        self.title: str = title
+        self.information: str = information
+        self.show_progress_bar: bool = show_progress_bar
+        self.project: str = project
+        self.version: str = version
+        self.company: str = company
+        self.fade_in: bool = fade_in
 
         # Functions
         self._grey_overlay()
