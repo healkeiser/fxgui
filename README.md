@@ -49,6 +49,9 @@ Custom Python classes and utilities tailored for PySide2 built UI, in VFX-orient
 pip install pyside2-vfx-template
 ```
 
+> [!IMPORTANT]  
+> In order to have access to the module, make sure to add `pyside2_vfx_template` to the `$PYTHONPATH` of the DCCs. For Houdini, you can find the [houdini_package file](./houdini_package.json).
+
 
 
 <!-- EXAMPLE -->
@@ -68,7 +71,7 @@ example.main()
 
 Here's how it would like like launched from Houdini: 
 
-![Image 1](./images/LWpoFDJlzh.png)
+![Screenshot](./images/LWpoFDJlzh.png)
 
 > [!NOTE]  
 > As you can see, you can still load the DCC stylesheet if you want, but the toolbar, menu bar and statusbar will remain with a custom stylesheet.
