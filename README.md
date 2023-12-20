@@ -7,33 +7,28 @@
   <img src="https://img.shields.io/badge/-Linux-E95420?style=for-the-badge&logo=linux" alt="Compatible with Linux"/></a>
 </p>
 
-<div id="top"></div>
-<!-- PROJECT LOGO -->
-<br />
 <div align="center">
-  <a href="https://github.com/healkeiser/cloud_vfx_server">
-    <img src="./docs/images/pyside2_vfx_template_logo.svg" alt="Logo" width="150" >
-  </a>
 
-  <h3 align="center">PySide2 VFX Template</h3>
+# PySide2 VFX Template
 
-  <p align="center">
-    <br />
-    <br />
-    <br />
-  </p>
+[![Logo](./docs/images/pyside2_vfx_template_logo_large_dark.svg#gh-light-mode-only)](https://github.com/healkeiser/pyside2_vfx_template)
+[![Logo](./docs/images/pyside2_vfx_template_logo_large_light.svg#gh-dark-mode-only)](https://github.com/healkeiser/pyside2_vfx_template)
+
 </div>
+
+<br/><br/><br/>
 
 
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 <!--ts-->
-- [Table of Contents](#table-of-contents)
-- [About](#about)
-- [Installation](#installation)
-- [Example](#example)
-- [Contact](#contact)
+- [PySide2 VFX Template](#pyside2-vfx-template)
+  - [Table of Contents](#table-of-contents)
+  - [About](#about)
+  - [Installation](#installation)
+  - [Example](#example)
+  - [Contact](#contact)
 <!--te-->
 
 

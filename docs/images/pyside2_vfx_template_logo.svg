@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="48" height="48" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 48 48">
   <defs>
-    <linearGradient id="linear-gradient" x1="18.5357" y1="938.815" x2="27.0984" y2="891.8035" gradientTransform="translate(0 939.1111) scale(1 -1)" gradientUnits="userSpaceOnUse">
+    <linearGradient id="linear-gradient" x1="18.5357" y1="49.7039" x2="27.0984" y2="2.6924" gradientTransform="translate(0 50) scale(1 -1)" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#037192"/>
       <stop offset="1" stop-color="#039492"/>
     </linearGradient>
-    <linearGradient id="linear-gradient-2" x1="20.1383" y1="924.5171" x2="27.3862" y2="884.9322" gradientTransform="translate(0 939.1111) scale(1 -1)" gradientUnits="userSpaceOnUse">
+    <linearGradient id="linear-gradient-2" x1="20.1383" y1="35.406" x2="27.3862" y2="-4.1789" gradientTransform="translate(0 50) scale(1 -1)" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#fddb22"/>
       <stop offset=".4429" stop-color="#f5c81b"/>
       <stop offset="1" stop-color="#f3c00b"/>
