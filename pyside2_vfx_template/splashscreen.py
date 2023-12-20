@@ -40,6 +40,8 @@ class VFXSplashScreen(QSplashScreen):
     Args:
         image_path (str): Path to the image to be displayed on the splash
             screen.
+        icon (str, optional): Path to the icon to be displayed on the splash
+            screen.
         title (str, optional): Title text to be displayed. Defaults to
             `Untitled`.
         information (str, optional): Information text to be displayed.
@@ -53,17 +55,18 @@ class VFXSplashScreen(QSplashScreen):
             splash screen. Defaults to False.
 
     Attributes:
-        pixmap (QPixmap): The image to be displayed on the splash screen.
-        title (str, optional): Title text to be displayed. Defaults to
-            `Untitled`.
-        information (str, optional): Information text to be displayed.
-            Defaults to a placeholder text.
-        show_progress_bar (bool, optional): Whether to display a progress bar.
+        pixmap (QPixmap): The image on the splash screen. Dewfaults to
+            `splash.png`.
+        icon (QIcon): The icon of the splash screen. Defaults to `favicon.png`.
+        title (str): Title text to be displayed. Defaults to `Untitled`.
+        information (str): Information text to be displayed. Defaults to a
+            placeholder Lorem Ipsum text.
+        show_progress_bar (bool): Whether to display a progress bar.
             Defaults to `False`.
-        project (str, optional): Project name. Defaults to `N/A`.
-        version (str, optional): Version information. Defaults to `v0.0.0`.
-        company (str, optional): Company name. Defaults to `Company Ltd.`.
-        fade_in (bool, optional): Whether to apply a fade-in effect on the
+        project (str): Project name. Defaults to `N/A`.
+        version (str): Version information. Defaults to `v0.0.0`.
+        company (str): Company name. Defaults to `Company Ltd.`.
+        fade_in (bool): Whether to apply a fade-in effect on the
             splash screen. Defaults to `False`.
         title_label (QLabel): Label for the title text.
         info_label (QLabel): Label for the information text.
@@ -95,6 +98,7 @@ class VFXSplashScreen(QSplashScreen):
     def __init__(
         self,
         image_path: Optional[str] = None,
+        icon: Optional[str] = None,
         title: Optional[str] = None,
         information: Optional[str] = None,
         show_progress_bar: bool = False,
@@ -121,6 +125,10 @@ class VFXSplashScreen(QSplashScreen):
 
         # Attributes
         self.pixmap: QPixmap = image
+        self._default_icon = os.path.join(
+            os.path.dirname(__file__), "icons", "favicon.png"
+        )
+        self.icon: QIcon = icon
         self.title: str = title
         self.information: str = information
         self.show_progress_bar: bool = show_progress_bar
@@ -203,15 +211,32 @@ class VFXSplashScreen(QSplashScreen):
         layout = QVBoxLayout(frame)
         layout.setContentsMargins(50, 50, 50, 50)
 
+        # Icon QLabel
+        self.icon_label = QLabel()
+        if self.icon:
+            pixmap = QPixmap(self.icon)
+        else:
+            pixmap = QPixmap(self._default_icon)
+
+        pixmap = pixmap.scaledToHeight(32, Qt.SmoothTransformation)
+        self.icon_label.setPixmap(pixmap)
+
         # Title QLabel with a slightly bigger font and bold
         self.title_label = QLabel(self.title if self.title else "Untitled")
         title_font = QFont()
         title_font.setBold(True)
         self.title_label.setFont(title_font)
         self.title_label.setStyleSheet(
-            "font-size: 14pt;"
+            "font-size: 18pt;"
         )  # Mandatory because of style.qss
-        layout.addWidget(self.title_label)
+
+        # Horizontal layout for title and icon
+        title_icon_layout = QHBoxLayout()
+        title_icon_layout.addWidget(self.icon_label)
+        title_icon_layout.addWidget(self.title_label)
+        title_icon_layout.setSpacing(10)
+        title_icon_layout.addStretch()
+        layout.addLayout(title_icon_layout)
 
         # Spacer
         spacer_a = QSpacerItem(

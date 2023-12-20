@@ -6,6 +6,7 @@
 # Built-in
 import os
 import sys
+from importlib import reload
 
 # Third-party
 from PySide2.QtWidgets import *
@@ -14,7 +15,11 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 
 # Internal
-from pyside2_vfx_template import splashscreen, window
+# from pyside2_vfx_template import splashscreen, window
+import splashscreen, window
+
+reload(splashscreen)
+reload(window)
 
 # Metadatas
 __author__ = "Valentin Beaumont"

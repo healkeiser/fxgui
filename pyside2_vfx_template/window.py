@@ -16,6 +16,7 @@ Classes:
 # Built-in
 import os
 import logging
+from typing import Optional
 from datetime import datetime
 from webbrowser import open_new_tab
 from urllib.parse import urlparse
@@ -182,17 +183,17 @@ class VFXWindow(QMainWindow):
 
     def __init__(
         self,
-        parent=None,
-        icon=None,
-        title=None,
-        size=None,
-        flags=None,
-        documentation=None,
-        project=None,
-        version=None,
-        company=None,
-        ui_file=None,
-        light_theme=False,
+        parent: Optional[QWidget] = None,
+        icon: Optional[str] = None,
+        title: Optional[str] = None,
+        size: Optional[int] = None,
+        flags: Optional[Qt.WindowFlags] = None,
+        documentation: Optional[str] = None,
+        project: Optional[str] = None,
+        version: Optional[str] = None,
+        company: Optional[str] = None,
+        ui_file: Optional[str] = None,
+        light_theme: bool = False,
     ):
         super().__init__(parent)
 
