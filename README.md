@@ -1,10 +1,10 @@
 <p align="left">
   <a href="https://www.python.org">
-  <img src="https://img.shields.io/badge/-Python-FFD43B?style=for-the-badge&logo=python" alt="Python"/></a> 
-  <img src="https://img.shields.io/badge/-PySide-284821?style=for-the-badge&logo=qt" alt="Python"/></a> 
+  <img src="https://img.shields.io/badge/-Python-FFD43B?style=for-the-badge&logo=python" alt="Python"/></a>
+  <img src="https://img.shields.io/badge/-PySide-284821?style=for-the-badge&logo=qt" alt="Python"/></a>
   <img src="https://img.shields.io/badge/-Windows-00A4EF?style=for-the-badge&logo=windows" alt="Compatible with Windows"/></a>
   <img src="https://img.shields.io/badge/-macOS-000000?style=for-the-badge&logo=apple" alt="Compatible with macOS"/></a>
-  <img src="https://img.shields.io/badge/-Linux-E95420?style=for-the-badge&logo=linux" alt="Compatible with Linux"/></a> 
+  <img src="https://img.shields.io/badge/-Linux-E95420?style=for-the-badge&logo=linux" alt="Compatible with Linux"/></a>
 </p>
 
 <div id="top"></div>
@@ -12,7 +12,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/healkeiser/cloud_vfx_server">
-    <img src="https://qt-wiki-uploads.s3.amazonaws.com/images/0/07/PySideLogo1.png" alt="Logo" width="150" >
+    <img src="./docs/images/pyside2_vfx_template_logo.svg" alt="Logo" width="150" >
   </a>
 
   <h3 align="center">PySide2 VFX Template</h3>
@@ -29,10 +29,11 @@
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 <!--ts-->
-   * [About](#about)
-   * [Installation](#installation)
-   * [Example](#example)
-   * [Contact](#contact)
+- [Table of Contents](#table-of-contents)
+- [About](#about)
+- [Installation](#installation)
+- [Example](#example)
+- [Contact](#contact)
 <!--te-->
 
 
@@ -49,7 +50,7 @@ Custom Python classes and utilities tailored for PySide2 built UI, in VFX-orient
 pip install pyside2-vfx-template
 ```
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > In order to have access to the module, make sure to add `pyside2_vfx_template` to the `$PYTHONPATH` of the DCCs. For Houdini, you can find the [houdini_package file](./houdini_package.json).
 
 
@@ -69,11 +70,11 @@ from pyside2_vfx_template import example
 example.main()
 ```
 
-Here's how it would like like launched from Houdini: 
+Here's how it would like like launched from Houdini:
 
-![Screenshot](./images/LWpoFDJlzh.png)
+![Screenshot](./docs/images/LWpoFDJlzh.png)
 
-> [!NOTE]  
+> [!NOTE]
 > As you can see, you can still load the DCC stylesheet if you want, but the toolbar, menu bar and statusbar will remain with a custom stylesheet.
 
 
@@ -85,11 +86,11 @@ Project Link: [PySide2 VFX Template](https://github.com/healkeiser/pyside2_vfx_t
 
 <p align='left'>
   <a href="https://www.linkedin.com/in/valentin-beaumont">
-  <img src="https://img.shields.io/badge/-LinkedIn-0A66C2?style=for-the-badge&logo=linkedin" alt="LinkedIn"/></a> 
+  <img src="https://img.shields.io/badge/-LinkedIn-0A66C2?style=for-the-badge&logo=linkedin" alt="LinkedIn"/></a>
   <a href="https://www.behance.net/el1ven">
-  <img src="https://img.shields.io/badge/-Behance-313131?style=for-the-badge&logo=behance" alt="Behance"/></a> 
+  <img src="https://img.shields.io/badge/-Behance-313131?style=for-the-badge&logo=behance" alt="Behance"/></a>
   <a href="https://twitter.com/valentinbeaumon">
-  <img src="https://img.shields.io/badge/-Twitter-E1E8ED?style=for-the-badge&logo=twitter" alt="Twitter"/></a> 
+  <img src="https://img.shields.io/badge/-Twitter-E1E8ED?style=for-the-badge&logo=twitter" alt="Twitter"/></a>
   <a href="https://www.instagram.com/val.beaumontart">
   <img src="https://img.shields.io/badge/-Instagram-85255b?style=for-the-badge&logo=instagram" alt="Instagram"/></a>
   <a href="https://healkeiser.gumroad.com/subscribe">

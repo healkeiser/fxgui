@@ -10,9 +10,6 @@ It also provides options for displaying a progress bar and applying a fade-in ef
 
 Classes:
     VFXSplashScreen: A class for creating a customized splash screen.
-
-Author:
-    Valentin Beaumont (valentin.onze@gmail.com)
 """
 
 # Built-in
@@ -55,7 +52,7 @@ class VFXSplashScreen(QSplashScreen):
         fade_in (bool, optional): Whether to apply a fade-in effect on the
             splash screen. Defaults to False.
 
-    Example:
+    Examples:
         >>> app = QApplication(sys.argv)
         >>> splash = VFXSplashScreen(
         ...     image_path="path_to_your_image.png",

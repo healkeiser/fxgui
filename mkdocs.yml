@@ -1,0 +1,107 @@
+# Base for MkDocs.
+
+# Author: Valentin Beaumont
+# Mail: valentin.onze@gmail.com
+
+###### CODE ####################################################################
+
+site_name: PySide2 VFX Template
+site_author: Valentin Beaumont
+copyright: Copyright &copy; 2021 - 2023 Valentin Beaumont
+repo_url: https://healkeiser.gumroad.com/l/beacon
+repo_name: GitHub
+edit_uri: ""
+
+###### Theme ###################################################################
+
+theme:
+  name: material
+  language: en
+  logo: images/pyside2_vfx_template_logo.svg
+  icon:
+    repo: material/github
+  features:
+    - announce.dismiss
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.annotate
+    - content.tooltips
+    - content.tabs.link
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: yellow
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: yellow
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+###### Markdown extensions #####################################################
+
+markdown_extensions:
+  - footnotes
+  - admonition
+  - attr_list
+  - md_in_html
+  - def_list
+  - tables
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.b64
+  - pymdownx.smartsymbols
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      # custom_templates: templates
+      handlers:
+        python:
+          options:
+            # paths: [src]
+            heading_level: 2
+            separate_signature: true
+            line_length: 80
+            show_signature_annotations: true
+            signature_crossrefs: true
+            docstring_style: google
+            docstring_section_style: table
+            show_if_no_docstring: false
+            show_docstring_attributes: true
+            annotations_path: brief
+            show_root_heading: false
+            show_root_full_path: false
+            show_source: false
+
+nav:
+  - "actions": actions.md
+  - "dcc": dcc.md
+  - "shadows": shadows.md
+  - "splashscreen": splashscreen.md
+  - "style": style.md
+  - "tree_widget": tree_widget.md
+  - "utils": utils.md
+  - "window": window.md

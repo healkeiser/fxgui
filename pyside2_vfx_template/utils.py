@@ -32,7 +32,7 @@ def load_ui(parent: QWidget, ui_file: str) -> QWidget:
     Raises:
         FileNotFoundError: If the specified UI file doesn't exist.
 
-    Example:
+    Examples:
         ... # To load a UI file located in the same directory as
         ... # the `.py` script:
         >>> from pathlib import Path

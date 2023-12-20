@@ -30,7 +30,7 @@ def filter_tree(
         column (int, optional): The column index to use for text filtering.
             Defaults to `0`.
 
-    Example:
+    Examples:
         >>> filter_bar = QLineEdit()
         >>> tree_widget = QTreeWidget()
         ... # Populate tree_widget with items

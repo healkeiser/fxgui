@@ -4,7 +4,7 @@
 """Utility functions for retrieving main windows of DCC applications.
 
 Note:
-    To avoid potential ModuleImportErrors, each DCC module (e.g., `hou`, `nuke`)
+    To avoid potential `ModuleImportError`s, each DCC module (e.g., `hou`, `nuke`)
     is imported within its own function. This approach ensures that attempting
     to  use a function like `get_houdini_main_window` only triggers the import
     of `hou`, even if the main program lacks access to other modules like
@@ -29,7 +29,7 @@ def get_houdini_main_window() -> QtWidgets.QWidget:
     """Get the Houdini main window.
 
     Returns:
-        PySide2.QtWidgets.QWidget: 'QWidget' Houdini main window.
+        PySide2.QtWidgets.QWidget: `QWidget` Houdini main window.
     """
 
     import hou  # type:ignore
@@ -53,7 +53,7 @@ def get_maya_main_window() -> QtWidgets.QWidget:
     """Get the Maya main window.
 
     Returns:
-        PySide2.QtWidgets.QWidget: 'TmainWindow' Maya main window.
+        PySide2.QtWidgets.QWidget: `TmainWindow` Maya main window.
     """
 
     import maya.OpenMayaUI as apiUI  # type:ignore
@@ -67,7 +67,7 @@ def get_nuke_main_window() -> QtWidgets.QMainWindow:
     """Get the Nuke main window.
 
     Returns:
-        PySide2.QtWidgets.QMainWindow: 'DockMainWindow' Nuke main window.
+        PySide2.QtWidgets.QMainWindow: `DockMainWindow` Nuke main window.
     """
 
     import nuke  # type:ignore

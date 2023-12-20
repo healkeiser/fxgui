@@ -3,11 +3,11 @@
 
 """UI stylesheet, HEX colors and others.
 
-Example:
+Examples:
     >>> import style
     >>> colors = style.load_colors_from_jsonc()
     >>> houdini_orange = colors["houdini"]["main"]
-    '#3cc0fd'
+    #3cc0fd
 """
 
 # Built-in
@@ -118,7 +118,7 @@ def _invert_icons(stylesheet):
     return stylesheet
 
 
-def load_stylesheet(light_theme: bool = False):
+def load_stylesheet(light_theme: bool = False) -> str:
     """Load and process the stylesheet.
 
     This function loads a stylesheet from a `style.qss` file and applies color
@@ -126,7 +126,7 @@ def load_stylesheet(light_theme: bool = False):
     replaces certain placeholders with their corresponding values.
 
     Args:
-        light_theme(bool): Wheter to enable the light mode or not.
+        light_theme (bool): Wheter to enable the light mode or not.
 
     Returns:
         str: The processed stylesheet content.

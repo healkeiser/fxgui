@@ -1,0 +1,1 @@
+::: pyside2_vfx_template.actions

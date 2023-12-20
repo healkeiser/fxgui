@@ -9,14 +9,13 @@ and actions for a VFX workflow.
 
 This module also defines several constants for different types of notifications.
 
-Author:
-    Valentin Beaumont (valentin.onze@gmail.com)
+Classes:
+    VFXWindow: A class for creating a customized window.
 """
 
 # Built-in
 import os
 import logging
-from typing import Union
 from datetime import datetime
 from webbrowser import open_new_tab
 from urllib.parse import urlparse
@@ -26,6 +25,7 @@ from PySide2.QtWidgets import *
 from PySide2.QtUiTools import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
+
 
 # Internal
 from pyside2_vfx_template import style, shadows, actions, utils
@@ -59,7 +59,7 @@ class VFXWindow(QMainWindow):
         title (str, optional): Title of the window. Defaults to `None`.
         size (Tuple[int, int], optional): Window size as width and height.
             Defaults to `None`.
-        flags: (Qt.WindowFlags, optional): Window flags. Defaults to `None`.
+        flags: (QtCore.Qt.WindowFlags, optional): Window flags. Defaults to `None`.
         documentation (str, optional): URL to the tool's documentation.
             Defaults to `None`.
         version (str, optional): Version label for the window.
@@ -67,21 +67,34 @@ class VFXWindow(QMainWindow):
         ui_file (str, optional): Path to the UI file for loading.
             Defaults to `None`.
 
-    Example:
+    Examples:
+        Outside a DCC
         >>> app = QApplication(sys.argv)
-        >>> window = VFXWindow(
-        ...     icon="path_to_icon.png",
+        >>> _window = VFXWindow(
+        ...     icon="path/to/icon.png",
         ...     title="My Custom Window",
         ...     size=(800, 600),
         ...     documentation="https://my_tool_docs.com",
         ...     project="Awesome Project",
         ...     version="v1.0.0",
-        ...     ui_file="path_to_ui_file.ui",
+        ...     ui_file="path/to/ui_file.ui",
         ...     light_theme=False,
         ... )
-        >>> window.set_statusbar_message("Window initialized", window.INFO)
-        >>> window.show()
+        >>> _window.show()
+        >>> _window.set_statusbar_message("Window initialized", window.INFO)
         >>> sys.exit(app.exec_())
+
+        Inside a DCC (Houdini)
+        >>> houdini_window = dcc.get_houdini_main_window()
+        >>> houdini_style = dcc.get_houdini_stylesheet()
+        >>> _window = window.VFXWindow(
+        ...    parent=houdini_win,
+        ...    ui_file=_ui_file,
+        ...    light_theme=False
+        ...   )
+        >>> _window.show()
+        >>> _window.set_statusbar_message("Window initialized", window.INFO)
+
     """
 
     def __init__(
@@ -118,6 +131,12 @@ class VFXWindow(QMainWindow):
         self.version = version
         self.company = company
         self.ui_file = ui_file
+
+        self.CRITICAL = CRITICAL
+        self.ERROR = ERROR
+        self.WARNING = WARNING
+        self.SUCCESS = SUCCESS
+        self.INFO = INFO
 
         # Functions
         # ! Order matters to load the stylesheet correctly
@@ -781,14 +800,18 @@ class VFXWindow(QMainWindow):
             logger (Logger, optional): A logger object to log the message.
                 Defaults to `None`.
 
-        Example:
-            ... # To display a critical error message with a red background
+        Examples:
+            To display a critical error message with a red background
             >>> self.set_statusbar_message(
             ...     "Critical error occurred!",
             ...     severity_type=self.CRITICAL,
             ...     duration=5,
             ...     logger=my_logger,
             ... )
+
+        Note:
+            You can either use the window instance to retrieve the verbosity
+            constants, or the window module.
         """
 
         colors_dict = style.load_colors_from_jsonc()
