@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """Scripts related to the QGraphicsDropShadowEffect."""
-# Built-in
-from typing import Any
 
 # Third-party
 from PySide2 import QtWidgets

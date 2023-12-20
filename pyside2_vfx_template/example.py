@@ -14,8 +14,7 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 
 # Internal
-import splashscreen
-import window
+from pyside2_vfx_template import splashscreen, window
 
 # Metadatas
 __author__ = "Valentin Beaumont"

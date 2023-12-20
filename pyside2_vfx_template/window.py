@@ -28,10 +28,7 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 
 # Internal
-import style
-import shadows
-import actions
-import utils
+from pyside2_vfx_template import style, shadows, actions, utils
 
 # Metadatas
 __author__ = "Valentin Beaumont"
