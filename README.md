@@ -66,6 +66,13 @@ from pyside2_vfx_template import example
 example.main()
 ```
 
+Here's how it would like like launched from Houdini: 
+
+![Image 1](./images/LWpoFDJlzh.png)
+
+> [!NOTE]  
+> As you can see, you can still load the DCC stylesheet if you want, but the toolbar, menu bar and statusbar will remain with a custom stylesheet.
+
 
 
 <!-- CONTACT -->
