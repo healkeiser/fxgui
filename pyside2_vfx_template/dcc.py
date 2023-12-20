@@ -48,7 +48,7 @@ def get_maya_main_window() -> QtWidgets.QWidget:
 
     window = apiUI.MQtUtil.mainWindow()
     if window is not None:
-        return shiboken2.wrapInstance(long(window), QtWidgets.QWidget)
+        return shiboken2.wrapInstance(int(window), QtWidgets.QWidget)
 
 
 def get_nuke_main_window() -> QtWidgets.QMainWindow:
