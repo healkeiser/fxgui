@@ -79,7 +79,7 @@ class VFXWindow(QMainWindow):
         ...     ui_file="path_to_ui_file.ui",
         ...     light_theme=False,
         ... )
-        >>> window.set_status_bar_message("Window initialized", window.INFO)
+        >>> window.set_statusbar_message("Window initialized", window.INFO)
         >>> window.show()
         >>> sys.exit(app.exec_())
     """
@@ -94,6 +94,7 @@ class VFXWindow(QMainWindow):
         documentation=None,
         project=None,
         version=None,
+        company=None,
         ui_file=None,
         light_theme=False,
     ):
@@ -115,21 +116,27 @@ class VFXWindow(QMainWindow):
         self.documentation = documentation
         self.project = project
         self.version = version
+        self.company = company
         self.ui_file = ui_file
 
         # Functions
+        # ! Order matters to load the stylesheet correctly
+
+        self._create_actions()
+        self._switch_theme()
         self._load_ui()
         self._set_window_icon()
         self._set_window_title()
         self._set_window_size()
         self._set_window_flags()
-        self._create_actions()
         self._create_menu_bar()
         self._create_toolbars()
         self._create_status_bar()
-        self._switch_theme()
         self._check_documentation()
         self._add_shadows()
+
+        # ? If using a DCC stylehseet, keep some elements from the custom one
+        self._override_dcc_stylesheet()
 
     # - Hidden methods
 
@@ -168,7 +175,7 @@ class VFXWindow(QMainWindow):
             self,
             "About",
             None,
-            None,
+            self._show_about_dialog,
             enable=True,
             visible=True,
         )
@@ -385,22 +392,23 @@ class VFXWindow(QMainWindow):
 
         self.toolbar.setMovable(True)
 
+    def _generate_label(self, attribute: str, default: str) -> QLabel:
+        if attribute is not None and len(attribute) >= 1:
+            return QLabel(attribute)
+        else:
+            return QLabel(default)
+
     def _create_status_bar(self) -> None:
         self.status_bar = self.statusBar()
 
-        if self.project is not None and len(self.project) >= 1:
-            project_label = QLabel(self.project)
-        else:
-            project_label = QLabel("N/A")
-
-        if self.version is not None and len(self.version) >= 1:
-            version_label = QLabel(self.version)
-        else:
-            version_label = QLabel("v0.0.0")
+        project_label = self._generate_label(self.project, "N/A")
+        version_label = self._generate_label(self.version, "v0.0.0")
+        company_label = self._generate_label(
+            self.company, "\u00A9 Company Ltd."
+        )
 
         separator_0 = QLabel("|")
         separator_1 = QLabel("|")
-        company_label = QLabel("\u00A9 Company Ltd.")
         widgets = [
             project_label,
             separator_0,
@@ -415,6 +423,32 @@ class VFXWindow(QMainWindow):
 
         # Connection to handle color change during feedback
         self.status_bar.messageChanged.connect(self._status_changed)
+
+    def _show_about_dialog(self) -> None:
+        # ! Repetition from `_create_status_bar` is necessary to create new
+        # ! objects
+        # If the dialog already exists and is open, close it
+        if hasattr(self, "about_dialog") and self.about_dialog is not None:
+            self.about_dialog.close()
+
+        # Create a new dialog with self (window) as the parent
+        self.about_dialog = QDialog(self)
+        self.about_dialog.setWindowTitle("About")
+
+        project_label = self._generate_label(self.project, "N/A")
+        version_label = self._generate_label(self.version, "v0.0.0")
+        company_label = self._generate_label(
+            self.company, "\u00A9 Company Ltd."
+        )
+
+        layout = QVBoxLayout()
+        layout.addWidget(project_label)
+        layout.addWidget(version_label)
+        layout.addWidget(company_label)
+
+        self.about_dialog.setFixedSize(self.about_dialog.sizeHint())
+        self.about_dialog.setLayout(layout)
+        self.about_dialog.exec_()
 
     def _window_on_top(self) -> None:
         flags = self.windowFlags()
@@ -543,9 +577,189 @@ class VFXWindow(QMainWindow):
 
             self.status_bar.setStyleSheet(stylesheet)
 
+    def _override_dcc_stylesheet(self) -> None:
+        # Menu bar
+        stylesheet = """
+            QMenuBar,
+            QMenuBar::item {
+                color: @white;
+                background-color: @tableBackground;
+            }
+
+            QMenuBar::item {
+                padding: 6px;
+            }
+
+            QMenuBar {
+                border-bottom: 1px solid @menuBackground;
+            }
+
+            QMenu,
+            QMenu::item {
+                color: @white;
+                background-color: @menuBackground;
+                text-decoration: none;
+            }
+
+            QMenuBar::item:selected {
+                color: @white;
+                background-color: @menuHoverBackground;
+            }
+
+            QMenuBar::item:pressed {
+                color: @white;
+                background-color: @menuSelectionbackground;
+            }
+
+            QMenu::item:selected,
+            QMenu::item:pressed {
+                color: @white;
+                background-color: @menuSelectionbackground;
+                border-radius: 3px;
+            }
+
+            QMenuBar::item:disabled,
+            QMenu::item:disabled {
+                color: @disabledText;
+            }
+
+            QMenu::right-arrow {
+                width: 10px;
+                height: 10px;
+                image:url("qss:icons/right_arrow_light.png");
+                margin-right: 2px;
+            }
+
+            QMenu::right-arrow:selected {
+                image:url("qss:icons/right_arrow_lighter.png");
+            }
+
+            QMenu::item {
+                padding: 2px 26px 2px 10px; /* make room for icon at left */
+                border: 1px solid transparent; /* reserve space for selection border */
+            }
+
+            QMenu::icon {
+                margin-left: 2px;
+            }
+
+            QMenu::separator {
+                height: 1px;
+                background-color: @menuBackground;
+                margin: 6px 4px;
+            }
+
+            QMenu::indicator:non-exclusive:checked {
+                color: @white;
+            }
+
+            /* Fix for elements inside a drop-down menu */
+            QMenu QRadioButton,
+            QMenu QCheckBox,
+            QMenu QPushButton,
+            QMenu QToolButton {
+                color: @white; /* Same as regular QRadioButton and QCheckBox */
+            }
+
+            QMenu QRadioButton:hover,
+            QMenu QCheckBox:hover,
+            QMenu QPushButton:hover,
+            QMenu QToolButton:hover,
+            QMenu QPushButton:pressed,
+            QMenu QToolButton:pressed,
+            QMenu QPushButton:selected,
+            QMenu QToolButton:selected {
+                color: @white;
+                background-color: @menuHoverBackground; /* Same as QMenu::item:selected and QMenu::item:pressed */
+            }
+
+            QMenu QRadioButton:disabled,
+            QMenu QCheckBox:disabled {
+                color: @disabledText;
+            }
+
+            QMenu QRadioButton::indicator:disabled,
+            QMenu QCheckBox::indicator:disabled {
+                color: @disabledText;
+                background-color: transparent;
+                border: 1px solid @disabledText;
+            }
+        """
+        stylesheet = style.replace_colors(stylesheet)
+        self.menu_bar.setStyleSheet(stylesheet)
+
+        # Toolbar
+        stylesheet = """
+            QToolBar {
+                background-color: @tableBackground;
+                border: none;
+                padding: 2px;
+            }
+
+            QToolBar::handle:top,
+            QToolBar::handle:bottom,
+            QToolBar::handle:horizontal {
+                background-image: url("qss:icons/Hmovetoolbar_light.png");
+                width: 10px;
+                margin: 4px 2px;
+                background-position: top right;
+                background-repeat: repeat-y;
+            }
+
+            QToolBar::handle:left,
+            QToolBar::handle:right,
+            QToolBar::handle:vertical {
+                background-image: url("qss:icons/Vmovetoolbar_light.png");
+                height: 10px;
+                margin: 2px 4px;
+                background-position: left bottom;
+                background-repeat: repeat-x;
+            }
+
+            QToolBar::separator:top,
+            QToolBar::separator:bottom,
+            QToolBar::separator:horizontal {
+                width: 1px;
+                margin: 6px 4px;
+                background-color: @tableBackground;
+            }
+
+            QToolBar::separator:left,
+            QToolBar::separator:right,
+            QToolBar::separator:vertical {
+                height: 1px;
+                margin: 4px 6px;
+                background-color: @tableBackground;
+            }
+        """
+
+        stylesheet = style.replace_colors(stylesheet)
+        self.toolbar.setStyleSheet(stylesheet)
+
+        # Statusbar
+        self._status_changed("")
+
     # - Public methods
 
-    def set_status_bar_message(
+    def hide_toolbar(self) -> None:
+        self.toolbar.hide()
+
+    def show_toolbar(self) -> None:
+        self.toolbar.show()
+
+    def hide_menu_bar(self) -> None:
+        self.menu_bar.hide()
+
+    def show_menu_bar(self) -> None:
+        self.menu_bar.show()
+
+    def hide_statusbar(self) -> None:
+        self.status_bar.hide()
+
+    def show_statusbar(self) -> None:
+        self.status_bar.show()
+
+    def set_statusbar_message(
         self,
         message: str,
         severity_type: int = 4,
@@ -569,7 +783,7 @@ class VFXWindow(QMainWindow):
 
         Example:
             ... # To display a critical error message with a red background
-            >>> self.set_status_bar_message(
+            >>> self.set_statusbar_message(
             ...     "Critical error occurred!",
             ...     severity_type=self.CRITICAL,
             ...     duration=5,
@@ -644,6 +858,9 @@ class VFXWindow(QMainWindow):
                 logger.error(message)
             elif severity_type == 3 or severity_type == 4:
                 logger.info(message)
+
+    def clear_statusbar_message(self) -> None:
+        self.status_bar.clearMessage()
 
     # - Placeholders
 

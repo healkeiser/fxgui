@@ -37,6 +37,18 @@ def get_houdini_main_window() -> QtWidgets.QWidget:
     return hou.qt.mainWindow()
 
 
+def get_houdini_stylesheet() -> str:
+    """Get the Houdini stylesheet.
+
+    Returns:
+        str: The Houdini stylesheet.
+    """
+
+    import hou  # type:ignore
+
+    return hou.qt.styleSheet()
+
+
 def get_maya_main_window() -> QtWidgets.QWidget:
     """Get the Maya main window.
 

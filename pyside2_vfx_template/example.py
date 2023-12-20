@@ -14,10 +14,7 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 
 # Internal
-try:
-    from pyside2_vfx_template import splashscreen, window
-except ImportError:
-    import splashscreen, window
+from pyside2_vfx_template import splashscreen, window
 
 # Metadatas
 __author__ = "Valentin Beaumont"
@@ -31,7 +28,7 @@ _ui_file = os.path.join(os.path.dirname(__file__), "ui", "test.ui")
 _pixmap = os.path.join(os.path.dirname(__file__), "images", "splash.png")
 
 
-def main():
+def main(show_delayed: bool = True):
     """Main example function."""
 
     # Initialize the QApplication
@@ -48,26 +45,31 @@ def main():
     splash.show()
     app.processEvents()
 
-    # Delay the call to splash.finish by 5 seconds
-    # QTimer.singleShot(time * 1000, lambda: splash.finish(win))
-    # app.processEvents()
-
-    # Link the window loading to the splashcreen visibility
-    splash.finish(win)
-    app.processEvents()
+    if show_delayed:
+        # Delay the call to splash.finish by 5 seconds
+        QTimer.singleShot(5 * 1000, lambda: splash.finish(win))
+        app.processEvents()
+    else:
+        # Link the window loading to the splashcreen visibility
+        splash.finish(win)
+        app.processEvents()
 
     # Window
-    # QTimer.singleShot(time * 1000 + 200, win.show)
-    win.set_status_bar_message("Window initialized", severity_type=window.INFO)
-    win.show()
+    if show_delayed:
+        # Delay the call to win.show by 5 seconds
+        QTimer.singleShot(5 * 1000 + 200, win.show)
+    else:
+        win.show()
+
+    win.set_statusbar_message("Window initialized", severity_type=window.INFO)
     app.processEvents()
 
     # Buttons in `test.ui` example
     win.ui.button_error.clicked.connect(
-        lambda: win.set_status_bar_message("Error", window.ERROR)
+        lambda: win.set_statusbar_message("Error", window.ERROR)
     )
     win.ui.button_success.clicked.connect(
-        lambda: win.set_status_bar_message("Success", window.SUCCESS)
+        lambda: win.set_statusbar_message("Success", window.SUCCESS)
     )
 
     sys.exit(app.exec_())
