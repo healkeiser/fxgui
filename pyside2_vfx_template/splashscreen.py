@@ -18,6 +18,7 @@ Author:
 # Built-in
 import os
 import time
+from typing import Optional
 
 # Third-party
 from PySide2.QtWidgets import *
@@ -48,8 +49,9 @@ class VFXSplashScreen(QSplashScreen):
             Defaults to a placeholder text.
         show_progress_bar (bool, optional): Whether to display a progress bar.
             Defaults to False.
-        project (str, optional): Project name. Defaults to "N/A".
-        version (str, optional): Version information. Defaults to "v0.0.0".
+        project (str, optional): Project name. Defaults to `N/A`.
+        version (str, optional): Version information. Defaults to `v0.0.0`.
+        company (str, optional): Company name. Defaults to `Company Ltd.`.
         fade_in (bool, optional): Whether to apply a fade-in effect on the
             splash screen. Defaults to False.
 
@@ -62,6 +64,7 @@ class VFXSplashScreen(QSplashScreen):
         ...     show_progress_bar=True,
         ...     project="Cool Project",
         ...     version="v1.2.3",
+        ...     company="My Company Ltd.",
         ...     fade_in=True,
         ... )
         >>> splash.progress(50)
@@ -73,22 +76,25 @@ class VFXSplashScreen(QSplashScreen):
 
     def __init__(
         self,
-        image_path=None,
-        title=None,
-        information=None,
-        show_progress_bar=False,
-        project=None,
-        version=None,
-        fade_in=False,
+        image_path: Optional[str] = None,
+        title: Optional[str] = None,
+        information: Optional[str] = None,
+        show_progress_bar: bool = False,
+        project: Optional[str] = None,
+        version: Optional[str] = None,
+        company: Optional[str] = None,
+        fade_in: bool = False,
     ):
         # Load the image using image_path and redirect as the original pixmap
         # argument from QSplashScreen
         if image_path is not None and os.path.isfile(image_path):
             image = self._resize_image(image_path)
-        else:
+        elif image_path is None:
             image = os.path.join(
                 os.path.dirname(__file__), "images", "snap.png"
             )
+        else:
+            raise ValueError(f"Invalid image path: {image_path}")
 
         super().__init__(image)
 
@@ -102,6 +108,7 @@ class VFXSplashScreen(QSplashScreen):
         self.show_progress_bar = show_progress_bar
         self.project = project
         self.version = version
+        self.company = company
         self.fade_in = fade_in
 
         # Functions
@@ -230,8 +237,14 @@ class VFXSplashScreen(QSplashScreen):
             if self.version and len(self.version) >= 1
             else "v0.0.0"
         )
+        company = (
+            self.company
+            if self.company and len(self.company) >= 1
+            else "Company Ltd."
+        )
+
         self.copyright_label = QLabel(
-            f"{project} | {version} | \u00A9 Company Ltd."
+            f"{project} | {version} | \u00A9 {company}"
         )
         self.copyright_label.setStyleSheet(
             "font-size: 8pt; qproperty-alignment: AlignBottom;"
