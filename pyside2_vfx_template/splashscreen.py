@@ -119,7 +119,7 @@ class VFXSplashScreen(QSplashScreen):
     def showMessage(self, message):
         self.info_label.setText(message.capitalize())
 
-    # - Hidden methods
+    # - Private methods
 
     def _resize_image(
         self, image_path: str, ideal_width: int = 800, ideal_height: int = 450

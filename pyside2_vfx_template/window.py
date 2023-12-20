@@ -26,7 +26,6 @@ from PySide2.QtUiTools import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 
-
 # Internal
 from pyside2_vfx_template import style, shadows, actions, utils
 
@@ -59,13 +58,86 @@ class VFXWindow(QMainWindow):
         title (str, optional): Title of the window. Defaults to `None`.
         size (Tuple[int, int], optional): Window size as width and height.
             Defaults to `None`.
-        flags: (QtCore.Qt.WindowFlags, optional): Window flags. Defaults to `None`.
+        flags (Qt.WindowFlags, optional): Window flags. Defaults to `None`.
         documentation (str, optional): URL to the tool's documentation.
             Defaults to `None`.
         version (str, optional): Version label for the window.
             Defaults to `None`.
         ui_file (str, optional): Path to the UI file for loading.
             Defaults to `None`.
+        light_theme (bool, optional): Whether to use the light theme.
+
+    Attributes:
+        window_icon (QIcon): The icon of the window.
+        window_title (str): The title of the window.
+        window_size (QSize): The size of the window.
+        window_flags (Qt.WindowFlags): The window flags.
+        documentation (str): The documentation string.
+        project (str): The project name.
+        version (str): The version string.
+        company (str): The company name.
+        ui_file (str): The UI file path.
+        light_theme (bool): A flag indicating whether the light theme is
+            currently active.
+
+        CRITICAL (int): Constant for critical log level.
+        ERROR (int): Constant for error log level.
+        WARNING (int): Constant for warning log level.
+        SUCCESS (int): Constant for success log level.
+        INFO (int): Constant for info log level.
+
+        about_action (QAction): Action for the "About" menu item.
+        hide_action (QAction): Action for the "Hide" menu item.
+        hide_others_action (QAction): Action for the "Hide Others" menu item.
+        close_action (QAction): Action for the "Close" menu item.
+        check_updates_action (QAction): Action for the "Check for Updates..."
+            menu item.
+        settings_action (QAction): Action for the "Settings" menu item.
+        switch_theme_action (QAction): Action for the "Switch Theme" menu item.
+        window_on_top_action (QAction): Action for the "Always On Top" menu
+            item.
+        minimize_window_action (QAction): Action for the "Minimize" menu item.
+        maximize_window_action (QAction): Action for the "Maximize" menu item.
+        open_documentation_action (QAction): Action for the "Documentation"
+            menu item.
+        previous_action (QAction): Action for the "Previous" toolbar item.
+        next_action (QAction): Action for the "Next" toolbar item.
+        refresh_action (QAction): Action for the "Refresh" toolbar item.
+        home_action (QAction): Action for the "Home" toolbar item.
+
+        menu_bar (QMenuBar): The menu bar of the window.
+        icon_menu (QMenu): The icon menu of the menu bar.
+        main_menu (QMenu): The main menu of the menu bar.
+        about_menu (QAction): The "About" menu item in the main menu.
+        check_updates_menu (QAction): The "Check for Updates..." menu item in
+            the main menu.
+        close_menu (QAction): The "Close" menu item in the main menu.
+        hide_main_menu (QAction): The "Hide" menu item in the main menu.
+        hide_others_menu (QAction): The "Hide Others" menu item in the main
+            menu.
+        edit_menu (QMenu): The edit menu of the menu bar.
+        settings_menu (QAction): The "Settings" menu item in the edit menu.
+        window_menu (QMenu): The window menu of the menu bar.
+        switch_theme_menu (QAction): The "Switch Theme" menu item in the window
+            menu.
+        minimize_menu (QAction): The "Minimize" menu item in the window menu.
+        maximize_menu (QAction): The "Maximize" menu item in the window menu.
+        on_top_menu (QAction): The "Always On Top" menu item in the window menu.
+        help_menu (QMenu): The help menu of the menu bar.
+        open_documentation_menu (QAction): The "Documentation" menu item in the
+            help menu.
+
+        toolbar (QToolBar): The toolbar of the window.
+        previous_toolbar (QAction): The "Previous" toolbar item.
+        next_toolbar (QAction): The "Next" toolbar item.
+        refresh_toolbar (QAction): The "Refresh" toolbar item.
+        home_toolbar (QAction): The "Home" toolbar item.
+        about_dialog (QDialog): The "About" dialog.
+
+        status_bar (QStatusBar): The status bar of the window.
+        project_label (QLabel): The project label in the status bar.
+        version_label (QLabel): The version label in the status bar.
+        company_label (QLabel): The company label in the status bar.
 
     Examples:
         Outside a DCC
@@ -95,6 +167,17 @@ class VFXWindow(QMainWindow):
         >>> _window.show()
         >>> _window.set_statusbar_message("Window initialized", window.INFO)
 
+        Hide toolbar and menu bar
+        >>> houdini_window = dcc.get_houdini_main_window()
+        >>> houdini_style = dcc.get_houdini_stylesheet()
+        >>> _window = window.VFXWindow(
+        ...    parent=houdini_win,
+        ...    ui_file=_ui_file,
+        ...    light_theme=False
+        ...   )
+        >>> _window.show()
+        >>> _window.hide_toolbar()
+        >>> _window.hide_menu_bar()
     """
 
     def __init__(
@@ -122,21 +205,21 @@ class VFXWindow(QMainWindow):
         self._default_icon = os.path.join(
             os.path.dirname(__file__), "icons", "favicon.png"
         )
-        self.window_icon = icon
-        self.window_title = title
-        self.window_size = size
-        self.window_flags = flags
-        self.documentation = documentation
-        self.project = project
-        self.version = version
-        self.company = company
-        self.ui_file = ui_file
+        self.window_icon: QIcon = icon
+        self.window_title: str = title
+        self.window_size: QSize = size
+        self.window_flags: Qt.WindowFlags = flags
+        self.documentation: str = documentation
+        self.project: str = project
+        self.version: str = version
+        self.company: str = company
+        self.ui_file: str = ui_file
 
-        self.CRITICAL = CRITICAL
-        self.ERROR = ERROR
-        self.WARNING = WARNING
-        self.SUCCESS = SUCCESS
-        self.INFO = INFO
+        self.CRITICAL: int = CRITICAL
+        self.ERROR: int = ERROR
+        self.WARNING: int = WARNING
+        self.SUCCESS: int = SUCCESS
+        self.INFO: int = INFO
 
         # Functions
         # ! Order matters to load the stylesheet correctly
@@ -157,9 +240,16 @@ class VFXWindow(QMainWindow):
         # ? If using a DCC stylehseet, keep some elements from the custom one
         self._override_dcc_stylesheet()
 
-    # - Hidden methods
+    # - Private methods
 
     def _load_ui(self) -> None:
+        """Loads the UI from the specified UI file and sets it as the central
+        widget of the main window.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         if self.ui_file is not None:
             self.ui = utils.load_ui(self, self.ui_file)
 
@@ -167,28 +257,58 @@ class VFXWindow(QMainWindow):
             self.setCentralWidget(self.ui)
 
     def _set_window_icon(self) -> None:
+        """Sets the window icon from the specified icon path.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         if self.window_icon is not None and os.path.isfile(self.window_icon):
             self.setWindowIcon(QIcon(self.window_icon))
         else:
             self.setWindowIcon(QIcon(self._default_icon))
 
     def _set_window_title(self) -> None:
+        """Sets the window title from the specified title.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         if self.window_title is not None and len(self.window_title) >= 1:
             self.setWindowTitle(f"VFX | {self.window_title} *")
         else:
             self.setWindowTitle(f"VFX | Window *")
 
     def _set_window_size(self) -> None:
+        """Sets the window size from the specified size.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         if self.window_size is not None and len(self.window_size) >= 1:
             self.resize(QSize(*self.window_size))
         else:
             self.resize(QSize(500, 600))
 
     def _set_window_flags(self) -> None:
+        """Sets the window flags from the specified flags.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         if self.window_flags is not None:
             self.setWindowFlags(self.windowFlags() | self.window_flags)
 
     def _create_actions(self) -> None:
+        """Creates the actions for the window.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         # Main menu
         self.about_action = actions.create_action(
             self,
@@ -341,6 +461,18 @@ class VFXWindow(QMainWindow):
         native_menu_bar: bool = False,
         enable_logo_menu_bar: bool = True,
     ) -> None:
+        """Creates the menu bar for the window.
+
+        Args:
+            native_menu_bar (bool, optional): Whether to use the native menu
+                bar. Defaults to `False`.
+            enable_logo_menu_bar (bool, optional): Whether to enable the logo
+                menu bar. Defaults to `True`.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         self.menu_bar = self.menuBar()
         self.menu_bar.setNativeMenuBar(native_menu_bar)  # Mostly for macOS
 
@@ -400,6 +532,12 @@ class VFXWindow(QMainWindow):
         )
 
     def _create_toolbars(self) -> None:
+        """Creates the toolbar for the window.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         self.toolbar = QToolBar("Toolbar")
         self.toolbar.setIconSize(QSize(17, 17))
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
@@ -412,28 +550,45 @@ class VFXWindow(QMainWindow):
         self.toolbar.setMovable(True)
 
     def _generate_label(self, attribute: str, default: str) -> QLabel:
+        """Generates a label for the status bar.
+
+        Args:
+            attribute (str): The attribute to be displayed.
+            default (str): The default value to be displayed if the attribute
+                is not set.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         if attribute is not None and len(attribute) >= 1:
             return QLabel(attribute)
         else:
             return QLabel(default)
 
     def _create_status_bar(self) -> None:
+        """Creates the status bar for the window.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         self.status_bar = self.statusBar()
 
-        project_label = self._generate_label(self.project, "N/A")
-        version_label = self._generate_label(self.version, "v0.0.0")
-        company_label = self._generate_label(
+        self.project_label = self._generate_label(self.project, "N/A")
+        self.version_label = self._generate_label(self.version, "v0.0.0")
+        self.company_label = self._generate_label(
             self.company, "\u00A9 Company Ltd."
         )
 
         separator_0 = QLabel("|")
         separator_1 = QLabel("|")
         widgets = [
-            project_label,
+            self.project_label,
             separator_0,
-            version_label,
+            self.version_label,
             separator_1,
-            company_label,
+            self.company_label,
         ]
         for widget in widgets:
             self.status_bar.addPermanentWidget(widget)
@@ -444,6 +599,12 @@ class VFXWindow(QMainWindow):
         self.status_bar.messageChanged.connect(self._status_changed)
 
     def _show_about_dialog(self) -> None:
+        """Shows the "About" dialog.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         # ! Repetition from `_create_status_bar` is necessary to create new
         # ! objects
         # If the dialog already exists and is open, close it
@@ -470,6 +631,12 @@ class VFXWindow(QMainWindow):
         self.about_dialog.exec_()
 
     def _window_on_top(self) -> None:
+        """Sets the window on top of all other windows or not.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         flags = self.windowFlags()
         action_values = {
             True: (
@@ -494,6 +661,12 @@ class VFXWindow(QMainWindow):
         self.show()
 
     def _move_window(self) -> None:
+        """Moves the window to the selected area of the screen.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         frame_geo = self.frameGeometry()
         desktop_geometry = QDesktopWidget().availableGeometry()
         center_point = desktop_geometry.center()
@@ -520,6 +693,12 @@ class VFXWindow(QMainWindow):
         self.move(frame_geo.topLeft())
 
     def _switch_theme(self) -> None:
+        """Switches the theme of the window.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         if self.light_theme == False:
             self.setStyleSheet(style.load_stylesheet(light_theme=True))
             self.switch_theme_action.setText("Dark Theme")
@@ -534,6 +713,15 @@ class VFXWindow(QMainWindow):
         # self._status_changed(args=None)
 
     def _is_valid_url(self, url: str) -> bool:
+        """Checks if the specified URL is valid.
+
+        Args:
+            url (str): The URL to check.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         try:
             result = urlparse(url)
             return all([result.scheme, result.netloc])
@@ -541,6 +729,13 @@ class VFXWindow(QMainWindow):
             return False
 
     def _check_documentation(self):
+        """Checks if the documentation URL is valid and enables/disables the
+        action accordingly.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         pass
         if self._is_valid_url(self.documentation):
             self.open_documentation_action.setEnabled(True)
@@ -548,6 +743,12 @@ class VFXWindow(QMainWindow):
             self.open_documentation_action.setEnabled(False)
 
     def _add_shadows(self) -> None:
+        """Adds shadows to the window elements.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         shadows.add_shadows(self, self.menu_bar)
         # shadows.add_shadows(self, self.toolbar)
         shadows.add_shadows(self, self.status_bar)
@@ -555,14 +756,37 @@ class VFXWindow(QMainWindow):
     def _get_current_time(
         self, display_seconds: bool = False, display_date: bool = False
     ) -> str:
+        """Returns the current time as a string.
+
+        Args:
+            display_seconds (bool, optional): Whether to display the seconds.
+                Defaults to `False`.
+            display_date (bool, optional): Whether to display the date.
+                Defaults to `False`.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         format_string = "%H:%M:%S" if display_seconds else "%H:%M"
         if display_date:
             format_string = "%Y-%m-%d " + format_string
         return datetime.now().strftime(format_string)
 
     def _status_changed(self, args: str) -> None:
-        # If there are no arguments (meaning the message is being removed),
-        # then change the status bar background back to black.
+        """Changes the status bar background color according to the message and
+        severity.
+
+        Args:
+            args (str): The message to be displayed.
+
+        Note:
+            If there are no arguments (meaning the message is being removed),
+            then change the status bar background back to black.
+
+        Warning:
+            This method is intended for internal use only.
+        """
 
         if not args:
             if self.light_theme:
@@ -597,6 +821,12 @@ class VFXWindow(QMainWindow):
             self.status_bar.setStyleSheet(stylesheet)
 
     def _override_dcc_stylesheet(self) -> None:
+        """Overrides the DCC stylesheet with the custom one.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
         # Menu bar
         stylesheet = """
             QMenuBar,
@@ -761,21 +991,33 @@ class VFXWindow(QMainWindow):
     # - Public methods
 
     def hide_toolbar(self) -> None:
+        """Hide the toolbar."""
+
         self.toolbar.hide()
 
     def show_toolbar(self) -> None:
+        """Show the toolbar."""
+
         self.toolbar.show()
 
     def hide_menu_bar(self) -> None:
+        """Hide the menu bar."""
+
         self.menu_bar.hide()
 
     def show_menu_bar(self) -> None:
+        """Show the menu bar."""
+
         self.menu_bar.show()
 
     def hide_statusbar(self) -> None:
+        """Hide the status bar."""
+
         self.status_bar.hide()
 
     def show_statusbar(self) -> None:
+        """Show the status bar."""
+
         self.status_bar.show()
 
     def set_statusbar_message(
@@ -883,6 +1125,8 @@ class VFXWindow(QMainWindow):
                 logger.info(message)
 
     def clear_statusbar_message(self) -> None:
+        """Clear the status bar message."""
+
         self.status_bar.clearMessage()
 
     # - Placeholders
