@@ -26,7 +26,7 @@ from PySide2.QtWidgets import *
 from PySide2.QtUiTools import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-import qdarktheme
+import qdarkstyle
 
 # Internal
 try:
@@ -232,8 +232,18 @@ class VFXWindow(QMainWindow):
         # Functions
         # ! Order matters to load the stylesheet correctly
         # Stylesheet
-        qdarktheme.setup_theme(
-            theme=self.theme, custom_colors={"primary": self.accent_color}
+        # qdarktheme.setup_theme(
+        #     theme=self.theme, custom_colors={"primary": self.accent_color}
+        # )
+        # self.setStyleSheet(
+        #     qdarktheme.load_stylesheet(
+        #         theme=self.theme, custom_colors={"primary": self.accent_color}
+        #     )
+        # )
+        self.setStyleSheet(
+            qdarkstyle.load_stylesheet(
+                qt_api="pyside2", palette=qdarkstyle.DarkPalette
+            )
         )
 
         self._create_actions()
@@ -390,13 +400,15 @@ class VFXWindow(QMainWindow):
 
         # Window menu
         theme_combo_box = QComboBox()
-        theme_combo_box.addItems(qdarktheme.get_themes())
-        theme_combo_box.currentTextChanged.connect(
-            lambda: qdarktheme.setup_theme(
-                theme=theme_combo_box.currentText(),
-                custom_colors={"primary": self.accent_color},
-            )
-        )
+        # theme_combo_box.addItems(qdarktheme.get_themes())
+        # theme_combo_box.currentTextChanged.connect(
+        #     lambda: self.setStyleSheet(
+        #         qdarktheme.load_stylesheet(
+        #             theme=theme_combo_box.currentText(),
+        #             custom_colors={"primary": self.accent_color},
+        #         )
+        #     )
+        # )
         theme_combo_box.currentTextChanged.connect(self._on_theme_changed)
         self.switch_theme_action = QWidgetAction(self)
         self.switch_theme_action.setDefaultWidget(theme_combo_box)
@@ -680,8 +692,8 @@ class VFXWindow(QMainWindow):
         """
 
         combo_box = QComboBox()
-        combo_box.addItems(qdarktheme.get_themes())
-        combo_box.currentTextChanged.connect(qdarktheme.setup_theme)
+        # combo_box.addItems(qdarktheme.get_themes())
+        # combo_box.currentTextChanged.connect(qdarktheme.setup_theme)
         combo_box.show()
 
     def _window_on_top(self) -> None:

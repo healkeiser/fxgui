@@ -21,7 +21,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="pyside2_vfx_template",
-    version="1.0.0",
+    version="1.1.0",
     long_description=long_description,
     long_description_content_type="text/markdown",
     description="Custom Python classes and utilities tailored for PySide2 built UI, in VFX-oriented DCC applications.",
@@ -30,7 +30,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "PySide2",
-        "pyqtdarktheme",
+        "qdarkstyle",
     ],
     include_package_data=True,
 )

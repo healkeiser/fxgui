@@ -22,10 +22,9 @@ from PySide2.QtWidgets import *
 from PySide2.QtUiTools import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-import qdarktheme
+import qdarkstyle
 
 # Internal
-
 try:
     from pyside2_vfx_template import shadows
 except ModuleNotFoundError:
@@ -152,9 +151,20 @@ class VFXSplashScreen(QSplashScreen):
         # Functions
         # ! Order matters to load the stylesheet correctly
         # Stylesheet
-        qdarktheme.setup_theme(
-            theme=self.theme, custom_colors={"primary": self.accent_color}
+        # qdarktheme.setup_theme(
+        #     theme=self.theme, custom_colors={"primary": self.accent_color}
+        # )
+        # self.setStyleSheet(
+        #     qdarktheme.load_stylesheet(
+        #         theme=self.theme, custom_colors={"primary": self.accent_color}
+        #     )
+        # )
+        self.setStyleSheet(
+            qdarkstyle.load_stylesheet(
+                qt_api="pyside2", palette=qdarkstyle.DarkPalette
+            )
         )
+
         self._grey_overlay()
 
     def progress(self, value, max_range=100):

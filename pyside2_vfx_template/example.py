@@ -46,6 +46,9 @@ def main(show_delayed: bool = False):
     # Initialize the QApplication
     app = QApplication(sys.argv)
 
+    # app.setStyleSheet(qdarkstyle.load_stylesheet_pyside2())
+    # app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api="pyside2"))
+
     # Initialize window for splashscreen
     _window = window.VFXWindow(ui_file=_ui_file)
     app.processEvents()
@@ -152,4 +155,4 @@ def show_window():
 if __name__ == "__main__":
     # show_splashscreen()
     # show_window()
-    main(True)
+    main(False)
