@@ -62,6 +62,27 @@
            </spacer>
           </item>
           <item>
+           <widget class="QPushButton" name="button_success">
+            <property name="text">
+             <string>Success</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="button_info">
+            <property name="text">
+             <string>Info</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="button_warning">
+            <property name="text">
+             <string>Warning</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="button_error">
             <property name="text">
              <string>Error</string>
@@ -69,9 +90,9 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="button_success">
+           <widget class="QPushButton" name="button_critical">
             <property name="text">
-             <string>Success</string>
+             <string>Critical</string>
             </property>
            </widget>
           </item>
@@ -402,8 +423,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>293</width>
-            <height>153</height>
+            <width>817</width>
+            <height>223</height>
            </rect>
           </property>
           <attribute name="label">
@@ -451,8 +472,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>98</width>
-            <height>28</height>
+            <width>100</width>
+            <height>30</height>
            </rect>
           </property>
           <attribute name="label">

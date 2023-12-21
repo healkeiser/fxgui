@@ -50,15 +50,30 @@ class Ui_Form(object):
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
 
+        self.button_success = QPushButton(self.frame)
+        self.button_success.setObjectName(u"button_success")
+
+        self.horizontalLayout.addWidget(self.button_success)
+
+        self.button_info = QPushButton(self.frame)
+        self.button_info.setObjectName(u"button_info")
+
+        self.horizontalLayout.addWidget(self.button_info)
+
+        self.button_warning = QPushButton(self.frame)
+        self.button_warning.setObjectName(u"button_warning")
+
+        self.horizontalLayout.addWidget(self.button_warning)
+
         self.button_error = QPushButton(self.frame)
         self.button_error.setObjectName(u"button_error")
 
         self.horizontalLayout.addWidget(self.button_error)
 
-        self.button_success = QPushButton(self.frame)
-        self.button_success.setObjectName(u"button_success")
+        self.button_critical = QPushButton(self.frame)
+        self.button_critical.setObjectName(u"button_critical")
 
-        self.horizontalLayout.addWidget(self.button_success)
+        self.horizontalLayout.addWidget(self.button_critical)
 
 
         self.gridLayout.addWidget(self.frame, 8, 1, 1, 2)
@@ -236,7 +251,7 @@ class Ui_Form(object):
         self.toolBox.setObjectName(u"toolBox")
         self.page = QWidget()
         self.page.setObjectName(u"page")
-        self.page.setGeometry(QRect(0, 0, 293, 153))
+        self.page.setGeometry(QRect(0, 0, 817, 223))
         self.horizontalLayout_2 = QHBoxLayout(self.page)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.groupBox = QGroupBox(self.page)
@@ -277,7 +292,7 @@ class Ui_Form(object):
         self.toolBox.addItem(self.page, u"Page 1")
         self.page_2 = QWidget()
         self.page_2.setObjectName(u"page_2")
-        self.page_2.setGeometry(QRect(0, 0, 98, 28))
+        self.page_2.setGeometry(QRect(0, 0, 100, 30))
         self.toolBox.addItem(self.page_2, u"Page 2")
 
         self.gridLayout_3.addWidget(self.toolBox, 0, 0, 1, 2)
@@ -298,8 +313,11 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         Form.setWindowTitle(QCoreApplication.translate("Form", u"Form", None))
-        self.button_error.setText(QCoreApplication.translate("Form", u"Error", None))
         self.button_success.setText(QCoreApplication.translate("Form", u"Success", None))
+        self.button_info.setText(QCoreApplication.translate("Form", u"Info", None))
+        self.button_warning.setText(QCoreApplication.translate("Form", u"Warning", None))
+        self.button_error.setText(QCoreApplication.translate("Form", u"Error", None))
+        self.button_critical.setText(QCoreApplication.translate("Form", u"Critical", None))
         self.label.setText(QCoreApplication.translate("Form", u"Enabled", None))
         self.lineEdit_3.setPlaceholderText(QCoreApplication.translate("Form", u"Disabled...", None))
         self.label_2.setText(QCoreApplication.translate("Form", u"Disabled", None))

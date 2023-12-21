@@ -22,9 +22,14 @@ from PySide2.QtWidgets import *
 from PySide2.QtUiTools import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
+import qdarktheme
 
 # Internal
-from pyside2_vfx_template import style, shadows
+
+try:
+    from pyside2_vfx_template import shadows
+except ModuleNotFoundError:
+    import shadows
 
 # Metadatas
 __author__ = "Valentin Beaumont"
@@ -51,6 +56,10 @@ class VFXSplashScreen(QSplashScreen):
         project (str, optional): Project name. Defaults to `N/A`.
         version (str, optional): Version information. Defaults to `v0.0.0`.
         company (str, optional): Company name. Defaults to `Company Ltd.`.
+        theme (str, optional): Theme to be applied to the splash screen.
+            Defaults to `dark`.
+        accent_color (str, optional): Accent color to be applied to the splash
+            screen. Defaults to `#039492`.
         fade_in (bool, optional): Whether to apply a fade-in effect on the
             splash screen. Defaults to False.
 
@@ -66,6 +75,8 @@ class VFXSplashScreen(QSplashScreen):
         project (str): Project name. Defaults to `N/A`.
         version (str): Version information. Defaults to `v0.0.0`.
         company (str): Company name. Defaults to `Company Ltd.`.
+        theme (str): Theme applied to the splash screen.
+        accent_color (str): Accent color applied to the splash screen.
         fade_in (bool): Whether to apply a fade-in effect on the
             splash screen. Defaults to `False`.
         title_label (QLabel): Label for the title text.
@@ -105,10 +116,12 @@ class VFXSplashScreen(QSplashScreen):
         project: Optional[str] = None,
         version: Optional[str] = None,
         company: Optional[str] = None,
+        theme: str = "dark",
+        accent_color: str = "#039492",
         fade_in: bool = False,
     ):
         # Load the image using image_path and redirect as the original pixmap
-        # argument from QSplashScreen
+        # argument from `QSplashScreen`
         if image_path is not None and os.path.isfile(image_path):
             image = self._resize_image(image_path)
         elif image_path is None:
@@ -119,9 +132,6 @@ class VFXSplashScreen(QSplashScreen):
             raise ValueError(f"Invalid image path: {image_path}")
 
         super().__init__(image)
-
-        # Stylesheet
-        self.setStyleSheet(style.load_stylesheet(light_theme=False))
 
         # Attributes
         self.pixmap: QPixmap = image
@@ -135,9 +145,16 @@ class VFXSplashScreen(QSplashScreen):
         self.project: str = project
         self.version: str = version
         self.company: str = company
+        self.theme: str = theme
+        self.accent_color: str = accent_color
         self.fade_in: bool = fade_in
 
         # Functions
+        # ! Order matters to load the stylesheet correctly
+        # Stylesheet
+        qdarktheme.setup_theme(
+            theme=self.theme, custom_colors={"primary": self.accent_color}
+        )
         self._grey_overlay()
 
     def progress(self, value, max_range=100):
@@ -201,10 +218,6 @@ class VFXSplashScreen(QSplashScreen):
         # Main QFrame
         frame = QFrame(self)
         frame.setGeometry(0, 0, self.pixmap.width() // 2, self.pixmap.height())
-        # Equivalent to #1a1a1a with opacity
-        stylesheet = "background-color: @tableBackground;"
-        stylesheet = style.replace_colors(stylesheet)
-        frame.setStyleSheet(stylesheet)
         shadows.add_shadows(self, frame)
 
         # Create a vertical layout for the QFrame
@@ -226,9 +239,7 @@ class VFXSplashScreen(QSplashScreen):
         title_font = QFont()
         title_font.setBold(True)
         self.title_label.setFont(title_font)
-        self.title_label.setStyleSheet(
-            "font-size: 18pt;"
-        )  # Mandatory because of style.qss
+        self.title_label.setStyleSheet("font-size: 18pt;")
 
         # Horizontal layout for title and icon
         title_icon_layout = QHBoxLayout()

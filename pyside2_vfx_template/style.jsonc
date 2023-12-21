@@ -48,32 +48,5 @@
         "80": "#3f3f3f",
         "90": "#2a2a2a",
         "100": "#151515"
-    },
-    // QSS stylesheet
-    // All values are values of grey, except for the ones indicated being
-    // colored
-    "tableBackground": "#1a1a1a",
-    "inputHover": "#1a1a1a",
-    "inputFocus": "#1a1a1a",
-    "buttonBackgroundDisabled": "#202020",
-    "tableHeader": "#202020",
-    "mainBackground": "#242424",
-    "selectionHoverColor": "#242424",
-    "menuBackground": "#383838",
-    "buttonBackgroundDefault": "#383838",
-    "buttonBackgroundBright2": "#383838",
-    "buttonBackgroundBright1": "#434343",
-    "menuHoverBackground": "#575757",
-    "buttonBackgroundHover": "#575757",
-    "scrollHandleColor": "#575757",
-    "borders": "#5a5a5a",
-    "tableBorders": "#5a5a5a",
-    "selectionBackgroundHoverColor": "#787878",
-    "scrollHandleHoverColor": "#808080",
-    "white": "#c0c0c0",
-    "lightGrey": "#bebebe",
-    "disabledText": "#696969",
-    "selectionColor": "#ffffff",
-    "selectionBackgroundColor": "#196ebf", // ! Blue color
-    "menuSelectionbackground": "#196ebf" // ! Blue color
+    }
 }

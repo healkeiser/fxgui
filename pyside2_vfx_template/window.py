@@ -26,9 +26,13 @@ from PySide2.QtWidgets import *
 from PySide2.QtUiTools import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
+import qdarktheme
 
 # Internal
-from pyside2_vfx_template import style, shadows, actions, utils
+try:
+    from pyside2_vfx_template import style, shadows, actions, utils
+except ModuleNotFoundError:
+    import style, shadows, actions, utils
 
 # Metadatas
 __author__ = "Valentin Beaumont"
@@ -64,9 +68,14 @@ class VFXWindow(QMainWindow):
             Defaults to `None`.
         version (str, optional): Version label for the window.
             Defaults to `None`.
+        company (str, optional): Company name for the window.
+            Defaults to `None`.
+        theme (str, optional): Theme to be applied to the splash screen.
+            Defaults to `dark`.
+        accent_color (str, optional): Accent color to be applied to the splash
+            screen. Defaults to `#039492`.
         ui_file (str, optional): Path to the UI file for loading.
             Defaults to `None`.
-        light_theme (bool, optional): Whether to use the light theme.
 
     Attributes:
         window_icon (QIcon): The icon of the window.
@@ -77,9 +86,9 @@ class VFXWindow(QMainWindow):
         project (str): The project name.
         version (str): The version string.
         company (str): The company name.
+        theme (str): The theme name.
+        accent_color (str): The accent color.
         ui_file (str): The UI file path.
-        light_theme (bool): A flag indicating whether the light theme is
-            currently active.
 
         CRITICAL (int): Constant for critical log level.
         ERROR (int): Constant for error log level.
@@ -151,7 +160,7 @@ class VFXWindow(QMainWindow):
         ...     project="Awesome Project",
         ...     version="v1.0.0",
         ...     ui_file="path/to/ui_file.ui",
-        ...     light_theme=False,
+        ...     theme="dark",
         ... )
         >>> _window.show()
         >>> _window.set_statusbar_message("Window initialized", window.INFO)
@@ -161,9 +170,9 @@ class VFXWindow(QMainWindow):
         >>> houdini_window = dcc.get_houdini_main_window()
         >>> houdini_style = dcc.get_houdini_stylesheet()
         >>> _window = window.VFXWindow(
-        ...    parent=houdini_win,
-        ...    ui_file=_ui_file,
-        ...    light_theme=False
+        ...    parent=houdini_window,
+        ...    ui_file="path/to/ui_file.ui",
+        ...    theme="dark",
         ...   )
         >>> _window.show()
         >>> _window.set_statusbar_message("Window initialized", window.INFO)
@@ -172,9 +181,9 @@ class VFXWindow(QMainWindow):
         >>> houdini_window = dcc.get_houdini_main_window()
         >>> houdini_style = dcc.get_houdini_stylesheet()
         >>> _window = window.VFXWindow(
-        ...    parent=houdini_win,
-        ...    ui_file=_ui_file,
-        ...    light_theme=False
+        ...    parent=houdini_window,
+        ...    ui_file="path/to/ui_file.ui",
+        ...    theme="dark",
         ...   )
         >>> _window.show()
         >>> _window.hide_toolbar()
@@ -192,15 +201,11 @@ class VFXWindow(QMainWindow):
         project: Optional[str] = None,
         version: Optional[str] = None,
         company: Optional[str] = None,
+        theme: str = "dark",
+        accent_color: str = "#039492",
         ui_file: Optional[str] = None,
-        light_theme: bool = False,
     ):
         super().__init__(parent)
-
-        # Stylesheet
-        # ! Invert value because of the
-        # !`self._switch_theme()` function call during construction
-        self.light_theme = not light_theme
 
         # Attributes
         self._default_icon = os.path.join(
@@ -214,6 +219,8 @@ class VFXWindow(QMainWindow):
         self.project: str = project
         self.version: str = version
         self.company: str = company
+        self.theme: str = theme
+        self.accent_color: str = accent_color
         self.ui_file: str = ui_file
 
         self.CRITICAL: int = CRITICAL
@@ -224,9 +231,12 @@ class VFXWindow(QMainWindow):
 
         # Functions
         # ! Order matters to load the stylesheet correctly
+        # Stylesheet
+        qdarktheme.setup_theme(
+            theme=self.theme, custom_colors={"primary": self.accent_color}
+        )
 
         self._create_actions()
-        self._switch_theme()
         self._load_ui()
         self._set_window_icon()
         self._set_window_title()
@@ -236,10 +246,7 @@ class VFXWindow(QMainWindow):
         self._create_toolbars()
         self._create_status_bar()
         self._check_documentation()
-        self._add_shadows()
-
-        # ? If using a DCC stylehseet, keep some elements from the custom one
-        self._override_dcc_stylesheet()
+        # self._add_shadows()
 
     # - Private methods
 
@@ -311,38 +318,50 @@ class VFXWindow(QMainWindow):
         """
 
         # Main menu
+        help_pixmap = QStyle.StandardPixmap.SP_DialogHelpButton
+        help_icon = self.style().standardIcon(help_pixmap)
+
         self.about_action = actions.create_action(
             self,
             "About",
-            None,
+            help_icon,
             self._show_about_dialog,
             enable=True,
             visible=True,
         )
 
+        no_pixmap = QStyle.StandardPixmap.SP_DialogNoButton
+        no_icon = self.style().standardIcon(no_pixmap)
+
         self.hide_action = actions.create_action(
             self,
             "Hide",
-            None,
+            no_icon,
             self.hide,
             enable=False,
             visible=True,
             shortcut="Ctrl+Alt+h",
         )
 
+        no_all_pixmap = QStyle.StandardPixmap.SP_DialogNoToAllButton
+        no_all_icon = self.style().standardIcon(no_all_pixmap)
+
         self.hide_others_action = actions.create_action(
             self,
             "Hide Others",
-            None,
+            no_all_icon,
             None,
             enable=False,
             visible=True,
         )
 
+        close_pixmap = QStyle.StandardPixmap.SP_DialogCloseButton
+        clos_icon = self.style().standardIcon(close_pixmap)
+
         self.close_action = actions.create_action(
             self,
             "Close",
-            None,
+            clos_icon,
             self.close,
             enable=True,
             visible=True,
@@ -370,14 +389,17 @@ class VFXWindow(QMainWindow):
         )
 
         # Window menu
-        self.switch_theme_action = actions.create_action(
-            self,
-            "Switch Theme",
-            None,
-            self._switch_theme,
-            enable=False,  # TODO: Show when all is fixed
-            visible=False,  # TODO: Enable when all is fixed
+        theme_combo_box = QComboBox()
+        theme_combo_box.addItems(qdarktheme.get_themes())
+        theme_combo_box.currentTextChanged.connect(
+            lambda: qdarktheme.setup_theme(
+                theme=theme_combo_box.currentText(),
+                custom_colors={"primary": self.accent_color},
+            )
         )
+        theme_combo_box.currentTextChanged.connect(self._on_theme_changed)
+        self.switch_theme_action = QWidgetAction(self)
+        self.switch_theme_action.setDefaultWidget(theme_combo_box)
 
         self.window_on_top_action = actions.create_action(
             self,
@@ -420,42 +442,57 @@ class VFXWindow(QMainWindow):
         )
 
         # Toolbar
+        home_pixmap = QStyle.StandardPixmap.SP_DirHomeIcon
+        home_icon = self.style().standardIcon(home_pixmap)
+
+        self.home_action = actions.create_action(
+            self,
+            "Home",
+            home_icon,
+            None,
+            enable=False,
+            visible=True,
+        )
+
+        previous_pixmap = QStyle.StandardPixmap.SP_ArrowBack
+        previous_icon = self.style().standardIcon(previous_pixmap)
+
         self.previous_action = actions.create_action(
             self,
             "Previous",
-            None,
+            previous_icon,
             None,
             enable=False,
-            visible=False,
+            visible=True,
         )
+
+        next_pixmap = QStyle.StandardPixmap.SP_ArrowForward
+        next_icon = self.style().standardIcon(next_pixmap)
 
         self.next_action = actions.create_action(
             self,
             "Next",
-            None,
+            next_icon,
             None,
             enable=False,
-            visible=False,
+            visible=True,
         )
+
+        reload_pixmap = QStyle.StandardPixmap.SP_BrowserReload
+        reload_icon = self.style().standardIcon(reload_pixmap)
 
         self.refresh_action = actions.create_action(
             self,
             "Refresh",
+            reload_icon,
             None,
-            self.refresh,
             enable=True,
             visible=True,
             shortcut="Ctrl+Alt+r",
         )
 
-        self.home_action = actions.create_action(
-            self,
-            "Home",
-            None,
-            None,
-            enable=False,
-            visible=False,
-        )
+    def _on_theme_changed(self, theme):
+        self.theme = theme
 
     def _create_menu_bar(
         self,
@@ -490,6 +527,7 @@ class VFXWindow(QMainWindow):
             )
             icon = QIcon(scaled_pixmap)
             self.icon_menu.setIcon(icon)
+            self.icon_menu.setEnabled(False)
 
         # Main menu
         self.main_menu = self.menu_bar.addMenu("File")
@@ -513,10 +551,6 @@ class VFXWindow(QMainWindow):
 
         # Window menu
         self.window_menu = self.menu_bar.addMenu("Window")
-        self.switch_theme_menu = self.window_menu.addAction(
-            self.switch_theme_action
-        )
-        self.window_menu.addSeparator()
         self.minimize_menu = self.window_menu.addAction(
             self.minimize_window_action
         )
@@ -525,6 +559,10 @@ class VFXWindow(QMainWindow):
         )
         self.window_menu.addSeparator()
         self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
+        self.window_menu.addSeparator()
+        self.switch_theme_menu = self.window_menu.addAction(
+            self.switch_theme_action
+        )
 
         # Help menu
         self.help_menu = self.menu_bar.addMenu("Help")
@@ -543,10 +581,10 @@ class VFXWindow(QMainWindow):
         self.toolbar.setIconSize(QSize(17, 17))
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
 
+        self.home_toolbar = self.toolbar.addAction(self.home_action)
         self.previous_toolbar = self.toolbar.addAction(self.previous_action)
         self.next_toolbar = self.toolbar.addAction(self.next_action)
         self.refresh_toolbar = self.toolbar.addAction(self.refresh_action)
-        self.home_toolbar = self.toolbar.addAction(self.home_action)
 
         self.toolbar.setMovable(True)
 
@@ -582,22 +620,22 @@ class VFXWindow(QMainWindow):
             self.company, "\u00A9 Company Ltd."
         )
 
-        separator_0 = QLabel("|")
-        separator_1 = QLabel("|")
+        separator_str = "|"
+        separator_left = QLabel(separator_str)
+        separator_right = QLabel(separator_str)
+
         widgets = [
             self.project_label,
-            separator_0,
+            # separator_left,
             self.version_label,
-            separator_1,
+            # separator_right,
             self.company_label,
         ]
+
         for widget in widgets:
             self.status_bar.addPermanentWidget(widget)
         self.status_bar.setEnabled(True)
         self.status_bar.setVisible(True)
-
-        # Connection to handle color change during feedback
-        self.status_bar.messageChanged.connect(self._status_changed)
 
     def _show_about_dialog(self) -> None:
         """Shows the "About" dialog.
@@ -617,19 +655,34 @@ class VFXWindow(QMainWindow):
         self.about_dialog.setWindowTitle("About")
 
         project_label = self._generate_label(self.project, "N/A")
+        project_label.setAlignment(Qt.AlignCenter)
         version_label = self._generate_label(self.version, "v0.0.0")
+        version_label.setAlignment(Qt.AlignCenter)
         company_label = self._generate_label(
             self.company, "\u00A9 Company Ltd."
         )
+        company_label.setAlignment(Qt.AlignCenter)
 
         layout = QVBoxLayout()
         layout.addWidget(project_label)
         layout.addWidget(version_label)
         layout.addWidget(company_label)
 
-        self.about_dialog.setFixedSize(self.about_dialog.sizeHint())
+        self.about_dialog.setFixedSize(200, 150)
         self.about_dialog.setLayout(layout)
         self.about_dialog.exec_()
+
+    def _switch_theme(self):
+        """Switches the theme of the window.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        combo_box = QComboBox()
+        combo_box.addItems(qdarktheme.get_themes())
+        combo_box.currentTextChanged.connect(qdarktheme.setup_theme)
+        combo_box.show()
 
     def _window_on_top(self) -> None:
         """Sets the window on top of all other windows or not.
@@ -693,26 +746,6 @@ class VFXWindow(QMainWindow):
         frame_geo.moveCenter(moving_position)
         self.move(frame_geo.topLeft())
 
-    def _switch_theme(self) -> None:
-        """Switches the theme of the window.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        if self.light_theme == False:
-            self.setStyleSheet(style.load_stylesheet(light_theme=True))
-            self.switch_theme_action.setText("Dark Theme")
-            # self.switch_theme_action.setIcon("Dark")
-            self.light_theme = True
-        else:
-            self.setStyleSheet(style.load_stylesheet(light_theme=False))
-            self.switch_theme_action.setText("Light Theme")
-            # self.switch_theme_action.setIcon("Light")
-            self.light_theme = False
-        # Force the status bar to get the right colors
-        # self._status_changed(args=None)
-
     def _is_valid_url(self, url: str) -> bool:
         """Checks if the specified URL is valid.
 
@@ -773,221 +806,6 @@ class VFXWindow(QMainWindow):
         if display_date:
             format_string = "%Y-%m-%d " + format_string
         return datetime.now().strftime(format_string)
-
-    def _status_changed(self, args: str) -> None:
-        """Changes the status bar background color according to the message and
-        severity.
-
-        Args:
-            args (str): The message to be displayed.
-
-        Note:
-            If there are no arguments (meaning the message is being removed),
-            then change the status bar background back to black.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        if not args:
-            if self.light_theme:
-                # TODO: Call `style.replace_colors()` instead of manually typing the color values
-                stylesheet = """
-                    QStatusBar {
-                        color: @white;
-                        background-color: #e5e5e5;
-                        border-top: 1px solid #c7c7c7;
-                    }
-
-                    QStatusBar::item {
-                        color: @white;
-                        border: 0px solid transparent;
-                    }
-                """
-            else:
-                stylesheet = """
-                    QStatusBar {
-                        color: @white;
-                        background-color: @tableBackground;
-                        border-top: 1px solid @menuBackground;
-                    }
-
-                    QStatusBar::item {
-                        color: @white;
-                        border: 0px solid transparent;
-                    }
-                """
-                stylesheet = style.replace_colors(stylesheet)
-
-            self.status_bar.setStyleSheet(stylesheet)
-
-    def _override_dcc_stylesheet(self) -> None:
-        """Overrides the DCC stylesheet with the custom one.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        # Menu bar
-        stylesheet = """
-            QMenuBar,
-            QMenuBar::item {
-                color: @white;
-                background-color: @tableBackground;
-            }
-
-            QMenuBar::item {
-                padding: 6px;
-            }
-
-            QMenuBar {
-                border-bottom: 1px solid @menuBackground;
-            }
-
-            QMenu,
-            QMenu::item {
-                color: @white;
-                background-color: @menuBackground;
-                text-decoration: none;
-            }
-
-            QMenuBar::item:selected {
-                color: @white;
-                background-color: @menuHoverBackground;
-            }
-
-            QMenuBar::item:pressed {
-                color: @white;
-                background-color: @menuSelectionbackground;
-            }
-
-            QMenu::item:selected,
-            QMenu::item:pressed {
-                color: @white;
-                background-color: @menuSelectionbackground;
-                border-radius: 3px;
-            }
-
-            QMenuBar::item:disabled,
-            QMenu::item:disabled {
-                color: @disabledText;
-            }
-
-            QMenu::right-arrow {
-                width: 10px;
-                height: 10px;
-                image:url("qss:icons/right_arrow_light.png");
-                margin-right: 2px;
-            }
-
-            QMenu::right-arrow:selected {
-                image:url("qss:icons/right_arrow_lighter.png");
-            }
-
-            QMenu::item {
-                padding: 2px 26px 2px 10px; /* make room for icon at left */
-                border: 1px solid transparent; /* reserve space for selection border */
-            }
-
-            QMenu::icon {
-                margin-left: 2px;
-            }
-
-            QMenu::separator {
-                height: 1px;
-                background-color: @menuBackground;
-                margin: 6px 4px;
-            }
-
-            QMenu::indicator:non-exclusive:checked {
-                color: @white;
-            }
-
-            /* Fix for elements inside a drop-down menu */
-            QMenu QRadioButton,
-            QMenu QCheckBox,
-            QMenu QPushButton,
-            QMenu QToolButton {
-                color: @white; /* Same as regular QRadioButton and QCheckBox */
-            }
-
-            QMenu QRadioButton:hover,
-            QMenu QCheckBox:hover,
-            QMenu QPushButton:hover,
-            QMenu QToolButton:hover,
-            QMenu QPushButton:pressed,
-            QMenu QToolButton:pressed,
-            QMenu QPushButton:selected,
-            QMenu QToolButton:selected {
-                color: @white;
-                background-color: @menuHoverBackground; /* Same as QMenu::item:selected and QMenu::item:pressed */
-            }
-
-            QMenu QRadioButton:disabled,
-            QMenu QCheckBox:disabled {
-                color: @disabledText;
-            }
-
-            QMenu QRadioButton::indicator:disabled,
-            QMenu QCheckBox::indicator:disabled {
-                color: @disabledText;
-                background-color: transparent;
-                border: 1px solid @disabledText;
-            }
-        """
-        stylesheet = style.replace_colors(stylesheet)
-        self.menu_bar.setStyleSheet(stylesheet)
-
-        # Toolbar
-        stylesheet = """
-            QToolBar {
-                background-color: @tableBackground;
-                border: none;
-                padding: 2px;
-            }
-
-            QToolBar::handle:top,
-            QToolBar::handle:bottom,
-            QToolBar::handle:horizontal {
-                background-image: url("qss:icons/Hmovetoolbar_light.png");
-                width: 10px;
-                margin: 4px 2px;
-                background-position: top right;
-                background-repeat: repeat-y;
-            }
-
-            QToolBar::handle:left,
-            QToolBar::handle:right,
-            QToolBar::handle:vertical {
-                background-image: url("qss:icons/Vmovetoolbar_light.png");
-                height: 10px;
-                margin: 2px 4px;
-                background-position: left bottom;
-                background-repeat: repeat-x;
-            }
-
-            QToolBar::separator:top,
-            QToolBar::separator:bottom,
-            QToolBar::separator:horizontal {
-                width: 1px;
-                margin: 6px 4px;
-                background-color: @tableBackground;
-            }
-
-            QToolBar::separator:left,
-            QToolBar::separator:right,
-            QToolBar::separator:vertical {
-                height: 1px;
-                margin: 4px 6px;
-                background-color: @tableBackground;
-            }
-        """
-
-        stylesheet = style.replace_colors(stylesheet)
-        self.toolbar.setStyleSheet(stylesheet)
-
-        # Statusbar
-        self._status_changed("")
 
     # - Public methods
 
@@ -1057,30 +875,36 @@ class VFXWindow(QMainWindow):
             constants, or the window module.
         """
 
+        # Create dictionnary for verbosity colors
         colors_dict = style.load_colors_from_jsonc()
-        severity_colors = {
+        severity_mapping = {
             0: (
                 "Critical",
+                "\u26A0",  # Warning sign
                 colors_dict["feedback"]["error"]["background"],
                 colors_dict["feedback"]["error"]["dark"],
             ),
             1: (
                 "Error",
+                "\u26A0",  # Warning sign
                 colors_dict["feedback"]["error"]["background"],
                 colors_dict["feedback"]["error"]["dark"],
             ),
             2: (
                 "Warning",
+                "\u26A1",  # Lightning bolt
                 colors_dict["feedback"]["warning"]["background"],
                 colors_dict["feedback"]["warning"]["dark"],
             ),
             3: (
                 "Success",
+                "\u2705",  # Check mark
                 colors_dict["feedback"]["success"]["background"],
                 colors_dict["feedback"]["success"]["dark"],
             ),
             4: (
                 "Info",
+                "\u2139",  # Information sign
                 colors_dict["feedback"]["info"]["background"],
                 colors_dict["feedback"]["info"]["dark"],
             ),
@@ -1088,32 +912,21 @@ class VFXWindow(QMainWindow):
 
         (
             severity_prefix,
+            severity_sign,
             status_bar_color,
             status_bar_border_color,
-        ) = severity_colors[severity_type]
+        ) = severity_mapping[severity_type]
 
+        # Message
         message_prefix = (
-            f"{severity_prefix}: {self._get_current_time()} - "
+            f"{severity_sign} {severity_prefix}: {self._get_current_time()} - "
             if time
-            else f"{severity_prefix}: "
+            else f"{severity_sign} {severity_prefix}: "
         )
         notification_message = f"{message_prefix} {message}"
-
         self.status_bar.showMessage(notification_message, duration * 1000)
 
-        self.status_bar.setStyleSheet(
-            """QStatusBar {
-        color: white;
-        background: """
-            + status_bar_color
-            + """;
-        border-top: 1px solid"""
-            + status_bar_border_color
-            + """;
-        }
-        """
-        )
-
+        # Link `Logger` object
         if logger is not None:
             # Modify log level according to severity_type
             if severity_type == 0:
@@ -1129,11 +942,6 @@ class VFXWindow(QMainWindow):
         """Clear the status bar message."""
 
         self.status_bar.clearMessage()
-
-    # - Placeholders
-
-    def refresh(self) -> None:
-        pass
 
     # - Events
 
