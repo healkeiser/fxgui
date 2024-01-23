@@ -109,7 +109,7 @@ def main(show_delayed: bool = False):
     sys.exit(_application.exec_())
 
 
-def show_splashscreen(time: float = 3.0):
+def show_splashscreen(time: float = 5.0):
     """Show the splashscreen.
 
     Args:
@@ -117,8 +117,9 @@ def show_splashscreen(time: float = 3.0):
     """
 
     _application = application.VFXApplication()
-    _splashscreen = splashscreen.VFXSplashScreen(image_path=_pixmap, fade_in=False)
+    _splashscreen = splashscreen.VFXSplashScreen(image_path=_pixmap, show_progress_bar=True, fade_in=False)
     _splashscreen.show()
+    _splashscreen.progress_bar.setValue(75)
     QTimer.singleShot(time * 1000, _splashscreen.close)
     QTimer.singleShot(time * 1000, _application.quit)
     _application.exec_()
@@ -134,6 +135,6 @@ def show_window():
 
 
 if __name__ == "__main__":
-    # show_splashscreen()
+    show_splashscreen()
     # show_window()
-    main(False)
+    # main(False)

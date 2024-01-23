@@ -73,12 +73,9 @@ from pyside2_vfx_template import example
 example.main()
 ```
 
-Here's how it would like like launched from Houdini:
+Here's how it would like like launched from Houdini and launched as a standalone:
 
 ![Screenshot](./docs/images/qwZ0omKbe0.png)
-
-> [!NOTE]
-> As you can see, you can still load the DCC stylesheet if you want, but the toolbar, menu bar and statusbar will remain with a custom stylesheet.
 
 
 
