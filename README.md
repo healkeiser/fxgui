@@ -92,8 +92,8 @@ Please read the full documentation [here](https://healkeiser.github.io/pyside2_v
 <!-- GALLERY -->
 ## Gallery
 
-Splash Screen      |  Main Window
-:-------------------------:|:-------------------------:
+Splash Screen                                   | Main Window
+:----------------------------------------------:|:----------------------------------------------:
 ![Splash Screen](./docs/images/jxxZTVZy29.png)  |  ![Main Window](./docs/images/e72Hfw2ReZ.png)
 
 

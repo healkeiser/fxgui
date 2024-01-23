@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """VFXSplashscreen module.
 
 This module contains the VFXSplashScreen class, a customized QSplashScreen class.
@@ -22,7 +21,6 @@ from PySide2.QtWidgets import *
 from PySide2.QtUiTools import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-import qdarkstyle
 
 # Internal
 try:
@@ -33,7 +31,6 @@ except ModuleNotFoundError:
 # Metadatas
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
-
 
 ###### CODE ####################################################################
 
@@ -124,9 +121,7 @@ class VFXSplashScreen(QSplashScreen):
         if image_path is not None and os.path.isfile(image_path):
             image = self._resize_image(image_path)
         elif image_path is None:
-            image = os.path.join(
-                os.path.dirname(__file__), "images", "snap.png"
-            )
+            image = os.path.join(os.path.dirname(__file__), "images", "snap.png")
         else:
             raise ValueError(f"Invalid image path: {image_path}")
 
@@ -134,9 +129,7 @@ class VFXSplashScreen(QSplashScreen):
 
         # Attributes
         self.pixmap: QPixmap = image
-        self._default_icon = os.path.join(
-            os.path.dirname(__file__), "icons", "favicon.png"
-        )
+        self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon.png")
         self.icon: QIcon = icon
         self.title: str = title
         self.information: str = information
@@ -149,22 +142,6 @@ class VFXSplashScreen(QSplashScreen):
         self.fade_in: bool = fade_in
 
         # Functions
-        # ! Order matters to load the stylesheet correctly
-        # Stylesheet
-        # qdarktheme.setup_theme(
-        #     theme=self.theme, custom_colors={"primary": self.accent_color}
-        # )
-        # self.setStyleSheet(
-        #     qdarktheme.load_stylesheet(
-        #         theme=self.theme, custom_colors={"primary": self.accent_color}
-        #     )
-        # )
-        self.setStyleSheet(
-            qdarkstyle.load_stylesheet(
-                qt_api="pyside2", palette=qdarkstyle.DarkPalette
-            )
-        )
-
         self._grey_overlay()
 
     def progress(self, value, max_range=100):
@@ -177,9 +154,7 @@ class VFXSplashScreen(QSplashScreen):
 
     # - Private methods
 
-    def _resize_image(
-        self, image_path: str, ideal_width: int = 800, ideal_height: int = 450
-    ) -> QPixmap:
+    def _resize_image(self, image_path: str, ideal_width: int = 800, ideal_height: int = 450) -> QPixmap:
         pixmap = QPixmap(image_path)
         width = pixmap.width()
         height = pixmap.height()
@@ -228,6 +203,7 @@ class VFXSplashScreen(QSplashScreen):
         # Main QFrame
         frame = QFrame(self)
         frame.setGeometry(0, 0, self.pixmap.width() // 2, self.pixmap.height())
+        frame.setStyleSheet("background-color: #232323;")
         shadows.add_shadows(self, frame)
 
         # Create a vertical layout for the QFrame
@@ -260,25 +236,19 @@ class VFXSplashScreen(QSplashScreen):
         layout.addLayout(title_icon_layout)
 
         # Spacer
-        spacer_a = QSpacerItem(
-            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
-        )
+        spacer_a = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout.addItem(spacer_a)
 
         # Information
         self.info_label = QLabel(
-            self.information
-            if self.information is not None and len(self.information) >= 1
-            else lorem_ipsum
+            self.information if self.information is not None and len(self.information) >= 1 else lorem_ipsum
         )
         self.info_label.setAlignment(Qt.AlignJustify)
         self.info_label.setWordWrap(True)
         layout.addWidget(self.info_label)
 
         # Spacer
-        spacer_b = QSpacerItem(
-            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
-        )
+        spacer_b = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout.addItem(spacer_b)
 
         # Progress Bar
@@ -287,32 +257,16 @@ class VFXSplashScreen(QSplashScreen):
             layout.addWidget(self.progress_bar)
 
         # Spacer
-        spacer_c = QSpacerItem(
-            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
-        )
+        spacer_c = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout.addItem(spacer_c)
 
         # Copyright QLabel
-        project = (
-            self.project if self.project and len(self.project) >= 1 else "N/A"
-        )
-        version = (
-            self.version
-            if self.version and len(self.version) >= 1
-            else "v0.0.0"
-        )
-        company = (
-            self.company
-            if self.company and len(self.company) >= 1
-            else "Company Ltd."
-        )
+        project = self.project if self.project and len(self.project) >= 1 else "N/A"
+        version = self.version if self.version and len(self.version) >= 1 else "v0.0.0"
+        company = self.company if self.company and len(self.company) >= 1 else "Company Ltd."
 
-        self.copyright_label = QLabel(
-            f"{project} | {version} | \u00A9 {company}"
-        )
-        self.copyright_label.setStyleSheet(
-            "font-size: 8pt; qproperty-alignment: AlignBottom;"
-        )
+        self.copyright_label = QLabel(f"{project} | {version} | \u00A9 {company}")
+        self.copyright_label.setStyleSheet("font-size: 8pt; qproperty-alignment: AlignBottom;")
         layout.addWidget(self.copyright_label)
 
     def _fade_in(self) -> None:

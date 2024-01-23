@@ -81,11 +81,7 @@ def replace_colors(
         str: The stylesheet with replaced colors.
     """
 
-    placeholders = {
-        f"@{prefix}{key}": value
-        for key, value in colors_dict.items()
-        if not isinstance(value, dict)
-    }
+    placeholders = {f"@{prefix}{key}": value for key, value in colors_dict.items() if not isinstance(value, dict)}
     for placeholder, color in placeholders.items():
         stylesheet = stylesheet.replace(placeholder, color)
     return stylesheet

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """Run a VFXSPlashscreen and VFXWindow instance as an example."""
 
 # Built-in
@@ -16,21 +15,20 @@ from PySide2.QtGui import *
 
 # Internal
 try:
-    from pyside2_vfx_template import splashscreen, window
+    from pyside2_vfx_template import splashscreen, window, application
 except ModuleNotFoundError:
-    import splashscreen, window
+    import splashscreen, window, application
 
 # Reload
 reload(splashscreen)
 reload(window)
+reload(application)
 
 # Metadatas
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
-
 ###### CODE ####################################################################
-
 
 _ui_file = os.path.join(os.path.dirname(__file__), "ui", "test.ui")
 _pixmap = os.path.join(os.path.dirname(__file__), "images", "splash.png")
@@ -44,37 +42,32 @@ def main(show_delayed: bool = False):
     """
 
     # Initialize the QApplication
-    app = QApplication(sys.argv)
-
-    # app.setStyleSheet(qdarkstyle.load_stylesheet_pyside2())
-    # app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api="pyside2"))
+    _application = application.VFXApplication()
 
     # Initialize window for splashscreen
     _window = window.VFXWindow(ui_file=_ui_file)
-    app.processEvents()
+    _application.processEvents()
 
     # Splashscreen
-    _splashscreen = splashscreen.VFXSplashScreen(
-        image_path=_pixmap, fade_in=False, show_progress_bar=True
-    )
-    app.processEvents()
+    _splashscreen = splashscreen.VFXSplashScreen(image_path=_pixmap, fade_in=False, show_progress_bar=True)
+    _application.processEvents()
 
     _splashscreen.show()
-    app.processEvents()
+    _application.processEvents()
 
     # Loading process
     for i in range(101):
         _splashscreen.progress_bar.setValue(i)
-        QTimer.singleShot(i, app.processEvents)
+        QTimer.singleShot(i, _application.processEvents)
 
     if show_delayed:
         # Delay the call to splash.finish by 5 seconds
         QTimer.singleShot(3 * 1000, lambda: _splashscreen.finish(_window))
-        app.processEvents()
+        _application.processEvents()
     else:
         # Link the window loading to the splashcreen visibility
         _splashscreen.finish(_window)
-        app.processEvents()
+        _application.processEvents()
 
     # Window
     if show_delayed:
@@ -84,24 +77,14 @@ def main(show_delayed: bool = False):
         _window.show()
 
     _window.set_statusbar_message("Window initialized", window.INFO)
-    app.processEvents()
+    _application.processEvents()
 
     # Buttons in `test.ui` example
-    _window.ui.button_success.clicked.connect(
-        lambda: _window.set_statusbar_message("Success", window.SUCCESS)
-    )
-    _window.ui.button_info.clicked.connect(
-        lambda: _window.set_statusbar_message("Info", window.INFO)
-    )
-    _window.ui.button_warning.clicked.connect(
-        lambda: _window.set_statusbar_message("Success", window.WARNING)
-    )
-    _window.ui.button_error.clicked.connect(
-        lambda: _window.set_statusbar_message("Error", window.ERROR)
-    )
-    _window.ui.button_critical.clicked.connect(
-        lambda: _window.set_statusbar_message("Success", window.CRITICAL)
-    )
+    _window.ui.button_success.clicked.connect(lambda: _window.set_statusbar_message("Success", window.SUCCESS))
+    _window.ui.button_info.clicked.connect(lambda: _window.set_statusbar_message("Info", window.INFO))
+    _window.ui.button_warning.clicked.connect(lambda: _window.set_statusbar_message("Success", window.WARNING))
+    _window.ui.button_error.clicked.connect(lambda: _window.set_statusbar_message("Error", window.ERROR))
+    _window.ui.button_critical.clicked.connect(lambda: _window.set_statusbar_message("Success", window.CRITICAL))
 
     # Refresh toolbar button
     def refresh():
@@ -123,7 +106,7 @@ def main(show_delayed: bool = False):
 
     _window.refresh_action.triggered.connect(refresh)
 
-    sys.exit(app.exec_())
+    sys.exit(_application.exec_())
 
 
 def show_splashscreen(time: float = 3.0):
@@ -133,23 +116,21 @@ def show_splashscreen(time: float = 3.0):
         time (float): The time in seconds to show the splashscreen.
     """
 
-    splash_app = QApplication(sys.argv)
-    _splashscreen = splashscreen.VFXSplashScreen(
-        image_path=_pixmap, fade_in=False
-    )
+    _application = application.VFXApplication()
+    _splashscreen = splashscreen.VFXSplashScreen(image_path=_pixmap, fade_in=False)
     _splashscreen.show()
     QTimer.singleShot(time * 1000, _splashscreen.close)
-    QTimer.singleShot(time * 1000, splash_app.quit)
-    splash_app.exec_()
+    QTimer.singleShot(time * 1000, _application.quit)
+    _application.exec_()
 
 
 def show_window():
     """Show the window."""
 
-    window_app = QApplication(sys.argv)
+    _application = application.VFXApplication()
     _window = window.VFXWindow(ui_file=_ui_file)
     _window.show()
-    sys.exit(window_app.exec_())
+    sys.exit(_application.exec_())
 
 
 if __name__ == "__main__":

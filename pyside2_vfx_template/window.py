@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """This module defines the `VFXWindow` class which provides a custom window
 tailored for VFX-oriented DCC applications.
 
@@ -12,6 +11,8 @@ This module also defines several constants for different types of notifications.
 Classes:
     VFXWindow: A class for creating a customized window.
 """
+
+# pylint:disable=wildcard-import
 
 # Built-in
 import os
@@ -26,7 +27,6 @@ from PySide2.QtWidgets import *
 from PySide2.QtUiTools import *
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-import qdarkstyle
 
 # Internal
 try:
@@ -38,9 +38,7 @@ except ModuleNotFoundError:
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
-
 ###### CODE ####################################################################
-
 
 # Constants
 CRITICAL = 0
@@ -48,7 +46,6 @@ ERROR = 1
 WARNING = 2
 SUCCESS = 3
 INFO = 4
-
 
 # TODO: Add the status bar color notification system (Fix)
 # TODO: Replace the colors by reading the JSONC file in the status bar stylesheet
@@ -208,9 +205,7 @@ class VFXWindow(QMainWindow):
         super().__init__(parent)
 
         # Attributes
-        self._default_icon = os.path.join(
-            os.path.dirname(__file__), "icons", "favicon.png"
-        )
+        self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon.png")
         self.window_icon: QIcon = icon
         self.window_title: str = title
         self.window_size: QSize = size
@@ -240,11 +235,6 @@ class VFXWindow(QMainWindow):
         #         theme=self.theme, custom_colors={"primary": self.accent_color}
         #     )
         # )
-        self.setStyleSheet(
-            qdarkstyle.load_stylesheet(
-                qt_api="pyside2", palette=qdarkstyle.DarkPalette
-            )
-        )
 
         self._create_actions()
         self._load_ui()
@@ -529,14 +519,10 @@ class VFXWindow(QMainWindow):
         # Icon menu
         if enable_logo_menu_bar:
             self.icon_menu = self.menu_bar.addMenu("")
-            pixmap_path = os.path.join(
-                os.path.dirname(__file__), "icons", "favicon.png"
-            )
+            pixmap_path = os.path.join(os.path.dirname(__file__), "icons", "favicon.png")
             pixmap = QPixmap(pixmap_path)
             new_size = QSize(10, 10)
-            scaled_pixmap = pixmap.scaled(
-                new_size, Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
+            scaled_pixmap = pixmap.scaled(new_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             icon = QIcon(scaled_pixmap)
             self.icon_menu.setIcon(icon)
             self.icon_menu.setEnabled(False)
@@ -545,15 +531,11 @@ class VFXWindow(QMainWindow):
         self.main_menu = self.menu_bar.addMenu("File")
         self.about_menu = self.main_menu.addAction(self.about_action)
         self.main_menu.addSeparator()
-        self.check_updates_menu = self.main_menu.addAction(
-            self.check_updates_action
-        )
+        self.check_updates_menu = self.main_menu.addAction(self.check_updates_action)
         self.main_menu.addSeparator()
         self.close_menu = self.main_menu.addAction(self.close_action)
         self.hide_main_menu = self.main_menu.addAction(self.hide_action)
-        self.hide_others_menu = self.main_menu.addAction(
-            self.hide_others_action
-        )
+        self.hide_others_menu = self.main_menu.addAction(self.hide_others_action)
         self.main_menu.addSeparator()
         self.close_menu = self.main_menu.addAction(self.close_action)
 
@@ -563,24 +545,16 @@ class VFXWindow(QMainWindow):
 
         # Window menu
         self.window_menu = self.menu_bar.addMenu("Window")
-        self.minimize_menu = self.window_menu.addAction(
-            self.minimize_window_action
-        )
-        self.maximize_menu = self.window_menu.addAction(
-            self.maximize_window_action
-        )
+        self.minimize_menu = self.window_menu.addAction(self.minimize_window_action)
+        self.maximize_menu = self.window_menu.addAction(self.maximize_window_action)
         self.window_menu.addSeparator()
         self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
         self.window_menu.addSeparator()
-        self.switch_theme_menu = self.window_menu.addAction(
-            self.switch_theme_action
-        )
+        self.switch_theme_menu = self.window_menu.addAction(self.switch_theme_action)
 
         # Help menu
         self.help_menu = self.menu_bar.addMenu("Help")
-        self.open_documentation_menu = self.help_menu.addAction(
-            self.open_documentation_action
-        )
+        self.open_documentation_menu = self.help_menu.addAction(self.open_documentation_action)
 
     def _create_toolbars(self) -> None:
         """Creates the toolbar for the window.
@@ -628,9 +602,7 @@ class VFXWindow(QMainWindow):
 
         self.project_label = self._generate_label(self.project, "N/A")
         self.version_label = self._generate_label(self.version, "v0.0.0")
-        self.company_label = self._generate_label(
-            self.company, "\u00A9 Company Ltd."
-        )
+        self.company_label = self._generate_label(self.company, "\u00A9 Company Ltd.")
 
         separator_str = "|"
         separator_left = QLabel(separator_str)
@@ -670,9 +642,7 @@ class VFXWindow(QMainWindow):
         project_label.setAlignment(Qt.AlignCenter)
         version_label = self._generate_label(self.version, "v0.0.0")
         version_label.setAlignment(Qt.AlignCenter)
-        company_label = self._generate_label(
-            self.company, "\u00A9 Company Ltd."
-        )
+        company_label = self._generate_label(self.company, "\u00A9 Company Ltd.")
         company_label.setAlignment(Qt.AlignCenter)
 
         layout = QVBoxLayout()
@@ -737,15 +707,9 @@ class VFXWindow(QMainWindow):
         desktop_geometry = QDesktopWidget().availableGeometry()
         center_point = desktop_geometry.center()
         left_top_point = QPoint(desktop_geometry.left(), desktop_geometry.top())
-        right_top_point = QPoint(
-            desktop_geometry.right(), desktop_geometry.top()
-        )
-        left_bottom_point = QPoint(
-            desktop_geometry.left(), desktop_geometry.bottom()
-        )
-        right_bottom_point = QPoint(
-            desktop_geometry.right(), desktop_geometry.bottom()
-        )
+        right_top_point = QPoint(desktop_geometry.right(), desktop_geometry.top())
+        left_bottom_point = QPoint(desktop_geometry.left(), desktop_geometry.bottom())
+        right_bottom_point = QPoint(desktop_geometry.right(), desktop_geometry.bottom())
         moving_position = {
             1: center_point,
             2: left_top_point,
@@ -799,9 +763,7 @@ class VFXWindow(QMainWindow):
         # shadows.add_shadows(self, self.toolbar)
         shadows.add_shadows(self, self.status_bar)
 
-    def _get_current_time(
-        self, display_seconds: bool = False, display_date: bool = False
-    ) -> str:
+    def _get_current_time(self, display_seconds: bool = False, display_date: bool = False) -> str:
         """Returns the current time as a string.
 
         Args:

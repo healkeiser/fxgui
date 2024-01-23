@@ -30,7 +30,6 @@ setup(
     packages=find_packages(),
     install_requires=[
         "PySide2",
-        "qdarkstyle",
     ],
     include_package_data=True,
 )

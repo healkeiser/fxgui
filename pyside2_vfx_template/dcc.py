@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 # -*- coding= utf-8 -*-
 
-"""Utility functions for retrieving main windows of DCC applications.
-
-Note:
-    To avoid potential `ModuleImportError`s, each DCC module (e.g., `hou`, `nuke`)
-    is imported within its own function. This approach ensures that attempting
-    to  use a function like `get_houdini_main_window` only triggers the import
-    of `hou`, even if the main program lacks access to other modules like
-    `nuke` or `OpenMayaUI`.
-"""
+"""Utility functions for retrieving main windows of DCC applications."""
 
 # Built-in
 import shiboken2
+from typing import Optional, Any
 
 # Third-party
 from PySide2 import QtWidgets
@@ -25,6 +18,30 @@ __email__ = "johndavidrussell@gmail.com"
 ###### CODE ####################################################################
 
 
+def get_dcc_main_window() -> Optional[Any]:
+    """This function attempts to import a series of modules and call a corresponding function in each.
+    The first successful call is returned. If no calls are successful, the function returns `None`.
+
+    Returns:
+        Optional[Any]: The return value of the first successful function call, or `None` if no calls are successful.
+    """
+
+    dccs = [
+        ("maya.OpenMayaUI", "get_maya_main_window"),
+        ("hou", "get_houdini_main_window"),
+        ("nuke", "get_nuke_main_window"),
+    ]
+
+    for module_name, function_name in dccs:
+        try:
+            module = __import__(module_name)
+            function = getattr(module, function_name)
+            return function()
+        except ImportError:
+            continue
+    return None
+
+
 def get_houdini_main_window() -> QtWidgets.QWidget:
     """Get the Houdini main window.
 
@@ -32,9 +49,7 @@ def get_houdini_main_window() -> QtWidgets.QWidget:
         PySide2.QtWidgets.QWidget: `QWidget` Houdini main window.
     """
 
-    import hou  # type:ignore
-
-    return hou.qt.mainWindow()
+    return hou.qt.mainWindow()  # type:ignore
 
 
 def get_houdini_stylesheet() -> str:
@@ -44,9 +59,7 @@ def get_houdini_stylesheet() -> str:
         str: The Houdini stylesheet.
     """
 
-    import hou  # type:ignore
-
-    return hou.qt.styleSheet()
+    return hou.qt.styleSheet()  # type:ignore
 
 
 def get_maya_main_window() -> QtWidgets.QWidget:
@@ -56,9 +69,7 @@ def get_maya_main_window() -> QtWidgets.QWidget:
         PySide2.QtWidgets.QWidget: `TmainWindow` Maya main window.
     """
 
-    import maya.OpenMayaUI as apiUI  # type:ignore
-
-    window = apiUI.MQtUtil.mainWindow()
+    window = apiUI.MQtUtil.mainWindow()  # type:ignore
     if window is not None:
         return shiboken2.wrapInstance(int(window), QtWidgets.QWidget)
 
@@ -70,11 +81,6 @@ def get_nuke_main_window() -> QtWidgets.QMainWindow:
         PySide2.QtWidgets.QMainWindow: `DockMainWindow` Nuke main window.
     """
 
-    import nuke  # type:ignore
-
     for widget in QtWidgets.QApplication.topLevelWidgets():
-        if (
-            widget.inherits("QMainWindow")
-            and widget.metaObject().className() == "Foundry::UI::DockMainWindow"
-        ):
+        if widget.inherits("QMainWindow") and widget.metaObject().className() == "Foundry::UI::DockMainWindow":
             return widget
