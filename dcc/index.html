@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../images/favicon.svg">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.2">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.4">
     
     
       
@@ -433,9 +433,18 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pyside2_vfx_template.dcc.get_dcc_main_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_dcc_main_window
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pyside2_vfx_template.dcc.get_houdini_main_window" class="md-nav__link">
     <span class="md-ellipsis">
-      get_houdini_main_window()
+      get_houdini_main_window
     </span>
   </a>
   
@@ -444,7 +453,7 @@
         <li class="md-nav__item">
   <a href="#pyside2_vfx_template.dcc.get_houdini_stylesheet" class="md-nav__link">
     <span class="md-ellipsis">
-      get_houdini_stylesheet()
+      get_houdini_stylesheet
     </span>
   </a>
   
@@ -453,7 +462,7 @@
         <li class="md-nav__item">
   <a href="#pyside2_vfx_template.dcc.get_maya_main_window" class="md-nav__link">
     <span class="md-ellipsis">
-      get_maya_main_window()
+      get_maya_main_window
     </span>
   </a>
   
@@ -462,7 +471,7 @@
         <li class="md-nav__item">
   <a href="#pyside2_vfx_template.dcc.get_nuke_main_window" class="md-nav__link">
     <span class="md-ellipsis">
-      get_nuke_main_window()
+      get_nuke_main_window
     </span>
   </a>
   
@@ -644,9 +653,18 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pyside2_vfx_template.dcc.get_dcc_main_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_dcc_main_window
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pyside2_vfx_template.dcc.get_houdini_main_window" class="md-nav__link">
     <span class="md-ellipsis">
-      get_houdini_main_window()
+      get_houdini_main_window
     </span>
   </a>
   
@@ -655,7 +673,7 @@
         <li class="md-nav__item">
   <a href="#pyside2_vfx_template.dcc.get_houdini_stylesheet" class="md-nav__link">
     <span class="md-ellipsis">
-      get_houdini_stylesheet()
+      get_houdini_stylesheet
     </span>
   </a>
   
@@ -664,7 +682,7 @@
         <li class="md-nav__item">
   <a href="#pyside2_vfx_template.dcc.get_maya_main_window" class="md-nav__link">
     <span class="md-ellipsis">
-      get_maya_main_window()
+      get_maya_main_window
     </span>
   </a>
   
@@ -673,7 +691,7 @@
         <li class="md-nav__item">
   <a href="#pyside2_vfx_template.dcc.get_nuke_main_window" class="md-nav__link">
     <span class="md-ellipsis">
-      get_nuke_main_window()
+      get_nuke_main_window
     </span>
   </a>
   
@@ -713,14 +731,6 @@
   
       <p>Utility functions for retrieving main windows of DCC applications.</p>
 
-<details class="note" open>
-  <summary>Note</summary>
-  <p>To avoid potential <code>ModuleImportError</code>s, each DCC module (e.g., <code>hou</code>, <code>nuke</code>)
-is imported within its own function. This approach ensures that attempting
-to  use a function like <code>get_houdini_main_window</code> only triggers the import
-of <code>hou</code>, even if the main program lacks access to other modules like
-<code>nuke</code> or <code>OpenMayaUI</code>.</p>
-</details>
   
 
   <div class="doc doc-children">
@@ -738,13 +748,61 @@ of <code>hou</code>, even if the main program lacks access to other modules like
 
 
 
+<h2 id="pyside2_vfx_template.dcc.get_dcc_main_window" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_dcc_main_window</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_dcc_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Import the current DCC main window.</p>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Optional[Any]: The return value of the first successful function call, or <code>None</code> if no calls are successful.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <p>This function is DCC agnostic and will return the main window based on the success of the DCC module import.</p>
+</details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
 
 <h2 id="pyside2_vfx_template.dcc.get_houdini_main_window" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">get_houdini_main_window</span>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_houdini_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_houdini_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="PySide2.QtWidgets.QWidget">QWidget</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -784,13 +842,12 @@ of <code>hou</code>, even if the main program lacks access to other modules like
 
 
 
-
 <h2 id="pyside2_vfx_template.dcc.get_houdini_stylesheet" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">get_houdini_stylesheet</span>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_houdini_stylesheet</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_houdini_stylesheet</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">str</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -830,13 +887,12 @@ of <code>hou</code>, even if the main program lacks access to other modules like
 
 
 
-
 <h2 id="pyside2_vfx_template.dcc.get_maya_main_window" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">get_maya_main_window</span>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_maya_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_maya_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="PySide2.QtWidgets.QWidget">QWidget</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -876,13 +932,12 @@ of <code>hou</code>, even if the main program lacks access to other modules like
 
 
 
-
 <h2 id="pyside2_vfx_template.dcc.get_nuke_main_window" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">get_nuke_main_window</span>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_nuke_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMainWindow</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_nuke_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="PySide2.QtWidgets.QMainWindow">QMainWindow</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -962,6 +1017,7 @@ of <code>hou</code>, even if the main program lacks access to other modules like
     
     
       
+  
   <span class="md-source-file__fact">
     <span class="md-icon" title="Contributors">
       
@@ -1051,10 +1107,10 @@ of <code>hou</code>, even if the main program lacks access to other modules like
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "content.code.annotate", "content.tooltips", "content.tabs.link", "content.action.edit"], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "content.code.annotate", "content.tooltips", "content.tabs.link", "content.action.edit"], "search": "../assets/javascripts/workers/search.c011b7c0.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7c377c4.min.js"></script>
+      <script src="../assets/javascripts/bundle.7389ff0e.min.js"></script>
       
     
   </body>
