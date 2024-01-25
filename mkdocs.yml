@@ -113,7 +113,9 @@ nav:
   - Home: index.md
   - Technical:
       - actions: actions.md
+      - application: application.md
       - dcc: dcc.md
+      - icons: icons.md
       - shadows: shadows.md
       - splashscreen: splashscreen.md
       - style: style.md
