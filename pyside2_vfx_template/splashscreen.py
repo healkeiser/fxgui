@@ -141,7 +141,7 @@ class VFXSplashScreen(QSplashScreen):
         self.accent_color: str = accent_color
         self.fade_in: bool = fade_in
 
-        # Functions
+        # Methods
         self._grey_overlay()
 
     def progress(self, value, max_range=100):

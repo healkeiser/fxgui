@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding= utf-8 -*-
-
 """Utility functions for retrieving main windows of DCC applications."""
 
 # Built-in

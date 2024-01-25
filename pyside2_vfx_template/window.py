@@ -30,15 +30,17 @@ from PySide2.QtGui import *
 
 # Internal
 try:
-    from pyside2_vfx_template import style, shadows, actions, utils
+    from pyside2_vfx_template import style, shadows, actions, utils, icons
 except ModuleNotFoundError:
-    import style, shadows, actions, utils
+    import style, shadows, actions, utils, icons
 
 # Metadatas
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
+
 ###### CODE ####################################################################
+
 
 # Constants
 CRITICAL = 0
@@ -224,18 +226,9 @@ class VFXWindow(QMainWindow):
         self.SUCCESS: int = SUCCESS
         self.INFO: int = INFO
 
-        # Functions
-        # ! Order matters to load the stylesheet correctly
-        # Stylesheet
-        # qdarktheme.setup_theme(
-        #     theme=self.theme, custom_colors={"primary": self.accent_color}
-        # )
-        # self.setStyleSheet(
-        #     qdarktheme.load_stylesheet(
-        #         theme=self.theme, custom_colors={"primary": self.accent_color}
-        #     )
-        # )
+        self._status_icon_connected = False
 
+        # Methods
         self._create_actions()
         self._load_ui()
         self._set_window_icon()
@@ -318,50 +311,38 @@ class VFXWindow(QMainWindow):
         """
 
         # Main menu
-        help_pixmap = QStyle.StandardPixmap.SP_DialogHelpButton
-        help_icon = self.style().standardIcon(help_pixmap)
-
         self.about_action = actions.create_action(
             self,
             "About",
-            help_icon,
+            icons.get_qicon("support"),
             self._show_about_dialog,
             enable=True,
             visible=True,
         )
 
-        no_pixmap = QStyle.StandardPixmap.SP_DialogNoButton
-        no_icon = self.style().standardIcon(no_pixmap)
-
         self.hide_action = actions.create_action(
             self,
             "Hide",
-            no_icon,
+            icons.get_qicon("hide_source"),
             self.hide,
             enable=False,
             visible=True,
             shortcut="Ctrl+Alt+h",
         )
 
-        no_all_pixmap = QStyle.StandardPixmap.SP_DialogNoToAllButton
-        no_all_icon = self.style().standardIcon(no_all_pixmap)
-
         self.hide_others_action = actions.create_action(
             self,
             "Hide Others",
-            no_all_icon,
+            icons.get_qicon("hide_source"),
             None,
             enable=False,
             visible=True,
         )
 
-        close_pixmap = QStyle.StandardPixmap.SP_DialogCloseButton
-        clos_icon = self.style().standardIcon(close_pixmap)
-
         self.close_action = actions.create_action(
             self,
             "Close",
-            clos_icon,
+            icons.get_qicon("close"),
             self.close,
             enable=True,
             visible=True,
@@ -371,7 +352,7 @@ class VFXWindow(QMainWindow):
         self.check_updates_action = actions.create_action(
             self,
             "Check for Updates...",
-            None,
+            icons.get_qicon("update"),
             None,
             enable=False,
             visible=True,
@@ -381,7 +362,7 @@ class VFXWindow(QMainWindow):
         self.settings_action = actions.create_action(
             self,
             "Settings",
-            None,
+            icons.get_qicon("settings"),
             None,
             enable=False,
             visible=True,
@@ -389,24 +370,10 @@ class VFXWindow(QMainWindow):
         )
 
         # Window menu
-        theme_combo_box = QComboBox()
-        # theme_combo_box.addItems(qdarktheme.get_themes())
-        # theme_combo_box.currentTextChanged.connect(
-        #     lambda: self.setStyleSheet(
-        #         qdarktheme.load_stylesheet(
-        #             theme=theme_combo_box.currentText(),
-        #             custom_colors={"primary": self.accent_color},
-        #         )
-        #     )
-        # )
-        theme_combo_box.currentTextChanged.connect(self._on_theme_changed)
-        self.switch_theme_action = QWidgetAction(self)
-        self.switch_theme_action.setDefaultWidget(theme_combo_box)
-
         self.window_on_top_action = actions.create_action(
             self,
             "Always On Top",
-            None,
+            icons.get_qicon("hdr_strong"),
             self._window_on_top,
             enable=True,
             visible=True,
@@ -416,7 +383,7 @@ class VFXWindow(QMainWindow):
         self.minimize_window_action = actions.create_action(
             self,
             "Minimize",
-            None,
+            icons.get_qicon("minimize"),
             self.showMinimized,
             enable=True,
             visible=True,
@@ -426,7 +393,7 @@ class VFXWindow(QMainWindow):
         self.maximize_window_action = actions.create_action(
             self,
             "Maximize",
-            None,
+            icons.get_qicon("maximize"),
             self.showMaximized,
             enable=True,
             visible=True,
@@ -437,56 +404,44 @@ class VFXWindow(QMainWindow):
         self.open_documentation_action = actions.create_action(
             self,
             "Documentation",
-            None,
+            icons.get_qicon("contact_support"),
             lambda: open_new_tab(self.documentation),
             enable=True,
             visible=True,
         )
 
         # Toolbar
-        home_pixmap = QStyle.StandardPixmap.SP_DirHomeIcon
-        home_icon = self.style().standardIcon(home_pixmap)
-
         self.home_action = actions.create_action(
             self,
             "Home",
-            home_icon,
+            icons.get_qicon("home"),
             None,
             enable=False,
             visible=True,
         )
-
-        previous_pixmap = QStyle.StandardPixmap.SP_ArrowBack
-        previous_icon = self.style().standardIcon(previous_pixmap)
 
         self.previous_action = actions.create_action(
             self,
             "Previous",
-            previous_icon,
+            icons.get_qicon("arrow_back"),
             None,
             enable=False,
             visible=True,
         )
-
-        next_pixmap = QStyle.StandardPixmap.SP_ArrowForward
-        next_icon = self.style().standardIcon(next_pixmap)
 
         self.next_action = actions.create_action(
             self,
             "Next",
-            next_icon,
+            icons.get_qicon("arrow_forward"),
             None,
             enable=False,
             visible=True,
         )
 
-        reload_pixmap = QStyle.StandardPixmap.SP_BrowserReload
-        reload_icon = self.style().standardIcon(reload_pixmap)
-
         self.refresh_action = actions.create_action(
             self,
             "Refresh",
-            reload_icon,
+            icons.get_qicon("refresh"),
             None,
             enable=True,
             visible=True,
@@ -499,7 +454,6 @@ class VFXWindow(QMainWindow):
     def _create_menu_bar(
         self,
         native_menu_bar: bool = False,
-        enable_logo_menu_bar: bool = True,
     ) -> None:
         """Creates the menu bar for the window.
 
@@ -516,19 +470,8 @@ class VFXWindow(QMainWindow):
         self.menu_bar = self.menuBar()
         self.menu_bar.setNativeMenuBar(native_menu_bar)  # Mostly for macOS
 
-        # Icon menu
-        if enable_logo_menu_bar:
-            self.icon_menu = self.menu_bar.addMenu("")
-            pixmap_path = os.path.join(os.path.dirname(__file__), "icons", "favicon.png")
-            pixmap = QPixmap(pixmap_path)
-            new_size = QSize(10, 10)
-            scaled_pixmap = pixmap.scaled(new_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            icon = QIcon(scaled_pixmap)
-            self.icon_menu.setIcon(icon)
-            self.icon_menu.setEnabled(False)
-
         # Main menu
-        self.main_menu = self.menu_bar.addMenu("File")
+        self.main_menu = self.menu_bar.addMenu("&File")
         self.about_menu = self.main_menu.addAction(self.about_action)
         self.main_menu.addSeparator()
         self.check_updates_menu = self.main_menu.addAction(self.check_updates_action)
@@ -540,20 +483,19 @@ class VFXWindow(QMainWindow):
         self.close_menu = self.main_menu.addAction(self.close_action)
 
         # Edit menu
-        self.edit_menu = self.menu_bar.addMenu("Edit")
+        self.edit_menu = self.menu_bar.addMenu("&Edit")
         self.settings_menu = self.edit_menu.addAction(self.settings_action)
 
         # Window menu
-        self.window_menu = self.menu_bar.addMenu("Window")
+        self.window_menu = self.menu_bar.addMenu("&Window")
         self.minimize_menu = self.window_menu.addAction(self.minimize_window_action)
         self.maximize_menu = self.window_menu.addAction(self.maximize_window_action)
         self.window_menu.addSeparator()
         self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
         self.window_menu.addSeparator()
-        self.switch_theme_menu = self.window_menu.addAction(self.switch_theme_action)
 
         # Help menu
-        self.help_menu = self.menu_bar.addMenu("Help")
+        self.help_menu = self.menu_bar.addMenu("&Help")
         self.open_documentation_menu = self.help_menu.addAction(self.open_documentation_action)
 
     def _create_toolbars(self) -> None:
@@ -677,12 +619,12 @@ class VFXWindow(QMainWindow):
         action_values = {
             True: (
                 "Always on Top",
-                None,
+                icons.get_qicon("hdr_strong"),
                 self.windowTitle().replace(" **", " *"),
             ),
             False: (
                 "Regular Position",
-                None,
+                icons.get_qicon("hdr_weak"),
                 self.windowTitle().replace(" *", " **"),
             ),
         }
@@ -854,31 +796,31 @@ class VFXWindow(QMainWindow):
         severity_mapping = {
             0: (
                 "Critical",
-                "\u26A0",  # Warning sign
+                QApplication.style().standardIcon(QStyle.SP_MessageBoxCritical),
                 colors_dict["feedback"]["error"]["background"],
                 colors_dict["feedback"]["error"]["dark"],
             ),
             1: (
                 "Error",
-                "\u26A0",  # Warning sign
+                QApplication.style().standardIcon(QStyle.SP_MessageBoxCritical),
                 colors_dict["feedback"]["error"]["background"],
                 colors_dict["feedback"]["error"]["dark"],
             ),
             2: (
                 "Warning",
-                "\u26A1",  # Lightning bolt
+                QApplication.style().standardIcon(QStyle.SP_MessageBoxWarning),
                 colors_dict["feedback"]["warning"]["background"],
                 colors_dict["feedback"]["warning"]["dark"],
             ),
             3: (
                 "Success",
-                "\u2705",  # Check mark
+                QApplication.style().standardIcon(QStyle.SP_MessageBoxQuestion),
                 colors_dict["feedback"]["success"]["background"],
                 colors_dict["feedback"]["success"]["dark"],
             ),
             4: (
                 "Info",
-                "\u2139",  # Information sign
+                QApplication.style().standardIcon(QStyle.SP_MessageBoxInformation),
                 colors_dict["feedback"]["info"]["background"],
                 colors_dict["feedback"]["info"]["dark"],
             ),
@@ -886,17 +828,13 @@ class VFXWindow(QMainWindow):
 
         (
             severity_prefix,
-            severity_sign,
+            severity_icon,
             status_bar_color,
             status_bar_border_color,
         ) = severity_mapping[severity_type]
 
         # Message
-        message_prefix = (
-            f"{severity_sign} {severity_prefix}: {self._get_current_time()} - "
-            if time
-            else f"{severity_sign} {severity_prefix}: "
-        )
+        message_prefix = f"{severity_prefix}: {self._get_current_time()} - " if time else f"{severity_prefix}: "
         notification_message = f"{message_prefix} {message}"
         self.status_bar.showMessage(notification_message, duration * 1000)
 
@@ -911,11 +849,6 @@ class VFXWindow(QMainWindow):
                 logger.error(message)
             elif severity_type == 3 or severity_type == 4:
                 logger.info(message)
-
-    def clear_statusbar_message(self) -> None:
-        """Clear the status bar message."""
-
-        self.status_bar.clearMessage()
 
     # - Events
 

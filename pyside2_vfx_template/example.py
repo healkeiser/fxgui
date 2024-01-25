@@ -28,7 +28,9 @@ reload(application)
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
+
 ###### CODE ####################################################################
+
 
 _ui_file = os.path.join(os.path.dirname(__file__), "ui", "test.ui")
 _pixmap = os.path.join(os.path.dirname(__file__), "images", "splash.png")
@@ -77,14 +79,17 @@ def main(show_delayed: bool = False):
         _window.show()
 
     _window.set_statusbar_message("Window initialized", window.INFO)
+    _window.hide_toolbar()
     _application.processEvents()
 
     # Buttons in `test.ui` example
-    _window.ui.button_success.clicked.connect(lambda: _window.set_statusbar_message("Success", window.SUCCESS))
-    _window.ui.button_info.clicked.connect(lambda: _window.set_statusbar_message("Info", window.INFO))
-    _window.ui.button_warning.clicked.connect(lambda: _window.set_statusbar_message("Success", window.WARNING))
-    _window.ui.button_error.clicked.connect(lambda: _window.set_statusbar_message("Error", window.ERROR))
-    _window.ui.button_critical.clicked.connect(lambda: _window.set_statusbar_message("Success", window.CRITICAL))
+    _window.ui.button_success.clicked.connect(lambda: _window.set_statusbar_message("Success message", window.SUCCESS))
+    _window.ui.button_info.clicked.connect(lambda: _window.set_statusbar_message("Info message", window.INFO))
+    _window.ui.button_warning.clicked.connect(lambda: _window.set_statusbar_message("Success message", window.WARNING))
+    _window.ui.button_error.clicked.connect(lambda: _window.set_statusbar_message("Error message", window.ERROR))
+    _window.ui.button_critical.clicked.connect(
+        lambda: _window.set_statusbar_message("Critical message", window.CRITICAL)
+    )
 
     # Refresh toolbar button
     def refresh():
@@ -135,6 +140,6 @@ def show_window():
 
 
 if __name__ == "__main__":
-    show_splashscreen()
+    # show_splashscreen()
     # show_window()
-    # main(False)
+    main(False)
