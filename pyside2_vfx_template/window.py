@@ -314,7 +314,7 @@ class VFXWindow(QMainWindow):
         self.about_action = actions.create_action(
             self,
             "About",
-            icons.get_qicon("support"),
+            icons.get_icon("support"),
             self._show_about_dialog,
             enable=True,
             visible=True,
@@ -323,7 +323,7 @@ class VFXWindow(QMainWindow):
         self.hide_action = actions.create_action(
             self,
             "Hide",
-            icons.get_qicon("hide_source"),
+            icons.get_icon("hide_source"),
             self.hide,
             enable=False,
             visible=True,
@@ -333,7 +333,7 @@ class VFXWindow(QMainWindow):
         self.hide_others_action = actions.create_action(
             self,
             "Hide Others",
-            icons.get_qicon("hide_source"),
+            icons.get_icon("hide_source"),
             None,
             enable=False,
             visible=True,
@@ -342,7 +342,7 @@ class VFXWindow(QMainWindow):
         self.close_action = actions.create_action(
             self,
             "Close",
-            icons.get_qicon("close"),
+            icons.get_icon("close"),
             self.close,
             enable=True,
             visible=True,
@@ -352,7 +352,7 @@ class VFXWindow(QMainWindow):
         self.check_updates_action = actions.create_action(
             self,
             "Check for Updates...",
-            icons.get_qicon("update"),
+            icons.get_icon("update"),
             None,
             enable=False,
             visible=True,
@@ -362,7 +362,7 @@ class VFXWindow(QMainWindow):
         self.settings_action = actions.create_action(
             self,
             "Settings",
-            icons.get_qicon("settings"),
+            icons.get_icon("settings"),
             None,
             enable=False,
             visible=True,
@@ -373,7 +373,7 @@ class VFXWindow(QMainWindow):
         self.window_on_top_action = actions.create_action(
             self,
             "Always On Top",
-            icons.get_qicon("hdr_strong"),
+            icons.get_icon("hdr_strong"),
             self._window_on_top,
             enable=True,
             visible=True,
@@ -383,7 +383,7 @@ class VFXWindow(QMainWindow):
         self.minimize_window_action = actions.create_action(
             self,
             "Minimize",
-            icons.get_qicon("minimize"),
+            icons.get_icon("minimize"),
             self.showMinimized,
             enable=True,
             visible=True,
@@ -393,7 +393,7 @@ class VFXWindow(QMainWindow):
         self.maximize_window_action = actions.create_action(
             self,
             "Maximize",
-            icons.get_qicon("maximize"),
+            icons.get_icon("maximize"),
             self.showMaximized,
             enable=True,
             visible=True,
@@ -404,7 +404,7 @@ class VFXWindow(QMainWindow):
         self.open_documentation_action = actions.create_action(
             self,
             "Documentation",
-            icons.get_qicon("contact_support"),
+            icons.get_icon("contact_support"),
             lambda: open_new_tab(self.documentation),
             enable=True,
             visible=True,
@@ -414,7 +414,7 @@ class VFXWindow(QMainWindow):
         self.home_action = actions.create_action(
             self,
             "Home",
-            icons.get_qicon("home"),
+            icons.get_icon("home"),
             None,
             enable=False,
             visible=True,
@@ -423,7 +423,7 @@ class VFXWindow(QMainWindow):
         self.previous_action = actions.create_action(
             self,
             "Previous",
-            icons.get_qicon("arrow_back"),
+            icons.get_icon("arrow_back"),
             None,
             enable=False,
             visible=True,
@@ -432,7 +432,7 @@ class VFXWindow(QMainWindow):
         self.next_action = actions.create_action(
             self,
             "Next",
-            icons.get_qicon("arrow_forward"),
+            icons.get_icon("arrow_forward"),
             None,
             enable=False,
             visible=True,
@@ -441,7 +441,7 @@ class VFXWindow(QMainWindow):
         self.refresh_action = actions.create_action(
             self,
             "Refresh",
-            icons.get_qicon("refresh"),
+            icons.get_icon("refresh"),
             None,
             enable=True,
             visible=True,
@@ -619,12 +619,12 @@ class VFXWindow(QMainWindow):
         action_values = {
             True: (
                 "Always on Top",
-                icons.get_qicon("hdr_strong"),
+                icons.get_icon("hdr_strong"),
                 self.windowTitle().replace(" **", " *"),
             ),
             False: (
                 "Regular Position",
-                icons.get_qicon("hdr_weak"),
+                icons.get_icon("hdr_weak"),
                 self.windowTitle().replace(" *", " **"),
             ),
         }

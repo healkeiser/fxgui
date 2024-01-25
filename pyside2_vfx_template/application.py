@@ -1,3 +1,9 @@
+"""This module defines a custom QApplication for a VFX application.
+
+Classes:
+    VFXApplication: A custom QApplication for a VFX application.
+"""
+
 # Third-party
 from PySide2 import QtWidgets
 from PySide2.QtWidgets import QStyleFactory
@@ -14,6 +20,8 @@ except ModuleNotFoundError:
 
 
 class VFXApplication(QtWidgets.QApplication):
+    """A custom QApplication for a VFX application."""
+
     def __init__(self):
         super().__init__()
 

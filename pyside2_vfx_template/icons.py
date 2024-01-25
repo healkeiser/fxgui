@@ -1,3 +1,5 @@
+"""This module provides functionality for handling icons in a VFX application."""
+
 # Built-in
 from typing import Optional, Callable
 from pathlib import Path
@@ -70,14 +72,14 @@ def get_icon_path(
     return path
 
 
-def has_any_transparency(mask: QBitmap) -> bool:
+def has_transparency(mask: QBitmap) -> bool:
     """Check if a mask has any transparency.
 
     Args:
         mask (QBitmap): The mask to check.
 
     Returns:
-        bool: `True` if the mask has any transparency, `False` otherwise.
+        bool: `True` if the mask has transparency, `False` otherwise.
     """
 
     image = mask.toImage()
@@ -86,19 +88,19 @@ def has_any_transparency(mask: QBitmap) -> bool:
 
 
 @lru_cache(maxsize=128)
-def convert_pixmap_to_color(pixmap: QPixmap, color: str) -> QPixmap:
-    """Convert the color of a pixmap.
+def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
+    """Change the color of a pixmap.
 
     Args:
-        pixmap (QPixmap): The pixmap to convert.
-        color (str): The color to convert to.
+        pixmap (QPixmap): The pixmap to change the color of.
+        color (str): The color to apply.
 
     Returns:
-        QPixmap: The converted pixmap.
+        QPixmap: The pixmap with the new color applied.
     """
 
     mask = pixmap.createMaskFromColor(Qt.transparent)
-    if not has_any_transparency(mask):
+    if not has_transparency(mask):
         return pixmap
 
     qcolor = QColor(color)
@@ -126,7 +128,7 @@ def convert_pixmap_to_color(pixmap: QPixmap, color: str) -> QPixmap:
 
 
 @lru_cache(maxsize=128)
-def get_qpixmap(
+def get_pixmap(
     icon_name: str,
     width: int = 48,
     height: int = 48,
@@ -148,19 +150,22 @@ def get_qpixmap(
 
     Returns:
         QPixmap: The QPixmap of the icon.
+
+    Examples:
+        >>> get_pixmap("add", color="red")
     """
 
     path = get_icon_path(icon_name, library=library, style=style, extension=extension, verify=True)
     qpixmap = QIcon(path).pixmap(width, height)
     if color:
-        qpixmap = convert_pixmap_to_color(qpixmap, color)
+        qpixmap = change_pixmap_color(qpixmap, color)
     else:
-        qpixmap = convert_pixmap_to_color(qpixmap, "white")
+        qpixmap = change_pixmap_color(qpixmap, "white")
     return qpixmap
 
 
 @lru_cache(maxsize=128)
-def get_qicon(
+def get_icon(
     icon_name: str,
     width: int = 48,
     height: int = 48,
@@ -182,9 +187,12 @@ def get_qicon(
 
     Returns:
         QIcon: The QIcon of the icon.
+
+    Examples:
+        >>> get_icon("add", color="red")
     """
 
-    qpixmap = get_qpixmap(icon_name, width, height, color, library, style, extension)
+    qpixmap = get_pixmap(icon_name, width, height, color, library, style, extension)
     return QIcon(qpixmap)
 
 

@@ -148,7 +148,7 @@ class VFXProxyStyle(QProxyStyle):
 
         icon_name, color = STANDARD_ICON_MAP.get(standardIcon, (None, None))
         if icon_name is not None:
-            return icons.get_qicon(icon_name, color=color)
+            return icons.get_icon(icon_name, color=color)
         else:
             return super().standardIcon(standardIcon, option, widget)
 
