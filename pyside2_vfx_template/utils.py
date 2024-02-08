@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """Load UI files generated with Qt Designer."""
 
 # Built-in

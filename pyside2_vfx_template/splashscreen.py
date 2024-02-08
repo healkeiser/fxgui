@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """VFXSplashscreen module.
 
 This module contains the VFXSplashScreen class, a customized QSplashScreen class.

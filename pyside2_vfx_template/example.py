@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Run a VFXSPlashscreen and VFXWindow instance as an example."""
 
 # Built-in

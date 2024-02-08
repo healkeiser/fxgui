@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """This module defines the `VFXWindow` class which provides a custom window
 tailored for VFX-oriented DCC applications.
 
@@ -204,6 +202,12 @@ class VFXWindow(QMainWindow):
         accent_color: str = "#039492",
         ui_file: Optional[str] = None,
     ):
+        """Constructor.
+
+        Args:
+            parent (QtWidget, optional): Parent widget. Defaults to `None`.
+        """
+
         super().__init__(parent)
 
         # Attributes
