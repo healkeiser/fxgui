@@ -5,9 +5,9 @@ Classes:
 """
 
 # Third-party
-from PySide2 import QtWidgets
-from PySide2.QtWidgets import QStyleFactory
-from PySide2.QtGui import QPalette, QColor
+from qtpy import QtWidgets
+from qtpy.QtWidgets import QStyleFactory
+from qtpy.QtGui import QPalette, QColor
 
 # Internal
 try:

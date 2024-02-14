@@ -1,7 +1,7 @@
 """Scripts related to the QTreeWidget."""
 
 # Third-party
-from PySide2.QtWidgets import QLineEdit, QTreeWidget
+from qtpy.QtWidgets import QLineEdit, QTreeWidget
 
 # Metadatas
 __author__ = "Valentin Beaumont"

@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import Optional
 
 # Third-party
-from PySide2.QtWidgets import QProxyStyle, QStyle, QStyleOption, QWidget, QApplication, QStyleFactory
-from PySide2.QtGui import QIcon, QPalette, QColor
+from qtpy.QtWidgets import QProxyStyle, QStyle, QStyleOption, QWidget, QApplication, QStyleFactory
+from qtpy.QtGui import QIcon, QPalette, QColor
 
 # Internal
 try:

@@ -4,9 +4,9 @@
 import os
 
 # Third-party
-from PySide2.QtUiTools import QUiLoader
-from PySide2.QtCore import QFile
-from PySide2.QtWidgets import QWidget
+from qtpy.QtUiTools import QUiLoader
+from qtpy.QtCore import QFile
+from qtpy.QtWidgets import QWidget
 
 # Metadatas
 __author__ = "Valentin Beaumont"

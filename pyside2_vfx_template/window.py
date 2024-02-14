@@ -1,7 +1,7 @@
 """This module defines the `VFXWindow` class which provides a custom window
 tailored for VFX-oriented DCC applications.
 
-The `VFXWindow` class uses PySide2 for the UI and includes various utilities
+The `VFXWindow` class uses qtpy for the UI and includes various utilities
 and actions for a VFX workflow.
 
 This module also defines several constants for different types of notifications.
@@ -21,10 +21,10 @@ from webbrowser import open_new_tab
 from urllib.parse import urlparse
 
 # Third-party
-from PySide2.QtWidgets import *
-from PySide2.QtUiTools import *
-from PySide2.QtCore import *
-from PySide2.QtGui import *
+from qtpy.QtWidgets import *
+from qtpy.QtUiTools import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
 
 # Internal
 try:

@@ -15,11 +15,11 @@ import time
 from typing import Optional
 
 # Third-party
-import hou
-from PySide2.QtWidgets import *
-from PySide2.QtUiTools import *
-from PySide2.QtCore import *
-from PySide2.QtGui import *
+from qtpy.QtWidgets import *
+from qtpy.QtUiTools import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+
 
 # Internal
 try:
@@ -74,7 +74,7 @@ class VFXFloatingDialog(QDialog):
         self._setup_layout()
         self._handle_connections()
         self.set_dialog_icon()
-        self.set_dialog_title()
+        self.set_dialog_title(self.dialog_title)
 
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
@@ -183,7 +183,7 @@ class VFXFloatingDialog(QDialog):
             title (str): The title of the dialog.
         """
 
-        if self.dialog_title is not None and len(self.dialog_title) >= 1:
+        if title is not None and len(title) >= 1:
             self.title_label.setText(title)
         else:
             self.title_label.setText("VFX | Floating Dialog")

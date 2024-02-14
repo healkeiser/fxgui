@@ -6,9 +6,9 @@ from pathlib import Path
 from functools import lru_cache
 
 # Third-party
-from PySide2.QtWidgets import QGridLayout, QPushButton, QStyle, QWidget, QApplication
-from PySide2.QtGui import QIcon, QColor, QPainter, QPixmap, QBitmap, QGuiApplication
-from PySide2.QtCore import Qt, qVersion
+from qtpy.QtWidgets import QGridLayout, QPushButton, QStyle, QWidget, QApplication
+from qtpy.QtGui import QIcon, QColor, QPainter, QPixmap, QBitmap, QGuiApplication
+from qtpy.QtCore import Qt, qVersion
 
 # Internal
 try:

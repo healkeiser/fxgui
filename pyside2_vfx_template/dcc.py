@@ -6,7 +6,7 @@ import importlib
 from typing import Optional, Any
 
 # Third-party
-from PySide2 import QtWidgets
+from qtpy import QtWidgets
 
 # Metadatas
 __author__ = "Valentin Beaumont"
@@ -46,7 +46,7 @@ def get_houdini_main_window() -> QtWidgets.QWidget:
     """Get the Houdini main window.
 
     Returns:
-        PySide2.QtWidgets.QWidget: `QWidget` Houdini main window.
+        qtpy.QtWidgets.QWidget: `QWidget` Houdini main window.
     """
 
     import hou
@@ -70,7 +70,7 @@ def get_maya_main_window() -> QtWidgets.QWidget:
     """Get the Maya main window.
 
     Returns:
-        PySide2.QtWidgets.QWidget: `TmainWindow` Maya main window.
+        qtpy.QtWidgets.QWidget: `TmainWindow` Maya main window.
     """
 
     import maya.OpenMayaUI
@@ -84,7 +84,7 @@ def get_nuke_main_window() -> QtWidgets.QMainWindow:
     """Get the Nuke main window.
 
     Returns:
-        PySide2.QtWidgets.QMainWindow: `DockMainWindow` Nuke main window.
+        qtpy.QtWidgets.QMainWindow: `DockMainWindow` Nuke main window.
     """
 
     import nuke

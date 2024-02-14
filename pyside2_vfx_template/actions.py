@@ -4,8 +4,8 @@
 from typing import Union, Callable
 
 # Thirs-party
-from PySide2.QtGui import QIcon, QKeySequence
-from PySide2.QtWidgets import QAction, QWidget
+from qtpy.QtGui import QIcon, QKeySequence
+from qtpy.QtWidgets import QAction, QWidget
 
 # Metadatas
 __author__ = "Valentin Beaumont"

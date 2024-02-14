@@ -15,10 +15,10 @@ import time
 from typing import Optional
 
 # Third-party
-from PySide2.QtWidgets import *
-from PySide2.QtUiTools import *
-from PySide2.QtCore import *
-from PySide2.QtGui import *
+from qtpy.QtWidgets import *
+from qtpy.QtUiTools import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
 
 # Internal
 try:
