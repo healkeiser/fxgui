@@ -5,11 +5,11 @@
 
 ###### CODE ####################################################################
 
-site_name: PySide2 VFX Template
+site_name: FXGui
 site_author: Valentin Beaumont
 copyright: Copyright &copy; 2021 - 2023 Valentin Beaumont
-repo_url: https://github.com/healkeiser/pyside2_vfx_template
-repo_name: healkeiser/pyside2_vfx_template
+repo_url: https://github.com/healkeiser/fxgui
+repo_name: healkeiser/fxgui
 edit_uri: edit/main/docs/
 
 ###### Theme ###################################################################
@@ -85,7 +85,7 @@ plugins:
   - git-revision-date-localized:
       enable_creation_date: true
   - git-committers:
-      repository: healkeiser/pyside2_vfx_template
+      repository: healkeiser/fxgui
       branch: main
   - mkdocstrings:
       # custom_templates: templates
@@ -112,13 +112,9 @@ plugins:
 nav:
   - Home: index.md
   - Technical:
-      - actions: actions.md
-      - application: application.md
       - dcc: dcc.md
+      - examples: examples.md
       - icons: icons.md
-      - shadows: shadows.md
-      - splashscreen: splashscreen.md
       - style: style.md
-      - tree_widget: tree_widget.md
       - utils: utils.md
-      - window: window.md
+      - widgets: widgets.md

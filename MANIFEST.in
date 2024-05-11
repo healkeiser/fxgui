@@ -1,2 +1,2 @@
-recursive-include pyside2_vfx_template *
+recursive-include fxgui *
 global-exclude __pycache__/*

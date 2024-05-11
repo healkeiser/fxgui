@@ -1,1 +1,1 @@
-::: pyside2_vfx_template.style
+::: fxgui.style

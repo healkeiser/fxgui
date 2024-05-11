@@ -1,6 +1,6 @@
 <div id="top"></div>
 <div align="center">
-  <a href="https://github.com/healkeiser/pyside2_vfx_template">
+  <a href="https://github.com/healkeiser/fxgui">
     <img src="https://images2.imgbox.com/7e/77/Ds0VabZZ_o.png#only-dark" alt="PySide2 VFX Template" width="250" >
     <img src="https://images2.imgbox.com/7e/a0/4RDkIRfs_o.png#only-light" alt="PySide2 VFX Template" width="250" >
   </a>

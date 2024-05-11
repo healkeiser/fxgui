@@ -1,0 +1,207 @@
+/* Custom stylesheet.
+
+author = "Valentin Beaumont"
+email = "valentin.onze@gmail.com"
+*/
+
+/*# TAB BAR ##################################################################*/
+
+QTabWidget::pane {
+    background-color: transparent;
+    position: absolute;
+}
+
+QTabWidget::pane:top,
+QTabWidget::pane:bottom,
+QTabWidget::pane:left,
+QTabWidget::pane:right {
+    border: 0px solid transparent;
+    /* Necessary */
+}
+
+QTabWidget::tab-bar {
+    alignment: center;
+}
+
+QTabBar {
+    qproperty-drawBase: 0;
+    /* Important */
+    background-color: transparent;
+}
+
+QTabBar {
+    border: 0px solid transparent;
+    /* set color for all QTabBars */
+    alignment: center;
+}
+
+QDockWidget QTabBar {
+    border-color: transparent;
+    /* Set color for all QTabBars but ones created from QDockWidget */
+}
+
+QDialog QTabBar {
+    border-color: transparent;
+    /* Set color for QTabBars inside Preferences dialog */
+}
+
+QTabBar::tab {
+    border-color: @grey_90;
+    border-bottom-color: @grey_90;
+    min-height: 25px;
+    position: center;
+}
+
+QTabBar::tab:selected,
+QTabBar::tab:hover {
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+            stop: 0 @houdini_dark_blue, stop: 1 @houdini_light_blue);
+}
+
+QTabBar::tab:top,
+QTabBar::tab:bottom {
+    min-width: 14ex;
+    min-height: 25px;
+    padding: 0px 10px 0px 10px;
+    margin: 0px 0px 10px 0px;
+}
+
+QTabBar::tab:left,
+QTabBar::tab:right {
+    min-height: 14ex;
+    min-width: 25px;
+    padding: 10px 0px 10px 0px;
+}
+
+/*# LIST WIDGET ##############################################################*/
+
+QListView::item {
+    background: @grey_90;
+    border: 3px solid transparent;
+    border-radius: 5px;
+}
+
+QListView::item:hover {
+    background: @houdini_hover;
+    border: 1px solid transparent;
+}
+
+QListView::item:selected {
+    background: @houdini_selected;
+    border: 1px solid @houdini_orange;
+}
+
+/*# TREE WIDGET ##############################################################*/
+
+QTreeWidget::item {
+    padding: 0 5px;
+    height: 30px;
+}
+
+QTreeView::item:hover {
+    background-color: @houdini_hover;
+}
+
+QTreeView::item:selected {
+    background-color: @houdini_selected;
+    border-top: 1px solid @houdini_orange;
+    border-bottom: 1px solid @houdini_orange;
+}
+
+QTreeView::branch {
+    color: white;
+    background: transparent;
+}
+
+/*# GROUP BOX ################################################################*/
+
+QGroupBox {
+    border: 1px solid @grey_85;
+    border-top: 25px solid @grey_85;
+    border-radius: 0px;
+    margin-top: 0;
+    padding: 3px;
+    padding-top: 6px;
+    background-color: @grey_75;
+}
+
+QGroupBox::title {
+    padding: 4 5px;
+    background-color: transparent;
+}
+
+/*# TOOLTIP ##################################################################*/
+
+QToolTip {
+    background-color: @grey_90;
+    padding: 5px;
+}
+
+/*# PROGRESS BAR #############################################################*/
+
+QProgressBar {
+    max-height: 20px;
+}
+
+/*# COMBO BOX ################################################################*/
+
+QComboBox {
+    max-height: 20px;
+}
+
+/*# PUSH BUTTON ##############################################################*/
+
+QPushButton {
+    max-height: 20px;
+    /* min-width: 110px; */
+}
+
+/*# LINE EDIT ################################################################*/
+
+QLineEdit {
+    min-height: 15px;
+}
+
+/*# MENU BAR #################################################################*/
+
+QMenuBar {
+    border: 0px solid transparent;
+    border-bottom: 1px solid black;
+    font: 14px;
+    min-height: 0px;
+    background-color: @grey_90;
+    padding: 0px;
+    spacing: 0px;
+}
+
+/* QMenuBar:hover {
+    background: @houdini_orange_menu;
+} */
+
+QMenuBar::item {
+    padding: 5px 5px;
+}
+
+QMenuBar::item:selected,
+QMenuBar::item:pressed {
+    background-color: @houdini_orange_menu;
+}
+
+/*# STATUS BAR ###############################################################*/
+
+QStatusBar {
+    border: 0px solid transparent;
+    background: @grey_90;
+    border-top: 1px solid black;
+}
+
+/*# TOOL BAR #################################################################*/
+
+QToolBar {
+    border: 1px solid black;
+    /* border-bottom: 1px solid black; */
+    background: @grey_80;
+    min-height: 0px;
+    padding: 0px 0px;
+    spacing: 0px;
+}

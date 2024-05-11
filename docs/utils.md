@@ -1,1 +1,1 @@
-::: pyside2_vfx_template.utils
+::: fxgui.utils

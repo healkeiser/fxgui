@@ -1,1 +1,1 @@
-::: pyside2_vfx_template.dcc
+::: fxgui.dcc

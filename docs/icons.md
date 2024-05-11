@@ -1,1 +1,1 @@
-::: pyside2_vfx_template.icons
+::: fxgui.icons
