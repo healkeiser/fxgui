@@ -9,8 +9,8 @@
 
 <div align="center">
 
-  ![Logo](./docs/images/pyside2_vfx_template_logo_large_dark.svg#gh-light-mode-only)
-  ![Logo](./docs/images/pyside2_vfx_template_logo_large_light.svg#gh-dark-mode-only)
+  ![Logo](./fxgui/images/fxgui_logo_dark.svg#gh-light-mode-only)
+  ![Logo](./fxgui/images/fxgui_logo_light.svg#gh-dark-mode-only)
 
   <h3 align="center">FXGUI</h3>
 
