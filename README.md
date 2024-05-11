@@ -50,7 +50,7 @@ Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DC
 ## Installation
 
 ``` shell
-pip install pyside2-vfx-template
+pip install fxgui
 ```
 
 > [!IMPORTANT]
