@@ -11,7 +11,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 
 # Internal
-import widgets, utils
+import widgets, utils, style
 
 
 ###### CODE ####################################################################
@@ -123,6 +123,8 @@ def main(show_delayed: bool = False):
 
     _window.set_statusbar_message("Window initialized", widgets.INFO)
     _window.hide_toolbar()
+    # style.set_dark_palette(_application)
+
     _application.processEvents()
 
     # Buttons in `test.ui` example
@@ -130,9 +132,12 @@ def main(show_delayed: bool = False):
     _window.ui.button_info.clicked.connect(lambda: _window.set_statusbar_message("Info message", widgets.INFO))
     _window.ui.button_warning.clicked.connect(lambda: _window.set_statusbar_message("Success message", widgets.WARNING))
     _window.ui.button_error.clicked.connect(lambda: _window.set_statusbar_message("Error message", widgets.ERROR))
-    _window.ui.button_critical.clicked.connect(
-        lambda: _window.set_statusbar_message("Critical message", widgets.CRITICAL)
-    )
+    # _window.ui.button_critical.clicked.connect(
+    #     lambda: _window.set_statusbar_message("Critical message", widgets.CRITICAL)
+    # )
+
+    _window.ui.button_critical.setText(" Get Palette")
+    _window.ui.button_critical.clicked.connect(lambda: style.get_current_palette(_application))  # ! For the palette
 
     # Refresh toolbar button
     def refresh():

@@ -34,7 +34,7 @@ LIBRARIES_INFO = {
 }
 
 
-@lru_cache(maxsize=128)
+# @lru_cache(maxsize=128)
 def get_icon_path(
     icon_name: str,
     library: Optional[str] = None,
@@ -87,7 +87,7 @@ def has_transparency(mask: QBitmap) -> bool:
     return any(image.pixelIndex(x, y) == 0 for x in range(size.width()) for y in range(size.height()))
 
 
-@lru_cache(maxsize=128)
+# @lru_cache(maxsize=128)
 def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     """Change the color of a pixmap.
 
@@ -127,7 +127,7 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     return pixmap
 
 
-@lru_cache(maxsize=128)
+# @lru_cache(maxsize=128)
 def get_pixmap(
     icon_name: str,
     width: int = 48,
@@ -164,7 +164,7 @@ def get_pixmap(
     return qpixmap
 
 
-@lru_cache(maxsize=128)
+# @lru_cache(maxsize=128)
 def get_icon(
     icon_name: str,
     width: int = 48,

@@ -32,128 +32,14 @@ SUCCESS = 3
 INFO = 4
 
 
-class VFXProxyStyle(QProxyStyle):
-    """A custom style class that extends QProxyStyle to provide custom icons."""
-
-    def standardIcon(
-        self,
-        standardIcon: QStyle.StandardPixmap,
-        option: Optional[QStyleOption] = None,
-        widget: Optional[QWidget] = None,
-    ) -> QIcon:
-        """Returns an icon for the given standardIcon.
-
-        Args:
-            standardIcon (QStyle.StandardPixmap): The standard pixmap for which an icon should be returned.
-            option (QStyleOption, optional): An option that can be used to fine-tune the look of the icon.
-                Defaults to `None`.
-            widget (QWidget, optional): The widget for which the icon is being requested. Defaults to `None`.
-
-        Returns:
-            QIcon: The icon for the standardIcon. If no custom icon is found, the default icon is returned.
-        """
-
-        colors_dict = style.load_colors_from_jsonc()
-
-        STANDARD_ICON_MAP = {
-            QStyle.SP_ArrowBack: ("arrow_back", "white"),
-            QStyle.SP_ArrowDown: ("arrow_downward", "white"),
-            QStyle.SP_ArrowForward: ("arrow_forward", "white"),
-            QStyle.SP_ArrowLeft: ("arrow_back", "white"),
-            QStyle.SP_ArrowRight: ("arrow_forward", "white"),
-            QStyle.SP_ArrowUp: ("arrow_upward", "white"),
-            QStyle.SP_BrowserReload: ("refresh", "white"),
-            QStyle.SP_BrowserStop: ("block", "white"),
-            QStyle.SP_CommandLink: ("arrow_forward", "white"),
-            QStyle.SP_ComputerIcon: ("computer", "white"),
-            QStyle.SP_CustomBase: ("tune", "white"),
-            QStyle.SP_DesktopIcon: ("desktop_windows", "white"),
-            QStyle.SP_DialogAbortButton: ("cancel", "white"),
-            QStyle.SP_DialogApplyButton: ("done", "white"),
-            QStyle.SP_DialogCancelButton: ("cancel", "white"),
-            QStyle.SP_DialogCloseButton: ("close", "white"),
-            QStyle.SP_DialogDiscardButton: ("delete", "white"),
-            QStyle.SP_DialogHelpButton: ("help", "white"),
-            QStyle.SP_DialogIgnoreButton: ("notifications_paused", "white"),
-            QStyle.SP_DialogNoButton: ("cancel", "white"),
-            QStyle.SP_DialogNoToAllButton: ("do_not_disturb", "white"),
-            QStyle.SP_DialogOkButton: ("done", "white"),
-            QStyle.SP_DialogOpenButton: ("open_in_new", "white"),
-            QStyle.SP_DialogResetButton: ("cleaning_services", "white"),
-            QStyle.SP_DialogRetryButton: ("restart_alt", "white"),
-            QStyle.SP_DialogSaveAllButton: ("save", "white"),
-            QStyle.SP_DialogSaveButton: ("save", "white"),
-            QStyle.SP_DialogYesButton: ("done", "white"),
-            QStyle.SP_DialogYesToAllButton: ("done", "white"),
-            QStyle.SP_DirClosedIcon: ("folder", "white"),
-            QStyle.SP_DirHomeIcon: ("home", "white"),
-            QStyle.SP_DirIcon: ("folder_open", "white"),
-            QStyle.SP_DirLinkIcon: ("drive_file_move", "white"),
-            QStyle.SP_DirLinkOpenIcon: ("folder_open", "white"),
-            QStyle.SP_DockWidgetCloseButton: ("cancel", "white"),
-            QStyle.SP_DirOpenIcon: ("folder_open", "white"),
-            QStyle.SP_DriveCDIcon: ("album", "white"),
-            QStyle.SP_DriveDVDIcon: ("album", "white"),
-            QStyle.SP_DriveFDIcon: ("usb", "white"),
-            QStyle.SP_DriveHDIcon: ("dns", "white"),
-            QStyle.SP_DriveNetIcon: ("cloud", "white"),
-            QStyle.SP_FileDialogBack: ("arrow_back", "white"),
-            QStyle.SP_FileDialogContentsView: ("find_in_page", "white"),
-            QStyle.SP_FileDialogDetailedView: ("description", "white"),
-            QStyle.SP_FileDialogEnd: ("note", "white"),
-            QStyle.SP_FileDialogInfoView: ("info", "white"),
-            QStyle.SP_FileDialogListView: ("grid_view", "white"),
-            QStyle.SP_FileDialogNewFolder: ("create_new_folder", "white"),
-            QStyle.SP_FileDialogStart: ("insert_drive_file", "white"),
-            QStyle.SP_FileDialogToParent: ("upload_file", "white"),
-            QStyle.SP_FileIcon: ("description", "white"),
-            QStyle.SP_FileLinkIcon: ("file_present", "white"),
-            QStyle.SP_LineEditClearButton: ("close", "white"),
-            QStyle.SP_MediaPause: ("pause", "white"),
-            QStyle.SP_MediaPlay: ("play_arrow", "white"),
-            QStyle.SP_MediaSeekBackward: ("fast_rewind", "white"),
-            QStyle.SP_MediaSeekForward: ("fast_forward", "white"),
-            QStyle.SP_MediaSkipBackward: ("skip_previous", "white"),
-            QStyle.SP_MediaSkipForward: ("skip_next", "white"),
-            QStyle.SP_MediaStop: ("stop", "white"),
-            QStyle.SP_MediaVolume: ("volume_up", "white"),
-            QStyle.SP_MediaVolumeMuted: ("volume_off", "white"),
-            #
-            QStyle.SP_MessageBoxCritical: ("error", colors_dict["feedback"]["error"]["light"]),
-            QStyle.SP_MessageBoxInformation: ("info", colors_dict["feedback"]["info"]["light"]),
-            QStyle.SP_MessageBoxQuestion: ("help", colors_dict["feedback"]["success"]["light"]),
-            QStyle.SP_MessageBoxWarning: ("warning", colors_dict["feedback"]["warning"]["light"]),
-            #
-            QStyle.SP_RestoreDefaultsButton: ("restore", "white"),
-            QStyle.SP_TitleBarCloseButton: ("close", "white"),
-            QStyle.SP_TitleBarContextHelpButton: ("question_mark", "white"),
-            QStyle.SP_TitleBarMaxButton: ("maximize", "white"),
-            QStyle.SP_TitleBarMenuButton: ("menu", "white"),
-            QStyle.SP_TitleBarMinButton: ("minimize", "white"),
-            QStyle.SP_TitleBarNormalButton: ("close_fullscreen", "white"),
-            QStyle.SP_TitleBarShadeButton: ("expand_more", "white"),
-            QStyle.SP_TitleBarUnshadeButton: ("expand_less", "white"),
-            QStyle.SP_ToolBarHorizontalExtensionButton: ("keyboard_arrow_right", "white"),
-            QStyle.SP_ToolBarVerticalExtensionButton: ("keyboard_arrow_down", "white"),
-            QStyle.SP_TrashIcon: ("delete", "white"),
-            QStyle.SP_VistaShield: ("security", "white"),
-        }
-
-        icon_name, color = STANDARD_ICON_MAP.get(standardIcon, (None, None))
-        if icon_name is not None:
-            return icons.get_pixmap(icon_name, color=color)
-        else:
-            return super().standardIcon(standardIcon, option, widget)
-
-
 class VFXApplication(QApplication):
     """Customized QApplication class."""
 
     def __init__(self):
         super().__init__()
 
-        style.set_application_palette(self)
-        style.set_application_style(self)
+        style.set_style(self)
+        # style.set_dark_palette(self)
 
 
 class VFXSplashScreen(QSplashScreen):
@@ -559,6 +445,10 @@ class VFXWindow(QMainWindow):
 
         super().__init__(parent)
 
+        print(">>> ", QApplication.instance().style())
+        print(">>> ", QApplication.instance().style().icon_color)
+        print(">>> ", type(QApplication.instance().style()))
+
         # Attributes
         self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon.png")
         self.window_icon: QIcon = icon
@@ -753,6 +643,24 @@ class VFXWindow(QMainWindow):
             shortcut="Ctrl+Alt+f",
         )
 
+        self.set_light_theme_action = utils.create_action(
+            self,
+            "Light",
+            None,
+            lambda: style.set_light_palette(QApplication.instance()),
+            enable=True,
+            visible=True,
+        )
+
+        self.set_dark_theme_action = utils.create_action(
+            self,
+            "Dark",
+            None,
+            lambda: style.set_dark_palette(QApplication.instance()),
+            enable=True,
+            visible=True,
+        )
+
         # Help menu
         self.open_documentation_action = utils.create_action(
             self,
@@ -843,6 +751,12 @@ class VFXWindow(QMainWindow):
         self.window_menu.addSeparator()
         self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
         self.window_menu.addSeparator()
+        self.window_menu.addAction(self.set_light_theme_action)
+        self.set_light_theme_action.triggered.connect(lambda: self.style().set_icon_color("black"))
+        self.set_light_theme_action.triggered.connect(self.update)
+        self.window_menu.addAction(self.set_dark_theme_action)
+        self.set_dark_theme_action.triggered.connect(lambda: self.style().set_icon_color("white"))
+        self.set_dark_theme_action.triggered.connect(self.update)
 
         # Help menu
         self.help_menu = self.menu_bar.addMenu("&Help")

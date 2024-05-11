@@ -54,7 +54,7 @@ pip install fxgui
 ```
 
 > [!IMPORTANT]
-> In order to have access to the module, make sure to add `pyside2_vfx_template` to the `$PYTHONPATH` of the DCCs. For Houdini, you can find the [houdini_package file](./houdini_package.json).
+> In order to have access to the module, make sure to add `fxgui` to the `$PYTHONPATH` of the DCCs. For Houdini, you can find the [houdini_package file](./houdini_package.json).
 
 
 
