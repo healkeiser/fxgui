@@ -12,7 +12,7 @@
   ![Logo](./docs/images/pyside2_vfx_template_logo_large_dark.svg#gh-light-mode-only)
   ![Logo](./docs/images/pyside2_vfx_template_logo_large_light.svg#gh-dark-mode-only)
 
-  <h3 align="center">FXGui</h3>
+  <h3 align="center">FXGUI</h3>
 
   <p align="center">
     Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.
