@@ -98,7 +98,7 @@ Please read the full documentation [here](https://healkeiser.github.io/pyside2_v
 <!-- CONTACT -->
 ## Contact
 
-Project Link: [PySide2 VFX Template](https://github.com/healkeiser/pyside2_vfx_template)
+Project Link: [fxgui](https://github.com/healkeiser/fxgui)
 
 <p align='left'>
   <a href="https://www.linkedin.com/in/valentin-beaumont">
