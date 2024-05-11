@@ -12,10 +12,10 @@
   ![Logo](./docs/images/pyside2_vfx_template_logo_large_dark.svg#gh-light-mode-only)
   ![Logo](./docs/images/pyside2_vfx_template_logo_large_light.svg#gh-dark-mode-only)
 
-  <h3 align="center">PySide2 VFX Template</h3>
+  <h3 align="center">FXGui</h3>
 
   <p align="center">
-    Custom Python classes and utilities tailored for PySide2 built UI, in VFX-oriented DCC applications.
+    Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.
     <br/>
     <br/>
     <br/>
@@ -42,7 +42,7 @@
 <!-- ABOUT -->
 ## About
 
-Custom Python classes and utilities tailored for PySide2 built UI, in VFX-oriented DCC applications.
+Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.
 
 
 
@@ -61,16 +61,16 @@ pip install pyside2-vfx-template
 <!-- EXAMPLE -->
 ## Example
 
-After installing PySide2 VFX Template, you can run the demo:
+After installing FXGui, you can run the demo:
 
 ``` shell
 python example.py
 ```
 Or:
 ``` python
-from pyside2_vfx_template import example
+from fxgui import examples
 
-example.main()
+examples.main()
 ```
 
 Here's how it would like like launched from Houdini and launched as a standalone:
@@ -89,9 +89,9 @@ Please read the full documentation [here](https://healkeiser.github.io/pyside2_v
 <!-- GALLERY -->
 ## Gallery
 
-Splash Screen                                   | Main Window
-:----------------------------------------------:|:----------------------------------------------:
-![Splash Screen](./docs/images/jxxZTVZy29.png)  |  ![Main Window](./docs/images/e72Hfw2ReZ.png)
+|                 Splash Screen                  |                 Main Window                  |
+| :--------------------------------------------: | :------------------------------------------: |
+| ![Splash Screen](./docs/images/jxxZTVZy29.png) | ![Main Window](./docs/images/e72Hfw2ReZ.png) |
 
 
 
