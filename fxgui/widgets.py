@@ -9,6 +9,7 @@ from webbrowser import open_new_tab
 from urllib.parse import urlparse
 
 # Third-party
+import qdarktheme
 from qtpy.QtWidgets import *
 from qtpy.QtUiTools import *
 from qtpy.QtCore import *
@@ -16,9 +17,9 @@ from qtpy.QtGui import *
 
 # Internal
 try:
-    import style, utils, icons
+    import style, utils, icons, dcc
 except ModuleNotFoundError:
-    from fxgui import style, utils, icons
+    from fxgui import style, utils, icons, dcc
 
 
 ###### CODE ####################################################################
@@ -37,9 +38,6 @@ class VFXApplication(QApplication):
 
     def __init__(self):
         super().__init__()
-
-        style.set_style(self)
-        # style.set_dark_palette(self)
 
 
 class VFXSplashScreen(QSplashScreen):
@@ -316,6 +314,7 @@ class VFXWindow(QMainWindow):
         company: Optional[str] = None,
         accent_color: str = "#039492",
         ui_file: Optional[str] = None,
+        parent_package: Optional[int] = None,
     ):
         """Customized QMainWindow class.
 
@@ -336,6 +335,10 @@ class VFXWindow(QMainWindow):
                 screen. Defaults to `#039492`.
             ui_file (str, optional): Path to the UI file for loading.
                 Defaults to `None`.
+            parent_package (int, optional): Whether the window is standalone application, or belongs to a DCC parent.
+                This is useful is you're planning to apply a custom stylesheet, since `qdarktheme` will attempt
+                to apply a stylesheet to the `QApplication`, which is not always accessible in a DCC environment.
+                Defaults to `True`.
 
         Attributes:
             window_icon (QIcon): The icon of the window.
@@ -445,10 +448,6 @@ class VFXWindow(QMainWindow):
 
         super().__init__(parent)
 
-        print(">>> ", QApplication.instance().style())
-        print(">>> ", QApplication.instance().style().icon_color)
-        print(">>> ", type(QApplication.instance().style()))
-
         # Attributes
         self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon.png")
         self.window_icon: QIcon = icon
@@ -461,12 +460,17 @@ class VFXWindow(QMainWindow):
         self.company: str = company or "Company"
         self.accent_color: str = accent_color
         self.ui_file: str = ui_file
+        self.parent_package: bool = parent_package
 
         self.CRITICAL: int = CRITICAL
         self.ERROR: int = ERROR
         self.WARNING: int = WARNING
         self.SUCCESS: int = SUCCESS
         self.INFO: int = INFO
+
+        # Custom stylesheet
+        if self.parent_package == dcc.STANDALONE:
+            qdarktheme.setup_theme("dark", "rounded")
 
         # Methods
         self._create_actions()
@@ -480,9 +484,6 @@ class VFXWindow(QMainWindow):
         self._create_status_bar()
         self._check_documentation()
         self._add_shadows()
-
-        # Custom stylesheet
-        # self.setStyleSheet(style.load_stylesheet())
 
     # - Private methods
 
@@ -557,7 +558,7 @@ class VFXWindow(QMainWindow):
         self.about_action = utils.create_action(
             self,
             "About",
-            icons.get_pixmap("support", color="white"),
+            None,
             self._show_about_dialog,
             enable=True,
             visible=True,
@@ -566,7 +567,7 @@ class VFXWindow(QMainWindow):
         self.hide_action = utils.create_action(
             self,
             "Hide",
-            icons.get_pixmap("hide_source", color="white"),
+            None,
             self.hide,
             enable=False,
             visible=True,
@@ -576,7 +577,7 @@ class VFXWindow(QMainWindow):
         self.hide_others_action = utils.create_action(
             self,
             "Hide Others",
-            icons.get_pixmap("hide_source", color="white"),
+            None,
             None,
             enable=False,
             visible=True,
@@ -585,7 +586,7 @@ class VFXWindow(QMainWindow):
         self.close_action = utils.create_action(
             self,
             "Close",
-            icons.get_pixmap("close", color="white"),
+            None,
             self.close,
             enable=True,
             visible=True,
@@ -595,7 +596,7 @@ class VFXWindow(QMainWindow):
         self.check_updates_action = utils.create_action(
             self,
             "Check for Updates...",
-            icons.get_pixmap("update", color="white"),
+            None,
             None,
             enable=False,
             visible=True,
@@ -605,7 +606,7 @@ class VFXWindow(QMainWindow):
         self.settings_action = utils.create_action(
             self,
             "Settings",
-            icons.get_pixmap("settings", color="white"),
+            None,
             None,
             enable=False,
             visible=True,
@@ -616,7 +617,7 @@ class VFXWindow(QMainWindow):
         self.window_on_top_action = utils.create_action(
             self,
             "Always On Top",
-            icons.get_pixmap("hdr_strong", color="white"),
+            None,
             self._window_on_top,
             enable=True,
             visible=True,
@@ -626,7 +627,7 @@ class VFXWindow(QMainWindow):
         self.minimize_window_action = utils.create_action(
             self,
             "Minimize",
-            icons.get_pixmap("minimize", color="white"),
+            None,
             self.showMinimized,
             enable=True,
             visible=True,
@@ -636,36 +637,18 @@ class VFXWindow(QMainWindow):
         self.maximize_window_action = utils.create_action(
             self,
             "Maximize",
-            icons.get_pixmap("maximize", color="white"),
+            None,
             self.showMaximized,
             enable=True,
             visible=True,
             shortcut="Ctrl+Alt+f",
         )
 
-        self.set_light_theme_action = utils.create_action(
-            self,
-            "Light",
-            None,
-            lambda: style.set_light_palette(QApplication.instance()),
-            enable=True,
-            visible=True,
-        )
-
-        self.set_dark_theme_action = utils.create_action(
-            self,
-            "Dark",
-            None,
-            lambda: style.set_dark_palette(QApplication.instance()),
-            enable=True,
-            visible=True,
-        )
-
         # Help menu
         self.open_documentation_action = utils.create_action(
             self,
             "Documentation",
-            icons.get_pixmap("contact_support", color="white"),
+            None,
             lambda: open_new_tab(self.documentation),
             enable=True,
             visible=True,
@@ -675,7 +658,7 @@ class VFXWindow(QMainWindow):
         self.home_action = utils.create_action(
             self,
             "Home",
-            icons.get_pixmap("home", color="white"),
+            None,
             None,
             enable=False,
             visible=True,
@@ -684,7 +667,7 @@ class VFXWindow(QMainWindow):
         self.previous_action = utils.create_action(
             self,
             "Previous",
-            icons.get_pixmap("arrow_back", color="white"),
+            None,
             None,
             enable=False,
             visible=True,
@@ -693,7 +676,7 @@ class VFXWindow(QMainWindow):
         self.next_action = utils.create_action(
             self,
             "Next",
-            icons.get_pixmap("arrow_forward", color="white"),
+            None,
             None,
             enable=False,
             visible=True,
@@ -702,7 +685,7 @@ class VFXWindow(QMainWindow):
         self.refresh_action = utils.create_action(
             self,
             "Refresh",
-            icons.get_pixmap("refresh", color="white"),
+            None,
             None,
             enable=True,
             visible=True,
@@ -751,16 +734,49 @@ class VFXWindow(QMainWindow):
         self.window_menu.addSeparator()
         self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
         self.window_menu.addSeparator()
-        self.window_menu.addAction(self.set_light_theme_action)
-        self.set_light_theme_action.triggered.connect(lambda: self.style().set_icon_color("black"))
-        self.set_light_theme_action.triggered.connect(self.update)
-        self.window_menu.addAction(self.set_dark_theme_action)
-        self.set_dark_theme_action.triggered.connect(lambda: self.style().set_icon_color("white"))
-        self.set_dark_theme_action.triggered.connect(self.update)
+
+        if self.parent_package == dcc.STANDALONE:
+            self._add_switch_theme_in_menu()
 
         # Help menu
         self.help_menu = self.menu_bar.addMenu("&Help")
         self.open_documentation_menu = self.help_menu.addAction(self.open_documentation_action)
+
+    def _add_switch_theme_in_menu(self) -> None:
+        """Add a menu item holding radio buttons to switch themes in the window menu.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        # Create a button group
+        button_group = QButtonGroup(self)
+        layout = QVBoxLayout()
+
+        # Create a radio button for each theme
+        themes = qdarktheme.get_themes()
+        for i, theme in enumerate(themes):
+            radio_button = QRadioButton(theme.capitalize())
+            radio_button.toggled.connect(
+                lambda checked, theme=theme: qdarktheme.setup_theme(theme) if checked else None
+            )
+            button_group.addButton(radio_button)
+            layout.addWidget(radio_button)
+
+            # # Set the first radio button to be checked by default
+            # if i == 0:
+            #     radio_button.setChecked(True)
+
+        # Create a widget to hold the layout
+        widget = QWidget()
+        widget.setLayout(layout)
+
+        # Create a QWidgetAction and set the widget as its default widget
+        theme_action = QWidgetAction(self)
+        theme_action.setDefaultWidget(widget)
+
+        # Add the action to the menu
+        self.window_menu.addAction(theme_action)
 
     def _create_toolbars(self) -> None:
         """Creates the toolbar for the window.
@@ -831,7 +847,7 @@ class VFXWindow(QMainWindow):
         """If there are no arguments, which means the message is being removed,
         then change the status bar background back to black.
         """
-
+        return
         if not args:
             self.statusBar().setStyleSheet(
                 """
@@ -900,8 +916,8 @@ class VFXWindow(QMainWindow):
         text, icon, window_title = action_values[stays_on_top]
         flags ^= Qt.WindowStaysOnTopHint
         self.window_on_top_action.setText(text)
-        if icon is not None:
-            self.window_on_top_action.setIcon(icon)
+        # if icon is not None:
+        #     self.window_on_top_action.setIcon(icon)
         self.setWindowFlags(flags)
         self.setWindowTitle(window_title)
         self.show()
@@ -962,16 +978,27 @@ class VFXWindow(QMainWindow):
         else:
             self.open_documentation_action.setEnabled(False)
 
-    def _add_shadows(self) -> None:
+    def _add_shadows(self, menu_bar: bool = False, toolbar: bool = False, status_bar: bool = False) -> None:
         """Adds shadows to the window elements.
+
+        Args:
+            menu_bar (bool, optional): Whether to add shadows to the menu bar.
+                Defaults to `False`.
+            toolbar (bool, optional): Whether to add shadows to the toolbar.
+                Defaults to `False`.
+            status_bar (bool, optional): Whether to add shadows to the status bar.
+                Defaults to `False`.
 
         Warning:
             This method is intended for internal use only.
         """
 
-        utils.add_shadows(self, self.menu_bar)
-        # utils.add_shadows(self, self.toolbar)
-        utils.add_shadows(self, self.statusBar())
+        if menu_bar:
+            utils.add_shadows(self, self.menu_bar)
+        if toolbar:
+            utils.add_shadows(self, self.toolbar)
+        if status_bar:
+            utils.add_shadows(self, self.statusBar())
 
     def _get_current_time(self, display_seconds: bool = False, display_date: bool = False) -> str:
         """Returns the current time as a string.
@@ -1029,7 +1056,8 @@ class VFXWindow(QMainWindow):
         severity_type: int = 4,
         duration: float = 2.5,
         time: bool = True,
-        logger: logging.Logger = None,
+        logger: Optional[logging.Logger] = None,
+        set_color: bool = False,
     ) -> None:
         """Display a message in the status bar with a specified severity.
 
@@ -1044,6 +1072,7 @@ class VFXWindow(QMainWindow):
                 the message. Defaults to `True`.
             logger (Logger, optional): A logger object to log the message.
                 Defaults to `None`.
+            set_color (bool)
 
         Examples:
             To display a critical error message with a red background
@@ -1105,17 +1134,19 @@ class VFXWindow(QMainWindow):
         message_prefix = f"{severity_prefix}: {self._get_current_time()} - " if time else f"{severity_prefix}: "
         notification_message = f"{message_prefix} {message}"
         self.statusBar().showMessage(notification_message, duration * 1000)
-        self.statusBar().setStyleSheet(
-            """QStatusBar {
-        background: """
-            + status_bar_color
-            + """;
-        border-top: 1px solid"""
-            + status_bar_border_color
-            + """;
-        }
-        """
-        )
+
+        if set_color:
+            self.statusBar().setStyleSheet(
+                """QStatusBar {
+            background: """
+                + status_bar_color
+                + """;
+            border-top: 1px solid"""
+                + status_bar_border_color
+                + """;
+            }
+            """
+            )
 
         # Link `Logger` object
         if logger is not None:

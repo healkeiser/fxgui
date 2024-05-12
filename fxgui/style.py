@@ -15,7 +15,7 @@ from typing import Optional
 
 # Third-party
 from qtpy.QtCore import QObject
-from qtpy.QtWidgets import QProxyStyle, QStyle, QStyleOption, QWidget, QApplication, QStyleFactory
+from qtpy.QtWidgets import QProxyStyle, QStyle, QStyleOption, QWidget, QStyleFactory
 from qtpy.QtGui import QIcon, QPalette, QColor
 
 # Internal
@@ -33,19 +33,19 @@ __email__ = "valentin.onze@gmail.com"
 
 
 # Constants
-STYLE_FILE = Path(__file__).parent / "qss" / "style.qss"
+HOUDINI_STYLE_FILE = Path(__file__).parent / "qss" / "style.qss"
 COLORS_FILE = Path(__file__).parent / "style.jsonc"
 
 # Globals
 _colors = None
 
 
-class VFXProxyStyle(QProxyStyle):
+class _VFXProxyStyle(QProxyStyle):
     """A custom style class that extends QProxyStyle to provide custom icons."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.icon_color = "red"  # Default color
+        self.icon_color = "white"  # Default color
 
     def standardIcon(
         self,
@@ -364,20 +364,20 @@ def set_light_palette(object: QObject) -> QPalette:
     return palette
 
 
-def set_style(application: QApplication, style: Optional[str] = "Fusion") -> VFXProxyStyle:
-    """Set the "Fusion" style in a dark theme.
+def set_style(widget: QWidget, style: str = "Fusion") -> _VFXProxyStyle:
+    """Set the style.
 
     Args:
-        application (QApplication, optional): The application to set the style to.
+        widget (QWidget): The QWidget subclass to set the style to.
         style (str, optional): The style to set. Defaults to "Fusion".
 
     Returns:
-        VFXProxyStyle: The custom style.
+        _VFXProxyStyle: The custom style.
     """
 
     style = QStyleFactory.create("Fusion")
-    custom_style = VFXProxyStyle(style)
-    application.setStyle(custom_style)
+    custom_style = _VFXProxyStyle(style)
+    widget.setStyle(custom_style)
 
     return custom_style
 

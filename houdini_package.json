@@ -9,7 +9,7 @@
         {
             "FXGUI": [
                 {
-                    "houdini_os == 'windows'": "D:/Code/fxgui"
+                    "houdini_os == 'windows'": "$SERVER_ROOT/Projects/Code/fxgui"
                 },
                 {
                     "houdini_os == 'linux'": ""
@@ -21,7 +21,7 @@
         },
         {
             "PYTHONPATH": [
-                "$FXGUI/fxgui",
+                "$FXGUI",
                 {
                     "method": "append"
                 }

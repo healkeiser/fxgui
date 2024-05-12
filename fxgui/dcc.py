@@ -15,6 +15,12 @@ __email__ = "valentin.onze@gmail.com"
 
 ###### CODE ####################################################################
 
+# Constants
+STANDALONE = 0
+HOUDINI = 1
+MAYA = 2
+NUKE = 3
+
 
 def get_dcc_main_window() -> Optional[Any]:
     """Import the current DCC main window.

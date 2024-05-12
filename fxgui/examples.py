@@ -123,7 +123,7 @@ def main(show_delayed: bool = False):
 
     _window.set_statusbar_message("Window initialized", widgets.INFO)
     _window.hide_toolbar()
-    # style.set_dark_palette(_application)
+    style.set_light_palette(_application)
 
     _application.processEvents()
 
