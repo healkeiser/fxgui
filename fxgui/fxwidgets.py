@@ -16,10 +16,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 
 # Internal
-try:
-    import style, utils, icons, dcc
-except ModuleNotFoundError:
-    from fxgui import style, utils, icons, dcc
+import fxstyle, fxutils, fxicons, fxdcc
 
 
 ###### CODE ####################################################################
@@ -36,8 +33,25 @@ INFO = 4
 class VFXApplication(QApplication):
     """Customized QApplication class."""
 
-    def __init__(self):
+    def __init__(self, parent_package: Optional[int] = None):
         super().__init__()
+
+        # Attributes
+        self.parent_package = parent_package
+
+        # Styling
+        fxstyle.set_style(self)
+        if self.parent_package == fxdcc.STANDALONE or self.parent_package == None:
+            fxstyle.set_dark_palette(self)
+        elif self.parent_package == fxdcc.HOUDINI:
+            stylesheet = fxstyle.load_houdini_stylesheet(style_file=fxstyle.HOUDINI_STYLE_FILE)
+            self.setStyleSheet(stylesheet)
+        elif self.parent_package == fxdcc.MAYA:
+            pass
+        elif self.parent_package == fxdcc.NUKE:
+            pass
+        else:
+            pass
 
 
 class VFXSplashScreen(QSplashScreen):
@@ -119,10 +133,10 @@ class VFXSplashScreen(QSplashScreen):
     ):
         # Load the image using image_path and redirect as the original pixmap
         # argument from `QSplashScreen`
-        if image_path is not None and os.path.isfile(image_path):
-            image = self._resize_image(image_path)
-        elif image_path is None:
+        if image_path is None:
             image = os.path.join(os.path.dirname(__file__), "images", "snap.png")
+        elif os.path.isfile(image_path):
+            image = self._resize_image(image_path)
         else:
             raise ValueError(f"Invalid image path: {image_path}")
 
@@ -130,7 +144,7 @@ class VFXSplashScreen(QSplashScreen):
 
         # Attributes
         self.pixmap: QPixmap = image
-        self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon.png")
+        self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon_light.png")
         self.icon: QIcon = icon
         self.title: str = title
         self.information: str = information
@@ -204,7 +218,7 @@ class VFXSplashScreen(QSplashScreen):
         frame = QFrame(self)
         frame.setGeometry(0, 0, self.pixmap.width() // 2, self.pixmap.height())
         frame.setStyleSheet("background-color: #232323;")
-        utils.add_shadows(self, frame)
+        fxutils.add_shadows(self, frame)
 
         # Create a vertical layout for the QFrame
         layout = QVBoxLayout(frame)
@@ -261,8 +275,8 @@ class VFXSplashScreen(QSplashScreen):
         layout.addItem(spacer_c)
 
         # Copyright QLabel
-        project = self.project if self.project and len(self.project) >= 1 else "N/A"
-        version = self.version if self.version and len(self.version) >= 1 else "v0.0.0"
+        project = self.project if self.project and len(self.project) >= 1 else "Project"
+        version = self.version if self.version and len(self.version) >= 1 else "0.0.0"
         company = self.company if self.company and len(self.company) >= 1 else "Company"
 
         self.copyright_label = QLabel(f"{project} | {version} | \u00A9 {company}")
@@ -338,7 +352,7 @@ class VFXWindow(QMainWindow):
             parent_package (int, optional): Whether the window is standalone application, or belongs to a DCC parent.
                 This is useful is you're planning to apply a custom stylesheet, since `qdarktheme` will attempt
                 to apply a stylesheet to the `QApplication`, which is not always accessible in a DCC environment.
-                Defaults to `True`.
+                Defaults to `None`.
 
         Attributes:
             window_icon (QIcon): The icon of the window.
@@ -460,7 +474,7 @@ class VFXWindow(QMainWindow):
         self.company: str = company or "Company"
         self.accent_color: str = accent_color
         self.ui_file: str = ui_file
-        self.parent_package: bool = parent_package
+        self.parent_package = parent_package
 
         self.CRITICAL: int = CRITICAL
         self.ERROR: int = ERROR
@@ -468,9 +482,20 @@ class VFXWindow(QMainWindow):
         self.SUCCESS: int = SUCCESS
         self.INFO: int = INFO
 
-        # Custom stylesheet
-        if self.parent_package == dcc.STANDALONE:
-            qdarktheme.setup_theme("dark", "rounded")
+        # Styling
+        fxstyle.set_style(self)
+
+        if self.parent_package == fxdcc.STANDALONE or self.parent_package == None:
+            pass
+        elif self.parent_package == fxdcc.HOUDINI:
+            stylesheet = fxstyle.load_houdini_stylesheet(style_file=fxstyle.HOUDINI_STYLE_FILE)
+            self.setStyleSheet(stylesheet)
+        elif self.parent_package == fxdcc.MAYA:
+            pass
+        elif self.parent_package == fxdcc.NUKE:
+            pass
+        else:
+            pass
 
         # Methods
         self._create_actions()
@@ -496,7 +521,7 @@ class VFXWindow(QMainWindow):
         """
 
         if self.ui_file is not None:
-            self.ui = utils.load_ui(self, self.ui_file)
+            self.ui = fxutils.load_ui(self, self.ui_file)
 
             # Add the loaded UI to the main window
             self.setCentralWidget(self.ui)
@@ -508,10 +533,8 @@ class VFXWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        if self.window_icon is not None and os.path.isfile(self.window_icon):
-            self.setWindowIcon(QIcon(self.window_icon))
-        else:
-            self.setWindowIcon(QIcon(self._default_icon))
+        icon_path = self.window_icon if self.window_icon and os.path.isfile(self.window_icon) else self._default_icon
+        self.setWindowIcon(QIcon(icon_path))
 
     def _set_window_title(self) -> None:
         """Sets the window title from the specified title.
@@ -520,10 +543,7 @@ class VFXWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        if self.window_title is not None and len(self.window_title) >= 1:
-            self.setWindowTitle(f"{self.window_title} *")
-        else:
-            self.setWindowTitle(f"Window *")
+        self.setWindowTitle(f"{self.window_title if self.window_title else 'Window'} *")
 
     def _set_window_size(self) -> None:
         """Sets the window size from the specified size.
@@ -532,10 +552,7 @@ class VFXWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        if self.window_size is not None and len(self.window_size) >= 1:
-            self.resize(QSize(*self.window_size))
-        else:
-            self.resize(QSize(500, 600))
+        self.resize(QSize(*self.window_size) if self.window_size and len(self.window_size) >= 1 else QSize(500, 600))
 
     def _set_window_flags(self) -> None:
         """Sets the window flags from the specified flags.
@@ -544,8 +561,7 @@ class VFXWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        if self.window_flags is not None:
-            self.setWindowFlags(self.windowFlags() | self.window_flags)
+        self.setWindowFlags(self.windowFlags() | (self.window_flags if self.window_flags else 0))
 
     def _create_actions(self) -> None:
         """Creates the actions for the window.
@@ -555,7 +571,7 @@ class VFXWindow(QMainWindow):
         """
 
         # Main menu
-        self.about_action = utils.create_action(
+        self.about_action = fxutils.create_action(
             self,
             "About",
             None,
@@ -564,7 +580,7 @@ class VFXWindow(QMainWindow):
             visible=True,
         )
 
-        self.hide_action = utils.create_action(
+        self.hide_action = fxutils.create_action(
             self,
             "Hide",
             None,
@@ -574,7 +590,7 @@ class VFXWindow(QMainWindow):
             shortcut="Ctrl+Alt+h",
         )
 
-        self.hide_others_action = utils.create_action(
+        self.hide_others_action = fxutils.create_action(
             self,
             "Hide Others",
             None,
@@ -583,7 +599,7 @@ class VFXWindow(QMainWindow):
             visible=True,
         )
 
-        self.close_action = utils.create_action(
+        self.close_action = fxutils.create_action(
             self,
             "Close",
             None,
@@ -593,7 +609,7 @@ class VFXWindow(QMainWindow):
             shortcut="Ctrl+Alt+q",
         )
 
-        self.check_updates_action = utils.create_action(
+        self.check_updates_action = fxutils.create_action(
             self,
             "Check for Updates...",
             None,
@@ -603,7 +619,7 @@ class VFXWindow(QMainWindow):
         )
 
         # Edit menu
-        self.settings_action = utils.create_action(
+        self.settings_action = fxutils.create_action(
             self,
             "Settings",
             None,
@@ -614,7 +630,7 @@ class VFXWindow(QMainWindow):
         )
 
         # Window menu
-        self.window_on_top_action = utils.create_action(
+        self.window_on_top_action = fxutils.create_action(
             self,
             "Always On Top",
             None,
@@ -624,7 +640,7 @@ class VFXWindow(QMainWindow):
             shortcut="Ctrl+Shift+t",
         )
 
-        self.minimize_window_action = utils.create_action(
+        self.minimize_window_action = fxutils.create_action(
             self,
             "Minimize",
             None,
@@ -634,7 +650,7 @@ class VFXWindow(QMainWindow):
             shortcut="Ctrl+Alt+m",
         )
 
-        self.maximize_window_action = utils.create_action(
+        self.maximize_window_action = fxutils.create_action(
             self,
             "Maximize",
             None,
@@ -645,7 +661,7 @@ class VFXWindow(QMainWindow):
         )
 
         # Help menu
-        self.open_documentation_action = utils.create_action(
+        self.open_documentation_action = fxutils.create_action(
             self,
             "Documentation",
             None,
@@ -655,37 +671,37 @@ class VFXWindow(QMainWindow):
         )
 
         # Toolbar
-        self.home_action = utils.create_action(
+        self.home_action = fxutils.create_action(
             self,
             "Home",
-            None,
+            self.style().standardIcon(QStyle.SP_DirHomeIcon),
             None,
             enable=False,
             visible=True,
         )
 
-        self.previous_action = utils.create_action(
+        self.previous_action = fxutils.create_action(
             self,
             "Previous",
-            None,
+            self.style().standardIcon(QStyle.SP_ArrowBack),
             None,
             enable=False,
             visible=True,
         )
 
-        self.next_action = utils.create_action(
+        self.next_action = fxutils.create_action(
             self,
             "Next",
-            None,
+            self.style().standardIcon(QStyle.SP_ArrowForward),
             None,
             enable=False,
             visible=True,
         )
 
-        self.refresh_action = utils.create_action(
+        self.refresh_action = fxutils.create_action(
             self,
             "Refresh",
-            None,
+            self.style().standardIcon(QStyle.SP_BrowserReload),
             None,
             enable=True,
             visible=True,
@@ -735,7 +751,7 @@ class VFXWindow(QMainWindow):
         self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
         self.window_menu.addSeparator()
 
-        if self.parent_package == dcc.STANDALONE:
+        if self.parent_package == fxdcc.STANDALONE:
             self._add_switch_theme_in_menu()
 
         # Help menu
@@ -847,7 +863,8 @@ class VFXWindow(QMainWindow):
         """If there are no arguments, which means the message is being removed,
         then change the status bar background back to black.
         """
-        return
+
+        return  # TODO: Figure out the whole statusbar color change depending on the theme
         if not args:
             self.statusBar().setStyleSheet(
                 """
@@ -903,12 +920,12 @@ class VFXWindow(QMainWindow):
         action_values = {
             True: (
                 "Always on Top",
-                icons.get_pixmap("hdr_strong", color="white"),
+                fxicons.get_pixmap("hdr_strong", color="white"),
                 self.windowTitle().replace(" **", " *"),
             ),
             False: (
                 "Regular Position",
-                icons.get_pixmap("hdr_weak", color="white"),
+                fxicons.get_pixmap("hdr_weak", color="white"),
                 self.windowTitle().replace(" *", " **"),
             ),
         }
@@ -994,11 +1011,11 @@ class VFXWindow(QMainWindow):
         """
 
         if menu_bar:
-            utils.add_shadows(self, self.menu_bar)
+            fxutils.add_shadows(self, self.menu_bar)
         if toolbar:
-            utils.add_shadows(self, self.toolbar)
+            fxutils.add_shadows(self, self.toolbar)
         if status_bar:
-            utils.add_shadows(self, self.statusBar())
+            fxutils.add_shadows(self, self.statusBar())
 
     def _get_current_time(self, display_seconds: bool = False, display_date: bool = False) -> str:
         """Returns the current time as a string.
@@ -1089,7 +1106,7 @@ class VFXWindow(QMainWindow):
         """
 
         # Create dictionnary for verbosity colors
-        colors_dict = style.load_colors_from_jsonc()
+        colors_dict = fxstyle.load_colors_from_jsonc()
         severity_mapping = {
             0: (
                 "Critical",
@@ -1172,6 +1189,8 @@ class VFXFloatingDialog(QDialog):
         parent: Optional[QWidget] = None,
         icon: Optional[QPixmap] = None,
         title: Optional[str] = None,
+        # VFXObject
+        parent_package: Optional[int] = None,
     ):
         """A floating dialog that appears at the cursor's position.
         It closes when any mouse button except the right one is pressed.
@@ -1193,11 +1212,11 @@ class VFXFloatingDialog(QDialog):
             button_box (QDialogButtonBox): _summary_.
         """
 
-        super().__init__(parent)
+        super().__init__(self, parent)
 
         # Attributes
-        _icon = QPixmap(icons.get_icon_path("home"))
-        _icon = icons.convert_pixmap_to_color(_icon, "white")
+        _icon = QPixmap(fxicons.get_icon_path("home"))
+        _icon = fxicons.change_pixmap_color(_icon, "white")
         self._default_icon = _icon
         self.dialog_icon: QIcon = icon
         self.dialog_title: str = title
@@ -1207,6 +1226,8 @@ class VFXFloatingDialog(QDialog):
             self.drop_position.x() - (self.width() / 2),
             self.drop_position.y() - (self.height() / 2),
         )
+
+        self.parent_package = parent_package
 
         # Methods
         self._setup_title()
@@ -1220,16 +1241,32 @@ class VFXFloatingDialog(QDialog):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.resize(200, 40)
-        self.setStyleSheet(
+
+        if self.parent_package == fxdcc.STANDALONE or self.parent_package == None:
+            pass
+
+        elif self.parent_package == fxdcc.HOUDINI:
+            # Custom stylesheet for Houdini
+            self.title_widget.setStyleSheet("background-color: #2b2b2b;")
+            self.setStyleSheet(
+                """
+                VFXFloatingDialog {
+                    border-top: 1px solid #949494;
+                    border-left: 1px solid #949494;
+                    border-bottom: 1px solid #262626;
+                    border-right: 1px solid #262626;
+                }
             """
-            VFXFloatingDialog {
-                border-top: 1px solid #949494;
-                border-left: 1px solid #949494;
-                border-bottom: 1px solid #262626;
-                border-right: 1px solid #262626;
-            }
-        """
-        )
+            )
+
+        elif self.parent_package == fxdcc.MAYA:
+            pass
+
+        elif self.parent_package == fxdcc.NUKE:
+            pass
+
+        else:
+            pass
 
     # - Private methods
 
@@ -1243,7 +1280,6 @@ class VFXFloatingDialog(QDialog):
         self._icon_label = QLabel(self)
         self._icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.title_widget = QWidget(self)
-        self.title_widget.setStyleSheet("background-color: #2b2b2b;")
 
         font = QFont()
         font.setPointSize(12)
@@ -1307,9 +1343,7 @@ class VFXFloatingDialog(QDialog):
             icon (QPixmap, optional): The QPixmap icon.
         """
 
-        if not icon:
-            icon = self._default_icon
-
+        icon = icon if icon else self._default_icon
         self._icon_label.setPixmap(icon.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.dialog_icon = icon
 
@@ -1320,10 +1354,7 @@ class VFXFloatingDialog(QDialog):
             title (str): The title of the dialog.
         """
 
-        if title is not None and len(title) >= 1:
-            self.title_label.setText(f"{title}")
-        else:
-            self.title_label.setText("Floating Dialog")
+        self.title_label.setText(title if title else "Floating Dialog")
 
     def show_under_cursor(self) -> int:
         """Moves the dialog to the current cursor position and displays it.

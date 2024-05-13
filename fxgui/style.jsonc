@@ -1,7 +1,8 @@
 {
     // DCCs
     "houdini": {
-        "main": "#ff6600"
+        "main": "#ff6600",
+        "dark_blue": "#ffffff"
     },
     "maya": {
         "main": "#38a6cc"

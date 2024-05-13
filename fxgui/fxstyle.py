@@ -8,23 +8,22 @@ Examples:
 """
 
 # Built-in
+import os
 import re
 import json
 from pathlib import Path
 from typing import Optional
 
 # Third-party
+import qtpy
 from qtpy.QtCore import QObject
 from qtpy.QtWidgets import QProxyStyle, QStyle, QStyleOption, QWidget, QStyleFactory
 from qtpy.QtGui import QIcon, QPalette, QColor
 
 # Internal
-try:
-    import style, icons
-except ModuleNotFoundError:
-    from fxgui import style, icons
+import fxicons
 
-# Metadatas
+# Metadata
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
@@ -33,14 +32,14 @@ __email__ = "valentin.onze@gmail.com"
 
 
 # Constants
-HOUDINI_STYLE_FILE = Path(__file__).parent / "qss" / "style.qss"
-COLORS_FILE = Path(__file__).parent / "style.jsonc"
+HOUDINI_STYLE_FILE = Path(__file__).parent / "qss" / "houdini_style.qss"
+COLOR_FILE = Path(__file__).parent / "style.jsonc"
 
 # Globals
 _colors = None
 
 
-class _VFXProxyStyle(QProxyStyle):
+class VFXProxyStyle(QProxyStyle):
     """A custom style class that extends QProxyStyle to provide custom icons."""
 
     def __init__(self, *args, **kwargs):
@@ -65,7 +64,7 @@ class _VFXProxyStyle(QProxyStyle):
             QIcon: The icon for the standardIcon. If no custom icon is found, the default icon is returned.
         """
 
-        colors_dict = style.load_colors_from_jsonc()
+        colors_dict = load_colors_from_jsonc()
 
         STANDARD_ICON_MAP = {
             QStyle.SP_ArrowBack: ("arrow_back", self.icon_color),
@@ -153,7 +152,7 @@ class _VFXProxyStyle(QProxyStyle):
 
         icon_name, color = STANDARD_ICON_MAP.get(standardIcon, (None, None))
         if icon_name is not None:
-            return icons.get_pixmap(icon_name, color=color)
+            return fxicons.get_pixmap(icon_name, color=color)
         else:
             return super().standardIcon(standardIcon, option, widget)
 
@@ -214,7 +213,7 @@ def get_current_palette(object: QObject) -> None:
             )
 
 
-def set_dark_palette(object: QObject) -> QPalette:
+def _set_dark_palette(object: QObject) -> QPalette:
     """Set the object palette to a dark theme.
 
     Args:
@@ -285,6 +284,39 @@ def set_dark_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Active, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.NoRole, QColor(0, 0, 0))
+    object.setPalette(palette)
+    return palette
+
+
+def set_dark_palette(object: QObject) -> QPalette:
+    """Set the object palette to a dark theme.
+
+    Args:
+        application (QObject): The QObject (QApplication, QWindow, etc.) to set the palette on.
+
+    Returns:
+        QPalette: The custom palette.
+    """
+
+    palette = QPalette()
+    palette.setColor(QPalette.Window, QColor(53, 53, 53))
+    palette.setColor(QPalette.WindowText, "white")
+    palette.setColor(QPalette.Base, QColor(35, 35, 35))
+    palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+    palette.setColor(QPalette.ToolTipBase, QColor(25, 25, 25))
+    palette.setColor(QPalette.ToolTipText, "white")
+    palette.setColor(QPalette.Text, "white")
+    palette.setColor(QPalette.Button, QColor(53, 53, 53))
+    palette.setColor(QPalette.ButtonText, "white")
+    palette.setColor(QPalette.BrightText, "red")
+    palette.setColor(QPalette.Link, QColor(42, 130, 218))
+    palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
+    palette.setColor(QPalette.HighlightedText, QColor(35, 35, 35))
+    palette.setColor(QPalette.Active, QPalette.Button, QColor(53, 53, 53))
+    palette.setColor(QPalette.Disabled, QPalette.ButtonText, "darkGray")
+    palette.setColor(QPalette.Disabled, QPalette.WindowText, "darkGray")
+    palette.setColor(QPalette.Disabled, QPalette.Text, "darkGray")
+    palette.setColor(QPalette.Disabled, QPalette.Light, QColor(53, 53, 53))
     object.setPalette(palette)
     return palette
 
@@ -364,7 +396,7 @@ def set_light_palette(object: QObject) -> QPalette:
     return palette
 
 
-def set_style(widget: QWidget, style: str = "Fusion") -> _VFXProxyStyle:
+def set_style(widget: QWidget, style: str = "Fusion") -> VFXProxyStyle:
     """Set the style.
 
     Args:
@@ -372,11 +404,11 @@ def set_style(widget: QWidget, style: str = "Fusion") -> _VFXProxyStyle:
         style (str, optional): The style to set. Defaults to "Fusion".
 
     Returns:
-        _VFXProxyStyle: The custom style.
+        VFXProxyStyle: The custom style.
     """
 
     style = QStyleFactory.create("Fusion")
-    custom_style = _VFXProxyStyle(style)
+    custom_style = VFXProxyStyle(style)
     widget.setStyle(custom_style)
 
     return custom_style
@@ -402,11 +434,11 @@ def _remove_comments(text: str) -> str:
     )
 
 
-def load_colors_from_jsonc(jsonc_file: str = COLORS_FILE) -> dict:
+def load_colors_from_jsonc(jsonc_file: str = COLOR_FILE) -> dict:
     """Load colors from a JSONC (JSON with comments) file.
 
     Args:
-        jsonc_file (str): The path to the JSONC file. Defaults to `COLORS_FILE`.
+        jsonc_file (str): The path to the JSONC file. Defaults to `COLOR_FILE`.
 
     Returns:
         dict: A dictionary containing color definitions.
@@ -425,7 +457,7 @@ def load_colors_from_jsonc(jsonc_file: str = COLORS_FILE) -> dict:
 
 def replace_colors(
     stylesheet: str,
-    colors_dict: dict = load_colors_from_jsonc(COLORS_FILE),
+    colors_dict: dict = load_colors_from_jsonc(COLOR_FILE),
     prefix="",
 ) -> str:
     """_summary_
@@ -433,7 +465,7 @@ def replace_colors(
     Args:
         stylesheet (str): The stylesheet to replace the colors in.
         colors_dict (dict, optional): The dict to use to search for colors to be
-            replaced. Defaults to `load_colors_from_jsonc(COLORS_FILE)`.
+            replaced. Defaults to `load_colors_from_jsonc(COLOR_FILE)`.
         prefix (str, optional): The identifier prefix for colors to be replaced.
             Defaults to `""`.
 
@@ -444,4 +476,89 @@ def replace_colors(
     placeholders = {f"@{prefix}{key}": value for key, value in colors_dict.items() if not isinstance(value, dict)}
     for placeholder, color in placeholders.items():
         stylesheet = stylesheet.replace(placeholder, color)
+    return stylesheet
+
+
+def _load_stylesheet(style_file: str = HOUDINI_STYLE_FILE, color_file: str = COLOR_FILE) -> Optional[str]:
+    """Load and process the stylesheet.
+
+    This function loads a stylesheet from a QSS file and applies color
+    replacements based on the definitions in `style.jsonc` file. It also
+    replaces certain placeholders with their corresponding values.
+
+    Args:
+        style_file (str, optional): The path to the QSS file. Defaults to `HOUDINI_STYLE_FILE`.
+        color_file (str, optional): The path to the JSONC file containing color definitions. Defaults to `COLOR_FILE`.
+
+    Returns:
+        Optional[str]: The processed stylesheet content, or `None` if the file(s) don't exist.
+    """
+
+    if not os.path.exists(style_file):
+        return None
+
+    if not os.path.exists(color_file):
+        return None
+
+    with open(style_file, "r") as in_file:
+        stylesheet = in_file.read()
+
+    colors_dict = load_colors_from_jsonc(color_file)
+
+    # Perform color replacements
+    stylesheet = replace_colors(stylesheet, colors_dict)
+
+    # Replace icons path
+    stylesheet = stylesheet.replace("qss:", os.path.dirname(__file__).replace("\\", "/") + "/")
+
+    return stylesheet
+
+
+def load_houdini_stylesheet(
+    style_file: str = HOUDINI_STYLE_FILE,
+):
+    """Load the stylesheet and replace some part of the given QSS file to
+    make them work in Houdini.
+
+    Args:
+        style_file (str, optional): The path to the QSS file. Defaults to `HOUDINI_STYLE_FILE`.
+
+    Returns:
+        str: The stylesheet with the right elements replaced.
+    """
+
+    if not os.path.exists(style_file):
+        return "None"
+
+    with open(style_file, "r") as in_file:
+        stylesheet = in_file.read()
+
+    stylesheet_path = os.path.dirname(style_file)
+    stylesheet_path = stylesheet_path.replace("\\", "/") + "/"
+
+    replace = {
+        "qss:": stylesheet_path,
+        "@white": "#cccccc",
+        "@houdini_orange": "#f57900",
+        "@houdini_orange_menu": "#b36600",
+        "@houdini_hover": "#493c25",
+        "@houdini_selected": "#605032",
+        "@houdini_dark_blue": "#4f647a",
+        "@houdini_light_blue": "#7b94ae",
+        "@grey_10": "#e2e2e2",
+        "@grey_20": "#c6c6c6",
+        "@grey_30": "#ababab",
+        "@grey_40": "#919191",
+        "@grey_50": "#777777",
+        "@grey_60": "#5e5e5e",
+        "@grey_70": "#474747",
+        "@grey_75": "#3d3d3d",
+        "@grey_80": "#303030",
+        "@grey_85": "#212121",
+        "@grey_90": "#1b1b1b",
+    }
+
+    for key, value in replace.items():
+        stylesheet = stylesheet.replace(key, value)
+
     return stylesheet

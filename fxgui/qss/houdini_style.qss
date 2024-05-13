@@ -1,4 +1,4 @@
-/* Custom stylesheet.
+/* Stylesheet for Houdini.
 
 author = "Valentin Beaumont"
 email = "valentin.onze@gmail.com"
@@ -6,7 +6,7 @@ email = "valentin.onze@gmail.com"
 
 /*# TAB BAR ##################################################################*/
 
-QTabWidget::pane {
+/* QTabWidget::pane {
     background-color: transparent;
     position: absolute;
 }
@@ -16,7 +16,6 @@ QTabWidget::pane:bottom,
 QTabWidget::pane:left,
 QTabWidget::pane:right {
     border: 0px solid transparent;
-    /* Necessary */
 }
 
 QTabWidget::tab-bar {
@@ -25,24 +24,21 @@ QTabWidget::tab-bar {
 
 QTabBar {
     qproperty-drawBase: 0;
-    /* Important */
     background-color: transparent;
 }
 
 QTabBar {
     border: 0px solid transparent;
-    /* set color for all QTabBars */
     alignment: center;
 }
 
 QDockWidget QTabBar {
     border-color: transparent;
-    /* Set color for all QTabBars but ones created from QDockWidget */
+
 }
 
 QDialog QTabBar {
     border-color: transparent;
-    /* Set color for QTabBars inside Preferences dialog */
 }
 
 QTabBar::tab {
@@ -71,11 +67,11 @@ QTabBar::tab:right {
     min-height: 14ex;
     min-width: 25px;
     padding: 10px 0px 10px 0px;
-}
+} */
 
 /*# LIST WIDGET ##############################################################*/
 
-QListView::item {
+/* QListView::item {
     background: @grey_90;
     border: 3px solid transparent;
     border-radius: 5px;
@@ -89,11 +85,11 @@ QListView::item:hover {
 QListView::item:selected {
     background: @houdini_selected;
     border: 1px solid @houdini_orange;
-}
+} */
 
 /*# TREE WIDGET ##############################################################*/
 
-QTreeWidget::item {
+/* QTreeWidget::item {
     padding: 0 5px;
     height: 30px;
 }
@@ -111,11 +107,52 @@ QTreeView::item:selected {
 QTreeView::branch {
     color: white;
     background: transparent;
-}
+} */
+
+/* Vertical line */
+/* QTreeView::branch:has-siblings: !adjoins-item {
+    border-image: none;
+} */
+
+/* Branch more */
+/* QTreeView::branch:has-siblings:adjoins-item {
+    border-image: none;
+} */
+
+/* Branch end */
+/* QTreeView::branch: !has-children: !has-siblings:adjoins-item {
+    border-image: none;
+} */
+
+/* Branch closed */
+/* QTreeView::branch:has-children: !has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+    border-image: none;
+    image: url("hss:misc/branch_closed_white_24dp.svg");
+} */
+
+/* Branch opened */
+/* QTreeView::branch:open:has-children: !has-siblings,
+QTreeView::branch:open:has-children:has-siblings {
+    border-image: none;
+    image: url("hss:misc/branch_open_white_24dp.svg");
+} */
+
+/* Branch closed on */
+/* QTreeView::branch:has-children: !has-siblings:closed:hover,
+QTreeView::branch:closed:has-children:has-siblings:hover {
+    image: url("hss:misc/branch_closed_white_24dp.svg");
+} */
+
+/* Branch opened on */
+/* QTreeView::branch:open:has-children: !has-siblings:hover,
+QTreeView::branch:open:has-children:has-siblings:hover {
+    image: url("hss:misc/branch_open_white_24dp.svg");
+} */
 
 /*# GROUP BOX ################################################################*/
 
-QGroupBox {
+/* QGroupBox {
     border: 1px solid @grey_85;
     border-top: 25px solid @grey_85;
     border-radius: 0px;
@@ -128,39 +165,38 @@ QGroupBox {
 QGroupBox::title {
     padding: 4 5px;
     background-color: transparent;
-}
+} */
 
 /*# TOOLTIP ##################################################################*/
 
-QToolTip {
+/* QToolTip {
     background-color: @grey_90;
     padding: 5px;
-}
+} */
 
 /*# PROGRESS BAR #############################################################*/
 
-QProgressBar {
+/* QProgressBar {
     max-height: 20px;
-}
+} */
 
 /*# COMBO BOX ################################################################*/
 
-QComboBox {
+/* QComboBox {
     max-height: 20px;
-}
+} */
 
 /*# PUSH BUTTON ##############################################################*/
 
-QPushButton {
-    max-height: 20px;
-    /* min-width: 110px; */
-}
+/* QPushButton {
+    max-height: 20px;/
+} */
 
 /*# LINE EDIT ################################################################*/
 
-QLineEdit {
+/* QLineEdit {
     min-height: 15px;
-}
+} */
 
 /*# MENU BAR #################################################################*/
 

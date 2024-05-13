@@ -4,7 +4,7 @@
 from setuptools import setup, find_packages
 from pathlib import Path
 
-# Metadatas
+# Metadata
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 

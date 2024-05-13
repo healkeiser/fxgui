@@ -1,6 +1,7 @@
 """This module provides functionality for handling icons in a VFX application."""
 
 # Built-in
+import os
 from typing import Optional, Callable
 from pathlib import Path
 from functools import lru_cache
@@ -11,10 +12,7 @@ from qtpy.QtGui import QIcon, QColor, QPainter, QPixmap, QBitmap, QGuiApplicatio
 from qtpy.QtCore import Qt, qVersion
 
 # Internal
-try:
-    import widgets
-except ModuleNotFoundError:
-    from fxgui import widgets
+import fxwidgets
 
 
 ###### CODE ####################################################################
@@ -225,7 +223,8 @@ if __name__ == "__main__":
             """
 
             clipboard = QGuiApplication.clipboard()
-            clipboard.setText(f'QStyle.{name}: ("___", "white"),')
+            # clipboard.setText(f'QStyle.{name}: ("___", "white"),')
+            clipboard.setText(f"self.style().standardIcon(QStyle.{name})")
 
         def create_callback(self, name: str) -> Callable[[bool], None]:
             """Create a callback function for a button click.
@@ -244,12 +243,13 @@ if __name__ == "__main__":
             return lambda checked: self.copy_to_clipboard(name)
 
     # _application = QApplication()
-    _application = widgets.VFXApplication()
+    _application = fxwidgets.VFXApplication()
     _widget = _VFXBuiltInIcons()
-    _window = widgets.VFXWindow()
+    _window = fxwidgets.VFXWindow()
     _window.setCentralWidget(_widget)
     _window.hide_menu_bar()
     _window.hide_toolbar()
     _window.show()
+    _window.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), "icons", "favicon_dark.png")))
     _window.setWindowTitle("Built-in Icons")
     _application.exec_()

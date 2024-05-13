@@ -8,7 +8,7 @@ from typing import Optional, Any
 # Third-party
 from qtpy import QtWidgets
 
-# Metadatas
+# Metadata
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
