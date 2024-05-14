@@ -11,22 +11,22 @@
       
       
       
-        <link rel="prev" href="../splashscreen/">
+        <link rel="prev" href="../fxicons/">
       
       
-        <link rel="next" href="../tree_widget/">
+        <link rel="next" href="../fxutils/">
       
       
       <link rel="icon" href="../images/favicon.svg">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.4">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.22">
     
     
       
-        <title>style - PySide2 VFX Template</title>
+        <title>fxstyle - FXGui</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.50c56a3b.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.732c4fb1.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
@@ -67,7 +67,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="yellow">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pyside2_vfx_template.style" class="md-skip">
+        <a href="#fxgui.fxstyle" class="md-skip">
           Skip to content
         </a>
       
@@ -90,9 +90,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="PySide2 VFX Template" class="md-header__button md-logo" aria-label="PySide2 VFX Template" data-md-component="logo">
+    <a href=".." title="FXGui" class="md-header__button md-logo" aria-label="FXGui" data-md-component="logo">
       
-  <img src="../images/pyside2_vfx_template_logo_white.svg" alt="logo">
+  <img src="../images/fxgui_logo_light.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -103,13 +103,13 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            PySide2 VFX Template
+            FXGui
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              style
+              fxstyle
             
           </span>
         </div>
@@ -122,7 +122,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="yellow"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
@@ -132,7 +132,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="yellow"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
@@ -186,13 +186,13 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/healkeiser/pyside2_vfx_template" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/healkeiser/fxgui" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2Z"/></svg>
   </div>
   <div class="md-source__repository">
-    healkeiser/pyside2_vfx_template
+    healkeiser/fxgui
   </div>
 </a>
       </div>
@@ -237,7 +237,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../actions/" class="md-tabs__link">
+        <a href="../examples/" class="md-tabs__link">
           
   
   Technical
@@ -270,22 +270,22 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="PySide2 VFX Template" class="md-nav__button md-logo" aria-label="PySide2 VFX Template" data-md-component="logo">
+    <a href=".." title="FXGui" class="md-nav__button md-logo" aria-label="FXGui" data-md-component="logo">
       
-  <img src="../images/pyside2_vfx_template_logo_white.svg" alt="logo">
+  <img src="../images/fxgui_logo_light.svg" alt="logo">
 
     </a>
-    PySide2 VFX Template
+    FXGui
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/healkeiser/pyside2_vfx_template" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/healkeiser/fxgui" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2Z"/></svg>
   </div>
   <div class="md-source__repository">
-    healkeiser/pyside2_vfx_template
+    healkeiser/fxgui
   </div>
 </a>
     </div>
@@ -323,14 +323,17 @@
     
     
     
-    
-    
+      
+        
+        
       
       
+        
+      
+    
     
     <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
-        
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
@@ -361,11 +364,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../actions/" class="md-nav__link">
+      <a href="../examples/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    actions
+    examples
   </span>
   
 
@@ -382,11 +385,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../application/" class="md-nav__link">
+      <a href="../fxdcc/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    application
+    fxdcc
   </span>
   
 
@@ -403,74 +406,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../dcc/" class="md-nav__link">
+      <a href="../fxicons/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    dcc
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../icons/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    icons
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../shadows/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    shadows
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../splashscreen/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    splashscreen
+    fxicons
   </span>
   
 
@@ -498,7 +438,7 @@
           
   
   <span class="md-ellipsis">
-    style
+    fxstyle
   </span>
   
 
@@ -509,7 +449,7 @@
         
   
   <span class="md-ellipsis">
-    style
+    fxstyle
   </span>
   
 
@@ -529,16 +469,16 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style" class="md-nav__link">
+  <a href="#fxgui.fxstyle" class="md-nav__link">
     <span class="md-ellipsis">
-      style
+      fxstyle
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.VFXProxyStyle" class="md-nav__link">
+  <a href="#fxgui.fxstyle.VFXProxyStyle" class="md-nav__link">
     <span class="md-ellipsis">
       VFXProxyStyle
     </span>
@@ -548,7 +488,16 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.VFXProxyStyle.standardIcon" class="md-nav__link">
+  <a href="#fxgui.fxstyle.VFXProxyStyle.set_icon_color" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_icon_color
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.VFXProxyStyle.standardIcon" class="md-nav__link">
     <span class="md-ellipsis">
       standardIcon
     </span>
@@ -562,7 +511,16 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.load_colors_from_jsonc" class="md-nav__link">
+  <a href="#fxgui.fxstyle.get_current_palette" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_current_palette
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.load_colors_from_jsonc" class="md-nav__link">
     <span class="md-ellipsis">
       load_colors_from_jsonc
     </span>
@@ -571,7 +529,16 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.replace_colors" class="md-nav__link">
+  <a href="#fxgui.fxstyle.load_houdini_stylesheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      load_houdini_stylesheet
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.replace_colors" class="md-nav__link">
     <span class="md-ellipsis">
       replace_colors
     </span>
@@ -580,18 +547,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.set_application_palette" class="md-nav__link">
+  <a href="#fxgui.fxstyle.set_dark_palette" class="md-nav__link">
     <span class="md-ellipsis">
-      set_application_palette
+      set_dark_palette
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.set_application_style" class="md-nav__link">
+  <a href="#fxgui.fxstyle.set_light_palette" class="md-nav__link">
     <span class="md-ellipsis">
-      set_application_style
+      set_light_palette
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.set_style" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_style
     </span>
   </a>
   
@@ -613,11 +589,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../tree_widget/" class="md-nav__link">
+      <a href="../fxutils/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    tree_widget
+    fxutils
   </span>
   
 
@@ -634,32 +610,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../utils/" class="md-nav__link">
+      <a href="../fxwidgets/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    utils
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../window/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    window
+    fxwidgets
   </span>
   
 
@@ -701,16 +656,16 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style" class="md-nav__link">
+  <a href="#fxgui.fxstyle" class="md-nav__link">
     <span class="md-ellipsis">
-      style
+      fxstyle
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.VFXProxyStyle" class="md-nav__link">
+  <a href="#fxgui.fxstyle.VFXProxyStyle" class="md-nav__link">
     <span class="md-ellipsis">
       VFXProxyStyle
     </span>
@@ -720,7 +675,16 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.VFXProxyStyle.standardIcon" class="md-nav__link">
+  <a href="#fxgui.fxstyle.VFXProxyStyle.set_icon_color" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_icon_color
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.VFXProxyStyle.standardIcon" class="md-nav__link">
     <span class="md-ellipsis">
       standardIcon
     </span>
@@ -734,7 +698,16 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.load_colors_from_jsonc" class="md-nav__link">
+  <a href="#fxgui.fxstyle.get_current_palette" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_current_palette
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.load_colors_from_jsonc" class="md-nav__link">
     <span class="md-ellipsis">
       load_colors_from_jsonc
     </span>
@@ -743,7 +716,16 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.replace_colors" class="md-nav__link">
+  <a href="#fxgui.fxstyle.load_houdini_stylesheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      load_houdini_stylesheet
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.replace_colors" class="md-nav__link">
     <span class="md-ellipsis">
       replace_colors
     </span>
@@ -752,18 +734,27 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.set_application_palette" class="md-nav__link">
+  <a href="#fxgui.fxstyle.set_dark_palette" class="md-nav__link">
     <span class="md-ellipsis">
-      set_application_palette
+      set_dark_palette
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pyside2_vfx_template.style.set_application_style" class="md-nav__link">
+  <a href="#fxgui.fxstyle.set_light_palette" class="md-nav__link">
     <span class="md-ellipsis">
-      set_application_style
+      set_light_palette
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.set_style" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_style
     </span>
   </a>
   
@@ -784,7 +775,7 @@
                   
 
   
-    <a href="https://github.com/healkeiser/pyside2_vfx_template/edit/main/docs/style.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/healkeiser/fxgui/edit/main/docs/fxstyle.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
     </a>
@@ -792,20 +783,20 @@
   
 
 
-  <h1>style</h1>
+  <h1>fxstyle</h1>
 
 <div class="doc doc-object doc-module">
 
 
 
-<a id="pyside2_vfx_template.style"></a>
+<a id="fxgui.fxstyle"></a>
   <div class="doc doc-contents first">
   
       <p>UI stylesheet, HEX colors and others.</p>
 
 
 
-<p><strong>Examples:</strong></p>
+<p><span class="doc-section-title">Examples:</span></p>
     <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">style</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">colors</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">load_colors_from_jsonc</span><span class="p">()</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">houdini_orange</span> <span class="o">=</span> <span class="n">colors</span><span class="p">[</span><span class="s2">&quot;houdini&quot;</span><span class="p">][</span><span class="s2">&quot;main&quot;</span><span class="p">]</span>
@@ -827,7 +818,7 @@
 
 
 
-<h2 id="pyside2_vfx_template.style.VFXProxyStyle" class="doc doc-heading">
+<h2 id="fxgui.fxstyle.VFXProxyStyle" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">VFXProxyStyle</span>
 
 
@@ -836,7 +827,7 @@
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="PySide2.QtWidgets.QProxyStyle">QProxyStyle</span></code></p>
+            Bases: <code><span title="qtpy.QtWidgets.QProxyStyle">QProxyStyle</span></code></p>
 
   
       <p>A custom style class that extends QProxyStyle to provide custom icons.</p>
@@ -859,25 +850,21 @@
 
 
 
-<h3 id="pyside2_vfx_template.style.VFXProxyStyle.standardIcon" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">standardIcon</span>
+<h3 id="fxgui.fxstyle.VFXProxyStyle.set_icon_color" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">set_icon_color</span>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">standardIcon</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">standardIcon</span><span class="p">:</span> <span class="n"><span title="PySide2.QtWidgets.QStyle.StandardPixmap">StandardPixmap</span></span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">option</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="PySide2.QtWidgets.QStyleOption">QStyleOption</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">widget</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="PySide2.QtWidgets.QWidget">QWidget</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="PySide2.QtGui.QIcon">QIcon</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_icon_color</span><span class="p">(</span><span class="n">color</span><span class="p">:</span> <span class="n">str</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Returns an icon for the given standardIcon.</p>
+      <p>Sets the color of the icons.</p>
 
 
 
-  <p><strong>Parameters:</strong></p>
+  <p><span class="doc-section-title">Parameters:</span></p>
   <table>
     <thead>
       <tr>
@@ -888,10 +875,61 @@
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="doc-section-item">
+          <td><code>color</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The color to set the icons to.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="fxgui.fxstyle.VFXProxyStyle.standardIcon" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">standardIcon</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">standardIcon</span><span class="p">(</span><span class="n">standardIcon</span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QStyle.StandardPixmap">StandardPixmap</span></span><span class="p">,</span> <span class="n">option</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="qtpy.QtWidgets.QStyleOption">QStyleOption</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">widget</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtGui.QIcon">QIcon</span></span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Returns an icon for the given standardIcon.</p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
           <td><code>standardIcon</code></td>
           <td>
-                <code><span title="PySide2.QtWidgets.QStyle.StandardPixmap">StandardPixmap</span></code>
+                <code><span title="qtpy.QtWidgets.QStyle.StandardPixmap">StandardPixmap</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -902,10 +940,10 @@
               <em>required</em>
           </td>
         </tr>
-        <tr>
+        <tr class="doc-section-item">
           <td><code>option</code></td>
           <td>
-                <code><span title="PySide2.QtWidgets.QStyleOption">QStyleOption</span></code>
+                <code><span title="qtpy.QtWidgets.QStyleOption">QStyleOption</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -917,10 +955,10 @@ Defaults to <code>None</code>.</p>
                 <code>None</code>
           </td>
         </tr>
-        <tr>
+        <tr class="doc-section-item">
           <td><code>widget</code></td>
           <td>
-                <code><span title="PySide2.QtWidgets.QWidget">QWidget</span></code>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -936,7 +974,7 @@ Defaults to <code>None</code>.</p>
 
 
 
-  <p><strong>Returns:</strong></p>
+  <p><span class="doc-section-title">Returns:</span></p>
   <table>
     <thead>
       <tr>
@@ -945,9 +983,9 @@ Defaults to <code>None</code>.</p>
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="doc-section-item">
 <td><code>QIcon</code></td>          <td>
-                <code><span title="PySide2.QtGui.QIcon">QIcon</span></code>
+                <code><span title="qtpy.QtGui.QIcon">QIcon</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -977,21 +1015,23 @@ Defaults to <code>None</code>.</p>
 
 
 
-<h2 id="pyside2_vfx_template.style.load_colors_from_jsonc" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">load_colors_from_jsonc</span>
+<h2 id="fxgui.fxstyle.get_current_palette" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_current_palette</span>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">load_colors_from_jsonc</span><span class="p">(</span><span class="n">jsonc_file</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="n">COLORS_FILE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dict</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_current_palette</span><span class="p">(</span><span class="nb">object</span><span class="p">:</span> <span class="n"><span title="qtpy.QtCore.QObject">QObject</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Load colors from a JSONC (JSON with comments) file.</p>
+      <p>Prints the current palette of the given Qt object.</p>
+<p>This function retrieves the current palette of the given Qt object and prints
+each color role in each state group in the format <code>QPalette.State, QPalette.Role, QColor(r, g, b)</code>.</p>
 
 
 
-  <p><strong>Parameters:</strong></p>
+  <p><span class="doc-section-title">Parameters:</span></p>
   <table>
     <thead>
       <tr>
@@ -1002,18 +1042,69 @@ Defaults to <code>None</code>.</p>
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="doc-section-item">
+          <td><code>object</code></td>
+          <td>
+                <code><span title="qtpy.QtCore.QObject">QObject</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The Qt object whose palette is to be retrieved.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="fxgui.fxstyle.load_colors_from_jsonc" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">load_colors_from_jsonc</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">load_colors_from_jsonc</span><span class="p">(</span><span class="n">jsonc_file</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="n">COLOR_FILE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">dict</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Load colors from a JSONC (JSON with comments) file.</p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
           <td><code>jsonc_file</code></td>
           <td>
                 <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The path to the JSONC file. Defaults to <code>COLORS_FILE</code>.</p>
+              <p>The path to the JSONC file. Defaults to <code>COLOR_FILE</code>.</p>
             </div>
           </td>
           <td>
-                <code><span title="pyside2_vfx_template.style.COLORS_FILE">COLORS_FILE</span></code>
+                <code><span title="fxgui.fxstyle.COLOR_FILE">COLOR_FILE</span></code>
           </td>
         </tr>
     </tbody>
@@ -1021,7 +1112,7 @@ Defaults to <code>None</code>.</p>
 
 
 
-  <p><strong>Returns:</strong></p>
+  <p><span class="doc-section-title">Returns:</span></p>
   <table>
     <thead>
       <tr>
@@ -1030,7 +1121,7 @@ Defaults to <code>None</code>.</p>
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="doc-section-item">
 <td><code>dict</code></td>          <td>
                 <code>dict</code>
           </td>
@@ -1052,25 +1143,22 @@ Defaults to <code>None</code>.</p>
 
 
 
-<h2 id="pyside2_vfx_template.style.replace_colors" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">replace_colors</span>
+<h2 id="fxgui.fxstyle.load_houdini_stylesheet" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">load_houdini_stylesheet</span>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">replace_colors</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">stylesheet</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">colors_dict</span><span class="p">:</span> <span class="n">dict</span> <span class="o">=</span> <span class="n">load_colors_from_jsonc</span><span class="p">(</span><span class="n">COLORS_FILE</span><span class="p">),</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">str</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">load_houdini_stylesheet</span><span class="p">(</span><span class="n">style_file</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p><em>summary</em></p>
+      <p>Load the stylesheet and replace some part of the given QSS file to
+make them work in Houdini.</p>
 
 
 
-  <p><strong>Parameters:</strong></p>
+  <p><span class="doc-section-title">Parameters:</span></p>
   <table>
     <thead>
       <tr>
@@ -1081,7 +1169,81 @@ Defaults to <code>None</code>.</p>
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="doc-section-item">
+          <td><code>style_file</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The path to the QSS file. Defaults to <code>HOUDINI_STYLE_FILE</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><span class="doc-section-title">Returns:</span></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+<td><code>str</code></td>          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The stylesheet with the right elements replaced.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="fxgui.fxstyle.replace_colors" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">replace_colors</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">replace_colors</span><span class="p">(</span><span class="n">stylesheet</span><span class="p">:</span> <span class="n">str</span><span class="p">,</span> <span class="n">colors_dict</span><span class="p">:</span> <span class="n">dict</span> <span class="o">=</span> <span class="n">load_colors_from_jsonc</span><span class="p">(</span><span class="n">COLOR_FILE</span><span class="p">),</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">str</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p><em>summary</em></p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
           <td><code>stylesheet</code></td>
           <td>
                 <code>str</code>
@@ -1095,7 +1257,7 @@ Defaults to <code>None</code>.</p>
               <em>required</em>
           </td>
         </tr>
-        <tr>
+        <tr class="doc-section-item">
           <td><code>colors_dict</code></td>
           <td>
                 <code>dict</code>
@@ -1103,14 +1265,14 @@ Defaults to <code>None</code>.</p>
           <td>
             <div class="doc-md-description">
               <p>The dict to use to search for colors to be
-replaced. Defaults to <code>load_colors_from_jsonc(COLORS_FILE)</code>.</p>
+replaced. Defaults to <code>load_colors_from_jsonc(COLOR_FILE)</code>.</p>
             </div>
           </td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="pyside2_vfx_template.style.load_colors_from_jsonc" href="#pyside2_vfx_template.style.load_colors_from_jsonc">load_colors_from_jsonc</a>(<span title="pyside2_vfx_template.style.COLORS_FILE">COLORS_FILE</span>)</code>
+                <code><a class="autorefs autorefs-internal" title="fxgui.fxstyle.load_colors_from_jsonc" href="#fxgui.fxstyle.load_colors_from_jsonc">load_colors_from_jsonc</a>(<span title="fxgui.fxstyle.COLOR_FILE">COLOR_FILE</span>)</code>
           </td>
         </tr>
-        <tr>
+        <tr class="doc-section-item">
           <td><code>prefix</code></td>
           <td>
                 <code>str</code>
@@ -1130,7 +1292,7 @@ Defaults to <code>""</code>.</p>
 
 
 
-  <p><strong>Returns:</strong></p>
+  <p><span class="doc-section-title">Returns:</span></p>
   <table>
     <thead>
       <tr>
@@ -1139,7 +1301,7 @@ Defaults to <code>""</code>.</p>
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="doc-section-item">
 <td><code>str</code></td>          <td>
                 <code>str</code>
           </td>
@@ -1161,21 +1323,21 @@ Defaults to <code>""</code>.</p>
 
 
 
-<h2 id="pyside2_vfx_template.style.set_application_palette" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">set_application_palette</span>
+<h2 id="fxgui.fxstyle.set_dark_palette" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">set_dark_palette</span>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">set_application_palette</span><span class="p">(</span><span class="n">application</span><span class="p">:</span> <span class="n"><span title="PySide2.QtWidgets.QApplication">QApplication</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="PySide2.QtGui.QPalette">QPalette</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_dark_palette</span><span class="p">(</span><span class="nb">object</span><span class="p">:</span> <span class="n"><span title="qtpy.QtCore.QObject">QObject</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtGui.QPalette">QPalette</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Set the application palette to a dark theme.</p>
+      <p>Set the object palette to a dark theme.</p>
 
 
 
-  <p><strong>Parameters:</strong></p>
+  <p><span class="doc-section-title">Parameters:</span></p>
   <table>
     <thead>
       <tr>
@@ -1186,14 +1348,14 @@ Defaults to <code>""</code>.</p>
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="doc-section-item">
           <td><code>application</code></td>
           <td>
-                <code><span title="PySide2.QtWidgets.QApplication">QApplication</span></code>
+                <code><span title="qtpy.QtCore.QObject">QObject</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The application to set the palette to.</p>
+              <p>The QObject (QApplication, QWindow, etc.) to set the palette on.</p>
             </div>
           </td>
           <td>
@@ -1205,7 +1367,7 @@ Defaults to <code>""</code>.</p>
 
 
 
-  <p><strong>Returns:</strong></p>
+  <p><span class="doc-section-title">Returns:</span></p>
   <table>
     <thead>
       <tr>
@@ -1214,9 +1376,9 @@ Defaults to <code>""</code>.</p>
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="doc-section-item">
 <td><code>QPalette</code></td>          <td>
-                <code><span title="PySide2.QtGui.QPalette">QPalette</span></code>
+                <code><span title="qtpy.QtGui.QPalette">QPalette</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1236,21 +1398,21 @@ Defaults to <code>""</code>.</p>
 
 
 
-<h2 id="pyside2_vfx_template.style.set_application_style" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">set_application_style</span>
+<h2 id="fxgui.fxstyle.set_light_palette" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">set_light_palette</span>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">set_application_style</span><span class="p">(</span><span class="n">application</span><span class="p">:</span> <span class="n"><span title="PySide2.QtWidgets.QApplication">QApplication</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="pyside2_vfx_template.style.VFXProxyStyle" href="#pyside2_vfx_template.style.VFXProxyStyle">VFXProxyStyle</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_light_palette</span><span class="p">(</span><span class="nb">object</span><span class="p">:</span> <span class="n"><span title="qtpy.QtCore.QObject">QObject</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtGui.QPalette">QPalette</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Set the "Fusion" style in a dark theme.</p>
+      <p>Set the object palette to a light theme.</p>
 
 
 
-  <p><strong>Parameters:</strong></p>
+  <p><span class="doc-section-title">Parameters:</span></p>
   <table>
     <thead>
       <tr>
@@ -1261,14 +1423,14 @@ Defaults to <code>""</code>.</p>
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="doc-section-item">
           <td><code>application</code></td>
           <td>
-                <code><span title="PySide2.QtWidgets.QApplication">QApplication</span></code>
+                <code><span title="qtpy.QtCore.QObject">QObject</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The application to set the style to.</p>
+              <p>The QObject (QApplication, QWindow, etc.) to set the palette on.</p>
             </div>
           </td>
           <td>
@@ -1280,7 +1442,7 @@ Defaults to <code>""</code>.</p>
 
 
 
-  <p><strong>Returns:</strong></p>
+  <p><span class="doc-section-title">Returns:</span></p>
   <table>
     <thead>
       <tr>
@@ -1289,9 +1451,98 @@ Defaults to <code>""</code>.</p>
       </tr>
     </thead>
     <tbody>
-        <tr>
+        <tr class="doc-section-item">
+<td><code>QPalette</code></td>          <td>
+                <code><span title="qtpy.QtGui.QPalette">QPalette</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The custom palette.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="fxgui.fxstyle.set_style" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">set_style</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_style</span><span class="p">(</span><span class="n">widget</span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">,</span> <span class="n">style</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="s1">&#39;Fusion&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="fxgui.fxstyle.VFXProxyStyle" href="#fxgui.fxstyle.VFXProxyStyle">VFXProxyStyle</a></span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Set the style.</p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td><code>widget</code></td>
+          <td>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The QWidget subclass to set the style to.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code>style</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The style to set. Defaults to "Fusion".</p>
+            </div>
+          </td>
+          <td>
+                <code>&#39;Fusion&#39;</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><span class="doc-section-title">Returns:</span></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
 <td><code>VFXProxyStyle</code></td>          <td>
-                <code><a class="autorefs autorefs-internal" title="pyside2_vfx_template.style.VFXProxyStyle" href="#pyside2_vfx_template.style.VFXProxyStyle">VFXProxyStyle</a></code>
+                <code><a class="autorefs autorefs-internal" title="fxgui.fxstyle.VFXProxyStyle" href="#fxgui.fxstyle.VFXProxyStyle">VFXProxyStyle</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1335,7 +1586,7 @@ Defaults to <code>""</code>.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1-2.1-2M12.5 7v5.2l4 2.4-1 1L11 13V7h1.5M11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2v1.8Z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">December 20, 2023</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">May 14, 2024</span>
   </span>
 
     
@@ -1345,7 +1596,7 @@ Defaults to <code>""</code>.</p>
     <span class="md-icon" title="Created">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3h-2Z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">December 20, 2023</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">May 14, 2024</span>
   </span>
 
     
@@ -1365,29 +1616,6 @@ Defaults to <code>""</code>.</p>
   </span>
 
     
-    
-      
-  <span class="md-source-file__fact">
-    
-      
-  <span class="md-icon" title="Contributors">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2Z"/></svg>
-  </span>
-  <span>GitHub</span>
-
-    
-    <nav>
-      
-        <a href="https://github.com/healkeiser" class="md-author" title="@healkeiser">
-          
-          <img src="https://avatars.githubusercontent.com/u/57375180?v=4&size=72" alt="healkeiser">
-        </a>
-      
-      
-      
-    </nav>
-  </span>
-
     
   </aside>
 
@@ -1441,10 +1669,10 @@ Defaults to <code>""</code>.</p>
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "content.code.annotate", "content.tooltips", "content.tabs.link", "content.action.edit"], "search": "../assets/javascripts/workers/search.c011b7c0.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "content.code.annotate", "content.tooltips", "content.tabs.link", "content.action.edit"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.7389ff0e.min.js"></script>
+      <script src="../assets/javascripts/bundle.5cfa9459.min.js"></script>
       
     
   </body>
