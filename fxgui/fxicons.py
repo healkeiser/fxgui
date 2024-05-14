@@ -2,7 +2,7 @@
 
 # Built-in
 import os
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict
 from pathlib import Path
 from functools import lru_cache
 
@@ -12,7 +12,10 @@ from qtpy.QtGui import QIcon, QColor, QPainter, QPixmap, QBitmap, QGuiApplicatio
 from qtpy.QtCore import Qt, qVersion
 
 # Internal
-import fxwidgets
+try:
+    from fxgui import fxwidgets
+except ModuleNotFoundError:
+    import fxwidgets
 
 
 ###### CODE ####################################################################

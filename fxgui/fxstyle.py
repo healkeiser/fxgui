@@ -11,17 +11,20 @@ Examples:
 import os
 import re
 import json
+import platform
 from pathlib import Path
 from typing import Optional
 
 # Third-party
-import qtpy
 from qtpy.QtCore import QObject
 from qtpy.QtWidgets import QProxyStyle, QStyle, QStyleOption, QWidget, QStyleFactory
 from qtpy.QtGui import QIcon, QPalette, QColor
 
 # Internal
-import fxicons
+try:
+    from fxgui import fxicons
+except ModuleNotFoundError:
+    import fxicons
 
 # Metadata
 __author__ = "Valentin Beaumont"
@@ -32,8 +35,9 @@ __email__ = "valentin.onze@gmail.com"
 
 
 # Constants
-HOUDINI_STYLE_FILE = Path(__file__).parent / "qss" / "houdini_style.qss"
-COLOR_FILE = Path(__file__).parent / "style.jsonc"
+_parent_directory = Path(__file__).parent
+STYLE_FILE = _parent_directory / "qss" / "style.qss"
+COLOR_FILE = _parent_directory / "style.jsonc"
 
 # Globals
 _colors = None
@@ -162,7 +166,9 @@ class VFXProxyStyle(QProxyStyle):
         Args:
             color (str): The color to set the icons to.
         """
+
         self.icon_color = color
+        self.update()
 
 
 def get_current_palette(object: QObject) -> None:
@@ -410,7 +416,6 @@ def set_style(widget: QWidget, style: str = "Fusion") -> VFXProxyStyle:
     style = QStyleFactory.create("Fusion")
     custom_style = VFXProxyStyle(style)
     widget.setStyle(custom_style)
-
     return custom_style
 
 
@@ -455,11 +460,7 @@ def load_colors_from_jsonc(jsonc_file: str = COLOR_FILE) -> dict:
         return _colors
 
 
-def replace_colors(
-    stylesheet: str,
-    colors_dict: dict = load_colors_from_jsonc(COLOR_FILE),
-    prefix="",
-) -> str:
+def replace_colors(stylesheet: str, colors_dict: dict = load_colors_from_jsonc(COLOR_FILE), prefix="") -> str:
     """_summary_
 
     Args:
@@ -479,44 +480,7 @@ def replace_colors(
     return stylesheet
 
 
-def _load_stylesheet(style_file: str = HOUDINI_STYLE_FILE, color_file: str = COLOR_FILE) -> Optional[str]:
-    """Load and process the stylesheet.
-
-    This function loads a stylesheet from a QSS file and applies color
-    replacements based on the definitions in `style.jsonc` file. It also
-    replaces certain placeholders with their corresponding values.
-
-    Args:
-        style_file (str, optional): The path to the QSS file. Defaults to `HOUDINI_STYLE_FILE`.
-        color_file (str, optional): The path to the JSONC file containing color definitions. Defaults to `COLOR_FILE`.
-
-    Returns:
-        Optional[str]: The processed stylesheet content, or `None` if the file(s) don't exist.
-    """
-
-    if not os.path.exists(style_file):
-        return None
-
-    if not os.path.exists(color_file):
-        return None
-
-    with open(style_file, "r") as in_file:
-        stylesheet = in_file.read()
-
-    colors_dict = load_colors_from_jsonc(color_file)
-
-    # Perform color replacements
-    stylesheet = replace_colors(stylesheet, colors_dict)
-
-    # Replace icons path
-    stylesheet = stylesheet.replace("qss:", os.path.dirname(__file__).replace("\\", "/") + "/")
-
-    return stylesheet
-
-
-def load_houdini_stylesheet(
-    style_file: str = HOUDINI_STYLE_FILE,
-):
+def load_houdini_stylesheet(style_file: str = None):
     """Load the stylesheet and replace some part of the given QSS file to
     make them work in Houdini.
 
@@ -560,5 +524,182 @@ def load_houdini_stylesheet(
 
     for key, value in replace.items():
         stylesheet = stylesheet.replace(key, value)
+
+    return stylesheet
+
+
+def _load_stylesheet(style_file: str = STYLE_FILE, color_file: str = COLOR_FILE) -> Optional[str]:
+    """Load and process the stylesheet.
+
+    This function loads a stylesheet from a QSS file and applies color
+    replacements based on the definitions in `style.jsonc` file. It also
+    replaces certain placeholders with their corresponding values.
+
+    Args:
+        style_file (str, optional): The path to the QSS file. Defaults to `HOUDINI_STYLE_FILE`.
+        color_file (str, optional): The path to the JSONC file containing color definitions. Defaults to `COLOR_FILE`.
+
+    Returns:
+        Optional[str]: The processed stylesheet content, or `None` if the file(s) don't exist.
+    """
+
+    if not os.path.exists(style_file):
+        return None
+
+    if not os.path.exists(color_file):
+        return None
+
+    with open(style_file, "r") as in_file:
+        stylesheet = in_file.read()
+
+    colors_dict = load_colors_from_jsonc(color_file)
+
+    # Perform color replacements
+    stylesheet = replace_colors(stylesheet, colors_dict)
+
+    # Replace icons path
+    stylesheet = stylesheet.replace("qss:", os.path.dirname(__file__).replace("\\", "/") + "/")
+
+    return stylesheet
+
+
+def _load_stylesheet(style_file: str = STYLE_FILE):
+    """Load the stylesheet and replace some part of the given QSS file to
+    make them work in Houdini.
+
+    Args:
+        style_file (str, optional): The path to the QSS file. Defaults to `STYLE_FILE`.
+
+    Returns:
+        str: The stylesheet with the right elements replaced.
+    """
+
+    if not os.path.exists(style_file):
+        return "None"
+
+    with open(style_file, "r") as in_file:
+        stylesheet = in_file.read()
+
+    stylesheet_path = os.path.dirname(style_file)
+    stylesheet_path = stylesheet_path.replace("\\", "/") + "/"
+
+    replace = {"@icons": str(Path(__file__).parent / "icons" / "stylesheet").replace("\\", "/")}
+
+    for key, value in replace.items():
+        stylesheet = stylesheet.replace(key, value)
+
+    return stylesheet
+
+
+def _load_stylesheet(style_file: str = STYLE_FILE):
+    """Load the stylesheet and replace some part of the `.qss` file to
+    make them work in Houdini.
+
+    Returns:
+        str:
+            The stylesheet with the right elements replaced.
+    """
+
+    if not os.path.exists(style_file):
+        return "None"
+
+    with open(style_file, "r") as in_file:
+        stylesheet = in_file.read()
+
+    def replace_colors(stylesheet, colors_dict, prefix=""):
+        for key, value in colors_dict.items():
+            if isinstance(value, dict):
+                # Recursively replace nested dictionaries
+                stylesheet = replace_colors(
+                    stylesheet,
+                    value,
+                    f"{prefix.replace(' ', '_')}{key.replace(' ', '_')}_",
+                )
+            else:
+                # Replace color placeholders with their corresponding values
+                placeholder = f"@{prefix}{key}"
+                stylesheet = stylesheet.replace(placeholder, value)
+
+    # Colors
+    # stylesheet = replace_colors(stylesheet, COLORS)
+
+    # Icons
+    stylesheet = stylesheet.replace("~icons", str(_parent_directory / "icons" / "stylesheet").replace("\\", "/"))
+
+    return stylesheet
+
+
+def _load_stylesheet(style_file: str = STYLE_FILE):
+    """Load the stylesheet and replace some part of the given QSS file to
+    make them work in Houdini.
+
+    Args:
+        style_file (str, optional): The path to the QSS file. Defaults to `STYLE_FILE`.
+
+    Returns:
+        str: The stylesheet with the right elements replaced.
+    """
+
+    if not os.path.exists(style_file):
+        return "None"
+
+    with open(style_file, "r") as in_file:
+        stylesheet = in_file.read()
+
+    if platform.system() == "Windows":
+        font_stylesheet = """* {
+            font-family: "Segoe UI";
+        }
+        """
+    elif platform.system() == "Linux":
+        font_stylesheet = """* {
+            font-family: "Open Sans";
+        }
+        """
+    elif platform.system() == "Darwin":
+        font_stylesheet = """* {
+            font-family: "San Francisco";
+        }
+        """
+
+    replace = {
+        "@SelectionHighlight": "#3377a7",
+        "@Hover": "#3d8ec9",
+        "@Pressed": "#3d8ec9",
+        #
+        "@GreyH": "#201F1F",
+        "@GreyA": "#3A3939",
+        "@GreyB": "#2D2C2C",
+        "@GreyC": "#302F2F",
+        "@GreyF": "#404040",
+        "@GreyO": "#403F3F",
+        "@GreyK": "#4A4949",
+        "@GreyJ": "#444",
+        "@GreyI": "#6c6c6c",
+        "@GreyN": "#727272",
+        "@GreyD": "#777777",
+        "@GreyG": "#787876",
+        "@GreyM": "#a8a8a8",
+        "@GreyL": "#b1b1b1",
+        "@GreyE": "#bbb",
+        "@White": "#FFFFFF",
+        #
+        "~icons": str(_parent_directory / "icons" / "stylesheet").replace(os.sep, "/"),
+    }
+
+    for key, value in replace.items():
+        stylesheet = stylesheet.replace(key, value)
+
+    stylesheet = font_stylesheet + stylesheet
+
+    # Get the path to the desktop
+    desktop_path = os.path.join(os.getenv("OneDrive"), "Desktop")
+
+    # Create the full path for the .qss file
+    qss_file_path = os.path.join(desktop_path, "stylesheet.qss").replace(os.sep, "/")
+
+    # Open the .qss file and write the stylesheet to it
+    with open(qss_file_path, "w") as qss_file:
+        qss_file.write(stylesheet)
 
     return stylesheet

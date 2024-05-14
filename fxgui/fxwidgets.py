@@ -9,15 +9,16 @@ from webbrowser import open_new_tab
 from urllib.parse import urlparse
 
 # Third-party
-import qdarktheme
 from qtpy.QtWidgets import *
 from qtpy.QtUiTools import *
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 
 # Internal
-import fxstyle, fxutils, fxicons, fxdcc
-
+try:
+    from fxgui import fxstyle, fxutils, fxicons, fxdcc
+except ModuleNotFoundError:
+    import fxstyle, fxutils, fxicons, fxdcc
 
 ###### CODE ####################################################################
 
@@ -40,18 +41,20 @@ class VFXApplication(QApplication):
         self.parent_package = parent_package
 
         # Styling
-        fxstyle.set_style(self)
-        if self.parent_package == fxdcc.STANDALONE or self.parent_package == None:
-            fxstyle.set_dark_palette(self)
-        elif self.parent_package == fxdcc.HOUDINI:
-            stylesheet = fxstyle.load_houdini_stylesheet(style_file=fxstyle.HOUDINI_STYLE_FILE)
-            self.setStyleSheet(stylesheet)
-        elif self.parent_package == fxdcc.MAYA:
-            pass
-        elif self.parent_package == fxdcc.NUKE:
-            pass
-        else:
-            pass
+        # fxstyle.set_style(self)
+        # if self.parent_package == fxdcc.STANDALONE or self.parent_package == None:
+        #     fxstyle.set_dark_palette(self)
+        # elif self.parent_package == fxdcc.HOUDINI:
+        #     stylesheet = fxstyle.load_houdini_stylesheet(style_file=fxstyle.HOUDINI_STYLE_FILE)
+        #     self.setStyleSheet(stylesheet)
+        # elif self.parent_package == fxdcc.MAYA:
+        #     pass
+        # elif self.parent_package == fxdcc.NUKE:
+        #     pass
+        # else:
+        #     pass
+
+        self.setStyleSheet(fxstyle._load_stylesheet())
 
 
 class VFXSplashScreen(QSplashScreen):
@@ -217,7 +220,7 @@ class VFXSplashScreen(QSplashScreen):
         # Main QFrame
         frame = QFrame(self)
         frame.setGeometry(0, 0, self.pixmap.width() // 2, self.pixmap.height())
-        frame.setStyleSheet("background-color: #232323;")
+        # frame.setStyleSheet("background-color: #232323; color: #f1f3f9;")
         fxutils.add_shadows(self, frame)
 
         # Create a vertical layout for the QFrame
@@ -349,10 +352,8 @@ class VFXWindow(QMainWindow):
                 screen. Defaults to `#039492`.
             ui_file (str, optional): Path to the UI file for loading.
                 Defaults to `None`.
-            parent_package (int, optional): Whether the window is standalone application, or belongs to a DCC parent.
-                This is useful is you're planning to apply a custom stylesheet, since `qdarktheme` will attempt
-                to apply a stylesheet to the `QApplication`, which is not always accessible in a DCC environment.
-                Defaults to `None`.
+            parent_package (int, optional): Whether the window is standalone application, or belongs to a
+                DCC parent.
 
         Attributes:
             window_icon (QIcon): The icon of the window.
@@ -463,7 +464,7 @@ class VFXWindow(QMainWindow):
         super().__init__(parent)
 
         # Attributes
-        self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon.png")
+        self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon_dark.png")
         self.window_icon: QIcon = icon
         self.window_title: str = title
         self.window_size: QSize = size
@@ -482,21 +483,6 @@ class VFXWindow(QMainWindow):
         self.SUCCESS: int = SUCCESS
         self.INFO: int = INFO
 
-        # Styling
-        fxstyle.set_style(self)
-
-        if self.parent_package == fxdcc.STANDALONE or self.parent_package == None:
-            pass
-        elif self.parent_package == fxdcc.HOUDINI:
-            stylesheet = fxstyle.load_houdini_stylesheet(style_file=fxstyle.HOUDINI_STYLE_FILE)
-            self.setStyleSheet(stylesheet)
-        elif self.parent_package == fxdcc.MAYA:
-            pass
-        elif self.parent_package == fxdcc.NUKE:
-            pass
-        else:
-            pass
-
         # Methods
         self._create_actions()
         self._load_ui()
@@ -504,6 +490,7 @@ class VFXWindow(QMainWindow):
         self._set_window_title()
         self._set_window_size()
         self._set_window_flags()
+        self._create_status_line()
         self._create_menu_bar()
         self._create_toolbars()
         self._create_status_bar()
@@ -574,7 +561,7 @@ class VFXWindow(QMainWindow):
         self.about_action = fxutils.create_action(
             self,
             "About",
-            None,
+            fxicons.get_icon("home"),
             self._show_about_dialog,
             enable=True,
             visible=True,
@@ -751,48 +738,9 @@ class VFXWindow(QMainWindow):
         self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
         self.window_menu.addSeparator()
 
-        if self.parent_package == fxdcc.STANDALONE:
-            self._add_switch_theme_in_menu()
-
         # Help menu
         self.help_menu = self.menu_bar.addMenu("&Help")
         self.open_documentation_menu = self.help_menu.addAction(self.open_documentation_action)
-
-    def _add_switch_theme_in_menu(self) -> None:
-        """Add a menu item holding radio buttons to switch themes in the window menu.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        # Create a button group
-        button_group = QButtonGroup(self)
-        layout = QVBoxLayout()
-
-        # Create a radio button for each theme
-        themes = qdarktheme.get_themes()
-        for i, theme in enumerate(themes):
-            radio_button = QRadioButton(theme.capitalize())
-            radio_button.toggled.connect(
-                lambda checked, theme=theme: qdarktheme.setup_theme(theme) if checked else None
-            )
-            button_group.addButton(radio_button)
-            layout.addWidget(radio_button)
-
-            # # Set the first radio button to be checked by default
-            # if i == 0:
-            #     radio_button.setChecked(True)
-
-        # Create a widget to hold the layout
-        widget = QWidget()
-        widget.setLayout(layout)
-
-        # Create a QWidgetAction and set the widget as its default widget
-        theme_action = QWidgetAction(self)
-        theme_action.setDefaultWidget(widget)
-
-        # Add the action to the menu
-        self.window_menu.addAction(theme_action)
 
     def _create_toolbars(self) -> None:
         """Creates the toolbar for the window.
@@ -829,6 +777,30 @@ class VFXWindow(QMainWindow):
         else:
             return QLabel(default)
 
+    def _create_status_line(self, color_a: str = "#cc00cc", color_b: str = "#4ab5cc") -> None:
+        self.line = QFrame(self)
+        self.line.setFrameShape(QFrame.HLine)
+        self.line.setFrameShadow(QFrame.Sunken)
+        self.line.setFixedHeight(3)
+        self.line.setSizePolicy(QSizePolicy.Expanding, self.line.sizePolicy().verticalPolicy())
+        self.line.setStyleSheet(
+            f"""
+            QFrame {{
+                background-color: QLinearGradient( x1: 0, y1: 0, x2: 1, y2: 0, stop:0 {color_a}, stop:1 {color_b});
+                border: 0px solid transparent;
+                border-radius: 0px;
+            }}
+        """
+        )
+        self.line.setSizePolicy(QSizePolicy.Expanding, self.line.sizePolicy().verticalPolicy())
+        central_widget = self.centralWidget()
+        widget = QWidget(self)
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(central_widget)
+        layout.addWidget(self.line)
+        self.setCentralWidget(widget)
+
     def _create_status_bar(self) -> None:
         """Creates the status bar for the window.
 
@@ -846,9 +818,9 @@ class VFXWindow(QMainWindow):
 
         widgets = [
             self.project_label,
-            separator_left,
+            # separator_left,
             self.version_label,
-            separator_right,
+            # separator_right,
             self.company_label,
         ]
 

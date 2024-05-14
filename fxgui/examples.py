@@ -1,8 +1,9 @@
-"""Examples on how to use the `ui.qt` module."""
+"""Examples on how to use the `fxgui` module."""
 
 # Built-in
 import os
-import sys
+
+os.environ["QT_API"] = "pyside2"
 
 # Third-party
 from qtpy.QtWidgets import *
@@ -11,7 +12,10 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 
 # Internal
-import fxwidgets, fxutils, fxdcc
+try:
+    from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
+except ModuleNotFoundError:
+    import fxwidgets, fxutils, fxdcc, fxstyle
 
 
 ###### CODE ####################################################################
@@ -32,11 +36,13 @@ def show_window_houdini():
 def show_floating_dialog_houdini():
     """An example VFXFloatingDialog launched from inside Houdini."""
 
+    import hou
+
     houdini_window = fxdcc.get_dcc_main_window()
     floating_dialog = fxwidgets.VFXFloatingDialog(parent=houdini_window)
 
     # Set icon
-    icon = None
+    icon = hou.qt.Icon("MISC_python")
     pixmap = fxutils.convert_qicon_to_qpixmap(icon, QSize(10, 100))
     floating_dialog.set_dialog_icon(pixmap)
 
@@ -74,7 +80,7 @@ def show_window():
     application = fxwidgets.VFXApplication()
     window = fxwidgets.VFXWindow(ui_file=_ui_file)
     window.show()
-    sys.exit(application.exec_())
+    application.exec_()
 
 
 def show_floating_dialogue():
@@ -92,8 +98,6 @@ def main(show_delayed: bool = False):
 
     # Initialize the QApplication
     application = fxwidgets.VFXApplication()
-
-    # show_floating_dialogue()
 
     # Initialize window for splashscreen
     window = fxwidgets.VFXWindow(ui_file=_ui_file, parent_package=fxdcc.STANDALONE)
@@ -161,7 +165,7 @@ def main(show_delayed: bool = False):
 
     window.refresh_action.triggered.connect(refresh)
 
-    sys.exit(application.exec_())
+    application.exec_()
 
 
 if __name__ == "__main__":

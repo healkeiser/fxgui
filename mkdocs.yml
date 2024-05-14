@@ -36,7 +36,7 @@ theme:
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: black
-      accent: yellow
+      accent: blue
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
@@ -44,7 +44,7 @@ theme:
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: black
-      accent: yellow
+      accent: blue
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -112,9 +112,9 @@ plugins:
 nav:
   - Home: index.md
   - Technical:
-      - dcc: dcc.md
       - examples: examples.md
-      - icons: icons.md
-      - style: style.md
-      - utils: utils.md
-      - widgets: widgets.md
+      - fxdcc: fxdcc.md
+      - fxicons: fxicons.md
+      - fxstyle: fxstyle.md
+      - fxutils: fxutils.md
+      - fxwidgets: fxwidgets.md
