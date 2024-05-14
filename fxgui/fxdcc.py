@@ -1,4 +1,4 @@
-"""Utility functions for retrieving main windows of DCC applications."""
+"""Utility functions related to DCC packages."""
 
 # Built-in
 import shiboken2

@@ -54,7 +54,7 @@ class VFXApplication(QApplication):
         # else:
         #     pass
 
-        self.setStyleSheet(fxstyle._load_stylesheet())
+        self.setStyleSheet(fxstyle.load_stylesheet())
 
 
 class VFXSplashScreen(QSplashScreen):
@@ -317,6 +317,23 @@ class VFXSplashScreen(QSplashScreen):
             self._fade_in()
 
 
+class _VFXStatusBar(QStatusBar):
+    # TODO: Implement a custom status bar
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.label = QLabel()
+        self.label.setTextFormat(Qt.RichText)
+        self.addWidget(self.label)
+
+    def showMessage(self, message, severity_prefix, time=True):
+        message_prefix = f"<b>{severity_prefix}</b>: {self._get_current_time()} - " if time else f"{severity_prefix}: "
+        self.label.setText(message_prefix + message)
+        super().showMessage(message)
+
+    def _get_current_time(self):
+        pass
+
+
 class VFXWindow(QMainWindow):
     def __init__(
         self,
@@ -418,6 +435,8 @@ class VFXWindow(QMainWindow):
             home_toolbar (QAction): The "Home" toolbar item.
             about_dialog (QDialog): The "About" dialog.
 
+            status_line (QFrame): A custom status line resting on top of the status bar.
+
             status_bar (QStatusBar): The status bar of the window.
             project_label (QLabel): The project label in the status bar.
             version_label (QLabel): The version label in the status bar.
@@ -425,8 +444,8 @@ class VFXWindow(QMainWindow):
 
         Examples:
             Outside a DCC
-            >>> app = QApplication(sys.argv)
-            >>> _window = VFXWindow(
+            >>> application = fxgui.VFXApplication()
+            >>> window = vfxwidgets.VFXWindow(
             ...     icon="path/to/icon.png",
             ...     title="My Custom Window",
             ...     size=(800, 600),
@@ -435,30 +454,30 @@ class VFXWindow(QMainWindow):
             ...     version="v1.0.0",
             ...     ui_file="path/to/ui_file.ui",
             ... )
-            >>> _window.show()
-            >>> _window.set_statusbar_message("Window initialized", window.INFO)
+            >>> window.show()
+            >>> window.set_statusbar_message("Window initialized", window.INFO)
             >>> sys.exit(app.exec_())
 
             Inside a DCC (Houdini)
-            >>> houdini_window = dcc.get_houdini_main_window()
-            >>> houdini_style = dcc.get_houdini_stylesheet()
-            >>> _window = window.VFXWindow(
+            >>> houdini_window = fxdcc.get_houdini_main_window()
+            >>> houdini_style = fxdcc.get_houdini_stylesheet()
+            >>> window = fxwidgets.VFXWindow(
             ...    parent=houdini_window,
             ...    ui_file="path/to/ui_file.ui",
             ...   )
-            >>> _window.show()
-            >>> _window.set_statusbar_message("Window initialized", window.INFO)
+            >>> window.show()
+            >>> window.set_statusbar_message("Window initialized", window.INFO)
 
             Hide toolbar and menu bar
-            >>> houdini_window = dcc.get_houdini_main_window()
-            >>> houdini_style = dcc.get_houdini_stylesheet()
-            >>> _window = window.VFXWindow(
+            >>> houdini_window = fxdcc.get_houdini_main_window()
+            >>> houdini_style = fxdcc.get_houdini_stylesheet()
+            >>> window = fxwidgets.VFXWindow(
             ...    parent=houdini_window,
             ...    ui_file="path/to/ui_file.ui",
             ...   )
-            >>> _window.show()
-            >>> _window.hide_toolbar()
-            >>> _window.hide_menu_bar()
+            >>> window.show()
+            >>> window.hide_toolbar()
+            >>> window.hide_menu_bar()
         """
 
         super().__init__(parent)
@@ -561,16 +580,25 @@ class VFXWindow(QMainWindow):
         self.about_action = fxutils.create_action(
             self,
             "About",
-            fxicons.get_icon("home"),
+            fxicons.get_icon("support"),
             self._show_about_dialog,
             enable=True,
+            visible=True,
+        )
+
+        self.check_updates_action = fxutils.create_action(
+            self,
+            "Check for Updates...",
+            None,
+            None,
+            enable=False,
             visible=True,
         )
 
         self.hide_action = fxutils.create_action(
             self,
             "Hide",
-            None,
+            fxicons.get_icon("visibility_off"),
             self.hide,
             enable=False,
             visible=True,
@@ -580,7 +608,7 @@ class VFXWindow(QMainWindow):
         self.hide_others_action = fxutils.create_action(
             self,
             "Hide Others",
-            None,
+            fxicons.get_icon("disabled_visible"),
             None,
             enable=False,
             visible=True,
@@ -594,15 +622,6 @@ class VFXWindow(QMainWindow):
             enable=True,
             visible=True,
             shortcut="Ctrl+Alt+q",
-        )
-
-        self.check_updates_action = fxutils.create_action(
-            self,
-            "Check for Updates...",
-            None,
-            None,
-            enable=False,
-            visible=True,
         )
 
         # Edit menu
@@ -777,28 +796,30 @@ class VFXWindow(QMainWindow):
         else:
             return QLabel(default)
 
-    def _create_status_line(self, color_a: str = "#cc00cc", color_b: str = "#4ab5cc") -> None:
-        self.line = QFrame(self)
-        self.line.setFrameShape(QFrame.HLine)
-        self.line.setFrameShadow(QFrame.Sunken)
-        self.line.setFixedHeight(3)
-        self.line.setSizePolicy(QSizePolicy.Expanding, self.line.sizePolicy().verticalPolicy())
-        self.line.setStyleSheet(
-            f"""
-            QFrame {{
-                background-color: QLinearGradient( x1: 0, y1: 0, x2: 1, y2: 0, stop:0 {color_a}, stop:1 {color_b});
-                border: 0px solid transparent;
-                border-radius: 0px;
-            }}
+    def _create_status_line(self, color_a: str = "#649eff", color_b: str = "#4188ff") -> None:
+        """Creates a custom status line for the window.
+
+        Args:
+            color_a (str, optional): The first color of the gradient. Defaults to `#cc00cc`.
+            color_b (str, optional): The second color of the gradient. Defaults to `#4ab5cc`.
+
+        Note:
+            This method is intended for internal use only.
         """
-        )
-        self.line.setSizePolicy(QSizePolicy.Expanding, self.line.sizePolicy().verticalPolicy())
+
+        self.status_line = QFrame(self)
+        self.status_line.setFrameShape(QFrame.HLine)
+        self.status_line.setFrameShadow(QFrame.Sunken)
+        self.status_line.setFixedHeight(3)
+        self.status_line.setSizePolicy(QSizePolicy.Expanding, self.status_line.sizePolicy().verticalPolicy())
+        self.status_line.setSizePolicy(QSizePolicy.Expanding, self.status_line.sizePolicy().verticalPolicy())
+        self.set_status_line_colors(color_a, color_b)
         central_widget = self.centralWidget()
         widget = QWidget(self)
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(central_widget)
-        layout.addWidget(self.line)
+        layout.addWidget(self.status_line)
         self.setCentralWidget(widget)
 
     def _create_status_bar(self) -> None:
@@ -836,14 +857,13 @@ class VFXWindow(QMainWindow):
         then change the status bar background back to black.
         """
 
-        return  # TODO: Figure out the whole statusbar color change depending on the theme
         if not args:
             self.statusBar().setStyleSheet(
                 """
                 QStatusBar {
                     border: 0px solid transparent;
-                    background: #1b1b1b;
-                    border-top: 1px solid black;
+                    background: #201f1f;
+                    border-top: 1px solid #2a2929;
                 }
             """
             )
@@ -1029,6 +1049,34 @@ class VFXWindow(QMainWindow):
 
         self.menu_bar.show()
 
+    def hide_status_line(self) -> None:
+        """Hide the status line."""
+
+        self.status_line.hide()
+
+    def show_status_line(self) -> None:
+        """Show the status line."""
+
+        self.status_line.show()
+
+    def set_status_line_colors(self, color_a: str, color_b: str) -> None:
+        """Set the colors of the status line.
+
+        Args:
+            color_a (str): The first color of the gradient.
+            color_b (str): The second color of the gradient.
+        """
+
+        self.status_line.setStyleSheet(
+            f"""
+            QFrame {{
+                background-color: QLinearGradient( x1: 0, y1: 0, x2: 1, y2: 0, stop:0 {color_a}, stop:1 {color_b});
+                border: 0px solid transparent;
+                border-radius: 0px;
+            }}
+        """
+        )
+
     def hide_statusbar(self) -> None:
         """Hide the status bar."""
 
@@ -1046,7 +1094,7 @@ class VFXWindow(QMainWindow):
         duration: float = 2.5,
         time: bool = True,
         logger: Optional[logging.Logger] = None,
-        set_color: bool = False,
+        set_color: bool = True,
     ) -> None:
         """Display a message in the status bar with a specified severity.
 
@@ -1061,7 +1109,8 @@ class VFXWindow(QMainWindow):
                 the message. Defaults to `True`.
             logger (Logger, optional): A logger object to log the message.
                 Defaults to `None`.
-            set_color (bool)
+            set_color (bool): Wheter to set the status bar color depending on the log
+                verbosity. Defaults to `True`.
 
         Examples:
             To display a critical error message with a red background
@@ -1120,7 +1169,7 @@ class VFXWindow(QMainWindow):
         ) = severity_mapping[severity_type]
 
         # Message
-        message_prefix = f"{severity_prefix}: {self._get_current_time()} - " if time else f"{severity_prefix}: "
+        message_prefix = f"<b>{severity_prefix}</b>: {self._get_current_time()} - " if time else f"{severity_prefix}: "
         notification_message = f"{message_prefix} {message}"
         self.statusBar().showMessage(notification_message, duration * 1000)
 

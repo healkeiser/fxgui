@@ -2,6 +2,9 @@
 
 # Built-in
 import os
+
+os.environ["QT_API"] = "pyside2"
+
 from typing import Optional, Callable, Dict
 from pathlib import Path
 from functools import lru_cache
@@ -245,14 +248,17 @@ if __name__ == "__main__":
 
             return lambda checked: self.copy_to_clipboard(name)
 
-    # _application = QApplication()
-    _application = fxwidgets.VFXApplication()
-    _widget = _VFXBuiltInIcons()
-    _window = fxwidgets.VFXWindow()
-    _window.setCentralWidget(_widget)
-    _window.hide_menu_bar()
-    _window.hide_toolbar()
-    _window.show()
-    _window.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), "icons", "favicon_dark.png")))
-    _window.setWindowTitle("Built-in Icons")
-    _application.exec_()
+    import fxstyle
+
+    application = fxwidgets.VFXApplication()
+    # application.setStyle(fxstyle.VFXProxyStyle())
+    # widget = _VFXBuiltInIcons()
+    window = fxwidgets.VFXWindow()
+    # window.setCentralWidget(widget)
+    # window.hide_menu_bar()
+    # window.hide_toolbar()
+    window.show()
+    # window.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), "icons", "favicon_dark.png")))
+    window.setWindowTitle("Built-in Icons")
+
+    application.exec_()

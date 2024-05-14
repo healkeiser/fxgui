@@ -16,24 +16,28 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractButton, QApplication, QCheckBox, QComboBox,
-    QDialogButtonBox, QDoubleSpinBox, QFontComboBox, QFrame,
-    QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
-    QLabel, QLineEdit, QListView, QListWidget,
-    QListWidgetItem, QPlainTextEdit, QProgressBar, QPushButton,
-    QRadioButton, QScrollBar, QSizePolicy, QSlider,
-    QSpacerItem, QSpinBox, QTabWidget, QTableView,
-    QTextBrowser, QToolBox, QTreeWidget, QTreeWidgetItem,
-    QVBoxLayout, QWidget)
+    QDialogButtonBox, QDockWidget, QDoubleSpinBox, QFontComboBox,
+    QFrame, QGridLayout, QGroupBox, QHBoxLayout,
+    QHeaderView, QLabel, QLineEdit, QListView,
+    QListWidget, QListWidgetItem, QPlainTextEdit, QProgressBar,
+    QPushButton, QRadioButton, QScrollBar, QSizePolicy,
+    QSlider, QSpacerItem, QSpinBox, QTabWidget,
+    QTableView, QTextBrowser, QToolBox, QTreeWidget,
+    QTreeWidgetItem, QVBoxLayout, QWidget)
 
 class Ui_Form(object):
     def setupUi(self, Form):
         if not Form.objectName():
             Form.setObjectName(u"Form")
-        Form.resize(859, 584)
+        Form.resize(1307, 935)
         self.verticalLayout = QVBoxLayout(Form)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.tabWidget = QTabWidget(Form)
         self.tabWidget.setObjectName(u"tabWidget")
+        self.tabWidget.setDocumentMode(False)
+        self.tabWidget.setTabsClosable(True)
+        self.tabWidget.setMovable(True)
+        self.tabWidget.setTabBarAutoHide(False)
         self.tab = QWidget()
         self.tab.setObjectName(u"tab")
         self.gridLayout = QGridLayout(self.tab)
@@ -203,10 +207,11 @@ class Ui_Form(object):
         self.tab_3.setObjectName(u"tab_3")
         self.gridLayout_3 = QGridLayout(self.tab_3)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.textBrowser = QTextBrowser(self.tab_3)
-        self.textBrowser.setObjectName(u"textBrowser")
+        self.radioButton_2 = QRadioButton(self.tab_3)
+        self.radioButton_2.setObjectName(u"radioButton_2")
+        self.radioButton_2.setEnabled(False)
 
-        self.gridLayout_3.addWidget(self.textBrowser, 1, 0, 1, 2)
+        self.gridLayout_3.addWidget(self.radioButton_2, 4, 0, 1, 1)
 
         self.checkBox_3 = QCheckBox(self.tab_3)
         self.checkBox_3.setObjectName(u"checkBox_3")
@@ -226,11 +231,15 @@ class Ui_Form(object):
 
         self.gridLayout_3.addWidget(self.progressBar, 2, 0, 1, 2)
 
-        self.radioButton_2 = QRadioButton(self.tab_3)
-        self.radioButton_2.setObjectName(u"radioButton_2")
-        self.radioButton_2.setEnabled(False)
+        self.textBrowser = QTextBrowser(self.tab_3)
+        self.textBrowser.setObjectName(u"textBrowser")
 
-        self.gridLayout_3.addWidget(self.radioButton_2, 4, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.textBrowser, 1, 0, 1, 2)
+
+        self.radioButton_3 = QRadioButton(self.tab_3)
+        self.radioButton_3.setObjectName(u"radioButton_3")
+
+        self.gridLayout_3.addWidget(self.radioButton_3, 5, 0, 1, 1)
 
         self.checkBox = QCheckBox(self.tab_3)
         self.checkBox.setObjectName(u"checkBox")
@@ -242,16 +251,11 @@ class Ui_Form(object):
 
         self.gridLayout_3.addWidget(self.radioButton, 3, 0, 1, 1)
 
-        self.radioButton_3 = QRadioButton(self.tab_3)
-        self.radioButton_3.setObjectName(u"radioButton_3")
-
-        self.gridLayout_3.addWidget(self.radioButton_3, 5, 0, 1, 1)
-
         self.toolBox = QToolBox(self.tab_3)
         self.toolBox.setObjectName(u"toolBox")
         self.page = QWidget()
         self.page.setObjectName(u"page")
-        self.page.setGeometry(QRect(0, 0, 817, 223))
+        self.page.setGeometry(QRect(0, 0, 1265, 330))
         self.horizontalLayout_2 = QHBoxLayout(self.page)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.groupBox = QGroupBox(self.page)
@@ -298,13 +302,26 @@ class Ui_Form(object):
         self.gridLayout_3.addWidget(self.toolBox, 0, 0, 1, 2)
 
         self.tabWidget.addTab(self.tab_3, "")
+        self.tab_4 = QWidget()
+        self.tab_4.setObjectName(u"tab_4")
+        self.gridLayout_4 = QGridLayout(self.tab_4)
+        self.gridLayout_4.setObjectName(u"gridLayout_4")
+        self.dockWidget = QDockWidget(self.tab_4)
+        self.dockWidget.setObjectName(u"dockWidget")
+        self.dockWidgetContents = QWidget()
+        self.dockWidgetContents.setObjectName(u"dockWidgetContents")
+        self.dockWidget.setWidget(self.dockWidgetContents)
+
+        self.gridLayout_4.addWidget(self.dockWidget, 0, 0, 1, 1)
+
+        self.tabWidget.addTab(self.tab_4, "")
 
         self.verticalLayout.addWidget(self.tabWidget)
 
 
         self.retranslateUi(Form)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(3)
         self.toolBox.setCurrentIndex(0)
 
 
@@ -376,21 +393,22 @@ class Ui_Form(object):
         self.listWidget.setSortingEnabled(__sortingEnabled1)
 
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("Form", u"Tab 2", None))
+        self.radioButton_2.setText(QCoreApplication.translate("Form", u"RadioButton", None))
+        self.checkBox_3.setText(QCoreApplication.translate("Form", u"CheckBox", None))
+        self.checkBox_2.setText(QCoreApplication.translate("Form", u"CheckBox", None))
         self.textBrowser.setHtml(QCoreApplication.translate("Form", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</span></p></body></html>", None))
-        self.checkBox_3.setText(QCoreApplication.translate("Form", u"CheckBox", None))
-        self.checkBox_2.setText(QCoreApplication.translate("Form", u"CheckBox", None))
-        self.radioButton_2.setText(QCoreApplication.translate("Form", u"RadioButton", None))
+        self.radioButton_3.setText(QCoreApplication.translate("Form", u"RadioButton", None))
         self.checkBox.setText(QCoreApplication.translate("Form", u"CheckBox", None))
         self.radioButton.setText(QCoreApplication.translate("Form", u"RadioButton", None))
-        self.radioButton_3.setText(QCoreApplication.translate("Form", u"RadioButton", None))
         self.groupBox.setTitle(QCoreApplication.translate("Form", u"GroupBox", None))
         self.groupBox_2.setTitle(QCoreApplication.translate("Form", u"GroupBox", None))
         self.toolBox.setItemText(self.toolBox.indexOf(self.page), QCoreApplication.translate("Form", u"Page 1", None))
         self.toolBox.setItemText(self.toolBox.indexOf(self.page_2), QCoreApplication.translate("Form", u"Page 2", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), QCoreApplication.translate("Form", u"Tab 3", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), QCoreApplication.translate("Form", u"Page", None))
     # retranslateUi
 

@@ -77,7 +77,13 @@ def show_splashscreen(time: float = 5.0):
 def show_window():
     """Show the window."""
 
+    # Initialize the QApplication
     application = fxwidgets.VFXApplication()
+
+    # Replace default icons on the application
+    style = fxstyle.VFXProxyStyle()
+    application.setStyle(style)
+
     window = fxwidgets.VFXWindow(ui_file=_ui_file)
     window.show()
     application.exec_()
@@ -145,6 +151,8 @@ def main(show_delayed: bool = False):
         lambda: window.set_statusbar_message("Critical message", fxwidgets.CRITICAL)
     )
 
+    fxutils.set_formatted_tooltip(window.ui.button_success, "Success", "This is a success message.")
+
     # Refresh toolbar button
     def refresh():
         # Store original icon
@@ -161,7 +169,7 @@ def main(show_delayed: bool = False):
             window.refresh_action.setIcon(original_icon)
             window.refresh_action.setEnabled(True)
 
-        QTimer.singleShot(2000, restore_icon)
+        QTimer.singleShot(1000, restore_icon)
 
     window.refresh_action.triggered.connect(refresh)
 

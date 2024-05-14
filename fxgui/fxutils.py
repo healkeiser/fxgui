@@ -179,3 +179,19 @@ def filter_tree(
                 for grandchild in range(item.childCount())
             )
             item.setHidden(item.isHidden() or should_hide_parent)
+
+
+def set_formatted_tooltip(widget: QWidget, title: str, tooltip: str) -> None:
+    """Set a formatted tooltip.
+
+    Args:
+        widget (QWidget): The widget to set the tooltip.
+        tooltip (str): The tooltip text.
+
+    Examples:
+        >>> set_formatted_tooltip(self, "This is a <b>formatted</b> tooltip.")
+    """
+
+    tooltip = f"<b>{title}</b><hr>{tooltip}"
+    widget.setToolTip(tooltip)
+    widget.setToolTipDuration(5 * 1000)
