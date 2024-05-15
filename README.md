@@ -82,7 +82,7 @@ Here's how it would like like launched from Houdini and launched as a standalone
 <!-- DOCUMENTATION -->
 ## Documentation
 
-Please read the full documentation [here](https://healkeiser.github.io/pyside2_vfx_template/).
+Please read the full documentation [here](https://healkeiser.github.io/fxgui/).
 
 
 
