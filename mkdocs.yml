@@ -112,6 +112,7 @@ plugins:
 
 nav:
   - Home: index.md
+  - How-to: how_to.md
   - Technical:
       - examples: examples.md
       - fxdcc: fxdcc.md

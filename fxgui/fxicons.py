@@ -250,10 +250,10 @@ if __name__ == "__main__":
 
     import fxstyle
 
-    application = fxwidgets.VFXApplication()
+    application = fxwidgets.FXApplication()
     # application.setStyle(fxstyle.VFXProxyStyle())
     # widget = _VFXBuiltInIcons()
-    window = fxwidgets.VFXWindow()
+    window = fxwidgets.FXMainWindow()
     # window.setCentralWidget(widget)
     # window.hide_menu_bar()
     # window.hide_toolbar()

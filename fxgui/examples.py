@@ -26,20 +26,20 @@ _pixmap = os.path.join(os.path.dirname(__file__), "images", "splash.png")
 
 
 def show_window_houdini():
-    """An example VFXWindow instance launched from inside Houdini."""
+    """An example FXMainWindow instance launched from inside Houdini."""
 
     houdini_window = fxdcc.get_dcc_main_window()
-    window = fxwidgets.VFXWindow(parent=houdini_window, ui_file=_ui_file, parent_package=fxdcc.HOUDINI)
+    window = fxwidgets.FXMainWindow(parent=houdini_window, ui_file=_ui_file)
     window.show()
 
 
 def show_floating_dialog_houdini():
-    """An example VFXFloatingDialog launched from inside Houdini."""
+    """An example FXFloatingDialog launched from inside Houdini."""
 
     import hou
 
     houdini_window = fxdcc.get_dcc_main_window()
-    floating_dialog = fxwidgets.VFXFloatingDialog(parent=houdini_window)
+    floating_dialog = fxwidgets.FXFloatingDialog(parent=houdini_window)
 
     # Set icon
     icon = hou.qt.Icon("MISC_python")
@@ -65,8 +65,8 @@ def show_splashscreen(time: float = 5.0):
         time (float): The time in seconds to show the splashscreen.
     """
 
-    application = fxwidgets.VFXApplication()
-    splashscreen = fxwidgets.VFXSplashScreen(image_path=_pixmap, show_progress_bar=True, fade_in=False)
+    application = fxwidgets.FXApplication()
+    splashscreen = fxwidgets.FXSplashScreen(image_path=_pixmap, show_progress_bar=True, fade_in=False)
     splashscreen.show()
     splashscreen.progress_bar.setValue(75)
     QTimer.singleShot(time * 1000, splashscreen.close)
@@ -78,12 +78,12 @@ def show_window():
     """Show the window."""
 
     # Initialize the QApplication
-    application = fxwidgets.VFXApplication()
+    application = fxwidgets.FXApplication()
 
     # Replace default icons on the application
     style = fxstyle.VFXProxyStyle()
     application.setStyle(style)
-    window = fxwidgets.VFXWindow(ui_file=_ui_file)
+    window = fxwidgets.FXMainWindow(ui_file=_ui_file)
 
     # Buttons in `test.ui` example
     window.ui.button_success.clicked.connect(
@@ -108,7 +108,7 @@ def show_window():
 
 def show_floating_dialogue():
 
-    dialogue = fxwidgets.VFXFloatingDialog(parent_package=fxdcc.STANDALONE)
+    dialogue = fxwidgets.FXFloatingDialog()
     dialogue.show_under_cursor()
 
 
@@ -120,16 +120,16 @@ def main(show_delayed: bool = False):
     """
 
     # Initialize the QApplication
-    application = fxwidgets.VFXApplication()
+    application = fxwidgets.FXApplication()
     application.setStyle(fxstyle.VFXProxyStyle())
 
     # Initialize window now for splashscreen
-    window = fxwidgets.VFXWindow(ui_file=_ui_file, parent_package=fxdcc.STANDALONE)  # 4ab5cc
+    window = fxwidgets.FXMainWindow(ui_file=_ui_file)  # 4ab5cc
     window.set_status_line_colors(color_a="#cc00cc", color_b="#4ab5cc")
     application.processEvents()
 
     # Splashscreen
-    splashscreen = fxwidgets.VFXSplashScreen(image_path=_pixmap, fade_in=False, show_progress_bar=True)
+    splashscreen = fxwidgets.FXSplashScreen(image_path=_pixmap, fade_in=False, show_progress_bar=True)
     application.processEvents()
 
     splashscreen.show()
@@ -178,6 +178,7 @@ def main(show_delayed: bool = False):
         lambda: window.statusBar().showMessage("Critical message", fxwidgets.CRITICAL)
     )
 
+    # Set tooltips on the buttons
     fxutils.set_formatted_tooltip(window.ui.button_success, "Success", "This is a success message.")
 
     # Refresh toolbar button
@@ -196,7 +197,7 @@ def main(show_delayed: bool = False):
             window.refresh_action.setIcon(original_icon)
             window.refresh_action.setEnabled(True)
 
-        QTimer.singleShot(1000, restore_icon)
+        QTimer.singleShot(1 * 1000, restore_icon)
 
     window.refresh_action.triggered.connect(refresh)
 

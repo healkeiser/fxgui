@@ -20,6 +20,7 @@ try:
 except ModuleNotFoundError:
     import fxstyle, fxutils, fxicons, fxdcc
 
+
 ###### CODE ####################################################################
 
 
@@ -31,33 +32,16 @@ SUCCESS = 3
 INFO = 4
 
 
-class VFXApplication(QApplication):
+class FXApplication(QApplication):
     """Customized QApplication class."""
 
-    def __init__(self, parent_package: Optional[int] = None):
+    def __init__(self):
         super().__init__()
-
-        # Attributes
-        self.parent_package = parent_package
-
-        # Styling
-        # fxstyle.set_style(self)
-        # if self.parent_package == fxdcc.STANDALONE or self.parent_package == None:
-        #     fxstyle.set_dark_palette(self)
-        # elif self.parent_package == fxdcc.HOUDINI:
-        #     stylesheet = fxstyle.load_houdini_stylesheet(style_file=fxstyle.HOUDINI_STYLE_FILE)
-        #     self.setStyleSheet(stylesheet)
-        # elif self.parent_package == fxdcc.MAYA:
-        #     pass
-        # elif self.parent_package == fxdcc.NUKE:
-        #     pass
-        # else:
-        #     pass
 
         self.setStyleSheet(fxstyle.load_stylesheet())
 
 
-class VFXSplashScreen(QSplashScreen):
+class FXSplashScreen(QSplashScreen):
     """Customized QSplashScreen class.
 
     Args:
@@ -104,7 +88,7 @@ class VFXSplashScreen(QSplashScreen):
 
     Examples:
         >>> app = QApplication(sys.argv)
-        >>> splash = VFXSplashScreen(
+        >>> splash = FXSplashScreen(
         ...     image_path="path_to_your_image.png",
         ...     title="My Awesome App",
         ...     information="Loading...",
@@ -323,7 +307,7 @@ class VFXSplashScreen(QSplashScreen):
             self._fade_in()
 
 
-class VFXStatusBar(QStatusBar):
+class FXStatusBar(QStatusBar):
     """Customized QStatusBar class.
 
     Args:
@@ -420,7 +404,7 @@ class VFXStatusBar(QStatusBar):
             ... )
 
         Note:
-            You can either use the `VFXWindow` instance to retrieve the verbosity
+            You can either use the `FXMainWindow` instance to retrieve the verbosity
             constants, or the `fxwidgets` module.
         """
 
@@ -547,7 +531,135 @@ class VFXStatusBar(QStatusBar):
             )
 
 
-class VFXWindow(QMainWindow):
+class FXMainWindow(QMainWindow):
+    """Customized QMainWindow class.
+
+    Args:
+        parent (QWidget, optional): Parent widget. Defaults to `hou.qt.mainWindow()`.
+        icon (str, optional): Path to the window icon image. Defaults to `None`.
+        title (str, optional): Title of the window. Defaults to `None`.
+        size (Tuple[int, int], optional): Window size as width and height.
+            Defaults to `None`.
+        flags (Qt.WindowFlags, optional): Window flags. Defaults to `None`.
+        documentation (str, optional): URL to the tool's documentation.
+            Defaults to `None`.
+        version (str, optional): Version label for the window.
+            Defaults to `None`.
+        company (str, optional): Company name for the window.
+            Defaults to `Company`.
+        accent_color (str, optional): Accent color to be applied to the splash
+            screen. Defaults to `#039492`.
+        ui_file (str, optional): Path to the UI file for loading.
+            Defaults to `None`.
+
+    Attributes:
+        window_icon (QIcon): The icon of the window.
+        window_title (str): The title of the window.
+        window_size (QSize): The size of the window.
+        window_flags (Qt.WindowFlags): The window flags.
+        documentation (str): The documentation string.
+        project (str): The project name.
+        version (str): The version string.
+        company (str): The company name.
+        accent_color (str): The accent color.
+        ui_file (str): The UI file path.
+
+        CRITICAL (int): Constant for critical log level.
+        ERROR (int): Constant for error log level.
+        WARNING (int): Constant for warning log level.
+        SUCCESS (int): Constant for success log level.
+        INFO (int): Constant for info log level.
+
+        about_action (QAction): Action for the "About" menu item.
+        hide_action (QAction): Action for the "Hide" menu item.
+        hide_others_action (QAction): Action for the "Hide Others" menu item.
+        close_action (QAction): Action for the "Close" menu item.
+        check_updates_action (QAction): Action for the "Check for Updates..."
+            menu item.
+        settings_action (QAction): Action for the "Settings" menu item.
+        window_on_top_action (QAction): Action for the "Always On Top" menu
+            item.
+        minimize_window_action (QAction): Action for the "Minimize" menu item.
+        maximize_window_action (QAction): Action for the "Maximize" menu item.
+        open_documentation_action (QAction): Action for the "Documentation"
+            menu item.
+        previous_action (QAction): Action for the "Previous" toolbar item.
+        next_action (QAction): Action for the "Next" toolbar item.
+        refresh_action (QAction): Action for the "Refresh" toolbar item.
+        home_action (QAction): Action for the "Home" toolbar item.
+
+        menu_bar (QMenuBar): The menu bar of the window.
+        icon_menu (QMenu): The icon menu of the menu bar.
+        main_menu (QMenu): The main menu of the menu bar.
+        about_menu (QAction): The "About" menu item in the main menu.
+        check_updates_menu (QAction): The "Check for Updates..." menu item in
+            the main menu.
+        close_menu (QAction): The "Close" menu item in the main menu.
+        hide_main_menu (QAction): The "Hide" menu item in the main menu.
+        hide_others_menu (QAction): The "Hide Others" menu item in the main
+            menu.
+        edit_menu (QMenu): The edit menu of the menu bar.
+        settings_menu (QAction): The "Settings" menu item in the edit menu.
+        window_menu (QMenu): The window menu of the menu bar.
+        minimize_menu (QAction): The "Minimize" menu item in the window menu.
+        maximize_menu (QAction): The "Maximize" menu item in the window menu.
+        on_top_menu (QAction): The "Always On Top" menu item in the window menu.
+        help_menu (QMenu): The help menu of the menu bar.
+        open_documentation_menu (QAction): The "Documentation" menu item in the
+            help menu.
+
+        toolbar (QToolBar): The toolbar of the window.
+        previous_toolbar (QAction): The "Previous" toolbar item.
+        next_toolbar (QAction): The "Next" toolbar item.
+        refresh_toolbar (QAction): The "Refresh" toolbar item.
+        home_toolbar (QAction): The "Home" toolbar item.
+        about_dialog (QDialog): The "About" dialog.
+
+        status_line (QFrame): A custom status line resting on top of the status bar.
+
+        status_bar (QStatusBar): The status bar of the window.
+        project_label (QLabel): The project label in the status bar.
+        version_label (QLabel): The version label in the status bar.
+        company_label (QLabel): The company label in the status bar.
+
+    Examples:
+        Outside a DCC
+        >>> application = fxgui.FXApplication()
+        >>> window = vfxwidgets.FXMainWindow(
+        ...     icon="path/to/icon.png",
+        ...     title="My Custom Window",
+        ...     size=(800, 600),
+        ...     documentation="https://my_tool_docs.com",
+        ...     project="Awesome Project",
+        ...     version="v1.0.0",
+        ...     ui_file="path/to/ui_file.ui",
+        ... )
+        >>> window.show()
+        >>> window.set_statusbar_message("Window initialized", window.INFO)
+        >>> sys.exit(app.exec_())
+
+        Inside a DCC (Houdini)
+        >>> houdini_window = fxdcc.get_houdini_main_window()
+        >>> houdini_style = fxdcc.get_houdini_stylesheet()
+        >>> window = fxwidgets.FXMainWindow(
+        ...    parent=houdini_window,
+        ...    ui_file="path/to/ui_file.ui",
+        ...   )
+        >>> window.show()
+        >>> window.set_statusbar_message("Window initialized", window.INFO)
+
+        Hide toolbar and menu bar
+        >>> houdini_window = fxdcc.get_houdini_main_window()
+        >>> houdini_style = fxdcc.get_houdini_stylesheet()
+        >>> window = fxwidgets.FXMainWindow(
+        ...    parent=houdini_window,
+        ...    ui_file="path/to/ui_file.ui",
+        ...   )
+        >>> window.show()
+        >>> window.hide_toolbar()
+        >>> window.hide_menu_bar()
+    """
+
     def __init__(
         self,
         parent: Optional[QWidget] = None,
@@ -561,138 +673,7 @@ class VFXWindow(QMainWindow):
         company: Optional[str] = None,
         accent_color: str = "#039492",
         ui_file: Optional[str] = None,
-        parent_package: Optional[int] = None,
     ):
-        """Customized QMainWindow class.
-
-        Args:
-            parent (QWidget, optional): Parent widget. Defaults to `hou.qt.mainWindow()`.
-            icon (str, optional): Path to the window icon image. Defaults to `None`.
-            title (str, optional): Title of the window. Defaults to `None`.
-            size (Tuple[int, int], optional): Window size as width and height.
-                Defaults to `None`.
-            flags (Qt.WindowFlags, optional): Window flags. Defaults to `None`.
-            documentation (str, optional): URL to the tool's documentation.
-                Defaults to `None`.
-            version (str, optional): Version label for the window.
-                Defaults to `None`.
-            company (str, optional): Company name for the window.
-                Defaults to `Company`.
-            accent_color (str, optional): Accent color to be applied to the splash
-                screen. Defaults to `#039492`.
-            ui_file (str, optional): Path to the UI file for loading.
-                Defaults to `None`.
-            parent_package (int, optional): Whether the window is standalone application, or belongs to a
-                DCC parent.
-
-        Attributes:
-            window_icon (QIcon): The icon of the window.
-            window_title (str): The title of the window.
-            window_size (QSize): The size of the window.
-            window_flags (Qt.WindowFlags): The window flags.
-            documentation (str): The documentation string.
-            project (str): The project name.
-            version (str): The version string.
-            company (str): The company name.
-            accent_color (str): The accent color.
-            ui_file (str): The UI file path.
-
-            CRITICAL (int): Constant for critical log level.
-            ERROR (int): Constant for error log level.
-            WARNING (int): Constant for warning log level.
-            SUCCESS (int): Constant for success log level.
-            INFO (int): Constant for info log level.
-
-            about_action (QAction): Action for the "About" menu item.
-            hide_action (QAction): Action for the "Hide" menu item.
-            hide_others_action (QAction): Action for the "Hide Others" menu item.
-            close_action (QAction): Action for the "Close" menu item.
-            check_updates_action (QAction): Action for the "Check for Updates..."
-                menu item.
-            settings_action (QAction): Action for the "Settings" menu item.
-            window_on_top_action (QAction): Action for the "Always On Top" menu
-                item.
-            minimize_window_action (QAction): Action for the "Minimize" menu item.
-            maximize_window_action (QAction): Action for the "Maximize" menu item.
-            open_documentation_action (QAction): Action for the "Documentation"
-                menu item.
-            previous_action (QAction): Action for the "Previous" toolbar item.
-            next_action (QAction): Action for the "Next" toolbar item.
-            refresh_action (QAction): Action for the "Refresh" toolbar item.
-            home_action (QAction): Action for the "Home" toolbar item.
-
-            menu_bar (QMenuBar): The menu bar of the window.
-            icon_menu (QMenu): The icon menu of the menu bar.
-            main_menu (QMenu): The main menu of the menu bar.
-            about_menu (QAction): The "About" menu item in the main menu.
-            check_updates_menu (QAction): The "Check for Updates..." menu item in
-                the main menu.
-            close_menu (QAction): The "Close" menu item in the main menu.
-            hide_main_menu (QAction): The "Hide" menu item in the main menu.
-            hide_others_menu (QAction): The "Hide Others" menu item in the main
-                menu.
-            edit_menu (QMenu): The edit menu of the menu bar.
-            settings_menu (QAction): The "Settings" menu item in the edit menu.
-            window_menu (QMenu): The window menu of the menu bar.
-            minimize_menu (QAction): The "Minimize" menu item in the window menu.
-            maximize_menu (QAction): The "Maximize" menu item in the window menu.
-            on_top_menu (QAction): The "Always On Top" menu item in the window menu.
-            help_menu (QMenu): The help menu of the menu bar.
-            open_documentation_menu (QAction): The "Documentation" menu item in the
-                help menu.
-
-            toolbar (QToolBar): The toolbar of the window.
-            previous_toolbar (QAction): The "Previous" toolbar item.
-            next_toolbar (QAction): The "Next" toolbar item.
-            refresh_toolbar (QAction): The "Refresh" toolbar item.
-            home_toolbar (QAction): The "Home" toolbar item.
-            about_dialog (QDialog): The "About" dialog.
-
-            status_line (QFrame): A custom status line resting on top of the status bar.
-
-            status_bar (QStatusBar): The status bar of the window.
-            project_label (QLabel): The project label in the status bar.
-            version_label (QLabel): The version label in the status bar.
-            company_label (QLabel): The company label in the status bar.
-
-        Examples:
-            Outside a DCC
-            >>> application = fxgui.VFXApplication()
-            >>> window = vfxwidgets.VFXWindow(
-            ...     icon="path/to/icon.png",
-            ...     title="My Custom Window",
-            ...     size=(800, 600),
-            ...     documentation="https://my_tool_docs.com",
-            ...     project="Awesome Project",
-            ...     version="v1.0.0",
-            ...     ui_file="path/to/ui_file.ui",
-            ... )
-            >>> window.show()
-            >>> window.set_statusbar_message("Window initialized", window.INFO)
-            >>> sys.exit(app.exec_())
-
-            Inside a DCC (Houdini)
-            >>> houdini_window = fxdcc.get_houdini_main_window()
-            >>> houdini_style = fxdcc.get_houdini_stylesheet()
-            >>> window = fxwidgets.VFXWindow(
-            ...    parent=houdini_window,
-            ...    ui_file="path/to/ui_file.ui",
-            ...   )
-            >>> window.show()
-            >>> window.set_statusbar_message("Window initialized", window.INFO)
-
-            Hide toolbar and menu bar
-            >>> houdini_window = fxdcc.get_houdini_main_window()
-            >>> houdini_style = fxdcc.get_houdini_stylesheet()
-            >>> window = fxwidgets.VFXWindow(
-            ...    parent=houdini_window,
-            ...    ui_file="path/to/ui_file.ui",
-            ...   )
-            >>> window.show()
-            >>> window.hide_toolbar()
-            >>> window.hide_menu_bar()
-        """
-
         super().__init__(parent)
 
         # Attributes
@@ -707,7 +688,6 @@ class VFXWindow(QMainWindow):
         self.company: str = company or "\u00A9 Company"
         self.accent_color: str = accent_color
         self.ui_file: str = ui_file
-        self.parent_package = parent_package
 
         self.CRITICAL: int = CRITICAL
         self.ERROR: int = ERROR
@@ -1045,7 +1025,7 @@ class VFXWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        self.vfx_status_bar = VFXStatusBar()
+        self.vfx_status_bar = FXStatusBar()
         self.setStatusBar(self.vfx_status_bar)
 
     def _show_about_dialog(self) -> None:
@@ -1209,7 +1189,7 @@ class VFXWindow(QMainWindow):
 
     # - Public methods
 
-    def statusBar(self) -> VFXStatusBar:
+    def statusBar(self) -> FXStatusBar:
         return self.vfx_status_bar
 
     def hide_toolbar(self) -> None:
@@ -1276,7 +1256,7 @@ class VFXWindow(QMainWindow):
         self.setParent(None)
 
 
-class VFXFloatingDialog(QDialog):
+class FXFloatingDialog(QDialog):
     """A floating dialog that appears at the cursor's position.
     It closes when any mouse button except the right one is pressed.
 
@@ -1338,7 +1318,7 @@ class VFXFloatingDialog(QDialog):
             self.title_widget.setStyleSheet("background-color: #2b2b2b;")
             self.setStyleSheet(
                 """
-                VFXFloatingDialog {
+                FXFloatingDialog {
                     border-top: 1px solid #949494;
                     border-left: 1px solid #949494;
                     border-bottom: 1px solid #262626;
