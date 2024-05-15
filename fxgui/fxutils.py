@@ -181,17 +181,19 @@ def filter_tree(
             item.setHidden(item.isHidden() or should_hide_parent)
 
 
-def set_formatted_tooltip(widget: QWidget, title: str, tooltip: str) -> None:
-    """Set a formatted tooltip.
+def set_formatted_tooltip(widget: QWidget, title: str, tooltip: str, duration: int = 5) -> None:
+    """Set a formatted tooltip. The tooltip will be displayed with a bold title, and a separator line
+    between the title and the tooltip text.
 
     Args:
         widget (QWidget): The widget to set the tooltip.
         tooltip (str): The tooltip text.
+        duration (int): The duration in seconds to show the tooltip. Defaults to `5`.
 
     Examples:
-        >>> set_formatted_tooltip(self, "This is a <b>formatted</b> tooltip.")
+        >>> set_formatted_tooltip(self, "Tooltip", "This is a <b>formatted</b> tooltip.")
     """
 
     tooltip = f"<b>{title}</b><hr>{tooltip}"
     widget.setToolTip(tooltip)
-    widget.setToolTipDuration(5 * 1000)
+    widget.setToolTipDuration(duration * 1000)

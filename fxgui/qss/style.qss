@@ -1265,24 +1265,19 @@ QToolBox::tab:selected { /* Bold selected tabs */
 QStatusBar {
     background-color: @GreyH;
     border-top: 1px solid #2a2929;
-    padding: 2px;
 }
 
 QStatusBar::item {
+    background: transparent;
     border: 1px transparent @GreyA;
 }
 
 QStatusBar QLabel {
-    border: 1px solid @GreyA;
-    padding: 1px;
-    border-radius: 2px;
+    background: transparent;
     margin-top: 2px;
     margin-bottom: 2px;
 }
 
-QStatusBar QLabel:hover {
-    border: 1px solid @ColorA;
-}
 
 QFrame[height="3"], QFrame[width="3"] {
     background-color: @GreyJ;

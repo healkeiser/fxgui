@@ -87,6 +87,7 @@ plugins:
   - git-committers:
       repository: healkeiser/fxgui
       branch: main
+      # token: !!python/object/apply:os.getenv ["GITHUB_API_KEY"]
   - mkdocstrings:
       # custom_templates: templates
       handlers:

@@ -71,8 +71,8 @@ class VFXSplashScreen(QSplashScreen):
             Defaults to a placeholder text.
         show_progress_bar (bool, optional): Whether to display a progress bar.
             Defaults to False.
-        project (str, optional): Project name. Defaults to `N/A`.
-        version (str, optional): Version information. Defaults to `v0.0.0`.
+        project (str, optional): Project name. Defaults to `Project`.
+        version (str, optional): Version information. Defaults to `0.0.0`.
         company (str, optional): Company name. Defaults to `Company`.
         accent_color (str, optional): Accent color to be applied to the splash
             screen. Defaults to `#039492`.
@@ -88,7 +88,7 @@ class VFXSplashScreen(QSplashScreen):
             placeholder Lorem Ipsum text.
         show_progress_bar (bool): Whether to display a progress bar.
             Defaults to `False`.
-        project (str): Project name. Defaults to `N/A`.
+        project (str): Project name. Defaults to `Project`.
         version (str): Version information. Defaults to `v0.0.0`.
         company (str): Company name. Defaults to `Company`.
         accent_color (str): Accent color applied to the splash screen.
@@ -161,13 +161,19 @@ class VFXSplashScreen(QSplashScreen):
         # Methods
         self._grey_overlay()
 
+        # Styling
+        self.setStyleSheet(fxstyle.load_stylesheet())
+
     def progress(self, value, max_range=100):
         for value in range(max_range):
             time.sleep(0.25)
             self.progress_bar.setValue(value)
 
-    def showMessage(self, message):
-        self.info_label.setText(message.capitalize())
+    def showMessage(self, message: str) -> None:
+        # Fake signal to trigger the `messageChanged` event
+        super().showMessage(" ")
+
+        self.info_label.setText(message)
 
     # - Private methods
 
@@ -280,7 +286,7 @@ class VFXSplashScreen(QSplashScreen):
         # Copyright QLabel
         project = self.project if self.project and len(self.project) >= 1 else "Project"
         version = self.version if self.version and len(self.version) >= 1 else "0.0.0"
-        company = self.company if self.company and len(self.company) >= 1 else "Company"
+        company = self.company if self.company and len(self.company) >= 1 else "\u00A9 Company"
 
         self.copyright_label = QLabel(f"{project} | {version} | \u00A9 {company}")
         self.copyright_label.setStyleSheet("font-size: 8pt; qproperty-alignment: AlignBottom;")
@@ -317,21 +323,228 @@ class VFXSplashScreen(QSplashScreen):
             self._fade_in()
 
 
-class _VFXStatusBar(QStatusBar):
-    # TODO: Implement a custom status bar
-    def __init__(self, parent=None):
+class VFXStatusBar(QStatusBar):
+    """Customized QStatusBar class.
+
+    Args:
+        parent (QWidget, optional): Parent widget. Defaults to `None`.
+        project (str, optional): Project name. Defaults to `None`.
+        version (str, optional): Version information. Defaults to `None`.
+        company (str, optional): Company name. Defaults to `None`.
+
+    Attributes:
+        project (str): The project name.
+        version (str): The version string.
+        company (str): The company name.
+        icon_label (QLabel): The icon label.
+        message_label (QLabel): The message label.
+        project_label (QLabel): The project label.
+        version_label (QLabel): The version label.
+        company_label (QLabel): The company label.
+    """
+
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        project: Optional[str] = None,
+        version: Optional[str] = None,
+        company: Optional[str] = None,
+    ):
+
         super().__init__(parent)
-        self.label = QLabel()
-        self.label.setTextFormat(Qt.RichText)
-        self.addWidget(self.label)
 
-    def showMessage(self, message, severity_prefix, time=True):
+        # Attributes
+        self.project = project or "Project"
+        self.version = version or "0.0.0"
+        self.company = company or "\u00A9 Company"
+        self.icon_label = QLabel()
+        self.message_label = QLabel()
+        self.project_label = QLabel(self.project)
+        self.version_label = QLabel(self.version)
+        self.company_label = QLabel(self.company)
+
+        self.message_label.setTextFormat(Qt.RichText)
+
+        left_widgets = [
+            self.icon_label,
+            self.message_label,
+        ]
+
+        right_widgets = [
+            self.project_label,
+            self.version_label,
+            self.company_label,
+        ]
+
+        for widget in left_widgets:
+            self.addWidget(widget)
+            widget.setVisible(False)  # Hide if no message is shown
+
+        for widget in right_widgets:
+            self.addPermanentWidget(widget)
+
+        self.messageChanged.connect(self._on_status_message_changed)
+
+    def showMessage(
+        self,
+        message: str,
+        severity_type: int = 4,
+        duration: float = 2.5,
+        time: bool = True,
+        logger: Optional[logging.Logger] = None,
+        set_color: bool = True,
+    ):
+        """Display a message in the status bar with a specified severity.
+
+        Args:
+            message (str): The message to be displayed.
+            severity_type (int, optional): The severity level of the message.
+                Should be one of `CRITICAL`, `ERROR`, `WARNING`, `SUCCESS`,
+                or `INFO`. Defaults to `INFO`.
+            duration (float, optional): The duration in seconds for which
+                the message should be displayed. Defaults to` 2.5`.
+            time (bool, optional): Whether to display the current time before
+                the message. Defaults to `True`.
+            logger (Logger, optional): A logger object to log the message.
+                Defaults to `None`.
+            set_color (bool): Wheter to set the status bar color depending on the log
+                verbosity. Defaults to `True`.
+
+        Examples:
+            To display a critical error message with a red background
+            >>> self.set_statusbar_message(
+            ...     "Critical error occurred!",
+            ...     severity_type=self.CRITICAL,
+            ...     duration=5,
+            ...     logger=my_logger,
+            ... )
+
+        Note:
+            You can either use the `VFXWindow` instance to retrieve the verbosity
+            constants, or the `fxwidgets` module.
+        """
+
+        # Send fake signal to trigger the `messageChanged` event
+        super().showMessage(" ", timeout=duration * 1000)
+
+        # Show the icon and message label which were hidden at init time
+        self.icon_label.setVisible(True)
+        self.message_label.setVisible(True)
+
+        colors_dict = fxstyle.load_colors_from_jsonc()
+        severity_mapping = {
+            0: (
+                "Critical",
+                fxicons.get_pixmap("gpp_maybe", width=14, color=colors_dict["feedback"]["error"]["light"]),
+                colors_dict["feedback"]["error"]["background"],
+                colors_dict["feedback"]["error"]["dark"],
+            ),
+            1: (
+                "Error",
+                fxicons.get_pixmap("error", width=14, color=colors_dict["feedback"]["error"]["light"]),
+                colors_dict["feedback"]["error"]["background"],
+                colors_dict["feedback"]["error"]["dark"],
+            ),
+            2: (
+                "Warning",
+                fxicons.get_pixmap("warning", width=14, color=colors_dict["feedback"]["warning"]["light"]),
+                colors_dict["feedback"]["warning"]["background"],
+                colors_dict["feedback"]["warning"]["dark"],
+            ),
+            3: (
+                "Success",
+                fxicons.get_pixmap("check_circle", width=14, color=colors_dict["feedback"]["success"]["light"]),
+                colors_dict["feedback"]["success"]["background"],
+                colors_dict["feedback"]["success"]["dark"],
+            ),
+            4: (
+                "Info",
+                fxicons.get_pixmap("info", width=14, color=colors_dict["feedback"]["info"]["light"]),
+                colors_dict["feedback"]["info"]["background"],
+                colors_dict["feedback"]["info"]["dark"],
+            ),
+        }
+
+        (
+            severity_prefix,
+            severity_icon,
+            status_bar_color,
+            status_bar_border_color,
+        ) = severity_mapping[severity_type]
+
+        # Message
         message_prefix = f"<b>{severity_prefix}</b>: {self._get_current_time()} - " if time else f"{severity_prefix}: "
-        self.label.setText(message_prefix + message)
-        super().showMessage(message)
+        notification_message = f"{message_prefix} {message}"
+        self.icon_label.setPixmap(severity_icon)
+        self.message_label.setText(notification_message)
+        # self.clearMessage()
 
-    def _get_current_time(self):
-        pass
+        if set_color:
+            self.setStyleSheet(
+                """QStatusBar {
+            background: """
+                + status_bar_color
+                + """;
+            border-top: 1px solid"""
+                + status_bar_border_color
+                + """;
+            }
+            """
+            )
+
+        # Link `Logger` object
+        if logger is not None:
+            # Modify log level according to severity_type
+            if severity_type == 0:
+                logger.critical(message)
+            if severity_type == 1:
+                logger.warning(message)
+            elif severity_type == 2:
+                logger.error(message)
+            elif severity_type == 3 or severity_type == 4:
+                logger.info(message)
+
+    def clearMessage(self):
+        self.icon_label.clear()
+        self.icon_label.setVisible(False)
+        self.message_label.clear()
+        self.message_label.setVisible(False)
+        super().clearMessage()
+
+    def _get_current_time(self, display_seconds: bool = False, display_date: bool = False) -> str:
+        """Returns the current time as a string.
+
+        Args:
+            display_seconds (bool, optional): Whether to display the seconds.
+                Defaults to `False`.
+            display_date (bool, optional): Whether to display the date.
+                Defaults to `False`.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        format_string = "%H:%M:%S" if display_seconds else "%H:%M"
+        if display_date:
+            format_string = "%Y-%m-%d " + format_string
+        return datetime.now().strftime(format_string)
+
+    def _on_status_message_changed(self, args):
+        """If there are no arguments, which means the message is being removed,
+        then change the status bar background back to black.
+        """
+
+        if not args:
+            self.clearMessage()
+            self.setStyleSheet(
+                """
+                QStatusBar {
+                    border: 0px solid transparent;
+                    background: #201f1f;
+                    border-top: 1px solid #2a2929;
+                }
+            """
+            )
 
 
 class VFXWindow(QMainWindow):
@@ -491,7 +704,7 @@ class VFXWindow(QMainWindow):
         self.documentation: str = documentation
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
-        self.company: str = company or "Company"
+        self.company: str = company or "\u00A9 Company"
         self.accent_color: str = accent_color
         self.ui_file: str = ui_file
         self.parent_package = parent_package
@@ -515,6 +728,9 @@ class VFXWindow(QMainWindow):
         self._create_status_bar()
         self._check_documentation()
         self._add_shadows()
+
+        # Styling
+        self.setStyleSheet(fxstyle.load_stylesheet())
 
     # - Private methods
 
@@ -829,44 +1045,8 @@ class VFXWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        self.project_label = self._generate_label(self.project, "N/A")
-        self.version_label = self._generate_label(self.version, "v0.0.0")
-        self.company_label = self._generate_label(self.company, "\u00A9 Company")
-
-        separator_str = "|"
-        separator_left = QLabel(separator_str)
-        separator_right = QLabel(separator_str)
-
-        widgets = [
-            self.project_label,
-            # separator_left,
-            self.version_label,
-            # separator_right,
-            self.company_label,
-        ]
-
-        for widget in widgets:
-            self.statusBar().addPermanentWidget(widget)
-        self.statusBar().setEnabled(True)
-        self.statusBar().setVisible(True)
-
-        self.statusBar().messageChanged.connect(self._on_status_message_changed)
-
-    def _on_status_message_changed(self, args):
-        """If there are no arguments, which means the message is being removed,
-        then change the status bar background back to black.
-        """
-
-        if not args:
-            self.statusBar().setStyleSheet(
-                """
-                QStatusBar {
-                    border: 0px solid transparent;
-                    background: #201f1f;
-                    border-top: 1px solid #2a2929;
-                }
-            """
-            )
+        self.vfx_status_bar = VFXStatusBar()
+        self.setStatusBar(self.vfx_status_bar)
 
     def _show_about_dialog(self) -> None:
         """Shows the "About" dialog.
@@ -885,9 +1065,9 @@ class VFXWindow(QMainWindow):
         self.about_dialog = QDialog(self)
         self.about_dialog.setWindowTitle("About")
 
-        project_label = self._generate_label(self.project, "N/A")
+        project_label = self._generate_label(self.project, "Project")
         project_label.setAlignment(Qt.AlignCenter)
-        version_label = self._generate_label(self.version, "v0.0.0")
+        version_label = self._generate_label(self.version, "0.0.0")
         version_label.setAlignment(Qt.AlignCenter)
         company_label = self._generate_label(self.company, "\u00A9 Company")
         company_label.setAlignment(Qt.AlignCenter)
@@ -1029,6 +1209,9 @@ class VFXWindow(QMainWindow):
 
     # - Public methods
 
+    def statusBar(self) -> VFXStatusBar:
+        return self.vfx_status_bar
+
     def hide_toolbar(self) -> None:
         """Hide the toolbar."""
 
@@ -1087,117 +1270,6 @@ class VFXWindow(QMainWindow):
 
         self.statusBar().show()
 
-    def set_statusbar_message(
-        self,
-        message: str,
-        severity_type: int = 4,
-        duration: float = 2.5,
-        time: bool = True,
-        logger: Optional[logging.Logger] = None,
-        set_color: bool = True,
-    ) -> None:
-        """Display a message in the status bar with a specified severity.
-
-        Args:
-            message (str): The message to be displayed.
-            severity_type (int, optional): The severity level of the message.
-                Should be one of `CRITICAL`, `ERROR`, `WARNING`, `SUCCESS`,
-                or `INFO`. Defaults to `INFO`.
-            duration (float, optional): The duration in seconds for which
-                the message should be displayed. Defaults to` 2.5`.
-            time (bool, optional): Whether to display the current time before
-                the message. Defaults to `True`.
-            logger (Logger, optional): A logger object to log the message.
-                Defaults to `None`.
-            set_color (bool): Wheter to set the status bar color depending on the log
-                verbosity. Defaults to `True`.
-
-        Examples:
-            To display a critical error message with a red background
-            >>> self.set_statusbar_message(
-            ...     "Critical error occurred!",
-            ...     severity_type=self.CRITICAL,
-            ...     duration=5,
-            ...     logger=my_logger,
-            ... )
-
-        Note:
-            You can either use the window instance to retrieve the verbosity
-            constants, or the window module.
-        """
-
-        # Create dictionnary for verbosity colors
-        colors_dict = fxstyle.load_colors_from_jsonc()
-        severity_mapping = {
-            0: (
-                "Critical",
-                QApplication.style().standardIcon(QStyle.SP_MessageBoxCritical),
-                colors_dict["feedback"]["error"]["background"],
-                colors_dict["feedback"]["error"]["dark"],
-            ),
-            1: (
-                "Error",
-                QApplication.style().standardIcon(QStyle.SP_MessageBoxCritical),
-                colors_dict["feedback"]["error"]["background"],
-                colors_dict["feedback"]["error"]["dark"],
-            ),
-            2: (
-                "Warning",
-                QApplication.style().standardIcon(QStyle.SP_MessageBoxWarning),
-                colors_dict["feedback"]["warning"]["background"],
-                colors_dict["feedback"]["warning"]["dark"],
-            ),
-            3: (
-                "Success",
-                QApplication.style().standardIcon(QStyle.SP_MessageBoxQuestion),
-                colors_dict["feedback"]["success"]["background"],
-                colors_dict["feedback"]["success"]["dark"],
-            ),
-            4: (
-                "Info",
-                QApplication.style().standardIcon(QStyle.SP_MessageBoxInformation),
-                colors_dict["feedback"]["info"]["background"],
-                colors_dict["feedback"]["info"]["dark"],
-            ),
-        }
-
-        (
-            severity_prefix,
-            severity_icon,
-            status_bar_color,
-            status_bar_border_color,
-        ) = severity_mapping[severity_type]
-
-        # Message
-        message_prefix = f"<b>{severity_prefix}</b>: {self._get_current_time()} - " if time else f"{severity_prefix}: "
-        notification_message = f"{message_prefix} {message}"
-        self.statusBar().showMessage(notification_message, duration * 1000)
-
-        if set_color:
-            self.statusBar().setStyleSheet(
-                """QStatusBar {
-            background: """
-                + status_bar_color
-                + """;
-            border-top: 1px solid"""
-                + status_bar_border_color
-                + """;
-            }
-            """
-            )
-
-        # Link `Logger` object
-        if logger is not None:
-            # Modify log level according to severity_type
-            if severity_type == 0:
-                logger.critical(message)
-            if severity_type == 1:
-                logger.warning(message)
-            elif severity_type == 2:
-                logger.error(message)
-            elif severity_type == 3 or severity_type == 4:
-                logger.info(message)
-
     # - Events
 
     def closeEvent(self, event) -> None:
@@ -1205,34 +1277,29 @@ class VFXWindow(QMainWindow):
 
 
 class VFXFloatingDialog(QDialog):
+    """A floating dialog that appears at the cursor's position.
+    It closes when any mouse button except the right one is pressed.
+
+    Args:
+        parent (QtWidget, optional): Parent widget. Defaults to `hou.qt.mainWindow()`.
+        icon (QPixmap): The QPixmap icon.
+        title (str): The dialog title.
+
+    Attributes:
+        dialog_icon (QIcon): The icon of the dialog.
+        dialog_title (str): The title of the dialog.
+        drop_position (QPoint): The drop position of the dialog.
+        dialog_position (Tuple[int, int]): The position of the dialog.
+        parent_package (int): Whether the dialog is standalone application, or belongs to a DCC parent.
+    """
+
     def __init__(
         self,
         parent: Optional[QWidget] = None,
         icon: Optional[QPixmap] = None,
         title: Optional[str] = None,
-        # VFXObject
         parent_package: Optional[int] = None,
     ):
-        """A floating dialog that appears at the cursor's position.
-        It closes when any mouse button except the right one is pressed.
-
-        Args:
-            parent (QtWidget, optional): Parent widget. Defaults to `hou.qt.mainWindow()`.
-            icon (QPixmap): The QPixmap icon.
-            title (str): The dialog title.
-
-        Attributes:
-            dialog_icon (Qicon): _summary_.
-            drop_position (tuple): _summary_.
-            title_widget (QWidget): _summary_.
-            title_label (QLabel): _summary_.
-            title_layout (QLayout): _summary_.
-            main_widget (Qwidget): _summary_.
-            main_layout (QLayout): _summary_.
-            layout (QLayout): _summary_.
-            button_box (QDialogButtonBox): _summary_.
-        """
-
         super().__init__(self, parent)
 
         # Attributes

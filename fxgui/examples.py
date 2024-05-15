@@ -83,8 +83,25 @@ def show_window():
     # Replace default icons on the application
     style = fxstyle.VFXProxyStyle()
     application.setStyle(style)
-
     window = fxwidgets.VFXWindow(ui_file=_ui_file)
+
+    # Buttons in `test.ui` example
+    window.ui.button_success.clicked.connect(
+        lambda: window.statusBar().showMessage("Success message", fxwidgets.SUCCESS)
+    )
+    window.ui.button_info.clicked.connect(
+        lambda: window.statusBar().showMessage("Info message", fxwidgets.INFO),
+    )
+    window.ui.button_warning.clicked.connect(
+        lambda: window.statusBar().showMessage("Warning message", fxwidgets.WARNING)
+    )
+    window.ui.button_error.clicked.connect(
+        lambda: window.statusBar().showMessage("Error message", fxwidgets.ERROR),
+    )
+    window.ui.button_critical.clicked.connect(
+        lambda: window.statusBar().showMessage("Critical message", fxwidgets.CRITICAL)
+    )
+
     window.show()
     application.exec_()
 
@@ -104,9 +121,11 @@ def main(show_delayed: bool = False):
 
     # Initialize the QApplication
     application = fxwidgets.VFXApplication()
+    application.setStyle(fxstyle.VFXProxyStyle())
 
-    # Initialize window for splashscreen
-    window = fxwidgets.VFXWindow(ui_file=_ui_file, parent_package=fxdcc.STANDALONE)
+    # Initialize window now for splashscreen
+    window = fxwidgets.VFXWindow(ui_file=_ui_file, parent_package=fxdcc.STANDALONE)  # 4ab5cc
+    window.set_status_line_colors(color_a="#cc00cc", color_b="#4ab5cc")
     application.processEvents()
 
     # Splashscreen
@@ -116,7 +135,7 @@ def main(show_delayed: bool = False):
     splashscreen.show()
     application.processEvents()
 
-    # Loading process
+    # Fake loading process
     for i in range(101):
         splashscreen.progress_bar.setValue(i)
         QTimer.singleShot(i, application.processEvents)
@@ -137,18 +156,26 @@ def main(show_delayed: bool = False):
     else:
         window.show()
 
-    window.set_statusbar_message("Window initialized", fxwidgets.INFO)
+    window.statusBar().showMessage("Window initialized", fxwidgets.INFO)
     window.hide_toolbar()
 
     application.processEvents()
 
     # Buttons in `test.ui` example
-    window.ui.button_success.clicked.connect(lambda: window.set_statusbar_message("Success message", fxwidgets.SUCCESS))
-    window.ui.button_info.clicked.connect(lambda: window.set_statusbar_message("Info message", fxwidgets.INFO))
-    window.ui.button_warning.clicked.connect(lambda: window.set_statusbar_message("Success message", fxwidgets.WARNING))
-    window.ui.button_error.clicked.connect(lambda: window.set_statusbar_message("Error message", fxwidgets.ERROR))
+    window.ui.button_success.clicked.connect(
+        lambda: window.statusBar().showMessage("Success message", fxwidgets.SUCCESS)
+    )
+    window.ui.button_info.clicked.connect(
+        lambda: window.statusBar().showMessage("Info message", fxwidgets.INFO),
+    )
+    window.ui.button_warning.clicked.connect(
+        lambda: window.statusBar().showMessage("Warning message", fxwidgets.WARNING)
+    )
+    window.ui.button_error.clicked.connect(
+        lambda: window.statusBar().showMessage("Error message", fxwidgets.ERROR),
+    )
     window.ui.button_critical.clicked.connect(
-        lambda: window.set_statusbar_message("Critical message", fxwidgets.CRITICAL)
+        lambda: window.statusBar().showMessage("Critical message", fxwidgets.CRITICAL)
     )
 
     fxutils.set_formatted_tooltip(window.ui.button_success, "Success", "This is a success message.")
