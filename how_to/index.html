@@ -22,7 +22,7 @@
     
     
       
-        <title>How-to - FXGui</title>
+        <title>How-to - fxgui</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="FXGui" class="md-header__button md-logo" aria-label="FXGui" data-md-component="logo">
+    <a href=".." title="fxgui" class="md-header__button md-logo" aria-label="fxgui" data-md-component="logo">
       
   <img src="../images/fxgui_logo_light.svg" alt="logo">
 
@@ -103,7 +103,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            FXGui
+            fxgui
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -287,12 +287,12 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="FXGui" class="md-nav__button md-logo" aria-label="FXGui" data-md-component="logo">
+    <a href=".." title="fxgui" class="md-nav__button md-logo" aria-label="fxgui" data-md-component="logo">
       
   <img src="../images/fxgui_logo_light.svg" alt="logo">
 
     </a>
-    FXGui
+    fxgui
   </label>
   
     <div class="md-nav__source">
@@ -381,6 +381,15 @@
   <a href="#style-an-existing-application" class="md-nav__link">
     <span class="md-ellipsis">
       Style an Existing Application
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apply-the-custom-google-material-icons" class="md-nav__link">
+    <span class="md-ellipsis">
+      Apply the Custom Google Material Icons
     </span>
   </a>
   
@@ -602,6 +611,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#apply-the-custom-google-material-icons" class="md-nav__link">
+    <span class="md-ellipsis">
+      Apply the Custom Google Material Icons
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -628,12 +646,35 @@
   <h1>How-to</h1>
 
 <h2 id="style-an-existing-application">Style an Existing Application</h2>
-<p>In the case where you already have made some custom applications, and don't want to be bothered by subclassing the widgets inside the <a href="../fxwidgets/">fxwidgets</a> module but still wan't all applications to look and feel the same, you can call the <code>fxstyle.load_stylesheet()</code> function and apply the returned stylesheet to your current application/widget.</p>
+<p>In the case where you already have made some custom applications, and don't want to be bothered by subclassing the widgets inside the <a href="../fxwidgets/">fxwidgets</a> module but still want all applications to look and feel the same, you can call the <code>fxstyle.load_stylesheet()</code> function and apply the returned stylesheet to your current application/widget.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">fxgui</span> <span class="kn">import</span> <span class="n">fxstyle</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">application</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">()</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">application</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">load_stylesheet</span><span class="p">())</span>
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can set this stylesheet on a <code>QMainWindow</code>, <code>QWidget</code>, etc.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can pass extra arguments to the <a href="../fxstyle/">load_stylesheet()</a> function.</p>
+</div>
+<h2 id="apply-the-custom-google-material-icons">Apply the Custom Google Material Icons</h2>
+<p>You can find a <code>QProxyStyle</code> subclass in <a href="../fxstyle/">fxstyle</a>, called <code>FXProxyStyle</code>. When used on a <code>QApplication</code> instance, it allows you to switch the defaults icons provided by <code>Qt</code> for Google Material icons.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">fxgui</span> <span class="kn">import</span> <span class="n">fxstyle</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">application</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">()</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">application</span><span class="o">.</span><span class="n">setStyle</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXProxyStyle</span><span class="p">())</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default, the <code>FXApplication</code> found inside <a href="../fxwidgets/">fxwidgets</a> alreayd applies this custom style.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Applying the <code>FXProxyStyle</code> is only allowed on a <code>QApplication</code> instance! So if you're instanciating a <code>FXMainWindow</code> inside a parent DCC, <strong>do not</strong> set the style on it.</p>
+</div>
 
 
 
@@ -656,7 +697,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1-2.1-2M12.5 7v5.2l4 2.4-1 1L11 13V7h1.5M11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2v1.8Z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">May 15, 2024</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">May 16, 2024</span>
   </span>
 
     
