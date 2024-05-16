@@ -9,8 +9,8 @@
 
 <div align="center">
 
-  ![Logo](https://raw.githubusercontent.com/healkeiser/fxgui/main/fxgui/images/fxgui_logo_dark.svg#gh-light-mode-only)
-  ![Logo](https://raw.githubusercontent.com/healkeiser/fxgui/main/fxgui/images/fxgui_logo_light.svg#gh-dark-mode-only)
+  ![Logo](https://raw.githubusercontent.com/healkeiser/fxgui/main/fxgui/images/fxgui_logo_background_dark.svg#gh-light-mode-only)
+  ![Logo](https://raw.githubusercontent.com/healkeiser/fxgui/main/fxgui/images/fxgui_logo_background_light.svg#gh-dark-mode-only)
 
   <h3 align="center">FXGUI</h3>
 
