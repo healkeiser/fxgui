@@ -407,6 +407,7 @@ class FXStatusBar(QStatusBar):
         Note:
             You can either use the `FXMainWindow` instance to retrieve the verbosity
             constants, or the `fxwidgets` module.
+            Overrides the base class method.
         """
 
         # Send fake signal to trigger the `messageChanged` event
@@ -490,6 +491,12 @@ class FXStatusBar(QStatusBar):
                 logger.info(message)
 
     def clearMessage(self):
+        """Clears the message from the status bar.
+
+        Note:
+            Overrides the base class method.
+        """
+
         self.icon_label.clear()
         self.icon_label.setVisible(False)
         self.message_label.clear()
