@@ -548,7 +548,6 @@ class FXMainWindow(QMainWindow):
         title (str, optional): Title of the window. Defaults to `None`.
         size (Tuple[int, int], optional): Window size as width and height.
             Defaults to `None`.
-        flags (Qt.WindowFlags, optional): Window flags. Defaults to `None`.
         documentation (str, optional): URL to the tool's documentation.
             Defaults to `None`.
         version (str, optional): Version label for the window.

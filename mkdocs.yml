@@ -101,6 +101,8 @@ plugins:
           options:
             # paths: [src]
             heading_level: 2
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
             separate_signature: true
             parameter_headings: true
             line_length: 80
