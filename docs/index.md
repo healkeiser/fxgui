@@ -3,9 +3,8 @@
 <div id="top"></div>
 <div align="center">
   <a href="https://github.com/healkeiser/fxgui">
-    <img src="docs/images/fxgui_logo_dark.svg" alt="fxgui" width="100" >
+    <img src="docs/images/fxgui_logo_background_dark.svg" alt="fxgui" width="128" >
   </a>
-
   <p align="center">
     <br/>
   </p>
