@@ -48,7 +48,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../stylesheets/extra.css">
     
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#style-an-existing-application" class="md-skip">
+        <a href="#how-to" class="md-skip">
           Skip to content
         </a>
       
@@ -342,6 +342,8 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -369,6 +371,8 @@
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">
@@ -595,6 +599,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -643,8 +649,7 @@
   
 
 
-  <h1>How-to</h1>
-
+<h1 id="how-to"><span class="twemoji scale-in-center"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12Z"/></svg></span> How-to</h1>
 <h2 id="style-an-existing-application">Style an Existing Application</h2>
 <p>In the case where you already have made some custom applications, and don't want to be bothered by subclassing the widgets inside the <a href="../fxwidgets/">fxwidgets</a> module but still want all applications to look and feel the same, you can call the <code>fxstyle.load_stylesheet()</code> function and apply the returned stylesheet to your current application/widget.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">fxgui</span> <span class="kn">import</span> <span class="n">fxstyle</span>
