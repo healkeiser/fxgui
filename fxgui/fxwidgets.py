@@ -31,8 +31,6 @@ WARNING = 2
 SUCCESS = 3
 INFO = 4
 
-_TEST = None
-
 
 class FXApplication(QApplication):
     """Customized QApplication class."""
@@ -40,6 +38,7 @@ class FXApplication(QApplication):
     def __init__(self):
         super().__init__()
 
+        fxstyle.set_style(self)
         self.setStyleSheet(fxstyle.load_stylesheet())
 
 

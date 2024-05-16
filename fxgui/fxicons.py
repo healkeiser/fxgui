@@ -251,7 +251,7 @@ if __name__ == "__main__":
     import fxstyle
 
     application = fxwidgets.FXApplication()
-    # application.setStyle(fxstyle.VFXProxyStyle())
+    # application.setStyle(fxstyle.FXProxyStyle())
     # widget = _VFXBuiltInIcons()
     window = fxwidgets.FXMainWindow()
     # window.setCentralWidget(widget)

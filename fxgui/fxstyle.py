@@ -43,7 +43,7 @@ COLOR_FILE = _parent_directory / "style.jsonc"
 _colors = None
 
 
-class VFXProxyStyle(QProxyStyle):
+class FXProxyStyle(QProxyStyle):
     """A custom style class that extends QProxyStyle to provide custom icons."""
 
     def __init__(self, *args, **kwargs):
@@ -402,19 +402,25 @@ def set_light_palette(object: QObject) -> QPalette:
     return palette
 
 
-def set_style(widget: QWidget, style: str = "Fusion") -> VFXProxyStyle:
+def set_style(widget: QWidget, style: str = None) -> FXProxyStyle:
     """Set the style.
 
     Args:
         widget (QWidget): The QWidget subclass to set the style to.
-        style (str, optional): The style to set. Defaults to "Fusion".
+        style (str, optional): The style to set. Defaults to `None`.
 
     Returns:
-        VFXProxyStyle: The custom style.
+        FXProxyStyle: The custom style.
+
+    Note:
+        You can retrieve the styles available on your system with `QStyleFactory.keys()`.
+        Only those string values are accepted in the `style` argument.
     """
 
-    style = QStyleFactory.create("Fusion")
-    custom_style = VFXProxyStyle(style)
+    if style is not None:
+        style = QStyleFactory.create(style)
+
+    custom_style = FXProxyStyle(style)
     widget.setStyle(custom_style)
     return custom_style
 

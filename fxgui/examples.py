@@ -81,7 +81,7 @@ def show_window():
     application = fxwidgets.FXApplication()
 
     # Replace default icons on the application
-    style = fxstyle.VFXProxyStyle()
+    style = fxstyle.FXProxyStyle()
     application.setStyle(style)
     window = fxwidgets.FXMainWindow(ui_file=_ui_file)
 
@@ -121,7 +121,7 @@ def main(show_delayed: bool = False):
 
     # Initialize the QApplication
     application = fxwidgets.FXApplication()
-    application.setStyle(fxstyle.VFXProxyStyle())
+    application.setStyle(fxstyle.FXProxyStyle())
 
     # Initialize window now for splashscreen
     window = fxwidgets.FXMainWindow(ui_file=_ui_file)  # 4ab5cc
