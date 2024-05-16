@@ -12,6 +12,11 @@ repo_url: https://github.com/healkeiser/fxgui
 repo_name: healkeiser/fxgui
 edit_uri: edit/main/docs/
 
+###### Custom ##################################################################
+
+extra_css:
+  - stylesheets/extra.css
+
 ###### Theme ###################################################################
 
 theme:
@@ -89,6 +94,7 @@ plugins:
       branch: main
       # token: !!python/object/apply:os.getenv ["GITHUB_API_KEY"]
   - mkdocstrings:
+      enabled: !ENV [ENABLE_MKDOCSTRINGS, false]
       # custom_templates: templates
       handlers:
         python:

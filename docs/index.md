@@ -1,8 +1,9 @@
+# :material-home:{.scale-in-center} Home
+
 <div id="top"></div>
 <div align="center">
   <a href="https://github.com/healkeiser/fxgui">
-    <img src="docs/images/fxgui_logo_light.svg#only-dark" alt="fxgui" width="100" >
-    <img src="docs/images/fxgui_logo_dark.svg#only-light" alt="fxgui" width="100" >
+    <img src="docs/images/fxgui_logo_dark.svg" alt="fxgui" width="100" >
   </a>
 
   <p align="center">
