@@ -33,7 +33,6 @@
 - [Installation](#installation)
 - [Example](#example)
 - [Documentation](#documentation)
-- [Gallery](#gallery)
 - [Contact](#contact)
 <!--te-->
 
@@ -61,21 +60,19 @@ pip install fxgui
 <!-- EXAMPLE -->
 ## Example
 
-After installing FXGui, you can run the demo:
+After installing fxgui, you can run the demo:
 
 ``` shell
 python example.py
 ```
+
 Or:
+
 ``` python
 from fxgui import examples
 
 examples.main()
 ```
-
-Here's how it would like like launched from Houdini and launched as a standalone:
-
-![Screenshot](./docs/images/qwZ0omKbe0.png)
 
 
 
@@ -83,15 +80,6 @@ Here's how it would like like launched from Houdini and launched as a standalone
 ## Documentation
 
 Please read the full documentation [here](https://healkeiser.github.io/fxgui/).
-
-
-
-<!-- GALLERY -->
-## Gallery
-
-|                 Splash Screen                  |                 Main Window                  |
-| :--------------------------------------------: | :------------------------------------------: |
-| ![Splash Screen](./docs/images/jxxZTVZy29.png) | ![Main Window](./docs/images/e72Hfw2ReZ.png) |
 
 
 
