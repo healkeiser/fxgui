@@ -202,7 +202,7 @@ def get_icon(
 
 if __name__ == "__main__":
 
-    class _VFXBuiltInIcons(QWidget):
+    class _FXBuiltInIcons(QWidget):
         def __init__(self):
             super().__init__()
 
@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
     application = fxwidgets.FXApplication()
     # application.setStyle(fxstyle.FXProxyStyle())
-    # widget = _VFXBuiltInIcons()
+    # widget = _FXBuiltInIcons()
     window = fxwidgets.FXMainWindow()
     # window.setCentralWidget(widget)
     # window.hide_menu_bar()

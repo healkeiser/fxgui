@@ -615,10 +615,7 @@ class FXMainWindow(QMainWindow):
         refresh_toolbar (QAction): The "Refresh" toolbar item.
         home_toolbar (QAction): The "Home" toolbar item.
         about_dialog (QDialog): The "About" dialog.
-
         status_line (QFrame): A custom status line resting on top of the status bar.
-
-        status_bar (QStatusBar): The status bar of the window.
         project_label (QLabel): The project label in the status bar.
         version_label (QLabel): The version label in the status bar.
         company_label (QLabel): The company label in the status bar.
@@ -626,7 +623,7 @@ class FXMainWindow(QMainWindow):
     Examples:
         Outside a DCC
         >>> application = fxgui.FXApplication()
-        >>> window = vfxwidgets.FXMainWindow(
+        >>> window = fxwidgets.FXMainWindow(
         ...     icon="path/to/icon.png",
         ...     title="My Custom Window",
         ...     size=(800, 600),
@@ -1026,8 +1023,8 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        self.vfx_status_bar = FXStatusBar()
-        self.setStatusBar(self.vfx_status_bar)
+        self.fx_status_bar = FXStatusBar()
+        self.setStatusBar(self.fx_status_bar)
 
     def _show_about_dialog(self) -> None:
         """Shows the "About" dialog.
@@ -1191,7 +1188,7 @@ class FXMainWindow(QMainWindow):
     # - Public methods
 
     def statusBar(self) -> FXStatusBar:
-        return self.vfx_status_bar
+        return self.fx_status_bar
 
     def hide_toolbar(self) -> None:
         """Hide the toolbar."""
