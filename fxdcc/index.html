@@ -17,7 +17,7 @@
         <link rel="next" href="../fxicons/">
       
       
-      <link rel="icon" href="../images/favicon.svg">
+      <link rel="icon" href="../images/fxgui_logo_background_light.svg">
       <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.22">
     
     
@@ -48,6 +48,8 @@
       
     
     
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
       <link rel="stylesheet" href="../stylesheets/extra.css">
     
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
@@ -74,6 +76,11 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
+      
+        
+        <a href="#fxgui.fxdcc" class="md-skip">
+          Skip to content
+        </a>
       
     </div>
     <div data-md-component="announce">
@@ -424,6 +431,17 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    fxdcc
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -433,6 +451,77 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc" class="md-nav__link">
+    <span class="md-ellipsis">
+      fxdcc
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc.get_dcc_main_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_dcc_main_window
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc.get_houdini_main_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_houdini_main_window
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc.get_houdini_stylesheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_houdini_stylesheet
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc.get_maya_main_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_maya_main_window
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc.get_nuke_main_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_nuke_main_window
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -548,6 +637,68 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc" class="md-nav__link">
+    <span class="md-ellipsis">
+      fxdcc
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc.get_dcc_main_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_dcc_main_window
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc.get_houdini_main_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_houdini_main_window
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc.get_houdini_stylesheet" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_houdini_stylesheet
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc.get_maya_main_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_maya_main_window
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxdcc.get_nuke_main_window" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_nuke_main_window
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -571,7 +722,263 @@
 
   <h1>fxdcc</h1>
 
-<p>::: fxgui.fxdcc</p>
+<div class="doc doc-object doc-module">
+
+
+
+<a id="fxgui.fxdcc"></a>
+  <div class="doc doc-contents first">
+  
+      <p>Utility functions related to DCC packages.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="fxgui.fxdcc.get_dcc_main_window" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_dcc_main_window</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_dcc_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Import the current DCC main window.</p>
+
+
+
+  <p><span class="doc-section-title">Returns:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Optional[Any]: The return value of the first successful function call, or <code>None</code> if no calls are successful.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <p>This function is DCC agnostic and will return the main window based on the success of the DCC module import.</p>
+</details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="fxgui.fxdcc.get_houdini_main_window" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_houdini_main_window</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_houdini_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the Houdini main window.</p>
+
+
+
+  <p><span class="doc-section-title">Returns:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>qtpy.QtWidgets.QWidget: <code>QWidget</code> Houdini main window.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="fxgui.fxdcc.get_houdini_stylesheet" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_houdini_stylesheet</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_houdini_stylesheet</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">str</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the Houdini stylesheet.</p>
+
+
+
+  <p><span class="doc-section-title">Returns:</span></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+<td><code>str</code></td>          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The Houdini stylesheet.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="fxgui.fxdcc.get_maya_main_window" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_maya_main_window</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_maya_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the Maya main window.</p>
+
+
+
+  <p><span class="doc-section-title">Returns:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>qtpy.QtWidgets.QWidget: <code>TmainWindow</code> Maya main window.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="fxgui.fxdcc.get_nuke_main_window" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_nuke_main_window</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_nuke_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtWidgets.QMainWindow">QMainWindow</span></span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the Nuke main window.</p>
+
+
+
+  <p><span class="doc-section-title">Returns:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td>
+                <code><span title="qtpy.QtWidgets.QMainWindow">QMainWindow</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>qtpy.QtWidgets.QMainWindow: <code>DockMainWindow</code> Nuke main window.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 
 
