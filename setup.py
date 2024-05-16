@@ -22,8 +22,11 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     description="Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.",
+    url="https://github.com/healkeiser/fxgui",
     author="Valentin Beaumont",
     author_email="valentin.onze@gmail.com",
+    license="MIT",
+    keywords="Qt PySide2 VFX DCC UI",
     packages=find_packages(),
     install_requires=[
         "qtpy",
