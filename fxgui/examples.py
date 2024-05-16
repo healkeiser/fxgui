@@ -79,11 +79,7 @@ def show_window():
 
     # Initialize the QApplication
     application = fxwidgets.FXApplication()
-
-    # Replace default icons on the application
-    style = fxstyle.FXProxyStyle()
-    application.setStyle(style)
-    window = fxwidgets.FXMainWindow(ui_file=_ui_file)
+    window = fxwidgets.FXMainWindow()
 
     # Buttons in `test.ui` example
     window.ui.button_success.clicked.connect(
@@ -205,4 +201,4 @@ def main(show_delayed: bool = False):
 
 
 if __name__ == "__main__":
-    main()
+    show_window()

@@ -5,12 +5,12 @@ import os
 
 os.environ["QT_API"] = "pyside2"
 
-from typing import Optional, Callable, Dict
+from typing import Optional, Callable
 from pathlib import Path
 from functools import lru_cache
 
 # Third-party
-from qtpy.QtWidgets import QGridLayout, QPushButton, QStyle, QWidget
+from qtpy.QtWidgets import QGridLayout, QPushButton, QStyle, QWidget, QMainWindow
 from qtpy.QtGui import QIcon, QColor, QPainter, QPixmap, QBitmap, QGuiApplication
 from qtpy.QtCore import Qt, qVersion
 
@@ -235,9 +235,6 @@ if __name__ == "__main__":
         def create_callback(self, name: str) -> Callable[[bool], None]:
             """Create a callback function for a button click.
 
-            This method creates and returns a lambda function that will be called when a button is clicked.
-            The returned lambda function will call the `copy_to_clipboard` method with the given name as argument.
-
             Args:
                 name (str): The name of the icon that will be copied to the clipboard when the button is clicked.
 
@@ -248,17 +245,13 @@ if __name__ == "__main__":
 
             return lambda checked: self.copy_to_clipboard(name)
 
-    import fxstyle
-
     application = fxwidgets.FXApplication()
-    # application.setStyle(fxstyle.FXProxyStyle())
-    # widget = _FXBuiltInIcons()
+    widget = _FXBuiltInIcons()
     window = fxwidgets.FXMainWindow()
-    # window.setCentralWidget(widget)
-    # window.hide_menu_bar()
-    # window.hide_toolbar()
-    window.show()
-    # window.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), "icons", "favicon_dark.png")))
+    window.setCentralWidget(widget)
+    window.menu_bar.hide()
+    window.toolbar.hide()
+    window.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), "icons", "favicon_dark.png")))
     window.setWindowTitle("Built-in Icons")
-
+    window.show()
     application.exec_()

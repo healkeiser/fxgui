@@ -615,13 +615,15 @@ class FXMainWindow(QMainWindow):
         refresh_toolbar (QAction): The "Refresh" toolbar item.
         home_toolbar (QAction): The "Home" toolbar item.
         about_dialog (QDialog): The "About" dialog.
+
         status_line (QFrame): A custom status line resting on top of the status bar.
+        status_bar (FXStatusBar): The status bar of the window.
         project_label (QLabel): The project label in the status bar.
         version_label (QLabel): The version label in the status bar.
         company_label (QLabel): The company label in the status bar.
 
     Examples:
-        Outside a DCC
+        Outside a DCC (standalone)
         >>> application = fxgui.FXApplication()
         >>> window = fxwidgets.FXMainWindow(
         ...     icon="path/to/icon.png",
@@ -629,6 +631,8 @@ class FXMainWindow(QMainWindow):
         ...     size=(800, 600),
         ...     documentation="https://my_tool_docs.com",
         ...     project="Awesome Project",
+        ...     version="v1.0.0",
+        ...     company="\u00A9 Super Company",
         ...     version="v1.0.0",
         ...     ui_file="path/to/ui_file.ui",
         ... )
@@ -638,7 +642,6 @@ class FXMainWindow(QMainWindow):
 
         Inside a DCC (Houdini)
         >>> houdini_window = fxdcc.get_houdini_main_window()
-        >>> houdini_style = fxdcc.get_houdini_stylesheet()
         >>> window = fxwidgets.FXMainWindow(
         ...    parent=houdini_window,
         ...    ui_file="path/to/ui_file.ui",
@@ -646,16 +649,26 @@ class FXMainWindow(QMainWindow):
         >>> window.show()
         >>> window.set_statusbar_message("Window initialized", window.INFO)
 
-        Hide toolbar and menu bar
+        Inside a DCC (Houdini), hide toolbar, menu bar ans status bar
         >>> houdini_window = fxdcc.get_houdini_main_window()
-        >>> houdini_style = fxdcc.get_houdini_stylesheet()
         >>> window = fxwidgets.FXMainWindow(
         ...    parent=houdini_window,
         ...    ui_file="path/to/ui_file.ui",
         ...   )
+        >>> window.toolbar.hide()
+        >>> window.menu_bar.hide()
+        >>> window.status_bar.hide()
         >>> window.show()
-        >>> window.hide_toolbar()
-        >>> window.hide_menu_bar()
+
+        Inside a DCC (Houdini), override the `fxgui` stylesheet with the Houdini one
+        >>> houdini_window = fxdcc.get_houdini_main_window()
+        >>> window = fxwidgets.FXMainWindow(
+        ...    parent=houdini_window,
+        ...    ui_file="path/to/ui_file.ui",
+        ...   )
+        >>> window.setStyleSheet(hou.qt.styleSheet())
+        >>> window.show()
+        >>> window.set_statusbar_message("Window initialized", window.INFO)
     """
 
     def __init__(
@@ -664,7 +677,6 @@ class FXMainWindow(QMainWindow):
         icon: Optional[str] = None,
         title: Optional[str] = None,
         size: Optional[int] = None,
-        flags: Optional[Qt.WindowFlags] = None,
         documentation: Optional[str] = None,
         project: Optional[str] = None,
         version: Optional[str] = None,
@@ -679,7 +691,6 @@ class FXMainWindow(QMainWindow):
         self.window_icon: QIcon = icon
         self.window_title: str = title
         self.window_size: QSize = size
-        self.window_flags: Qt.WindowFlags = flags
         self.documentation: str = documentation
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
@@ -699,7 +710,6 @@ class FXMainWindow(QMainWindow):
         self._set_window_icon()
         self._set_window_title()
         self._set_window_size()
-        self._set_window_flags()
         self._create_status_line()
         self._create_menu_bar()
         self._create_toolbars()
@@ -753,15 +763,6 @@ class FXMainWindow(QMainWindow):
         """
 
         self.resize(QSize(*self.window_size) if self.window_size and len(self.window_size) >= 1 else QSize(500, 600))
-
-    def _set_window_flags(self) -> None:
-        """Sets the window flags from the specified flags.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        self.setWindowFlags(self.windowFlags() | (self.window_flags if self.window_flags else 0))
 
     def _create_actions(self) -> None:
         """Creates the actions for the window.
@@ -965,12 +966,10 @@ class FXMainWindow(QMainWindow):
         self.toolbar = QToolBar("Toolbar")
         self.toolbar.setIconSize(QSize(17, 17))
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
-
         self.home_toolbar = self.toolbar.addAction(self.home_action)
         self.previous_toolbar = self.toolbar.addAction(self.previous_action)
         self.next_toolbar = self.toolbar.addAction(self.next_action)
         self.refresh_toolbar = self.toolbar.addAction(self.refresh_action)
-
         self.toolbar.setMovable(True)
 
     def _generate_label(self, attribute: str, default: str) -> QLabel:
@@ -1006,13 +1005,19 @@ class FXMainWindow(QMainWindow):
         self.status_line.setFrameShadow(QFrame.Sunken)
         self.status_line.setFixedHeight(3)
         self.status_line.setSizePolicy(QSizePolicy.Expanding, self.status_line.sizePolicy().verticalPolicy())
-        self.status_line.setSizePolicy(QSizePolicy.Expanding, self.status_line.sizePolicy().verticalPolicy())
         self.set_status_line_colors(color_a, color_b)
+
         central_widget = self.centralWidget()
         widget = QWidget(self)
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(central_widget)
+
+        if central_widget is not None:
+            layout.addWidget(central_widget)
+        else:
+            central_widget = QWidget()
+            layout.addWidget(central_widget)
+
         layout.addWidget(self.status_line)
         self.setCentralWidget(widget)
 
@@ -1023,8 +1028,8 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        self.fx_status_bar = FXStatusBar()
-        self.setStatusBar(self.fx_status_bar)
+        self.status_bar = FXStatusBar()
+        self.setStatusBar(self.status_bar)
 
     def _show_about_dialog(self) -> None:
         """Shows the "About" dialog.
@@ -1188,37 +1193,41 @@ class FXMainWindow(QMainWindow):
     # - Public methods
 
     def statusBar(self) -> FXStatusBar:
+        """Returns the FXStatusBar instance associated with this window.
+
+        Returns:
+            FXStatusBar: The FXStatusBar instance associated with this window.
+
+        Note:
+            Overrides the base class method.
+        """
+
         return self.fx_status_bar
 
-    def hide_toolbar(self) -> None:
-        """Hide the toolbar."""
+    def setCentralWidget(self, widget):
+        """Overrides the QMainWindow's setCentralWidget method to ensure that the
+        status line is always at the bottom of the window.
 
-        self.toolbar.hide()
+        Args:
+            widget (QWidget): The widget to set as the central widget.
 
-    def show_toolbar(self) -> None:
-        """Show the toolbar."""
+        Note:
+            Overrides the base class method.
+        """
 
-        self.toolbar.show()
+        # Create a new QWidget to hold the widget and the status line
+        central_widget = QWidget(self)
+        layout = QVBoxLayout(central_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-    def hide_menu_bar(self) -> None:
-        """Hide the menu bar."""
+        # Add the widget to the new layout
+        layout.addWidget(widget)
 
-        self.menu_bar.hide()
+        # Add the status line to the new layout
+        layout.addWidget(self.status_line)
 
-    def show_menu_bar(self) -> None:
-        """Show the menu bar."""
-
-        self.menu_bar.show()
-
-    def hide_status_line(self) -> None:
-        """Hide the status line."""
-
-        self.status_line.hide()
-
-    def show_status_line(self) -> None:
-        """Show the status line."""
-
-        self.status_line.show()
+        # Call the parent's setCentralWidget method with the new central widget
+        super().setCentralWidget(central_widget)
 
     def set_status_line_colors(self, color_a: str, color_b: str) -> None:
         """Set the colors of the status line.
@@ -1237,16 +1246,6 @@ class FXMainWindow(QMainWindow):
             }}
         """
         )
-
-    def hide_statusbar(self) -> None:
-        """Hide the status bar."""
-
-        self.statusBar().hide()
-
-    def show_statusbar(self) -> None:
-        """Show the status bar."""
-
-        self.statusBar().show()
 
     # - Events
 
