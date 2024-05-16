@@ -22,7 +22,7 @@ extra_css:
 theme:
   name: material
   language: en
-  favicon: images/favicon.svg
+  favicon: images/fxgui_logo_background_light.svg
   logo: images/fxgui_logo_light.svg
   icon:
     repo: material/github
@@ -94,7 +94,7 @@ plugins:
       branch: main
       # token: !!python/object/apply:os.getenv ["GITHUB_API_KEY"]
   - mkdocstrings:
-      enabled: !ENV [ENABLE_MKDOCSTRINGS, false]
+      enabled: !ENV [ENABLE_MKDOCSTRINGS, true]
       # custom_templates: templates
       handlers:
         python:
