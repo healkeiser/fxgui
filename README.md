@@ -63,7 +63,7 @@ pip install fxgui
 After installing fxgui, you can run the demo:
 
 ``` shell
-python example.py
+python examples.py
 ```
 
 Or:
