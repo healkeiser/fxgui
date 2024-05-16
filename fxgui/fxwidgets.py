@@ -31,6 +31,8 @@ WARNING = 2
 SUCCESS = 3
 INFO = 4
 
+_TEST = None
+
 
 class FXApplication(QApplication):
     """Customized QApplication class."""
