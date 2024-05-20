@@ -10,8 +10,21 @@ from pathlib import Path
 from functools import lru_cache
 
 # Third-party
-from qtpy.QtWidgets import QGridLayout, QPushButton, QStyle, QWidget, QMainWindow
-from qtpy.QtGui import QIcon, QColor, QPainter, QPixmap, QBitmap, QGuiApplication
+from qtpy.QtWidgets import (
+    QGridLayout,
+    QPushButton,
+    QStyle,
+    QWidget,
+    QMainWindow,
+)
+from qtpy.QtGui import (
+    QIcon,
+    QColor,
+    QPainter,
+    QPixmap,
+    QBitmap,
+    QGuiApplication,
+)
 from qtpy.QtCore import Qt, qVersion
 
 # Internal
@@ -52,8 +65,10 @@ def get_icon_path(
         icon_name (str): The name of the icon.
         library (str, optional): The library of the icon. Defaults to `None`.
         style (str, optional): The style of the icon. Defaults to `None`.
-        extension (str, optional): The extension of the icon. Defaults to `None`.
-        verify (bool, optional): Whether to verify if the icon exists. Defaults to `True`.
+        extension (str, optional): The extension of the icon.
+            Defaults to `None`.
+        verify (bool, optional): Whether to verify if the icon exists.
+            Defaults to `True`.
 
     Raises:
         OSError: If verify is `True` and the icon does not exist.
@@ -70,7 +85,13 @@ def get_icon_path(
         extension = LIBRARIES_INFO[library]["defaults"].get("extension")
 
     pattern = LIBRARIES_INFO[library]["pattern"]
-    path = pattern.format(icon_name=icon_name, style=style, library=library, extension=extension, root=LIBRARIES_ROOT)
+    path = pattern.format(
+        icon_name=icon_name,
+        style=style,
+        library=library,
+        extension=extension,
+        root=LIBRARIES_ROOT,
+    )
     if verify and not Path(path).exists():
         raise OSError(f"Icon path '{path}' does not exist.")
     return path
@@ -88,7 +109,11 @@ def has_transparency(mask: QBitmap) -> bool:
 
     image = mask.toImage()
     size = mask.size()
-    return any(image.pixelIndex(x, y) == 0 for x in range(size.width()) for y in range(size.height()))
+    return any(
+        image.pixelIndex(x, y) == 0
+        for x in range(size.width())
+        for y in range(size.height())
+    )
 
 
 @lru_cache(maxsize=128)
@@ -147,10 +172,12 @@ def get_pixmap(
         icon_name (str): The name of the icon.
         width (int, optional): The width of the pixmap. Defaults to 48.
         height (int, optional): The height of the pixmap. Defaults to 48.
-        color (str, optional): The color to convert the pixmap to. Defaults to `None`.
+        color (str, optional): The color to convert the pixmap to.
+            Defaults to `None`.
         library (str, optional): The library of the icon. Defaults to `None`.
         style (str, optional): The style of the icon. Defaults to `None`.
-        extension (str, optional): The extension of the icon. Defaults to `None`.
+        extension (str, optional): The extension of the icon.
+            Defaults to `None`.
 
     Returns:
         QPixmap: The QPixmap of the icon.
@@ -159,7 +186,13 @@ def get_pixmap(
         >>> get_pixmap("add", color="red")
     """
 
-    path = get_icon_path(icon_name, library=library, style=style, extension=extension, verify=True)
+    path = get_icon_path(
+        icon_name,
+        library=library,
+        style=style,
+        extension=extension,
+        verify=True,
+    )
     qpixmap = QIcon(path).pixmap(width, height)
     if color is not None:
         qpixmap = change_pixmap_color(qpixmap, color)
@@ -184,10 +217,12 @@ def get_icon(
         icon_name (str): The name of the icon.
         width (int, optional): The width of the pixmap. Defaults to 48.
         height (int, optional): The height of the pixmap. Defaults to 48.
-        color (str, optional): The color to convert the pixmap to. Defaults to `None`.
+        color (str, optional): The color to convert the pixmap to.
+            Defaults to `None`.
         library (str, optional): The library of the icon. Defaults to `None`.
         style (str, optional): The style of the icon. Defaults to `None`.
-        extension (str, optional): The extension of the icon. Defaults to `None`.
+        extension (str, optional): The extension of the icon.
+            Defaults to `None`.
 
     Returns:
         QIcon: The QIcon of the icon.
@@ -196,7 +231,9 @@ def get_icon(
         >>> get_icon("add", color="red")
     """
 
-    qpixmap = get_pixmap(icon_name, width, height, color, library, style, extension)
+    qpixmap = get_pixmap(
+        icon_name, width, height, color, library, style, extension
+    )
     return QIcon(qpixmap)
 
 
@@ -206,7 +243,9 @@ if __name__ == "__main__":
         def __init__(self):
             super().__init__()
 
-            icons = sorted([attr for attr in dir(QStyle) if attr.startswith("SP_")])
+            icons = sorted(
+                [attr for attr in dir(QStyle) if attr.startswith("SP_")]
+            )
             layout = QGridLayout()
 
             for number, name in enumerate(icons):
@@ -251,7 +290,11 @@ if __name__ == "__main__":
     window.setCentralWidget(widget)
     window.menu_bar.hide()
     window.toolbar.hide()
-    window.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), "icons", "favicon_dark.png")))
+    window.setWindowIcon(
+        QIcon(
+            os.path.join(os.path.dirname(__file__), "icons", "favicon_dark.png")
+        )
+    )
     window.setWindowTitle("Built-in Icons")
     window.show()
     application.exec_()

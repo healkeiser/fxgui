@@ -26,10 +26,12 @@ def get_dcc_main_window() -> Optional[Any]:
     """Import the current DCC main window.
 
     Returns:
-        Optional[Any]: The return value of the first successful function call, or `None` if no calls are successful.
+        Optional[Any]: The return value of the first successful function call,
+            or `None` if no calls are successful.
 
     Notes:
-        This function is DCC agnostic and will return the main window based on the success of the DCC module import.
+        This function is DCC agnostic and will return the main window based on
+            the success of the DCC module import.
     """
 
     dccs = [
@@ -96,5 +98,8 @@ def get_nuke_main_window() -> QtWidgets.QMainWindow:
     import nuke
 
     for widget in QtWidgets.QApplication.topLevelWidgets():
-        if widget.inherits("QMainWindow") and widget.metaObject().className() == "Foundry::UI::DockMainWindow":
+        if (
+            widget.inherits("QMainWindow")
+            and widget.metaObject().className() == "Foundry::UI::DockMainWindow"
+        ):
             return widget

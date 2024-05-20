@@ -8,7 +8,13 @@ from typing import Callable, Optional
 from qtpy.QtUiTools import QUiLoader
 from qtpy.QtCore import QFile, QSize
 from qtpy.QtGui import QIcon, QPixmap, QKeySequence
-from qtpy.QtWidgets import QAction, QWidget, QGraphicsDropShadowEffect, QLineEdit, QTreeWidget
+from qtpy.QtWidgets import (
+    QAction,
+    QWidget,
+    QGraphicsDropShadowEffect,
+    QLineEdit,
+    QTreeWidget,
+)
 
 
 ###### CODE ####################################################################
@@ -113,7 +119,9 @@ def add_shadows(
     return shadow
 
 
-def convert_qicon_to_qpixmap(icon: QIcon, desired_size: Optional[QSize] = None) -> Optional[QPixmap]:
+def convert_qicon_to_qpixmap(
+    icon: QIcon, desired_size: Optional[QSize] = None
+) -> Optional[QPixmap]:
     """Converts a QIcon to a QPixmap.
 
     Args:
@@ -181,7 +189,9 @@ def filter_tree(
             item.setHidden(item.isHidden() or should_hide_parent)
 
 
-def set_formatted_tooltip(widget: QWidget, title: str, tooltip: str, duration: int = 5) -> None:
+def set_formatted_tooltip(
+    widget: QWidget, title: str, tooltip: str, duration: int = 5
+) -> None:
     """Set a formatted tooltip. The tooltip will be displayed with a bold title, and a separator line
     between the title and the tooltip text.
 

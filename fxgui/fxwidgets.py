@@ -122,7 +122,9 @@ class FXSplashScreen(QSplashScreen):
         # Load the image using image_path and redirect as the original pixmap
         # argument from `QSplashScreen`
         if image_path is None:
-            image = os.path.join(os.path.dirname(__file__), "images", "snap.png")
+            image = os.path.join(
+                os.path.dirname(__file__), "images", "snap.png"
+            )
         elif os.path.isfile(image_path):
             image = self._resize_image(image_path)
         else:
@@ -132,7 +134,9 @@ class FXSplashScreen(QSplashScreen):
 
         # Attributes
         self.pixmap: QPixmap = image
-        self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon_light.png")
+        self._default_icon = os.path.join(
+            os.path.dirname(__file__), "icons", "favicon_light.png"
+        )
         self.icon: QIcon = icon
         self.title: str = title
         self.information: str = information
@@ -162,7 +166,9 @@ class FXSplashScreen(QSplashScreen):
 
     # - Private methods
 
-    def _resize_image(self, image_path: str, ideal_width: int = 800, ideal_height: int = 450) -> QPixmap:
+    def _resize_image(
+        self, image_path: str, ideal_width: int = 800, ideal_height: int = 450
+    ) -> QPixmap:
         pixmap = QPixmap(image_path)
         width = pixmap.width()
         height = pixmap.height()
@@ -244,19 +250,25 @@ class FXSplashScreen(QSplashScreen):
         layout.addLayout(title_icon_layout)
 
         # Spacer
-        spacer_a = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer_a = QSpacerItem(
+            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        )
         layout.addItem(spacer_a)
 
         # Information
         self.info_label = QLabel(
-            self.information if self.information is not None and len(self.information) >= 1 else lorem_ipsum
+            self.information
+            if self.information is not None and len(self.information) >= 1
+            else lorem_ipsum
         )
         self.info_label.setAlignment(Qt.AlignJustify)
         self.info_label.setWordWrap(True)
         layout.addWidget(self.info_label)
 
         # Spacer
-        spacer_b = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer_b = QSpacerItem(
+            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        )
         layout.addItem(spacer_b)
 
         # Progress Bar
@@ -265,16 +277,32 @@ class FXSplashScreen(QSplashScreen):
             layout.addWidget(self.progress_bar)
 
         # Spacer
-        spacer_c = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer_c = QSpacerItem(
+            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        )
         layout.addItem(spacer_c)
 
         # Copyright QLabel
-        project = self.project if self.project and len(self.project) >= 1 else "Project"
-        version = self.version if self.version and len(self.version) >= 1 else "0.0.0"
-        company = self.company if self.company and len(self.company) >= 1 else "\u00A9 Company"
+        project = (
+            self.project
+            if self.project and len(self.project) >= 1
+            else "Project"
+        )
+        version = (
+            self.version if self.version and len(self.version) >= 1 else "0.0.0"
+        )
+        company = (
+            self.company
+            if self.company and len(self.company) >= 1
+            else "\u00A9 Company"
+        )
 
-        self.copyright_label = QLabel(f"{project} | {version} | \u00A9 {company}")
-        self.copyright_label.setStyleSheet("font-size: 8pt; qproperty-alignment: AlignBottom;")
+        self.copyright_label = QLabel(
+            f"{project} | {version} | \u00A9 {company}"
+        )
+        self.copyright_label.setStyleSheet(
+            "font-size: 8pt; qproperty-alignment: AlignBottom;"
+        )
         layout.addWidget(self.copyright_label)
 
     def _fade_in(self) -> None:
@@ -421,31 +449,51 @@ class FXStatusBar(QStatusBar):
         severity_mapping = {
             0: (
                 "Critical",
-                fxicons.get_pixmap("gpp_maybe", width=14, color=colors_dict["feedback"]["error"]["light"]),
+                fxicons.get_pixmap(
+                    "gpp_maybe",
+                    width=14,
+                    color=colors_dict["feedback"]["error"]["light"],
+                ),
                 colors_dict["feedback"]["error"]["background"],
                 colors_dict["feedback"]["error"]["dark"],
             ),
             1: (
                 "Error",
-                fxicons.get_pixmap("error", width=14, color=colors_dict["feedback"]["error"]["light"]),
+                fxicons.get_pixmap(
+                    "error",
+                    width=14,
+                    color=colors_dict["feedback"]["error"]["light"],
+                ),
                 colors_dict["feedback"]["error"]["background"],
                 colors_dict["feedback"]["error"]["dark"],
             ),
             2: (
                 "Warning",
-                fxicons.get_pixmap("warning", width=14, color=colors_dict["feedback"]["warning"]["light"]),
+                fxicons.get_pixmap(
+                    "warning",
+                    width=14,
+                    color=colors_dict["feedback"]["warning"]["light"],
+                ),
                 colors_dict["feedback"]["warning"]["background"],
                 colors_dict["feedback"]["warning"]["dark"],
             ),
             3: (
                 "Success",
-                fxicons.get_pixmap("check_circle", width=14, color=colors_dict["feedback"]["success"]["light"]),
+                fxicons.get_pixmap(
+                    "check_circle",
+                    width=14,
+                    color=colors_dict["feedback"]["success"]["light"],
+                ),
                 colors_dict["feedback"]["success"]["background"],
                 colors_dict["feedback"]["success"]["dark"],
             ),
             4: (
                 "Info",
-                fxicons.get_pixmap("info", width=14, color=colors_dict["feedback"]["info"]["light"]),
+                fxicons.get_pixmap(
+                    "info",
+                    width=14,
+                    color=colors_dict["feedback"]["info"]["light"],
+                ),
                 colors_dict["feedback"]["info"]["background"],
                 colors_dict["feedback"]["info"]["dark"],
             ),
@@ -459,7 +507,11 @@ class FXStatusBar(QStatusBar):
         ) = severity_mapping[severity_type]
 
         # Message
-        message_prefix = f"<b>{severity_prefix}</b>: {self._get_current_time()} - " if time else f"{severity_prefix}: "
+        message_prefix = (
+            f"<b>{severity_prefix}</b>: {self._get_current_time()} - "
+            if time
+            else f"{severity_prefix}: "
+        )
         notification_message = f"{message_prefix} {message}"
         self.icon_label.setPixmap(severity_icon)
         self.message_label.setText(notification_message)
@@ -503,7 +555,9 @@ class FXStatusBar(QStatusBar):
         self.message_label.setVisible(False)
         super().clearMessage()
 
-    def _get_current_time(self, display_seconds: bool = False, display_date: bool = False) -> str:
+    def _get_current_time(
+        self, display_seconds: bool = False, display_date: bool = False
+    ) -> str:
         """Returns the current time as a string.
 
         Args:
@@ -570,6 +624,8 @@ class FXMainWindow(QMainWindow):
         company (str): The company name.
         accent_color (str): The accent color.
         ui_file (str): The UI file path.
+        ui (QWidget): The loaded UI from the UI file. Note that this attribute
+            is only accessible if you're defining a UI file through `ui_file`.
 
         CRITICAL (int): Constant for critical log level.
         ERROR (int): Constant for error log level.
@@ -622,7 +678,8 @@ class FXMainWindow(QMainWindow):
         home_toolbar (QAction): The "Home" toolbar item.
         about_dialog (QDialog): The "About" dialog.
 
-        status_line (QFrame): A custom status line resting on top of the status bar.
+        status_line (QFrame): A custom colored status line resting on top of the
+            status bar.
         status_bar (FXStatusBar): The status bar of the window.
         project_label (QLabel): The project label in the status bar.
         version_label (QLabel): The version label in the status bar.
@@ -693,7 +750,9 @@ class FXMainWindow(QMainWindow):
         super().__init__(parent)
 
         # Attributes
-        self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon_dark.png")
+        self._default_icon = os.path.join(
+            os.path.dirname(__file__), "icons", "favicon_dark.png"
+        )
         self.window_icon: QIcon = icon
         self.window_title: str = title
         self.window_size: QSize = size
@@ -703,6 +762,7 @@ class FXMainWindow(QMainWindow):
         self.company: str = company or "\u00A9 Company"
         self.accent_color: str = accent_color
         self.ui_file: str = ui_file
+        self.ui = None
 
         self.CRITICAL: int = CRITICAL
         self.ERROR: int = ERROR
@@ -749,7 +809,11 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        icon_path = self.window_icon if self.window_icon and os.path.isfile(self.window_icon) else self._default_icon
+        icon_path = (
+            self.window_icon
+            if self.window_icon and os.path.isfile(self.window_icon)
+            else self._default_icon
+        )
         self.setWindowIcon(QIcon(icon_path))
 
     def _set_window_title(self) -> None:
@@ -759,7 +823,9 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        self.setWindowTitle(f"{self.window_title if self.window_title else 'Window'} *")
+        self.setWindowTitle(
+            f"{self.window_title if self.window_title else 'Window'} *"
+        )
 
     def _set_window_size(self) -> None:
         """Sets the window size from the specified size.
@@ -768,7 +834,11 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        self.resize(QSize(*self.window_size) if self.window_size and len(self.window_size) >= 1 else QSize(500, 600))
+        self.resize(
+            QSize(*self.window_size)
+            if self.window_size and len(self.window_size) >= 1
+            else QSize(500, 600)
+        )
 
     def _create_actions(self) -> None:
         """Creates the actions for the window.
@@ -938,11 +1008,15 @@ class FXMainWindow(QMainWindow):
         self.main_menu = self.menu_bar.addMenu("&File")
         self.about_menu = self.main_menu.addAction(self.about_action)
         self.main_menu.addSeparator()
-        self.check_updates_menu = self.main_menu.addAction(self.check_updates_action)
+        self.check_updates_menu = self.main_menu.addAction(
+            self.check_updates_action
+        )
         self.main_menu.addSeparator()
         self.close_menu = self.main_menu.addAction(self.close_action)
         self.hide_main_menu = self.main_menu.addAction(self.hide_action)
-        self.hide_others_menu = self.main_menu.addAction(self.hide_others_action)
+        self.hide_others_menu = self.main_menu.addAction(
+            self.hide_others_action
+        )
         self.main_menu.addSeparator()
         self.close_menu = self.main_menu.addAction(self.close_action)
 
@@ -952,15 +1026,21 @@ class FXMainWindow(QMainWindow):
 
         # Window menu
         self.window_menu = self.menu_bar.addMenu("&Window")
-        self.minimize_menu = self.window_menu.addAction(self.minimize_window_action)
-        self.maximize_menu = self.window_menu.addAction(self.maximize_window_action)
+        self.minimize_menu = self.window_menu.addAction(
+            self.minimize_window_action
+        )
+        self.maximize_menu = self.window_menu.addAction(
+            self.maximize_window_action
+        )
         self.window_menu.addSeparator()
         self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
         self.window_menu.addSeparator()
 
         # Help menu
         self.help_menu = self.menu_bar.addMenu("&Help")
-        self.open_documentation_menu = self.help_menu.addAction(self.open_documentation_action)
+        self.open_documentation_menu = self.help_menu.addAction(
+            self.open_documentation_action
+        )
 
     def _create_toolbars(self) -> None:
         """Creates the toolbar for the window.
@@ -995,7 +1075,9 @@ class FXMainWindow(QMainWindow):
         else:
             return QLabel(default)
 
-    def _create_status_line(self, color_a: str = "#649eff", color_b: str = "#4188ff") -> None:
+    def _create_status_line(
+        self, color_a: str = "#649eff", color_b: str = "#4188ff"
+    ) -> None:
         """Creates a custom status line for the window.
 
         Args:
@@ -1010,7 +1092,10 @@ class FXMainWindow(QMainWindow):
         self.status_line.setFrameShape(QFrame.HLine)
         self.status_line.setFrameShadow(QFrame.Sunken)
         self.status_line.setFixedHeight(3)
-        self.status_line.setSizePolicy(QSizePolicy.Expanding, self.status_line.sizePolicy().verticalPolicy())
+        self.status_line.setSizePolicy(
+            QSizePolicy.Expanding,
+            self.status_line.sizePolicy().verticalPolicy(),
+        )
         self.set_status_line_colors(color_a, color_b)
 
         central_widget = self.centralWidget()
@@ -1111,9 +1196,15 @@ class FXMainWindow(QMainWindow):
         desktop_geometry = QDesktopWidget().availableGeometry()
         center_point = desktop_geometry.center()
         left_top_point = QPoint(desktop_geometry.left(), desktop_geometry.top())
-        right_top_point = QPoint(desktop_geometry.right(), desktop_geometry.top())
-        left_bottom_point = QPoint(desktop_geometry.left(), desktop_geometry.bottom())
-        right_bottom_point = QPoint(desktop_geometry.right(), desktop_geometry.bottom())
+        right_top_point = QPoint(
+            desktop_geometry.right(), desktop_geometry.top()
+        )
+        left_bottom_point = QPoint(
+            desktop_geometry.left(), desktop_geometry.bottom()
+        )
+        right_bottom_point = QPoint(
+            desktop_geometry.right(), desktop_geometry.bottom()
+        )
         moving_position = {
             1: center_point,
             2: left_top_point,
@@ -1156,7 +1247,12 @@ class FXMainWindow(QMainWindow):
         else:
             self.open_documentation_action.setEnabled(False)
 
-    def _add_shadows(self, menu_bar: bool = False, toolbar: bool = False, status_bar: bool = False) -> None:
+    def _add_shadows(
+        self,
+        menu_bar: bool = False,
+        toolbar: bool = False,
+        status_bar: bool = False,
+    ) -> None:
         """Adds shadows to the window elements.
 
         Args:
@@ -1178,7 +1274,9 @@ class FXMainWindow(QMainWindow):
         if status_bar:
             fxutils.add_shadows(self, self.statusBar())
 
-    def _get_current_time(self, display_seconds: bool = False, display_date: bool = False) -> str:
+    def _get_current_time(
+        self, display_seconds: bool = False, display_date: bool = False
+    ) -> str:
         """Returns the current time as a string.
 
         Args:
@@ -1313,7 +1411,10 @@ class FXFloatingDialog(QDialog):
         self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.resize(200, 40)
 
-        if self.parent_package == fxdcc.STANDALONE or self.parent_package == None:
+        if (
+            self.parent_package == fxdcc.STANDALONE
+            or self.parent_package == None
+        ):
             pass
 
         elif self.parent_package == fxdcc.HOUDINI:
@@ -1415,7 +1516,9 @@ class FXFloatingDialog(QDialog):
         """
 
         icon = icon if icon else self._default_icon
-        self._icon_label.setPixmap(icon.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self._icon_label.setPixmap(
+            icon.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
         self.dialog_icon = icon
 
     def set_dialog_title(self, title: str = None) -> None:
