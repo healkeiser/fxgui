@@ -18,7 +18,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="fxgui",
-    version="2.2.3",
+    version="2.2.4",
     long_description=long_description,
     long_description_content_type="text/markdown",
     description="Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.",
