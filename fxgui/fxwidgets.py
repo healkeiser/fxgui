@@ -772,11 +772,11 @@ class FXMainWindow(QMainWindow):
 
         # Methods
         self._create_actions()
+        self._create_status_line()
         self._load_ui()
         self._set_window_icon()
         self._set_window_title()
         self._set_window_size()
-        self._create_status_line()
         self._create_menu_bar()
         self._create_toolbars()
         self._create_status_bar()
@@ -1306,7 +1306,7 @@ class FXMainWindow(QMainWindow):
             Overrides the base class method.
         """
 
-        return self.fx_status_bar
+        return self.status_bar
 
     def setCentralWidget(self, widget):
         """Overrides the QMainWindow's setCentralWidget method to ensure that the

@@ -130,8 +130,8 @@ def main(show_delayed: bool = False):
     application.setStyle(fxstyle.FXProxyStyle())
 
     # Initialize window now for splashscreen
-    window = fxwidgets.FXMainWindow(ui_file=_ui_file)  # 4ab5cc
-    window.set_status_line_colors(color_a="#cc00cc", color_b="#4ab5cc")
+    window = fxwidgets.FXMainWindow(ui_file=_ui_file)
+    window.set_status_line_colors(color_a="#fd6b72", color_b="#ffc577")
     application.processEvents()
 
     # Splashscreen
@@ -165,7 +165,7 @@ def main(show_delayed: bool = False):
         window.show()
 
     window.statusBar().showMessage("Window initialized", fxwidgets.INFO)
-    window.hide_toolbar()
+    window.toolbar.hide()
 
     application.processEvents()
 
@@ -223,4 +223,4 @@ def main(show_delayed: bool = False):
 
 
 if __name__ == "__main__":
-    show_window()
+    main()
