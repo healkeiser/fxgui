@@ -11,6 +11,13 @@ application = QApplication()
 application.setStyleSheet(fxstyle.load_stylesheet())
 ```
 
+```python
+from fxgui import fxstyle
+
+window = QMainWindow()
+window.setStyleSheet(fxstyle.load_stylesheet())
+```
+
 !!! note
     You can set this stylesheet on a `QMainWindow`, `QWidget`, etc.
 
@@ -29,7 +36,7 @@ application.setStyle(fxstyle.FXProxyStyle())
 ```
 
 !!! note
-    By default, the `FXApplication` found inside [fxwidgets](fxwidgets.md) alreayd applies this custom style.
+    By default, the `FXApplication` found inside [fxwidgets](fxwidgets.md) already applies this custom style.
 
 !!! warning
-    Applying the `FXProxyStyle` is only allowed on a `QApplication` instance! So if you're instanciating a `FXMainWindow` inside a parent DCC, **do not** set the style on it.
+    Applying the `FXProxyStyle` is only allowed on a `QApplication` instance! So if you're instantiating a `FXMainWindow` inside a parent DCC, **do not** set the style on it.
