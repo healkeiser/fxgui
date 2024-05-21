@@ -12,7 +12,7 @@
   ![Logo](https://raw.githubusercontent.com/healkeiser/fxgui/main/fxgui/images/fxgui_logo_background_dark.svg#gh-light-mode-only)
   ![Logo](https://raw.githubusercontent.com/healkeiser/fxgui/main/fxgui/images/fxgui_logo_background_light.svg#gh-dark-mode-only)
 
-  <h3 align="center">FXGUI</h3>
+  <h3 align="center">fxgui</h3>
 
   <p align="center">
     Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.
