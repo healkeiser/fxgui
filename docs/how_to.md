@@ -35,6 +35,23 @@ application = QApplication()
 application.setStyle(fxstyle.FXProxyStyle())
 ```
 
+![Sreenshot](docs/images/screenshot_built_in_icons.png)
+
+You can now use the icons by doing:
+
+```python
+from qtpy import QStyle
+from fxgui import fxwidgets
+
+
+application = fxwidgets.FXApplication()
+window = fxwidgets.FXWindow()
+style = window.style()
+window.ui.button_critical.setIcon(style.standardIcon(QStyle.SP_MessageBoxCritical))
+window.show()
+application.exec_()
+```
+
 !!! note
     By default, the `FXApplication` found inside [fxwidgets](fxwidgets.md) already applies this custom style.
 

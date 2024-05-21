@@ -751,7 +751,9 @@ class FXMainWindow(QMainWindow):
 
         # Attributes
         self._default_icon = os.path.join(
-            os.path.dirname(__file__), "icons", "favicon_dark.png"
+            os.path.dirname(__file__),
+            "images",
+            "fxgui_logo_background_dark.svg",
         )
         self.window_icon: QIcon = icon
         self.window_title: str = title

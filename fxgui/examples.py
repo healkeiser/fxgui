@@ -194,6 +194,11 @@ def main(show_delayed: bool = False):
         )
     )
 
+    style = window.style()
+    window.ui.button_critical.setIcon(
+        style.standardIcon(QStyle.SP_MediaVolumeMuted)
+    )
+
     # Set tooltips on the buttons
     fxutils.set_formatted_tooltip(
         window.ui.button_success, "Success", "This is a success message."

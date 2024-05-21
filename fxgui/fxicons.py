@@ -290,11 +290,6 @@ if __name__ == "__main__":
     window.setCentralWidget(widget)
     window.menu_bar.hide()
     window.toolbar.hide()
-    window.setWindowIcon(
-        QIcon(
-            os.path.join(os.path.dirname(__file__), "icons", "favicon_dark.png")
-        )
-    )
     window.setWindowTitle("Built-in Icons")
     window.show()
     application.exec_()
