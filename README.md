@@ -1,7 +1,7 @@
 <p align="left">
   <a href="https://www.python.org">
   <img src="https://img.shields.io/badge/-Python-FFD43B?style=for-the-badge&logo=python" alt="Python"/></a>
-  <img src="https://img.shields.io/badge/-PySide-284821?style=for-the-badge&logo=qt" alt="Python"/></a>
+  <img src="https://img.shields.io/badge/-Qt-284821?style=for-the-badge&logo=qt" alt="Python"/></a>
   <img src="https://img.shields.io/badge/-Windows-00A4EF?style=for-the-badge&logo=windows" alt="Compatible with Windows"/></a>
   <img src="https://img.shields.io/badge/-macOS-000000?style=for-the-badge&logo=apple" alt="Compatible with macOS"/></a>
   <img src="https://img.shields.io/badge/-Linux-E95420?style=for-the-badge&logo=linux" alt="Compatible with Linux"/></a>
