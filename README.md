@@ -16,9 +16,11 @@
 
   <p align="center">
     Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.
-    <br/>
-    <br/>
-    <br/>
+    <br />
+    <br />
+    <a href="https://healkeiser.github.io/fxgui"><strong>Documentation</strong></a>
+    <br />
+    <br />
   </p>
 
 </div>
@@ -53,7 +55,7 @@ pip install fxgui
 ```
 
 > [!IMPORTANT]
-> In order to have access to the module, make sure to add `fxgui` to the `$PYTHONPATH` of the DCCs. For Houdini, you can find the [houdini_package file](./houdini_package.json).
+> In order to have access to the module, make sure to add `fxgui` to the `$PYTHONPATH` of the DCCs. For Houdini, you can find the [`houdini_package` file](./houdini_package.json).
 
 
 
