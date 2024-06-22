@@ -2,11 +2,14 @@
 
 # Built-in
 import os
+from pathlib import Path
 import logging
 from typing import Optional
 from datetime import datetime
 from webbrowser import open_new_tab
 from urllib.parse import urlparse
+
+os.environ["QT_API"] = "pyside2"
 
 # Third-party
 from qtpy.QtWidgets import *
@@ -1065,7 +1068,12 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        self.status_bar = FXStatusBar()
+        self.status_bar = FXStatusBar(
+            parent=self,
+            project=self.project,
+            version=self.version,
+            company=self.company,
+        )
         self.setStatusBar(self.status_bar)
 
     def _show_about_dialog(self) -> None:
@@ -1288,6 +1296,42 @@ class FXMainWindow(QMainWindow):
             }}
         """
         )
+
+    def set_project_label(self, project: str) -> None:
+        """Sets the project label in the status bar.
+
+        Args:
+            project (str): The project name.
+
+        Note:
+            Overrides the base class method.
+        """
+
+        self.statusBar().project_label.setText(project)
+
+    def set_company_label(self, company: str) -> None:
+        """Sets the company label in the status bar.
+
+        Args:
+            company (str): The company name.
+
+        Note:
+            Overrides the base class method.
+        """
+
+        self.statusBar().company_label.setText(company)
+
+    def set_version_label(self, version: str) -> None:
+        """Sets the version label in the status bar.
+
+        Args:
+            version (str): The version string.
+
+        Note:
+            Overrides the base class method.
+        """
+
+        self.statusBar().version_label.setText(version)
 
     # - Events
 
@@ -1527,3 +1571,129 @@ class FXFloatingDialog(QDialog):
 
         self.setParent(None)
         super().close()
+
+
+class FXSystemTray(QObject):
+    """A system tray icon with a context menu.
+
+    Args:
+        parent (QWidget, optional): The parent widget. Defaults to None.
+        icon (str, optional): The icon path. Defaults to None.
+
+    Attributes:
+        tray_icon (QSystemTrayIcon): The system tray icon.
+        quit_action (QAction): The action to quit the application.
+        tray_menu (QMenu): The tray menu.
+
+    Examples:
+        >>> app = FXApplication()
+        >>> system_tray = FXSystemTray()
+        >>> hello_action = QAction(fxicons.get_icon("perm_media"), "Set Project", system_tray)
+        >>> system_tray.tray_menu.insertAction(system_tray.quit_action, hello_action)
+        >>> system_tray.tray_menu.insertSeparator(system_tray.quit_action)
+        >>> system_tray.show()
+        >>> app.exec_()
+    """
+
+    def __init__(self, parent=None, icon=None):
+        super().__init__(parent)
+
+        self.icon = icon or (Path(__file__).parent / "images" / "fxgui_logo_light.svg").as_posix()
+        self.tray_icon = QSystemTrayIcon(QIcon(self.icon), parent)
+
+        # Methods
+        self._create_actions()
+        self._create_menu()
+        self._handle_connections()
+
+    # - Private methods
+
+    def _create_actions(self) -> None:
+        """Creates the actions for the window.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        # Main menu
+        self.quit_action = fxutils.create_action(
+            self,
+            "Quit",
+            fxicons.get_icon("close"),
+            QApplication.instance().quit,
+            enable=True,
+            visible=True,
+        )
+
+    def _create_menu(self) -> None:
+        self.tray_menu = QMenu(self.parent())
+        self.tray_menu.addAction(self.quit_action)
+
+        # Styling
+        self.tray_menu.setStyleSheet(fxstyle.load_stylesheet())
+
+    def _handle_connections(self) -> None:
+        # Right-click
+        # self.tray_icon.setContextMenu(self.tray_menu)
+
+        # Left-click
+        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+
+    # - Public methods
+
+    def show(self):
+        """Shows the system tray icon."""
+
+        self.tray_icon.show()
+
+    def on_tray_icon_activated(self, reason):
+        """Shows the tray menu at the cursor's position.
+
+        Args:
+            reason (QSystemTrayIcon.ActivationReason): The reason for the tray
+                icon activation.
+        """
+
+        if reason == QSystemTrayIcon.Trigger:
+
+            # Calculate taskbar position
+            screen = QApplication.primaryScreen()
+            screen_geometry = screen.geometry()
+            available_geometry = screen.availableGeometry()
+            tray_icon_geometry = self.tray_icon.geometry()
+
+            # Calculate the center position of the tray icon
+            tray_icon_center = tray_icon_geometry.center()
+
+            menu_width = self.tray_menu.sizeHint().width()
+            menu_height = self.tray_menu.sizeHint().height()
+
+            if available_geometry.y() > screen_geometry.y():
+                # Taskbar is on the top
+                pos = QPoint(tray_icon_center.x() - menu_width / 2, tray_icon_geometry.bottom())
+            elif available_geometry.x() > screen_geometry.x():
+                # Taskbar is on the left
+                pos = QPoint(tray_icon_geometry.right(), tray_icon_center.y() - menu_height / 2)
+            elif available_geometry.height() < screen_geometry.height():
+                # Taskbar is on the bottom
+                pos = QPoint(tray_icon_center.x() - menu_width / 2, tray_icon_geometry.top() - menu_height)
+            else:
+                # Taskbar is on the right or default position
+                pos = QPoint(tray_icon_geometry.left() - menu_width, tray_icon_center.y() - menu_height / 2)
+
+            # Ensure the menu is completely visible
+            if pos.x() < available_geometry.x():
+                pos.setX(available_geometry.x())
+            if pos.y() < available_geometry.y():
+                pos.setY(available_geometry.y())
+            if pos.x() + menu_width > available_geometry.right():
+                pos.setX(available_geometry.right() - menu_width)
+            if pos.y() + menu_height > available_geometry.bottom():
+                pos.setY(available_geometry.bottom() - menu_height)
+
+            self.tray_menu.exec_(pos)
+
+    # - Events
+
+    def closeEvent(self, event) -> None:
+        self.setParent(None)

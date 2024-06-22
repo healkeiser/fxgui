@@ -3,6 +3,8 @@
 # Built-in
 import os
 
+from fxgui.fxwidgets import FXApplication
+
 os.environ["QT_API"] = "pyside2"
 
 # Third-party
@@ -120,7 +122,7 @@ def main(show_delayed: bool = False):
     application.setStyle(fxstyle.FXProxyStyle())
 
     # Initialize window now for splashscreen
-    window = fxwidgets.FXMainWindow(ui_file=_ui_file)
+    window = fxwidgets.FXMainWindow(project="fxgui", version="0.1.0", ui_file=_ui_file)
     window.set_status_line_colors(color_a="#fd6b72", color_b="#ffc577")
     application.processEvents()
 
