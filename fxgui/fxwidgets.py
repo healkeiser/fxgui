@@ -38,11 +38,35 @@ INFO = 4
 class FXApplication(QApplication):
     """Customized QApplication class."""
 
-    def __init__(self):
-        super().__init__()
+    _instance = None  # Private class attribute to hold the singleton instance
 
-        fxstyle.set_style(self)
-        self.setStyleSheet(fxstyle.load_stylesheet())
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+
+            # Create the instance if it doesn't exist
+            cls._instance = super(FXApplication, cls).__new__(cls)
+
+            # Initialize the instance once
+            cls._instance.__initialized = False
+        return cls._instance
+
+    def __init__(self, *args, **kwargs):
+        if not self.__initialized:
+            super().__init__(*args, **kwargs)
+
+            fxstyle.set_style(self)
+            self.setStyleSheet(fxstyle.load_stylesheet())
+
+            # Mark the instance as initialized
+            self.__initialized = True
+
+    @classmethod
+    def instance(cls, *args, **kwargs):
+        """Return the existing instance or create a new one if it doesn't exist."""
+
+        # This ensures that __new__ and __init__ are called if the instance
+        # doesn't exist
+        return cls(*args, **kwargs)
 
 
 class FXSplashScreen(QSplashScreen):
@@ -1668,18 +1692,20 @@ class FXSystemTray(QObject):
             menu_width = self.tray_menu.sizeHint().width()
             menu_height = self.tray_menu.sizeHint().height()
 
+            margin = 20  # Margin between the taskbar and the system tray menu
+
             if available_geometry.y() > screen_geometry.y():
                 # Taskbar is on the top
-                pos = QPoint(tray_icon_center.x() - menu_width / 2, tray_icon_geometry.bottom())
+                pos = QPoint(tray_icon_center.x() - menu_width / 2, tray_icon_geometry.bottom() + margin)
             elif available_geometry.x() > screen_geometry.x():
                 # Taskbar is on the left
-                pos = QPoint(tray_icon_geometry.right(), tray_icon_center.y() - menu_height / 2)
+                pos = QPoint(tray_icon_geometry.right() + margin, tray_icon_center.y() - menu_height / 2)
             elif available_geometry.height() < screen_geometry.height():
                 # Taskbar is on the bottom
-                pos = QPoint(tray_icon_center.x() - menu_width / 2, tray_icon_geometry.top() - menu_height)
+                pos = QPoint(tray_icon_center.x() - menu_width / 2, tray_icon_geometry.top() - menu_height - margin)
             else:
                 # Taskbar is on the right or default position
-                pos = QPoint(tray_icon_geometry.left() - menu_width, tray_icon_center.y() - menu_height / 2)
+                pos = QPoint(tray_icon_geometry.left() - menu_width - margin, tray_icon_center.y() - menu_height / 2)
 
             # Ensure the menu is completely visible
             if pos.x() < available_geometry.x():
