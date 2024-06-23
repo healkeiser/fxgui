@@ -62,9 +62,11 @@ class FXApplication(QApplication):
 
     @classmethod
     def instance(cls, *args, **kwargs):
-        """Return the existing instance or create a new one if it doesn't exist."""
+        """Return the existing instance or create a new one if it doesn't
+        exist.
+        """
 
-        # This ensures that __new__ and __init__ are called if the instance
+        # This ensures that `__new__` and `__init__` are called if the instance
         # doesn't exist
         return cls(*args, **kwargs)
 
@@ -185,7 +187,7 @@ class FXSplashScreen(QSplashScreen):
         # Fake signal to trigger the `messageChanged` event
         super().showMessage(" ")
 
-        self.info_label.setText(message)
+        self.message_label.setText(message)
 
     # - Private methods
 
@@ -280,11 +282,23 @@ class FXSplashScreen(QSplashScreen):
         )
         self.info_label.setAlignment(Qt.AlignJustify)
         self.info_label.setWordWrap(True)
+        self.info_label.setStyleSheet("font-size: 10pt;")
         layout.addWidget(self.info_label)
 
         # Spacer
         spacer_b = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         layout.addItem(spacer_b)
+
+        # Message
+        self.message_label = QLabel("")
+        self.message_label.setWordWrap(True)
+        self.message_label.setAlignment(Qt.AlignLeft)
+        self.message_label.setStyleSheet("font-size: 10pt;")
+        layout.addWidget(self.message_label)
+
+        # Spacer
+        spacer_c = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        layout.addItem(spacer_c)
 
         # Progress Bar
         if self.show_progress_bar:
@@ -292,8 +306,8 @@ class FXSplashScreen(QSplashScreen):
             layout.addWidget(self.progress_bar)
 
         # Spacer
-        spacer_c = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-        layout.addItem(spacer_c)
+        spacer_d = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        layout.addItem(spacer_d)
 
         # Copyright QLabel
         project = self.project if self.project and len(self.project) >= 1 else "Project"
@@ -424,7 +438,7 @@ class FXStatusBar(QStatusBar):
 
         Examples:
             To display a critical error message with a red background
-            >>> self.set_statusbar_message(
+            >>> self.showMessage(
             ...     "Critical error occurred!",
             ...     severity_type=self.CRITICAL,
             ...     duration=5,
@@ -1609,6 +1623,11 @@ class FXSystemTray(QObject):
         quit_action (QAction): The action to quit the application.
         tray_menu (QMenu): The tray menu.
 
+    Methods:
+        show: Shows the system tray icon.
+        on_tray_icon_activated: Shows the tray menu above the taskbar.
+        closeEvent: Closes the application.
+
     Examples:
         >>> app = FXApplication()
         >>> system_tray = FXSystemTray()
@@ -1644,7 +1663,7 @@ class FXSystemTray(QObject):
             self,
             "Quit",
             fxicons.get_icon("close"),
-            QApplication.instance().quit,
+            self.closeEvent,
             enable=True,
             visible=True,
         )
@@ -1679,7 +1698,6 @@ class FXSystemTray(QObject):
         """
 
         if reason == QSystemTrayIcon.Trigger:
-
             # Calculate taskbar position
             screen = QApplication.primaryScreen()
             screen_geometry = screen.geometry()
@@ -1719,7 +1737,7 @@ class FXSystemTray(QObject):
 
             self.tray_menu.exec_(pos)
 
-    # - Events
-
     def closeEvent(self, event) -> None:
+        FXApplication.instance().quit()
+        QApplication.instance().quit()
         self.setParent(None)

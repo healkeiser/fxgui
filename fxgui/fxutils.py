@@ -119,9 +119,7 @@ def add_shadows(
     return shadow
 
 
-def convert_qicon_to_qpixmap(
-    icon: QIcon, desired_size: Optional[QSize] = None
-) -> Optional[QPixmap]:
+def convert_qicon_to_qpixmap(icon: QIcon, desired_size: Optional[QSize] = None) -> Optional[QPixmap]:
     """Converts a QIcon to a QPixmap.
 
     Args:
@@ -189,14 +187,13 @@ def filter_tree(
             item.setHidden(item.isHidden() or should_hide_parent)
 
 
-def set_formatted_tooltip(
-    widget: QWidget, title: str, tooltip: str, duration: int = 5
-) -> None:
+def set_formatted_tooltip(widget: QWidget, title: str, tooltip: str, duration: int = 5) -> None:
     """Set a formatted tooltip. The tooltip will be displayed with a bold title, and a separator line
     between the title and the tooltip text.
 
     Args:
         widget (QWidget): The widget to set the tooltip.
+        title (str): The title of the tooltip.
         tooltip (str): The tooltip text.
         duration (int): The duration in seconds to show the tooltip. Defaults to `5`.
 
