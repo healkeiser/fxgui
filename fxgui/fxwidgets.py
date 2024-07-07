@@ -88,8 +88,10 @@ class FXSplashScreen(QSplashScreen):
         project (str, optional): Project name. Defaults to `Project`.
         version (str, optional): Version information. Defaults to `0.0.0`.
         company (str, optional): Company name. Defaults to `Company`.
-        accent_color (str, optional): Accent color to be applied to the splash
-            screen. Defaults to `#039492`.
+        color_a (str, optional): Color A to be applied to the splash
+            screen. Defaults to `#649eff`.
+        color_b (str, optional): Color B to be applied to the splash
+            screen. Defaults to `#4188ff`.
         fade_in (bool, optional): Whether to apply a fade-in effect on the
             splash screen. Defaults to False.
 
@@ -105,7 +107,8 @@ class FXSplashScreen(QSplashScreen):
         project (str): Project name. Defaults to `Project`.
         version (str): Version information. Defaults to `v0.0.0`.
         company (str): Company name. Defaults to `Company`.
-        accent_color (str): Accent color applied to the splash screen.
+        color_a (str): Color A applied to the splash screen.
+        color_b (str): Color B applied to the splash screen.
         fade_in (bool): Whether to apply a fade-in effect on the
             splash screen. Defaults to `False`.
         title_label (QLabel): Label for the title text.
@@ -145,7 +148,8 @@ class FXSplashScreen(QSplashScreen):
         project: Optional[str] = None,
         version: Optional[str] = None,
         company: Optional[str] = None,
-        accent_color: str = "#039492",
+        color_a: str = "#649eff",
+        color_b: str = "#4188ff",
         fade_in: bool = False,
     ):
         # Load the image using image_path and redirect as the original pixmap
@@ -169,7 +173,8 @@ class FXSplashScreen(QSplashScreen):
         self.project: str = project
         self.version: str = version
         self.company: str = company
-        self.accent_color: str = accent_color
+        self.color_a: str = color_a
+        self.color_b: str = color_b
         self.fade_in: bool = fade_in
 
         # Methods
@@ -615,8 +620,10 @@ class FXMainWindow(QMainWindow):
             Defaults to `None`.
         company (str, optional): Company name for the window.
             Defaults to `Company`.
-        accent_color (str, optional): Accent color to be applied to the splash
-            screen. Defaults to `#039492`.
+        color_a (str, optional):Color to be applied to the window.
+            Defaults to `#649eff`.
+        color_b (str, optional): Color to be applied to the window.
+            Defaults to `#4188ff`.
         ui_file (str, optional): Path to the UI file for loading.
             Defaults to `None`.
 
@@ -629,7 +636,8 @@ class FXMainWindow(QMainWindow):
         project (str): The project name.
         version (str): The version string.
         company (str): The company name.
-        accent_color (str): The accent color.
+        color_a (str): The color A.
+        color_b (str): The color B.
         ui_file (str): The UI file path.
         ui (QWidget): The loaded UI from the UI file. Note that this attribute
             is only accessible if you're defining a UI file through `ui_file`.
@@ -751,7 +759,8 @@ class FXMainWindow(QMainWindow):
         project: Optional[str] = None,
         version: Optional[str] = None,
         company: Optional[str] = None,
-        accent_color: str = "#039492",
+        color_a: str = "#649eff",
+        color_b: str = "#4188ff",
         ui_file: Optional[str] = None,
     ):
         super().__init__(parent)
@@ -769,7 +778,8 @@ class FXMainWindow(QMainWindow):
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
         self.company: str = company or "\u00A9 Company"
-        self.accent_color: str = accent_color
+        self.color_a: str = color_a
+        self.color_b: str = color_b
         self.ui_file: str = ui_file
         self.ui = None
 
@@ -793,7 +803,7 @@ class FXMainWindow(QMainWindow):
         self._add_shadows()
 
         # Styling
-        self.setStyleSheet(fxstyle.load_stylesheet())
+        self.setStyleSheet(fxstyle.load_stylesheet(color_a=self.color_a, color_b=self.color_b))
 
     # - Private methods
 
@@ -1316,6 +1326,18 @@ class FXMainWindow(QMainWindow):
 
         # Call the parent's setCentralWidget method with the new central widget
         super().setCentralWidget(central_widget)
+
+    def set_colors(self, color_a: str, color_b: str) -> None:
+        """Sets the accent color of the window.
+
+        Args:
+            color_a (str): The first color.
+            color_b (str): The second color.
+        """
+
+        self.color_a = color_a
+        self.color_b = color_b
+        self.setStyleSheet(fxstyle.load_stylesheet(color_a=color_a, color_b=color_b))
 
     def set_status_line_colors(self, color_a: str, color_b: str) -> None:
         """Set the colors of the status line.
