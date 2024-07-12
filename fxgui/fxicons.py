@@ -28,10 +28,7 @@ from qtpy.QtGui import (
 from qtpy.QtCore import Qt, qVersion
 
 # Internal
-try:
-    from fxgui import fxwidgets
-except ModuleNotFoundError:
-    import fxwidgets
+from fxgui import fxwidgets
 
 
 ###### CODE ####################################################################
@@ -109,11 +106,7 @@ def has_transparency(mask: QBitmap) -> bool:
 
     image = mask.toImage()
     size = mask.size()
-    return any(
-        image.pixelIndex(x, y) == 0
-        for x in range(size.width())
-        for y in range(size.height())
-    )
+    return any(image.pixelIndex(x, y) == 0 for x in range(size.width()) for y in range(size.height()))
 
 
 @lru_cache(maxsize=128)
@@ -231,9 +224,7 @@ def get_icon(
         >>> get_icon("add", color="red")
     """
 
-    qpixmap = get_pixmap(
-        icon_name, width, height, color, library, style, extension
-    )
+    qpixmap = get_pixmap(icon_name, width, height, color, library, style, extension)
     return QIcon(qpixmap)
 
 
@@ -243,9 +234,7 @@ if __name__ == "__main__":
         def __init__(self):
             super().__init__()
 
-            icons = sorted(
-                [attr for attr in dir(QStyle) if attr.startswith("SP_")]
-            )
+            icons = sorted([attr for attr in dir(QStyle) if attr.startswith("SP_")])
             layout = QGridLayout()
 
             for number, name in enumerate(icons):

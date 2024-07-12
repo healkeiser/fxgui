@@ -34,6 +34,9 @@ WARNING = 2
 SUCCESS = 3
 INFO = 4
 
+_COLOR_A_DEFAULT = "#597e97"
+_COLOR_B_DEFAULT = "#3d5768"
+
 
 class FXApplication(QApplication):
     """Customized QApplication class."""
@@ -148,8 +151,8 @@ class FXSplashScreen(QSplashScreen):
         project: Optional[str] = None,
         version: Optional[str] = None,
         company: Optional[str] = None,
-        color_a: str = "#649eff",
-        color_b: str = "#4188ff",
+        color_a: str = _COLOR_A_DEFAULT,
+        color_b: str = _COLOR_B_DEFAULT,
         fade_in: bool = False,
     ):
         # Load the image using image_path and redirect as the original pixmap
@@ -759,8 +762,8 @@ class FXMainWindow(QMainWindow):
         project: Optional[str] = None,
         version: Optional[str] = None,
         company: Optional[str] = None,
-        color_a: str = "#649eff",
-        color_b: str = "#4188ff",
+        color_a: Optional[str] = None,
+        color_b: Optional[str] = None,
         ui_file: Optional[str] = None,
     ):
         super().__init__(parent)
@@ -778,8 +781,8 @@ class FXMainWindow(QMainWindow):
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
         self.company: str = company or "\u00A9 Company"
-        self.color_a: str = color_a
-        self.color_b: str = color_b
+        self.color_a: str = color_a or _COLOR_A_DEFAULT
+        self.color_b: str = color_b or _COLOR_B_DEFAULT
         self.ui_file: str = ui_file
         self.ui = None
 
@@ -869,7 +872,7 @@ class FXMainWindow(QMainWindow):
         self.check_updates_action = fxutils.create_action(
             self,
             "Check for Updates...",
-            None,
+            fxicons.get_icon("update"),
             None,
             enable=False,
             visible=True,
@@ -897,7 +900,7 @@ class FXMainWindow(QMainWindow):
         self.close_action = fxutils.create_action(
             self,
             "Close",
-            None,
+            fxicons.get_icon("close"),
             self.close,
             enable=True,
             visible=True,
@@ -908,7 +911,7 @@ class FXMainWindow(QMainWindow):
         self.settings_action = fxutils.create_action(
             self,
             "Settings",
-            None,
+            fxicons.get_icon("settings"),
             None,
             enable=False,
             visible=True,
@@ -919,7 +922,7 @@ class FXMainWindow(QMainWindow):
         self.window_on_top_action = fxutils.create_action(
             self,
             "Always On Top",
-            None,
+            fxicons.get_icon("hdr_weak"),
             self._window_on_top,
             enable=True,
             visible=True,
@@ -929,7 +932,7 @@ class FXMainWindow(QMainWindow):
         self.minimize_window_action = fxutils.create_action(
             self,
             "Minimize",
-            None,
+            fxicons.get_icon("minimize"),
             self.showMinimized,
             enable=True,
             visible=True,
@@ -939,7 +942,7 @@ class FXMainWindow(QMainWindow):
         self.maximize_window_action = fxutils.create_action(
             self,
             "Maximize",
-            None,
+            fxicons.get_icon("maximize"),
             self.showMaximized,
             enable=True,
             visible=True,
@@ -950,7 +953,7 @@ class FXMainWindow(QMainWindow):
         self.open_documentation_action = fxutils.create_action(
             self,
             "Documentation",
-            None,
+            fxicons.get_icon("help_center"),
             lambda: open_new_tab(self.documentation),
             enable=True,
             visible=True,
@@ -960,7 +963,8 @@ class FXMainWindow(QMainWindow):
         self.home_action = fxutils.create_action(
             self,
             "Home",
-            self.style().standardIcon(QStyle.SP_DirHomeIcon),
+            fxicons.get_icon("home"),
+            # self.style().standardIcon(QStyle.SP_DirHomeIcon),
             None,
             enable=False,
             visible=True,
@@ -969,7 +973,8 @@ class FXMainWindow(QMainWindow):
         self.previous_action = fxutils.create_action(
             self,
             "Previous",
-            self.style().standardIcon(QStyle.SP_ArrowBack),
+            fxicons.get_icon("arrow_back"),
+            # self.style().standardIcon(QStyle.SP_ArrowBack),
             None,
             enable=False,
             visible=True,
@@ -978,7 +983,8 @@ class FXMainWindow(QMainWindow):
         self.next_action = fxutils.create_action(
             self,
             "Next",
-            self.style().standardIcon(QStyle.SP_ArrowForward),
+            fxicons.get_icon("arrow_forward"),
+            # self.style().standardIcon(QStyle.SP_ArrowForward),
             None,
             enable=False,
             visible=True,
@@ -987,7 +993,8 @@ class FXMainWindow(QMainWindow):
         self.refresh_action = fxutils.create_action(
             self,
             "Refresh",
-            self.style().standardIcon(QStyle.SP_BrowserReload),
+            fxicons.get_icon("refresh"),
+            # self.style().standardIcon(QStyle.SP_BrowserReload),
             None,
             enable=True,
             visible=True,
@@ -1074,7 +1081,7 @@ class FXMainWindow(QMainWindow):
         else:
             return QLabel(default)
 
-    def _create_status_line(self, color_a: str = "#649eff", color_b: str = "#4188ff") -> None:
+    def _create_status_line(self, color_a: str = _COLOR_A_DEFAULT, color_b: str = _COLOR_A_DEFAULT) -> None:
         """Creates a custom status line for the window.
 
         Args:
@@ -1181,8 +1188,8 @@ class FXMainWindow(QMainWindow):
         text, icon, window_title = action_values[stays_on_top]
         flags ^= Qt.WindowStaysOnTopHint
         self.window_on_top_action.setText(text)
-        # if icon is not None:
-        #     self.window_on_top_action.setIcon(icon)
+        if icon is not None:
+            self.window_on_top_action.setIcon(icon)
         self.setWindowFlags(flags)
         self.setWindowTitle(window_title)
         self.show()

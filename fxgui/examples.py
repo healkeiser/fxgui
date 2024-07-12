@@ -123,8 +123,7 @@ def main(show_delayed: bool = False):
 
     # Initialize window now for splashscreen
     window = fxwidgets.FXMainWindow(project="fxgui", version="0.1.0", ui_file=_ui_file)
-    window.set_status_line_colors(color_a="#fd6b72", color_b="#ffc577")
-    window.set_colors(color_a="#fd6b72", color_b="#ffc577")
+    # window.set_status_line_colors(color_a="#fd6b72", color_b="#ffc577")
     application.processEvents()
 
     # Splashscreen
@@ -207,4 +206,5 @@ def main(show_delayed: bool = False):
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    show_window()

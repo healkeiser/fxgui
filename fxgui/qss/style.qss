@@ -1,6 +1,6 @@
 /*
-@ColorA: #649eff
-@ColorB: #4188ff
+@ColorA: #597e97
+@ColorB: #3d5768
 
 @GreyH: #201F1F
 @GreyA: #3A3939
@@ -19,9 +19,6 @@
 @GreyE: #bbb
 
 @White: #FFFFFF
-
-@Pink: #cc00cc
-@Blue: #4ab5cc
 */
 
 QProgressBar:horizontal {
@@ -50,7 +47,7 @@ QWidget
     color: silver;
     background-color: @GreyC;
     selection-background-color: @ColorA;
-    selection-color: black;
+    selection-color: white;
     background-clip: border;
     border-image: none;
     outline: 0;
@@ -83,8 +80,8 @@ QCheckBox:disabled
 QCheckBox::indicator,
 QGroupBox::indicator
 {
-    width: 18px;
-    height: 18px;
+    width: 15px;
+    height: 15px;
 }
 QGroupBox::indicator
 {
@@ -234,7 +231,7 @@ QMenuBar::item
 
 QMenuBar::item:selected
 {
-    color: black;
+    color: white;
     background-color: @ColorA;
     border-radius: 2px;
     margin: 5px;
@@ -246,7 +243,7 @@ QMenuBar::item:pressed
 {
     border: 1px solid @GreyA;
     background-color: @ColorB;
-    color: black;
+    color: white;
     padding-bottom:8px;
 }
 
@@ -274,12 +271,12 @@ QMenu::item
 
 QMenu::item:selected
 {
-    color: black;
+    color: white;
 }
 
 QMenu::item:pressed
 {
-    color: black;
+    color: white;
     background-color: @ColorB;
 }
 
@@ -354,7 +351,7 @@ QAbstractItemView
 QWidget:focus,
 QMenuBar:focus
 {
-    border: 1px solid @ColorA;
+    border: none;
 }
 
 QTabWidget:focus, QCheckBox:focus,
@@ -689,6 +686,7 @@ QTreeView:hover
     color: silver;
 }
 
+
 QComboBox:on
 {
     background-color: #626873;
@@ -710,7 +708,6 @@ QComboBox::drop-down
     subcontrol-origin: padding;
     subcontrol-position: top right;
     width: 15px;
-
     border-left-width: 0px;
     border-left-color: darkgray;
     border-left-style: solid;
@@ -829,7 +826,7 @@ QTabBar::close-button:pressed {
 
 /* TOP TABS */
 QTabBar::tab:top {
-    color: @GreyL;
+    color: silver;
     border: 1px solid @GreyK;
     border-bottom: 1px transparent black;
     background-color: @GreyC;
@@ -841,7 +838,7 @@ QTabBar::tab:top {
 }
 
 QTabBar::tab:top:selected {
-    margin-bottom: -1px;
+    margin-bottom: 1px;
 }
 
 
@@ -853,12 +850,13 @@ QTabBar::tab:top:!selected
     border-bottom: 1px solid @GreyK;
     border-top-left-radius: 2px;
     border-top-right-radius: 2px;
-    margin-top: 2px;
+    margin-top: 3px;
 }
 
 QTabBar::tab:top:!selected:hover {
-    color: black;
+    color: white;
     background-color: @ColorA;
+    margin-bottom: -2px;
 }
 
 /* BOTTOM TABS */
@@ -883,7 +881,7 @@ QTabBar::tab:bottom:!selected
 }
 
 QTabBar::tab:bottom:!selected:hover {
-    color: black;
+    color: white;
     background-color: @ColorA;
 }
 
@@ -909,7 +907,7 @@ QTabBar::tab:left:!selected
 }
 
 QTabBar::tab:left:!selected:hover {
-    color: black;
+    color: white;
     background-color: @ColorA;
 }
 
@@ -936,7 +934,7 @@ QTabBar::tab:right:!selected
 }
 
 QTabBar::tab:right:!selected:hover {
-    color: black;
+    color: white;
     background-color: @ColorA;
 }
 
@@ -977,6 +975,7 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
     padding: 1px -1px -1px 1px;
     background: rgba(255, 255, 255, 10);
 }
+
 
 QTreeView, QListView
 {
@@ -1099,7 +1098,6 @@ QToolButton[popupMode="2"] { /* only for InstantPopup */
  border: 1px transparent @GreyK;
 }
 
-
 QToolButton:hover,
 QToolButton::menu-button:hover {
     background-color: transparent;
@@ -1138,6 +1136,7 @@ QToolButton::menu-arrow:open {
     border: 1px solid @GreyA;
 }
 
+
 QPushButton::menu-indicator  {
     subcontrol-origin: padding;
     subcontrol-position: right;
@@ -1152,6 +1151,7 @@ QPushButton::menu-indicator:disabled {
     height: 9px;
     padding-right: 3px;
 }
+
 
 QTableView
 {
@@ -1261,6 +1261,7 @@ QToolBox::tab:selected { /* Bold selected tabs */
     background-color: @GreyC;
     border-color: @ColorA;
 }
+
 
 QStatusBar {
     background-color: @GreyH;
