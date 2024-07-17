@@ -4,12 +4,16 @@
 import os
 from pathlib import Path
 import logging
+import sys
 from typing import Optional
 from datetime import datetime
 from webbrowser import open_new_tab
 from urllib.parse import urlparse
 
-os.environ["QT_API"] = "pyside2"
+if sys.version_info < (3, 11):
+    os.environ["QT_API"] = "pyside2"
+else:
+    os.environ["QT_API"] = "pyside6"
 
 # Third-party
 from qtpy.QtWidgets import *
@@ -34,8 +38,8 @@ WARNING = 2
 SUCCESS = 3
 INFO = 4
 
-_COLOR_A_DEFAULT = "#597e97"
-_COLOR_B_DEFAULT = "#3d5768"
+_COLOR_A_DEFAULT = "rgba(89, 126, 151, 200)"  # "#597e97"
+_COLOR_B_DEFAULT = "rgba(61, 87, 104, 200)"  # "#3d5768"
 
 
 class FXApplication(QApplication):
@@ -1665,6 +1669,9 @@ class FXSystemTray(QObject):
         >>> system_tray.tray_menu.insertSeparator(system_tray.quit_action)
         >>> system_tray.show()
         >>> app.exec_()
+
+    Note:
+        Inherits from QObject, not QSystemTrayIcon.
     """
 
     def __init__(self, parent=None, icon=None):

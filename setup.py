@@ -1,8 +1,9 @@
 """PyPI setup script."""
 
 # Built-in
-from setuptools import setup, find_packages
 from pathlib import Path
+from setuptools import setup, find_packages
+import sys
 
 # Metadata
 __author__ = "Valentin Beaumont"
@@ -16,6 +17,14 @@ __email__ = "valentin.onze@gmail.com"
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
+install_requires = [
+    "qtpy",
+]
+if sys.version_info < (3, 11):
+    install_requires.append("PySide2")
+else:
+    install_requires.append("PySide6")
+
 setup(
     name="fxgui",
     version="2.2.4",
@@ -28,9 +37,9 @@ setup(
     license="MIT",
     keywords="Qt PySide2 VFX DCC UI",
     packages=find_packages(),
-    install_requires=[
-        "qtpy",
-        "PySide2",
-    ],
+    install_requires=install_requires,
     include_package_data=True,
 )
+
+# To install as a local editable package:
+# python -m pip install -e .

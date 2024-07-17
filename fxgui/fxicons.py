@@ -2,8 +2,12 @@
 
 # Built-in
 import os
+import sys
 
-os.environ["QT_API"] = "pyside2"
+if sys.version_info < (3, 11):
+    os.environ["QT_API"] = "pyside2"
+else:
+    os.environ["QT_API"] = "pyside6"
 
 from typing import Optional, Callable
 from pathlib import Path
