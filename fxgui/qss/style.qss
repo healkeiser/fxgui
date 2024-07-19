@@ -1,6 +1,6 @@
 /*
-@ColorA: #597e97
-@ColorB: #3d5768
+@ColorA: #912d9af4
+@ColorB: #8c2275b8
 
 @GreyH: #201F1F
 @GreyA: #3A3939
@@ -56,8 +56,8 @@ QWidget
 
 QWidget:item:hover
 {
-    background-color: @ColorA;
-    color: black;
+    background-color: @ColorB;
+    color: white;
 }
 
 QWidget:item:selected
@@ -652,10 +652,9 @@ QPushButton:disabled
     color: #454545;
 }
 
-/* QPushButton:focus {
-    background-color: @ColorA;
-    color: white;
-} */
+QPushButton:focus {
+    border: 1px solid @GreyK;
+}
 
 QComboBox
 {
@@ -680,7 +679,8 @@ QLineEdit:hover,
 QTextEdit:hover,
 QPlainTextEdit:hover,
 QAbstractView:hover,
-QTreeView:hover
+QTreeView:hover,
+QListView:hover
 {
     border: 1px solid @ColorA;
     color: silver;
@@ -1023,7 +1023,7 @@ QTreeView::branch:open:has-children:has-siblings:hover  {
 QListView::item:!selected:hover,
 QListView::item:!selected:hover,
 QTreeView::item:!selected:hover  {
-    background: rgba(0, 0, 0, 0);
+    background: @ColorB;
     outline: 0;
     color: @White
 }
@@ -1169,6 +1169,7 @@ QTableView, QHeaderView
 QTableView::item:pressed,
 QListView::item:pressed,
 QTreeView::item:pressed  {
+    border-color: @ColorA;
     background: @ColorA;
     color: @White;
 }
@@ -1176,6 +1177,7 @@ QTreeView::item:pressed  {
 QTableView::item:selected:active,
 QTreeView::item:selected:active,
 QListView::item:selected:active  {
+    border-color: @ColorB;
     background: @ColorA;
     color: @White;
 }

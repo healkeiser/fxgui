@@ -10,9 +10,6 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 
-###### CODE ####################################################################
-
-
 # Add `README.md` as project long description
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()

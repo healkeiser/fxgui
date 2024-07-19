@@ -9,8 +9,6 @@ if sys.version_info < (3, 11):
 else:
     os.environ["QT_API"] = "pyside6"
 
-from fxgui.fxwidgets import FXApplication
-
 
 # Third-party
 from qtpy.QtWidgets import *
@@ -19,13 +17,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 
 # Internal
-try:
-    from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
-except ModuleNotFoundError:
-    import fxwidgets, fxutils, fxdcc, fxstyle
-
-
-###### CODE ####################################################################
+from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
 
 
 _ui_file = os.path.join(os.path.dirname(__file__), "ui", "test.ui")
@@ -71,7 +63,7 @@ def show_splashscreen(time: float = 5.0):
     Args:
         time (float): The time in seconds to show the splashscreen.
     """
-
+    _fix = QUiLoader()  # XXX: This is a PySide6 bug
     application = fxwidgets.FXApplication()
     splashscreen = fxwidgets.FXSplashScreen(image_path=_pixmap, show_progress_bar=True, fade_in=False)
     splashscreen.show()
@@ -85,6 +77,7 @@ def show_window():
     """Show the window."""
 
     # Initialize the QApplication
+    _fix = QUiLoader()  # XXX: This is a PySide6 bug
     application = fxwidgets.FXApplication()
     window = fxwidgets.FXMainWindow(ui_file=_ui_file)
 
@@ -123,6 +116,7 @@ def main(show_delayed: bool = False):
     """
 
     # Initialize the QApplication
+    _fix = QUiLoader()  # XXX: This is a PySide6 bug
     application = fxwidgets.FXApplication()
     application.setStyle(fxstyle.FXProxyStyle())
 
@@ -211,5 +205,5 @@ def main(show_delayed: bool = False):
 
 
 if __name__ == "__main__":
-    # main()
-    show_window()
+    main()
+    # show_window()

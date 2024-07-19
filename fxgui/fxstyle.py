@@ -37,15 +37,18 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 
-###### CODE ####################################################################
-
-
 # Constants
 _parent_directory = Path(__file__).parent
 STYLE_FILE = _parent_directory / "qss" / "style.qss"
 COLOR_FILE = _parent_directory / "style.jsonc"
-_COLOR_A_DEFAULT = "rgba(89, 126, 151, 200)"  # "#597e97"
-_COLOR_B_DEFAULT = "rgba(61, 87, 104, 200)"  # "#3d5768"
+
+# Lighter
+_COLOR_A_DEFAULT = "#912d9af4"  # "#282727"  # "#605f5f"  # "rgba(89, 126, 151, 200)"  # "#597e97"
+
+# Darker
+_COLOR_B_DEFAULT = (
+    "#8c2275b8"  # "#302f2f"  # "rgba(61, 87, 104, 200)"  # "#3d5768"
+)
 
 # Globals
 _colors = None
@@ -105,7 +108,10 @@ class FXProxyStyle(QProxyStyle):
             QStyle.SP_DialogNoToAllButton: ("do_not_disturb", self.icon_color),
             QStyle.SP_DialogOkButton: ("done", self.icon_color),
             QStyle.SP_DialogOpenButton: ("open_in_new", self.icon_color),
-            QStyle.SP_DialogResetButton: ("cleaning_services", self.icon_color),
+            QStyle.SP_DialogResetButton: (
+                "cleaning_services",
+                self.icon_color,
+            ),
             QStyle.SP_DialogRetryButton: ("restart_alt", self.icon_color),
             QStyle.SP_DialogSaveAllButton: ("save", self.icon_color),
             QStyle.SP_DialogSaveButton: ("save", self.icon_color),
@@ -124,7 +130,10 @@ class FXProxyStyle(QProxyStyle):
             QStyle.SP_DriveHDIcon: ("dns", self.icon_color),
             QStyle.SP_DriveNetIcon: ("cloud", self.icon_color),
             QStyle.SP_FileDialogBack: ("arrow_back", self.icon_color),
-            QStyle.SP_FileDialogContentsView: ("find_in_page", self.icon_color),
+            QStyle.SP_FileDialogContentsView: (
+                "find_in_page",
+                self.icon_color,
+            ),
             QStyle.SP_FileDialogDetailedView: ("description", self.icon_color),
             QStyle.SP_FileDialogEnd: ("note", self.icon_color),
             QStyle.SP_FileDialogInfoView: ("info", self.icon_color),
@@ -272,30 +281,58 @@ def _set_dark_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Active, QPalette.Window, QColor(53, 53, 53))
     palette.setColor(QPalette.Inactive, QPalette.Window, QColor(53, 53, 53))
     palette.setColor(QPalette.Disabled, QPalette.Window, QColor(53, 53, 53))
-    palette.setColor(QPalette.Active, QPalette.WindowText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.WindowText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(169, 169, 169))
+    palette.setColor(
+        QPalette.Active, QPalette.WindowText, QColor(255, 255, 255)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.WindowText, QColor(255, 255, 255)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.WindowText, QColor(169, 169, 169)
+    )
     palette.setColor(QPalette.Active, QPalette.Base, QColor(35, 35, 35))
     palette.setColor(QPalette.Inactive, QPalette.Base, QColor(35, 35, 35))
     palette.setColor(QPalette.Disabled, QPalette.Base, QColor(35, 35, 35))
-    palette.setColor(QPalette.Active, QPalette.AlternateBase, QColor(53, 53, 53))
-    palette.setColor(QPalette.Inactive, QPalette.AlternateBase, QColor(53, 53, 53))
-    palette.setColor(QPalette.Disabled, QPalette.AlternateBase, QColor(53, 53, 53))
+    palette.setColor(
+        QPalette.Active, QPalette.AlternateBase, QColor(53, 53, 53)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.AlternateBase, QColor(53, 53, 53)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.AlternateBase, QColor(53, 53, 53)
+    )
     palette.setColor(QPalette.Active, QPalette.ToolTipBase, QColor(25, 25, 25))
-    palette.setColor(QPalette.Inactive, QPalette.ToolTipBase, QColor(25, 25, 25))
-    palette.setColor(QPalette.Disabled, QPalette.ToolTipBase, QColor(25, 25, 25))
-    palette.setColor(QPalette.Active, QPalette.ToolTipText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.ToolTipText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.ToolTipText, QColor(255, 255, 255))
+    palette.setColor(
+        QPalette.Inactive, QPalette.ToolTipBase, QColor(25, 25, 25)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.ToolTipBase, QColor(25, 25, 25)
+    )
+    palette.setColor(
+        QPalette.Active, QPalette.ToolTipText, QColor(255, 255, 255)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.ToolTipText, QColor(255, 255, 255)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.ToolTipText, QColor(255, 255, 255)
+    )
     palette.setColor(QPalette.Active, QPalette.Text, QColor(255, 255, 255))
     palette.setColor(QPalette.Inactive, QPalette.Text, QColor(255, 255, 255))
     palette.setColor(QPalette.Disabled, QPalette.Text, QColor(169, 169, 169))
     palette.setColor(QPalette.Active, QPalette.Button, QColor(53, 53, 53))
     palette.setColor(QPalette.Inactive, QPalette.Button, QColor(53, 53, 53))
     palette.setColor(QPalette.Disabled, QPalette.Button, QColor(53, 53, 53))
-    palette.setColor(QPalette.Active, QPalette.ButtonText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.ButtonText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(169, 169, 169))
+    palette.setColor(
+        QPalette.Active, QPalette.ButtonText, QColor(255, 255, 255)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.ButtonText, QColor(255, 255, 255)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.ButtonText, QColor(169, 169, 169)
+    )
     palette.setColor(QPalette.Active, QPalette.BrightText, QColor(255, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.BrightText, QColor(255, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.BrightText, QColor(255, 0, 0))
@@ -303,17 +340,31 @@ def _set_dark_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Inactive, QPalette.Link, QColor(42, 130, 218))
     palette.setColor(QPalette.Disabled, QPalette.Link, QColor(42, 130, 218))
     palette.setColor(QPalette.Active, QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.Inactive, QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.Disabled, QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.Active, QPalette.HighlightedText, QColor(35, 35, 35))
-    palette.setColor(QPalette.Inactive, QPalette.HighlightedText, QColor(35, 35, 35))
-    palette.setColor(QPalette.Disabled, QPalette.HighlightedText, QColor(35, 35, 35))
+    palette.setColor(
+        QPalette.Inactive, QPalette.Highlight, QColor(42, 130, 218)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.Highlight, QColor(42, 130, 218)
+    )
+    palette.setColor(
+        QPalette.Active, QPalette.HighlightedText, QColor(35, 35, 35)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.HighlightedText, QColor(35, 35, 35)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.HighlightedText, QColor(35, 35, 35)
+    )
     palette.setColor(QPalette.Active, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Inactive, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Disabled, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Active, QPalette.Midlight, QColor(227, 227, 227))
-    palette.setColor(QPalette.Inactive, QPalette.Midlight, QColor(227, 227, 227))
-    palette.setColor(QPalette.Disabled, QPalette.Midlight, QColor(247, 247, 247))
+    palette.setColor(
+        QPalette.Inactive, QPalette.Midlight, QColor(227, 227, 227)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.Midlight, QColor(247, 247, 247)
+    )
     palette.setColor(QPalette.Active, QPalette.Dark, QColor(160, 160, 160))
     palette.setColor(QPalette.Inactive, QPalette.Dark, QColor(160, 160, 160))
     palette.setColor(QPalette.Disabled, QPalette.Dark, QColor(160, 160, 160))
@@ -323,9 +374,15 @@ def _set_dark_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Active, QPalette.Shadow, QColor(105, 105, 105))
     palette.setColor(QPalette.Inactive, QPalette.Shadow, QColor(105, 105, 105))
     palette.setColor(QPalette.Disabled, QPalette.Shadow, QColor(0, 0, 0))
-    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor(255, 0, 255))
-    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(255, 0, 255))
-    palette.setColor(QPalette.Disabled, QPalette.LinkVisited, QColor(255, 0, 255))
+    palette.setColor(
+        QPalette.Active, QPalette.LinkVisited, QColor(255, 0, 255)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.LinkVisited, QColor(255, 0, 255)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.LinkVisited, QColor(255, 0, 255)
+    )
     palette.setColor(QPalette.Active, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.NoRole, QColor(0, 0, 0))
@@ -383,16 +440,30 @@ def set_light_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Disabled, QPalette.Window, QColor(240, 240, 240))
     palette.setColor(QPalette.Active, QPalette.WindowText, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.WindowText, QColor(0, 0, 0))
-    palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(120, 120, 120))
+    palette.setColor(
+        QPalette.Disabled, QPalette.WindowText, QColor(120, 120, 120)
+    )
     palette.setColor(QPalette.Active, QPalette.Base, QColor(255, 255, 255))
     palette.setColor(QPalette.Inactive, QPalette.Base, QColor(255, 255, 255))
     palette.setColor(QPalette.Disabled, QPalette.Base, QColor(240, 240, 240))
-    palette.setColor(QPalette.Active, QPalette.AlternateBase, QColor(233, 231, 227))
-    palette.setColor(QPalette.Inactive, QPalette.AlternateBase, QColor(233, 231, 227))
-    palette.setColor(QPalette.Disabled, QPalette.AlternateBase, QColor(247, 247, 247))
-    palette.setColor(QPalette.Active, QPalette.ToolTipBase, QColor(255, 255, 220))
-    palette.setColor(QPalette.Inactive, QPalette.ToolTipBase, QColor(255, 255, 220))
-    palette.setColor(QPalette.Disabled, QPalette.ToolTipBase, QColor(255, 255, 220))
+    palette.setColor(
+        QPalette.Active, QPalette.AlternateBase, QColor(233, 231, 227)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.AlternateBase, QColor(233, 231, 227)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.AlternateBase, QColor(247, 247, 247)
+    )
+    palette.setColor(
+        QPalette.Active, QPalette.ToolTipBase, QColor(255, 255, 220)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.ToolTipBase, QColor(255, 255, 220)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.ToolTipBase, QColor(255, 255, 220)
+    )
     palette.setColor(QPalette.Active, QPalette.ToolTipText, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.ToolTipText, QColor(0, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.ToolTipText, QColor(0, 0, 0))
@@ -404,25 +475,47 @@ def set_light_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Disabled, QPalette.Button, QColor(240, 240, 240))
     palette.setColor(QPalette.Active, QPalette.ButtonText, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.ButtonText, QColor(0, 0, 0))
-    palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(120, 120, 120))
-    palette.setColor(QPalette.Active, QPalette.BrightText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.BrightText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.BrightText, QColor(255, 255, 255))
+    palette.setColor(
+        QPalette.Disabled, QPalette.ButtonText, QColor(120, 120, 120)
+    )
+    palette.setColor(
+        QPalette.Active, QPalette.BrightText, QColor(255, 255, 255)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.BrightText, QColor(255, 255, 255)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.BrightText, QColor(255, 255, 255)
+    )
     palette.setColor(QPalette.Active, QPalette.Link, QColor(0, 0, 255))
     palette.setColor(QPalette.Inactive, QPalette.Link, QColor(0, 0, 255))
     palette.setColor(QPalette.Disabled, QPalette.Link, QColor(0, 0, 255))
     palette.setColor(QPalette.Active, QPalette.Highlight, QColor(0, 120, 215))
-    palette.setColor(QPalette.Inactive, QPalette.Highlight, QColor(240, 240, 240))
-    palette.setColor(QPalette.Disabled, QPalette.Highlight, QColor(0, 120, 215))
-    palette.setColor(QPalette.Active, QPalette.HighlightedText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.HighlightedText, QColor(0, 0, 0))
-    palette.setColor(QPalette.Disabled, QPalette.HighlightedText, QColor(255, 255, 255))
+    palette.setColor(
+        QPalette.Inactive, QPalette.Highlight, QColor(240, 240, 240)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.Highlight, QColor(0, 120, 215)
+    )
+    palette.setColor(
+        QPalette.Active, QPalette.HighlightedText, QColor(255, 255, 255)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.HighlightedText, QColor(0, 0, 0)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.HighlightedText, QColor(255, 255, 255)
+    )
     palette.setColor(QPalette.Active, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Inactive, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Disabled, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Active, QPalette.Midlight, QColor(227, 227, 227))
-    palette.setColor(QPalette.Inactive, QPalette.Midlight, QColor(227, 227, 227))
-    palette.setColor(QPalette.Disabled, QPalette.Midlight, QColor(247, 247, 247))
+    palette.setColor(
+        QPalette.Inactive, QPalette.Midlight, QColor(227, 227, 227)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.Midlight, QColor(247, 247, 247)
+    )
     palette.setColor(QPalette.Active, QPalette.Dark, QColor(160, 160, 160))
     palette.setColor(QPalette.Inactive, QPalette.Dark, QColor(160, 160, 160))
     palette.setColor(QPalette.Disabled, QPalette.Dark, QColor(160, 160, 160))
@@ -432,9 +525,15 @@ def set_light_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Active, QPalette.Shadow, QColor(105, 105, 105))
     palette.setColor(QPalette.Inactive, QPalette.Shadow, QColor(105, 105, 105))
     palette.setColor(QPalette.Disabled, QPalette.Shadow, QColor(0, 0, 0))
-    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor(255, 0, 255))
-    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(255, 0, 255))
-    palette.setColor(QPalette.Disabled, QPalette.LinkVisited, QColor(255, 0, 255))
+    palette.setColor(
+        QPalette.Active, QPalette.LinkVisited, QColor(255, 0, 255)
+    )
+    palette.setColor(
+        QPalette.Inactive, QPalette.LinkVisited, QColor(255, 0, 255)
+    )
+    palette.setColor(
+        QPalette.Disabled, QPalette.LinkVisited, QColor(255, 0, 255)
+    )
     palette.setColor(QPalette.Active, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.NoRole, QColor(0, 0, 0))
@@ -525,13 +624,19 @@ def replace_colors(
         str: The stylesheet with replaced colors.
     """
 
-    placeholders = {f"@{prefix}{key}": value for key, value in colors_dict.items() if not isinstance(value, dict)}
+    placeholders = {
+        f"@{prefix}{key}": value
+        for key, value in colors_dict.items()
+        if not isinstance(value, dict)
+    }
     for placeholder, color in placeholders.items():
         stylesheet = stylesheet.replace(placeholder, color)
     return stylesheet
 
 
-def _load_stylesheet(style_file: str = STYLE_FILE, color_file: str = COLOR_FILE) -> Optional[str]:
+def _load_stylesheet(
+    style_file: str = STYLE_FILE, color_file: str = COLOR_FILE
+) -> Optional[str]:
     """Load and process the stylesheet.
 
     This function loads a stylesheet from a QSS file and applies color
@@ -561,7 +666,9 @@ def _load_stylesheet(style_file: str = STYLE_FILE, color_file: str = COLOR_FILE)
     stylesheet = replace_colors(stylesheet, colors_dict)
 
     # Replace icons path
-    stylesheet = stylesheet.replace("qss:", os.path.dirname(__file__).replace("\\", "/") + "/")
+    stylesheet = stylesheet.replace(
+        "qss:", os.path.dirname(__file__).replace("\\", "/") + "/"
+    )
 
     return stylesheet
 
@@ -587,7 +694,11 @@ def _load_stylesheet(style_file: str = STYLE_FILE):
     stylesheet_path = os.path.dirname(style_file)
     stylesheet_path = stylesheet_path.replace("\\", "/") + "/"
 
-    replace = {"@icons": str(Path(__file__).parent / "icons" / "stylesheet").replace("\\", "/")}
+    replace = {
+        "@icons": str(Path(__file__).parent / "icons" / "stylesheet").replace(
+            "\\", "/"
+        )
+    }
 
     for key, value in replace.items():
         stylesheet = stylesheet.replace(key, value)
@@ -703,12 +814,18 @@ def load_stylesheet(
         "@GreyE": "#bbb",
         "@White": "#FFFFFF",
         #
-        "~icons": str(_parent_directory / "icons" / "stylesheet").replace(os.sep, "/"),
+        "~icons": str(_parent_directory / "icons" / "stylesheet").replace(
+            os.sep, "/"
+        ),
     }
 
     for key, value in replace.items():
         stylesheet = stylesheet.replace(key, value)
 
-    stylesheet = font_stylesheet + stylesheet + extra if extra else font_stylesheet + stylesheet
+    stylesheet = (
+        font_stylesheet + stylesheet + extra
+        if extra
+        else font_stylesheet + stylesheet
+    )
 
     return stylesheet

@@ -35,9 +35,6 @@ from qtpy.QtCore import Qt, qVersion
 from fxgui import fxwidgets
 
 
-###### CODE ####################################################################
-
-
 # Constants
 LIBRARIES_ROOT = Path(__file__).parent / "icons" / "libraries"
 DEFAULT_LIBRARY = "material-icons"

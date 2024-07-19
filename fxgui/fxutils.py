@@ -17,9 +17,6 @@ from qtpy.QtWidgets import (
 )
 
 
-###### CODE ####################################################################
-
-
 def load_ui(parent: QWidget, ui_file: str) -> QWidget:
     """Load a UI file and return the loaded UI as a QWidget.
 

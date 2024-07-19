@@ -1,7 +1,6 @@
 """Utility functions related to DCC packages."""
 
 # Built-in
-import shiboken2
 import importlib
 from typing import Optional, Any
 
@@ -12,8 +11,6 @@ from qtpy import QtWidgets
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
-
-###### CODE ####################################################################
 
 # Constants
 STANDALONE = 0
@@ -98,8 +95,5 @@ def get_nuke_main_window() -> QtWidgets.QMainWindow:
     import nuke
 
     for widget in QtWidgets.QApplication.topLevelWidgets():
-        if (
-            widget.inherits("QMainWindow")
-            and widget.metaObject().className() == "Foundry::UI::DockMainWindow"
-        ):
+        if widget.inherits("QMainWindow") and widget.metaObject().className() == "Foundry::UI::DockMainWindow":
             return widget

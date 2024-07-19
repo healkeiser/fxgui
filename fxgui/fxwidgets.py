@@ -22,13 +22,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 
 # Internal
-try:
-    from fxgui import fxstyle, fxutils, fxicons, fxdcc
-except ModuleNotFoundError:
-    import fxstyle, fxutils, fxicons, fxdcc
-
-
-###### CODE ####################################################################
+from fxgui import fxstyle, fxutils, fxicons, fxdcc
 
 
 # Constants
@@ -37,9 +31,6 @@ ERROR = 1
 WARNING = 2
 SUCCESS = 3
 INFO = 4
-
-_COLOR_A_DEFAULT = "rgba(89, 126, 151, 200)"  # "#597e97"
-_COLOR_B_DEFAULT = "rgba(61, 87, 104, 200)"  # "#3d5768"
 
 
 class FXApplication(QApplication):
@@ -155,14 +146,16 @@ class FXSplashScreen(QSplashScreen):
         project: Optional[str] = None,
         version: Optional[str] = None,
         company: Optional[str] = None,
-        color_a: str = _COLOR_A_DEFAULT,
-        color_b: str = _COLOR_B_DEFAULT,
+        color_a: str = fxstyle._COLOR_A_DEFAULT,
+        color_b: str = fxstyle._COLOR_B_DEFAULT,
         fade_in: bool = False,
     ):
         # Load the image using image_path and redirect as the original pixmap
         # argument from `QSplashScreen`
         if image_path is None:
-            image = os.path.join(os.path.dirname(__file__), "images", "snap.png")
+            image = os.path.join(
+                os.path.dirname(__file__), "images", "snap.png"
+            )
         elif os.path.isfile(image_path):
             image = self._resize_image(image_path)
         else:
@@ -172,7 +165,9 @@ class FXSplashScreen(QSplashScreen):
 
         # Attributes
         self.pixmap: QPixmap = image
-        self._default_icon = os.path.join(os.path.dirname(__file__), "icons", "favicon_light.png")
+        self._default_icon = os.path.join(
+            os.path.dirname(__file__), "icons", "favicon_light.png"
+        )
         self.icon: QIcon = icon
         self.title: str = title
         self.information: str = information
@@ -203,7 +198,9 @@ class FXSplashScreen(QSplashScreen):
 
     # - Private methods
 
-    def _resize_image(self, image_path: str, ideal_width: int = 800, ideal_height: int = 450) -> QPixmap:
+    def _resize_image(
+        self, image_path: str, ideal_width: int = 800, ideal_height: int = 450
+    ) -> QPixmap:
         pixmap = QPixmap(image_path)
         width = pixmap.width()
         height = pixmap.height()
@@ -285,12 +282,16 @@ class FXSplashScreen(QSplashScreen):
         layout.addLayout(title_icon_layout)
 
         # Spacer
-        spacer_a = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer_a = QSpacerItem(
+            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        )
         layout.addItem(spacer_a)
 
         # Information
         self.info_label = QLabel(
-            self.information if self.information is not None and len(self.information) >= 1 else lorem_ipsum
+            self.information
+            if self.information is not None and len(self.information) >= 1
+            else lorem_ipsum
         )
         self.info_label.setAlignment(Qt.AlignJustify)
         self.info_label.setWordWrap(True)
@@ -298,7 +299,9 @@ class FXSplashScreen(QSplashScreen):
         layout.addWidget(self.info_label)
 
         # Spacer
-        spacer_b = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer_b = QSpacerItem(
+            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        )
         layout.addItem(spacer_b)
 
         # Message
@@ -309,7 +312,9 @@ class FXSplashScreen(QSplashScreen):
         layout.addWidget(self.message_label)
 
         # Spacer
-        spacer_c = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer_c = QSpacerItem(
+            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        )
         layout.addItem(spacer_c)
 
         # Progress Bar
@@ -318,16 +323,34 @@ class FXSplashScreen(QSplashScreen):
             layout.addWidget(self.progress_bar)
 
         # Spacer
-        spacer_d = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        spacer_d = QSpacerItem(
+            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        )
         layout.addItem(spacer_d)
 
         # Copyright QLabel
-        project = self.project if self.project and len(self.project) >= 1 else "Project"
-        version = self.version if self.version and len(self.version) >= 1 else "0.0.0"
-        company = self.company if self.company and len(self.company) >= 1 else "\u00A9 Company"
+        project = (
+            self.project
+            if self.project and len(self.project) >= 1
+            else "Project"
+        )
+        version = (
+            self.version
+            if self.version and len(self.version) >= 1
+            else "0.0.0"
+        )
+        company = (
+            self.company
+            if self.company and len(self.company) >= 1
+            else "\u00A9 Company"
+        )
 
-        self.copyright_label = QLabel(f"{project} | {version} | \u00A9 {company}")
-        self.copyright_label.setStyleSheet("font-size: 8pt; qproperty-alignment: AlignBottom;")
+        self.copyright_label = QLabel(
+            f"{project} | {version} | \u00A9 {company}"
+        )
+        self.copyright_label.setStyleSheet(
+            "font-size: 8pt; qproperty-alignment: AlignBottom;"
+        )
         layout.addWidget(self.copyright_label)
 
     def _fade_in(self) -> None:
@@ -532,7 +555,11 @@ class FXStatusBar(QStatusBar):
         ) = severity_mapping[severity_type]
 
         # Message
-        message_prefix = f"<b>{severity_prefix}</b>: {self._get_current_time()} - " if time else f"{severity_prefix}: "
+        message_prefix = (
+            f"<b>{severity_prefix}</b>: {self._get_current_time()} - "
+            if time
+            else f"{severity_prefix}: "
+        )
         notification_message = f"{message_prefix} {message}"
         self.icon_label.setPixmap(severity_icon)
         self.message_label.setText(notification_message)
@@ -576,7 +603,9 @@ class FXStatusBar(QStatusBar):
         self.message_label.setVisible(False)
         super().clearMessage()
 
-    def _get_current_time(self, display_seconds: bool = False, display_date: bool = False) -> str:
+    def _get_current_time(
+        self, display_seconds: bool = False, display_date: bool = False
+    ) -> str:
         """Returns the current time as a string.
 
         Args:
@@ -785,8 +814,8 @@ class FXMainWindow(QMainWindow):
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
         self.company: str = company or "\u00A9 Company"
-        self.color_a: str = color_a or _COLOR_A_DEFAULT
-        self.color_b: str = color_b or _COLOR_B_DEFAULT
+        self.color_a: str = color_a or fxstyle._COLOR_A_DEFAULT
+        self.color_b: str = color_b or fxstyle._COLOR_B_DEFAULT
         self.ui_file: str = ui_file
         self.ui = None
 
@@ -810,7 +839,9 @@ class FXMainWindow(QMainWindow):
         self._add_shadows()
 
         # Styling
-        self.setStyleSheet(fxstyle.load_stylesheet(color_a=self.color_a, color_b=self.color_b))
+        self.setStyleSheet(
+            fxstyle.load_stylesheet(color_a=self.color_a, color_b=self.color_b)
+        )
 
     # - Private methods
 
@@ -835,7 +866,11 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        icon_path = self.window_icon if self.window_icon and os.path.isfile(self.window_icon) else self._default_icon
+        icon_path = (
+            self.window_icon
+            if self.window_icon and os.path.isfile(self.window_icon)
+            else self._default_icon
+        )
         self.setWindowIcon(QIcon(icon_path))
 
     def _set_window_title(self) -> None:
@@ -845,7 +880,9 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        self.setWindowTitle(f"{self.window_title if self.window_title else 'Window'} *")
+        self.setWindowTitle(
+            f"{self.window_title if self.window_title else 'Window'} *"
+        )
 
     def _set_window_size(self) -> None:
         """Sets the window size from the specified size.
@@ -854,7 +891,11 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        self.resize(QSize(*self.window_size) if self.window_size and len(self.window_size) >= 1 else QSize(500, 600))
+        self.resize(
+            QSize(*self.window_size)
+            if self.window_size and len(self.window_size) >= 1
+            else QSize(500, 600)
+        )
 
     def _create_actions(self) -> None:
         """Creates the actions for the window.
@@ -1028,11 +1069,15 @@ class FXMainWindow(QMainWindow):
         self.main_menu = self.menu_bar.addMenu("&File")
         self.about_menu = self.main_menu.addAction(self.about_action)
         self.main_menu.addSeparator()
-        self.check_updates_menu = self.main_menu.addAction(self.check_updates_action)
+        self.check_updates_menu = self.main_menu.addAction(
+            self.check_updates_action
+        )
         self.main_menu.addSeparator()
         self.close_menu = self.main_menu.addAction(self.close_action)
         self.hide_main_menu = self.main_menu.addAction(self.hide_action)
-        self.hide_others_menu = self.main_menu.addAction(self.hide_others_action)
+        self.hide_others_menu = self.main_menu.addAction(
+            self.hide_others_action
+        )
         self.main_menu.addSeparator()
         self.close_menu = self.main_menu.addAction(self.close_action)
 
@@ -1042,15 +1087,23 @@ class FXMainWindow(QMainWindow):
 
         # Window menu
         self.window_menu = self.menu_bar.addMenu("&Window")
-        self.minimize_menu = self.window_menu.addAction(self.minimize_window_action)
-        self.maximize_menu = self.window_menu.addAction(self.maximize_window_action)
+        self.minimize_menu = self.window_menu.addAction(
+            self.minimize_window_action
+        )
+        self.maximize_menu = self.window_menu.addAction(
+            self.maximize_window_action
+        )
         self.window_menu.addSeparator()
-        self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
+        self.on_top_menu = self.window_menu.addAction(
+            self.window_on_top_action
+        )
         self.window_menu.addSeparator()
 
         # Help menu
         self.help_menu = self.menu_bar.addMenu("&Help")
-        self.open_documentation_menu = self.help_menu.addAction(self.open_documentation_action)
+        self.open_documentation_menu = self.help_menu.addAction(
+            self.open_documentation_action
+        )
 
     def _create_toolbars(self) -> None:
         """Creates the toolbar for the window.
@@ -1085,7 +1138,11 @@ class FXMainWindow(QMainWindow):
         else:
             return QLabel(default)
 
-    def _create_status_line(self, color_a: str = _COLOR_A_DEFAULT, color_b: str = _COLOR_A_DEFAULT) -> None:
+    def _create_status_line(
+        self,
+        color_a: str = fxstyle._COLOR_A_DEFAULT,
+        color_b: str = fxstyle._COLOR_A_DEFAULT,
+    ) -> None:
         """Creates a custom status line for the window.
 
         Args:
@@ -1208,10 +1265,18 @@ class FXMainWindow(QMainWindow):
         frame_geo = self.frameGeometry()
         desktop_geometry = QDesktopWidget().availableGeometry()
         center_point = desktop_geometry.center()
-        left_top_point = QPoint(desktop_geometry.left(), desktop_geometry.top())
-        right_top_point = QPoint(desktop_geometry.right(), desktop_geometry.top())
-        left_bottom_point = QPoint(desktop_geometry.left(), desktop_geometry.bottom())
-        right_bottom_point = QPoint(desktop_geometry.right(), desktop_geometry.bottom())
+        left_top_point = QPoint(
+            desktop_geometry.left(), desktop_geometry.top()
+        )
+        right_top_point = QPoint(
+            desktop_geometry.right(), desktop_geometry.top()
+        )
+        left_bottom_point = QPoint(
+            desktop_geometry.left(), desktop_geometry.bottom()
+        )
+        right_bottom_point = QPoint(
+            desktop_geometry.right(), desktop_geometry.bottom()
+        )
         moving_position = {
             1: center_point,
             2: left_top_point,
@@ -1281,7 +1346,9 @@ class FXMainWindow(QMainWindow):
         if status_bar:
             fxutils.add_shadows(self, self.statusBar())
 
-    def _get_current_time(self, display_seconds: bool = False, display_date: bool = False) -> str:
+    def _get_current_time(
+        self, display_seconds: bool = False, display_date: bool = False
+    ) -> str:
         """Returns the current time as a string.
 
         Args:
@@ -1348,7 +1415,9 @@ class FXMainWindow(QMainWindow):
 
         self.color_a = color_a
         self.color_b = color_b
-        self.setStyleSheet(fxstyle.load_stylesheet(color_a=color_a, color_b=color_b))
+        self.setStyleSheet(
+            fxstyle.load_stylesheet(color_a=color_a, color_b=color_b)
+        )
 
     def set_status_line_colors(self, color_a: str, color_b: str) -> None:
         """Set the colors of the status line.
@@ -1424,6 +1493,7 @@ class FXWidget(QWidget):
 
         # Methods
         self._load_ui()
+        self._set_layout()
 
         # Styling
         self.setStyleSheet(fxstyle.load_stylesheet())
@@ -1440,6 +1510,18 @@ class FXWidget(QWidget):
 
         if self.ui_file is not None:
             self.ui = fxutils.load_ui(self, self.ui_file)
+
+    def _set_layout(self) -> None:
+        """Sets the layout of the widget.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(9, 9, 9, 9)
+        if self.ui:
+            self.layout.addWidget(self.ui)
 
 
 class FXFloatingDialog(QDialog):
@@ -1496,7 +1578,10 @@ class FXFloatingDialog(QDialog):
         self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.resize(200, 40)
 
-        if self.parent_package == fxdcc.STANDALONE or self.parent_package == None:
+        if (
+            self.parent_package == fxdcc.STANDALONE
+            or self.parent_package == None
+        ):
             pass
 
         elif self.parent_package == fxdcc.HOUDINI:
@@ -1598,7 +1683,9 @@ class FXFloatingDialog(QDialog):
         """
 
         icon = icon if icon else self._default_icon
-        self._icon_label.setPixmap(icon.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self._icon_label.setPixmap(
+            icon.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
         self.dialog_icon = icon
 
     def set_dialog_title(self, title: str = None) -> None:
@@ -1677,7 +1764,12 @@ class FXSystemTray(QObject):
     def __init__(self, parent=None, icon=None):
         super().__init__(parent)
 
-        self.icon = icon or (Path(__file__).parent / "images" / "fxgui_logo_light.svg").as_posix()
+        self.icon = (
+            icon
+            or (
+                Path(__file__).parent / "images" / "fxgui_logo_light.svg"
+            ).as_posix()
+        )
         self.tray_icon = QSystemTrayIcon(QIcon(self.icon), parent)
 
         # Methods
@@ -1750,16 +1842,28 @@ class FXSystemTray(QObject):
 
             if available_geometry.y() > screen_geometry.y():
                 # Taskbar is on the top
-                pos = QPoint(tray_icon_center.x() - menu_width / 2, tray_icon_geometry.bottom() + margin)
+                pos = QPoint(
+                    tray_icon_center.x() - menu_width / 2,
+                    tray_icon_geometry.bottom() + margin,
+                )
             elif available_geometry.x() > screen_geometry.x():
                 # Taskbar is on the left
-                pos = QPoint(tray_icon_geometry.right() + margin, tray_icon_center.y() - menu_height / 2)
+                pos = QPoint(
+                    tray_icon_geometry.right() + margin,
+                    tray_icon_center.y() - menu_height / 2,
+                )
             elif available_geometry.height() < screen_geometry.height():
                 # Taskbar is on the bottom
-                pos = QPoint(tray_icon_center.x() - menu_width / 2, tray_icon_geometry.top() - menu_height - margin)
+                pos = QPoint(
+                    tray_icon_center.x() - menu_width / 2,
+                    tray_icon_geometry.top() - menu_height - margin,
+                )
             else:
                 # Taskbar is on the right or default position
-                pos = QPoint(tray_icon_geometry.left() - menu_width - margin, tray_icon_center.y() - menu_height / 2)
+                pos = QPoint(
+                    tray_icon_geometry.left() - menu_width - margin,
+                    tray_icon_center.y() - menu_height / 2,
+                )
 
             # Ensure the menu is completely visible
             if pos.x() < available_geometry.x():
@@ -1777,3 +1881,10 @@ class FXSystemTray(QObject):
         FXApplication.instance().quit()
         QApplication.instance().quit()
         self.setParent(None)
+
+
+if __name__ == "__main__":
+    _application = FXApplication()
+    window = FXMainWindow()
+    window.show()
+    _application.exec_()
