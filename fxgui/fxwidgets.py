@@ -1437,6 +1437,12 @@ class FXMainWindow(QMainWindow):
         """
         )
 
+    def set_ui_file(self, ui_file: str) -> None:
+        """Sets the UI file and loads the UI."""
+
+        self.ui_file = ui_file
+        self._load_ui()
+
     def set_project_label(self, project: str) -> None:
         """Sets the project label in the status bar.
 
@@ -1548,7 +1554,7 @@ class FXFloatingDialog(QDialog):
         title: Optional[str] = None,
         parent_package: Optional[int] = None,
     ):
-        super().__init__(self, parent)
+        super().__init__(parent)
 
         # Attributes
         _icon = QPixmap(fxicons.get_icon_path("home"))

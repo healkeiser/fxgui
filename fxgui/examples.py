@@ -1,6 +1,7 @@
 """Examples on how to use the `fxgui` module."""
 
 # Built-in
+from email.mime import application
 import os
 import sys
 
@@ -11,6 +12,7 @@ else:
 
 
 # Third-party
+from numpy import append
 from qtpy.QtWidgets import *
 from qtpy.QtUiTools import *
 from qtpy.QtCore import *
@@ -65,7 +67,9 @@ def show_splashscreen(time: float = 5.0):
     """
     _fix = QUiLoader()  # XXX: This is a PySide6 bug
     application = fxwidgets.FXApplication()
-    splashscreen = fxwidgets.FXSplashScreen(image_path=_pixmap, show_progress_bar=True, fade_in=False)
+    splashscreen = fxwidgets.FXSplashScreen(
+        image_path=_pixmap, show_progress_bar=True, fade_in=False
+    )
     splashscreen.show()
     splashscreen.progress_bar.setValue(75)
     QTimer.singleShot(time * 1000, splashscreen.close)
@@ -83,29 +87,40 @@ def show_window():
 
     # Buttons in `test.ui` example
     window.ui.button_success.clicked.connect(
-        lambda: window.statusBar().showMessage("Success message", fxwidgets.SUCCESS)
+        lambda: window.statusBar().showMessage(
+            "Success message", fxwidgets.SUCCESS
+        )
     )
     window.ui.button_info.clicked.connect(
         lambda: window.statusBar().showMessage("Info message", fxwidgets.INFO),
     )
     window.ui.button_warning.clicked.connect(
-        lambda: window.statusBar().showMessage("Warning message", fxwidgets.WARNING)
+        lambda: window.statusBar().showMessage(
+            "Warning message", fxwidgets.WARNING
+        )
     )
     window.ui.button_error.clicked.connect(
-        lambda: window.statusBar().showMessage("Error message", fxwidgets.ERROR),
+        lambda: window.statusBar().showMessage(
+            "Error message", fxwidgets.ERROR
+        ),
     )
     window.ui.button_critical.clicked.connect(
-        lambda: window.statusBar().showMessage("Critical message", fxwidgets.CRITICAL)
+        lambda: window.statusBar().showMessage(
+            "Critical message", fxwidgets.CRITICAL
+        )
     )
 
     window.show()
     application.exec_()
 
 
-def show_floating_dialogue():
-
-    dialogue = fxwidgets.FXFloatingDialog()
-    dialogue.show_under_cursor()
+def show_window_alt():
+    _fix = QUiLoader()  # XXX: This is a PySide6 bug
+    application = fxwidgets.FXApplication()
+    window = fxwidgets.FXMainWindow()
+    window.set_ui_file(_ui_file)
+    window.show()
+    application.exec_()
 
 
 def main(show_delayed: bool = False):
@@ -121,12 +136,16 @@ def main(show_delayed: bool = False):
     application.setStyle(fxstyle.FXProxyStyle())
 
     # Initialize window now for splashscreen
-    window = fxwidgets.FXMainWindow(project="fxgui", version="0.1.0", ui_file=_ui_file)
+    window = fxwidgets.FXMainWindow(
+        project="fxgui", version="0.1.0", ui_file=_ui_file
+    )
     # window.set_status_line_colors(color_a="#fd6b72", color_b="#ffc577")
     application.processEvents()
 
     # Splashscreen
-    splashscreen = fxwidgets.FXSplashScreen(image_path=_pixmap, fade_in=False, show_progress_bar=True)
+    splashscreen = fxwidgets.FXSplashScreen(
+        image_path=_pixmap, fade_in=False, show_progress_bar=True
+    )
     application.processEvents()
 
     splashscreen.show()
@@ -160,26 +179,38 @@ def main(show_delayed: bool = False):
 
     # Buttons in `test.ui` example
     window.ui.button_success.clicked.connect(
-        lambda: window.statusBar().showMessage("Success message", fxwidgets.SUCCESS)
+        lambda: window.statusBar().showMessage(
+            "Success message", fxwidgets.SUCCESS
+        )
     )
     window.ui.button_info.clicked.connect(
         lambda: window.statusBar().showMessage("Info message", fxwidgets.INFO),
     )
     window.ui.button_warning.clicked.connect(
-        lambda: window.statusBar().showMessage("Warning message", fxwidgets.WARNING)
+        lambda: window.statusBar().showMessage(
+            "Warning message", fxwidgets.WARNING
+        )
     )
     window.ui.button_error.clicked.connect(
-        lambda: window.statusBar().showMessage("Error message", fxwidgets.ERROR),
+        lambda: window.statusBar().showMessage(
+            "Error message", fxwidgets.ERROR
+        ),
     )
     window.ui.button_critical.clicked.connect(
-        lambda: window.statusBar().showMessage("Critical message", fxwidgets.CRITICAL)
+        lambda: window.statusBar().showMessage(
+            "Critical message", fxwidgets.CRITICAL
+        )
     )
 
     style = window.style()
-    window.ui.button_critical.setIcon(style.standardIcon(QStyle.SP_MediaVolumeMuted))
+    window.ui.button_critical.setIcon(
+        style.standardIcon(QStyle.SP_MediaVolumeMuted)
+    )
 
     # Set tooltips on the buttons
-    fxutils.set_formatted_tooltip(window.ui.button_success, "Success", "This is a success message.")
+    fxutils.set_formatted_tooltip(
+        window.ui.button_success, "Success", "This is a success message."
+    )
 
     # Refresh toolbar button
     def refresh():
@@ -205,5 +236,6 @@ def main(show_delayed: bool = False):
 
 
 if __name__ == "__main__":
-    main()
+    # main()
     # show_window()
+    show_window_alt()

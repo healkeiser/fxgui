@@ -24,7 +24,7 @@ else:
 
 setup(
     name="fxgui",
-    version="2.2.4",
+    version="2.3.0",
     long_description=long_description,
     long_description_content_type="text/markdown",
     description="Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.",
