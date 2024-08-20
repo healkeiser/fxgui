@@ -14,9 +14,7 @@ __email__ = "valentin.onze@gmail.com"
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
-install_requires = [
-    "qtpy",
-]
+install_requires = ["qtpy", "QtAwesome"]
 if sys.version_info < (3, 11):
     install_requires.append("PySide2")
 else:

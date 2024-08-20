@@ -95,5 +95,9 @@ def get_nuke_main_window() -> QtWidgets.QMainWindow:
     import nuke
 
     for widget in QtWidgets.QApplication.topLevelWidgets():
-        if widget.inherits("QMainWindow") and widget.metaObject().className() == "Foundry::UI::DockMainWindow":
+        if (
+            widget.inherits("QMainWindow")
+            and widget.metaObject().className()
+            == "Foundry::UI::DockMainWindow"
+        ):
             return widget

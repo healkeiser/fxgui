@@ -1,14 +1,6 @@
 """This module provides functionality for handling icons in a VFX application."""
 
 # Built-in
-import os
-import sys
-
-if sys.version_info < (3, 11):
-    os.environ["QT_API"] = "pyside2"
-else:
-    os.environ["QT_API"] = "pyside6"
-
 from typing import Optional, Callable
 from pathlib import Path
 from functools import lru_cache
@@ -19,7 +11,6 @@ from qtpy.QtWidgets import (
     QPushButton,
     QStyle,
     QWidget,
-    QMainWindow,
 )
 from qtpy.QtGui import (
     QIcon,
@@ -107,7 +98,11 @@ def has_transparency(mask: QBitmap) -> bool:
 
     image = mask.toImage()
     size = mask.size()
-    return any(image.pixelIndex(x, y) == 0 for x in range(size.width()) for y in range(size.height()))
+    return any(
+        image.pixelIndex(x, y) == 0
+        for x in range(size.width())
+        for y in range(size.height())
+    )
 
 
 @lru_cache(maxsize=128)
@@ -191,7 +186,7 @@ def get_pixmap(
     if color is not None:
         qpixmap = change_pixmap_color(qpixmap, color)
     else:
-        qpixmap = change_pixmap_color(qpixmap, "white")
+        qpixmap = change_pixmap_color(qpixmap, "#b4b4b4")
     return qpixmap
 
 
@@ -225,7 +220,9 @@ def get_icon(
         >>> get_icon("add", color="red")
     """
 
-    qpixmap = get_pixmap(icon_name, width, height, color, library, style, extension)
+    qpixmap = get_pixmap(
+        icon_name, width, height, color, library, style, extension
+    )
     return QIcon(qpixmap)
 
 
@@ -235,7 +232,9 @@ if __name__ == "__main__":
         def __init__(self):
             super().__init__()
 
-            icons = sorted([attr for attr in dir(QStyle) if attr.startswith("SP_")])
+            icons = sorted(
+                [attr for attr in dir(QStyle) if attr.startswith("SP_")]
+            )
             layout = QGridLayout()
 
             for number, name in enumerate(icons):
@@ -265,11 +264,14 @@ if __name__ == "__main__":
             """Create a callback function for a button click.
 
             Args:
-                name (str): The name of the icon that will be copied to the clipboard when the button is clicked.
+                name (str): The name of the icon that will be copied to the
+                    clipboard when the button is clicked.
 
             Returns:
-                Callable[[bool], None]: A lambda function that takes a boolean argument (indicating whether the button
-                is checked) and calls the `copy_to_clipboard` method with the given name as argument.
+                Callable[[bool], None]: A lambda function that takes a boolean
+                    argument (indicating whether the button is checked) and
+                    calls the `copy_to_clipboard` method with the given name as
+                    an argument.
             """
 
             return lambda checked: self.copy_to_clipboard(name)

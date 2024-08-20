@@ -1,4 +1,7 @@
 {
+    "terminal.integrated.env.windows": {
+        "QT_API": "pyside2"
+    },
     "git.ignoreLimitWarning": true,
     "workbench.colorCustomizations": {
         "activityBar.activeBackground": "#4d4d4d",

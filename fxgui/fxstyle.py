@@ -59,7 +59,7 @@ class FXProxyStyle(QProxyStyle):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.icon_color = "white"  # Default color
+        self.icon_color = "#b4b4b4"  # Default color
 
     def standardIcon(
         self,

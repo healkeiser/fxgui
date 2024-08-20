@@ -4,16 +4,10 @@
 import os
 from pathlib import Path
 import logging
-import sys
 from typing import Optional
 from datetime import datetime
 from webbrowser import open_new_tab
 from urllib.parse import urlparse
-
-if sys.version_info < (3, 11):
-    os.environ["QT_API"] = "pyside2"
-else:
-    os.environ["QT_API"] = "pyside6"
 
 # Third-party
 from qtpy.QtWidgets import *

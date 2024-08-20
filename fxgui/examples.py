@@ -1,18 +1,12 @@
 """Examples on how to use the `fxgui` module."""
 
 # Built-in
-from email.mime import application
 import os
-import sys
 
-if sys.version_info < (3, 11):
-    os.environ["QT_API"] = "pyside2"
-else:
-    os.environ["QT_API"] = "pyside6"
-
+print(">>> ", os.getenv("QT_API"))
 
 # Third-party
-from numpy import append
+import qtawesome as qta
 from qtpy.QtWidgets import *
 from qtpy.QtUiTools import *
 from qtpy.QtCore import *
@@ -119,6 +113,13 @@ def show_window_alt():
     application = fxwidgets.FXApplication()
     window = fxwidgets.FXMainWindow()
     window.set_ui_file(_ui_file)
+    button_sucess = window.ui.button_success
+
+    # Spining icons
+    animation = qta.Spin(button_sucess)
+    spin_icon = qta.icon("fa5s.spinner", color="green", animation=animation)
+    button_sucess.setIcon(spin_icon)
+
     window.show()
     application.exec_()
 
