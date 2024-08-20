@@ -5,7 +5,12 @@
   <img src="https://img.shields.io/badge/-Windows-00A4EF?style=for-the-badge&logo=windows" alt="Compatible with Windows"/></a>
   <img src="https://img.shields.io/badge/-macOS-000000?style=for-the-badge&logo=apple" alt="Compatible with macOS"/></a>
   <img src="https://img.shields.io/badge/-Linux-E95420?style=for-the-badge&logo=linux" alt="Compatible with Linux"/></a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://pypi.org/project/fxgui">
+  <img src="https://img.shields.io/pypi/v/fxgui?style=for-the-badge&logo=pypi&logoColor=white" alt="PyPI version"/>
 </p>
+
+
 
 <div align="center">
 
