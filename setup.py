@@ -14,6 +14,7 @@ __email__ = "valentin.onze@gmail.com"
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
+# Required dependencies
 install_requires = ["qtpy", "QtAwesome"]
 if sys.version_info < (3, 11):
     install_requires.append("PySide2")
@@ -22,7 +23,8 @@ else:
 
 setup(
     name="fxgui",
-    version="2.3.0",
+    use_scm_version=True,
+    setup_requires=["setuptools_scm"],
     long_description=long_description,
     long_description_content_type="text/markdown",
     description="Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.",
@@ -35,6 +37,3 @@ setup(
     install_requires=install_requires,
     include_package_data=True,
 )
-
-# To install as a local editable package:
-# python -m pip install -e .

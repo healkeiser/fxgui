@@ -45,7 +45,7 @@ from fxgui import fxwidgets
 
 
 application = fxwidgets.FXApplication()
-window = fxwidgets.FXWindow()
+window = fxwidgets.FXWindow(ui_file="path/to/ui/file.ui")
 style = window.style()
 window.ui.button_critical.setIcon(style.standardIcon(QStyle.SP_MessageBoxCritical))
 window.show()
@@ -57,3 +57,36 @@ application.exec_()
 
 !!! warning
     Applying the `FXProxyStyle` is only allowed on a `QApplication` instance! So if you're instantiating a `FXMainWindow` inside a parent DCC, **do not** set the style on it.
+
+## QtAwesome
+
+`fxgui` comes bundled with [QtAwesome](https://qtawesome.readthedocs.io/en/latest/index.html), so you can use something like:
+
+```python
+import qtawesome as qta
+from fxgui import fxwidgets
+
+
+application = fxwidgets.FXApplication()
+window = fxwidgets.FXWindow(ui_file="path/to/ui/file.ui")
+window.ui.button_critical.setIcon(qta.icon("mdi6.access-point-network"))
+window.show()
+application.exec_()
+```
+
+And the very cool features from this package, such as animated icons:
+
+```python
+import qtawesome as qta
+from fxgui import fxwidgets
+
+
+application = fxwidgets.FXApplication()
+window = fxwidgets.FXWindow(ui_file="path/to/ui/file.ui")
+button_ctitical = window.ui.button_critical
+animation = qta.Spin(button_ctitical)
+spin_icon = qta.icon("fa5s.spinner", color="red", animation=animation)
+button_ctitical.setIcon(spin_icon)
+window.show()
+application.exec_()
+```
