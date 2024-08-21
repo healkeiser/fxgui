@@ -1,5 +1,5 @@
 {
     "scripts": {
-        "changelog": "auto-changelog -p"
+        "changelog": "auto-changelog -p --unreleased"
     }
 }

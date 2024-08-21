@@ -14,8 +14,11 @@
   ##
 
   <p align="center">
+    <!-- Maintenance status -->
+    <img src="https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg?&label=Maintenance">&nbsp;&nbsp;
+    <!-- <img src="https://img.shields.io/badge/maintenance-deprecated-red.svg?&label=Maintenance">&nbsp;&nbsp; -->
     <!-- License -->
-    <img src="https://img.shields.io/badge/License-MIT-green.svg?&logo=open-source-initiative&logoColor=white" alt="License: MIT"/>&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/License-MIT-brightgreen.svg?&logo=open-source-initiative&logoColor=white" alt="License: MIT"/>&nbsp;&nbsp;
     <!-- PyPI -->
     <a href="https://pypi.org/project/fxgui">
       <img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=PyPI" alt="PyPI version"/></a>&nbsp;&nbsp;
