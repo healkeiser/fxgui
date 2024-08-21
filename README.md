@@ -9,8 +9,9 @@
     Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.
     <br/><br/>
     <a href="https://healkeiser.github.io/fxgui"><strong>Documentation</strong></a>
-    <hr/>
   </p>
+
+  ##
 
   <p align="center">
     <img src="https://img.shields.io/badge/License-MIT-green.svg?&logo=open-source-initiative&logoColor=white" alt="License: MIT"/>&nbsp;&nbsp;
