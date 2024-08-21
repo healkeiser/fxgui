@@ -1,15 +1,3 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/License-MIT-green.svg?&logo=open-source-initiative&logoColor=white" alt="License: MIT"/>&nbsp;&nbsp;
-  <a href="https://pypi.org/project/fxgui">
-    <img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=PyPI" alt="PyPI version"/></a>&nbsp;&nbsp;
-  <img src="https://img.shields.io/github/last-commit/healkeiser/fxgui?logo=github&label=Last%20Commit" alt="Last Commit"/>&nbsp;&nbsp;
-  <a href="https://github.com/healkeiser/fxgui/pulse" alt="Activity">
-    <img src="https://img.shields.io/github/commit-activity/m/healkeiser/fxgui?&logo=github&label=Commit%20Activity"/></a>&nbsp;&nbsp;
-  <img src="https://img.shields.io/github/stars/healkeiser/fxgui" alt="GitHub Stars"/>&nbsp;&nbsp;
-</p>
-
-
-
 <div align="center">
 
   ![Logo](https://raw.githubusercontent.com/healkeiser/fxgui/main/fxgui/images/fxgui_logo_background_dark.svg#gh-light-mode-only)
@@ -19,11 +7,19 @@
 
   <p align="center">
     Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.
-    <br />
-    <br />
+    <br/><br/>
     <a href="https://healkeiser.github.io/fxgui"><strong>Documentation</strong></a>
-    <br />
-    <br />
+    <hr/>
+  </p>
+
+  <p align="center">
+    <img src="https://img.shields.io/badge/License-MIT-green.svg?&logo=open-source-initiative&logoColor=white" alt="License: MIT"/>&nbsp;&nbsp;
+    <a href="https://pypi.org/project/fxgui">
+      <img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=PyPI" alt="PyPI version"/></a>&nbsp;&nbsp;
+    <img src="https://img.shields.io/github/last-commit/healkeiser/fxgui?logo=github&label=Last%20Commit" alt="Last Commit"/>&nbsp;&nbsp;
+    <a href="https://github.com/healkeiser/fxgui/pulse" alt="Activity">
+      <img src="https://img.shields.io/github/commit-activity/m/healkeiser/fxgui?&logo=github&label=Commit%20Activity"/></a>&nbsp;&nbsp;
+    <img src="https://img.shields.io/github/stars/healkeiser/fxgui" alt="GitHub Stars"/>&nbsp;&nbsp;
   </p>
 
 </div>
