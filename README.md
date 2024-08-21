@@ -101,7 +101,7 @@ Project Link: [fxgui](https://github.com/healkeiser/fxgui)
   <a href="https://www.behance.net/el1ven">
   <img src="https://img.shields.io/badge/-Behance-313131?style=for-the-badge&logo=behance" alt="Behance"/></a>
   <a href="https://twitter.com/valentinbeaumon">
-  <img src="https://img.shields.io/badge/-Twitter-black?style=for-the-badge&logo=x" alt="X"/></a>
+  <img src="https://img.shields.io/badge/-X-black?style=for-the-badge&logo=x" alt="X"/></a>
   <a href="https://www.instagram.com/val.beaumontart">
   <img src="https://img.shields.io/badge/-Instagram-85255b?style=for-the-badge&logo=instagram" alt="Instagram"/></a>
   <a href="https://healkeiser.gumroad.com/subscribe">
