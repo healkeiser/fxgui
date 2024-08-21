@@ -11,7 +11,6 @@
 </p>
 
 
-
 <div align="center">
 
   ![Logo](https://raw.githubusercontent.com/healkeiser/fxgui/main/fxgui/images/fxgui_logo_background_dark.svg#gh-light-mode-only)
