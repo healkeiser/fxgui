@@ -14,12 +14,17 @@
   ##
 
   <p align="center">
+    <!-- License -->
     <img src="https://img.shields.io/badge/License-MIT-green.svg?&logo=open-source-initiative&logoColor=white" alt="License: MIT"/>&nbsp;&nbsp;
+    <!-- PyPI -->
     <a href="https://pypi.org/project/fxgui">
       <img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=PyPI" alt="PyPI version"/></a>&nbsp;&nbsp;
+    <!-- Last Commit -->
     <img src="https://img.shields.io/github/last-commit/healkeiser/fxgui?logo=github&label=Last%20Commit" alt="Last Commit"/>&nbsp;&nbsp;
+    <!-- Commit Activity -->
     <a href="https://github.com/healkeiser/fxgui/pulse" alt="Activity">
       <img src="https://img.shields.io/github/commit-activity/m/healkeiser/fxgui?&logo=github&label=Commit%20Activity"/></a>&nbsp;&nbsp;
+    <!-- GitHub stars -->
     <img src="https://img.shields.io/github/stars/healkeiser/fxgui" alt="GitHub Stars"/>&nbsp;&nbsp;
   </p>
 
@@ -29,14 +34,14 @@
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
-<!--ts-->
+
 - [Table of Contents](#table-of-contents)
 - [About](#about)
 - [Installation](#installation)
 - [Example](#example)
 - [Documentation](#documentation)
 - [Contact](#contact)
-<!--te-->
+
 
 
 
@@ -93,21 +98,28 @@ Please read the full documentation [here](https://healkeiser.github.io/fxgui/).
 Project Link: [fxgui](https://github.com/healkeiser/fxgui)
 
 <p align='center'>
+  <!-- GitHub profile -->
   <a href="https://github.com/healkeiser">
-    <img src="https://img.shields.io/badge/healkeiser-20151f?logo=github&style=social" alt="Gumroad"/></a>&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/healkeiser-181717?logo=github&style=social" alt="GitHub"/></a>&nbsp;&nbsp;
+  <!-- LinkedIn -->
   <a href="https://www.linkedin.com/in/valentin-beaumont">
-    <img src="https://img.shields.io/badge/Valentin Beaumont-0A66C2?&logo=linkedin&style=social" alt="LinkedIn"/></a>&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/Valentin%20Beaumont-0A66C2?logo=linkedin&style=social" alt="LinkedIn"/></a>&nbsp;&nbsp;
+  <!-- Behance -->
   <a href="https://www.behance.net/el1ven">
-    <img src="https://img.shields.io/badge/el1ven-313131?&logo=behance&style=social" alt="Behance"/></a>&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/el1ven-1769FF?logo=behance&style=social" alt="Behance"/></a>&nbsp;&nbsp;
+  <!-- X -->
   <a href="https://twitter.com/valentinbeaumon">
-    <img src="https://img.shields.io/badge/@valentinbeaumon-black?&logo=x&style=social" alt="Twitter"/></a>&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/@valentinbeaumon-1DA1F2?logo=x&style=social" alt="Twitter"/></a>&nbsp;&nbsp;
+  <!-- Instagram -->
   <a href="https://www.instagram.com/val.beaumontart">
-    <img src="https://img.shields.io/badge/@val.beaumontart-85255b?&logo=instagram&style=social" alt="Instagram"/></a>&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/@val.beaumontart-E4405F?logo=instagram&style=social" alt="Instagram"/></a>&nbsp;&nbsp;
+  <!-- Gumroad -->
   <a href="https://healkeiser.gumroad.com/subscribe">
-    <img src="https://img.shields.io/badge/healkeiser-20151f?logo=gumroad&style=social" alt="Gumroad"/></a>&nbsp;&nbsp;
-  <a href="https://healkeiser.gumroad.com/subscribe">
-    <img src="https://img.shields.io/badge/valentin.onze@gmail.com-20151f?logo=gmail&style=social" alt="Gumroad"/></a>&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/healkeiser-36a9ae?logo=gumroad&style=social" alt="Gumroad"/></a>&nbsp;&nbsp;
+  <!-- Gmail -->
+  <a href="mailto:valentin.onze@gmail.com">
+    <img src="https://img.shields.io/badge/valentin.onze@gmail.com-D14836?logo=gmail&style=social" alt="Email"/></a>&nbsp;&nbsp;
+  <!-- Buy me a coffee -->
   <a href="https://www.buymeacoffee.com/healkeiser">
     <img src="https://img.shields.io/badge/Buy Me A Coffee-FFDD00?&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"/></a>&nbsp;&nbsp;
 </p>
-
