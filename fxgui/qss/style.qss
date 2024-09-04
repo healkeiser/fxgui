@@ -2,14 +2,31 @@
 @ColorA: #912d9af4
 @ColorB: #8c2275b8
 
+@Grey90: #201F1F
+@Grey85: #2B2B2B
+@Grey82: #2D2C2C
+@Grey81: #302F2F
+@Grey77: #3A3939
+@Grey75: #403F3F
+@Grey75Alt: #404040
+@Grey73: #444
+@Grey71: #4A4949
+@Grey58: #6c6c6c
+@Grey55: #727272
+@Grey53: #777777
+@Grey53Alt: #787876
+@Grey34: #a8a8a8
+@Grey30: #b1b1b1
+@Grey27: #bbb
+
 @GreyH: #201F1F
-@GreyA: #3A3939
 @GreyB: #2D2C2C
 @GreyC: #302F2F
-@GreyF: #404040
+@GreyA: #3A3939
 @GreyO: #403F3F
-@GreyK: #4A4949
+@GreyF: #404040
 @GreyJ: #444
+@GreyK: #4A4949
 @GreyI: #6c6c6c
 @GreyN: #727272
 @GreyD: #777777
@@ -608,6 +625,7 @@ QToolBar {
     border: 1px transparent #393838;
     background: 1px solid @GreyC;
     font-weight: bold;
+    border-bottom: 1px solid @GreyA;
 }
 
 QToolBar::handle:horizontal {

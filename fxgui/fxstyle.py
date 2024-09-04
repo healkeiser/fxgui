@@ -737,6 +737,23 @@ def load_stylesheet(
         "@GreyE": "#bbb",
         "@White": "#FFFFFF",
         #
+        "@Grey90": "#201F1F",
+        "@Grey85": "#2B2B2B",
+        "@Grey82": "#2D2C2C",
+        "@Grey81": "#302F2F",
+        "@Grey77": "#3A3939",
+        "@Grey75": "#403F3F",
+        "@Grey75Alt": "#404040",
+        "@Grey73": "#444",
+        "@Grey71": "#4A4949",
+        "@Grey58": "#6c6c6c",
+        "@Grey55": "#727272",
+        "@Grey53": "#777777",
+        "@Grey53Alt": "#787876",
+        "@Grey34": "#a8a8a8",
+        "@Grey30": "#b1b1b1",
+        "@Grey27": "#bbb",
+        #
         "~icons": str(_parent_directory / "icons" / "stylesheet").replace(
             os.sep, "/"
         ),

@@ -723,6 +723,8 @@ class FXMainWindow(QMainWindow):
         home_toolbar (QAction): The "Home" toolbar item.
         about_dialog (QDialog): The "About" dialog.
 
+        banner (QLabel): The banner of the window.
+
         status_line (QFrame): A custom colored status line resting on top of the
             status bar.
         status_bar (FXStatusBar): The status bar of the window.
@@ -821,9 +823,10 @@ class FXMainWindow(QMainWindow):
 
         # Methods
         self._create_actions()
+        self._create_banner()
         self._create_status_line()
         self._load_ui()
-        # self.setWindowTitle(self.window_title)
+        self.setWindowTitle(self.window_title)
         self._set_window_icon()
         self._set_window_size()
         self._create_menu_bar()
@@ -1121,6 +1124,34 @@ class FXMainWindow(QMainWindow):
         else:
             return QLabel(default)
 
+    def _create_banner(self) -> None:
+        """Creates a banner with the window title for the window.
+
+        Note:
+            This method is intended for internal use only.
+        """
+
+        self.banner = QLabel("Banner", self)
+        self.banner.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.banner.setStyleSheet(
+            "color: white; font-size: 16px; padding: 10px; border-bottom: 1px solid #3A3939;"
+        )
+        self.banner.setFixedHeight(50)
+
+        central_widget = self.centralWidget()
+        widget = QWidget(self)
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.banner)
+
+        if central_widget is not None:
+            layout.addWidget(central_widget)
+        else:
+            central_widget = QWidget()
+            layout.addWidget(central_widget)
+
+        self.setCentralWidget(widget)
+
     def _create_status_line(
         self,
         color_a: str = fxstyle._COLOR_A_DEFAULT,
@@ -1351,7 +1382,7 @@ class FXMainWindow(QMainWindow):
             format_string = "%Y-%m-%d " + format_string
         return datetime.now().strftime(format_string)
 
-    # - Public methods
+    # - Public methods (Overrides)
 
     def statusBar(self) -> FXStatusBar:
         """Returns the FXStatusBar instance associated with this window.
@@ -1367,7 +1398,7 @@ class FXMainWindow(QMainWindow):
 
     def setCentralWidget(self, widget):
         """Overrides the QMainWindow's setCentralWidget method to ensure that the
-        status line is always at the bottom of the window.
+        status line is always at the bottom of the window and the banner is always at the top.
 
         Args:
             widget (QWidget): The widget to set as the central widget.
@@ -1376,16 +1407,21 @@ class FXMainWindow(QMainWindow):
             Overrides the base class method.
         """
 
-        # Create a new QWidget to hold the widget and the status line
+        # Create a new QWidget to hold the banner, widget, and the status line
         central_widget = QWidget(self)
         layout = QVBoxLayout(central_widget)
         layout.setContentsMargins(0, 0, 0, 0)
 
+        # Add the banner first (top)
+        if hasattr(self, "banner") and self.banner is not None:
+            layout.addWidget(self.banner)
+
         # Add the widget to the new layout
         layout.addWidget(widget)
 
-        # Add the status line to the new layout
-        layout.addWidget(self.status_line)
+        # Add the status line last (bottom)
+        if hasattr(self, "status_line") and self.status_line is not None:
+            layout.addWidget(self.status_line)
 
         # Call the parent's setCentralWidget method with the new central widget
         super().setCentralWidget(central_widget)
@@ -1400,6 +1436,8 @@ class FXMainWindow(QMainWindow):
         title = f"{title if title else 'Window'}"
         super().setWindowTitle(title)
 
+    # - Public methods
+
     def set_colors(self, color_a: str, color_b: str) -> None:
         """Sets the accent color of the window.
 
@@ -1413,6 +1451,15 @@ class FXMainWindow(QMainWindow):
         self.setStyleSheet(
             fxstyle.load_stylesheet(color_a=color_a, color_b=color_b)
         )
+
+    def set_banner_text(self, text: str) -> None:
+        """Sets the text of the banner.
+
+        Args:
+            text (str): The text to set in the banner.
+        """
+
+        self.banner.setText(text)
 
     def set_status_line_colors(self, color_a: str, color_b: str) -> None:
         """Set the colors of the status line.
