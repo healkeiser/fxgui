@@ -823,8 +823,8 @@ class FXMainWindow(QMainWindow):
         self._create_actions()
         self._create_status_line()
         self._load_ui()
+        # self.setWindowTitle(self.window_title)
         self._set_window_icon()
-        self._set_window_title()
         self._set_window_size()
         self._create_menu_bar()
         self._create_toolbars()
@@ -866,17 +866,6 @@ class FXMainWindow(QMainWindow):
             else self._default_icon
         )
         self.setWindowIcon(QIcon(icon_path))
-
-    def _set_window_title(self) -> None:
-        """Sets the window title from the specified title.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        self.setWindowTitle(
-            f"{self.window_title if self.window_title else 'Window'} *"
-        )
 
     def _set_window_size(self) -> None:
         """Sets the window size from the specified size.
@@ -1231,22 +1220,24 @@ class FXMainWindow(QMainWindow):
             True: (
                 "Always on Top",
                 fxicons.get_pixmap("hdr_strong", color="white"),
-                self.windowTitle().replace(" **", " *"),
+                # self.windowTitle().replace(" **", " *"),
             ),
             False: (
                 "Regular Position",
                 fxicons.get_pixmap("hdr_weak", color="white"),
-                self.windowTitle().replace(" *", " **"),
+                # self.windowTitle().replace(" *", " **"),
             ),
         }
         stays_on_top = bool(flags & Qt.WindowStaysOnTopHint)
-        text, icon, window_title = action_values[stays_on_top]
+        # text, icon, window_title = action_values[stays_on_top]
+        text, icon = action_values[stays_on_top]
+
         flags ^= Qt.WindowStaysOnTopHint
         self.window_on_top_action.setText(text)
         if icon is not None:
             self.window_on_top_action.setIcon(icon)
         self.setWindowFlags(flags)
-        self.setWindowTitle(window_title)
+        # self.setWindowTitle(window_title)
         self.show()
 
     def _move_window(self) -> None:
@@ -1398,6 +1389,16 @@ class FXMainWindow(QMainWindow):
 
         # Call the parent's setCentralWidget method with the new central widget
         super().setCentralWidget(central_widget)
+
+    def setWindowTitle(self, title: str) -> None:
+        """Override the `setWindowTitle` method to use `_set_window_title`.
+
+        Args:
+            title (str): The new window title.
+        """
+
+        title = f"{title if title else 'Window'}"
+        super().setWindowTitle(title)
 
     def set_colors(self, color_a: str, color_b: str) -> None:
         """Sets the accent color of the window.
@@ -1881,6 +1882,38 @@ class FXSystemTray(QObject):
         FXApplication.instance().quit()
         QApplication.instance().quit()
         self.setParent(None)
+
+
+class FXPasswordLineEdit(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.line_edit = QLineEdit()
+        self.line_edit.setEchoMode(QLineEdit.Password)
+
+        # Show/hide button
+        self.reveal_button = QPushButton("Show")
+        self.reveal_button.setIcon(fxicons.get_icon("visibility"))
+        self.reveal_button.clicked.connect(self.toggle_reveal)
+
+        # Layout for lineEdit and button
+        layout = QHBoxLayout()
+        layout.addWidget(self.line_edit)
+        layout.addWidget(self.reveal_button)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    def toggle_reveal(self):
+        """Toggles the echo mode between password and normal."""
+
+        if self.line_edit.echoMode() == QLineEdit.Password:
+            self.line_edit.setEchoMode(QLineEdit.Normal)
+            self.reveal_button.setText("Hide")
+            self.reveal_button.setIcon(fxicons.get_icon("visibility_off"))
+        else:
+            self.line_edit.setEchoMode(QLineEdit.Password)
+            self.reveal_button.setText("Show")
+            self.reveal_button.setIcon(fxicons.get_icon("visibility"))
 
 
 if __name__ == "__main__":

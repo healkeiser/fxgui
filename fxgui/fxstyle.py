@@ -27,14 +27,7 @@ from qtpy.QtWidgets import (
 from qtpy.QtGui import QIcon, QPalette, QColor
 
 # Internal
-try:
-    from fxgui import fxicons
-except ModuleNotFoundError:
-    import fxicons
-
-# Metadata
-__author__ = "Valentin Beaumont"
-__email__ = "valentin.onze@gmail.com"
+from fxgui import fxicons
 
 
 # Constants
@@ -70,17 +63,21 @@ class FXProxyStyle(QProxyStyle):
         """Returns an icon for the given standardIcon.
 
         Args:
-            standardIcon (QStyle.StandardPixmap): The standard pixmap for which an icon should be returned.
-            option (QStyleOption, optional): An option that can be used to fine-tune the look of the icon.
-                Defaults to `None`.
-            widget (QWidget, optional): The widget for which the icon is being requested. Defaults to `None`.
+            standardIcon (QStyle.StandardPixmap): The standard pixmap for
+                which an icon should be returned.
+            option (QStyleOption, optional): An option that can be used to
+                fine-tune the look of the icon. Defaults to `None`.
+            widget (QWidget, optional): The widget for which the icon is being
+                requested. Defaults to `None`.
 
         Returns:
-            QIcon: The icon for the standardIcon. If no custom icon is found, the default icon is returned.
+            QIcon: The icon for the standardIcon. If no custom icon is found,
+                the default icon is returned.
         """
 
         colors_dict = load_colors_from_jsonc()
 
+        # fmt: off
         STANDARD_ICON_MAP = {
             QStyle.SP_ArrowBack: ("arrow_back", self.icon_color),
             QStyle.SP_ArrowDown: ("arrow_downward", self.icon_color),
@@ -100,18 +97,12 @@ class FXProxyStyle(QProxyStyle):
             QStyle.SP_DialogCloseButton: ("close", self.icon_color),
             QStyle.SP_DialogDiscardButton: ("delete", self.icon_color),
             QStyle.SP_DialogHelpButton: ("help", self.icon_color),
-            QStyle.SP_DialogIgnoreButton: (
-                "notifications_paused",
-                self.icon_color,
-            ),
+            QStyle.SP_DialogIgnoreButton: ("notifications_paused", self.icon_color),
             QStyle.SP_DialogNoButton: ("cancel", self.icon_color),
             QStyle.SP_DialogNoToAllButton: ("do_not_disturb", self.icon_color),
             QStyle.SP_DialogOkButton: ("done", self.icon_color),
             QStyle.SP_DialogOpenButton: ("open_in_new", self.icon_color),
-            QStyle.SP_DialogResetButton: (
-                "cleaning_services",
-                self.icon_color,
-            ),
+            QStyle.SP_DialogResetButton: ("cleaning_services", self.icon_color),
             QStyle.SP_DialogRetryButton: ("restart_alt", self.icon_color),
             QStyle.SP_DialogSaveAllButton: ("save", self.icon_color),
             QStyle.SP_DialogSaveButton: ("save", self.icon_color),
@@ -130,18 +121,12 @@ class FXProxyStyle(QProxyStyle):
             QStyle.SP_DriveHDIcon: ("dns", self.icon_color),
             QStyle.SP_DriveNetIcon: ("cloud", self.icon_color),
             QStyle.SP_FileDialogBack: ("arrow_back", self.icon_color),
-            QStyle.SP_FileDialogContentsView: (
-                "find_in_page",
-                self.icon_color,
-            ),
+            QStyle.SP_FileDialogContentsView: ("find_in_page", self.icon_color),
             QStyle.SP_FileDialogDetailedView: ("description", self.icon_color),
             QStyle.SP_FileDialogEnd: ("note", self.icon_color),
             QStyle.SP_FileDialogInfoView: ("info", self.icon_color),
             QStyle.SP_FileDialogListView: ("grid_view", self.icon_color),
-            QStyle.SP_FileDialogNewFolder: (
-                "create_new_folder",
-                self.icon_color,
-            ),
+            QStyle.SP_FileDialogNewFolder: ("create_new_folder", self.icon_color),
             QStyle.SP_FileDialogStart: ("insert_drive_file", self.icon_color),
             QStyle.SP_FileDialogToParent: ("upload_file", self.icon_color),
             QStyle.SP_FileIcon: ("description", self.icon_color),
@@ -157,49 +142,26 @@ class FXProxyStyle(QProxyStyle):
             QStyle.SP_MediaVolume: ("volume_up", self.icon_color),
             QStyle.SP_MediaVolumeMuted: ("volume_off", self.icon_color),
             #
-            QStyle.SP_MessageBoxCritical: (
-                "error",
-                colors_dict["feedback"]["error"]["light"],
-            ),
-            QStyle.SP_MessageBoxInformation: (
-                "info",
-                colors_dict["feedback"]["info"]["light"],
-            ),
-            QStyle.SP_MessageBoxQuestion: (
-                "help",
-                colors_dict["feedback"]["success"]["light"],
-            ),
-            QStyle.SP_MessageBoxWarning: (
-                "warning",
-                colors_dict["feedback"]["warning"]["light"],
-            ),
+            QStyle.SP_MessageBoxCritical: ("error", colors_dict["feedback"]["error"]["light"]),
+            QStyle.SP_MessageBoxInformation: ("info", colors_dict["feedback"]["info"]["light"]),
+            QStyle.SP_MessageBoxQuestion: ("help", colors_dict["feedback"]["success"]["light"]),
+            QStyle.SP_MessageBoxWarning: ("warning", colors_dict["feedback"]["warning"]["light"]),
             #
             QStyle.SP_RestoreDefaultsButton: ("restore", self.icon_color),
             QStyle.SP_TitleBarCloseButton: ("close", self.icon_color),
-            QStyle.SP_TitleBarContextHelpButton: (
-                "question_mark",
-                self.icon_color,
-            ),
+            QStyle.SP_TitleBarContextHelpButton: ("question_mark", self.icon_color),
             QStyle.SP_TitleBarMaxButton: ("maximize", self.icon_color),
             QStyle.SP_TitleBarMenuButton: ("menu", self.icon_color),
             QStyle.SP_TitleBarMinButton: ("minimize", self.icon_color),
-            QStyle.SP_TitleBarNormalButton: (
-                "close_fullscreen",
-                self.icon_color,
-            ),
+            QStyle.SP_TitleBarNormalButton: ("close_fullscreen", self.icon_color),
             QStyle.SP_TitleBarShadeButton: ("expand_more", self.icon_color),
             QStyle.SP_TitleBarUnshadeButton: ("expand_less", self.icon_color),
-            QStyle.SP_ToolBarHorizontalExtensionButton: (
-                "keyboard_arrow_right",
-                self.icon_color,
-            ),
-            QStyle.SP_ToolBarVerticalExtensionButton: (
-                "keyboard_arrow_down",
-                self.icon_color,
-            ),
+            QStyle.SP_ToolBarHorizontalExtensionButton: ("keyboard_arrow_right", self.icon_color),
+            QStyle.SP_ToolBarVerticalExtensionButton: ("keyboard_arrow_down", self.icon_color),
             QStyle.SP_TrashIcon: ("delete", self.icon_color),
             QStyle.SP_VistaShield: ("security", self.icon_color),
         }
+        # fmt: on
 
         icon_name, color = STANDARD_ICON_MAP.get(standardIcon, (None, None))
         if icon_name is not None:
@@ -434,36 +396,23 @@ def set_light_palette(object: QObject) -> QPalette:
         QPalette: The custom palette.
     """
 
+    # fmt: off
     palette = QPalette()
     palette.setColor(QPalette.Active, QPalette.Window, QColor(240, 240, 240))
     palette.setColor(QPalette.Inactive, QPalette.Window, QColor(240, 240, 240))
     palette.setColor(QPalette.Disabled, QPalette.Window, QColor(240, 240, 240))
     palette.setColor(QPalette.Active, QPalette.WindowText, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.WindowText, QColor(0, 0, 0))
-    palette.setColor(
-        QPalette.Disabled, QPalette.WindowText, QColor(120, 120, 120)
-    )
+    palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(120, 120, 120))
     palette.setColor(QPalette.Active, QPalette.Base, QColor(255, 255, 255))
     palette.setColor(QPalette.Inactive, QPalette.Base, QColor(255, 255, 255))
     palette.setColor(QPalette.Disabled, QPalette.Base, QColor(240, 240, 240))
-    palette.setColor(
-        QPalette.Active, QPalette.AlternateBase, QColor(233, 231, 227)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.AlternateBase, QColor(233, 231, 227)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.AlternateBase, QColor(247, 247, 247)
-    )
-    palette.setColor(
-        QPalette.Active, QPalette.ToolTipBase, QColor(255, 255, 220)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.ToolTipBase, QColor(255, 255, 220)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.ToolTipBase, QColor(255, 255, 220)
-    )
+    palette.setColor(QPalette.Active, QPalette.AlternateBase, QColor(233, 231, 227))
+    palette.setColor(QPalette.Inactive, QPalette.AlternateBase, QColor(233, 231, 227))
+    palette.setColor(QPalette.Disabled, QPalette.AlternateBase, QColor(247, 247, 247))
+    palette.setColor(QPalette.Active, QPalette.ToolTipBase, QColor(255, 255, 220))
+    palette.setColor(QPalette.Inactive, QPalette.ToolTipBase, QColor(255, 255, 220))
+    palette.setColor(QPalette.Disabled, QPalette.ToolTipBase, QColor(255, 255, 220))
     palette.setColor(QPalette.Active, QPalette.ToolTipText, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.ToolTipText, QColor(0, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.ToolTipText, QColor(0, 0, 0))
@@ -475,47 +424,25 @@ def set_light_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Disabled, QPalette.Button, QColor(240, 240, 240))
     palette.setColor(QPalette.Active, QPalette.ButtonText, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.ButtonText, QColor(0, 0, 0))
-    palette.setColor(
-        QPalette.Disabled, QPalette.ButtonText, QColor(120, 120, 120)
-    )
-    palette.setColor(
-        QPalette.Active, QPalette.BrightText, QColor(255, 255, 255)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.BrightText, QColor(255, 255, 255)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.BrightText, QColor(255, 255, 255)
-    )
+    palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(120, 120, 120))
+    palette.setColor(QPalette.Active, QPalette.BrightText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Inactive, QPalette.BrightText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Disabled, QPalette.BrightText, QColor(255, 255, 255))
     palette.setColor(QPalette.Active, QPalette.Link, QColor(0, 0, 255))
     palette.setColor(QPalette.Inactive, QPalette.Link, QColor(0, 0, 255))
     palette.setColor(QPalette.Disabled, QPalette.Link, QColor(0, 0, 255))
     palette.setColor(QPalette.Active, QPalette.Highlight, QColor(0, 120, 215))
-    palette.setColor(
-        QPalette.Inactive, QPalette.Highlight, QColor(240, 240, 240)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.Highlight, QColor(0, 120, 215)
-    )
-    palette.setColor(
-        QPalette.Active, QPalette.HighlightedText, QColor(255, 255, 255)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.HighlightedText, QColor(0, 0, 0)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.HighlightedText, QColor(255, 255, 255)
-    )
+    palette.setColor(QPalette.Inactive, QPalette.Highlight, QColor(240, 240, 240))
+    palette.setColor(QPalette.Disabled, QPalette.Highlight, QColor(0, 120, 215))
+    palette.setColor(QPalette.Active, QPalette.HighlightedText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Inactive, QPalette.HighlightedText, QColor(0, 0, 0))
+    palette.setColor(QPalette.Disabled, QPalette.HighlightedText, QColor(255, 255, 255))
     palette.setColor(QPalette.Active, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Inactive, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Disabled, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Active, QPalette.Midlight, QColor(227, 227, 227))
-    palette.setColor(
-        QPalette.Inactive, QPalette.Midlight, QColor(227, 227, 227)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.Midlight, QColor(247, 247, 247)
-    )
+    palette.setColor(QPalette.Inactive, QPalette.Midlight, QColor(227, 227, 227))
+    palette.setColor(QPalette.Disabled, QPalette.Midlight, QColor(247, 247, 247))
     palette.setColor(QPalette.Active, QPalette.Dark, QColor(160, 160, 160))
     palette.setColor(QPalette.Inactive, QPalette.Dark, QColor(160, 160, 160))
     palette.setColor(QPalette.Disabled, QPalette.Dark, QColor(160, 160, 160))
@@ -525,18 +452,14 @@ def set_light_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Active, QPalette.Shadow, QColor(105, 105, 105))
     palette.setColor(QPalette.Inactive, QPalette.Shadow, QColor(105, 105, 105))
     palette.setColor(QPalette.Disabled, QPalette.Shadow, QColor(0, 0, 0))
-    palette.setColor(
-        QPalette.Active, QPalette.LinkVisited, QColor(255, 0, 255)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.LinkVisited, QColor(255, 0, 255)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.LinkVisited, QColor(255, 0, 255)
-    )
+    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor(255, 0, 255))
+    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(255, 0, 255))
+    palette.setColor(QPalette.Disabled, QPalette.LinkVisited, QColor(255, 0, 255))
     palette.setColor(QPalette.Active, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.NoRole, QColor(0, 0, 0))
+    # fmt: on
+
     object.setPalette(palette)
     return palette
 
@@ -754,7 +677,7 @@ def load_stylesheet(
     extra: Optional[str] = None,
 ) -> str:
     """Load the stylesheet and replace some part of the given QSS file to
-    make them work in Houdini.
+    make them work in a DCC.
 
     Args:
         style_file (str, optional): The path to the QSS file.

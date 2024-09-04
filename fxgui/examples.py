@@ -3,8 +3,6 @@
 # Built-in
 import os
 
-print(">>> ", os.getenv("QT_API"))
-
 # Third-party
 import qtawesome as qta
 from qtpy.QtWidgets import *
@@ -18,6 +16,54 @@ from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
 
 _ui_file = os.path.join(os.path.dirname(__file__), "ui", "test.ui")
 _pixmap = os.path.join(os.path.dirname(__file__), "images", "splash.png")
+
+
+def show_login_dialog():
+    class FXLoginDialog(QDialog):
+        def __init__(self, parent=None):
+            super().__init__(parent)
+
+            self.setModal(True)
+            self.setWindowTitle("Login")
+            self.resize(500, 100)
+            main_layout = QVBoxLayout()
+            form_layout = QFormLayout()
+            form_layout.setLabelAlignment(Qt.AlignRight)
+
+            # Login
+            self.login_line_edit = QLineEdit()
+            self.login_line_edit.setPlaceholderText("Mail...")
+            form_layout.addRow("Login", self.login_line_edit)
+
+            # Password
+            self.password_line_edit = fxwidgets.FXPasswordLineEdit()
+            self.password_line_edit.line_edit.setPlaceholderText("Password...")
+            form_layout.addRow("Password", self.password_line_edit)
+
+            # Remember Me
+            self.remember_me_checkbox = QCheckBox("Remember Me")
+            form_layout.addRow("", self.remember_me_checkbox)
+
+            # Add form layout to main layout
+            main_layout.addLayout(form_layout)
+
+            # Buttons
+            button_box = QDialogButtonBox(
+                QDialogButtonBox.Cancel | QDialogButtonBox.Ok
+            )
+            button_box.button(QDialogButtonBox.Cancel).setText("Cancel")
+            button_box.button(QDialogButtonBox.Ok).setText("Login")
+
+            # Close on cancel
+            button_box.rejected.connect(self.reject)
+
+            main_layout.addWidget(button_box)
+            self.setLayout(main_layout)
+
+    _fix = QUiLoader()  # XXX: This is a PySide6 bug
+    application = fxwidgets.FXApplication()
+    dialog = FXLoginDialog()
+    dialog.exec_()
 
 
 def show_window_houdini():
@@ -124,6 +170,58 @@ def show_window_alt():
     application.exec_()
 
 
+def subclass_window():
+    _fix = QUiLoader()  # XXX: This is a PySide6 bug
+    application = fxwidgets.FXApplication()
+
+    class MyWidget(QWidget):
+        def __init__(self, parent=None):
+            super().__init__(parent)
+
+            self.add_layout()
+            self.add_buttons()
+
+        def add_layout(self):
+            """Adds a vertical layout to the main layout of the widget."""
+
+            self.main_layout = QVBoxLayout()
+            self.setLayout(self.main_layout)
+
+        def add_buttons(self):
+            """Adds buttons to the main layout of the widget."""
+
+            pulse_button = QPushButton("Pulse Button")
+            pulse_animation = qta.Pulse(pulse_button)
+            pulse_icon = qta.icon(
+                "fa.spinner", color="#b4b4b4", animation=pulse_animation
+            )
+            pulse_button.setIcon(pulse_icon)
+
+            spin_button = QPushButton("Spin Button")
+            spin_animation = qta.Spin(spin_button)
+            spin_icon = qta.icon(
+                "fa5s.spinner", color="#b4b4b4", animation=spin_animation
+            )
+            spin_button.setIcon(spin_icon)
+
+            self.main_layout.addWidget(pulse_button)
+            self.main_layout.addWidget(spin_button)
+            self.main_layout.addStretch()
+
+    class MyWindow(fxwidgets.FXMainWindow):
+        def __init__(self, parent=None):
+            super().__init__(parent)
+
+            self.toolbar.hide()
+            self.setCentralWidget(MyWidget(parent=self))
+            self.adjustSize()
+
+    window = MyWindow()
+    window.setWindowTitle("My Window")
+    window.show()
+    application.exec_()
+
+
 def main(show_delayed: bool = False):
     """Main example function.
 
@@ -205,7 +303,7 @@ def main(show_delayed: bool = False):
 
     style = window.style()
     window.ui.button_critical.setIcon(
-        style.standardIcon(QStyle.SP_MediaVolumeMuted)
+        style.standardIcon(QStyle.SP_MessageBoxCritical)
     )
 
     # Set tooltips on the buttons
@@ -239,4 +337,6 @@ def main(show_delayed: bool = False):
 if __name__ == "__main__":
     # main()
     # show_window()
-    show_window_alt()
+    # show_window_alt()
+    # subclass_window()
+    show_login_dialog()
