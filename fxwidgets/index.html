@@ -660,6 +660,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXMainWindow.setWindowTitle" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;setWindowTitle
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXMainWindow.set_banner_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;set_banner_text
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fxgui.fxwidgets.FXMainWindow.set_colors" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;set_colors
@@ -717,6 +735,30 @@
   <a href="#fxgui.fxwidgets.FXMainWindow.statusBar" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;statusBar
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXPasswordLineEdit" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXPasswordLineEdit
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" FXPasswordLineEdit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXPasswordLineEdit.toggle_reveal" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;toggle_reveal
     </span>
   </a>
   
@@ -964,6 +1006,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXMainWindow.setWindowTitle" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;setWindowTitle
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXMainWindow.set_banner_text" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;set_banner_text
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fxgui.fxwidgets.FXMainWindow.set_colors" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;set_colors
@@ -1021,6 +1081,30 @@
   <a href="#fxgui.fxwidgets.FXMainWindow.statusBar" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;statusBar
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXPasswordLineEdit" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXPasswordLineEdit
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" FXPasswordLineEdit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXPasswordLineEdit.toggle_reveal" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;toggle_reveal
     </span>
   </a>
   
@@ -2429,6 +2513,17 @@ help menu.</p>
           </td>
         </tr>
         <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.banner">banner</span></code></td>
+          <td>
+                <code>QLabel</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The banner of the window.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXMainWindow.status_line">status_line</span></code></td>
           <td>
                 <code>QFrame</code>
@@ -2567,7 +2662,7 @@ status bar.</p>
   <div class="doc doc-contents ">
   
       <p>Overrides the QMainWindow's setCentralWidget method to ensure that the
-status line is always at the bottom of the window.</p>
+status line is always at the bottom of the window and the banner is always at the top.</p>
 
 
 
@@ -2603,6 +2698,108 @@ status line is always at the bottom of the window.</p>
   <summary>Note</summary>
   <p>Overrides the base class method.</p>
 </details>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="fxgui.fxwidgets.FXMainWindow.setWindowTitle" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">setWindowTitle</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">setWindowTitle</span><span class="p">(</span><span class="n">title</span><span class="p">:</span> <span class="n">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Override the <code>setWindowTitle</code> method to use <code>_set_window_title</code>.</p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td><code>title</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The new window title.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="fxgui.fxwidgets.FXMainWindow.set_banner_text" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">set_banner_text</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_banner_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="n">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Sets the text of the banner.</p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td><code>text</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The text to set in the banner.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
   </div>
 
 </div>
@@ -2968,6 +3165,65 @@ status line is always at the bottom of the window.</p>
   <summary>Note</summary>
   <p>Overrides the base class method.</p>
 </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="fxgui.fxwidgets.FXPasswordLineEdit" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">FXPasswordLineEdit</span>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code>QWidget</code></p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="fxgui.fxwidgets.FXPasswordLineEdit.toggle_reveal" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">toggle_reveal</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">toggle_reveal</span><span class="p">()</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Toggles the echo mode between password and normal.</p>
+
   </div>
 
 </div>
