@@ -24,6 +24,71 @@ window.setStyleSheet(fxstyle.load_stylesheet())
 !!! note
     You can pass extra arguments to the [load_stylesheet()](fxstyle.md) function.
 
+## Subclass the `FXMainWindow`
+
+You can subclass any widgets in the `fxwidgets` module. Here's a practical example with `FXMainWindow`:
+
+``` python
+# Third-party
+import qtawesome as qta
+from qtpy.QtWidgets import *
+from qtpy.QtUiTools import *
+from qtpy.QtCore import *
+from qtpy.QtGui import *
+
+# Internal
+from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
+
+
+class MyWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.add_layout()
+        self.add_buttons()
+
+    def add_layout(self):
+        """Adds a vertical layout to the main layout of the widget."""
+
+        self.main_layout = QVBoxLayout()
+        self.setLayout(self.main_layout)
+
+    def add_buttons(self):
+        """Adds buttons to the main layout of the widget."""
+
+        pulse_button = QPushButton("Pulse Button")
+        pulse_animation = qta.Pulse(pulse_button)
+        pulse_icon = qta.icon(
+            "fa.spinner", color="#b4b4b4", animation=pulse_animation
+        )
+        pulse_button.setIcon(pulse_icon)
+
+        spin_button = QPushButton("Spin Button")
+        spin_animation = qta.Spin(spin_button)
+        spin_icon = qta.icon(
+            "fa5s.spinner", color="#b4b4b4", animation=spin_animation
+        )
+        spin_button.setIcon(spin_icon)
+
+        self.main_layout.addWidget(pulse_button)
+        self.main_layout.addWidget(spin_button)
+        self.main_layout.addStretch()
+
+class MyWindow(fxwidgets.FXMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.toolbar.hide()
+        self.setCentralWidget(MyWidget(parent=self))
+        self.adjustSize()
+
+application = fxwidgets.FXApplication()
+window = MyWindow()
+window.setWindowTitle("Subclassed FXMainWindow")
+window.show()
+application.exec_()
+```
+
 ## Apply the Custom Google Material Icons
 
 You can find a `QProxyStyle` subclass in [fxstyle](fxstyle.md), called `FXProxyStyle`. When used on a `QApplication` instance, it allows you to switch the defaults icons provided by `Qt` for Google Material icons.

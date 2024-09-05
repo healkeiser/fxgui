@@ -36,4 +36,11 @@ setup(
     packages=find_packages(),
     install_requires=install_requires,
     include_package_data=True,
+    project_urls={
+        "Documentation": "https://healkeiser.github.io/fxgui",
+        "GitHub": "https://github.com/healkeiser/fxgui",
+        "Changelog": "https://github.com/healkeiser/fxgui/blob/main/CHANGELOG.md",
+        "Source": "https://github.com/healkeiser/fxgui",
+        "Funding": "https://github.com/sponsors/healkeiser",
+    },
 )
