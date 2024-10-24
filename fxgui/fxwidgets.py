@@ -1587,6 +1587,7 @@ class FXFloatingDialog(QDialog):
         drop_position (QPoint): The drop position of the dialog.
         dialog_position (Tuple[int, int]): The position of the dialog.
         parent_package (int): Whether the dialog is standalone application, or belongs to a DCC parent.
+        popup (bool): Whether the dialog is a popup or not.
     """
 
     def __init__(
@@ -1595,6 +1596,7 @@ class FXFloatingDialog(QDialog):
         icon: Optional[QPixmap] = None,
         title: Optional[str] = None,
         parent_package: Optional[int] = None,
+        popup: bool = False,
     ):
         super().__init__(parent)
 
@@ -1622,9 +1624,12 @@ class FXFloatingDialog(QDialog):
         self.set_dialog_icon(self.dialog_icon)
         self.set_dialog_title(self.dialog_title)
 
+        # Window
         self.setAttribute(Qt.WA_DeleteOnClose)
-        self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.resize(200, 40)
+
+        if popup:
+            self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
 
         if (
             self.parent_package == fxdcc.STANDALONE
@@ -1776,7 +1781,6 @@ class FXFloatingDialog(QDialog):
         """
 
         self.setParent(None)
-        super().close()
 
 
 class FXSystemTray(QObject):

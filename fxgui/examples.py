@@ -77,14 +77,15 @@ def show_window_houdini():
 def show_floating_dialog_houdini():
     """An example FXFloatingDialog launched from inside Houdini."""
 
-    import hou
+    # _fix = QUiLoader()  # XXX: This is a PySide6 bug
+    application = fxwidgets.FXApplication()
 
-    houdini_window = fxdcc.get_dcc_main_window()
-    floating_dialog = fxwidgets.FXFloatingDialog(parent=houdini_window)
+    # houdini_window = fxdcc.get_dcc_main_window()
+    floating_dialog = fxwidgets.FXFloatingDialog()
 
     # Set icon
-    icon = hou.qt.Icon("MISC_python")
-    pixmap = fxutils.convert_qicon_to_qpixmap(icon, QSize(10, 100))
+    # icon = hou.qt.Icon("MISC_python")
+    pixmap = fxutils.convert_qicon_to_qpixmap(None, QSize(10, 100))
     floating_dialog.set_dialog_icon(pixmap)
 
     # Add button to the `button_box`
@@ -97,6 +98,7 @@ def show_floating_dialog_houdini():
 
     # Show under the cursor
     floating_dialog.show_under_cursor()
+    application.exec_()
 
 
 def show_splashscreen(time: float = 5.0):
@@ -339,4 +341,5 @@ if __name__ == "__main__":
     # show_window()
     # show_window_alt()
     # subclass_window()
-    show_login_dialog()
+    # show_login_dialog()
+    show_floating_dialog_houdini()

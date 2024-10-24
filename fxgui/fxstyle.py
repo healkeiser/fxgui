@@ -11,7 +11,6 @@ Examples:
 import os
 import re
 import json
-import platform
 from pathlib import Path
 from typing import Optional
 
@@ -24,7 +23,7 @@ from qtpy.QtWidgets import (
     QWidget,
     QStyleFactory,
 )
-from qtpy.QtGui import QIcon, QPalette, QColor
+from qtpy.QtGui import QIcon, QPalette, QColor, QFontDatabase
 
 # Internal
 from fxgui import fxicons
@@ -36,12 +35,10 @@ STYLE_FILE = _parent_directory / "qss" / "style.qss"
 COLOR_FILE = _parent_directory / "style.jsonc"
 
 # Lighter
-_COLOR_A_DEFAULT = "#912d9af4"  # "#282727"  # "#605f5f"  # "rgba(89, 126, 151, 200)"  # "#597e97"
+_COLOR_A_DEFAULT = "#912d9af4"
 
 # Darker
-_COLOR_B_DEFAULT = (
-    "#8c2275b8"  # "#302f2f"  # "rgba(61, 87, 104, 200)"  # "#3d5768"
-)
+_COLOR_B_DEFAULT = "#8c2275b8"
 
 # Globals
 _colors = None
@@ -180,17 +177,17 @@ class FXProxyStyle(QProxyStyle):
         self.update()
 
 
-def get_current_palette(object: QObject) -> None:
+def get_current_palette(obj: QObject) -> None:
     """Prints the current palette of the given Qt object.
 
     This function retrieves the current palette of the given Qt object and prints
     each color role in each state group in the format `QPalette.State, QPalette.Role, QColor(r, g, b)`.
 
     Args:
-        object (QObject): The Qt object whose palette is to be retrieved.
+        object: The Qt object whose palette is to be retrieved.
     """
 
-    palette = object.palette()
+    palette = obj.palette()
     role_names = {
         QPalette.Window: "Window",
         QPalette.WindowText: "WindowText",
@@ -228,73 +225,46 @@ def get_current_palette(object: QObject) -> None:
             )
 
 
-def _set_dark_palette(object: QObject) -> QPalette:
+def _set_dark_palette(obj: QObject) -> QPalette:
     """Set the object palette to a dark theme.
 
     Args:
-        application (QObject): The QObject (QApplication, QWindow, etc.) to set
+        application: The QObject (QApplication, QWindow, etc.) to set
             the palette on.
 
     Returns:
         QPalette: The custom palette.
     """
 
+    # fmt: off
     palette = QPalette()
     palette.setColor(QPalette.Active, QPalette.Window, QColor(53, 53, 53))
     palette.setColor(QPalette.Inactive, QPalette.Window, QColor(53, 53, 53))
     palette.setColor(QPalette.Disabled, QPalette.Window, QColor(53, 53, 53))
-    palette.setColor(
-        QPalette.Active, QPalette.WindowText, QColor(255, 255, 255)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.WindowText, QColor(255, 255, 255)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.WindowText, QColor(169, 169, 169)
-    )
+    palette.setColor(QPalette.Active, QPalette.WindowText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Inactive, QPalette.WindowText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(169, 169, 169))
     palette.setColor(QPalette.Active, QPalette.Base, QColor(35, 35, 35))
     palette.setColor(QPalette.Inactive, QPalette.Base, QColor(35, 35, 35))
     palette.setColor(QPalette.Disabled, QPalette.Base, QColor(35, 35, 35))
-    palette.setColor(
-        QPalette.Active, QPalette.AlternateBase, QColor(53, 53, 53)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.AlternateBase, QColor(53, 53, 53)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.AlternateBase, QColor(53, 53, 53)
-    )
+    palette.setColor(QPalette.Active, QPalette.AlternateBase, QColor(53, 53, 53))
+    palette.setColor(QPalette.Inactive, QPalette.AlternateBase, QColor(53, 53, 53))
+    palette.setColor(QPalette.Disabled, QPalette.AlternateBase, QColor(53, 53, 53))
     palette.setColor(QPalette.Active, QPalette.ToolTipBase, QColor(25, 25, 25))
-    palette.setColor(
-        QPalette.Inactive, QPalette.ToolTipBase, QColor(25, 25, 25)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.ToolTipBase, QColor(25, 25, 25)
-    )
-    palette.setColor(
-        QPalette.Active, QPalette.ToolTipText, QColor(255, 255, 255)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.ToolTipText, QColor(255, 255, 255)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.ToolTipText, QColor(255, 255, 255)
-    )
+    palette.setColor(QPalette.Inactive, QPalette.ToolTipBase, QColor(25, 25, 25))
+    palette.setColor(QPalette.Disabled, QPalette.ToolTipBase, QColor(25, 25, 25))
+    palette.setColor(QPalette.Active, QPalette.ToolTipText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Inactive, QPalette.ToolTipText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Disabled, QPalette.ToolTipText, QColor(255, 255, 255))
     palette.setColor(QPalette.Active, QPalette.Text, QColor(255, 255, 255))
     palette.setColor(QPalette.Inactive, QPalette.Text, QColor(255, 255, 255))
     palette.setColor(QPalette.Disabled, QPalette.Text, QColor(169, 169, 169))
     palette.setColor(QPalette.Active, QPalette.Button, QColor(53, 53, 53))
     palette.setColor(QPalette.Inactive, QPalette.Button, QColor(53, 53, 53))
     palette.setColor(QPalette.Disabled, QPalette.Button, QColor(53, 53, 53))
-    palette.setColor(
-        QPalette.Active, QPalette.ButtonText, QColor(255, 255, 255)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.ButtonText, QColor(255, 255, 255)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.ButtonText, QColor(169, 169, 169)
-    )
+    palette.setColor(QPalette.Active, QPalette.ButtonText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Inactive, QPalette.ButtonText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(169, 169, 169))
     palette.setColor(QPalette.Active, QPalette.BrightText, QColor(255, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.BrightText, QColor(255, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.BrightText, QColor(255, 0, 0))
@@ -302,31 +272,17 @@ def _set_dark_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Inactive, QPalette.Link, QColor(42, 130, 218))
     palette.setColor(QPalette.Disabled, QPalette.Link, QColor(42, 130, 218))
     palette.setColor(QPalette.Active, QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(
-        QPalette.Inactive, QPalette.Highlight, QColor(42, 130, 218)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.Highlight, QColor(42, 130, 218)
-    )
-    palette.setColor(
-        QPalette.Active, QPalette.HighlightedText, QColor(35, 35, 35)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.HighlightedText, QColor(35, 35, 35)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.HighlightedText, QColor(35, 35, 35)
-    )
+    palette.setColor(QPalette.Inactive, QPalette.Highlight, QColor(42, 130, 218))
+    palette.setColor(QPalette.Disabled, QPalette.Highlight, QColor(42, 130, 218))
+    palette.setColor(QPalette.Active, QPalette.HighlightedText, QColor(35, 35, 35))
+    palette.setColor(QPalette.Inactive, QPalette.HighlightedText, QColor(35, 35, 35))
+    palette.setColor(QPalette.Disabled, QPalette.HighlightedText, QColor(35, 35, 35))
     palette.setColor(QPalette.Active, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Inactive, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Disabled, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Active, QPalette.Midlight, QColor(227, 227, 227))
-    palette.setColor(
-        QPalette.Inactive, QPalette.Midlight, QColor(227, 227, 227)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.Midlight, QColor(247, 247, 247)
-    )
+    palette.setColor(QPalette.Inactive, QPalette.Midlight, QColor(227, 227, 227))
+    palette.setColor(QPalette.Disabled, QPalette.Midlight, QColor(247, 247, 247))
     palette.setColor(QPalette.Active, QPalette.Dark, QColor(160, 160, 160))
     palette.setColor(QPalette.Inactive, QPalette.Dark, QColor(160, 160, 160))
     palette.setColor(QPalette.Disabled, QPalette.Dark, QColor(160, 160, 160))
@@ -336,33 +292,30 @@ def _set_dark_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Active, QPalette.Shadow, QColor(105, 105, 105))
     palette.setColor(QPalette.Inactive, QPalette.Shadow, QColor(105, 105, 105))
     palette.setColor(QPalette.Disabled, QPalette.Shadow, QColor(0, 0, 0))
-    palette.setColor(
-        QPalette.Active, QPalette.LinkVisited, QColor(255, 0, 255)
-    )
-    palette.setColor(
-        QPalette.Inactive, QPalette.LinkVisited, QColor(255, 0, 255)
-    )
-    palette.setColor(
-        QPalette.Disabled, QPalette.LinkVisited, QColor(255, 0, 255)
-    )
+    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor(255, 0, 255))
+    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(255, 0, 255))
+    palette.setColor(QPalette.Disabled, QPalette.LinkVisited, QColor(255, 0, 255))
     palette.setColor(QPalette.Active, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.NoRole, QColor(0, 0, 0))
-    object.setPalette(palette)
+    # fmt: on
+
+    obj.setPalette(palette)
     return palette
 
 
-def set_dark_palette(object: QObject) -> QPalette:
+def set_dark_palette(obj: QObject) -> QPalette:
     """Set the object palette to a dark theme.
 
     Args:
-        object (QObject): The QObject (QApplication, QWindow, etc.) to set the
+        object: The QObject (QApplication, QWindow, etc.) to set the
             palette on.
 
     Returns:
         QPalette: The custom palette.
     """
 
+    # fmt: off
     palette = QPalette()
     palette.setColor(QPalette.Window, QColor(53, 53, 53))
     palette.setColor(QPalette.WindowText, "white")
@@ -382,15 +335,16 @@ def set_dark_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Disabled, QPalette.WindowText, "darkGray")
     palette.setColor(QPalette.Disabled, QPalette.Text, "darkGray")
     palette.setColor(QPalette.Disabled, QPalette.Light, QColor(53, 53, 53))
-    object.setPalette(palette)
+    obj.setPalette(palette)
     return palette
+    # fmt: on
 
 
-def set_light_palette(object: QObject) -> QPalette:
+def set_light_palette(obj: QObject) -> QPalette:
     """Set the object palette to a light theme.
 
     Args:
-        object (QObject): The QObject (QApplication, QWindow, etc.) to set the palette on.
+        obj: The QObject (QApplication, QWindow, etc.) to set the palette on.
 
     Returns:
         QPalette: The custom palette.
@@ -460,7 +414,7 @@ def set_light_palette(object: QObject) -> QPalette:
     palette.setColor(QPalette.Disabled, QPalette.NoRole, QColor(0, 0, 0))
     # fmt: on
 
-    object.setPalette(palette)
+    obj.setPalette(palette)
     return palette
 
 
@@ -557,119 +511,6 @@ def replace_colors(
     return stylesheet
 
 
-def _load_stylesheet(
-    style_file: str = STYLE_FILE, color_file: str = COLOR_FILE
-) -> Optional[str]:
-    """Load and process the stylesheet.
-
-    This function loads a stylesheet from a QSS file and applies color
-    replacements based on the definitions in `style.jsonc` file. It also
-    replaces certain placeholders with their corresponding values.
-
-    Args:
-        style_file (str, optional): The path to the QSS file. Defaults to `HOUDINI_STYLE_FILE`.
-        color_file (str, optional): The path to the JSONC file containing color definitions. Defaults to `COLOR_FILE`.
-
-    Returns:
-        Optional[str]: The processed stylesheet content, or `None` if the file(s) don't exist.
-    """
-
-    if not os.path.exists(style_file):
-        return None
-
-    if not os.path.exists(color_file):
-        return None
-
-    with open(style_file, "r") as in_file:
-        stylesheet = in_file.read()
-
-    colors_dict = load_colors_from_jsonc(color_file)
-
-    # Perform color replacements
-    stylesheet = replace_colors(stylesheet, colors_dict)
-
-    # Replace icons path
-    stylesheet = stylesheet.replace(
-        "qss:", os.path.dirname(__file__).replace("\\", "/") + "/"
-    )
-
-    return stylesheet
-
-
-def _load_stylesheet(style_file: str = STYLE_FILE):
-    """Load the stylesheet and replace some part of the given QSS file to
-    make them work in Houdini.
-
-    Args:
-        style_file (str, optional): The path to the QSS file.
-            Defaults to `STYLE_FILE`.
-
-    Returns:
-        str: The stylesheet with the right elements replaced.
-    """
-
-    if not os.path.exists(style_file):
-        return "None"
-
-    with open(style_file, "r") as in_file:
-        stylesheet = in_file.read()
-
-    stylesheet_path = os.path.dirname(style_file)
-    stylesheet_path = stylesheet_path.replace("\\", "/") + "/"
-
-    replace = {
-        "@icons": str(Path(__file__).parent / "icons" / "stylesheet").replace(
-            "\\", "/"
-        )
-    }
-
-    for key, value in replace.items():
-        stylesheet = stylesheet.replace(key, value)
-
-    return stylesheet
-
-
-def _load_stylesheet(style_file: str = STYLE_FILE):
-    """Load the stylesheet and replace some part of the `.qss` file to
-    make them work in Houdini.
-
-    Returns:
-        str:
-            The stylesheet with the right elements replaced.
-    """
-
-    if not os.path.exists(style_file):
-        return "None"
-
-    with open(style_file, "r") as in_file:
-        stylesheet = in_file.read()
-
-    def replace_colors(stylesheet, colors_dict, prefix=""):
-        for key, value in colors_dict.items():
-            if isinstance(value, dict):
-                # Recursively replace nested dictionaries
-                stylesheet = replace_colors(
-                    stylesheet,
-                    value,
-                    f"{prefix.replace(' ', '_')}{key.replace(' ', '_')}_",
-                )
-            else:
-                # Replace color placeholders with their corresponding values
-                placeholder = f"@{prefix}{key}"
-                stylesheet = stylesheet.replace(placeholder, value)
-
-    # Colors
-    # stylesheet = replace_colors(stylesheet, COLORS)
-
-    # Icons
-    stylesheet = stylesheet.replace(
-        "~icons",
-        str(_parent_directory / "icons" / "stylesheet").replace("\\", "/"),
-    )
-
-    return stylesheet
-
-
 def load_stylesheet(
     style_file: str = STYLE_FILE,
     color_a: str = _COLOR_A_DEFAULT,
@@ -680,14 +521,10 @@ def load_stylesheet(
     make them work in a DCC.
 
     Args:
-        style_file (str, optional): The path to the QSS file.
-            Defaults to `STYLE_FILE`.
-        color_a (str, optional): The primary color to use.
-            Defaults to `#649eff`.
-        color_b (str, optional): The secondary color to use.
-            Defaults to `#4188ff`.
-        extra (str, optional): Extra stylesheet content to append.
-            Defaults to `None`.
+        style_file: The path to the QSS file. Defaults to `STYLE_FILE`.
+        color_a: The primary color to use. Defaults to `#649eff`.
+        color_b: The secondary color to use. Defaults to `#4188ff`.
+        extra: Extra stylesheet content to append. Defaults to `None`.
 
     Returns:
         str: The stylesheet with the right elements replaced.
@@ -700,21 +537,11 @@ def load_stylesheet(
         stylesheet = in_file.read()
 
     # Ensure font compatibility on multipe platforms
-    if platform.system() == "Windows":
-        font_stylesheet = """* {
-            font-family: "Segoe UI";
-        }
-        """
-    elif platform.system() == "Linux":
-        font_stylesheet = """* {
-            font-family: "Open Sans";
-        }
-        """
-    elif platform.system() == "Darwin":
-        font_stylesheet = """* {
-            font-family: "SF Pro";
-        }
-        """
+    default_font = QFontDatabase.systemFont(QFontDatabase.GeneralFont).family()
+    font_stylesheet = f"""* {{
+        font-family: "{default_font}";
+    }}
+    """
 
     replace = {
         "@ColorA": color_a,
