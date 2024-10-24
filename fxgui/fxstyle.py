@@ -11,6 +11,7 @@ Examples:
 import os
 import re
 import json
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -537,7 +538,12 @@ def load_stylesheet(
         stylesheet = in_file.read()
 
     # Ensure font compatibility on multipe platforms
-    default_font = QFontDatabase.systemFont(QFontDatabase.GeneralFont).family()
+    if sys.platform == "win32":
+        default_font = "Segoe UI"
+    else:
+        default_font = QFontDatabase.systemFont(
+            QFontDatabase.GeneralFont
+        ).family()
     font_stylesheet = f"""* {{
         font-family: "{default_font}";
     }}

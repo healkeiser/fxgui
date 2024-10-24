@@ -337,9 +337,9 @@ def main(show_delayed: bool = False):
 
 
 if __name__ == "__main__":
-    # main()
+    main()
     # show_window()
     # show_window_alt()
     # subclass_window()
     # show_login_dialog()
-    show_floating_dialog_houdini()
+    # show_floating_dialog_houdini()s
