@@ -1,0 +1,7 @@
+{
+    "template": "keepachangelog",
+    "unreleased": true,
+    "commitLimit": false,
+    "ignoreCommitPattern": ".*(CHANGELOG|README).*",
+    "sortCommits": "date"
+}
