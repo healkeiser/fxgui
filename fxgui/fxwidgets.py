@@ -578,9 +578,9 @@ class FXStatusBar(QStatusBar):
             if severity_type == 0:
                 logger.critical(message)
             if severity_type == 1:
-                logger.warning(message)
-            elif severity_type == 2:
                 logger.error(message)
+            elif severity_type == 2:
+                logger.warning(message)
             elif severity_type == 3 or severity_type == 4:
                 logger.info(message)
 
