@@ -1066,14 +1066,15 @@ the default icon is returned.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_current_palette</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n"><span title="qtpy.QtCore.QObject">QObject</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_current_palette</span><span class="p">(</span><span class="n">widget</span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Prints the current palette of the given Qt object.</p>
-<p>This function retrieves the current palette of the given Qt object and prints
-each color role in each state group in the format <code>QPalette.State, QPalette.Role, QColor(r, g, b)</code>.</p>
+<p>This function retrieves the current palette of the given Qt object and
+prints each color role in each state group in the format
+<code>QPalette.State, QPalette.Role, QColor(r, g, b)</code>.</p>
 
 
 
@@ -1089,12 +1090,13 @@ each color role in each state group in the format <code>QPalette.State, QPalette
     </thead>
     <tbody>
         <tr class="doc-section-item">
-          <td><code>object</code></td>
+          <td><code>widget</code></td>
           <td>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The Qt object whose palette is to be retrieved.</p>
+              <p>The Qt widget whose palette is to be retrieved.</p>
             </div>
           </td>
           <td>
@@ -1425,7 +1427,7 @@ Defaults to <code>""</code>.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_dark_palette</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n"><span title="qtpy.QtCore.QObject">QObject</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtGui.QPalette">QPalette</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_dark_palette</span><span class="p">(</span><span class="n">widget</span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtGui.QPalette">QPalette</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1446,13 +1448,14 @@ Defaults to <code>""</code>.</p>
     </thead>
     <tbody>
         <tr class="doc-section-item">
-          <td><code>object</code></td>
+          <td><code>widget</code></td>
           <td>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The QObject (QApplication, QWindow, etc.) to set the
-palette on.</p>
+              <p>The QWidget (QApplication, QWindow, etc.) to set
+the palette on.</p>
             </div>
           </td>
           <td>
@@ -1500,7 +1503,7 @@ palette on.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_light_palette</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n"><span title="qtpy.QtCore.QObject">QObject</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtGui.QPalette">QPalette</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_light_palette</span><span class="p">(</span><span class="n">widget</span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtGui.QPalette">QPalette</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1521,13 +1524,13 @@ palette on.</p>
     </thead>
     <tbody>
         <tr class="doc-section-item">
-          <td><code>obj</code></td>
+          <td><code>widget</code></td>
           <td>
-                <code><span title="qtpy.QtCore.QObject">QObject</span></code>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The QObject (QApplication, QWindow, etc.) to set the palette on.</p>
+              <p>The QWidget (QApplication, QWindow, etc.) to set the palette on.</p>
             </div>
           </td>
           <td>

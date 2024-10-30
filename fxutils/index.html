@@ -565,6 +565,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#fxgui.fxutils.deprecated" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;deprecated
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fxgui.fxutils.filter_tree" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;filter_tree
@@ -689,6 +698,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#fxgui.fxutils.deprecated" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;deprecated
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fxgui.fxutils.filter_tree" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;filter_tree
@@ -747,7 +765,7 @@
 <a id="fxgui.fxutils"></a>
   <div class="doc doc-contents first">
   
-      <p>Utils related to QT objects.</p>
+      <p>Utils related the <code>fxgui</code> package.</p>
 
   
 
@@ -1167,8 +1185,59 @@ Defaults to <code>None</code>.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Optional[QAction]:</p>
+              <p>Optional[QAction]: The created QAction.</p>
             </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="fxgui.fxutils.deprecated" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>          <span class="doc doc-object-name doc-function-name">deprecated</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">deprecated</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Callable">Callable</span></span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Decorator to mark functions as deprecated.</p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td><code>func</code></td>
+          <td>
+                <code><span title="typing.Callable">Callable</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The function to mark as deprecated.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
           </td>
         </tr>
     </tbody>

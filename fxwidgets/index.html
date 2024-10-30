@@ -3932,7 +3932,9 @@ splash screen. Defaults to <code>False</code>.</p>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">time</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">logger</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="logging.Logger">Logger</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">set_color</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">pixmap</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">QPixmap</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">background_color</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4034,12 +4036,42 @@ Defaults to <code>None</code>.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Wheter to set the status bar color depending on the log
-verbosity. Defaults to <code>True</code>.</p>
+              <p>Whether to set the status bar color depending on
+the log verbosity. Defaults to <code>True</code>.</p>
             </div>
           </td>
           <td>
                 <code>True</code>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code>pixmap</code></td>
+          <td>
+                <code>QPixmap</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A custom pixmap to be displayed in the
+status bar. Defaults to <code>None</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code>background_color</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A custom background color for
+the status bar. Defaults to <code>None</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
           </td>
         </tr>
     </tbody>
@@ -4059,8 +4091,8 @@ verbosity. Defaults to <code>True</code>.</p>
 
 <details class="note" open>
   <summary>Note</summary>
-  <p>You can either use the <code>FXMainWindow</code> instance to retrieve the verbosity
-constants, or the <code>fxwidgets</code> module.
+  <p>You can either use the <code>FXMainWindow</code> instance to retrieve the
+verbosity constants, or the <code>fxwidgets</code> module.
 Overrides the base class method.</p>
 </details>
   </div>
@@ -4229,7 +4261,7 @@ Overrides the base class method.</p>
 <p><span class="doc-section-title">Examples:</span></p>
     <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">app</span> <span class="o">=</span> <span class="n">FXApplication</span><span class="p">()</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">system_tray</span> <span class="o">=</span> <span class="n">FXSystemTray</span><span class="p">()</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">hello_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="n">fxicons</span><span class="o">.</span><span class="n">get_icon</span><span class="p">(</span><span class="s2">&quot;perm_media&quot;</span><span class="p">),</span> <span class="s2">&quot;Set Project&quot;</span><span class="p">,</span> <span class="n">system_tray</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">hello_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s2">&quot;mdi.eye&quot;</span><span class="p">),</span> <span class="s2">&quot;Set Project&quot;</span><span class="p">,</span> <span class="n">system_tray</span><span class="p">)</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">system_tray</span><span class="o">.</span><span class="n">tray_menu</span><span class="o">.</span><span class="n">insertAction</span><span class="p">(</span><span class="n">system_tray</span><span class="o">.</span><span class="n">quit_action</span><span class="p">,</span> <span class="n">hello_action</span><span class="p">)</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">system_tray</span><span class="o">.</span><span class="n">tray_menu</span><span class="o">.</span><span class="n">insertSeparator</span><span class="p">(</span><span class="n">system_tray</span><span class="o">.</span><span class="n">quit_action</span><span class="p">)</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">system_tray</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
