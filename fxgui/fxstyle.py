@@ -32,8 +32,8 @@ STYLE_FILE = _parent_directory / "qss" / "style.qss"
 COLOR_FILE = _parent_directory / "style.jsonc"
 
 # Colors
-_COLOR_A_DEFAULT = "#912d9af4"  # Lighter
-_COLOR_B_DEFAULT = "#8c2275b8"  # Darker
+_COLOR_A_DEFAULT = "#007ACC"  # Lighter Blue
+_COLOR_B_DEFAULT = "#005A9E"  # Darker Blue
 
 # Globals
 _colors = None

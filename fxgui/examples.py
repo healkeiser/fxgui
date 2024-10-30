@@ -69,7 +69,7 @@ def show_login_dialog():
 def show_window_houdini():
     """An example FXMainWindow instance launched from inside Houdini."""
 
-    houdini_window = fxdcc.get_dcc_main_window()
+    houdini_window = fxdcc.get_houdini_main_window()
     window = fxwidgets.FXMainWindow(parent=houdini_window, ui_file=_ui_file)
     window.show()
 
@@ -77,11 +77,8 @@ def show_window_houdini():
 def show_floating_dialog_houdini():
     """An example FXFloatingDialog launched from inside Houdini."""
 
-    # _fix = QUiLoader()  # XXX: This is a PySide6 bug
-    application = fxwidgets.FXApplication()
-
-    # houdini_window = fxdcc.get_dcc_main_window()
-    floating_dialog = fxwidgets.FXFloatingDialog()
+    houdini_window = fxdcc.get_dcc_main_window()
+    floating_dialog = fxwidgets.FXFloatingDialog(houdini_window)
 
     # Set icon
     # icon = hou.qt.Icon("MISC_python")
@@ -98,7 +95,6 @@ def show_floating_dialog_houdini():
 
     # Show under the cursor
     floating_dialog.show_under_cursor()
-    application.exec_()
 
 
 def show_splashscreen(time: float = 5.0):
@@ -240,7 +236,6 @@ def main(show_delayed: bool = False):
     window = fxwidgets.FXMainWindow(
         project="fxgui", version="0.1.0", ui_file=_ui_file
     )
-    # window.set_status_line_colors(color_a="#fd6b72", color_b="#ffc577")
     application.processEvents()
 
     # Splashscreen
@@ -268,7 +263,7 @@ def main(show_delayed: bool = False):
 
     # Window
     if show_delayed:
-        # Delay the call to _window.show by 3 seconds
+        # Delay the call to `window.show` by 3 seconds
         QTimer.singleShot(3 * 1000 + 200, window.show)
     else:
         window.show()
@@ -303,7 +298,28 @@ def main(show_delayed: bool = False):
         )
     )
 
+    # Use the standard icons, replaced by Google Material icons through the
+    # `fxstyle.FXProxyStyle` when possible
     style = window.style()
+    colors_dict = fxstyle.load_colors_from_jsonc()
+    window.ui.button_success.setIcon(
+        qta.icon(
+            "mdi.check-circle",
+            color=colors_dict["feedback"]["success"]["light"],
+        )
+    )
+    window.ui.button_info.setIcon(
+        style.standardIcon(QStyle.SP_MessageBoxInformation)
+    )
+    window.ui.button_warning.setIcon(
+        style.standardIcon(QStyle.SP_MessageBoxWarning)
+    )
+    window.ui.button_error.setIcon(
+        qta.icon(
+            "mdi.alert",
+            color=colors_dict["feedback"]["error"]["light"],
+        )
+    )
     window.ui.button_critical.setIcon(
         style.standardIcon(QStyle.SP_MessageBoxCritical)
     )
@@ -338,8 +354,3 @@ def main(show_delayed: bool = False):
 
 if __name__ == "__main__":
     main()
-    # show_window()
-    # show_window_alt()
-    # subclass_window()
-    # show_login_dialog()
-    # show_floating_dialog_houdini()s

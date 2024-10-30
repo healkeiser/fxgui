@@ -211,7 +211,7 @@ def set_formatted_tooltip(
     widget.setToolTipDuration(duration * 1000)
 
 
-# Misc
+# ' Misc
 def deprecated(func: Callable) -> Callable:
     """Decorator to mark functions as deprecated.
 

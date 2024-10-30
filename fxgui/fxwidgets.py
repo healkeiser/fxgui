@@ -452,6 +452,8 @@ class FXStatusBar(QStatusBar):
         time: bool = True,
         logger: Optional[logging.Logger] = None,
         set_color: bool = True,
+        pixmap: Optional[QPixmap] = None,
+        background_color: Optional[str] = None,
     ):
         """Display a message in the status bar with a specified severity.
 
@@ -466,8 +468,12 @@ class FXStatusBar(QStatusBar):
                 the message. Defaults to `True`.
             logger (Logger, optional): A logger object to log the message.
                 Defaults to `None`.
-            set_color (bool): Wheter to set the status bar color depending on the log
-                verbosity. Defaults to `True`.
+            set_color (bool): Whether to set the status bar color depending on
+                the log verbosity. Defaults to `True`.
+            pixmap (QPixmap, optional): A custom pixmap to be displayed in the
+                status bar. Defaults to `None`.
+            background_color (str, optional): A custom background color for
+                the status bar. Defaults to `None`.
 
         Examples:
             To display a critical error message with a red background
@@ -479,8 +485,8 @@ class FXStatusBar(QStatusBar):
             ... )
 
         Note:
-            You can either use the `FXMainWindow` instance to retrieve the verbosity
-            constants, or the `fxwidgets` module.
+            You can either use the `FXMainWindow` instance to retrieve the
+            verbosity constants, or the `fxwidgets` module.
             Overrides the base class method.
         """
 
@@ -546,6 +552,14 @@ class FXStatusBar(QStatusBar):
             status_bar_color,
             status_bar_border_color,
         ) = severity_mapping[severity_type]
+
+        # Use custom pixmap if provided
+        if pixmap is not None:
+            severity_icon = pixmap
+
+        # Use custom background color if provided
+        if background_color is not None:
+            status_bar_color = background_color
 
         # Message
         message_prefix = (
