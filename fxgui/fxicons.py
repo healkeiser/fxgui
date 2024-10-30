@@ -235,8 +235,8 @@ def get_icon(
 if __name__ == "__main__":
 
     class _FXBuiltInIcons(QWidget):
-        def __init__(self):
-            super().__init__()
+        def __init__(self, parent=None):
+            super().__init__(parent)
 
             icons = sorted(
                 [attr for attr in dir(QStyle) if attr.startswith("SP_")]
@@ -264,7 +264,7 @@ if __name__ == "__main__":
 
             clipboard = QGuiApplication.clipboard()
             # clipboard.setText(f'QStyle.{name}: ("___", "white"),')
-            clipboard.setText(f"self.style().standardIcon(QStyle.{name})")
+            clipboard.setText(name)
 
         def create_callback(self, name: str) -> Callable[[bool], None]:
             """Create a callback function for a button click.
@@ -283,8 +283,9 @@ if __name__ == "__main__":
             return lambda checked: self.copy_to_clipboard(name)
 
     application = fxwidgets.FXApplication()
-    widget = _FXBuiltInIcons()
     window = fxwidgets.FXMainWindow()
+    widget = _FXBuiltInIcons(parent=window)
+    window.set_banner_text("Built-in Icons")
     window.setCentralWidget(widget)
     window.menu_bar.hide()
     window.toolbar.hide()
