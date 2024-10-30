@@ -22,6 +22,9 @@
     <!-- PyPI -->
     <a href="https://pypi.org/project/fxgui">
       <img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=PyPI" alt="PyPI version"/></a>&nbsp;&nbsp;
+    <!-- PyPI downloads -->
+    <a href="https://pepy.tech/project/fxgui">
+      <img src="https://static.pepy.tech/badge/fxgui" alt="PyPI Downloads"></a>&nbsp;&nbsp;
     <!-- Last Commit -->
     <img src="https://img.shields.io/github/last-commit/healkeiser/fxgui?logo=github&label=Last%20Commit" alt="Last Commit"/>&nbsp;&nbsp;
     <!-- Commit Activity -->
