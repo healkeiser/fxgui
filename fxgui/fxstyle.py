@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import QObject
+import qtawesome as qta
 from qtpy.QtWidgets import (
     QProxyStyle,
     QStyle,
@@ -26,23 +26,20 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtGui import QIcon, QPalette, QColor, QFontDatabase
 
-# Internal
-from fxgui import fxicons
-
-
 # Constants
 _parent_directory = Path(__file__).parent
 STYLE_FILE = _parent_directory / "qss" / "style.qss"
 COLOR_FILE = _parent_directory / "style.jsonc"
 
-# Lighter
-_COLOR_A_DEFAULT = "#912d9af4"
-
-# Darker
-_COLOR_B_DEFAULT = "#8c2275b8"
+# Colors
+_COLOR_A_DEFAULT = "#912d9af4"  # Lighter
+_COLOR_B_DEFAULT = "#8c2275b8"  # Darker
 
 # Globals
 _colors = None
+
+# Icons
+qta.set_defaults(color="#b4b4b4")
 
 
 class FXProxyStyle(QProxyStyle):
@@ -77,93 +74,91 @@ class FXProxyStyle(QProxyStyle):
 
         # fmt: off
         STANDARD_ICON_MAP = {
-            QStyle.SP_ArrowBack: ("arrow_back", self.icon_color),
-            QStyle.SP_ArrowDown: ("arrow_downward", self.icon_color),
-            QStyle.SP_ArrowForward: ("arrow_forward", self.icon_color),
-            QStyle.SP_ArrowLeft: ("arrow_back", self.icon_color),
-            QStyle.SP_ArrowRight: ("arrow_forward", self.icon_color),
-            QStyle.SP_ArrowUp: ("arrow_upward", self.icon_color),
-            QStyle.SP_BrowserReload: ("refresh", self.icon_color),
-            QStyle.SP_BrowserStop: ("block", self.icon_color),
-            QStyle.SP_CommandLink: ("arrow_forward", self.icon_color),
-            QStyle.SP_ComputerIcon: ("computer", self.icon_color),
-            QStyle.SP_CustomBase: ("tune", self.icon_color),
-            QStyle.SP_DesktopIcon: ("desktop_windows", self.icon_color),
-            QStyle.SP_DialogAbortButton: ("cancel", self.icon_color),
-            QStyle.SP_DialogApplyButton: ("done", self.icon_color),
-            QStyle.SP_DialogCancelButton: ("cancel", self.icon_color),
-            QStyle.SP_DialogCloseButton: ("close", self.icon_color),
-            QStyle.SP_DialogDiscardButton: ("delete", self.icon_color),
-            QStyle.SP_DialogHelpButton: ("help", self.icon_color),
-            QStyle.SP_DialogIgnoreButton: ("notifications_paused", self.icon_color),
-            QStyle.SP_DialogNoButton: ("cancel", self.icon_color),
-            QStyle.SP_DialogNoToAllButton: ("do_not_disturb", self.icon_color),
-            QStyle.SP_DialogOkButton: ("done", self.icon_color),
-            QStyle.SP_DialogOpenButton: ("open_in_new", self.icon_color),
-            QStyle.SP_DialogResetButton: ("cleaning_services", self.icon_color),
-            QStyle.SP_DialogRetryButton: ("restart_alt", self.icon_color),
-            QStyle.SP_DialogSaveAllButton: ("save", self.icon_color),
-            QStyle.SP_DialogSaveButton: ("save", self.icon_color),
-            QStyle.SP_DialogYesButton: ("done", self.icon_color),
-            QStyle.SP_DialogYesToAllButton: ("done", self.icon_color),
-            QStyle.SP_DirClosedIcon: ("folder", self.icon_color),
-            QStyle.SP_DirHomeIcon: ("home", self.icon_color),
-            QStyle.SP_DirIcon: ("folder_open", self.icon_color),
-            QStyle.SP_DirLinkIcon: ("drive_file_move", self.icon_color),
-            QStyle.SP_DirLinkOpenIcon: ("folder_open", self.icon_color),
-            QStyle.SP_DockWidgetCloseButton: ("cancel", self.icon_color),
-            QStyle.SP_DirOpenIcon: ("folder_open", self.icon_color),
-            QStyle.SP_DriveCDIcon: ("album", self.icon_color),
-            QStyle.SP_DriveDVDIcon: ("album", self.icon_color),
-            QStyle.SP_DriveFDIcon: ("usb", self.icon_color),
-            QStyle.SP_DriveHDIcon: ("dns", self.icon_color),
-            QStyle.SP_DriveNetIcon: ("cloud", self.icon_color),
-            QStyle.SP_FileDialogBack: ("arrow_back", self.icon_color),
-            QStyle.SP_FileDialogContentsView: ("find_in_page", self.icon_color),
-            QStyle.SP_FileDialogDetailedView: ("description", self.icon_color),
-            QStyle.SP_FileDialogEnd: ("note", self.icon_color),
-            QStyle.SP_FileDialogInfoView: ("info", self.icon_color),
-            QStyle.SP_FileDialogListView: ("grid_view", self.icon_color),
-            QStyle.SP_FileDialogNewFolder: ("create_new_folder", self.icon_color),
-            QStyle.SP_FileDialogStart: ("insert_drive_file", self.icon_color),
-            QStyle.SP_FileDialogToParent: ("upload_file", self.icon_color),
-            QStyle.SP_FileIcon: ("description", self.icon_color),
-            QStyle.SP_FileLinkIcon: ("file_present", self.icon_color),
-            QStyle.SP_LineEditClearButton: ("close", self.icon_color),
-            QStyle.SP_MediaPause: ("pause", self.icon_color),
-            QStyle.SP_MediaPlay: ("play_arrow", self.icon_color),
-            QStyle.SP_MediaSeekBackward: ("fast_rewind", self.icon_color),
-            QStyle.SP_MediaSeekForward: ("fast_forward", self.icon_color),
-            QStyle.SP_MediaSkipBackward: ("skip_previous", self.icon_color),
-            QStyle.SP_MediaSkipForward: ("skip_next", self.icon_color),
-            QStyle.SP_MediaStop: ("stop", self.icon_color),
-            QStyle.SP_MediaVolume: ("volume_up", self.icon_color),
-            QStyle.SP_MediaVolumeMuted: ("volume_off", self.icon_color),
-            #
-            QStyle.SP_MessageBoxCritical: ("error", colors_dict["feedback"]["error"]["light"]),
-            QStyle.SP_MessageBoxInformation: ("info", colors_dict["feedback"]["info"]["light"]),
-            QStyle.SP_MessageBoxQuestion: ("help", colors_dict["feedback"]["success"]["light"]),
-            QStyle.SP_MessageBoxWarning: ("warning", colors_dict["feedback"]["warning"]["light"]),
-            #
-            QStyle.SP_RestoreDefaultsButton: ("restore", self.icon_color),
-            QStyle.SP_TitleBarCloseButton: ("close", self.icon_color),
-            QStyle.SP_TitleBarContextHelpButton: ("question_mark", self.icon_color),
-            QStyle.SP_TitleBarMaxButton: ("maximize", self.icon_color),
-            QStyle.SP_TitleBarMenuButton: ("menu", self.icon_color),
-            QStyle.SP_TitleBarMinButton: ("minimize", self.icon_color),
-            QStyle.SP_TitleBarNormalButton: ("close_fullscreen", self.icon_color),
-            QStyle.SP_TitleBarShadeButton: ("expand_more", self.icon_color),
-            QStyle.SP_TitleBarUnshadeButton: ("expand_less", self.icon_color),
-            QStyle.SP_ToolBarHorizontalExtensionButton: ("keyboard_arrow_right", self.icon_color),
-            QStyle.SP_ToolBarVerticalExtensionButton: ("keyboard_arrow_down", self.icon_color),
-            QStyle.SP_TrashIcon: ("delete", self.icon_color),
-            QStyle.SP_VistaShield: ("security", self.icon_color),
+            QStyle.SP_ArrowBack: qta.icon("mdi.arrow-left", color=self.icon_color),
+            QStyle.SP_ArrowDown: qta.icon("mdi.arrow-down", color=self.icon_color),
+            QStyle.SP_ArrowForward: qta.icon("mdi.arrow-right", color=self.icon_color),
+            QStyle.SP_ArrowLeft: qta.icon("mdi.arrow-left", color=self.icon_color),
+            QStyle.SP_ArrowRight: qta.icon("mdi.arrow-right", color=self.icon_color),
+            QStyle.SP_ArrowUp: qta.icon("mdi.arrow-up", color=self.icon_color),
+            QStyle.SP_BrowserReload: qta.icon("mdi.refresh", color=self.icon_color),
+            QStyle.SP_BrowserStop: qta.icon("mdi.block-helper", color=self.icon_color),
+            QStyle.SP_CommandLink: qta.icon("mdi.arrow-right", color=self.icon_color),
+            QStyle.SP_ComputerIcon: qta.icon("mdi.desktop-classic", color=self.icon_color),
+            QStyle.SP_CustomBase: qta.icon("mdi.tune", color=self.icon_color),
+            QStyle.SP_DesktopIcon: qta.icon("mdi.desktop-mac", color=self.icon_color),
+            QStyle.SP_DialogAbortButton: qta.icon("mdi.cancel", color=self.icon_color),
+            QStyle.SP_DialogApplyButton: qta.icon("mdi.check", color=self.icon_color),
+            QStyle.SP_DialogCancelButton: qta.icon("mdi.cancel", color=self.icon_color),
+            QStyle.SP_DialogCloseButton: qta.icon("mdi.close", color=self.icon_color),
+            QStyle.SP_DialogDiscardButton: qta.icon("mdi.delete", color=self.icon_color),
+            QStyle.SP_DialogHelpButton: qta.icon("mdi.help-circle", color=self.icon_color),
+            QStyle.SP_DialogIgnoreButton: qta.icon("mdi.bell-off", color=self.icon_color),
+            QStyle.SP_DialogNoButton: qta.icon("mdi.cancel", color=self.icon_color),
+            QStyle.SP_DialogNoToAllButton: qta.icon("mdi.do-not-disturb", color=self.icon_color),
+            QStyle.SP_DialogOkButton: qta.icon("mdi.check", color=self.icon_color),
+            QStyle.SP_DialogOpenButton: qta.icon("mdi.open-in-new", color=self.icon_color),
+            QStyle.SP_DialogResetButton: qta.icon("mdi.broom", color=self.icon_color),
+            QStyle.SP_DialogRetryButton: qta.icon("mdi.restart", color=self.icon_color),
+            QStyle.SP_DialogSaveAllButton: qta.icon("mdi.content-save-all", color=self.icon_color),
+            QStyle.SP_DialogSaveButton: qta.icon("mdi.content-save", color=self.icon_color),
+            QStyle.SP_DialogYesButton: qta.icon("mdi.check", color=self.icon_color),
+            QStyle.SP_DialogYesToAllButton: qta.icon("mdi.check-all", color=self.icon_color),
+            QStyle.SP_DirClosedIcon: qta.icon("mdi.folder", color=self.icon_color),
+            QStyle.SP_DirHomeIcon: qta.icon("mdi.home", color=self.icon_color),
+            QStyle.SP_DirIcon: qta.icon("mdi.folder-open", color=self.icon_color),
+            QStyle.SP_DirLinkIcon: qta.icon("mdi.link-variant", color=self.icon_color),
+            QStyle.SP_DirLinkOpenIcon: qta.icon("mdi.folder-open", color=self.icon_color),
+            QStyle.SP_DockWidgetCloseButton: qta.icon("mdi.close", color=self.icon_color),
+            QStyle.SP_DirOpenIcon: qta.icon("mdi.folder-open", color=self.icon_color),
+            QStyle.SP_DriveCDIcon: qta.icon("mdi.disc", color=self.icon_color),
+            QStyle.SP_DriveDVDIcon: qta.icon("mdi.disc", color=self.icon_color),
+            QStyle.SP_DriveFDIcon: qta.icon("mdi.usb", color=self.icon_color),
+            QStyle.SP_DriveHDIcon: qta.icon("mdi.harddisk", color=self.icon_color),
+            QStyle.SP_DriveNetIcon: qta.icon("mdi.cloud", color=self.icon_color),
+            QStyle.SP_FileDialogBack: qta.icon("mdi.arrow-left", color=self.icon_color),
+            QStyle.SP_FileDialogContentsView: qta.icon("mdi.file-find", color=self.icon_color),
+            QStyle.SP_FileDialogDetailedView: qta.icon("mdi.file-document", color=self.icon_color),
+            QStyle.SP_FileDialogEnd: qta.icon("mdi.file-check", color=self.icon_color),
+            QStyle.SP_FileDialogInfoView: qta.icon("mdi.information", color=self.icon_color),
+            QStyle.SP_FileDialogListView: qta.icon("mdi.view-list", color=self.icon_color),
+            QStyle.SP_FileDialogNewFolder: qta.icon("mdi.folder-plus", color=self.icon_color),
+            QStyle.SP_FileDialogStart: qta.icon("mdi.file", color=self.icon_color),
+            QStyle.SP_FileDialogToParent: qta.icon("mdi.file-upload", color=self.icon_color),
+            QStyle.SP_FileIcon: qta.icon("mdi.file", color=self.icon_color),
+            QStyle.SP_FileLinkIcon: qta.icon("mdi.link", color=self.icon_color),
+            QStyle.SP_LineEditClearButton: qta.icon("mdi.close", color=self.icon_color),
+            QStyle.SP_MediaPause: qta.icon("mdi.pause", color=self.icon_color),
+            QStyle.SP_MediaPlay: qta.icon("mdi.play", color=self.icon_color),
+            QStyle.SP_MediaSeekBackward: qta.icon("mdi.rewind", color=self.icon_color),
+            QStyle.SP_MediaSeekForward: qta.icon("mdi.fast-forward", color=self.icon_color),
+            QStyle.SP_MediaSkipBackward: qta.icon("mdi.skip-previous", color=self.icon_color),
+            QStyle.SP_MediaSkipForward: qta.icon("mdi.skip-next", color=self.icon_color),
+            QStyle.SP_MediaStop: qta.icon("mdi.stop", color=self.icon_color),
+            QStyle.SP_MediaVolume: qta.icon("mdi.volume-high", color=self.icon_color),
+            QStyle.SP_MediaVolumeMuted: qta.icon("mdi.volume-off", color=self.icon_color),
+            QStyle.SP_MessageBoxCritical: qta.icon("mdi.alert-circle", color=colors_dict["feedback"]["error"]["light"]),
+            QStyle.SP_MessageBoxInformation: qta.icon("mdi.information", color=colors_dict["feedback"]["info"]["light"]),
+            QStyle.SP_MessageBoxQuestion: qta.icon("mdi.help-circle", color=colors_dict["feedback"]["success"]["light"]),
+            QStyle.SP_MessageBoxWarning: qta.icon("mdi.alert", color=colors_dict["feedback"]["warning"]["light"]),
+            QStyle.SP_RestoreDefaultsButton: qta.icon("mdi.restore", color=self.icon_color),
+            QStyle.SP_TitleBarCloseButton: qta.icon("mdi.close", color=self.icon_color),
+            QStyle.SP_TitleBarContextHelpButton: qta.icon("mdi.help-circle", color=self.icon_color),
+            QStyle.SP_TitleBarMaxButton: qta.icon("mdi.window-maximize", color=self.icon_color),
+            QStyle.SP_TitleBarMenuButton: qta.icon("mdi.menu", color=self.icon_color),
+            QStyle.SP_TitleBarMinButton: qta.icon("mdi.window-minimize", color=self.icon_color),
+            QStyle.SP_TitleBarNormalButton: qta.icon("mdi.window-restore", color=self.icon_color),
+            QStyle.SP_TitleBarShadeButton: qta.icon("mdi.arrow-collapse-down", color=self.icon_color),
+            QStyle.SP_TitleBarUnshadeButton: qta.icon("mdi.arrow-collapse-up", color=self.icon_color),
+            QStyle.SP_ToolBarHorizontalExtensionButton: qta.icon("mdi.arrow-right", color=self.icon_color),
+            QStyle.SP_ToolBarVerticalExtensionButton: qta.icon("mdi.arrow-down", color=self.icon_color),
+            QStyle.SP_TrashIcon: qta.icon("mdi.delete", color=self.icon_color),
+            QStyle.SP_VistaShield: qta.icon("mdi.shield", color=self.icon_color),
         }
         # fmt: on
 
-        icon_name, color = STANDARD_ICON_MAP.get(standardIcon, (None, None))
-        if icon_name is not None:
-            return fxicons.get_pixmap(icon_name, color=color)
+        icon = STANDARD_ICON_MAP.get(standardIcon)
+        if icon is not None:
+            return icon
         else:
             return super().standardIcon(standardIcon, option, widget)
 
@@ -178,17 +173,18 @@ class FXProxyStyle(QProxyStyle):
         self.update()
 
 
-def get_current_palette(obj: QObject) -> None:
+def get_current_palette(widget: QWidget) -> None:
     """Prints the current palette of the given Qt object.
 
-    This function retrieves the current palette of the given Qt object and prints
-    each color role in each state group in the format `QPalette.State, QPalette.Role, QColor(r, g, b)`.
+    This function retrieves the current palette of the given Qt object and
+    prints each color role in each state group in the format
+    `QPalette.State, QPalette.Role, QColor(r, g, b)`.
 
     Args:
-        object: The Qt object whose palette is to be retrieved.
+        widget: The Qt widget whose palette is to be retrieved.
     """
 
-    palette = obj.palette()
+    palette = widget.palette()
     role_names = {
         QPalette.Window: "Window",
         QPalette.WindowText: "WindowText",
@@ -226,11 +222,11 @@ def get_current_palette(obj: QObject) -> None:
             )
 
 
-def _set_dark_palette(obj: QObject) -> QPalette:
+def set_dark_palette(widget: QWidget) -> QPalette:
     """Set the object palette to a dark theme.
 
     Args:
-        application: The QObject (QApplication, QWindow, etc.) to set
+        widget: The QWidget (QApplication, QWindow, etc.) to set
             the palette on.
 
     Returns:
@@ -301,51 +297,15 @@ def _set_dark_palette(obj: QObject) -> QPalette:
     palette.setColor(QPalette.Disabled, QPalette.NoRole, QColor(0, 0, 0))
     # fmt: on
 
-    obj.setPalette(palette)
+    widget.setPalette(palette)
     return palette
 
 
-def set_dark_palette(obj: QObject) -> QPalette:
-    """Set the object palette to a dark theme.
-
-    Args:
-        object: The QObject (QApplication, QWindow, etc.) to set the
-            palette on.
-
-    Returns:
-        QPalette: The custom palette.
-    """
-
-    # fmt: off
-    palette = QPalette()
-    palette.setColor(QPalette.Window, QColor(53, 53, 53))
-    palette.setColor(QPalette.WindowText, "white")
-    palette.setColor(QPalette.Base, QColor(35, 35, 35))
-    palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-    palette.setColor(QPalette.ToolTipBase, QColor(25, 25, 25))
-    palette.setColor(QPalette.ToolTipText, "white")
-    palette.setColor(QPalette.Text, "white")
-    palette.setColor(QPalette.Button, QColor(53, 53, 53))
-    palette.setColor(QPalette.ButtonText, "white")
-    palette.setColor(QPalette.BrightText, "red")
-    palette.setColor(QPalette.Link, QColor(42, 130, 218))
-    palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.HighlightedText, QColor(35, 35, 35))
-    palette.setColor(QPalette.Active, QPalette.Button, QColor(53, 53, 53))
-    palette.setColor(QPalette.Disabled, QPalette.ButtonText, "darkGray")
-    palette.setColor(QPalette.Disabled, QPalette.WindowText, "darkGray")
-    palette.setColor(QPalette.Disabled, QPalette.Text, "darkGray")
-    palette.setColor(QPalette.Disabled, QPalette.Light, QColor(53, 53, 53))
-    obj.setPalette(palette)
-    return palette
-    # fmt: on
-
-
-def set_light_palette(obj: QObject) -> QPalette:
+def set_light_palette(widget: QWidget) -> QPalette:
     """Set the object palette to a light theme.
 
     Args:
-        obj: The QObject (QApplication, QWindow, etc.) to set the palette on.
+        widget: The QWidget (QApplication, QWindow, etc.) to set the palette on.
 
     Returns:
         QPalette: The custom palette.
@@ -415,7 +375,7 @@ def set_light_palette(obj: QObject) -> QPalette:
     palette.setColor(QPalette.Disabled, QPalette.NoRole, QColor(0, 0, 0))
     # fmt: on
 
-    obj.setPalette(palette)
+    widget.setPalette(palette)
     return palette
 
 

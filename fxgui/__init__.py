@@ -1,5 +1,5 @@
 # Internal
-from fxgui import fxdcc, fxicons, fxstyle, fxutils, fxwidgets
+from fxgui import fxdcc, fxstyle, fxutils, fxwidgets
 
 
-__all__ = [fxdcc, fxicons, fxstyle, fxutils, fxwidgets]
+__all__ = [fxdcc, fxstyle, fxutils, fxwidgets]

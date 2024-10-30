@@ -24,6 +24,7 @@ from qtpy.QtCore import Qt, qVersion
 
 # Internal
 from fxgui import fxwidgets
+from fxgui.fxutils import deprecated
 
 
 # Constants
@@ -40,6 +41,7 @@ LIBRARIES_INFO = {
 }
 
 
+@deprecated
 @lru_cache(maxsize=128)
 def get_icon_path(
     icon_name: str,
@@ -86,6 +88,7 @@ def get_icon_path(
     return path
 
 
+@deprecated
 def has_transparency(mask: QBitmap) -> bool:
     """Check if a mask has any transparency.
 
@@ -105,6 +108,7 @@ def has_transparency(mask: QBitmap) -> bool:
     )
 
 
+@deprecated
 @lru_cache(maxsize=128)
 def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     """Change the color of a pixmap.
@@ -145,6 +149,7 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     return pixmap
 
 
+@deprecated
 @lru_cache(maxsize=128)
 def get_pixmap(
     icon_name: str,
@@ -190,6 +195,7 @@ def get_pixmap(
     return qpixmap
 
 
+@deprecated
 @lru_cache(maxsize=128)
 def get_icon(
     icon_name: str,

@@ -1,8 +1,9 @@
-"""Utils related to QT objects."""
+"""Utils related the `fxgui` package."""
 
 # Built-in
 import os
 from typing import Callable, Optional
+import warnings
 
 # Thirs-party
 from qtpy.QtUiTools import QUiLoader
@@ -68,7 +69,7 @@ def create_action(
             Defaults to `None`.
 
     Returns:
-        Optional[QAction]:
+        Optional[QAction]: The created QAction.
     """
 
     action = QAction(name, parent or None)
@@ -208,3 +209,22 @@ def set_formatted_tooltip(
     tooltip = f"<b>{title}</b><hr>{tooltip}"
     widget.setToolTip(tooltip)
     widget.setToolTipDuration(duration * 1000)
+
+
+# Misc
+def deprecated(func: Callable) -> Callable:
+    """Decorator to mark functions as deprecated.
+
+    Args:
+        func (Callable): The function to mark as deprecated.
+    """
+
+    def wrapper(*args, **kwargs):
+        warnings.warn(
+            f"{func.__name__} is deprecated and will be removed in a future version",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return func(*args, **kwargs)
+
+    return wrapper

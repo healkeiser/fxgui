@@ -8,16 +8,20 @@ from typing import Optional
 from datetime import datetime
 from webbrowser import open_new_tab
 from urllib.parse import urlparse
+import time
 
 # Third-party
+import qtawesome as qta
 from qtpy.QtWidgets import *
 from qtpy.QtUiTools import *
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 
 # Internal
-from fxgui import fxstyle, fxutils, fxicons, fxdcc
+from fxgui import fxstyle, fxutils, fxdcc
 
+# Icons
+qta.set_defaults(color="#b4b4b4")
 
 # Constants
 CRITICAL = 0
@@ -491,51 +495,46 @@ class FXStatusBar(QStatusBar):
         severity_mapping = {
             0: (
                 "Critical",
-                fxicons.get_pixmap(
-                    "gpp_maybe",
-                    width=14,
+                qta.icon(
+                    "mdi.alert-circle",
                     color=colors_dict["feedback"]["error"]["light"],
-                ),
+                ).pixmap(14, 14),
                 colors_dict["feedback"]["error"]["background"],
                 colors_dict["feedback"]["error"]["dark"],
             ),
             1: (
                 "Error",
-                fxicons.get_pixmap(
-                    "error",
-                    width=14,
+                qta.icon(
+                    "mdi.alert",
                     color=colors_dict["feedback"]["error"]["light"],
-                ),
+                ).pixmap(14, 14),
                 colors_dict["feedback"]["error"]["background"],
                 colors_dict["feedback"]["error"]["dark"],
             ),
             2: (
                 "Warning",
-                fxicons.get_pixmap(
-                    "warning",
-                    width=14,
+                qta.icon(
+                    "mdi.alert",
                     color=colors_dict["feedback"]["warning"]["light"],
-                ),
+                ).pixmap(14, 14),
                 colors_dict["feedback"]["warning"]["background"],
                 colors_dict["feedback"]["warning"]["dark"],
             ),
             3: (
                 "Success",
-                fxicons.get_pixmap(
-                    "check_circle",
-                    width=14,
+                qta.icon(
+                    "mdi.check-circle",
                     color=colors_dict["feedback"]["success"]["light"],
-                ),
+                ).pixmap(14, 14),
                 colors_dict["feedback"]["success"]["background"],
                 colors_dict["feedback"]["success"]["dark"],
             ),
             4: (
                 "Info",
-                fxicons.get_pixmap(
-                    "info",
-                    width=14,
+                qta.icon(
+                    "mdi.information",
                     color=colors_dict["feedback"]["info"]["light"],
-                ),
+                ).pixmap(14, 14),
                 colors_dict["feedback"]["info"]["background"],
                 colors_dict["feedback"]["info"]["dark"],
             ),
@@ -894,7 +893,7 @@ class FXMainWindow(QMainWindow):
         self.about_action = fxutils.create_action(
             self,
             "About",
-            fxicons.get_icon("support"),
+            qta.icon("mdi.help-circle"),  # About icon
             self._show_about_dialog,
             enable=True,
             visible=True,
@@ -903,7 +902,7 @@ class FXMainWindow(QMainWindow):
         self.check_updates_action = fxutils.create_action(
             self,
             "Check for Updates...",
-            fxicons.get_icon("update"),
+            qta.icon("mdi.update"),  # Update icon
             None,
             enable=False,
             visible=True,
@@ -912,7 +911,7 @@ class FXMainWindow(QMainWindow):
         self.hide_action = fxutils.create_action(
             self,
             "Hide",
-            fxicons.get_icon("visibility_off"),
+            qta.icon("mdi.eye-off"),  # Visibility off icon
             self.hide,
             enable=False,
             visible=True,
@@ -922,7 +921,7 @@ class FXMainWindow(QMainWindow):
         self.hide_others_action = fxutils.create_action(
             self,
             "Hide Others",
-            fxicons.get_icon("disabled_visible"),
+            qta.icon("mdi.eye-off-outline"),  # Disabled visible icon
             None,
             enable=False,
             visible=True,
@@ -931,7 +930,7 @@ class FXMainWindow(QMainWindow):
         self.close_action = fxutils.create_action(
             self,
             "Close",
-            fxicons.get_icon("close"),
+            qta.icon("mdi.close"),  # Close icon
             self.close,
             enable=True,
             visible=True,
@@ -942,7 +941,7 @@ class FXMainWindow(QMainWindow):
         self.settings_action = fxutils.create_action(
             self,
             "Settings",
-            fxicons.get_icon("settings"),
+            qta.icon("mdi.cog"),  # Settings icon
             None,
             enable=False,
             visible=True,
@@ -953,7 +952,7 @@ class FXMainWindow(QMainWindow):
         self.window_on_top_action = fxutils.create_action(
             self,
             "Always On Top",
-            fxicons.get_icon("hdr_weak"),
+            qta.icon("mdi.pin"),  # Always on top icon
             self._window_on_top,
             enable=True,
             visible=True,
@@ -963,7 +962,7 @@ class FXMainWindow(QMainWindow):
         self.minimize_window_action = fxutils.create_action(
             self,
             "Minimize",
-            fxicons.get_icon("minimize"),
+            qta.icon("mdi.window-minimize"),  # Minimize icon
             self.showMinimized,
             enable=True,
             visible=True,
@@ -973,7 +972,7 @@ class FXMainWindow(QMainWindow):
         self.maximize_window_action = fxutils.create_action(
             self,
             "Maximize",
-            fxicons.get_icon("maximize"),
+            qta.icon("mdi.window-maximize"),  # Maximize icon
             self.showMaximized,
             enable=True,
             visible=True,
@@ -984,7 +983,7 @@ class FXMainWindow(QMainWindow):
         self.open_documentation_action = fxutils.create_action(
             self,
             "Documentation",
-            fxicons.get_icon("help_center"),
+            qta.icon("mdi.book-open-page-variant"),  # Documentation icon
             lambda: open_new_tab(self.documentation),
             enable=True,
             visible=True,
@@ -994,8 +993,7 @@ class FXMainWindow(QMainWindow):
         self.home_action = fxutils.create_action(
             self,
             "Home",
-            fxicons.get_icon("home"),
-            # self.style().standardIcon(QStyle.SP_DirHomeIcon),
+            qta.icon("mdi.home"),  # Home icon
             None,
             enable=False,
             visible=True,
@@ -1004,8 +1002,7 @@ class FXMainWindow(QMainWindow):
         self.previous_action = fxutils.create_action(
             self,
             "Previous",
-            fxicons.get_icon("arrow_back"),
-            # self.style().standardIcon(QStyle.SP_ArrowBack),
+            qta.icon("mdi.arrow-left"),  # Previous icon
             None,
             enable=False,
             visible=True,
@@ -1014,8 +1011,7 @@ class FXMainWindow(QMainWindow):
         self.next_action = fxutils.create_action(
             self,
             "Next",
-            fxicons.get_icon("arrow_forward"),
-            # self.style().standardIcon(QStyle.SP_ArrowForward),
+            qta.icon("mdi.arrow-right"),  # Next icon
             None,
             enable=False,
             visible=True,
@@ -1024,8 +1020,7 @@ class FXMainWindow(QMainWindow):
         self.refresh_action = fxutils.create_action(
             self,
             "Refresh",
-            fxicons.get_icon("refresh"),
-            # self.style().standardIcon(QStyle.SP_BrowserReload),
+            qta.icon("mdi.refresh"),  # Refresh icon
             None,
             enable=True,
             visible=True,
@@ -1250,13 +1245,11 @@ class FXMainWindow(QMainWindow):
         action_values = {
             True: (
                 "Always on Top",
-                fxicons.get_pixmap("hdr_strong", color="white"),
-                # self.windowTitle().replace(" **", " *"),
+                qta.icon("mdi.pin", color="white").pixmap(14, 14),
             ),
             False: (
                 "Regular Position",
-                fxicons.get_pixmap("hdr_weak", color="white"),
-                # self.windowTitle().replace(" *", " **"),
+                qta.icon("mdi.pin-off", color="white").pixmap(14, 14),
             ),
         }
         stays_on_top = bool(flags & Qt.WindowStaysOnTopHint)
@@ -1601,8 +1594,7 @@ class FXFloatingDialog(QDialog):
         super().__init__(parent)
 
         # Attributes
-        _icon = QPixmap(fxicons.get_icon_path("home"))
-        _icon = fxicons.change_pixmap_color(_icon, "white")
+        _icon = qta.icon("mdi.home", color="#b4b4b4").pixmap(32, 32)
         self._default_icon = _icon
         self.dialog_icon: QIcon = icon
         self.dialog_title: str = title
@@ -1803,7 +1795,7 @@ class FXSystemTray(QObject):
     Examples:
         >>> app = FXApplication()
         >>> system_tray = FXSystemTray()
-        >>> hello_action = QAction(fxicons.get_icon("perm_media"), "Set Project", system_tray)
+        >>> hello_action = QAction(qta.icon("mdi.eye"), "Set Project", system_tray)
         >>> system_tray.tray_menu.insertAction(system_tray.quit_action, hello_action)
         >>> system_tray.tray_menu.insertSeparator(system_tray.quit_action)
         >>> system_tray.show()
@@ -1842,7 +1834,7 @@ class FXSystemTray(QObject):
         self.quit_action = fxutils.create_action(
             self,
             "Quit",
-            fxicons.get_icon("close"),
+            qta.icon("mdi.close"),
             self.closeEvent,
             enable=True,
             visible=True,
@@ -1943,7 +1935,7 @@ class FXPasswordLineEdit(QWidget):
 
         # Show/hide button
         self.reveal_button = QPushButton("Show")
-        self.reveal_button.setIcon(fxicons.get_icon("visibility"))
+        self.reveal_button.setIcon(qta.icon("mdi.eye"))
         self.reveal_button.clicked.connect(self.toggle_reveal)
 
         # Layout for lineEdit and button
@@ -1960,11 +1952,11 @@ class FXPasswordLineEdit(QWidget):
         if self.line_edit.echoMode() == QLineEdit.Password:
             self.line_edit.setEchoMode(QLineEdit.Normal)
             self.reveal_button.setText("Hide")
-            self.reveal_button.setIcon(fxicons.get_icon("visibility_off"))
+            self.reveal_button.setIcon(qta.icon("mdi.eye-off"))
         else:
             self.line_edit.setEchoMode(QLineEdit.Password)
             self.reveal_button.setText("Show")
-            self.reveal_button.setIcon(fxicons.get_icon("visibility"))
+            self.reveal_button.setIcon(qta.icon("mdi.eye"))
 
 
 if __name__ == "__main__":
