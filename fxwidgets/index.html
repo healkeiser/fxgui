@@ -770,6 +770,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXSortedTreeWidgetItem" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXSortedTreeWidgetItem
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" FXSortedTreeWidgetItem">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXSortedTreeWidgetItem.__lt__" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__lt__
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fxgui.fxwidgets.FXSplashScreen" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXSplashScreen
@@ -1105,6 +1129,30 @@
   <a href="#fxgui.fxwidgets.FXPasswordLineEdit.toggle_reveal" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;toggle_reveal
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXSortedTreeWidgetItem" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXSortedTreeWidgetItem
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" FXSortedTreeWidgetItem">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXSortedTreeWidgetItem.__lt__" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__lt__
     </span>
   </a>
   
@@ -3234,6 +3282,144 @@ status line is always at the bottom of the window and the banner is always at th
   <div class="doc doc-contents ">
   
       <p>Toggles the echo mode between password and normal.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="fxgui.fxwidgets.FXSortedTreeWidgetItem" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">FXSortedTreeWidgetItem</span>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code>QTreeWidgetItem</code></p>
+
+  
+      <p>Custom <code>QTreeWidgetItem</code> that provides natural sorting for strings
+containing numbers. This is useful for sorting items like version numbers
+or other strings where numeric parts should be ordered numerically.</p>
+<p>For example, this class will sort the following strings in the correct
+human-friendly order:
+- "testBox1"
+- "testBox9"
+- "testBox17"
+- "testBox25"</p>
+<p>Instead of the default sorting order:
+- "testBox1"
+- "testBox17"
+- "testBox25"
+- "testBox9"</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="fxgui.fxwidgets.FXSortedTreeWidgetItem.__lt__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">__lt__</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__lt__</span><span class="p">(</span><span class="nf">other</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="fxgui.fxwidgets.FXSortedTreeWidgetItem" href="#fxgui.fxwidgets.FXSortedTreeWidgetItem">FXSortedTreeWidgetItem</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">bool</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Override the less-than operator to provide a custom sorting logic.</p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td><code>other</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fxgui.fxwidgets.FXSortedTreeWidgetItem" href="#fxgui.fxwidgets.FXSortedTreeWidgetItem">FXSortedTreeWidgetItem</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Another instance of <code>FXSortedTreeWidgetItem</code> to compare with.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><span class="doc-section-title">Returns:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p><code>True</code> if the current item is less than the other item according to</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>the natural sort order, <code>False</code> otherwise.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
