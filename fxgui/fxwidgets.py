@@ -39,16 +39,18 @@ class FXSortedTreeWidgetItem(QTreeWidgetItem):
 
     For example, this class will sort the following strings in the correct
     human-friendly order:
-    - "testBox1"
-    - "testBox9"
-    - "testBox17"
-    - "testBox25"
+
+    - "something1"
+    - "something9"
+    - "something17"
+    - "something25"
 
     Instead of the default sorting order:
-    - "testBox1"
-    - "testBox17"
-    - "testBox25"
-    - "testBox9"
+
+    - "something1"
+    - "something17"
+    - "something25"
+    - "something9"
     """
 
     def __lt__(self, other: "FXSortedTreeWidgetItem") -> bool:
