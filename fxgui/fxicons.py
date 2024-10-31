@@ -1,5 +1,10 @@
 """This module provides functionality for handling icons in a VFX application."""
 
+# Raise an ImportError to indicate that the module is deprecated
+raise ImportError(
+    "The `fxicons` module is deprecated in favor of `qtawesome`."
+)
+
 # Built-in
 from typing import Optional, Callable
 from pathlib import Path
