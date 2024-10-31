@@ -7,8 +7,9 @@ import logging
 from typing import Optional
 from datetime import datetime
 from webbrowser import open_new_tab
-from urllib.parse import urlparse
+import re
 import time
+from urllib.parse import urlparse
 
 # Third-party
 import qtawesome as qta
@@ -29,6 +30,64 @@ ERROR = 1
 WARNING = 2
 SUCCESS = 3
 INFO = 4
+
+
+class FXSortedTreeWidgetItem(QTreeWidgetItem):
+    """Custom `QTreeWidgetItem` that provides natural sorting for strings
+    containing numbers. This is useful for sorting items like version numbers
+    or other strings where numeric parts should be ordered numerically.
+
+    For example, this class will sort the following strings in the correct
+    human-friendly order:
+    - "testBox1"
+    - "testBox9"
+    - "testBox17"
+    - "testBox25"
+
+    Instead of the default sorting order:
+    - "testBox1"
+    - "testBox17"
+    - "testBox25"
+    - "testBox9"
+    """
+
+    def __lt__(self, other: "FXSortedTreeWidgetItem") -> bool:
+        """Override the less-than operator to provide a custom sorting logic.
+
+        Args:
+            other: Another instance of `FXSortedTreeWidgetItem` to compare with.
+
+        Returns:
+            `True` if the current item is less than the other item according to
+            the natural sort order, `False` otherwise.
+        """
+
+        # Get the index of the column currently being used for sorting
+        column = self.treeWidget().sortColumn()
+
+        # Compare the items using the custom natural sort key
+        return self._generate_natural_sort_key(
+            self.text(column)
+        ) < self._generate_natural_sort_key(other.text(column))
+
+    def _generate_natural_sort_key(self, s: str) -> list:
+        """Generate a sort key for natural sorting of strings containing
+        numbers in a human-friendly way.
+
+        Args:
+            s: The string to sort.
+
+        Returns:
+            A list of elements where numeric parts are converted to integers
+            and other parts are converted to lowercase strings.
+        """
+
+        # Split the string into parts, converting numeric parts to integers
+        # and non-numeric parts to lowercase strings
+        return [
+            int(text) if text.isdigit() else text.lower()
+            for text in re.split("([0-9]+)", s)
+        ]
 
 
 class FXApplication(QApplication):
