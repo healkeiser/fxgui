@@ -4,7 +4,7 @@
     ],
     "load_package_once": true,
     "enable": true,
-    "version": "3.1.0",
+    "version": "4.1.0",
     "env": [
         {
             "FXGUI": [
