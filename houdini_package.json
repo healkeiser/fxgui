@@ -7,7 +7,7 @@
     "version": "4.1.0",
     "env": [
         {
-            "FXGUI": [
+            "PYTHONPATH": [
                 {
                     "houdini_os == 'windows'": "Path/to/fxgui"
                 },
@@ -16,12 +16,7 @@
                 },
                 {
                     "houdini_os == 'macos'": ""
-                }
-            ]
-        },
-        {
-            "PYTHONPATH": [
-                "$FXGUI",
+                },
                 {
                     "method": "append"
                 }
