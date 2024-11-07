@@ -850,18 +850,18 @@ QTabBar::tab:top {
     background-color: @GreyC;
     padding: 5px;
     padding-left: 20px;
-    padding-right: 20px;
+    padding-right: 25px;
     border-top-left-radius: 2px;
     border-top-right-radius: 2px;
+    min-width: 75px;
+    text-align: center;
 }
 
 QTabBar::tab:top:selected {
     margin-bottom: 1px;
 }
 
-
-QTabBar::tab:top:!selected
-{
+QTabBar::tab:top:!selected {
     color: @GreyL;
     background-color: @GreyH;
     border: 1px transparent @GreyK;

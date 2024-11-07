@@ -30,6 +30,7 @@ ERROR = 1
 WARNING = 2
 SUCCESS = 3
 INFO = 4
+DEBUG = 5
 
 
 class FXSortedTreeWidgetItem(QTreeWidgetItem):
@@ -522,7 +523,7 @@ class FXStatusBar(QStatusBar):
             message (str): The message to be displayed.
             severity_type (int, optional): The severity level of the message.
                 Should be one of `CRITICAL`, `ERROR`, `WARNING`, `SUCCESS`,
-                or `INFO`. Defaults to `INFO`.
+                `INFO`, or `DEBUG`. Defaults to `INFO`.
             duration (float, optional): The duration in seconds for which
                 the message should be displayed. Defaults to` 2.5`.
             time (bool, optional): Whether to display the current time before
@@ -605,6 +606,15 @@ class FXStatusBar(QStatusBar):
                 colors_dict["feedback"]["info"]["background"],
                 colors_dict["feedback"]["info"]["dark"],
             ),
+            5: (
+                "Debug",
+                qta.icon(
+                    "mdi.bug",
+                    color=colors_dict["feedback"]["debug"]["light"],
+                ).pixmap(14, 14),
+                colors_dict["feedback"]["debug"]["background"],
+                colors_dict["feedback"]["debug"]["dark"],
+            ),
         }
 
         (
@@ -636,14 +646,14 @@ class FXStatusBar(QStatusBar):
         if set_color:
             self.setStyleSheet(
                 """QStatusBar {
-            background: """
+                background: """
                 + status_bar_color
                 + """;
-            border-top: 1px solid"""
+                border-top: 1px solid"""
                 + status_bar_border_color
                 + """;
-            }
-            """
+                }
+                """
             )
 
         # Link `Logger` object
@@ -655,8 +665,12 @@ class FXStatusBar(QStatusBar):
                 logger.error(message)
             elif severity_type == 2:
                 logger.warning(message)
-            elif severity_type == 3 or severity_type == 4:
+            elif severity_type == 3:
                 logger.info(message)
+            elif severity_type == 4:
+                logger.info(message)
+            elif severity_type == 5:
+                logger.debug(message)
 
     def clearMessage(self):
         """Clears the message from the status bar.

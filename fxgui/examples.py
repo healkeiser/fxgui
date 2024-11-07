@@ -274,6 +274,11 @@ def main(show_delayed: bool = False):
     application.processEvents()
 
     # Buttons in `test.ui` example
+    window.ui.button_debug.clicked.connect(
+        lambda: window.statusBar().showMessage(
+            "Debug message", fxwidgets.DEBUG
+        )
+    )
     window.ui.button_success.clicked.connect(
         lambda: window.statusBar().showMessage(
             "Success message", fxwidgets.SUCCESS
@@ -302,6 +307,12 @@ def main(show_delayed: bool = False):
     # `fxstyle.FXProxyStyle` when possible
     style = window.style()
     colors_dict = fxstyle.load_colors_from_jsonc()
+    window.ui.button_debug.setIcon(
+        qta.icon(
+            "mdi.bug",
+            color=colors_dict["feedback"]["debug"]["light"],
+        )
+    )
     window.ui.button_success.setIcon(
         qta.icon(
             "mdi.check-circle",

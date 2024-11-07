@@ -16,14 +16,19 @@
     },
     // Feedback
     "feedback": {
+        "debug": {
+            "light": "#26C6DA",
+            "dark": "#00ACC1",
+            "background": "#006064"
+        },
         "info": {
             "light": "#7661f6",
-            "dark": "#5243aa",
+            "dark": "#8E24AA",
             "background": "#372d75"
         },
         "success": {
             "light": "#8ac549",
-            "dark": "#007e33",
+            "dark": "#43A047",
             "background": "#466425"
         },
         "warning": {

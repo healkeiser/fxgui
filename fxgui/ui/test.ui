@@ -74,6 +74,13 @@
            </spacer>
           </item>
           <item>
+           <widget class="QPushButton" name="button_debug">
+            <property name="text">
+             <string>Debug</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="button_success">
             <property name="text">
              <string>Success</string>
@@ -484,8 +491,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>100</width>
-            <height>30</height>
+            <width>98</width>
+            <height>28</height>
            </rect>
           </property>
           <attribute name="label">
