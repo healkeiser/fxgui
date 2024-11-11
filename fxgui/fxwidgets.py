@@ -4,7 +4,7 @@
 import os
 from pathlib import Path
 import logging
-from typing import Optional
+from typing import Dict, Tuple, Optional
 from datetime import datetime
 from webbrowser import open_new_tab
 import re
@@ -21,6 +21,7 @@ from qtpy.QtGui import *
 # Internal
 from fxgui import fxstyle, fxutils, fxdcc
 
+
 # Icons
 qta.set_defaults(color="#b4b4b4")
 
@@ -31,6 +32,438 @@ WARNING = 2
 SUCCESS = 3
 INFO = 4
 DEBUG = 5
+
+
+# XXX: Not sure if this is needed
+class _FXTreeWidget(QTreeWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def sizeHintForRow(self, row: int) -> int:
+        """Override the size hint for each row to set a specific height.
+
+        Args:
+            row: The row index.
+
+        Returns:
+            The height for the specified row.
+        """
+
+        return 20  # Row height
+
+
+# ? Keeping for reference
+class _FXColorLabelDelegate(QStyledItemDelegate):
+    """A custom delegate to paint items with specific colors and icons based
+    on their text content."""
+
+    # Custom role to skip delegate
+    SkipDelegateRole = Qt.UserRole + 5
+
+    def __init__(
+        self,
+        colors_icons: Dict[str, Tuple[QColor, QColor, QColor, QIcon, bool]],
+        parent=None,
+    ):
+        """Initializes the delegate with a dictionary of colors and icons.
+
+        Args:
+            colors_icons: A dictionary where keys are text patterns and values
+                are tuples containing background color, border color,
+                text/icon color, icon, and a boolean indicating if the icon
+                should be colored.
+            parent: The parent object.
+        """
+
+        super().__init__(parent)
+        self.colors_icons = colors_icons
+
+    def paint(
+        self, painter: QPainter, option: QStyleOptionViewItem, index
+    ) -> None:
+        """Paints the item with the specified colors and icons.
+
+        Args:
+            painter: The painter used to draw the item.
+            option: The style options for the item.
+            index: The model index of the item.
+        """
+
+        skip_delegate = index.data(FXColorLabelDelegate.SkipDelegateRole)
+        if skip_delegate:
+            super().paint(painter, option, index)
+            return
+
+        super().paint(painter, option, index)
+
+        text = index.data()
+        if not text:
+            super().paint(painter, option, index)
+            return
+
+        # Default colors and icon
+        background_color, border_color, text_icon_color, icon, color_icon = (
+            QColor("#212121"),
+            QColor("#212121"),
+            QColor("#b4b4b4"),
+            qta.icon("mdi6.dots-horizontal"),
+            False,
+        )
+
+        # Find the best match for the text in the colors_icons dictionary
+        best_match_length = 0
+        best_match = None
+
+        for key, value in self.colors_icons.items():
+            if key in text.lower() and len(key) > best_match_length:
+                best_match = value
+                best_match_length = len(key)
+
+        if best_match:
+            (
+                background_color,
+                border_color,
+                text_icon_color,
+                icon,
+                color_icon,
+            ) = best_match
+
+        # Adjust colors based on item state
+        if option.state & QStyle.State_Selected:
+            background_color = background_color.lighter(125)
+            border_color = border_color.lighter(125)
+        elif option.state & QStyle.State_MouseOver:
+            background_color = background_color.darker(125)
+            border_color = border_color.darker(125)
+
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setClipRect(option.rect)
+
+        metrics = QFontMetrics(option.font)
+        text_width = metrics.horizontalAdvance(text)
+        text_height = metrics.height()
+
+        rect = option.rect
+        icon_size = QSize(15, 15)
+        padding = 2
+
+        # Calculate the rectangles for text and icon
+        text_rect, icon_rect = self.calculate_rects(
+            rect, text_width, text_height, icon_size, padding
+        )
+
+        # Draw the background rectangle
+        painter.setBrush(background_color)
+        painter.setPen(border_color)
+        painter.drawRoundedRect(
+            text_rect.adjusted(-icon_size.width() - 10, -padding, 0, padding),
+            2,
+            2,
+        )
+
+        # Draw the icon
+        if color_icon:
+            pixmap = icon.pixmap(icon_size)
+            colored_pixmap = QPixmap(pixmap.size())
+            colored_pixmap.fill(Qt.transparent)
+
+            painter2 = QPainter(colored_pixmap)
+            painter2.setCompositionMode(QPainter.CompositionMode_Source)
+            painter2.drawPixmap(0, 0, pixmap)
+            painter2.setCompositionMode(QPainter.CompositionMode_SourceIn)
+            painter2.fillRect(colored_pixmap.rect(), text_icon_color)
+            painter2.end()
+
+            painter.drawPixmap(icon_rect, colored_pixmap)
+        else:
+            icon.paint(
+                painter, icon_rect, Qt.AlignCenter, QIcon.Normal, QIcon.On
+            )
+
+        # Draw the text
+        painter.setPen(text_icon_color)
+        painter.drawText(text_rect, Qt.AlignVCenter | Qt.AlignLeft, text)
+
+        painter.restore()
+
+    def calculate_rects(
+        self,
+        rect: QRect,
+        text_width: int,
+        text_height: int,
+        icon_size: QSize,
+        padding: int,
+    ) -> Tuple[QRect, QRect]:
+        """Calculates the rectangles for the text and icon.
+
+        Args:
+            rect: The bounding rectangle of the item.
+            text_width: The width of the text.
+            text_height: The height of the text.
+            icon_size: The size of the icon.
+            padding: The padding around the text and icon.
+
+        Returns:
+            A tuple containing the text rectangle and the icon rectangle.
+        """
+
+        text_rect = QRect(
+            rect.left() + icon_size.width() + 12,
+            rect.top() + (rect.height() - text_height) // 2,
+            text_width + 10,
+            text_height,
+        )
+
+        icon_rect = QRect(
+            rect.left() + 8,
+            rect.top() + (rect.height() - icon_size.height()) // 2,
+            icon_size.width(),
+            icon_size.height(),
+        )
+
+        # Adjust the text_rect to be `padding` pixels away from the item border
+        text_rect = text_rect.adjusted(padding, padding, -padding, -padding)
+
+        return text_rect, icon_rect
+
+    def sizeHint(self, option: QStyleOptionViewItem, index) -> QSize:
+        """
+        Provides the size hint for the item.
+
+        Args:
+            option: The style options for the item.
+            index: The model index of the item.
+
+        Returns:
+            The size hint for the item.
+        """
+
+        text = index.data()
+        metrics = QFontMetrics(option.font)
+        text_width = metrics.horizontalAdvance(text)
+        text_height = metrics.height()
+        icon_size = 15
+        padding = 4
+        return QSize(
+            text_width + icon_size + 20,
+            max(text_height, icon_size) + 2 * padding,
+        )
+
+
+class FXColorLabelDelegate(QStyledItemDelegate):
+    """A custom delegate to paint items with specific colors and icons based
+    on their text content."""
+
+    # Custom role to skip delegate
+    SKIP_DELEGATE_ROLE = Qt.UserRole + 5
+
+    def __init__(
+        self,
+        colors_icons: Dict[str, Tuple[QColor, QColor, QColor, QIcon, bool]],
+        parent: Optional[QWidget] = None,
+        margin_left: int = 2,
+        margin_top: Optional[int] = None,
+        margin_bottom: Optional[int] = None,
+    ):
+        """Initializes the delegate with a dictionary of colors and icons.
+
+        Args:
+            colors_icons: A dictionary where keys are text patterns and values
+                are tuples containing background color, border color,
+                text/icon color, icon, and a boolean indicating if the icon
+                should be colored.
+            parent: The parent object.
+            margin_left: The left margin for the text and icon. Defaults to 2.
+            margin_top: The top margin for the text and icon. Defaults to
+                `margin_left`.
+            margin_bottom: The bottom margin for the text and icon. Defaults to
+                `margin_left`.
+        """
+
+        super().__init__(parent)
+
+        # Dictionary mapping item texts to (background_color, border_color,
+        # text_icon_color, icon, color_icon)
+        self.colors_icons = colors_icons
+
+        # Margins
+        self.margin_left = margin_left
+        self.margin_top = (
+            self.margin_left if margin_top is None else margin_top
+        )
+        self.margin_bottom = (
+            self.margin_left if margin_bottom is None else margin_bottom
+        )
+
+    def paint(self, painter, option, index):
+        """Paints the item with the specified colors and icons.
+
+        Args:
+            painter: The painter used to draw the item.
+            option: The style options for the item.
+            index: The model index of the item.
+        """
+
+        # Check if the delegate should skip drawing
+        skip_delegate = index.data(FXColorLabelDelegate.SkipDelegateRole)
+        if skip_delegate:
+            super().paint(painter, option, index)
+            return
+
+        # Retrieve the text and associated colors and icon
+        text = index.data()
+        if not text:
+            return  # No need to paint anything if there's no text
+
+        # Create a copy of the option to modify to clear the text and icon
+        # XXX: Not working, need to investigate
+        option_modified = QStyleOptionViewItem(option)
+        option_modified.text = ""
+        option_modified.icon = QIcon()
+
+        # Call the base class paint method to draw selection and hover effects
+        super().paint(painter, option_modified, index)
+
+        # Set the default colors and icon
+        background_color, border_color, text_icon_color, icon, color_icon = (
+            QColor("#212121"),
+            QColor("#6d6d6d"),
+            QColor("#ffffff"),
+            qta.icon("mdi6.dots-horizontal"),
+            True,  # Default to coloring the icon
+        )
+
+        # Find the best match for the text in the colors_icons dictionary
+        best_match_length = 0
+        best_match = None
+
+        for key, value in self.colors_icons.items():
+            if key in text.lower() and len(key) > best_match_length:
+                best_match = value
+                best_match_length = len(key)
+
+        if best_match:
+            (
+                background_color,
+                border_color,
+                text_icon_color,
+                icon,
+                color_icon,
+            ) = best_match
+
+        # Adjust colors based on item state
+        if option.state & QStyle.State_Selected:
+            background_color = background_color.lighter(125)
+            border_color = border_color.lighter(125)
+        elif option.state & QStyle.State_MouseOver:
+            background_color = background_color.darker(125)
+            border_color = border_color.darker(125)
+
+        # Save painter state
+        painter.save()
+
+        # Anti-aliasing for smoother rendering
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # Set the clipping region to the column's rectangle
+        painter.setClipRect(option.rect)
+
+        # Adjust the rectangle to be away from the border using margins
+        rect = option.rect.adjusted(
+            self.margin_left,
+            self.margin_top,
+            -self.margin_left,
+            -self.margin_bottom,
+        )
+
+        # Use the default font and measure text size
+        metrics = QFontMetrics(option.font)
+        text_width = metrics.horizontalAdvance(text)
+        text_height = metrics.height()
+
+        # Define the rectangle around the text, aligned to the left
+        icon_size = QSize(14, 14)  # Icon size
+        text_rect = QRect(
+            rect.left() + icon_size.width() + 2,  # Space between icon and text
+            rect.top() + (rect.height() - text_height) // 2,
+            text_width + 10,
+            text_height + 0,
+        )
+
+        # Draw custom label with border and background colors from the mapping
+        painter.setBrush(background_color)
+        painter.setPen(border_color)
+        painter.drawRoundedRect(
+            text_rect.adjusted(-icon_size.width() - 2, 0, 0, 0), 2, 2
+        )
+
+        # Draw the icon inside the rectangle, on the left of the text
+        icon_rect = QRect(
+            rect.left() + 2,
+            rect.top() + (rect.height() - icon_size.height()) // 2,
+            icon_size.width(),
+            icon_size.height(),
+        )
+
+        if color_icon:
+            # Convert the icon to a QPixmap and apply the text/icon color
+            pixmap = icon.pixmap(icon_size)
+            colored_pixmap = QPixmap(pixmap.size())
+            colored_pixmap.fill(Qt.transparent)
+
+            painter2 = QPainter(colored_pixmap)
+            painter2.setCompositionMode(QPainter.CompositionMode_Source)
+            painter2.drawPixmap(0, 0, pixmap)
+            painter2.setCompositionMode(QPainter.CompositionMode_SourceIn)
+            painter2.fillRect(colored_pixmap.rect(), text_icon_color)
+            painter2.end()
+
+            painter.drawPixmap(icon_rect, colored_pixmap)
+        else:
+            # Draw the original icon without coloring
+            icon.paint(
+                painter, icon_rect, Qt.AlignCenter, QIcon.Normal, QIcon.On
+            )
+
+        # Draw the text inside the rectangle
+        painter.setPen(text_icon_color)
+        painter.drawText(text_rect, Qt.AlignCenter, text)
+
+        # Restore painter state
+        painter.restore()
+
+    def sizeHint(self, option, index) -> QSize:
+        """Provides the size hint for the item.
+
+        Args:
+            option: The style options for the item.
+            index: The model index of the item.
+
+        Returns:
+            The size hint for the item.
+        """
+
+        text = index.data()
+        if not text:
+            return QSize()
+        metrics = QFontMetrics(option.font)
+        text_width = metrics.horizontalAdvance(text)
+        text_height = metrics.height()
+        icon_size = 14
+        width = (
+            text_width
+            + icon_size
+            + 20
+            + self.margin_left * 2  # Add horizontal margins
+        )
+        height = (
+            max(text_height, icon_size)
+            + 2
+            + self.margin_top
+            + self.margin_bottom  # Add vertical margins
+        )
+        return QSize(width, height)
 
 
 class FXSortedTreeWidgetItem(QTreeWidgetItem):

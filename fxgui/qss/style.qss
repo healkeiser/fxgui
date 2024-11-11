@@ -707,10 +707,10 @@ QListView:hover
 
 QComboBox:on
 {
-    background-color: #626873;
+    /* background-color: #626873; */
     padding-top: 3px;
     padding-left: 4px;
-    selection-background-color: #4a4a4a;
+    /* selection-background-color: #4a4a4a; */
 }
 
 QComboBox QAbstractItemView

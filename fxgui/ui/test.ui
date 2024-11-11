@@ -241,6 +241,43 @@
        <string>Tab 2</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="1">
+        <widget class="QListWidget" name="listWidget">
+         <property name="alternatingRowColors">
+          <bool>true</bool>
+         </property>
+         <item>
+          <property name="text">
+           <string>Houdini</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>EXR</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>USD</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Nuke</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Maya</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Blender</string>
+          </property>
+         </item>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QTreeWidget" name="treeWidget">
          <property name="sortingEnabled">
@@ -261,7 +298,7 @@
          </column>
          <item>
           <property name="text">
-           <string>New Item</string>
+           <string>USD</string>
           </property>
           <item>
            <property name="text">
@@ -271,12 +308,7 @@
          </item>
          <item>
           <property name="text">
-           <string>New Item</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>New Item</string>
+           <string>Maya</string>
           </property>
           <item>
            <property name="text">
@@ -294,57 +326,12 @@
            </property>
           </item>
          </item>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QListWidget" name="listWidget">
-         <property name="alternatingRowColors">
-          <bool>true</bool>
-         </property>
          <item>
           <property name="text">
-           <string>New Item</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>New Item</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>New Item</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>New Item</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>New Item</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>New Item</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>New Item</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>New Item</string>
+           <string>Houdini</string>
           </property>
          </item>
         </widget>
-       </item>
-       <item row="1" column="0" colspan="2">
-        <widget class="QTableView" name="tableView"/>
        </item>
        <item row="2" column="0" colspan="2">
         <widget class="QDialogButtonBox" name="buttonBox">
@@ -355,6 +342,9 @@
           <bool>false</bool>
          </property>
         </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <widget class="QTableWidget" name="tableWidget"/>
        </item>
       </layout>
      </widget>
