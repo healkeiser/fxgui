@@ -540,6 +540,10 @@ def setup_table_widget(window: fxwidgets.FXMainWindow) -> None:
     window.ui.tableWidget.setColumnCount(2)
     window.ui.tableWidget.setHorizontalHeaderLabels(["Key", "Value"])
 
+    # Make columns stretch to fill available space
+    header = window.ui.tableWidget.horizontalHeader()
+    header.setSectionResizeMode(QHeaderView.Stretch)
+
     # Add items
     items = [
         ("Blender", "2.93"),
