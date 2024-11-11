@@ -1,4 +1,4 @@
-"""Scripts related to the QtWidgets module."""
+"""Custom widgets for the `fxgui` package."""
 
 # Built-in
 import os
@@ -79,7 +79,10 @@ class _FXColorLabelDelegate(QStyledItemDelegate):
         self.colors_icons = colors_icons
 
     def paint(
-        self, painter: QPainter, option: QStyleOptionViewItem, index
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
     ) -> None:
         """Paints the item with the specified colors and icons.
 
@@ -227,7 +230,9 @@ class _FXColorLabelDelegate(QStyledItemDelegate):
 
         return text_rect, icon_rect
 
-    def sizeHint(self, option: QStyleOptionViewItem, index) -> QSize:
+    def sizeHint(
+        self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> QSize:
         """
         Provides the size hint for the item.
 
@@ -296,7 +301,12 @@ class FXColorLabelDelegate(QStyledItemDelegate):
             self.margin_left if margin_bottom is None else margin_bottom
         )
 
-    def paint(self, painter, option, index):
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+    ) -> None:
         """Paints the item with the specified colors and icons.
 
         Args:
@@ -433,7 +443,9 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         # Restore painter state
         painter.restore()
 
-    def sizeHint(self, option, index) -> QSize:
+    def sizeHint(
+        self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> QSize:
         """Provides the size hint for the item.
 
         Args:
