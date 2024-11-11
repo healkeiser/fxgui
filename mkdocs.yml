@@ -114,6 +114,8 @@ plugins:
             show_root_heading: false
             show_root_full_path: false
             show_source: false
+            find_stubs_package: true
+            summary: true
 
 ###### Navigation ##############################################################
 

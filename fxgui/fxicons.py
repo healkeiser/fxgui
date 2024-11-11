@@ -1,12 +1,10 @@
-"""This module provides functionality for handling icons in a VFX application."""
-
-# Raise an ImportError to indicate that the module is deprecated
-raise ImportError(
-    "The `fxicons` module is deprecated in favor of `qtawesome`."
-)
+"""This module provides functionality for handling icons in a VFX
+application.
+"""
 
 # Built-in
-from typing import Optional, Callable
+from ast import List
+from typing import Optional, Callable, List
 from pathlib import Path
 from functools import lru_cache
 
@@ -29,24 +27,53 @@ from qtpy.QtCore import Qt, qVersion
 
 # Internal
 from fxgui import fxwidgets
-from fxgui.fxutils import deprecated
 
 
 # Constants
-LIBRARIES_ROOT = Path(__file__).parent / "icons" / "libraries"
-DEFAULT_LIBRARY = "material-icons"
+LIBRARIES_ROOT = Path(__file__).parent / "icons"
+DEFAULT_LIBRARY = "dcc"
 LIBRARIES_INFO = {
-    "material-icons": {
-        "pattern": "{root}/{library}/{extension}/{icon_name}/{style}.{extension}",
+    "dcc": {
+        "pattern": "{root}/{library}/{icon_name}.{extension}",
         "defaults": {
             "extension": "svg",
-            "style": "round",
+            "style": None,
         },
     },
 }
 
 
-@deprecated
+def get_available_icons_in_library(library: str) -> List[str]:
+    """Get all available icon names in the specified library.
+
+    Args:
+        library (str): The name of the library.
+
+    Returns:
+        List[str]: The available icon names in the library.
+
+    Raises:
+        ValueError: If the library does not exist.
+        FileNotFoundError: If no icons are found in the library.
+
+    Examples:
+        >>> print(get_available_icons_in_library("dcc"))
+        ["3d_equalizer", "adobe_photoshop", "blender", "hiero"]
+    """
+
+    library_path = LIBRARIES_ROOT / library
+    if not library_path.exists():
+        raise ValueError(f"Library '{library}' does not exist.")
+
+    icon_files = library_path.glob("**/*.*")
+    icon_names = sorted(icon_file.stem for icon_file in icon_files)
+
+    if not icon_names:
+        raise FileNotFoundError(f"No icons found in library '{library}'.")
+
+    return icon_names
+
+
 @lru_cache(maxsize=128)
 def get_icon_path(
     icon_name: str,
@@ -67,7 +94,7 @@ def get_icon_path(
             Defaults to `True`.
 
     Raises:
-        OSError: If verify is `True` and the icon does not exist.
+        FileNotFoundError: If verify is `True` and the icon does not exist.
 
     Returns:
         str: The path of the icon.
@@ -87,13 +114,14 @@ def get_icon_path(
         library=library,
         extension=extension,
         root=LIBRARIES_ROOT,
-    )
+    ).replace("\\", "/")
+
     if verify and not Path(path).exists():
-        raise OSError(f"Icon path '{path}' does not exist.")
+        raise FileNotFoundError(f"Icon path '{path}' does not exist.")
+
     return path
 
 
-@deprecated
 def has_transparency(mask: QBitmap) -> bool:
     """Check if a mask has any transparency.
 
@@ -113,7 +141,6 @@ def has_transparency(mask: QBitmap) -> bool:
     )
 
 
-@deprecated
 @lru_cache(maxsize=128)
 def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     """Change the color of a pixmap.
@@ -154,7 +181,6 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     return pixmap
 
 
-@deprecated
 @lru_cache(maxsize=128)
 def get_pixmap(
     icon_name: str,
@@ -195,12 +221,11 @@ def get_pixmap(
     qpixmap = QIcon(path).pixmap(width, height)
     if color is not None:
         qpixmap = change_pixmap_color(qpixmap, color)
-    else:
-        qpixmap = change_pixmap_color(qpixmap, "#b4b4b4")
+    # else:
+    #     qpixmap = change_pixmap_color(qpixmap, "#b4b4b4")
     return qpixmap
 
 
-@deprecated
 @lru_cache(maxsize=128)
 def get_icon(
     icon_name: str,
@@ -237,7 +262,8 @@ def get_icon(
     return QIcon(qpixmap)
 
 
-if __name__ == "__main__":
+def _main():
+    """Display a window with all built-in icons."""
 
     class _FXBuiltInIcons(QWidget):
         def __init__(self, parent=None):
@@ -250,7 +276,6 @@ if __name__ == "__main__":
 
             for number, name in enumerate(icons):
                 button = QPushButton(name)
-
                 pixmap = getattr(QStyle, name)
                 icon = self.style().standardIcon(pixmap)
                 button.setIcon(icon)
@@ -297,3 +322,7 @@ if __name__ == "__main__":
     window.setWindowTitle("Built-in Icons")
     window.show()
     application.exec_()
+
+
+if __name__ == "__main__":
+    _main()
