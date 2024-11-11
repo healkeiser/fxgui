@@ -581,6 +581,48 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXColorLabelDelegate" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXColorLabelDelegate
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" FXColorLabelDelegate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXColorLabelDelegate.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__init__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXColorLabelDelegate.paint" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;paint
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXColorLabelDelegate.sizeHint" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;sizeHint
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fxgui.fxwidgets.FXFloatingDialog" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXFloatingDialog
@@ -951,6 +993,48 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXColorLabelDelegate" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXColorLabelDelegate
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" FXColorLabelDelegate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXColorLabelDelegate.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;__init__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXColorLabelDelegate.paint" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;paint
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXColorLabelDelegate.sizeHint" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;sizeHint
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fxgui.fxwidgets.FXFloatingDialog" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXFloatingDialog
@@ -1279,7 +1363,7 @@
 <a id="fxgui.fxwidgets"></a>
   <div class="doc doc-contents first">
   
-      <p>Scripts related to the QtWidgets module.</p>
+      <p>Custom widgets for the <code>fxgui</code> package.</p>
 
   
 
@@ -1344,6 +1428,335 @@
   
       <p>Return the existing instance or create a new one if it doesn't
 exist.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="fxgui.fxwidgets.FXColorLabelDelegate" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>          <span class="doc doc-object-name doc-class-name">FXColorLabelDelegate</span>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code>QStyledItemDelegate</code></p>
+
+  
+      <p>A custom delegate to paint items with specific colors and icons based
+on their text content.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="fxgui.fxwidgets.FXColorLabelDelegate.__init__" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">__init__</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nf">colors_icons</span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n">QColor</span><span class="p">,</span> <span class="n">QColor</span><span class="p">,</span> <span class="n">QColor</span><span class="p">,</span> <span class="n">QIcon</span><span class="p">,</span> <span class="n">bool</span><span class="p">]],</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">parent</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">QWidget</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">margin_left</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">margin_top</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">margin_bottom</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Initializes the delegate with a dictionary of colors and icons.</p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td><code>colors_icons</code></td>
+          <td>
+                <code><span title="typing.Dict">Dict</span>[str, <span title="typing.Tuple">Tuple</span>[QColor, QColor, QColor, QIcon, bool]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A dictionary where keys are text patterns and values
+are tuples containing background color, border color,
+text/icon color, icon, and a boolean indicating if the icon
+should be colored.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code>parent</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[QWidget]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The parent object.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code>margin_left</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The left margin for the text and icon. Defaults to 2.</p>
+            </div>
+          </td>
+          <td>
+                <code>2</code>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code>margin_top</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The top margin for the text and icon. Defaults to
+<code>margin_left</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code>margin_bottom</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The bottom margin for the text and icon. Defaults to
+<code>margin_left</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="fxgui.fxwidgets.FXColorLabelDelegate.paint" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">paint</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">paint</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">painter</span><span class="p">:</span> <span class="n">QPainter</span><span class="p">,</span> <span class="n">option</span><span class="p">:</span> <span class="n">QStyleOptionViewItem</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">QModelIndex</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Paints the item with the specified colors and icons.</p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td><code>painter</code></td>
+          <td>
+                <code>QPainter</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The painter used to draw the item.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code>option</code></td>
+          <td>
+                <code>QStyleOptionViewItem</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The style options for the item.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code>index</code></td>
+          <td>
+                <code>QModelIndex</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The model index of the item.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="fxgui.fxwidgets.FXColorLabelDelegate.sizeHint" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>          <span class="doc doc-object-name doc-function-name">sizeHint</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">sizeHint</span><span class="p">(</span><span class="n">option</span><span class="p">:</span> <span class="n">QStyleOptionViewItem</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">QModelIndex</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QSize</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Provides the size hint for the item.</p>
+
+
+
+  <p><span class="doc-section-title">Parameters:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td><code>option</code></td>
+          <td>
+                <code>QStyleOptionViewItem</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The style options for the item.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code>index</code></td>
+          <td>
+                <code>QModelIndex</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The model index of the item.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><span class="doc-section-title">Returns:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td>
+                <code>QSize</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The size hint for the item.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -1483,7 +1896,7 @@ It closes when any mouse button except the right one is pressed.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXFloatingDialog.dialog_position">dialog_position</span></code></td>
           <td>
-                <code>Tuple[int, int]</code>
+                <code><span title="typing.Tuple">Tuple</span>[int, int]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1864,7 +2277,7 @@ It returns a <code>DialogCode</code> that can be <code>Accepted</code> or <code>
         <tr class="doc-section-item">
           <td><code>size</code></td>
           <td>
-                <code>Tuple[int, int]</code>
+                <code><span title="typing.Tuple">Tuple</span>[int, int]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4167,7 +4580,7 @@ splash screen. Defaults to <code>False</code>.</p>
             <div class="doc-md-description">
               <p>The severity level of the message.
 Should be one of <code>CRITICAL</code>, <code>ERROR</code>, <code>WARNING</code>, <code>SUCCESS</code>,
-or <code>INFO</code>. Defaults to <code>INFO</code>.</p>
+<code>INFO</code>, or <code>DEBUG</code>. Defaults to <code>INFO</code>.</p>
             </div>
           </td>
           <td>
