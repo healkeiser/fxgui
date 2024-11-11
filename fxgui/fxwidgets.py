@@ -58,7 +58,7 @@ class _FXColorLabelDelegate(QStyledItemDelegate):
     on their text content."""
 
     # Custom role to skip delegate
-    SkipDelegateRole = Qt.UserRole + 5
+    SKIP_DELEGATE_ROLE = Qt.UserRole + 5
 
     def __init__(
         self,
@@ -92,7 +92,7 @@ class _FXColorLabelDelegate(QStyledItemDelegate):
             index: The model index of the item.
         """
 
-        skip_delegate = index.data(FXColorLabelDelegate.SkipDelegateRole)
+        skip_delegate = index.data(FXColorLabelDelegate.SKIP_DELEGATE_ROLE)
         if skip_delegate:
             super().paint(painter, option, index)
             return
@@ -316,7 +316,7 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         """
 
         # Check if the delegate should skip drawing
-        skip_delegate = index.data(FXColorLabelDelegate.SkipDelegateRole)
+        skip_delegate = index.data(FXColorLabelDelegate.SKIP_DELEGATE_ROLE)
         if skip_delegate:
             super().paint(painter, option, index)
             return
