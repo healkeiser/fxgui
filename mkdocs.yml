@@ -121,9 +121,10 @@ nav:
   - Home: index.md
   - How-to: how_to.md
   - Technical:
-      - examples: examples.md
+      - fxconstants: fxconstants.md
       - fxdcc: fxdcc.md
       - fxicons: fxicons.md
       - fxstyle: fxstyle.md
       - fxutils: fxutils.md
       - fxwidgets: fxwidgets.md
+      - examples: examples.md

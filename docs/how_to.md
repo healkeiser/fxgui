@@ -100,6 +100,10 @@ application = QApplication()
 application.setStyle(fxstyle.FXProxyStyle())
 ```
 
+!!! tip
+    The `FXApplication` class found inside [fxwidgets](fxwidgets.md) already applies this custom style.
+
+
 ![Sreenshot](docs/images/screenshot_built_in_icons.png)
 
 You can now use the icons by doing:
