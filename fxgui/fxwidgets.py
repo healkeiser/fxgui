@@ -1189,81 +1189,8 @@ class FXMainWindow(QMainWindow):
             Defaults to `#4188ff`.
         ui_file (str, optional): Path to the UI file for loading.
             Defaults to `None`.
-
-    Attributes:
-        window_icon (QIcon): The icon of the window.
-        window_title (str): The title of the window.
-        window_size (QSize): The size of the window.
-        window_flags (Qt.WindowFlags): The window flags.
-        documentation (str): The documentation string.
-        project (str): The project name.
-        version (str): The version string.
-        company (str): The company name.
-        color_a (str): The color A.
-        color_b (str): The color B.
-        ui_file (str): The UI file path.
-        ui (QWidget): The loaded UI from the UI file. Note that this attribute
-            is only accessible if you're defining a UI file through `ui_file`.
-
-        CRITICAL (int): Constant for critical log level.
-        ERROR (int): Constant for error log level.
-        WARNING (int): Constant for warning log level.
-        SUCCESS (int): Constant for success log level.
-        INFO (int): Constant for info log level.
-
-        about_action (QAction): Action for the "About" menu item.
-        hide_action (QAction): Action for the "Hide" menu item.
-        hide_others_action (QAction): Action for the "Hide Others" menu item.
-        close_action (QAction): Action for the "Close" menu item.
-        check_updates_action (QAction): Action for the "Check for Updates..."
-            menu item.
-        settings_action (QAction): Action for the "Settings" menu item.
-        window_on_top_action (QAction): Action for the "Always On Top" menu
-            item.
-        minimize_window_action (QAction): Action for the "Minimize" menu item.
-        maximize_window_action (QAction): Action for the "Maximize" menu item.
-        open_documentation_action (QAction): Action for the "Documentation"
-            menu item.
-        previous_action (QAction): Action for the "Previous" toolbar item.
-        next_action (QAction): Action for the "Next" toolbar item.
-        refresh_action (QAction): Action for the "Refresh" toolbar item.
-        home_action (QAction): Action for the "Home" toolbar item.
-
-        menu_bar (QMenuBar): The menu bar of the window.
-        icon_menu (QMenu): The icon menu of the menu bar.
-        main_menu (QMenu): The main menu of the menu bar.
-        about_menu (QAction): The "About" menu item in the main menu.
-        check_updates_menu (QAction): The "Check for Updates..." menu item in
-            the main menu.
-        close_menu (QAction): The "Close" menu item in the main menu.
-        hide_main_menu (QAction): The "Hide" menu item in the main menu.
-        hide_others_menu (QAction): The "Hide Others" menu item in the main
-            menu.
-        edit_menu (QMenu): The edit menu of the menu bar.
-        settings_menu (QAction): The "Settings" menu item in the edit menu.
-        window_menu (QMenu): The window menu of the menu bar.
-        minimize_menu (QAction): The "Minimize" menu item in the window menu.
-        maximize_menu (QAction): The "Maximize" menu item in the window menu.
-        on_top_menu (QAction): The "Always On Top" menu item in the window menu.
-        help_menu (QMenu): The help menu of the menu bar.
-        open_documentation_menu (QAction): The "Documentation" menu item in the
-            help menu.
-
-        toolbar (QToolBar): The toolbar of the window.
-        previous_toolbar (QAction): The "Previous" toolbar item.
-        next_toolbar (QAction): The "Next" toolbar item.
-        refresh_toolbar (QAction): The "Refresh" toolbar item.
-        home_toolbar (QAction): The "Home" toolbar item.
-        about_dialog (QDialog): The "About" dialog.
-
-        banner (QLabel): The banner of the window.
-
-        status_line (QFrame): A custom colored status line resting on top of the
-            status bar.
-        status_bar (FXStatusBar): The status bar of the window.
-        project_label (QLabel): The project label in the status bar.
-        version_label (QLabel): The version label in the status bar.
-        company_label (QLabel): The company label in the status bar.
+        set_stylesheet (bool, optional): Whether to set the default stylesheet.
+            Defaults to `True`.
 
     Examples:
         Outside a DCC (standalone)
@@ -1303,7 +1230,8 @@ class FXMainWindow(QMainWindow):
         >>> window.status_bar.hide()
         >>> window.show()
 
-        Inside a DCC (Houdini), override the `fxgui` stylesheet with the Houdini one
+        Inside a DCC (Houdini), override the `fxgui` stylesheet with the Houdini
+        one
         >>> houdini_window = fxdcc.get_houdini_main_window()
         >>> window = fxwidgets.FXMainWindow(
         ...    parent=houdini_window,
@@ -1327,6 +1255,7 @@ class FXMainWindow(QMainWindow):
         color_a: Optional[str] = None,
         color_b: Optional[str] = None,
         ui_file: Optional[str] = None,
+        set_stylesheet: bool = True,
     ):
         super().__init__(parent)
 
@@ -1369,9 +1298,12 @@ class FXMainWindow(QMainWindow):
         self._add_shadows()
 
         # Styling
-        self.setStyleSheet(
-            fxstyle.load_stylesheet(color_a=self.color_a, color_b=self.color_b)
-        )
+        if set_stylesheet:
+            self.setStyleSheet(
+                fxstyle.load_stylesheet(
+                    color_a=self.color_a, color_b=self.color_b
+                )
+            )
 
     # - Private methods
 
