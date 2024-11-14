@@ -13,10 +13,72 @@ from urllib.parse import urlparse
 
 # Third-party
 import qtawesome as qta
-from qtpy.QtWidgets import *
-from qtpy.QtUiTools import *
-from qtpy.QtCore import *
-from qtpy.QtGui import *
+from qtpy.QtCore import (
+    QObject,
+    QPoint,
+    QRect,
+    QSize,
+    QTimer,
+    Qt,
+    QModelIndex,
+)
+from qtpy.QtGui import (
+    QColor,
+    QCursor,
+    QCloseEvent,
+    QFont,
+    QFontMetrics,
+    QIcon,
+    QMouseEvent,
+    QPainter,
+    QPixmap,
+)
+from qtpy.QtWidgets import (
+    QApplication,
+    QDialog,
+    QDialogButtonBox,
+    QFrame,
+    QLabel,
+    QHBoxLayout,
+    QLineEdit,
+    QMainWindow,
+    QMenu,
+    QPushButton,
+    QSizePolicy,
+    QSpacerItem,
+    QSplashScreen,
+    QStatusBar,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
+    QSystemTrayIcon,
+    QToolBar,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+    QProgressBar,
+)
+import qtawesome as qta
+
+# Conditional import based on Qt version
+from qtpy import QT_VERSION
+
+if QT_VERSION.startswith("5"):
+    from qtpy.QtWidgets import QDesktopWidget
+elif QT_VERSION.startswith("6"):
+    from qtpy.QtGui import QScreen
+
+# Internal
+from fxgui import fxstyle, fxutils, fxdcc
+
+# Conditional import based on Qt version
+from qtpy import QT_VERSION
+
+if QT_VERSION.startswith("5"):
+    from qtpy.QtWidgets import QDesktopWidget
+elif QT_VERSION.startswith("6"):
+    from qtpy.QtGui import QScreen
 
 # Internal
 from fxgui import fxstyle, fxutils, fxdcc
@@ -1603,6 +1665,7 @@ class FXMainWindow(QMainWindow):
         widget = QWidget(self)
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
+
         layout.addWidget(self.banner)
 
         if central_widget is not None:
@@ -1738,7 +1801,13 @@ class FXMainWindow(QMainWindow):
         """
 
         frame_geo = self.frameGeometry()
-        desktop_geometry = QDesktopWidget().availableGeometry()
+
+        if QT_VERSION.startswith("5"):
+            desktop_geometry = QDesktopWidget().availableGeometry()
+        elif QT_VERSION.startswith("6"):
+            screen = QApplication.primaryScreen()
+            desktop_geometry = screen.availableGeometry()
+
         center_point = desktop_geometry.center()
         left_top_point = QPoint(
             desktop_geometry.left(), desktop_geometry.top()
@@ -1752,6 +1821,7 @@ class FXMainWindow(QMainWindow):
         right_bottom_point = QPoint(
             desktop_geometry.right(), desktop_geometry.bottom()
         )
+
         moving_position = {
             1: center_point,
             2: left_top_point,
@@ -1759,6 +1829,7 @@ class FXMainWindow(QMainWindow):
             4: left_bottom_point,
             5: right_bottom_point,
         }.get(3, center_point)
+
         moving_position.setX(moving_position.x() + 0)
         moving_position.setY(moving_position.y() + 0)
         frame_geo.moveCenter(moving_position)

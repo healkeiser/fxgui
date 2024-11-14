@@ -6,9 +6,6 @@ from typing import Callable, Optional
 import warnings
 
 # Thirs-party
-from qtpy.QtUiTools import QUiLoader
-from qtpy.QtCore import QFile, QSize
-from qtpy.QtGui import QIcon, QPixmap, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
     QWidget,
@@ -16,6 +13,9 @@ from qtpy.QtWidgets import (
     QLineEdit,
     QTreeWidget,
 )
+from qtpy.QtUiTools import QUiLoader
+from qtpy.QtGui import QIcon, QPixmap, QKeySequence
+from qtpy.QtCore import QFile, QSize
 
 
 def load_ui(parent: QWidget, ui_file: str) -> QWidget:

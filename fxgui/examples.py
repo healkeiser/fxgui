@@ -6,10 +6,28 @@ from typing import Dict, Tuple
 
 # Third-party
 import qtawesome as qta
-from qtpy.QtWidgets import *
-from qtpy.QtUiTools import *
-from qtpy.QtCore import *
-from qtpy.QtGui import *
+from qtpy.QtWidgets import (
+    QDialog,
+    QFormLayout,
+    QVBoxLayout,
+    QLineEdit,
+    QCheckBox,
+    QDialogButtonBox,
+    QComboBox,
+    QWidget,
+    QPushButton,
+    QLabel,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QMenu,
+    QHeaderView,
+    QTableWidgetItem,
+    QStyle,
+    QWidgetAction,
+)
+from qtpy.QtUiTools import QUiLoader
+from qtpy.QtCore import Qt, QTimer, QSize, QPoint
+from qtpy.QtGui import QColor, QIcon
 
 # Internal
 from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
@@ -65,7 +83,6 @@ def show_login_dialog():
             main_layout.addWidget(button_box)
             self.setLayout(main_layout)
 
-    _fix = QUiLoader()  # XXX: This is a PySide6 bug
     application = fxwidgets.FXApplication()
     dialog = FXLoginDialog()
     dialog.exec_()
@@ -110,7 +127,7 @@ def show_splashscreen(time: float = 5.0):
     Args:
         time (float): The time in seconds to show the splashscreen.
     """
-    _fix = QUiLoader()  # XXX: This is a PySide6 bug
+
     application = fxwidgets.FXApplication()
     splashscreen = fxwidgets.FXSplashScreen(
         image_path=str(_pixmap), show_progress_bar=True, fade_in=False
@@ -126,7 +143,6 @@ def show_window():
     """Show the window."""
 
     # Initialize the QApplication
-    _fix = QUiLoader()  # XXX: This is a PySide6 bug
     application = fxwidgets.FXApplication()
     window = fxwidgets.FXMainWindow(ui_file=str(_ui_file))
 
@@ -160,7 +176,7 @@ def show_window():
 
 
 def show_window_alt():
-    _fix = QUiLoader()  # XXX: This is a PySide6 bug
+
     application = fxwidgets.FXApplication()
     window = fxwidgets.FXMainWindow()
     window.set_ui_file(str(_ui_file))
@@ -176,7 +192,7 @@ def show_window_alt():
 
 
 def subclass_window():
-    _fix = QUiLoader()  # XXX: This is a PySide6 bug
+
     application = fxwidgets.FXApplication()
 
     class MyWidget(QWidget):
