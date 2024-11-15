@@ -235,6 +235,23 @@
   
   
     <li class="md-tabs__item">
+      <a href="../installation/" class="md-tabs__link">
+        
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
       <a href="../how_to/" class="md-tabs__link">
         
   
@@ -338,6 +355,26 @@
   
   
     <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../how_to/" class="md-nav__link">
         
   
@@ -375,10 +412,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -389,8 +426,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             Technical
           </label>
@@ -1412,7 +1449,7 @@
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>QApplication</code></p>
+            Bases: <code><span title="qtpy.QtWidgets.QApplication">QApplication</span></code></p>
 
   
       <p>Customized QApplication class.</p>
@@ -1478,7 +1515,7 @@ exist.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>QStyledItemDelegate</code></p>
+            Bases: <code><span title="qtpy.QtWidgets.QStyledItemDelegate">QStyledItemDelegate</span></code></p>
 
   
       <p>A custom delegate to paint items with specific colors and icons based
@@ -1508,8 +1545,8 @@ on their text content.</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nf">colors_icons</span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n">QColor</span><span class="p">,</span> <span class="n">QColor</span><span class="p">,</span> <span class="n">QColor</span><span class="p">,</span> <span class="n">QIcon</span><span class="p">,</span> <span class="n">bool</span><span class="p">]],</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">parent</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">QWidget</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nf">colors_icons</span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n">str</span><span class="p">,</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="qtpy.QtGui.QColor">QColor</span></span><span class="p">,</span> <span class="n"><span title="qtpy.QtGui.QColor">QColor</span></span><span class="p">,</span> <span class="n"><span title="qtpy.QtGui.QColor">QColor</span></span><span class="p">,</span> <span class="n"><span title="qtpy.QtGui.QIcon">QIcon</span></span><span class="p">,</span> <span class="n">bool</span><span class="p">]],</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">parent</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">margin_left</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">margin_top</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">margin_bottom</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1536,7 +1573,7 @@ on their text content.</p>
         <tr class="doc-section-item">
           <td><code>colors_icons</code></td>
           <td>
-                <code><span title="typing.Dict">Dict</span>[str, <span title="typing.Tuple">Tuple</span>[QColor, QColor, QColor, QIcon, bool]]</code>
+                <code><span title="typing.Dict">Dict</span>[str, <span title="typing.Tuple">Tuple</span>[<span title="qtpy.QtGui.QColor">QColor</span>, <span title="qtpy.QtGui.QColor">QColor</span>, <span title="qtpy.QtGui.QColor">QColor</span>, <span title="qtpy.QtGui.QIcon">QIcon</span>, bool]]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1553,7 +1590,7 @@ should be colored.</p>
         <tr class="doc-section-item">
           <td><code>parent</code></td>
           <td>
-                <code><span title="typing.Optional">Optional</span>[QWidget]</code>
+                <code><span title="typing.Optional">Optional</span>[<span title="qtpy.QtWidgets.QWidget">QWidget</span>]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1626,7 +1663,7 @@ should be colored.</p>
 
 </h3>
 <div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">paint</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">painter</span><span class="p">:</span> <span class="n">QPainter</span><span class="p">,</span> <span class="n">option</span><span class="p">:</span> <span class="n">QStyleOptionViewItem</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">QModelIndex</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">painter</span><span class="p">:</span> <span class="n"><span title="qtpy.QtGui.QPainter">QPainter</span></span><span class="p">,</span> <span class="n">option</span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QStyleOptionViewItem">QStyleOptionViewItem</span></span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n"><span title="qtpy.QtCore.QModelIndex">QModelIndex</span></span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
@@ -1650,7 +1687,7 @@ should be colored.</p>
         <tr class="doc-section-item">
           <td><code>painter</code></td>
           <td>
-                <code>QPainter</code>
+                <code><span title="qtpy.QtGui.QPainter">QPainter</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1664,7 +1701,7 @@ should be colored.</p>
         <tr class="doc-section-item">
           <td><code>option</code></td>
           <td>
-                <code>QStyleOptionViewItem</code>
+                <code><span title="qtpy.QtWidgets.QStyleOptionViewItem">QStyleOptionViewItem</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1678,7 +1715,7 @@ should be colored.</p>
         <tr class="doc-section-item">
           <td><code>index</code></td>
           <td>
-                <code>QModelIndex</code>
+                <code><span title="qtpy.QtCore.QModelIndex">QModelIndex</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1706,7 +1743,7 @@ should be colored.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">sizeHint</span><span class="p">(</span><span class="n">option</span><span class="p">:</span> <span class="n">QStyleOptionViewItem</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">QModelIndex</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QSize</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">sizeHint</span><span class="p">(</span><span class="n">option</span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QStyleOptionViewItem">QStyleOptionViewItem</span></span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n"><span title="qtpy.QtCore.QModelIndex">QModelIndex</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtCore.QSize">QSize</span></span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1729,7 +1766,7 @@ should be colored.</p>
         <tr class="doc-section-item">
           <td><code>option</code></td>
           <td>
-                <code>QStyleOptionViewItem</code>
+                <code><span title="qtpy.QtWidgets.QStyleOptionViewItem">QStyleOptionViewItem</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1743,7 +1780,7 @@ should be colored.</p>
         <tr class="doc-section-item">
           <td><code>index</code></td>
           <td>
-                <code>QModelIndex</code>
+                <code><span title="qtpy.QtCore.QModelIndex">QModelIndex</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1770,7 +1807,7 @@ should be colored.</p>
     <tbody>
         <tr class="doc-section-item">
           <td>
-                <code>QSize</code>
+                <code><span title="qtpy.QtCore.QSize">QSize</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1807,7 +1844,7 @@ should be colored.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>QDialog</code></p>
+            Bases: <code><span title="qtpy.QtWidgets.QDialog">QDialog</span></code></p>
 
   
       <p>A floating dialog that appears at the cursor's position.
@@ -1843,7 +1880,7 @@ It closes when any mouse button except the right one is pressed.</p>
         <tr class="doc-section-item">
           <td><code>icon</code></td>
           <td>
-                <code>QPixmap</code>
+                <code><span title="qtpy.QtGui.QPixmap">QPixmap</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1886,7 +1923,7 @@ It closes when any mouse button except the right one is pressed.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXFloatingDialog.dialog_icon">dialog_icon</span></code></td>
           <td>
-                <code>QIcon</code>
+                <code><span title="qtpy.QtGui.QIcon">QIcon</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1908,7 +1945,7 @@ It closes when any mouse button except the right one is pressed.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXFloatingDialog.drop_position">drop_position</span></code></td>
           <td>
-                <code>QPoint</code>
+                <code><span title="qtpy.QtCore.QPoint">QPoint</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -1975,7 +2012,7 @@ It closes when any mouse button except the right one is pressed.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">closeEvent</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">QCloseEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">closeEvent</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n"><span title="qtpy.QtGui.QCloseEvent">QCloseEvent</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -1998,7 +2035,7 @@ It closes when any mouse button except the right one is pressed.</p>
         <tr class="doc-section-item">
           <td><code>event</code></td>
           <td>
-                <code>QCloseEvent</code>
+                <code><span title="qtpy.QtGui.QCloseEvent">QCloseEvent</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2026,7 +2063,7 @@ It closes when any mouse button except the right one is pressed.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">mousePressEvent</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">QMouseEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">mousePressEvent</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n"><span title="qtpy.QtGui.QMouseEvent">QMouseEvent</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2049,7 +2086,7 @@ It closes when any mouse button except the right one is pressed.</p>
         <tr class="doc-section-item">
           <td><code>event</code></td>
           <td>
-                <code>QMouseEvent</code>
+                <code><span title="qtpy.QtGui.QMouseEvent">QMouseEvent</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2077,7 +2114,7 @@ It closes when any mouse button except the right one is pressed.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_dialog_icon</span><span class="p">(</span><span class="n">icon</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">QPixmap</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_dialog_icon</span><span class="p">(</span><span class="n">icon</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="qtpy.QtGui.QPixmap">QPixmap</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -2100,7 +2137,7 @@ It closes when any mouse button except the right one is pressed.</p>
         <tr class="doc-section-item">
           <td><code>icon</code></td>
           <td>
-                <code>QPixmap</code>
+                <code><span title="qtpy.QtGui.QPixmap">QPixmap</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2237,7 +2274,7 @@ It returns a <code>DialogCode</code> that can be <code>Accepted</code> or <code>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>QMainWindow</code></p>
+            Bases: <code><span title="qtpy.QtWidgets.QMainWindow">QMainWindow</span></code></p>
 
   
       <p>Customized QMainWindow class.</p>
@@ -2258,7 +2295,7 @@ It returns a <code>DialogCode</code> that can be <code>Accepted</code> or <code>
         <tr class="doc-section-item">
           <td><code>parent</code></td>
           <td>
-                <code>QWidget</code>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2422,6 +2459,626 @@ Defaults to <code>True</code>.</p>
 
 
 
+  <p><span class="doc-section-title">Attributes:</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow._default_icon">_default_icon</span></code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Path to the default icon image.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.window_icon">window_icon</span></code></td>
+          <td>
+                <code><span title="qtpy.QtGui.QIcon">QIcon</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The window icon.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.window_title">window_title</span></code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The window title.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.window_size">window_size</span></code></td>
+          <td>
+                <code><span title="qtpy.QtCore.QSize">QSize</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The window size.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.documentation">documentation</span></code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>URL to the tool's documentation.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.project">project</span></code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The project name.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.version">version</span></code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The version label.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.company">company</span></code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The company name.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.color_a">color_a</span></code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The first color to be applied to the window.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.color_b">color_b</span></code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The second color to be applied to the window.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.ui_file">ui_file</span></code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Path to the UI file for loading.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.ui">ui</span></code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="qtpy.QtWidgets.QWidget">QWidget</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The loaded UI widget.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.CRITICAL">CRITICAL</span></code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Constant for critical severity level.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.ERROR">ERROR</span></code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Constant for error severity level.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.WARNING">WARNING</span></code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Constant for warning severity level.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.SUCCESS">SUCCESS</span></code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Constant for success severity level.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.INFO">INFO</span></code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Constant for info severity level.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.about_action">about_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "About" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.check_updates_action">check_updates_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Check for Updates" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.hide_action">hide_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Hide" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.hide_others_action">hide_others_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Hide Others" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.close_action">close_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Close" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.settings_action">settings_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Settings" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.window_on_top_action">window_on_top_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Always On Top" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.minimize_window_action">minimize_window_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Minimize" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.maximize_window_action">maximize_window_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Maximize" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.open_documentation_action">open_documentation_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Documentation" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.home_action">home_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Home" toolbar item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.previous_action">previous_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Previous" toolbar item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.next_action">next_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Next" toolbar item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.refresh_action">refresh_action</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Action for the "Refresh" toolbar item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.menu_bar">menu_bar</span></code></td>
+          <td>
+                <code>QMenuBar</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The menu bar of the window.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.main_menu">main_menu</span></code></td>
+          <td>
+                <code><span title="qtpy.QtWidgets.QMenu">QMenu</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The main menu of the window.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.about_menu">about_menu</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "About" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.check_updates_menu">check_updates_menu</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Check for Updates" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.close_menu">close_menu</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Close" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.hide_main_menu">hide_main_menu</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Hide" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.hide_others_menu">hide_others_menu</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Hide Others" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.edit_menu">edit_menu</span></code></td>
+          <td>
+                <code><span title="qtpy.QtWidgets.QMenu">QMenu</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The edit menu of the window.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.settings_menu">settings_menu</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Settings" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.window_menu">window_menu</span></code></td>
+          <td>
+                <code><span title="qtpy.QtWidgets.QMenu">QMenu</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The window menu of the window.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.minimize_menu">minimize_menu</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Minimize" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.maximize_menu">maximize_menu</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Maximize" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.on_top_menu">on_top_menu</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Always On Top" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.help_menu">help_menu</span></code></td>
+          <td>
+                <code><span title="qtpy.QtWidgets.QMenu">QMenu</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The help menu of the window.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.open_documentation_menu">open_documentation_menu</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Documentation" menu item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.toolbar">toolbar</span></code></td>
+          <td>
+                <code><span title="qtpy.QtWidgets.QToolBar">QToolBar</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The toolbar of the window.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.home_toolbar">home_toolbar</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Home" toolbar item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.previous_toolbar">previous_toolbar</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Previous" toolbar item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.next_toolbar">next_toolbar</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Next" toolbar item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.refresh_toolbar">refresh_toolbar</span></code></td>
+          <td>
+                <code>QAction</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "Refresh" toolbar item.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.banner">banner</span></code></td>
+          <td>
+                <code><span title="qtpy.QtWidgets.QLabel">QLabel</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The banner label.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.status_line">status_line</span></code></td>
+          <td>
+                <code><span title="qtpy.QtWidgets.QFrame">QFrame</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The status line frame.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.status_bar">status_bar</span></code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="fxgui.fxwidgets.FXStatusBar" href="#fxgui.fxwidgets.FXStatusBar">FXStatusBar</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The status bar of the window.</p>
+            </div>
+          </td>
+        </tr>
+        <tr class="doc-section-item">
+          <td><code><span title="fxgui.fxwidgets.FXMainWindow.about_dialog">about_dialog</span></code></td>
+          <td>
+                <code><span title="qtpy.QtWidgets.QDialog">QDialog</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The "About" dialog.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
 <p><span class="doc-section-title">Examples:</span></p>
     <p>Outside a DCC (standalone)</p>
     <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">application</span> <span class="o">=</span> <span class="n">fxgui</span><span class="o">.</span><span class="n">FXApplication</span><span class="p">()</span>
@@ -2519,7 +3176,7 @@ status line is always at the bottom of the window and the banner is always at th
         <tr class="doc-section-item">
           <td><code>widget</code></td>
           <td>
-                <code>QWidget</code>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3030,7 +3687,7 @@ status line is always at the bottom of the window and the banner is always at th
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>QWidget</code></p>
+            Bases: <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code></p>
 
 
 
@@ -3089,7 +3746,7 @@ status line is always at the bottom of the window and the banner is always at th
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>QTreeWidgetItem</code></p>
+            Bases: <code><span title="qtpy.QtWidgets.QTreeWidgetItem">QTreeWidgetItem</span></code></p>
 
   
       <p>Custom <code>QTreeWidgetItem</code> that provides natural sorting for strings
@@ -3231,7 +3888,7 @@ human-friendly order:</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>QSplashScreen</code></p>
+            Bases: <code><span title="qtpy.QtWidgets.QSplashScreen">QSplashScreen</span></code></p>
 
   
       <p>Customized QSplashScreen class.</p>
@@ -3429,7 +4086,7 @@ splash screen. Defaults to False.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXSplashScreen.pixmap">pixmap</span></code></td>
           <td>
-                <code>QPixmap</code>
+                <code><span title="qtpy.QtGui.QPixmap">QPixmap</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3441,7 +4098,7 @@ splash screen. Defaults to False.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXSplashScreen.icon">icon</span></code></td>
           <td>
-                <code>QIcon</code>
+                <code><span title="qtpy.QtGui.QIcon">QIcon</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3554,7 +4211,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXSplashScreen.title_label">title_label</span></code></td>
           <td>
-                <code>QLabel</code>
+                <code><span title="qtpy.QtWidgets.QLabel">QLabel</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3565,7 +4222,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXSplashScreen.info_label">info_label</span></code></td>
           <td>
-                <code>QLabel</code>
+                <code><span title="qtpy.QtWidgets.QLabel">QLabel</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3576,7 +4233,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXSplashScreen.progress_bar">progress_bar</span></code></td>
           <td>
-                <code>QProgressBar</code>
+                <code><span title="qtpy.QtWidgets.QProgressBar">QProgressBar</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3588,7 +4245,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXSplashScreen.copyright_label">copyright_label</span></code></td>
           <td>
-                <code>QLabel</code>
+                <code><span title="qtpy.QtWidgets.QLabel">QLabel</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3599,7 +4256,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXSplashScreen.fade_timer">fade_timer</span></code></td>
           <td>
-                <code>QTimer</code>
+                <code><span title="qtpy.QtCore.QTimer">QTimer</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3667,7 +4324,7 @@ splash screen. Defaults to <code>False</code>.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>QStatusBar</code></p>
+            Bases: <code><span title="qtpy.QtWidgets.QStatusBar">QStatusBar</span></code></p>
 
   
       <p>Customized QStatusBar class.</p>
@@ -3688,7 +4345,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code>parent</code></td>
           <td>
-                <code>QWidget</code>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3792,7 +4449,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXStatusBar.icon_label">icon_label</span></code></td>
           <td>
-                <code>QLabel</code>
+                <code><span title="qtpy.QtWidgets.QLabel">QLabel</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3803,7 +4460,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXStatusBar.message_label">message_label</span></code></td>
           <td>
-                <code>QLabel</code>
+                <code><span title="qtpy.QtWidgets.QLabel">QLabel</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3814,7 +4471,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXStatusBar.project_label">project_label</span></code></td>
           <td>
-                <code>QLabel</code>
+                <code><span title="qtpy.QtWidgets.QLabel">QLabel</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3825,7 +4482,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXStatusBar.version_label">version_label</span></code></td>
           <td>
-                <code>QLabel</code>
+                <code><span title="qtpy.QtWidgets.QLabel">QLabel</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3836,7 +4493,7 @@ splash screen. Defaults to <code>False</code>.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXStatusBar.company_label">company_label</span></code></td>
           <td>
-                <code>QLabel</code>
+                <code><span title="qtpy.QtWidgets.QLabel">QLabel</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3902,7 +4559,7 @@ splash screen. Defaults to <code>False</code>.</p>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">time</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">logger</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="logging.Logger">Logger</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">set_color</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">pixmap</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">QPixmap</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">pixmap</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="qtpy.QtGui.QPixmap">QPixmap</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">background_color</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
 </code></pre></div>
@@ -4017,7 +4674,7 @@ the log verbosity. Defaults to <code>True</code>.</p>
         <tr class="doc-section-item">
           <td><code>pixmap</code></td>
           <td>
-                <code>QPixmap</code>
+                <code><span title="qtpy.QtGui.QPixmap">QPixmap</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4091,7 +4748,7 @@ Overrides the base class method.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>QObject</code></p>
+            Bases: <code><span title="qtpy.QtCore.QObject">QObject</span></code></p>
 
   
       <p>A system tray icon with a context menu.</p>
@@ -4112,7 +4769,7 @@ Overrides the base class method.</p>
         <tr class="doc-section-item">
           <td><code>parent</code></td>
           <td>
-                <code>QWidget</code>
+                <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4155,7 +4812,7 @@ Overrides the base class method.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXSystemTray.tray_icon">tray_icon</span></code></td>
           <td>
-                <code>QSystemTrayIcon</code>
+                <code><span title="qtpy.QtWidgets.QSystemTrayIcon">QSystemTrayIcon</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4177,7 +4834,7 @@ Overrides the base class method.</p>
         <tr class="doc-section-item">
           <td><code><span title="fxgui.fxwidgets.FXSystemTray.tray_menu">tray_menu</span></code></td>
           <td>
-                <code>QMenu</code>
+                <code><span title="qtpy.QtWidgets.QMenu">QMenu</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4288,7 +4945,7 @@ Overrides the base class method.</p>
         <tr class="doc-section-item">
           <td><code>reason</code></td>
           <td>
-                <code><span title="QSystemTrayIcon.ActivationReason">ActivationReason</span></code>
+                <code><span title="qtpy.QtWidgets.QSystemTrayIcon.ActivationReason">ActivationReason</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4350,7 +5007,7 @@ icon activation.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>QWidget</code></p>
+            Bases: <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code></p>
 
 
 
