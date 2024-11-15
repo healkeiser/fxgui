@@ -64,21 +64,11 @@ import qtawesome as qta
 # Conditional import based on Qt version
 from qtpy import QT_VERSION
 
-if QT_VERSION.startswith("5"):
-    from qtpy.QtWidgets import QDesktopWidget
-elif QT_VERSION.startswith("6"):
+QT_VERSION_MAJOR = int(QT_VERSION.split(".")[0])
+if QT_VERSION_MAJOR >= 6:
     from qtpy.QtGui import QScreen
-
-# Internal
-from fxgui import fxstyle, fxutils, fxdcc
-
-# Conditional import based on Qt version
-from qtpy import QT_VERSION
-
-if QT_VERSION.startswith("5"):
+else:
     from qtpy.QtWidgets import QDesktopWidget
-elif QT_VERSION.startswith("6"):
-    from qtpy.QtGui import QScreen
 
 # Internal
 from fxgui import fxstyle, fxutils, fxdcc
@@ -1254,6 +1244,63 @@ class FXMainWindow(QMainWindow):
         set_stylesheet (bool, optional): Whether to set the default stylesheet.
             Defaults to `True`.
 
+    Attributes:
+        _default_icon (str): Path to the default icon image.
+        window_icon (QIcon): The window icon.
+        window_title (str): The window title.
+        window_size (QSize): The window size.
+        documentation (str): URL to the tool's documentation.
+        project (str): The project name.
+        version (str): The version label.
+        company (str): The company name.
+        color_a (str): The first color to be applied to the window.
+        color_b (str): The second color to be applied to the window.
+        ui_file (str): Path to the UI file for loading.
+        ui (Optional[QWidget]): The loaded UI widget.
+        CRITICAL (int): Constant for critical severity level.
+        ERROR (int): Constant for error severity level.
+        WARNING (int): Constant for warning severity level.
+        SUCCESS (int): Constant for success severity level.
+        INFO (int): Constant for info severity level.
+        about_action (QAction): Action for the "About" menu item.
+        check_updates_action (QAction): Action for the "Check for Updates" menu item.
+        hide_action (QAction): Action for the "Hide" menu item.
+        hide_others_action (QAction): Action for the "Hide Others" menu item.
+        close_action (QAction): Action for the "Close" menu item.
+        settings_action (QAction): Action for the "Settings" menu item.
+        window_on_top_action (QAction): Action for the "Always On Top" menu item.
+        minimize_window_action (QAction): Action for the "Minimize" menu item.
+        maximize_window_action (QAction): Action for the "Maximize" menu item.
+        open_documentation_action (QAction): Action for the "Documentation" menu item.
+        home_action (QAction): Action for the "Home" toolbar item.
+        previous_action (QAction): Action for the "Previous" toolbar item.
+        next_action (QAction): Action for the "Next" toolbar item.
+        refresh_action (QAction): Action for the "Refresh" toolbar item.
+        menu_bar (QMenuBar): The menu bar of the window.
+        main_menu (QMenu): The main menu of the window.
+        about_menu (QAction): The "About" menu item.
+        check_updates_menu (QAction): The "Check for Updates" menu item.
+        close_menu (QAction): The "Close" menu item.
+        hide_main_menu (QAction): The "Hide" menu item.
+        hide_others_menu (QAction): The "Hide Others" menu item.
+        edit_menu (QMenu): The edit menu of the window.
+        settings_menu (QAction): The "Settings" menu item.
+        window_menu (QMenu): The window menu of the window.
+        minimize_menu (QAction): The "Minimize" menu item.
+        maximize_menu (QAction): The "Maximize" menu item.
+        on_top_menu (QAction): The "Always On Top" menu item.
+        help_menu (QMenu): The help menu of the window.
+        open_documentation_menu (QAction): The "Documentation" menu item.
+        toolbar (QToolBar): The toolbar of the window.
+        home_toolbar (QAction): The "Home" toolbar item.
+        previous_toolbar (QAction): The "Previous" toolbar item.
+        next_toolbar (QAction): The "Next" toolbar item.
+        refresh_toolbar (QAction): The "Refresh" toolbar item.
+        banner (QLabel): The banner label.
+        status_line (QFrame): The status line frame.
+        status_bar (FXStatusBar): The status bar of the window.
+        about_dialog (QDialog): The "About" dialog.
+
     Examples:
         Outside a DCC (standalone)
         >>> application = fxgui.FXApplication()
@@ -1802,11 +1849,11 @@ class FXMainWindow(QMainWindow):
 
         frame_geo = self.frameGeometry()
 
-        if QT_VERSION.startswith("5"):
-            desktop_geometry = QDesktopWidget().availableGeometry()
-        elif QT_VERSION.startswith("6"):
+        if QT_VERSION_MAJOR >= 6:
             screen = QApplication.primaryScreen()
             desktop_geometry = screen.availableGeometry()
+        else:
+            desktop_geometry = QDesktopWidget().availableGeometry()
 
         center_point = desktop_geometry.center()
         left_top_point = QPoint(
