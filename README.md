@@ -46,8 +46,8 @@
 - [Installation](#installation)
 - [Example](#example)
 - [Documentation](#documentation)
+- [Screenshots](#screenshots)
 - [Contact](#contact)
-
 
 
 
@@ -95,6 +95,18 @@ examples.main()
 ## Documentation
 
 Please read the full documentation [here](https://healkeiser.github.io/fxgui/).
+
+
+
+<!-- SCREENSHOTS -->
+## Screenshots
+<p align="center">
+  <img width="500" src="docs/images/python_VM5AKCiXqn.png">
+</p>
+
+<p align="center">
+  <img width="500" src="docs/images/python_neD4vSUmit.png">
+</p>
 
 
 
