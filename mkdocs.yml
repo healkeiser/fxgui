@@ -121,6 +121,7 @@ plugins:
 
 nav:
   - Home: index.md
+  - Installation: installation.md
   - How-to: how_to.md
   - Technical:
       - fxconstants: fxconstants.md
