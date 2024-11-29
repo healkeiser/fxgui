@@ -531,6 +531,18 @@ def setup_tree_widget(window: fxwidgets.FXMainWindow) -> None:
         lambda pos: show_context_menu(window.ui.treeWidget, pos)
     )
 
+    # Add child items with numbers
+    items = [
+        "something1",
+        "something9",
+        "something17",
+        "something25",
+        "something025",
+    ]
+    for item in items:
+        child = fxwidgets.FXSortedTreeWidgetItem([item])
+        root.addChild(child)
+
 
 def setup_list_widget(window: fxwidgets.FXMainWindow) -> None:
     """Setup the list widget with a custom delegate.

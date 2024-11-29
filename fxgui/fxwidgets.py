@@ -21,6 +21,7 @@ from qtpy.QtCore import (
     QTimer,
     Qt,
     QModelIndex,
+    QCollator,
 )
 from qtpy.QtGui import (
     QColor,
@@ -530,7 +531,8 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         return QSize(width, height)
 
 
-class FXSortedTreeWidgetItem(QTreeWidgetItem):
+# ? Keeping for reference
+class _FXSortedTreeWidgetItem(QTreeWidgetItem):
     """Custom `QTreeWidgetItem` that provides natural sorting for strings
     containing numbers. This is useful for sorting items like version numbers
     or other strings where numeric parts should be ordered numerically.
@@ -588,6 +590,34 @@ class FXSortedTreeWidgetItem(QTreeWidgetItem):
             int(text) if text.isdigit() else text.lower()
             for text in re.split("([0-9]+)", s)
         ]
+
+
+class FXSortedTreeWidgetItem(QTreeWidgetItem):
+    """Custom `QTreeWidgetItem` that provides natural sorting for strings
+    containing numbers using QCollator for locale-aware sorting.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.collator = QCollator()
+        self.collator.setNumericMode(True)
+
+    def __lt__(self, other: "FXSortedTreeWidgetItem") -> bool:
+        """Override the less-than operator to provide a custom sorting logic.
+
+        Args:
+            other: Another instance of `FXSortedTreeWidgetItem` to compare with.
+
+        Returns:
+            `True` if the current item is less than the other item according to
+            the natural sort order, `False` otherwise.
+        """
+
+        # Get the index of the column currently being used for sorting
+        column = self.treeWidget().sortColumn()
+
+        # Compare the items using QCollator
+        return self.collator.compare(self.text(column), other.text(column)) < 0
 
 
 class FXApplication(QApplication):
