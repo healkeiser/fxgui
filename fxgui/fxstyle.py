@@ -509,6 +509,12 @@ def load_stylesheet(
     }}
     """
 
+    # ! Temporaty
+    # font_stylesheet = f"""* {{
+    #     font-family: "Times New Roman";
+    # }}
+    # """
+
     replace = {
         "@ColorA": color_a,
         "@ColorB": color_b,
@@ -560,5 +566,7 @@ def load_stylesheet(
         if extra
         else font_stylesheet + stylesheet
     )
+
+    stylesheet = stylesheet + extra if extra else stylesheet
 
     return stylesheet

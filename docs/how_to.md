@@ -138,7 +138,7 @@ from fxgui import fxwidgets
 
 application = fxwidgets.FXApplication()
 window = fxwidgets.FXWindow(ui_file="path/to/ui/file.ui")
-window.ui.button_critical.setIcon(qta.icon("mdi6.access-point-network"))
+window.ui.button_critical.setIcon(qta.icon("mdi.access-point-network"))
 window.show()
 application.exec_()
 ```

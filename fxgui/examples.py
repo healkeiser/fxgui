@@ -473,13 +473,13 @@ def show_context_menu(tree: QTreeWidget, position: QPoint) -> None:
 
     # Actions
     ac_show_in_explorer = menu.addAction("Show in Explorer")
-    ac_show_in_explorer.setIcon(qta.icon("mdi6.folder-open"))
+    ac_show_in_explorer.setIcon(qta.icon("mdi.folder-open"))
 
     copy_submenu = menu.addMenu("Copy Path to Clipboard")
-    copy_submenu.setIcon(qta.icon("mdi6.content-copy"))
+    copy_submenu.setIcon(qta.icon("mdi.content-copy"))
 
     ac_copy_default = copy_submenu.addAction("Default")
-    ac_copy_default.setIcon(qta.icon("mdi6.content-copy"))
+    ac_copy_default.setIcon(qta.icon("mdi.content-copy"))
 
     ac_copy_houdini = copy_submenu.addAction("Houdini")
     ac_copy_houdini.setIcon(

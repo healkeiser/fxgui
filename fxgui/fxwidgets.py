@@ -162,7 +162,7 @@ class _FXColorLabelDelegate(QStyledItemDelegate):
             QColor("#212121"),
             QColor("#212121"),
             QColor("#b4b4b4"),
-            qta.icon("mdi6.dots-horizontal"),
+            qta.icon("mdi.dots-horizontal"),
             False,
         )
 
@@ -393,7 +393,7 @@ class FXColorLabelDelegate(QStyledItemDelegate):
             QColor("#212121"),
             QColor("#6d6d6d"),
             QColor("#ffffff"),
-            qta.icon("mdi6.dots-horizontal"),
+            qta.icon("mdi.dots-horizontal"),
             True,  # Default to coloring the icon
         )
 
