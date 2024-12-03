@@ -12,7 +12,6 @@ import time
 from urllib.parse import urlparse
 
 # Third-party
-import qtawesome as qta
 from qtpy.QtCore import (
     QObject,
     QPoint,
@@ -60,7 +59,6 @@ from qtpy.QtWidgets import (
     QWidget,
     QProgressBar,
 )
-import qtawesome as qta
 
 # Conditional import based on Qt version
 from qtpy import QT_VERSION
@@ -72,11 +70,8 @@ else:
     from qtpy.QtWidgets import QDesktopWidget
 
 # Internal
-from fxgui import fxstyle, fxutils, fxdcc
+from fxgui import fxicons, fxstyle, fxutils, fxdcc
 
-
-# Icons
-qta.set_defaults(color="#b4b4b4")
 
 # Constants
 CRITICAL = 0
@@ -162,7 +157,7 @@ class _FXColorLabelDelegate(QStyledItemDelegate):
             QColor("#212121"),
             QColor("#212121"),
             QColor("#b4b4b4"),
-            qta.icon("mdi.dots-horizontal"),
+            fxicons.get_icon("drag_indicator"),
             False,
         )
 
@@ -393,8 +388,8 @@ class FXColorLabelDelegate(QStyledItemDelegate):
             QColor("#212121"),
             QColor("#6d6d6d"),
             QColor("#ffffff"),
-            qta.icon("mdi.dots-horizontal"),
-            True,  # Default to coloring the icon
+            fxicons.get_icon("drag_indicator"),
+            False,  # Default to not coloring the icon
         )
 
         # Find the best match for the text in the colors_icons dictionary
@@ -471,17 +466,9 @@ class FXColorLabelDelegate(QStyledItemDelegate):
 
         if color_icon:
             # Convert the icon to a QPixmap and apply the text/icon color
-            pixmap = icon.pixmap(icon_size)
-            colored_pixmap = QPixmap(pixmap.size())
-            colored_pixmap.fill(Qt.transparent)
-
-            painter2 = QPainter(colored_pixmap)
-            painter2.setCompositionMode(QPainter.CompositionMode_Source)
-            painter2.drawPixmap(0, 0, pixmap)
-            painter2.setCompositionMode(QPainter.CompositionMode_SourceIn)
-            painter2.fillRect(colored_pixmap.rect(), text_icon_color)
-            painter2.end()
-
+            colored_pixmap = fxicons.change_pixmap_color(
+                icon.pixmap(icon_size), text_icon_color
+            )
             painter.drawPixmap(icon_rect, colored_pixmap)
         else:
             # Draw the original icon without coloring
@@ -533,6 +520,34 @@ class FXColorLabelDelegate(QStyledItemDelegate):
 
 # ? Keeping for reference
 class _FXSortedTreeWidgetItem(QTreeWidgetItem):
+    """Custom `QTreeWidgetItem` that provides natural sorting for strings
+    containing numbers using QCollator for locale-aware sorting.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.collator = QCollator()
+        self.collator.setNumericMode(True)
+
+    def __lt__(self, other: "FXSortedTreeWidgetItem") -> bool:
+        """Override the less-than operator to provide a custom sorting logic.
+
+        Args:
+            other: Another instance of `FXSortedTreeWidgetItem` to compare with.
+
+        Returns:
+            `True` if the current item is less than the other item according to
+            the natural sort order, `False` otherwise.
+        """
+
+        # Get the index of the column currently being used for sorting
+        column = self.treeWidget().sortColumn()
+
+        # Compare the items using QCollator
+        return self.collator.compare(self.text(column), other.text(column)) < 0
+
+
+class FXSortedTreeWidgetItem(QTreeWidgetItem):
     """Custom `QTreeWidgetItem` that provides natural sorting for strings
     containing numbers. This is useful for sorting items like version numbers
     or other strings where numeric parts should be ordered numerically.
@@ -590,34 +605,6 @@ class _FXSortedTreeWidgetItem(QTreeWidgetItem):
             int(text) if text.isdigit() else text.lower()
             for text in re.split("([0-9]+)", s)
         ]
-
-
-class FXSortedTreeWidgetItem(QTreeWidgetItem):
-    """Custom `QTreeWidgetItem` that provides natural sorting for strings
-    containing numbers using QCollator for locale-aware sorting.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.collator = QCollator()
-        self.collator.setNumericMode(True)
-
-    def __lt__(self, other: "FXSortedTreeWidgetItem") -> bool:
-        """Override the less-than operator to provide a custom sorting logic.
-
-        Args:
-            other: Another instance of `FXSortedTreeWidgetItem` to compare with.
-
-        Returns:
-            `True` if the current item is less than the other item according to
-            the natural sort order, `False` otherwise.
-        """
-
-        # Get the index of the column currently being used for sorting
-        column = self.treeWidget().sortColumn()
-
-        # Compare the items using QCollator
-        return self.collator.compare(self.text(column), other.text(column)) < 0
 
 
 class FXApplication(QApplication):
@@ -1090,8 +1077,8 @@ class FXStatusBar(QStatusBar):
         severity_mapping = {
             0: (
                 "Critical",
-                qta.icon(
-                    "mdi.alert-circle",
+                fxicons.get_icon(
+                    "cancel",
                     color=colors_dict["feedback"]["error"]["light"],
                 ).pixmap(14, 14),
                 colors_dict["feedback"]["error"]["background"],
@@ -1099,8 +1086,8 @@ class FXStatusBar(QStatusBar):
             ),
             1: (
                 "Error",
-                qta.icon(
-                    "mdi.alert",
+                fxicons.get_icon(
+                    "error",
                     color=colors_dict["feedback"]["error"]["light"],
                 ).pixmap(14, 14),
                 colors_dict["feedback"]["error"]["background"],
@@ -1108,8 +1095,8 @@ class FXStatusBar(QStatusBar):
             ),
             2: (
                 "Warning",
-                qta.icon(
-                    "mdi.alert",
+                fxicons.get_icon(
+                    "warning",
                     color=colors_dict["feedback"]["warning"]["light"],
                 ).pixmap(14, 14),
                 colors_dict["feedback"]["warning"]["background"],
@@ -1117,8 +1104,8 @@ class FXStatusBar(QStatusBar):
             ),
             3: (
                 "Success",
-                qta.icon(
-                    "mdi.check-circle",
+                fxicons.get_icon(
+                    "check_circle",
                     color=colors_dict["feedback"]["success"]["light"],
                 ).pixmap(14, 14),
                 colors_dict["feedback"]["success"]["background"],
@@ -1126,8 +1113,8 @@ class FXStatusBar(QStatusBar):
             ),
             4: (
                 "Info",
-                qta.icon(
-                    "mdi.information",
+                fxicons.get_icon(
+                    "info",
                     color=colors_dict["feedback"]["info"]["light"],
                 ).pixmap(14, 14),
                 colors_dict["feedback"]["info"]["background"],
@@ -1135,8 +1122,8 @@ class FXStatusBar(QStatusBar):
             ),
             5: (
                 "Debug",
-                qta.icon(
-                    "mdi.bug",
+                fxicons.get_icon(
+                    "bug_report",
                     color=colors_dict["feedback"]["debug"]["light"],
                 ).pixmap(14, 14),
                 colors_dict["feedback"]["debug"]["background"],
@@ -1498,7 +1485,7 @@ class FXMainWindow(QMainWindow):
         self.about_action = fxutils.create_action(
             self,
             "About",
-            qta.icon("mdi.help-circle"),  # About icon
+            fxicons.get_icon("help"),  # About icon
             self._show_about_dialog,
             enable=True,
             visible=True,
@@ -1507,7 +1494,7 @@ class FXMainWindow(QMainWindow):
         self.check_updates_action = fxutils.create_action(
             self,
             "Check for Updates...",
-            qta.icon("mdi.update"),  # Update icon
+            fxicons.get_icon("update"),  # Update icon
             None,
             enable=False,
             visible=True,
@@ -1516,7 +1503,7 @@ class FXMainWindow(QMainWindow):
         self.hide_action = fxutils.create_action(
             self,
             "Hide",
-            qta.icon("mdi.eye-off"),  # Visibility off icon
+            fxicons.get_icon("visibility_off"),  # Visibility off icon
             self.hide,
             enable=False,
             visible=True,
@@ -1526,7 +1513,7 @@ class FXMainWindow(QMainWindow):
         self.hide_others_action = fxutils.create_action(
             self,
             "Hide Others",
-            qta.icon("mdi.eye-off-outline"),  # Disabled visible icon
+            fxicons.get_icon("disabled_visible"),  # Disabled visible icon
             None,
             enable=False,
             visible=True,
@@ -1535,7 +1522,7 @@ class FXMainWindow(QMainWindow):
         self.close_action = fxutils.create_action(
             self,
             "Close",
-            qta.icon("mdi.close"),  # Close icon
+            fxicons.get_icon("close"),  # Close icon
             self.close,
             enable=True,
             visible=True,
@@ -1546,7 +1533,7 @@ class FXMainWindow(QMainWindow):
         self.settings_action = fxutils.create_action(
             self,
             "Settings",
-            qta.icon("mdi.cog"),  # Settings icon
+            fxicons.get_icon("settings"),  # Settings icon
             None,
             enable=False,
             visible=True,
@@ -1557,7 +1544,7 @@ class FXMainWindow(QMainWindow):
         self.window_on_top_action = fxutils.create_action(
             self,
             "Always On Top",
-            qta.icon("mdi.pin"),  # Always on top icon
+            fxicons.get_icon("hdr_strong"),  # Always on top icon
             self._window_on_top,
             enable=True,
             visible=True,
@@ -1567,7 +1554,7 @@ class FXMainWindow(QMainWindow):
         self.minimize_window_action = fxutils.create_action(
             self,
             "Minimize",
-            qta.icon("mdi.window-minimize"),  # Minimize icon
+            fxicons.get_icon("minimize"),  # Minimize icon
             self.showMinimized,
             enable=True,
             visible=True,
@@ -1577,7 +1564,7 @@ class FXMainWindow(QMainWindow):
         self.maximize_window_action = fxutils.create_action(
             self,
             "Maximize",
-            qta.icon("mdi.window-maximize"),  # Maximize icon
+            fxicons.get_icon("maximize"),  # Maximize icon
             self.showMaximized,
             enable=True,
             visible=True,
@@ -1588,7 +1575,7 @@ class FXMainWindow(QMainWindow):
         self.open_documentation_action = fxutils.create_action(
             self,
             "Documentation",
-            qta.icon("mdi.book-open-page-variant"),  # Documentation icon
+            fxicons.get_icon("menu_book"),  # Documentation icon
             lambda: open_new_tab(self.documentation),
             enable=True,
             visible=True,
@@ -1598,7 +1585,7 @@ class FXMainWindow(QMainWindow):
         self.home_action = fxutils.create_action(
             self,
             "Home",
-            qta.icon("mdi.home"),  # Home icon
+            fxicons.get_icon("home"),  # Home icon
             None,
             enable=False,
             visible=True,
@@ -1607,7 +1594,7 @@ class FXMainWindow(QMainWindow):
         self.previous_action = fxutils.create_action(
             self,
             "Previous",
-            qta.icon("mdi.arrow-left"),  # Previous icon
+            fxicons.get_icon("arrow_back"),  # Previous icon
             None,
             enable=False,
             visible=True,
@@ -1616,7 +1603,7 @@ class FXMainWindow(QMainWindow):
         self.next_action = fxutils.create_action(
             self,
             "Next",
-            qta.icon("mdi.arrow-right"),  # Next icon
+            fxicons.get_icon("arrow_forward"),  # Next icon
             None,
             enable=False,
             visible=True,
@@ -1625,7 +1612,7 @@ class FXMainWindow(QMainWindow):
         self.refresh_action = fxutils.create_action(
             self,
             "Refresh",
-            qta.icon("mdi.refresh"),  # Refresh icon
+            fxicons.get_icon("refresh"),  # Refresh icon
             None,
             enable=True,
             visible=True,
@@ -1851,11 +1838,11 @@ class FXMainWindow(QMainWindow):
         action_values = {
             True: (
                 "Always on Top",
-                qta.icon("mdi.pin", color="white").pixmap(14, 14),
+                fxicons.get_icon("hdr_strong", color="white").pixmap(14, 14),
             ),
             False: (
                 "Regular Position",
-                qta.icon("mdi.pin-off", color="white").pixmap(14, 14),
+                fxicons.get_icon("hdr_weak", color="white").pixmap(14, 14),
             ),
         }
         stays_on_top = bool(flags & Qt.WindowStaysOnTopHint)
@@ -1880,10 +1867,10 @@ class FXMainWindow(QMainWindow):
         frame_geo = self.frameGeometry()
 
         if QT_VERSION_MAJOR >= 6:
-            screen = QApplication.primaryScreen()
+            screen: QScreen = QApplication.primaryScreen()
             desktop_geometry = screen.availableGeometry()
         else:
-            desktop_geometry = QDesktopWidget().availableGeometry()
+            desktop_geometry: QRect = QDesktopWidget().availableGeometry()
 
         center_point = desktop_geometry.center()
         left_top_point = QPoint(
@@ -2208,7 +2195,7 @@ class FXFloatingDialog(QDialog):
         super().__init__(parent)
 
         # Attributes
-        _icon = qta.icon("mdi.home", color="#b4b4b4").pixmap(32, 32)
+        _icon = fxicons.get_icon("home", color="#b4b4b4").pixmap(32, 32)
         self._default_icon = _icon
         self.dialog_icon: QIcon = icon
         self.dialog_title: str = title
@@ -2409,8 +2396,12 @@ class FXSystemTray(QObject):
     Examples:
         >>> app = FXApplication()
         >>> system_tray = FXSystemTray()
-        >>> hello_action = QAction(qta.icon("mdi.eye"), "Set Project", system_tray)
-        >>> system_tray.tray_menu.insertAction(system_tray.quit_action, hello_action)
+        >>> hello_action = QAction(
+        ...     fxicons.get_icon("visibility"), "Set Project", system_tray
+        ... )
+        >>> system_tray.tray_menu.insertAction(
+        ...     system_tray.quit_action, hello_action
+        ... )
         >>> system_tray.tray_menu.insertSeparator(system_tray.quit_action)
         >>> system_tray.show()
         >>> app.exec_()
@@ -2448,7 +2439,7 @@ class FXSystemTray(QObject):
         self.quit_action = fxutils.create_action(
             self,
             "Quit",
-            qta.icon("mdi.close"),
+            fxicons.get_icon("close"),
             self.closeEvent,
             enable=True,
             visible=True,
@@ -2549,7 +2540,7 @@ class FXPasswordLineEdit(QWidget):
 
         # Show/hide button
         self.reveal_button = QPushButton("Show")
-        self.reveal_button.setIcon(qta.icon("mdi.eye"))
+        self.reveal_button.setIcon(fxicons.get_icon("visibility"))
         self.reveal_button.clicked.connect(self.toggle_reveal)
 
         # Layout for lineEdit and button
@@ -2566,11 +2557,11 @@ class FXPasswordLineEdit(QWidget):
         if self.line_edit.echoMode() == QLineEdit.Password:
             self.line_edit.setEchoMode(QLineEdit.Normal)
             self.reveal_button.setText("Hide")
-            self.reveal_button.setIcon(qta.icon("mdi.eye-off"))
+            self.reveal_button.setIcon(fxicons.get_icon("disabled_visible"))
         else:
             self.line_edit.setEchoMode(QLineEdit.Password)
             self.reveal_button.setText("Show")
-            self.reveal_button.setIcon(qta.icon("mdi.eye"))
+            self.reveal_button.setIcon(fxicons.get_icon("visibility"))
 
 
 if __name__ == "__main__":

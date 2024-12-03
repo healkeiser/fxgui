@@ -623,6 +623,7 @@ def main(show_delayed: bool = False):
     # Initialize the application
     _ = QUiLoader()  # PySide6 bug workaround
     application = fxwidgets.FXApplication()
+
     application.setStyle(fxstyle.FXProxyStyle())
 
     # Initialize main window

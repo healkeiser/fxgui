@@ -3,36 +3,27 @@ application.
 """
 
 # Built-in
-from ast import List
-from typing import Optional, Callable, List
+from typing import Optional, List
 from pathlib import Path
 from functools import lru_cache
 
 # Third-party
-from qtpy.QtWidgets import (
-    QGridLayout,
-    QPushButton,
-    QStyle,
-    QWidget,
-)
 from qtpy.QtGui import (
     QIcon,
     QColor,
     QPainter,
     QPixmap,
     QBitmap,
-    QGuiApplication,
 )
 from qtpy.QtCore import Qt, qVersion
 
-# Internal
-from fxgui import fxwidgets
-
 
 # Constants
-LIBRARIES_ROOT = Path(__file__).parent / "icons"
-DEFAULT_LIBRARY = "dcc"
-LIBRARIES_INFO = {
+_LIBRARIES_ROOT = Path(__file__).parent / "icons"
+_DEFAULT_LIBRARY = "material"
+
+# Globals
+_LIBRARIES_INFO = {
     "dcc": {
         "pattern": "{root}/{library}/{icon_name}.{extension}",
         "defaults": {
@@ -40,7 +31,50 @@ LIBRARIES_INFO = {
             "style": None,
         },
     },
+    "material": {
+        "pattern": "{root}/{library}/{extension}/{icon_name}/{style}.{extension}",
+        "defaults": {
+            "extension": "svg",
+            "style": "round",
+        },
+    },
+    "fontawesome": {
+        "pattern": "{root}/{library}/{extension}s/{style}/{icon_name}.{extension}",
+        "defaults": {
+            "extension": "svg",
+            "style": "regular",
+        },
+    },
 }
+_ICON_DEFAULTS = {
+    # Attributes
+    "color": "#b4b4b4",
+    "width": 12,
+    "height": 12,
+    # Library
+    "library": _DEFAULT_LIBRARY,
+    "style": _LIBRARIES_INFO[_DEFAULT_LIBRARY]["defaults"]["style"],
+    "extension": _LIBRARIES_INFO[_DEFAULT_LIBRARY]["defaults"]["extension"],
+}
+
+
+def set_icon_defaults(**kwargs):
+    """Set the default values for the icons.
+
+    Args:
+        **kwargs: The default values to set.
+
+    Examples:
+        >>> set_icon_defaults(color="red", width=32, height=32)
+    """
+
+    valid_keys = _ICON_DEFAULTS.keys()
+    if not all(key in valid_keys for key in kwargs.keys()):
+        raise ValueError(f"Invalid key in {kwargs.keys()}.")
+
+    for key, value in kwargs.items():
+        if key in _ICON_DEFAULTS:
+            _ICON_DEFAULTS[key] = value
 
 
 def get_available_icons_in_library(library: str) -> List[str]:
@@ -61,7 +95,7 @@ def get_available_icons_in_library(library: str) -> List[str]:
         ["3d_equalizer", "adobe_photoshop", "blender", "hiero"]
     """
 
-    library_path = LIBRARIES_ROOT / library
+    library_path = _LIBRARIES_ROOT / library
     if not library_path.exists():
         raise ValueError(f"Library '{library}' does not exist.")
 
@@ -74,7 +108,6 @@ def get_available_icons_in_library(library: str) -> List[str]:
     return icon_names
 
 
-@lru_cache(maxsize=128)
 def get_icon_path(
     icon_name: str,
     library: Optional[str] = None,
@@ -85,13 +118,11 @@ def get_icon_path(
     """Get the path of the specified icon.
 
     Args:
-        icon_name (str): The name of the icon.
-        library (str, optional): The library of the icon. Defaults to `None`.
-        style (str, optional): The style of the icon. Defaults to `None`.
-        extension (str, optional): The extension of the icon.
-            Defaults to `None`.
-        verify (bool, optional): Whether to verify if the icon exists.
-            Defaults to `True`.
+        icon_name: The name of the icon.
+        library: The library of the icon. Defaults to `None`.
+        style: The style of the icon. Defaults to `None`.
+        extension: The extension of the icon. Defaults to `None`.
+        verify: Whether to verify if the icon exists. Defaults to `True`.
 
     Raises:
         FileNotFoundError: If verify is `True` and the icon does not exist.
@@ -101,19 +132,19 @@ def get_icon_path(
     """
 
     if library is None:
-        library = DEFAULT_LIBRARY
+        library = _DEFAULT_LIBRARY
     if style is None:
-        style = LIBRARIES_INFO[library]["defaults"].get("style")
+        style = _LIBRARIES_INFO[library]["defaults"].get("style")
     if extension is None:
-        extension = LIBRARIES_INFO[library]["defaults"].get("extension")
+        extension = _LIBRARIES_INFO[library]["defaults"].get("extension")
 
-    pattern = LIBRARIES_INFO[library]["pattern"]
+    pattern = _LIBRARIES_INFO[library]["pattern"]
     path = pattern.format(
         icon_name=icon_name,
         style=style,
         library=library,
         extension=extension,
-        root=LIBRARIES_ROOT,
+        root=_LIBRARIES_ROOT,
     ).replace("\\", "/")
 
     if verify and not Path(path).exists():
@@ -126,7 +157,7 @@ def has_transparency(mask: QBitmap) -> bool:
     """Check if a mask has any transparency.
 
     Args:
-        mask (QBitmap): The mask to check.
+        mask: The mask to check.
 
     Returns:
         bool: `True` if the mask has transparency, `False` otherwise.
@@ -141,7 +172,6 @@ def has_transparency(mask: QBitmap) -> bool:
     )
 
 
-@lru_cache(maxsize=128)
 def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     """Change the color of a pixmap.
 
@@ -184,8 +214,8 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
 @lru_cache(maxsize=128)
 def get_pixmap(
     icon_name: str,
-    width: int = 48,
-    height: int = 48,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
     color: Optional[str] = None,
     library: Optional[str] = None,
     style: Optional[str] = None,
@@ -194,15 +224,13 @@ def get_pixmap(
     """Get a QPixmap of the specified icon.
 
     Args:
-        icon_name (str): The name of the icon.
-        width (int, optional): The width of the pixmap. Defaults to 48.
-        height (int, optional): The height of the pixmap. Defaults to 48.
-        color (str, optional): The color to convert the pixmap to.
-            Defaults to `None`.
-        library (str, optional): The library of the icon. Defaults to `None`.
-        style (str, optional): The style of the icon. Defaults to `None`.
-        extension (str, optional): The extension of the icon.
-            Defaults to `None`.
+        icon_name: The name of the icon.
+        width: The width of the pixmap. Defaults to `None`.
+        height: The height of the pixmap. Defaults to `None`.
+        color: The color to convert the pixmap to. Defaults to `None`.
+        library: The library of the icon. Defaults to `None`.
+        style: The style of the icon. Defaults to `None`.
+        extension: The extension of the icon. Defaults to `None`.
 
     Returns:
         QPixmap: The QPixmap of the icon.
@@ -210,6 +238,19 @@ def get_pixmap(
     Examples:
         >>> get_pixmap("add", color="red")
     """
+
+    if library is None:
+        library = _ICON_DEFAULTS["library"]
+    if style is None:
+        style = _ICON_DEFAULTS["style"]
+    if extension is None:
+        extension = _ICON_DEFAULTS["extension"]
+    if width is None:
+        width = _ICON_DEFAULTS["width"]
+    if height is None:
+        height = _ICON_DEFAULTS["height"]
+    if color is None:
+        color = _ICON_DEFAULTS["color"]
 
     path = get_icon_path(
         icon_name,
@@ -221,16 +262,14 @@ def get_pixmap(
     qpixmap = QIcon(path).pixmap(width, height)
     if color is not None:
         qpixmap = change_pixmap_color(qpixmap, color)
-    # else:
-    #     qpixmap = change_pixmap_color(qpixmap, "#b4b4b4")
     return qpixmap
 
 
 @lru_cache(maxsize=128)
 def get_icon(
     icon_name: str,
-    width: int = 48,
-    height: int = 48,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
     color: Optional[str] = None,
     library: Optional[str] = None,
     style: Optional[str] = None,
@@ -239,15 +278,13 @@ def get_icon(
     """Get a QIcon of the specified icon.
 
     Args:
-        icon_name (str): The name of the icon.
-        width (int, optional): The width of the pixmap. Defaults to 48.
-        height (int, optional): The height of the pixmap. Defaults to 48.
-        color (str, optional): The color to convert the pixmap to.
-            Defaults to `None`.
-        library (str, optional): The library of the icon. Defaults to `None`.
-        style (str, optional): The style of the icon. Defaults to `None`.
-        extension (str, optional): The extension of the icon.
-            Defaults to `None`.
+        icon_name: The name of the icon.
+        width: The width of the pixmap. Defaults to `None`.
+        height: The height of the pixmap. Defaults to `None`.
+        color: The color to convert the pixmap to. Defaults to `None`.
+        library: The library of the icon. Defaults to `None`.
+        style: The style of the icon. Defaults to `None`.
+        extension: The extension of the icon. Defaults to `None`.
 
     Returns:
         QIcon: The QIcon of the icon.
@@ -260,69 +297,3 @@ def get_icon(
         icon_name, width, height, color, library, style, extension
     )
     return QIcon(qpixmap)
-
-
-def _main():
-    """Display a window with all built-in icons."""
-
-    class _FXBuiltInIcons(QWidget):
-        def __init__(self, parent=None):
-            super().__init__(parent)
-
-            icons = sorted(
-                [attr for attr in dir(QStyle) if attr.startswith("SP_")]
-            )
-            layout = QGridLayout()
-
-            for number, name in enumerate(icons):
-                button = QPushButton(name)
-                pixmap = getattr(QStyle, name)
-                icon = self.style().standardIcon(pixmap)
-                button.setIcon(icon)
-                button.setFixedSize(250, 25)
-                button.clicked.connect(self.create_callback(name))
-                layout.addWidget(button, number / 4, number % 4)
-
-            self.setLayout(layout)
-
-        def copy_to_clipboard(self, name: str):
-            """Copy the given name to the clipboard.
-
-            Args:
-                name (str): The name to copy.
-            """
-
-            clipboard = QGuiApplication.clipboard()
-            # clipboard.setText(f'QStyle.{name}: ("___", "white"),')
-            clipboard.setText(name)
-
-        def create_callback(self, name: str) -> Callable[[bool], None]:
-            """Create a callback function for a button click.
-
-            Args:
-                name (str): The name of the icon that will be copied to the
-                    clipboard when the button is clicked.
-
-            Returns:
-                Callable[[bool], None]: A lambda function that takes a boolean
-                    argument (indicating whether the button is checked) and
-                    calls the `copy_to_clipboard` method with the given name as
-                    an argument.
-            """
-
-            return lambda checked: self.copy_to_clipboard(name)
-
-    application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow()
-    widget = _FXBuiltInIcons(parent=window)
-    window.set_banner_text("Built-in Icons")
-    window.setCentralWidget(widget)
-    window.menu_bar.hide()
-    window.toolbar.hide()
-    window.setWindowTitle("Built-in Icons")
-    window.show()
-    application.exec_()
-
-
-if __name__ == "__main__":
-    _main()

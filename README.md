@@ -61,10 +61,23 @@ Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DC
 <!-- INSTALLATION -->
 ## Installation
 
-The package is available on [PyPI](https://pypi.org/project/fxgui).
+The package is available on [PyPI](https://pypi.org/project/fxgui) and can be installed via `pip`:
+
 
 ``` shell
-pip install fxgui
+python -m pip install fxgui
+```
+
+The repository contains submodules, so make sure to clone the repository with the `--recurse-submodules` flag:
+
+``` shell
+git clone --recurse-submodules https://github.com/healkeiser/fxgui
+```
+
+Or, if you already cloned the repository, you can initialize the submodules with:
+
+``` shell
+git submodule update --init --recursive
 ```
 
 > [!IMPORTANT]
