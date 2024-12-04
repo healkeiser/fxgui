@@ -127,6 +127,79 @@ application.exec_()
 !!! warning
     Applying the `FXProxyStyle` is only allowed on a `QApplication` instance! So if you're instantiating a `FXMainWindow` inside a parent DCC, **do not** set the style on it.
 
+## fxicons
+
+[fxicons](docs/fxicons.md) is a module that provides a way to use library icons in your applications. It comes with 4 libraries by default: "material", "fontawesome", "dcc", and "beacon". You can add your own libraries by using the `add_library` function. You can use it like this:
+
+```python
+from pathlib import Path
+from fxgui import fxicons
+
+# Add the houdini library
+fxicons.add_library(
+    library="houdini",
+    pattern="{root}/{library}/{style}/{icon_name}.{extension}",
+    defaults={
+        "extension": "svg",
+        "style": "CROWDS",
+        "color": None,
+        "width": 48,
+        "height": 48,
+    },
+    root=str(Path.home() / "Pictures" / "Icons"),
+)
+
+# Set the houdini library as the default
+fxicons.set_default_icon_library(library="houdini")
+
+# Override the defaults for the houdini library
+fxicons.set_icon_defaults(apply_to="houdini", color="red")
+
+# Apply the icon to a button
+button = QPushButton()
+button.setIcon(fxicons.get_icon("crowd"))
+```
+
+If you don't set a new default library, the `fxicons` module will use the "material" library as default. You can also precise the library you want to use when calling the `get_icon` function:
+
+```python
+from fxgui import fxicons
+
+icon = fxicons.get_icon("crowd", library="houdini")
+```
+
+If no argument `apply_to` is given to `set_icon_defaults`, it will apply to all libraries.
+
+```python
+from fxgui import fxicons
+
+# Set all icons to be red and 32x32
+fxicons.set_icon_defaults(color="red", width=32, height=32)
+```
+
+Arguments set on the `get_icon` function will override the defaults set by `set_icon_defaults`:
+
+```python
+from fxgui import fxicons
+
+# Set all icons to be red and 32x32
+fxicons.set_icon_defaults(color="red", width=32, height=32)
+
+# Get a blue icon
+icon = fxicons.get_icon("home", color="blue")
+```
+
+You can also superpose as many icons as you want:
+
+```python
+from fxgui import fxicons
+
+icon_a = fxicons.get_icon("home")
+icon_b = fxicons.get_icon("add")
+icon_c = fxicons.get_icon("settings", color="red")
+icon = fxicons.superpose_icons(icon_a, icon_b, icon_c)
+```
+
 ## QtAwesome
 
 `fxgui` comes bundled with [QtAwesome](https://qtawesome.readthedocs.io/en/latest/index.html), so you can use something like:
@@ -159,3 +232,6 @@ button_ctitical.setIcon(spin_icon)
 window.show()
 application.exec_()
 ```
+
+!!! warning
+    The `QtAwesome` package doesn't work properly within Houdini, so you should use the `fxicons` module instead.

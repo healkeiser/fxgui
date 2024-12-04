@@ -1,11 +1,10 @@
-"""This module provides functionality for handling icons in a VFX
-application.
-"""
+"""This module provides functionality for handling icons."""
 
 # Built-in
-from typing import Optional, List
-from pathlib import Path
 from functools import lru_cache
+from pathlib import Path
+import re
+from typing import Dict, List, Optional
 
 # Third-party
 from qtpy.QtGui import (
@@ -15,20 +14,32 @@ from qtpy.QtGui import (
     QPixmap,
     QBitmap,
 )
-from qtpy.QtCore import Qt, qVersion
+from qtpy.QtCore import Qt
 
 
 # Constants
 _LIBRARIES_ROOT = Path(__file__).parent / "icons"
-_DEFAULT_LIBRARY = "material"
 
 # Globals
-_LIBRARIES_INFO = {
-    "dcc": {
-        "pattern": "{root}/{library}/{icon_name}.{extension}",
+_libraries_info = {
+    "beacon": {
+        "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
         "defaults": {
             "extension": "svg",
             "style": None,
+            "color": None,
+            "width": 48,
+            "height": 48,
+        },
+    },
+    "dcc": {
+        "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
+        "defaults": {
+            "extension": "svg",
+            "style": None,
+            "color": None,
+            "width": 48,
+            "height": 48,
         },
     },
     "material": {
@@ -36,45 +47,137 @@ _LIBRARIES_INFO = {
         "defaults": {
             "extension": "svg",
             "style": "round",
+            "color": "#B4B4B4",
+            "width": 48,
+            "height": 48,
         },
     },
     "fontawesome": {
         "pattern": "{root}/{library}/{extension}s/{style}/{icon_name}.{extension}",
         "defaults": {
             "extension": "svg",
-            "style": "regular",
+            "style": "solid",
+            "color": "#B4B4B4",
+            "width": 48,
+            "height": 48,
         },
     },
 }
-_ICON_DEFAULTS = {
-    # Attributes
-    "color": "#b4b4b4",
-    "width": 12,
-    "height": 12,
-    # Library
-    "library": _DEFAULT_LIBRARY,
-    "style": _LIBRARIES_INFO[_DEFAULT_LIBRARY]["defaults"]["style"],
-    "extension": _LIBRARIES_INFO[_DEFAULT_LIBRARY]["defaults"]["extension"],
-}
+_default_library = "material"
 
 
-def set_icon_defaults(**kwargs):
+def set_default_icon_library(library: str):
+    """Set the default icon library.
+
+    Args:
+        library: The name of the library to set as default.
+
+    Raises:
+        ValueError: If the library does not exist.
+    """
+
+    global _default_library
+    if library not in _libraries_info:
+        raise ValueError(f"Library '{library}' does not exist.")
+    _default_library = library
+
+
+def set_icon_defaults(apply_to: Optional[str] = None, **kwargs):
     """Set the default values for the icons.
 
     Args:
+        apply_to: The library to apply the defaults to. If set to `None`, the
+            defaults will be applied to all libraries. Defaults to `None`.
         **kwargs: The default values to set.
 
     Examples:
         >>> set_icon_defaults(color="red", width=32, height=32)
+        >>> set_icon_defaults(apply_to="material", color="blue")
     """
 
-    valid_keys = _ICON_DEFAULTS.keys()
+    valid_keys = _libraries_info[_default_library]["defaults"].keys()
     if not all(key in valid_keys for key in kwargs.keys()):
         raise ValueError(f"Invalid key in {kwargs.keys()}.")
 
-    for key, value in kwargs.items():
-        if key in _ICON_DEFAULTS:
-            _ICON_DEFAULTS[key] = value
+    if apply_to is None:
+        # Apply to all libraries
+        for library_info in _libraries_info.values():
+            for key, value in kwargs.items():
+                library_info["defaults"][key] = value
+    else:
+        # Apply to specific library
+        if apply_to not in _libraries_info:
+            raise ValueError(f"Library '{apply_to}' does not exist.")
+        for key, value in kwargs.items():
+            _libraries_info[apply_to]["defaults"][key] = value
+
+
+def add_library(
+    library: str, pattern: str, defaults: Dict, root: Optional[Path] = None
+):
+    """Add a new icon library to the available libraries.
+
+    Args:
+        library: The name of the library.
+        pattern: The pattern to use for the library. Valid placeholders are:
+            - `{root}`: The root path for the library.
+            - `{library}`: The name of the library.
+            - `{style}`: The style of the icon.
+            - `{icon_name}`: The name of the icon.
+            - `{extension}`: The extension of the icon.
+        defaults: The default values for the library.
+        root: The root path for the library. Defaults to `_LIBRARIES_ROOT`.
+
+    Examples:
+        >>> add_library(
+        ...    library="houdini",
+        ...    pattern="{root}/{library}/{style}/{icon_name}.{extension}",
+        ...    defaults={
+        ...        "extension": "svg",
+        ...        "style": "CROWDS",
+        ...        "color": None,
+        ...        "width": 48,
+        ...        "height": 48,
+        ...    },
+        ...    root=str(Path.home() / "OneDrive" / "Pictures" / "Icons"),
+        ... )
+    """
+
+    valid_keys = _libraries_info[_default_library]["defaults"].keys()
+    if not all(key in valid_keys for key in defaults.keys()):
+        raise ValueError(f"Invalid key(s) in defaults: {defaults.keys()}")
+
+    valid_placeholders = {
+        "{root}",
+        "{library}",
+        "{style}",
+        "{icon_name}",
+        "{extension}",
+    }
+    placeholders = set(re.findall(r"\{[a-zA-Z_]+\}", pattern))
+    if not placeholders.issubset(valid_placeholders):
+        raise ValueError(f"Invalid placeholder(s) in pattern: {placeholders}")
+    if root is None:
+        root = _LIBRARIES_ROOT
+
+    _libraries_info[library] = {
+        "pattern": pattern,
+        "defaults": defaults,
+        "root": root,
+    }
+
+
+def get_available_libraries() -> List[str]:
+    """Get all available icon libraries.
+
+    Returns:
+        List[str]: The available icon libraries.
+
+    Examples:
+        >>> print(get_available_libraries())
+        ["beacon", "dcc", "material"]
+    """
+    return list(_libraries_info.keys())
 
 
 def get_available_icons_in_library(library: str) -> List[str]:
@@ -94,7 +197,6 @@ def get_available_icons_in_library(library: str) -> List[str]:
         >>> print(get_available_icons_in_library("dcc"))
         ["3d_equalizer", "adobe_photoshop", "blender", "hiero"]
     """
-
     library_path = _LIBRARIES_ROOT / library
     if not library_path.exists():
         raise ValueError(f"Library '{library}' does not exist.")
@@ -113,7 +215,6 @@ def get_icon_path(
     library: Optional[str] = None,
     style: Optional[str] = None,
     extension: Optional[str] = None,
-    verify: bool = True,
 ) -> str:
     """Get the path of the specified icon.
 
@@ -122,7 +223,6 @@ def get_icon_path(
         library: The library of the icon. Defaults to `None`.
         style: The style of the icon. Defaults to `None`.
         extension: The extension of the icon. Defaults to `None`.
-        verify: Whether to verify if the icon exists. Defaults to `True`.
 
     Raises:
         FileNotFoundError: If verify is `True` and the icon does not exist.
@@ -130,24 +230,24 @@ def get_icon_path(
     Returns:
         str: The path of the icon.
     """
-
     if library is None:
-        library = _DEFAULT_LIBRARY
+        library = _default_library
     if style is None:
-        style = _LIBRARIES_INFO[library]["defaults"].get("style")
+        style = _libraries_info[library]["defaults"].get("style")
     if extension is None:
-        extension = _LIBRARIES_INFO[library]["defaults"].get("extension")
+        extension = _libraries_info[library]["defaults"].get("extension")
 
-    pattern = _LIBRARIES_INFO[library]["pattern"]
+    root = _libraries_info[library].get("root", _LIBRARIES_ROOT)
+    pattern = _libraries_info[library]["pattern"]
     path = pattern.format(
         icon_name=icon_name,
         style=style,
         library=library,
         extension=extension,
-        root=_LIBRARIES_ROOT,
+        root=root,
     ).replace("\\", "/")
 
-    if verify and not Path(path).exists():
+    if not Path(path).exists():
         raise FileNotFoundError(f"Icon path '{path}' does not exist.")
 
     return path
@@ -162,7 +262,6 @@ def has_transparency(mask: QBitmap) -> bool:
     Returns:
         bool: `True` if the mask has transparency, `False` otherwise.
     """
-
     image = mask.toImage()
     size = mask.size()
     return any(
@@ -182,33 +281,20 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     Returns:
         QPixmap: The pixmap with the new color applied.
     """
-
     mask = pixmap.createMaskFromColor(Qt.transparent)
     if not has_transparency(mask):
         return pixmap
 
     qcolor = QColor(color)
-    if qVersion() < "4.8.0":
-        pixmap.fill(qcolor)
-        pixmap.setMask(mask)
-        return pixmap
-
-    if qVersion() < "5.6.0":
-        painter = QPainter(pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-        painter.setPen(qcolor)
-        painter.drawPixmap(pixmap.rect(), mask, mask.rect())
-        painter.end()
-        return pixmap
-
     qpixmap = pixmap.toImage()
+
     for y in range(qpixmap.height()):
         for x in range(qpixmap.width()):
             alpha = qpixmap.pixelColor(x, y).alpha()
             qcolor.setAlpha(alpha)
             qpixmap.setPixelColor(x, y, qcolor)
-    pixmap = QPixmap().fromImage(qpixmap)
-    return pixmap
+
+    return QPixmap.fromImage(qpixmap)
 
 
 @lru_cache(maxsize=128)
@@ -238,26 +324,23 @@ def get_pixmap(
     Examples:
         >>> get_pixmap("add", color="red")
     """
-
     if library is None:
-        library = _ICON_DEFAULTS["library"]
-    if style is None:
-        style = _ICON_DEFAULTS["style"]
-    if extension is None:
-        extension = _ICON_DEFAULTS["extension"]
+        library = _default_library
+
+    defaults = _libraries_info[library]["defaults"]
+
     if width is None:
-        width = _ICON_DEFAULTS["width"]
+        width = defaults["width"]
     if height is None:
-        height = _ICON_DEFAULTS["height"]
+        height = defaults["height"]
     if color is None:
-        color = _ICON_DEFAULTS["color"]
+        color = defaults["color"]
 
     path = get_icon_path(
         icon_name,
         library=library,
         style=style,
         extension=extension,
-        verify=True,
     )
     qpixmap = QIcon(path).pixmap(width, height)
     if color is not None:
@@ -292,8 +375,38 @@ def get_icon(
     Examples:
         >>> get_icon("add", color="red")
     """
-
     qpixmap = get_pixmap(
         icon_name, width, height, color, library, style, extension
     )
     return QIcon(qpixmap)
+
+
+def superpose_icons(*icons: QIcon) -> QIcon:
+    """Superpose multiple icons.
+
+    Args:
+        *icons: Icons to superpose. Add the icons in the order you want them
+            to be superposed, from background to foreground.
+
+    Returns:
+        QIcon: The QIcon of the superposed icons.
+
+    Notes:
+        The size of the resulting icon is the size of the first icon.
+    """
+    if not icons:
+        return QIcon()
+
+    # Use the size of the first icon
+    size = icons[0].availableSizes()[0]
+    pixmap = QPixmap(size)
+    pixmap.fill(Qt.transparent)
+
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.Antialiasing)
+    for icon in icons:
+        icon_pixmap = icon.pixmap(size)
+        painter.drawPixmap(0, 0, icon_pixmap)
+    painter.end()
+
+    return QIcon(pixmap)
