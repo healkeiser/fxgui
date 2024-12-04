@@ -124,7 +124,6 @@ nav:
   - Installation: installation.md
   - How-to: how_to.md
   - Technical:
-      - fxconstants: fxconstants.md
       - fxdcc: fxdcc.md
       - fxicons: fxicons.md
       - fxstyle: fxstyle.md

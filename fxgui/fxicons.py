@@ -16,9 +16,11 @@ from qtpy.QtGui import (
 )
 from qtpy.QtCore import Qt
 
+# Internal
+from fxgui import fxconstants
 
 # Constants
-_LIBRARIES_ROOT = Path(__file__).parent / "icons"
+_LIBRARIES_ROOT = fxconstants.ICONS_ROOT
 
 # Globals
 _libraries_info = {
