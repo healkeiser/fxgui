@@ -1,6 +1,3 @@
-[submodule "fxgui/icons/libraries/material-icons"]
-path = fxgui/icons/libraries/material-icons
-url = https://github.com/material-icons/material-icons.git
 [submodule "fxgui/icons/material"]
 	path = fxgui/icons/material
 	url = https://github.com/healkeiser/material_icons
