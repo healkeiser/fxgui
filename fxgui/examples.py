@@ -28,9 +28,11 @@ from qtpy.QtWidgets import (
 from qtpy.QtUiTools import QUiLoader
 from qtpy.QtCore import Qt, QTimer, QSize, QPoint
 from qtpy.QtGui import QColor, QIcon
+from requests import get
 
 # Internal
 from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
+from fxgui.fxicons import get_icon
 
 
 # Constants
@@ -252,50 +254,48 @@ def get_colors() -> Dict[str, Tuple[QColor, QColor, QColor, QIcon, bool]]:
         border_color, text_icon_color, icon, color_icon)`.
     """
 
-    icon_path = Path(__file__).parent / "icons" / "dcc"
-
     # Background, border, text/icon, icon
     colors = {
         "blender": (
             QColor("#5a2c13"),
             QColor("#a65123"),
             QColor("#b4b4b4"),
-            QIcon(str(icon_path / "blender.svg")),
+            get_icon("blender", library="dcc"),
             False,
         ),
         "maya": (
             QColor("#203e4c"),
             QColor("#407c98"),
             QColor("#b4b4b4"),
-            QIcon(str(icon_path / "maya.svg")),
+            get_icon("maya", library="dcc"),
             False,
         ),
         "exr": (
             QColor("#541431"),
             QColor("#891720"),
             QColor("#b4b4b4"),
-            QIcon(str(icon_path / "open_exr.svg")),
+            get_icon("open_exr", library="dcc"),
             False,
         ),
         "usd": (
             QColor("#203e4c"),
             QColor("#407c98"),
             QColor("#b4b4b4"),
-            QIcon(str(icon_path / "usd.svg")),
+            get_icon("usd", library="dcc"),
             False,
         ),
         "houdini": (
             QColor("#5a2c13"),
             QColor("#a65123"),
             QColor("#b4b4b4"),
-            QIcon(str(icon_path / "houdini.svg")),
+            get_icon("houdini", library="dcc"),
             False,
         ),
         "nuke": (
             QColor("#181a1b"),
             QColor("#5c6367"),
             QColor("#b4b4b4"),
-            QIcon(str(icon_path / "nuke.svg")),
+            get_icon("nuke", library="dcc"),
             False,
         ),
     }
@@ -405,11 +405,11 @@ def set_button_icons(window: fxwidgets.FXMainWindow) -> None:
     style = window.style()
     colors = fxstyle.load_colors_from_jsonc()
     button_icons = {
-        window.ui.button_debug: qta.icon(
-            "mdi.bug", color=colors["feedback"]["debug"]["light"]
+        window.ui.button_debug: get_icon(
+            "bug_report", color=colors["feedback"]["debug"]["light"]
         ),
-        window.ui.button_success: qta.icon(
-            "mdi.check-circle", color=colors["feedback"]["success"]["light"]
+        window.ui.button_success: get_icon(
+            "check_circle", color=colors["feedback"]["success"]["light"]
         ),
         window.ui.button_info: style.standardIcon(
             QStyle.SP_MessageBoxInformation
@@ -417,8 +417,8 @@ def set_button_icons(window: fxwidgets.FXMainWindow) -> None:
         window.ui.button_warning: style.standardIcon(
             QStyle.SP_MessageBoxWarning
         ),
-        window.ui.button_error: qta.icon(
-            "mdi.alert", color=colors["feedback"]["error"]["light"]
+        window.ui.button_error: get_icon(
+            "error", color=colors["feedback"]["error"]["light"]
         ),
         window.ui.button_critical: style.standardIcon(
             QStyle.SP_MessageBoxCritical
@@ -473,18 +473,16 @@ def show_context_menu(tree: QTreeWidget, position: QPoint) -> None:
 
     # Actions
     ac_show_in_explorer = menu.addAction("Show in Explorer")
-    ac_show_in_explorer.setIcon(qta.icon("mdi.folder-open"))
+    ac_show_in_explorer.setIcon(get_icon("folder_open"))
 
     copy_submenu = menu.addMenu("Copy Path to Clipboard")
-    copy_submenu.setIcon(qta.icon("mdi.content-copy"))
+    copy_submenu.setIcon(get_icon("content_copy"))
 
     ac_copy_default = copy_submenu.addAction("Default")
-    ac_copy_default.setIcon(qta.icon("mdi.content-copy"))
+    ac_copy_default.setIcon(get_icon("content_copy"))
 
     ac_copy_houdini = copy_submenu.addAction("Houdini")
-    ac_copy_houdini.setIcon(
-        QIcon(str(Path(__file__).parent / "icons" / "dcc" / "houdini.svg"))
-    )
+    ac_copy_houdini.setIcon(get_icon("houdini", library="dcc"))
 
     # Show the context menu
     menu.exec_(tree.viewport().mapToGlobal(position))
