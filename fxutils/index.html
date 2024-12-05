@@ -563,15 +563,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fxgui.fxutils.convert_qicon_to_qpixmap" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;convert_qicon_to_qpixmap
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#fxgui.fxutils.create_action" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;create_action
@@ -711,15 +702,6 @@
   <a href="#fxgui.fxutils.add_shadows" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;add_shadows
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#fxgui.fxutils.convert_qicon_to_qpixmap" class="md-nav__link">
-    <span class="md-ellipsis">
-      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;convert_qicon_to_qpixmap
     </span>
   </a>
   
@@ -950,105 +932,6 @@
 <p><span class="doc-section-title">Examples:</span></p>
     <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Apply shadows to `self.top_toolbar` widget</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">add_shadows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_toolbar</span><span class="p">,</span> <span class="s2">&quot;#212121&quot;</span><span class="p">)</span>
-</code></pre></div>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h2 id="fxgui.fxutils.convert_qicon_to_qpixmap" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">convert_qicon_to_qpixmap</span>
-
-
-</h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">convert_qicon_to_qpixmap</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">icon</span><span class="p">:</span> <span class="n"><span title="qtpy.QtGui.QIcon">QIcon</span></span><span class="p">,</span> <span class="n">desired_size</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="qtpy.QtCore.QSize">QSize</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="qtpy.QtGui.QPixmap">QPixmap</span></span><span class="p">]</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-      <p>Converts a QIcon to a QPixmap.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td><code>icon</code></td>
-            <td>
-                  <code><span title="qtpy.QtGui.QIcon">QIcon</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The QIcon to convert.</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td><code>desired_size</code></td>
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="qtpy.QtCore.QSize">QSize</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The desired size for the pixmap (QSize). If <code>None</code>,
-the "best" available size will be used.</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-<th>Name</th>          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-<td><code>QPixmap</code></td>            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="qtpy.QtGui.QPixmap">QPixmap</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A QPixmap or <code>None</code> if no suitable pixmap is available.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-<p><span class="doc-section-title">Examples:</span></p>
-    <p>Let the size be decided</p>
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">icon</span> <span class="o">=</span> <span class="n">hou</span><span class="o">.</span><span class="n">qt</span><span class="o">.</span><span class="n">Icon</span><span class="p">(</span><span class="s2">&quot;MISC_python&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">pixmap</span> <span class="o">=</span> <span class="n">convert_qicon_to_qpixmap</span><span class="p">(</span><span class="n">icon</span><span class="p">)</span>
-</code></pre></div>
-    <p>Choose a size</p>
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">icon</span> <span class="o">=</span> <span class="n">hou</span><span class="o">.</span><span class="n">qt</span><span class="o">.</span><span class="n">Icon</span><span class="p">(</span><span class="s2">&quot;MISC_python&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">pixmap</span> <span class="o">=</span> <span class="n">convert_qicon_to_qpixmap</span><span class="p">(</span><span class="n">icon</span><span class="p">,</span> <span class="n">QSize</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">48</span><span class="p">))</span>
 </code></pre></div>
 
     </div>
