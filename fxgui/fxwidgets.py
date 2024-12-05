@@ -1639,7 +1639,7 @@ class FXMainWindow(QMainWindow):
         self.menu_bar.setNativeMenuBar(native_menu_bar)  # Mostly for macOS
 
         # Main menu
-        self.main_menu = self.menu_bar.addMenu("&File")
+        self.main_menu = self.menu_bar.addMenu("File")
         self.about_menu = self.main_menu.addAction(self.about_action)
         self.main_menu.addSeparator()
         self.check_updates_menu = self.main_menu.addAction(
@@ -1655,11 +1655,11 @@ class FXMainWindow(QMainWindow):
         self.close_menu = self.main_menu.addAction(self.close_action)
 
         # Edit menu
-        self.edit_menu = self.menu_bar.addMenu("&Edit")
+        self.edit_menu = self.menu_bar.addMenu("Edit")
         self.settings_menu = self.edit_menu.addAction(self.settings_action)
 
         # Window menu
-        self.window_menu = self.menu_bar.addMenu("&Window")
+        self.window_menu = self.menu_bar.addMenu("Window")
         self.minimize_menu = self.window_menu.addAction(
             self.minimize_window_action
         )
@@ -1673,7 +1673,7 @@ class FXMainWindow(QMainWindow):
         self.window_menu.addSeparator()
 
         # Help menu
-        self.help_menu = self.menu_bar.addMenu("&Help")
+        self.help_menu = self.menu_bar.addMenu("Help")
         self.open_documentation_menu = self.help_menu.addAction(
             self.open_documentation_action
         )
