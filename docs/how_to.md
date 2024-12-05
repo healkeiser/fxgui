@@ -127,9 +127,9 @@ application.exec_()
 !!! warning
     Applying the `FXProxyStyle` is only allowed on a `QApplication` instance! So if you're instantiating a `FXMainWindow` inside a parent DCC, **do not** set the style on it.
 
-## fxicons
+## Use `fxicons`
 
-[fxicons](docs/fxicons.md) is a module that provides a way to use library icons in your applications. It comes with 4 libraries by default: "material", "fontawesome", "dcc", and "beacon". You can add your own libraries by using the `add_library` function. You can use it like this:
+[fxicons](fxicons.md) is a module that provides a way to use library icons in your applications. It comes with 4 libraries by default: "material", "fontawesome", "dcc", and "beacon". You can add your own libraries by using the `add_library` function. You can use it like this:
 
 ```python
 from pathlib import Path
@@ -189,7 +189,7 @@ fxicons.set_icon_defaults(color="red", width=32, height=32)
 icon = fxicons.get_icon("home", color="blue")
 ```
 
-You can also superpose as many icons as you want:
+You can also superpose as many icons as you want, from backround to foreground:
 
 ```python
 from fxgui import fxicons

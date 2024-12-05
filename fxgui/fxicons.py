@@ -19,8 +19,6 @@ from qtpy.QtCore import Qt
 # Internal
 from fxgui import fxconstants
 
-# Constants
-_LIBRARIES_ROOT = fxconstants.ICONS_ROOT
 
 # Globals
 _libraries_info = {
@@ -76,6 +74,9 @@ def set_default_icon_library(library: str):
 
     Raises:
         ValueError: If the library does not exist.
+
+    Examples:
+        >>> set_default_icon_library("fontawesome")
     """
 
     global _default_library
@@ -128,7 +129,8 @@ def add_library(
             - `{icon_name}`: The name of the icon.
             - `{extension}`: The extension of the icon.
         defaults: The default values for the library.
-        root: The root path for the library. Defaults to `_LIBRARIES_ROOT`.
+        root: The root path for the library. Defaults to
+            `fxconstants.ICONS_ROOT`.
 
     Examples:
         >>> add_library(
@@ -141,14 +143,16 @@ def add_library(
         ...        "width": 48,
         ...        "height": 48,
         ...    },
-        ...    root=str(Path.home() / "OneDrive" / "Pictures" / "Icons"),
+        ...    root=str(Path.home() / "Pictures" / "Icons"),
         ... )
     """
 
+    # Check for valid keys in `defaults`
     valid_keys = _libraries_info[_default_library]["defaults"].keys()
     if not all(key in valid_keys for key in defaults.keys()):
         raise ValueError(f"Invalid key(s) in defaults: {defaults.keys()}")
 
+    # Check for valid placeholders in `pattern`
     valid_placeholders = {
         "{root}",
         "{library}",
@@ -160,8 +164,9 @@ def add_library(
     if not placeholders.issubset(valid_placeholders):
         raise ValueError(f"Invalid placeholder(s) in pattern: {placeholders}")
     if root is None:
-        root = _LIBRARIES_ROOT
+        root = fxconstants.ICONS_ROOT
 
+    # Add the library
     _libraries_info[library] = {
         "pattern": pattern,
         "defaults": defaults,
@@ -177,7 +182,7 @@ def get_available_libraries() -> List[str]:
 
     Examples:
         >>> print(get_available_libraries())
-        ["beacon", "dcc", "material"]
+        ["beacon", "dcc", "material", "fontawesome"]
     """
     return list(_libraries_info.keys())
 
@@ -199,7 +204,8 @@ def get_available_icons_in_library(library: str) -> List[str]:
         >>> print(get_available_icons_in_library("dcc"))
         ["3d_equalizer", "adobe_photoshop", "blender", "hiero"]
     """
-    library_path = _LIBRARIES_ROOT / library
+
+    library_path = fxconstants.ICONS_ROOT / library
     if not library_path.exists():
         raise ValueError(f"Library '{library}' does not exist.")
 
@@ -231,7 +237,12 @@ def get_icon_path(
 
     Returns:
         str: The path of the icon.
+
+    Examples:
+        >>> get_icon_path("add")
+        >>> get_icon_path("lemon", library="fontawesome")
     """
+
     if library is None:
         library = _default_library
     if style is None:
@@ -239,7 +250,7 @@ def get_icon_path(
     if extension is None:
         extension = _libraries_info[library]["defaults"].get("extension")
 
-    root = _libraries_info[library].get("root", _LIBRARIES_ROOT)
+    root = _libraries_info[library].get("root", fxconstants.ICONS_ROOT)
     pattern = _libraries_info[library]["pattern"]
     path = pattern.format(
         icon_name=icon_name,
@@ -264,6 +275,7 @@ def has_transparency(mask: QBitmap) -> bool:
     Returns:
         bool: `True` if the mask has transparency, `False` otherwise.
     """
+
     image = mask.toImage()
     size = mask.size()
     return any(
@@ -283,6 +295,7 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     Returns:
         QPixmap: The pixmap with the new color applied.
     """
+
     mask = pixmap.createMaskFromColor(Qt.transparent)
     if not has_transparency(mask):
         return pixmap
@@ -325,7 +338,9 @@ def get_pixmap(
 
     Examples:
         >>> get_pixmap("add", color="red")
+        >>> get_pixmap("lemon", library="fontawesome")
     """
+
     if library is None:
         library = _default_library
 
@@ -376,7 +391,9 @@ def get_icon(
 
     Examples:
         >>> get_icon("add", color="red")
+        >>> get_icon("lemon", library="fontawesome")
     """
+
     qpixmap = get_pixmap(
         icon_name, width, height, color, library, style, extension
     )
@@ -395,7 +412,13 @@ def superpose_icons(*icons: QIcon) -> QIcon:
 
     Notes:
         The size of the resulting icon is the size of the first icon.
+
+    Examples:
+        >>> icon_a = get_icon("add")
+        >>> icon_b = get_icon("lemon", library="fontawesome")
+        >>> superposed_icon = superpose_icons(icon_a, icon_b)
     """
+
     if not icons:
         return QIcon()
 
