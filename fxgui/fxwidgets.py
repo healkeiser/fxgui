@@ -8,7 +8,6 @@ from typing import Dict, Tuple, Optional
 from datetime import datetime
 from webbrowser import open_new_tab
 import re
-import time
 from urllib.parse import urlparse
 
 # Third-party
@@ -519,6 +518,7 @@ class FXColorLabelDelegate(QStyledItemDelegate):
 
 
 # ? Keeping for reference
+# TODO: Make it work with `QCollator`
 class _FXSortedTreeWidgetItem(QTreeWidgetItem):
     """Custom `QTreeWidgetItem` that provides natural sorting for strings
     containing numbers using QCollator for locale-aware sorting.
@@ -644,71 +644,11 @@ class FXApplication(QApplication):
 
 
 class FXSplashScreen(QSplashScreen):
-    """Customized QSplashScreen class.
+    """Customized QSplashScreen class."""
 
-    Args:
-        image_path (str): Path to the image to be displayed on the splash
-            screen.
-        icon (str, optional): Path to the icon to be displayed on the splash
-            screen.
-        title (str, optional): Title text to be displayed. Defaults to
-            `Untitled`.
-        information (str, optional): Information text to be displayed.
-            Defaults to a placeholder text.
-        show_progress_bar (bool, optional): Whether to display a progress bar.
-            Defaults to False.
-        project (str, optional): Project name. Defaults to `Project`.
-        version (str, optional): Version information. Defaults to `0.0.0`.
-        company (str, optional): Company name. Defaults to `Company`.
-        color_a (str, optional): Color A to be applied to the splash
-            screen. Defaults to `#649eff`.
-        color_b (str, optional): Color B to be applied to the splash
-            screen. Defaults to `#4188ff`.
-        fade_in (bool, optional): Whether to apply a fade-in effect on the
-            splash screen. Defaults to False.
-
-    Attributes:
-        pixmap (QPixmap): The image on the splash screen. Dewfaults to
-            `splash.png`.
-        icon (QIcon): The icon of the splash screen. Defaults to `favicon.png`.
-        title (str): Title text to be displayed. Defaults to `Untitled`.
-        information (str): Information text to be displayed. Defaults to a
-            placeholder Lorem Ipsum text.
-        show_progress_bar (bool): Whether to display a progress bar.
-            Defaults to `False`.
-        project (str): Project name. Defaults to `Project`.
-        version (str): Version information. Defaults to `v0.0.0`.
-        company (str): Company name. Defaults to `Company`.
-        color_a (str): Color A applied to the splash screen.
-        color_b (str): Color B applied to the splash screen.
-        fade_in (bool): Whether to apply a fade-in effect on the
-            splash screen. Defaults to `False`.
-        title_label (QLabel): Label for the title text.
-        info_label (QLabel): Label for the information text.
-        progress_bar (QProgressBar): Progress bar widget. Only created if
-            `show_progress_bar` is `True`.
-        copyright_label (QLabel): Label for the copyright information.
-        fade_timer (QTimer): Timer for the fade-in effect. Only created if
-            `fade_in` is `True`.
-
-    Examples:
-        >>> app = QApplication(sys.argv)
-        >>> splash = FXSplashScreen(
-        ...     image_path="path_to_your_image.png",
-        ...     title="My Awesome App",
-        ...     information="Loading...",
-        ...     show_progress_bar=True,
-        ...     project="Cool Project",
-        ...     version="v1.2.3",
-        ...     company="My Company Ltd.",
-        ...     fade_in=True,
-        ... )
-        >>> splash.progress(50)
-        >>> splash.show()
-        >>> splash.progress(100)
-        >>> splash.close()
-        >>> sys.exit(app.exec_())
-    """
+    ICON_HEIGHT = 32
+    IDEAL_WIDTH = 800
+    IDEAL_HEIGHT = 450
 
     def __init__(
         self,
@@ -723,18 +663,9 @@ class FXSplashScreen(QSplashScreen):
         color_a: str = fxstyle._COLOR_A_DEFAULT,
         color_b: str = fxstyle._COLOR_B_DEFAULT,
         fade_in: bool = False,
+        set_stylesheet: bool = True,
     ):
-        # Load the image using image_path and redirect as the original pixmap
-        # argument from `QSplashScreen`
-        if image_path is None:
-            image = os.path.join(
-                os.path.dirname(__file__), "images", "snap.png"
-            )
-        elif os.path.isfile(image_path):
-            image = self._resize_image(image_path)
-        else:
-            raise ValueError(f"Invalid image path: {image_path}")
-
+        image = self._load_image(image_path)
         super().__init__(image)
 
         # Attributes
@@ -742,13 +673,13 @@ class FXSplashScreen(QSplashScreen):
         self._default_icon = os.path.join(
             os.path.dirname(__file__), "icons", "favicon_light.png"
         )
-        self.icon: QIcon = icon
-        self.title: str = title
-        self.information: str = information
+        self.icon: QIcon = QIcon(icon) if icon else QIcon(self._default_icon)
+        self.title: str = title or "Untitled"
+        self.information: str = information or self._default_information()
         self.show_progress_bar: bool = show_progress_bar
-        self.project: str = project
-        self.version: str = version
-        self.company: str = company
+        self.project: str = project or "Project"
+        self.version: str = version or "0.0.0"
+        self.company: str = company or "Company"
         self.color_a: str = color_a
         self.color_b: str = color_b
         self.fade_in: bool = fade_in
@@ -757,54 +688,25 @@ class FXSplashScreen(QSplashScreen):
         self._grey_overlay()
 
         # Styling
-        self.setStyleSheet(fxstyle.load_stylesheet())
+        if set_stylesheet:
+            self.setStyleSheet(
+                fxstyle.load_stylesheet(
+                    color_a=self.color_a, color_b=self.color_b
+                )
+            )
 
-    def progress(self, value, max_range=100):
-        for value in range(max_range):
-            time.sleep(0.25)
-            self.progress_bar.setValue(value)
+    # Private methods
+    def _load_image(self, image_path: Optional[str]) -> QPixmap:
+        if image_path is None:
+            image_path = os.path.join(
+                os.path.dirname(__file__), "images", "snap.png"
+            )
+        elif not os.path.isfile(image_path):
+            raise ValueError(f"Invalid image path: {image_path}")
+        return self._resize_image(image_path)
 
-    def showMessage(self, message: str) -> None:
-        # Fake signal to trigger the `messageChanged` event
-        super().showMessage(" ")
-
-        self.message_label.setText(message)
-
-    # - Private methods
-
-    def _resize_image(
-        self, image_path: str, ideal_width: int = 800, ideal_height: int = 450
-    ) -> QPixmap:
-        pixmap = QPixmap(image_path)
-        width = pixmap.width()
-        height = pixmap.height()
-
-        aspect = width / float(height)
-        ideal_aspect = ideal_width / float(ideal_height)
-
-        if aspect > ideal_aspect:
-            # Then crop the left and right edges
-            new_width = int(ideal_aspect * height)
-            offset = (width - new_width) / 2
-            crop_rect = QRect(offset, 0, new_width, height)
-        else:
-            # Crop the top and bottom
-            new_height = int(width / ideal_aspect)
-            offset = (height - new_height) / 2
-            crop_rect = QRect(0, int(offset), width, new_height)
-
-        cropped_pixmap = pixmap.copy(crop_rect)
-        resized_pixmap = cropped_pixmap.scaled(
-            ideal_width,
-            ideal_height,
-            Qt.KeepAspectRatio,
-            Qt.SmoothTransformation,
-        )
-
-        return resized_pixmap
-
-    def _grey_overlay(self) -> None:
-        lorem_ipsum = (
+    def _default_information(self) -> str:
+        return (
             "At vero eos et accusamus et iusto odio dignissimos ducimus qui "
             "blanditiis praesentium voluptatum deleniti atque corrupti quos "
             "dolores et quas molestias excepturi sint occaecati cupiditate non "
@@ -820,34 +722,51 @@ class FXSplashScreen(QSplashScreen):
             "consequatur aut perferendis doloribus asperiores repellat."
         )
 
-        # Main QFrame
+    def _resize_image(self, image_path: str) -> QPixmap:
+        pixmap = QPixmap(image_path)
+        width = pixmap.width()
+        height = pixmap.height()
+
+        aspect = width / float(height)
+        ideal_aspect = self.IDEAL_WIDTH / float(self.IDEAL_HEIGHT)
+
+        if aspect > ideal_aspect:
+            new_width = int(ideal_aspect * height)
+            offset = (width - new_width) / 2
+            crop_rect = QRect(offset, 0, new_width, height)
+        else:
+            new_height = int(width / ideal_aspect)
+            offset = (height - new_height) / 2
+            crop_rect = QRect(0, int(offset), width, new_height)
+
+        cropped_pixmap = pixmap.copy(crop_rect)
+        resized_pixmap = cropped_pixmap.scaled(
+            self.IDEAL_WIDTH,
+            self.IDEAL_HEIGHT,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
+        )
+
+        return resized_pixmap
+
+    def _grey_overlay(self) -> None:
         frame = QFrame(self)
         frame.setGeometry(0, 0, self.pixmap.width() // 2, self.pixmap.height())
-        # frame.setStyleSheet("background-color: #232323; color: #f1f3f9;")
         fxutils.add_shadows(self, frame)
 
-        # Create a vertical layout for the QFrame
         layout = QVBoxLayout(frame)
         layout.setContentsMargins(50, 50, 50, 50)
 
-        # Icon QLabel
         self.icon_label = QLabel()
-        if self.icon:
-            pixmap = QPixmap(self.icon)
-        else:
-            pixmap = QPixmap(self._default_icon)
-
-        pixmap = pixmap.scaledToHeight(32, Qt.SmoothTransformation)
+        pixmap = QPixmap(self.icon.pixmap(self.ICON_HEIGHT))
         self.icon_label.setPixmap(pixmap)
 
-        # Title QLabel with a slightly bigger font and bold
-        self.title_label = QLabel(self.title if self.title else "Untitled")
+        self.title_label = QLabel(self.title)
         title_font = QFont()
         title_font.setBold(True)
         self.title_label.setFont(title_font)
         self.title_label.setStyleSheet("font-size: 18pt;")
 
-        # Horizontal layout for title and icon
         title_icon_layout = QHBoxLayout()
         title_icon_layout.addWidget(self.icon_label)
         title_icon_layout.addWidget(self.title_label)
@@ -855,54 +774,49 @@ class FXSplashScreen(QSplashScreen):
         title_icon_layout.addStretch()
         layout.addLayout(title_icon_layout)
 
-        # Spacer
-        spacer_a = QSpacerItem(
-            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        layout.addItem(
+            QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         )
-        layout.addItem(spacer_a)
 
-        # Information
-        self.info_label = QLabel(
-            self.information
-            if self.information is not None and len(self.information) >= 1
-            else lorem_ipsum
-        )
+        self.info_label = QLabel(self.information)
         self.info_label.setAlignment(Qt.AlignJustify)
         self.info_label.setWordWrap(True)
         self.info_label.setStyleSheet("font-size: 10pt;")
         layout.addWidget(self.info_label)
 
-        # Spacer
-        spacer_b = QSpacerItem(
-            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        layout.addItem(
+            QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         )
-        layout.addItem(spacer_b)
 
-        # Message
         self.message_label = QLabel("")
         self.message_label.setWordWrap(True)
         self.message_label.setAlignment(Qt.AlignLeft)
         self.message_label.setStyleSheet("font-size: 10pt;")
         layout.addWidget(self.message_label)
 
-        # Spacer
-        spacer_c = QSpacerItem(
-            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        layout.addItem(
+            QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         )
-        layout.addItem(spacer_c)
 
-        # Progress Bar
         if self.show_progress_bar:
             self.progress_bar = QProgressBar()
             layout.addWidget(self.progress_bar)
 
-        # Spacer
-        spacer_d = QSpacerItem(
-            20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding
+        layout.addItem(
+            QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         )
-        layout.addItem(spacer_d)
 
         # Copyright QLabel
+        self.copyright_label = QLabel(
+            f"{self.project} | {self.version} | {self.company}"
+        )
+        self.copyright_label.setStyleSheet(
+            "font-size: 8pt; qproperty-alignment: AlignBottom;"
+        )
+
+        layout.addWidget(self.copyright_label)
+
+    def _update_copyright_label(self) -> None:
         project = (
             self.project
             if self.project and len(self.project) >= 1
@@ -919,13 +833,7 @@ class FXSplashScreen(QSplashScreen):
             else "\u00A9 Company"
         )
 
-        self.copyright_label = QLabel(
-            f"{project} | {version} | \u00A9 {company}"
-        )
-        self.copyright_label.setStyleSheet(
-            "font-size: 8pt; qproperty-alignment: AlignBottom;"
-        )
-        layout.addWidget(self.copyright_label)
+        self.copyright_label.setText(f"{project} | {version} | {company}")
 
     def _fade_in(self) -> None:
         opaqueness = 0.0
@@ -945,12 +853,128 @@ class FXSplashScreen(QSplashScreen):
         self.fade_timer.timeout.connect(update_opacity)
         self.fade_timer.start(100)
 
-    # - Events
+    # Public methods
+    def set_progress(self, value, max_range=100):
+        """Set the progress value for the splash screen.
 
-    def mousePressEvent(self, event):
+        Args:
+            value: The progress value.
+            max_range: The maximum progress value. Defaults to `100`.
+        """
+
+        for value in range(max_range):
+            QApplication.processEvents()
+            self.progress_bar.setValue(value)
+
+    def set_pixmap(self, image_path: str) -> None:
+        """Set the pixmap for the splash screen.
+
+        Args:
+            image_path: The path to the image file.
+        """
+
+        self.pixmap = self._resize_image(image_path)
+        self.setPixmap(self.pixmap)
+
+    def set_icon(self, icon_path: str) -> None:
+        """Set the icon for the splash screen.
+
+        Args:
+            icon_path: The path to the icon file.
+        """
+
+        self.icon = QIcon(icon_path)
+        pixmap = QPixmap(icon_path).scaledToHeight(
+            self.ICON_HEIGHT, Qt.SmoothTransformation
+        )
+        self.icon_label.setPixmap(pixmap)
+
+    def set_title(self, title: str) -> None:
+        """Set the title for the splash screen.
+
+        Args:
+            title: The title string.
+        """
+
+        self.title = title
+        self.title_label.setText(title)
+
+    def set_information_text(self, information: str) -> None:
+        """Set the information text for the splash screen.
+
+        Args:
+            information: The information text.
+        """
+
+        self.information = information
+        self.info_label.setText(information)
+
+    def toggle_progress_bar_visibility(self, show: bool) -> None:
+        """Toggle the visibility of the progress bar.
+
+        Args:
+            show: Whether to show the progress bar.
+        """
+
+        self.show_progress_bar = show
+        self.progress_bar.setVisible(show)
+
+    def set_project_label(self, project: str) -> None:
+        """Set the project name for the splash screen.
+
+        Args:
+            project: The project name.
+        """
+
+        self.project = project
+        self._update_copyright_label()
+
+    def set_version_label(self, version: str) -> None:
+        """Set the version information for the splash screen.
+
+        Args:
+            version: The version string.
+        """
+
+        self.version = version
+        self._update_copyright_label()
+
+    def set_company_label(self, company: str) -> None:
+        """Set the company name for the splash screen.
+
+        Args:
+            company: The company name.
+        """
+
+        self.company = company
+        self._update_copyright_label()
+
+    def toggle_fade_in(self, fade_in: bool) -> None:
+        """Toggle the fade-in effect for the splash screen.
+
+        Args:
+            fade_in: Whether to fade in the splash screen.
+        """
+
+        self.fade_in = fade_in
+
+    def set_colors(self, color_a: str, color_b: str) -> None:
+        """Set the color scheme for the splash screen.
+
+        Args:
+            color_a: The primary color.
+            color_b: The secondary color.
+        """
+
+        self.color_a = color_a
+        self.color_b = color_b
+        self.setStyleSheet(
+            fxstyle.load_stylesheet(color_a=color_a, color_b=color_b)
+        )
+
+    # Events
+    def mousePressEvent(self, _):
         pass
-        # self.close()
-        # self.setParent(None)
 
     def showEvent(self, event):
         if self.fade_in:
@@ -1431,8 +1455,7 @@ class FXMainWindow(QMainWindow):
                 )
             )
 
-    # - Private methods
-
+    # Private methods
     def _load_ui(self) -> None:
         """Loads the UI from the specified UI file and sets it as the central
         widget of the main window.
@@ -1976,8 +1999,7 @@ class FXMainWindow(QMainWindow):
             format_string = "%Y-%m-%d " + format_string
         return datetime.now().strftime(format_string)
 
-    # - Public methods (Overrides)
-
+    # Overrides
     def statusBar(self) -> FXStatusBar:
         """Returns the FXStatusBar instance associated with this window.
 
@@ -2030,8 +2052,7 @@ class FXMainWindow(QMainWindow):
         title = f"{title if title else 'Window'}"
         super().setWindowTitle(title)
 
-    # - Public methods
-
+    # Public methods
     def set_colors(self, color_a: str, color_b: str) -> None:
         """Sets the accent color of the window.
 
@@ -2115,8 +2136,7 @@ class FXMainWindow(QMainWindow):
 
         self.statusBar().version_label.setText(version)
 
-    # - Events
-
+    # Events
     def closeEvent(self, event) -> None:
         self.setParent(None)
 
@@ -2140,8 +2160,7 @@ class FXWidget(QWidget):
         # Styling
         self.setStyleSheet(fxstyle.load_stylesheet())
 
-    # - Private methods
-
+    # Private methods
     def _load_ui(self) -> None:
         """Loads the UI from the specified UI file and sets it as the central
         widget of the main window.
@@ -2253,8 +2272,7 @@ class FXFloatingDialog(QDialog):
         else:
             pass
 
-    # - Private methods
-
+    # Private methods
     def _setup_title(self):
         """_summary_
 
@@ -2319,8 +2337,7 @@ class FXFloatingDialog(QDialog):
         self.button_box.rejected.connect(self.reject)
         self.button_box.rejected.connect(self.close)  # TODO: Check if needed
 
-    # - Public methods
-
+    # Public methods
     def set_dialog_icon(self, icon: Optional[QPixmap] = None) -> None:
         """Sets the dialog's icon.
 
@@ -2354,8 +2371,7 @@ class FXFloatingDialog(QDialog):
         self.move(*self.dialog_position)
         return self.exec_()
 
-    # - Events
-
+    # Events
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Closes the dialog when any mouse button except the right one is pressed.
 
@@ -2426,8 +2442,7 @@ class FXSystemTray(QObject):
         self._create_menu()
         self._handle_connections()
 
-    # - Private methods
-
+    # Private methods
     def _create_actions(self) -> None:
         """Creates the actions for the window.
 
@@ -2459,8 +2474,7 @@ class FXSystemTray(QObject):
         # Left-click
         self.tray_icon.activated.connect(self.on_tray_icon_activated)
 
-    # - Public methods
-
+    # Public methods
     def show(self):
         """Shows the system tray icon."""
 

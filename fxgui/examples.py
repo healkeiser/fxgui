@@ -260,42 +260,42 @@ def get_colors() -> Dict[str, Tuple[QColor, QColor, QColor, QIcon, bool]]:
         "blender": (
             QColor("#5a2c13"),
             QColor("#a65123"),
-            QColor("#b4b4b4"),
+            QColor("#ffffff"),
             get_icon("blender", library="dcc"),
             False,
         ),
         "maya": (
             QColor("#203e4c"),
             QColor("#407c98"),
-            QColor("#b4b4b4"),
+            QColor("#ffffff"),
             get_icon("maya", library="dcc"),
             False,
         ),
         "exr": (
             QColor("#541431"),
             QColor("#891720"),
-            QColor("#b4b4b4"),
+            QColor("#ffffff"),
             get_icon("open_exr", library="dcc"),
             False,
         ),
         "usd": (
             QColor("#203e4c"),
             QColor("#407c98"),
-            QColor("#b4b4b4"),
+            QColor("#ffffff"),
             get_icon("usd", library="dcc"),
             False,
         ),
         "houdini": (
             QColor("#5a2c13"),
             QColor("#a65123"),
-            QColor("#b4b4b4"),
+            QColor("#ffffff"),
             get_icon("houdini", library="dcc"),
             False,
         ),
         "nuke": (
             QColor("#181a1b"),
             QColor("#5c6367"),
-            QColor("#b4b4b4"),
+            QColor("#ffffff"),
             get_icon("nuke", library="dcc"),
             False,
         ),
@@ -311,7 +311,12 @@ def show_splash_screen() -> fxwidgets.FXSplashScreen:
     """
 
     splashscreen = fxwidgets.FXSplashScreen(
-        image_path=str(_pixmap), fade_in=False, show_progress_bar=True
+        image_path=str(_pixmap),
+        fade_in=False,
+        show_progress_bar=True,
+        project="fxgui",
+        version="0.1.0",
+        company="\u00A9 Valentin Beaumont",
     )
     splashscreen.show()
     return splashscreen
@@ -530,18 +535,6 @@ def setup_tree_widget(window: fxwidgets.FXMainWindow) -> None:
         lambda pos: show_context_menu(window.ui.treeWidget, pos)
     )
 
-    # Add child items with numbers
-    items = [
-        "something1",
-        "something9",
-        "something17",
-        "something25",
-        "something025",
-    ]
-    for item in items:
-        child = fxwidgets.FXSortedTreeWidgetItem([item])
-        root.addChild(child)
-
 
 def setup_list_widget(window: fxwidgets.FXMainWindow) -> None:
     """Setup the list widget with a custom delegate.
@@ -627,8 +620,12 @@ def main(show_delayed: bool = False):
 
     # Initialize main window
     window = fxwidgets.FXMainWindow(
-        project="fxgui", version="0.1.0", ui_file=str(_ui_file)
+        project="fxgui",
+        version="0.1.0",
+        company="\u00A9 Valentin Beaumont",
+        ui_file=str(_ui_file),
     )
+    window.set_banner_text("Example")
 
     # Show splash screen
     splashscreen = show_splash_screen()

@@ -114,11 +114,10 @@ Please read the full documentation [here](https://healkeiser.github.io/fxgui/).
 <!-- SCREENSHOTS -->
 ## Screenshots
 <p align="center">
-  <img width="500" src="docs/images/python_VM5AKCiXqn.png">
-</p>
-
-<p align="center">
-  <img width="500" src="docs/images/python_neD4vSUmit.png">
+  <img width="500" src="docs/images/python_yFzxAPqS13.png">
+  <img width="500" src="docs/images/python_x9pbgeXwaT.png">
+  <img width="500" src="docs/images/python_8O8aQuwsy8.png">
+  <img width="500" src="docs/images/python_EM6S9rdJYw.png">
 </p>
 
 
