@@ -971,7 +971,8 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The root path for the library. Defaults to <code>_LIBRARIES_ROOT</code>.</p>
+                <p>The root path for the library. Defaults to
+<code>fxconstants.ICONS_ROOT</code>.</p>
               </div>
             </td>
             <td>
@@ -993,7 +994,7 @@
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">... </span>       <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="mi">48</span><span class="p">,</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="gp">... </span>       <span class="s2">&quot;height&quot;</span><span class="p">:</span> <span class="mi">48</span><span class="p">,</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="gp">... </span>   <span class="p">},</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="gp">... </span>   <span class="n">root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;OneDrive&quot;</span> <span class="o">/</span> <span class="s2">&quot;Pictures&quot;</span> <span class="o">/</span> <span class="s2">&quot;Icons&quot;</span><span class="p">),</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="gp">... </span>   <span class="n">root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;Pictures&quot;</span> <span class="o">/</span> <span class="s2">&quot;Icons&quot;</span><span class="p">),</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="gp">... </span><span class="p">)</span>
 </code></pre></div>
 
@@ -1237,7 +1238,7 @@
 
 <p><span class="doc-section-title">Examples:</span></p>
     <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">get_available_libraries</span><span class="p">())</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">[&quot;beacon&quot;, &quot;dcc&quot;, &quot;material&quot;]</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">[&quot;beacon&quot;, &quot;dcc&quot;, &quot;material&quot;, &quot;fontawesome&quot;]</span>
 </code></pre></div>
 
     </div>
@@ -1410,6 +1411,7 @@
 
 <p><span class="doc-section-title">Examples:</span></p>
     <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">get_icon</span><span class="p">(</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">get_icon</span><span class="p">(</span><span class="s2">&quot;lemon&quot;</span><span class="p">,</span> <span class="n">library</span><span class="o">=</span><span class="s2">&quot;fontawesome&quot;</span><span class="p">)</span>
 </code></pre></div>
 
     </div>
@@ -1552,6 +1554,12 @@
           </tr>
       </tbody>
     </table>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">get_icon_path</span><span class="p">(</span><span class="s2">&quot;add&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">get_icon_path</span><span class="p">(</span><span class="s2">&quot;lemon&quot;</span><span class="p">,</span> <span class="n">library</span><span class="o">=</span><span class="s2">&quot;fontawesome&quot;</span><span class="p">)</span>
+</code></pre></div>
 
     </div>
 
@@ -1723,6 +1731,7 @@
 
 <p><span class="doc-section-title">Examples:</span></p>
     <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">get_pixmap</span><span class="p">(</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">get_pixmap</span><span class="p">(</span><span class="s2">&quot;lemon&quot;</span><span class="p">,</span> <span class="n">library</span><span class="o">=</span><span class="s2">&quot;fontawesome&quot;</span><span class="p">)</span>
 </code></pre></div>
 
     </div>
@@ -1866,6 +1875,11 @@
           </tr>
       </tbody>
     </table>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">set_default_icon_library</span><span class="p">(</span><span class="s2">&quot;fontawesome&quot;</span><span class="p">)</span>
+</code></pre></div>
 
     </div>
 
@@ -2012,6 +2026,13 @@ to be superposed, from background to foreground.</p>
   <summary>Notes</summary>
   <p>The size of the resulting icon is the size of the first icon.</p>
 </details>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">icon_a</span> <span class="o">=</span> <span class="n">get_icon</span><span class="p">(</span><span class="s2">&quot;add&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">icon_b</span> <span class="o">=</span> <span class="n">get_icon</span><span class="p">(</span><span class="s2">&quot;lemon&quot;</span><span class="p">,</span> <span class="n">library</span><span class="o">=</span><span class="s2">&quot;fontawesome&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">superposed_icon</span> <span class="o">=</span> <span class="n">superpose_icons</span><span class="p">(</span><span class="n">icon_a</span><span class="p">,</span> <span class="n">icon_b</span><span class="p">)</span>
+</code></pre></div>
+
     </div>
 
 </div>
