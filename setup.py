@@ -26,7 +26,7 @@ setup(
     license="MIT",
     keywords="Qt PySide2 VFX DCC UI",
     packages=find_packages(),
-    install_requires=["qtpy", "QtAwesome"],
+    install_requires=["qtpy==2.4.2", "QtAwesome==1.3.1"],
     include_package_data=True,
     project_urls={
         "Documentation": "https://healkeiser.github.io/fxgui",
