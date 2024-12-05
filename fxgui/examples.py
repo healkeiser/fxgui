@@ -31,7 +31,6 @@ from qtpy.QtGui import QColor, QIcon
 
 # Internal
 from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
-from fxgui import fxicons
 from fxgui.fxicons import get_icon
 
 

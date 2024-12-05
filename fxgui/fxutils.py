@@ -14,8 +14,8 @@ from qtpy.QtWidgets import (
     QTreeWidget,
 )
 from qtpy.QtUiTools import QUiLoader
-from qtpy.QtGui import QIcon, QPixmap, QKeySequence
-from qtpy.QtCore import QFile, QSize
+from qtpy.QtGui import QIcon, QKeySequence
+from qtpy.QtCore import QFile
 
 
 def load_ui(parent: QWidget, ui_file: str) -> QWidget:
