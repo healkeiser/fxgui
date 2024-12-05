@@ -14,7 +14,7 @@ from qtpy.QtGui import (
     QPixmap,
     QBitmap,
 )
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QSize
 
 # Internal
 from fxgui import fxconstants
@@ -398,6 +398,34 @@ def get_icon(
         icon_name, width, height, color, library, style, extension
     )
     return QIcon(qpixmap)
+
+
+def convert_icon_to_pixmap(
+    icon: QIcon, desired_size: Optional[QSize] = None
+) -> Optional[QPixmap]:
+    """Converts a QIcon to a QPixmap.
+
+    Args:
+        icon: The QIcon to convert.
+        desired_size: The desired size for the pixmap (QSize). If `None`,
+            the default size is 48x48.
+
+    Returns:
+        A QPixmap or `None` if no suitable pixmap is available.
+
+    Examples:
+        Let the size be decided
+        >>> icon = hou.qt.Icon("MISC_python")
+        >>> pixmap = convert_icon_to_pixmap(icon)
+
+        Choose a size
+        >>> icon = hou.qt.Icon("MISC_python")
+        >>> pixmap = convert_icon_to_pixmap(icon, QSize(48, 48))
+    """
+
+    if desired_size:
+        return icon.pixmap(desired_size)
+    return icon.pixmap(QSize(48, 48))
 
 
 def superpose_icons(*icons: QIcon) -> QIcon:

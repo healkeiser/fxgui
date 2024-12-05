@@ -32,6 +32,7 @@ from requests import get
 
 # Internal
 from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
+from fxgui import fxicons
 from fxgui.fxicons import get_icon
 
 
@@ -108,8 +109,8 @@ def show_floating_dialog_houdini():
 
     # Set icon
     # icon = hou.qt.Icon("MISC_python")
-    pixmap = fxutils.convert_qicon_to_qpixmap(None, QSize(10, 100))
-    floating_dialog.set_dialog_icon(pixmap)
+    # pixmap = fxicons.convert_icon_to_pixmap(None, QSize(10, 100))
+    # floating_dialog.set_dialog_icon(pixmap)
 
     # Add button to the `button_box`
     floating_dialog.button_box.addButton("Test", QDialogButtonBox.ActionRole)

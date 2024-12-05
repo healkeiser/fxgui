@@ -117,38 +117,6 @@ def add_shadows(
     return shadow
 
 
-def convert_qicon_to_qpixmap(
-    icon: QIcon, desired_size: Optional[QSize] = None
-) -> Optional[QPixmap]:
-    """Converts a QIcon to a QPixmap.
-
-    Args:
-      icon: The QIcon to convert.
-      desired_size: The desired size for the pixmap (QSize). If `None`,
-        the "best" available size will be used.
-
-    Returns:
-      QPixmap: A QPixmap or `None` if no suitable pixmap is available.
-
-    Examples:
-        Let the size be decided
-        >>> icon = hou.qt.Icon("MISC_python")
-        >>> pixmap = convert_qicon_to_qpixmap(icon)
-
-        Choose a size
-        >>> icon = hou.qt.Icon("MISC_python")
-        >>> pixmap = convert_qicon_to_qpixmap(icon, QSize(48, 48))
-    """
-
-    try:
-        if desired_size:
-            return icon.pixmap(desired_size)
-        else:
-            return icon.pixmap(QSize(48, 48))
-    except:
-        return None
-
-
 def filter_tree(
     filter_bar_object: QLineEdit,
     tree_to_filter: QTreeWidget,
