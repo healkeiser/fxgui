@@ -28,7 +28,6 @@ from qtpy.QtWidgets import (
 from qtpy.QtUiTools import QUiLoader
 from qtpy.QtCore import Qt, QTimer, QSize, QPoint
 from qtpy.QtGui import QColor, QIcon
-from requests import get
 
 # Internal
 from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
