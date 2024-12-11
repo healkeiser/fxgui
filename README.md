@@ -15,25 +15,27 @@
 
   <p align="center">
     <!-- Maintenance status -->
-    <img src="https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg?&label=Maintenance">&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg?&label=Maintenance"> &nbsp;&nbsp;
     <!-- <img src="https://img.shields.io/badge/maintenance-deprecated-red.svg?&label=Maintenance">&nbsp;&nbsp; -->
     <!-- License -->
-    <img src="https://img.shields.io/badge/License-MIT-brightgreen.svg?&logo=open-source-initiative&logoColor=white" alt="License: MIT"/>&nbsp;&nbsp;
-    <!-- PyPI -->
+    <img src="https://img.shields.io/github/license/healkeiser/fxgui?&label=License"/> &nbsp;&nbsp;
+    <!-- GitHub build workflow -->
+    <img src="https://img.shields.io/github/actions/workflow/status/healkeiser/fxgui/python-publish.yml?&label=Build&logo=pypi&logoColor=white" alt="Build"> &nbsp;&nbsp;
+    <!-- PyPI version-->
     <a href="https://pypi.org/project/fxgui">
-      <img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=PyPI" alt="PyPI version"/></a>&nbsp;&nbsp;
+      <img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=Version" alt="PyPI version"/></a> &nbsp;&nbsp;
     <!-- PyPI downloads -->
     <a href="https://pepy.tech/project/fxgui">
-      <img src="https://static.pepy.tech/badge/fxgui" alt="PyPI Downloads"></a>&nbsp;&nbsp;
+      <img src="https://static.pepy.tech/badge/fxgui" alt="PyPI Downloads"></a> &nbsp;&nbsp;
     <!-- Last Commit -->
-    <img src="https://img.shields.io/github/last-commit/healkeiser/fxgui?logo=github&label=Last%20Commit" alt="Last Commit"/>&nbsp;&nbsp;
+    <img src="https://img.shields.io/github/last-commit/healkeiser/fxgui?logo=github&label=Last%20Commit" alt="Last Commit"> &nbsp;&nbsp;
     <!-- Commit Activity -->
     <a href="https://github.com/healkeiser/fxgui/pulse" alt="Activity">
-      <img src="https://img.shields.io/github/commit-activity/m/healkeiser/fxgui?&logo=github&label=Commit%20Activity"/></a>&nbsp;&nbsp;
+      <img src="https://img.shields.io/github/commit-activity/m/healkeiser/fxgui?&logo=github&label=Commit%20Activity"></a> &nbsp;&nbsp;
     <!-- GitHub stars -->
-    <img src="https://img.shields.io/github/stars/healkeiser/fxgui" alt="GitHub Stars"/>&nbsp;&nbsp;
+    <img src="https://img.shields.io/github/stars/healkeiser/fxgui" alt="GitHub Stars"/> &nbsp;&nbsp;
   </p>
-
+      
 </div>
 
 
