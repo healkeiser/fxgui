@@ -35,11 +35,12 @@ STYLE_FILE = _parent_directory / "qss" / "style.qss"
 COLOR_FILE = _parent_directory / "style.jsonc"
 
 # Colors
-_COLOR_A_DEFAULT = "#007ACC"  # Lighter Blue
-_COLOR_B_DEFAULT = "#005A9E"  # Darker Blue
+_COLOR_A_DEFAULT = "#007ACC"  # Lighter
+_COLOR_B_DEFAULT = "#005A9E"  # Darker
 
 # Globals
 _colors = None
+_theme = "dark"
 
 
 class FXProxyStyle(QProxyStyle):
@@ -488,6 +489,39 @@ def set_style(widget: QWidget, style: str = None) -> FXProxyStyle:
     return custom_style
 
 
+def get_theme(widget: QWidget) -> str:
+    """Get the theme of the widget.
+
+    Args:
+        widget: The QWidget subclass to get the theme from.
+
+    Returns:
+        The theme of the widget. Can be either "dark", "light", or
+            "unknown".
+    """
+
+    palette = widget.palette()
+    if palette.color(QPalette.Window) == QColor(53, 53, 53):
+        return "dark"
+    elif palette.color(QPalette.Window) == QColor(240, 240, 240):
+        return "light"
+    return "unknown"
+
+
+def set_theme(widget: QWidget, theme: str) -> None:
+    """Set the theme of the widget.
+
+    Args:
+        widget (QWidget): The QWidget subclass to set the theme to.
+        theme (str): The theme to set. Can be either "dark" or "light".
+    """
+
+    if theme == "dark":
+        set_dark_palette(widget)
+    elif theme == "light":
+        set_light_palette(widget)
+
+
 def _remove_comments(text: str) -> str:
     """Remove single-line and multi-line comments from the input text.
 
@@ -562,6 +596,7 @@ def load_stylesheet(
     color_a: str = _COLOR_A_DEFAULT,
     color_b: str = _COLOR_B_DEFAULT,
     extra: Optional[str] = None,
+    theme: str = "dark",
 ) -> str:
     """Load the stylesheet and replace some part of the given QSS file to
     make them work in a DCC.
@@ -571,6 +606,7 @@ def load_stylesheet(
         color_a: The primary color to use. Defaults to `#649eff`.
         color_b: The secondary color to use. Defaults to `#4188ff`.
         extra: Extra stylesheet content to append. Defaults to `None`.
+        theme: The theme to use, either 'dark' or 'light'. Defaults to 'dark'.
 
     Returns:
         str: The stylesheet with the right elements replaced.
@@ -597,45 +633,62 @@ def load_stylesheet(
     replace = {
         "@ColorA": color_a,
         "@ColorB": color_b,
-        #
-        "@GreyH": "#201F1F",
-        "@GreyA": "#3A3939",
-        "@GreyB": "#2D2C2C",
-        "@GreyC": "#302F2F",
-        "@GreyF": "#404040",
-        "@GreyO": "#403F3F",
-        "@GreyK": "#4A4949",
-        "@GreyJ": "#444",
-        "@GreyI": "#6c6c6c",
-        "@GreyN": "#727272",
-        "@GreyD": "#777777",
-        "@GreyG": "#787876",
-        "@GreyM": "#a8a8a8",
-        "@GreyL": "#b1b1b1",
-        "@GreyE": "#bbb",
-        "@White": "#FFFFFF",
-        #
-        "@Grey90": "#201F1F",
-        "@Grey85": "#2B2B2B",
-        "@Grey82": "#2D2C2C",
-        "@Grey81": "#302F2F",
-        "@Grey77": "#3A3939",
-        "@Grey75": "#403F3F",
-        "@Grey75Alt": "#404040",
-        "@Grey73": "#444",
-        "@Grey71": "#4A4949",
-        "@Grey58": "#6c6c6c",
-        "@Grey55": "#727272",
-        "@Grey53": "#777777",
-        "@Grey53Alt": "#787876",
-        "@Grey34": "#a8a8a8",
-        "@Grey30": "#b1b1b1",
-        "@Grey27": "#bbb",
-        #
         "~icons": str(_parent_directory / "icons" / "stylesheet").replace(
             os.sep, "/"
         ),
     }
+
+    global _theme
+    if theme == "dark":
+        _theme = "dark"
+        replace.update(
+            {
+                "black": "white",
+                "#181818": "silver",
+                "@GreyH": "#201F1F",
+                "@GreyP": "#2A2929",
+                "@GreyA": "#3A3939",
+                "@GreyB": "#2D2C2C",
+                "@GreyC": "#302F2F",
+                "@GreyF": "#404040",
+                "@GreyQ": "#605F5F",
+                "@GreyO": "#403F3F",
+                "@GreyK": "#4A4949",
+                "@GreyJ": "#444444",
+                "@GreyI": "#6C6C6C",
+                "@GreyN": "#727272",
+                "@GreyD": "#777777",
+                "@GreyG": "#787876",
+                "@GreyM": "#A8A8A8",
+                "@GreyL": "#B1B1B1",
+                "@GreyE": "#BBBBBB",
+            }
+        )
+    elif theme == "light":
+        _theme = "light"
+        replace.update(
+            {
+                "white": "black",
+                "silver": "#181818",
+                "@GreyH": "#E0E0E0",
+                "@GreyP": "#D3D3D3",
+                "@GreyA": "#C0C0C0",
+                "@GreyB": "#BEBEBE",
+                "@GreyC": "#B0B0B0",
+                "@GreyF": "#A0A0A0",
+                "@GreyQ": "#909090",
+                "@GreyO": "#808080",
+                "@GreyK": "#707070",
+                "@GreyJ": "#606060",
+                "@GreyI": "#505050",
+                "@GreyN": "#404040",
+                "@GreyD": "#303030",
+                "@GreyG": "#202020",
+                "@GreyM": "#101010",
+                "@GreyL": "#080808",
+                "@GreyE": "#000000",
+            }
+        )
 
     for key, value in replace.items():
         stylesheet = stylesheet.replace(key, value)

@@ -33,6 +33,7 @@ from qtpy.QtGui import (
     QPixmap,
 )
 from qtpy.QtWidgets import (
+    QAction,
     QApplication,
     QDialog,
     QDialogButtonBox,
@@ -1568,7 +1569,7 @@ class FXMainWindow(QMainWindow):
             self,
             "Always On Top",
             fxicons.get_icon("hdr_strong"),  # Always on top icon
-            self._window_on_top,
+            self._toggle_window_on_top,
             enable=True,
             visible=True,
             shortcut="Ctrl+Shift+t",
@@ -1592,6 +1593,16 @@ class FXMainWindow(QMainWindow):
             enable=True,
             visible=True,
             shortcut="Ctrl+Alt+f",
+        )
+
+        self.toggle_theme_action = fxutils.create_action(
+            self,
+            "Toggle Theme",
+            fxicons.get_icon("brightness_4"),  # Toggle theme icon
+            self._toggle_theme,
+            enable=True,
+            visible=True,
+            shortcut="Ctrl+Alt+t",
         )
 
         # Help menu
@@ -1694,6 +1705,9 @@ class FXMainWindow(QMainWindow):
             self.window_on_top_action
         )
         self.window_menu.addSeparator()
+
+        # TODO: Finish implementing theme toggling
+        # self.window_menu.addAction(self.toggle_theme_action)
 
         # Help menu
         self.help_menu = self.menu_bar.addMenu("Help")
@@ -1850,7 +1864,7 @@ class FXMainWindow(QMainWindow):
         self.about_dialog.setLayout(layout)
         self.about_dialog.exec_()
 
-    def _window_on_top(self) -> None:
+    def _toggle_window_on_top(self) -> None:
         """Sets the window on top of all other windows or not.
 
         Warning:
@@ -1861,23 +1875,20 @@ class FXMainWindow(QMainWindow):
         action_values = {
             True: (
                 "Always on Top",
-                fxicons.get_icon("hdr_strong", color="white").pixmap(14, 14),
+                fxicons.get_icon("hdr_strong").pixmap(14, 14),
             ),
             False: (
                 "Regular Position",
-                fxicons.get_icon("hdr_weak", color="white").pixmap(14, 14),
+                fxicons.get_icon("hdr_weak").pixmap(14, 14),
             ),
         }
         stays_on_top = bool(flags & Qt.WindowStaysOnTopHint)
-        # text, icon, window_title = action_values[stays_on_top]
         text, icon = action_values[stays_on_top]
-
         flags ^= Qt.WindowStaysOnTopHint
         self.window_on_top_action.setText(text)
         if icon is not None:
             self.window_on_top_action.setIcon(icon)
         self.setWindowFlags(flags)
-        # self.setWindowTitle(window_title)
         self.show()
 
     def _move_window(self) -> None:
@@ -1999,6 +2010,33 @@ class FXMainWindow(QMainWindow):
             format_string = "%Y-%m-%d " + format_string
         return datetime.now().strftime(format_string)
 
+    def _toggle_theme(self) -> None:
+        """Toggles the theme of the window between light and dark.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        fxicons.set_icon_defaults(
+            color="#b4b4b4" if fxstyle._theme == "dark" else "#131313"
+        )
+
+        # Window styling
+        self.setStyleSheet(
+            fxstyle.load_stylesheet(
+                color_a=self.color_a,
+                color_b=self.color_b,
+                theme="light" if fxstyle._theme == "dark" else "dark",
+            )
+        )
+
+        # Banner
+        self.banner.setStyleSheet(
+            "color: white; font-size: 16px; padding: 10px; border-bottom: 1px solid #3A3939;"
+            if fxstyle._theme == "dark"
+            else "color: black; font-size: 16px; padding: 10px; border-bottom: 1px solid #3A3939;"
+        )
+
     # Overrides
     def statusBar(self) -> FXStatusBar:
         """Returns the FXStatusBar instance associated with this window.
@@ -2076,6 +2114,16 @@ class FXMainWindow(QMainWindow):
 
         self.banner.setText(text)
 
+    def hide_banner(self) -> None:
+        """Hides the banner."""
+
+        self.banner.hide()
+
+    def show_banner(self) -> None:
+        """Shows the banner."""
+
+        self.banner.show()
+
     def set_status_line_colors(self, color_a: str, color_b: str) -> None:
         """Set the colors of the status line.
 
@@ -2093,6 +2141,16 @@ class FXMainWindow(QMainWindow):
             }}
         """
         )
+
+    def hide_status_line(self) -> None:
+        """Hides the status line."""
+
+        self.status_line.hide()
+
+    def show_status_line(self) -> None:
+        """Shows the status line."""
+
+        self.status_line.show()
 
     def set_ui_file(self, ui_file: str) -> None:
         """Sets the UI file and loads the UI."""
@@ -2137,7 +2195,7 @@ class FXMainWindow(QMainWindow):
         self.statusBar().version_label.setText(version)
 
     # Events
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, _) -> None:
         self.setParent(None)
 
 
@@ -2472,15 +2530,9 @@ class FXSystemTray(QObject):
         # self.tray_icon.setContextMenu(self.tray_menu)
 
         # Left-click
-        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+        self.tray_icon.activated.connect(self._on_tray_icon_activated)
 
-    # Public methods
-    def show(self):
-        """Shows the system tray icon."""
-
-        self.tray_icon.show()
-
-    def on_tray_icon_activated(self, reason):
+    def _on_tray_icon_activated(self, reason):
         """Shows the tray menu at the cursor's position.
 
         Args:
@@ -2540,7 +2592,33 @@ class FXSystemTray(QObject):
 
             self.tray_menu.exec_(pos)
 
-    def closeEvent(self, event) -> None:
+    # Public methods
+    def add_action(self, action: "QAction") -> None:
+        """Adds an action to the tray menu.
+
+        Args:
+            action: The action to add to the tray menu.
+        """
+
+        self.tray_menu.addAction(action)
+
+    def set_icon(self, icon_path: str) -> None:
+        """Sets a new icon for the system tray.
+
+        Args:
+            icon_path: The path to the new icon.
+        """
+
+        self.icon = icon_path
+        self.tray_icon.setIcon(QIcon(self.icon))
+
+    def show(self):
+        """Shows the system tray icon."""
+
+        self.tray_icon.show()
+
+    # Events
+    def closeEvent(self, _) -> None:
         FXApplication.instance().quit()
         QApplication.instance().quit()
         self.setParent(None)

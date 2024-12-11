@@ -62,6 +62,16 @@ _libraries_info = {
             "height": 48,
         },
     },
+    "simple": {
+        "pattern": "{root}/{library}/icons/{icon_name}.{extension}",
+        "defaults": {
+            "extension": "svg",
+            "style": "solid",
+            "color": "#B4B4B4",
+            "width": 48,
+            "height": 48,
+        },
+    },
 }
 _default_library = "material"
 
@@ -394,10 +404,33 @@ def get_icon(
         >>> get_icon("lemon", library="fontawesome")
     """
 
+    # Get the `QPixmap` of the icon
     qpixmap = get_pixmap(
         icon_name, width, height, color, library, style, extension
     )
-    return QIcon(qpixmap)
+
+    # Create a `QIcon` and add the normal state pixmap
+    icon = QIcon(qpixmap)
+
+    # `QPixmap` for disabled state
+    disabled_pixmap = qpixmap.copy()
+    painter = QPainter(disabled_pixmap)
+    painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+
+    # Darken the color for the disabled state
+    for y in range(disabled_pixmap.height()):
+        for x in range(disabled_pixmap.width()):
+            pixel_color = disabled_pixmap.toImage().pixelColor(x, y)
+            darker_color = pixel_color.darker(200)
+            painter.setPen(darker_color)
+            painter.drawPoint(x, y)
+
+    painter.end()
+
+    # Add disabled state pixmap to the `QIcon`
+    icon.addPixmap(disabled_pixmap, QIcon.Disabled)
+
+    return icon
 
 
 def convert_icon_to_pixmap(

@@ -26,7 +26,7 @@ from qtpy.QtWidgets import (
     QWidgetAction,
 )
 from qtpy.QtUiTools import QUiLoader
-from qtpy.QtCore import Qt, QTimer, QSize, QPoint
+from qtpy.QtCore import Qt, QTimer, QPoint
 from qtpy.QtGui import QColor, QIcon
 
 # Internal
