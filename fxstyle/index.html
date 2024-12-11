@@ -575,6 +575,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.get_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_theme
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fxgui.fxstyle.load_colors_from_jsonc" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_colors_from_jsonc
@@ -623,6 +632,15 @@
   <a href="#fxgui.fxstyle.set_style" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_style
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.set_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_theme
     </span>
   </a>
   
@@ -783,6 +801,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.get_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_theme
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fxgui.fxstyle.load_colors_from_jsonc" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;load_colors_from_jsonc
@@ -831,6 +858,15 @@
   <a href="#fxgui.fxstyle.set_style" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_style
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.set_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_theme
     </span>
   </a>
   
@@ -1138,6 +1174,78 @@ prints each color role in each state group in the format
 <div class="doc doc-object doc-function">
 
 
+<h2 id="fxgui.fxstyle.get_theme" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_theme</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_theme</span><span class="p">(</span><span class="n">widget</span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">str</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Get the theme of the widget.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>widget</code></td>
+            <td>
+                  <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The QWidget subclass to get the theme from.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The theme of the widget. Can be either "dark", "light", or
+"unknown".</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h2 id="fxgui.fxstyle.load_colors_from_jsonc" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">load_colors_from_jsonc</span>
 
@@ -1219,7 +1327,8 @@ prints each color role in each state group in the format
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">color_a</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="n">_COLOR_A_DEFAULT</span><span class="p">,</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">color_b</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="n">_COLOR_B_DEFAULT</span><span class="p">,</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">extra</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">str</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">theme</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="s2">&quot;dark&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">str</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1293,6 +1402,20 @@ make them work in a DCC.</p>
             </td>
             <td>
                   <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>theme</code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The theme to use, either 'dark' or 'light'. Defaults to 'dark'.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;dark&#39;</code>
             </td>
           </tr>
       </tbody>
@@ -1661,6 +1784,68 @@ the palette on.</p>
     <code>QStyleFactory.keys()</code>.
 Only those string values are accepted in the <code>style</code> argument.</p>
 </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fxgui.fxstyle.set_theme" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">set_theme</span>
+
+
+</h2>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_theme</span><span class="p">(</span><span class="n">widget</span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">,</span> <span class="n">theme</span><span class="p">:</span> <span class="n">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Set the theme of the widget.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>widget</code></td>
+            <td>
+                  <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The QWidget subclass to set the theme to.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>theme</code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The theme to set. Can be either "dark" or "light".</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
     </div>
 
 </div>
