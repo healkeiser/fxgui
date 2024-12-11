@@ -4,3 +4,6 @@
 [submodule "fxgui/icons/fontawesome"]
 	path = fxgui/icons/fontawesome
 	url = https://github.com/healkeiser/font_awesome
+[submodule "fxgui/icons/simple"]
+	path = fxgui/icons/simple
+	url = https://github.com/healkeiser/simple_icons
