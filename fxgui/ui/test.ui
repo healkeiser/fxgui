@@ -16,9 +16,6 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QTabWidget" name="tabWidget">
-     <property name="tabPosition">
-      <enum>QTabWidget::West</enum>
-     </property>
      <property name="currentIndex">
       <number>0</number>
      </property>
@@ -435,8 +432,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>1265</width>
-            <height>330</height>
+            <width>293</width>
+            <height>153</height>
            </rect>
           </property>
           <attribute name="label">
