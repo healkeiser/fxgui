@@ -18,13 +18,12 @@
         {
             "label": "Create and Push Git Tag",
             "type": "shell",
-            "command": "powershell -ExecutionPolicy Bypass -File ./scripts/git/increment_version.ps1 ${input:incrementType} | ForEach-Object { git tag -a v$_ -m \"Version $_\"; git push origin v$_ }",
+            "command": "powershell -ExecutionPolicy Bypass -File ./scripts/git/increment_version.ps1 ${input:incrementType}",
             "problemMatcher": [],
             "group": {
                 "kind": "none",
                 "isDefault": true
             },
-            "dependsOn": "Show Current Version",
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
