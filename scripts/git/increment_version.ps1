@@ -19,6 +19,9 @@ if ($versionParts.Length -ne 3) {
     exit 1
 }
 
+# ? Check all the tags follow the format vX.Y.Z by running the following command:
+# ? `git show-ref --tags`
+
 switch ($incrementType) {
     "major" {
         $versionParts[0] = [int]$versionParts[0] + 1
