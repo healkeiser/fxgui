@@ -1,0 +1,75 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Show Current Version",
+            "type": "shell",
+            "command": "powershell -ExecutionPolicy Bypass -File ./scripts/git/show_current_version.ps1",
+            "problemMatcher": [],
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Create and Push Git Tag",
+            "type": "shell",
+            "command": "powershell -ExecutionPolicy Bypass -File ./scripts/git/increment_version.ps1 ${input:incrementType} | ForEach-Object { git tag -a v$_ -m \"Version $_\"; git push origin v$_ }",
+            "problemMatcher": [],
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+            "dependsOn": "Show Current Version",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Deploy Documentation",
+            "type": "shell",
+            "command": "python -m mkdocs gh-deploy",
+            "problemMatcher": [],
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Generate Changelog",
+            "type": "shell",
+            "command": "npm run changelog",
+            "problemMatcher": [],
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "incrementType",
+            "type": "pickString",
+            "description": "Select the version increment type",
+            "options": [
+                "major",
+                "minor",
+                "patch"
+            ],
+            "default": "patch"
+        }
+    ]
+}

@@ -855,7 +855,7 @@ class FXSplashScreen(QSplashScreen):
         self.fade_timer.start(100)
 
     # Public methods
-    def set_progress(self, value, max_range=100):
+    def set_progress(self, value: int, max_range: int = 100):
         """Set the progress value for the splash screen.
 
         Args:
@@ -1660,10 +1660,10 @@ class FXMainWindow(QMainWindow):
         """Creates the menu bar for the window.
 
         Args:
-            native_menu_bar (bool, optional): Whether to use the native menu
-                bar. Defaults to `False`.
-            enable_logo_menu_bar (bool, optional): Whether to enable the logo
-                menu bar. Defaults to `True`.
+            native_menu_bar: Whether to use the native menu bar.
+                Defaults to `False`.
+            enable_logo_menu_bar: Whether to enable the logo menu bar.
+                Defaults to `True`.
 
         Warning:
             This method is intended for internal use only.
@@ -1785,8 +1785,8 @@ class FXMainWindow(QMainWindow):
         """Creates a custom status line for the window.
 
         Args:
-            color_a (str, optional): The first color of the gradient. Defaults to `#cc00cc`.
-            color_b (str, optional): The second color of the gradient. Defaults to `#4ab5cc`.
+            color_a: The first color of the gradient. Defaults to `#cc00cc`.
+            color_b: The second color of the gradient. Defaults to `#4ab5cc`.
 
         Note:
             This method is intended for internal use only.
@@ -1856,9 +1856,11 @@ class FXMainWindow(QMainWindow):
         company_label.setAlignment(Qt.AlignCenter)
 
         layout = QVBoxLayout()
+        layout.addStretch()
         layout.addWidget(project_label)
         layout.addWidget(version_label)
         layout.addWidget(company_label)
+        layout.addStretch()
 
         self.about_dialog.setFixedSize(200, 150)
         self.about_dialog.setLayout(layout)
