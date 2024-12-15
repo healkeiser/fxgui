@@ -1,4 +1,8 @@
-"""Custom widgets for the `fxgui` package."""
+"""This module provides a wrapper around the `QtWidgets` module for `fxgui`.
+
+It includes custom widgets and utility functions to enhance the functionality
+and ease of use of the standard Qt widgets within the `fxgui` framework.
+"""
 
 # Built-in
 import os
@@ -2452,6 +2456,79 @@ class FXFloatingDialog(QDialog):
         self.setParent(None)
 
 
+class FXPasswordLineEdit(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.line_edit = QLineEdit()
+        self.line_edit.setEchoMode(QLineEdit.Password)
+
+        # Show/hide button
+        self.reveal_button = QPushButton("Show")
+        self.reveal_button.setIcon(fxicons.get_icon("visibility"))
+        self.reveal_button.clicked.connect(self.toggle_reveal)
+
+        # Layout for lineEdit and button
+        layout = QHBoxLayout()
+        layout.addWidget(self.line_edit)
+        layout.addWidget(self.reveal_button)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    def toggle_reveal(self):
+        """Toggles the echo mode between password and normal."""
+
+        if self.line_edit.echoMode() == QLineEdit.Password:
+            self.line_edit.setEchoMode(QLineEdit.Normal)
+            self.reveal_button.setText("Hide")
+            self.reveal_button.setIcon(fxicons.get_icon("disabled_visible"))
+        else:
+            self.line_edit.setEchoMode(QLineEdit.Password)
+            self.reveal_button.setText("Show")
+            self.reveal_button.setIcon(fxicons.get_icon("visibility"))
+
+
+class FXIconLineEdit(QLineEdit):
+    """A line edit that displays an icon on the left side."""
+
+    def __init__(self, icon: QIcon, parent: Optional[QWidget] = None):
+        """Initialize the `FXIconLineEdit`.
+
+        Args:
+            icon: The icon to display.
+            parent: The parent widget.
+        """
+
+        super().__init__(parent)
+
+        # Create a `QLabel` to hold the icon
+        self.icon_button = QPushButton(self)
+        self.icon_button.setFlat(True)
+        self.icon_button.setStyleSheet(
+            "background-color: transparent; border: none;"
+        )
+        self.icon_button.setIcon(icon)
+        self.icon_button.setFixedSize(18, 18)
+
+        # Create a layout to hold the icon and the line edit
+        self.layout = QHBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.addWidget(self.icon_button)
+        self.layout.addStretch()
+        self.setLayout(self.layout)
+
+        # Add padding to the left of the text to make space for the icon
+        self.setTextMargins(22, 0, 0, 0)
+
+    def resizeEvent(self, event):
+        """Reposition the icon when the line edit is resized."""
+
+        super().resizeEvent(event)
+        self.icon_button.move(
+            5, (self.height() - self.icon_button.height()) // 2
+        )
+
+
 class FXSystemTray(QObject):
     """A system tray icon with a context menu.
 
@@ -2595,7 +2672,7 @@ class FXSystemTray(QObject):
             self.tray_menu.exec_(pos)
 
     # Public methods
-    def add_action(self, action: "QAction") -> None:
+    def add_action(self, action: QAction) -> None:
         """Adds an action to the tray menu.
 
         Args:
@@ -2624,38 +2701,6 @@ class FXSystemTray(QObject):
         FXApplication.instance().quit()
         QApplication.instance().quit()
         self.setParent(None)
-
-
-class FXPasswordLineEdit(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.line_edit = QLineEdit()
-        self.line_edit.setEchoMode(QLineEdit.Password)
-
-        # Show/hide button
-        self.reveal_button = QPushButton("Show")
-        self.reveal_button.setIcon(fxicons.get_icon("visibility"))
-        self.reveal_button.clicked.connect(self.toggle_reveal)
-
-        # Layout for lineEdit and button
-        layout = QHBoxLayout()
-        layout.addWidget(self.line_edit)
-        layout.addWidget(self.reveal_button)
-        layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(layout)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-
-    def toggle_reveal(self):
-        """Toggles the echo mode between password and normal."""
-
-        if self.line_edit.echoMode() == QLineEdit.Password:
-            self.line_edit.setEchoMode(QLineEdit.Normal)
-            self.reveal_button.setText("Hide")
-            self.reveal_button.setIcon(fxicons.get_icon("disabled_visible"))
-        else:
-            self.line_edit.setEchoMode(QLineEdit.Password)
-            self.reveal_button.setText("Show")
-            self.reveal_button.setIcon(fxicons.get_icon("visibility"))
 
 
 if __name__ == "__main__":
