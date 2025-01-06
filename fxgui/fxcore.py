@@ -49,7 +49,7 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
 
     def __init__(
         self,
-        ratio: float = 0.6,
+        ratio: float = 0.5,
         color_match: bool = True,
         parent: Optional[QWidget] = None,
     ):
@@ -127,7 +127,7 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
 
         return True
 
-    def filterAcceptsRow(
+    def __filterAcceptsRow(
         self, source_row: int, source_parent: QModelIndex
     ) -> bool:
         """Determine whether a row should be accepted by the filter.
@@ -156,6 +156,31 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
             self._filter_text, [text], n=1, cutoff=self._ratio
         )
         return bool(matches)
+
+    def filterAcceptsRow(
+        self, source_row: int, source_parent: QModelIndex
+    ) -> bool:
+        """Determine whether a row should be accepted by the filter.
+
+        Args:
+            source_row: The source row index.
+            source_parent: The source parent index.
+
+        Returns:
+            bool: `True` if the row is accepted, `False` otherwise.
+        """
+
+        if self._ratio <= 0.0 or self._show_all or not self._filter_text:
+            return True
+
+        text = (
+            self.sourceModel().index(source_row, 0, source_parent).data() or ""
+        ).lower()
+        if not text:
+            return False
+
+        ratio = SequenceMatcher(None, self._filter_text, text).ratio()
+        return ratio >= self._ratio
 
     def lessThan(self, left: QModelIndex, right: QModelIndex) -> bool:
         """Compare two indices to determine their order.

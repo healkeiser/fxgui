@@ -24,6 +24,7 @@ from qtpy.QtCore import (
     Qt,
     QModelIndex,
     QCollator,
+    Slot,
 )
 from qtpy.QtGui import (
     QColor,
@@ -846,6 +847,7 @@ class FXSplashScreen(QSplashScreen):
         self.setWindowOpacity(opaqueness)
         self.show()
 
+        @Slot()
         def update_opacity():
             nonlocal opaqueness
             if opaqueness < 1:
@@ -1248,6 +1250,7 @@ class FXStatusBar(QStatusBar):
             format_string = "%Y-%m-%d " + format_string
         return datetime.now().strftime(format_string)
 
+    @Slot()
     def _on_status_message_changed(self, args):
         """If there are no arguments, which means the message is being removed,
         then change the status bar background back to black.
@@ -2457,76 +2460,103 @@ class FXFloatingDialog(QDialog):
 
 
 class FXPasswordLineEdit(QWidget):
-    def __init__(self, parent=None):
+    """
+    A custom widget that includes a password line edit with a show/hide button.
+
+    Args:
+        parent: The parent widget.
+        icon_position: The position of the icon ('left' or 'right').
+    """
+
+    def __init__(self, parent=None, icon_position: str = "left"):
         super().__init__(parent)
-        self.line_edit = QLineEdit()
+        self.line_edit = FXIconLineEdit(icon_position=icon_position)
         self.line_edit.setEchoMode(QLineEdit.Password)
 
         # Show/hide button
-        self.reveal_button = QPushButton("Show")
+        self.reveal_button = self.line_edit.icon_button
         self.reveal_button.setIcon(fxicons.get_icon("visibility"))
+        self.reveal_button.setCursor(Qt.PointingHandCursor)
         self.reveal_button.clicked.connect(self.toggle_reveal)
 
         # Layout for lineEdit and button
         layout = QHBoxLayout()
         layout.addWidget(self.line_edit)
-        layout.addWidget(self.reveal_button)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
+    @Slot()
     def toggle_reveal(self):
-        """Toggles the echo mode between password and normal."""
+        """Toggles the echo mode between password and normal, and changes the
+        icon of the reveal button accordingly.
+        """
 
         if self.line_edit.echoMode() == QLineEdit.Password:
             self.line_edit.setEchoMode(QLineEdit.Normal)
-            self.reveal_button.setText("Hide")
             self.reveal_button.setIcon(fxicons.get_icon("disabled_visible"))
         else:
             self.line_edit.setEchoMode(QLineEdit.Password)
-            self.reveal_button.setText("Show")
             self.reveal_button.setIcon(fxicons.get_icon("visibility"))
 
 
 class FXIconLineEdit(QLineEdit):
-    """A line edit that displays an icon on the left side."""
+    """A line edit that displays an icon on the left or right side.
 
-    def __init__(self, icon: QIcon, parent: Optional[QWidget] = None):
-        """Initialize the `FXIconLineEdit`.
-
-        Args:
+    Args:
             icon: The icon to display.
+            icon_position: The position of the icon ('left' or 'right').
             parent: The parent widget.
-        """
+    """
 
+    def __init__(
+        self,
+        icon: Optional[QIcon] = None,
+        icon_position: str = "left",
+        parent: Optional[QWidget] = None,
+    ):
         super().__init__(parent)
 
-        # Create a `QLabel` to hold the icon
+        # Create a `QPushButton` to hold the icon
         self.icon_button = QPushButton(self)
         self.icon_button.setFlat(True)
         self.icon_button.setStyleSheet(
             "background-color: transparent; border: none;"
         )
-        self.icon_button.setIcon(icon)
         self.icon_button.setFixedSize(18, 18)
+        if icon is not None:
+            self.icon_button.setIcon(icon)
 
         # Create a layout to hold the icon and the line edit
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.addWidget(self.icon_button)
-        self.layout.addStretch()
-        self.setLayout(self.layout)
 
-        # Add padding to the left of the text to make space for the icon
-        self.setTextMargins(22, 0, 0, 0)
+        if icon_position == "left":
+            self.layout.addWidget(self.icon_button)
+            self.layout.addStretch()
+            self.setTextMargins(22, 0, 0, 0)
+        elif icon_position == "right":
+            self.layout.addStretch()
+            self.layout.addWidget(self.icon_button)
+            self.setTextMargins(0, 0, 22, 0)
+        else:
+            raise ValueError("icon_position must be 'left' or 'right'")
+
+        self.setLayout(self.layout)
 
     def resizeEvent(self, event):
         """Reposition the icon when the line edit is resized."""
 
         super().resizeEvent(event)
-        self.icon_button.move(
-            5, (self.height() - self.icon_button.height()) // 2
-        )
+        if self.layout.itemAt(0).widget() == self.icon_button:
+            self.icon_button.move(
+                5, (self.height() - self.icon_button.height()) // 2
+            )
+        else:
+            self.icon_button.move(
+                self.width() - self.icon_button.width() - 5,
+                (self.height() - self.icon_button.height()) // 2,
+            )
 
 
 class FXSystemTray(QObject):
@@ -2604,6 +2634,7 @@ class FXSystemTray(QObject):
         # Styling
         self.tray_menu.setStyleSheet(fxstyle.load_stylesheet())
 
+    @Slot()
     def _handle_connections(self) -> None:
         # Right-click
         # self.tray_icon.setContextMenu(self.tray_menu)
@@ -2611,6 +2642,7 @@ class FXSystemTray(QObject):
         # Left-click
         self.tray_icon.activated.connect(self._on_tray_icon_activated)
 
+    @Slot()
     def _on_tray_icon_activated(self, reason):
         """Shows the tray menu at the cursor's position.
 
