@@ -22,16 +22,13 @@
     <!-- GitHub build workflow -->
     <img src="https://img.shields.io/github/actions/workflow/status/healkeiser/fxgui/python-publish.yml?&label=Build&logo=pypi&logoColor=white" alt="Build"> &nbsp;&nbsp;
     <!-- PyPI version-->
-    <a href="https://pypi.org/project/fxgui">
-      <img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=Version" alt="PyPI version"/></a> &nbsp;&nbsp;
+    <a href="https://pypi.org/project/fxgui"><img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=Version" alt="PyPI Version"/></a> &nbsp;&nbsp;
     <!-- PyPI downloads -->
-    <a href="https://pepy.tech/project/fxgui">
-      <img src="https://static.pepy.tech/badge/fxgui" alt="PyPI Downloads"></a> &nbsp;&nbsp;
+    <a href="https://pepy.tech/projects/fxgui"><img src="https://static.pepy.tech/badge/fxgui" alt="PyPI Downloads"></a> &nbsp;&nbsp;
     <!-- Last Commit -->
     <img src="https://img.shields.io/github/last-commit/healkeiser/fxgui?logo=github&label=Last%20Commit" alt="Last Commit"> &nbsp;&nbsp;
     <!-- Commit Activity -->
-    <a href="https://github.com/healkeiser/fxgui/pulse" alt="Activity">
-      <img src="https://img.shields.io/github/commit-activity/m/healkeiser/fxgui?&logo=github&label=Commit%20Activity"></a> &nbsp;&nbsp;
+    <a href="https://github.com/healkeiser/fxgui/pulse" alt="Activity"><img src="https://img.shields.io/github/commit-activity/m/healkeiser/fxgui?&logo=github&label=Commit%20Activity"></a> &nbsp;&nbsp;
     <!-- GitHub stars -->
     <img src="https://img.shields.io/github/stars/healkeiser/fxgui" alt="GitHub Stars"/> &nbsp;&nbsp;
   </p>
