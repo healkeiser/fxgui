@@ -461,6 +461,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../fxcore/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    fxcore
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../fxicons/" class="md-nav__link">
         
   
@@ -690,6 +711,30 @@
   <a href="#fxgui.fxwidgets.FXFloatingDialog.show_under_cursor" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;show_under_cursor
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXIconLineEdit" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXIconLineEdit
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" FXIconLineEdit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXIconLineEdit.resizeEvent" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;resizeEvent
     </span>
   </a>
   
@@ -1284,6 +1329,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXIconLineEdit" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXIconLineEdit
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" FXIconLineEdit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxwidgets.FXIconLineEdit.resizeEvent" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;resizeEvent
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fxgui.fxwidgets.FXMainWindow" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;FXMainWindow
@@ -1702,7 +1771,9 @@
 <a id="fxgui.fxwidgets"></a>
     <div class="doc doc-contents first">
 
-      <p>Custom widgets for the <code>fxgui</code> package.</p>
+      <p>This module provides a wrapper around the <code>QtWidgets</code> module for <code>fxgui</code>.</p>
+<p>It includes custom widgets and utility functions to enhance the functionality
+and ease of use of the standard Qt widgets within the <code>fxgui</code> framework.</p>
 
 
 
@@ -2495,6 +2566,121 @@ It returns a <code>DialogCode</code> that can be <code>Accepted</code> or <code>
           </tr>
       </tbody>
     </table>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="fxgui.fxwidgets.FXIconLineEdit" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">FXIconLineEdit</span>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="qtpy.QtWidgets.QLineEdit">QLineEdit</span></code></p>
+
+
+      <p>A line edit that displays an icon on the left or right side.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>icon</code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="qtpy.QtGui.QIcon">QIcon</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The icon to display.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>icon_position</code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The position of the icon ('left' or 'right').</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;left&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>parent</code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="qtpy.QtWidgets.QWidget">QWidget</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The parent widget.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="fxgui.fxwidgets.FXIconLineEdit.resizeEvent" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">resizeEvent</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">resizeEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+      <p>Reposition the icon when the line edit is resized.</p>
 
     </div>
 
@@ -3985,6 +4171,50 @@ status line is always at the bottom of the window and the banner is always at th
               Bases: <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code></p>
 
 
+      <p>A custom widget that includes a password line edit with a show/hide button.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code>parent</code></td>
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The parent widget.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code>icon_position</code></td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The position of the icon ('left' or 'right').</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;left&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
 
 
 
@@ -4011,7 +4241,8 @@ status line is always at the bottom of the window and the banner is always at th
 
     <div class="doc doc-contents ">
 
-      <p>Toggles the echo mode between password and normal.</p>
+      <p>Toggles the echo mode between password and normal, and changes the
+icon of the reveal button accordingly.</p>
 
     </div>
 
@@ -4455,7 +4686,7 @@ human-friendly order:</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_progress</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">max_range</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_progress</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">int</span><span class="p">,</span> <span class="n">max_range</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4477,6 +4708,7 @@ human-friendly order:</p>
           <tr class="doc-section-item">
             <td><code>value</code></td>
             <td>
+                  <code>int</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4490,6 +4722,7 @@ human-friendly order:</p>
           <tr class="doc-section-item">
             <td><code>max_range</code></td>
             <td>
+                  <code>int</code>
             </td>
             <td>
               <div class="doc-md-description">
