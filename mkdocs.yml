@@ -125,6 +125,7 @@ nav:
   - How-to: how_to.md
   - Technical:
       - fxdcc: fxdcc.md
+      - fxcore: fxcore.md
       - fxicons: fxicons.md
       - fxstyle: fxstyle.md
       - fxutils: fxutils.md
