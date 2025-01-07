@@ -44,7 +44,7 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
 
     Notes:
         Base code from [Alex Telford](https://www.linkedin.com/in/mrminimaleffort):
-        https://www.linkedin.com/posts/mrminimaleffort_td-python-qt-activity-7270383661680603136-nvzb?utm_source=share&utm_medium=member_desktop
+        [LinkedIn post](https://www.linkedin.com/posts/mrminimaleffort_td-python-qt-activity-7270383661680603136-nvzb?utm_source=share&utm_medium=member_desktop)
     """
 
     def __init__(
