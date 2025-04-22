@@ -51,7 +51,7 @@ def create_action(
     parent: QWidget,
     name: str,
     icon: str,
-    trigger: Callable,
+    trigger: Optional[Callable],
     enable: bool = True,
     visible: bool = True,
     shortcut: str = None,
@@ -63,6 +63,7 @@ def create_action(
         name (str): Name to display.
         icon (str): Icon path.
         trigger (Callable): Function to trigger when clicked.
+            Defaults to `None`.
         enable (bool, optional): Enable/disable. Defaults to `True`.
         visible (bool, optional): Show/hide. Defaults to `True`.
         shortcut (str, optional): If not `None`, key sequence (hotkeys) to use.
@@ -74,7 +75,8 @@ def create_action(
 
     action = QAction(name, parent or None)
     action.setIcon(QIcon(icon))
-    action.triggered.connect(trigger)
+    if trigger is not None:
+        action.triggered.connect(trigger)
     action.setEnabled(enable)
     action.setVisible(visible)
     if shortcut is not None:
