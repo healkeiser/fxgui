@@ -217,11 +217,11 @@ jobs:
       - name: Install dependencies
         if: steps.check-mkdocs.outputs.exists == 'true'
         run: |
-          python3 -m pip install --upgrade pip
+          python -m pip install --upgrade pip
           if [ -f "requirements.txt" ]; then
-            python3 -m pip install -r requirements.txt
+            python -m pip install -r requirements.txt
           else
-            python3 -m pip install mkdocs mkdocs-material mkdocstrings mkdocstrings-python
+            python -m pip install mkdocs mkdocs-material mkdocstrings mkdocstrings-python
           fi
 
       - name: Deploy to GitHub Pages
