@@ -1,11 +1,47 @@
-"""Utils related the `fxgui` package."""
+"""Utility functions for the `fxgui` package.
+
+This module provides general-purpose utility functions for Qt-based
+applications including UI loading, action creation, widget effects,
+tree filtering, and tooltip formatting.
+
+Functions:
+    load_ui: Load a Qt Designer UI file.
+    create_action: Create a QAction with common settings.
+    add_shadows: Apply drop shadow effect to a widget.
+    filter_tree: Filter QTreeWidget items by text.
+    set_formatted_tooltip: Set a styled tooltip with title.
+    get_formatted_time: Get current time as formatted string.
+    deprecated: Decorator to mark functions as deprecated.
+
+Examples:
+    Loading a UI file:
+
+    >>> from fxgui.fxutils import load_ui
+    >>> ui = load_ui(parent_widget, "path/to/ui_file.ui")
+
+    Creating an action:
+
+    >>> action = create_action(
+    ...     parent=window,
+    ...     name="Save",
+    ...     icon=get_icon("save"),
+    ...     trigger=save_callback,
+    ...     shortcut="Ctrl+S"
+    ... )
+"""
+
+# Metadata
+__author__ = "Valentin Beaumont"
+__email__ = "valentin.onze@gmail.com"
 
 # Built-in
 import os
-from typing import Callable, Optional
+from datetime import datetime
+from functools import wraps
+from typing import Callable, Optional, Union
 import warnings
 
-# Thirs-party
+# Third-party
 from qtpy.QtWidgets import (
     QAction,
     QWidget,
@@ -50,31 +86,41 @@ def load_ui(parent: QWidget, ui_file: str) -> QWidget:
 def create_action(
     parent: QWidget,
     name: str,
-    icon: str,
-    trigger: Optional[Callable],
+    icon: Union[str, QIcon],
+    trigger: Optional[Callable] = None,
     enable: bool = True,
     visible: bool = True,
-    shortcut: str = None,
-) -> Optional[QAction]:
-    """Creates a QACtion.
+    shortcut: Optional[str] = None,
+) -> QAction:
+    """Create a QAction with common settings.
 
     Args:
-        parent (QWidget): Parent object.
-        name (str): Name to display.
-        icon (str): Icon path.
-        trigger (Callable): Function to trigger when clicked.
-            Defaults to `None`.
-        enable (bool, optional): Enable/disable. Defaults to `True`.
-        visible (bool, optional): Show/hide. Defaults to `True`.
-        shortcut (str, optional): If not `None`, key sequence (hotkeys) to use.
-            Defaults to `None`.
+        parent: Parent widget for the action.
+        name: Display name for the action.
+        icon: Icon for the action. Can be a path string or a QIcon object.
+        trigger: Callback function to execute when triggered. Defaults to None.
+        enable: Whether the action is enabled. Defaults to True.
+        visible: Whether the action is visible. Defaults to True.
+        shortcut: Keyboard shortcut (e.g., "Ctrl+S"). Defaults to None.
 
     Returns:
-        Optional[QAction]: The created QAction.
+        The created QAction.
+
+    Examples:
+        >>> action = create_action(
+        ...     parent=window,
+        ...     name="Save",
+        ...     icon=get_icon("save"),
+        ...     trigger=lambda: print("Saved!"),
+        ...     shortcut="Ctrl+S"
+        ... )
     """
 
     action = QAction(name, parent or None)
-    action.setIcon(QIcon(icon))
+    if isinstance(icon, QIcon):
+        action.setIcon(icon)
+    else:
+        action.setIcon(QIcon(icon))
     if trigger is not None:
         action.triggered.connect(trigger)
     action.setEnabled(enable)
@@ -182,13 +228,55 @@ def set_formatted_tooltip(
 
 
 # ' Misc
+def get_formatted_time(
+    display_seconds: bool = False, display_date: bool = False
+) -> str:
+    """Returns the current time as a formatted string.
+
+    Args:
+        display_seconds (bool, optional): Whether to display the seconds.
+            Defaults to `False`.
+        display_date (bool, optional): Whether to display the date.
+            Defaults to `False`.
+
+    Returns:
+        str: The formatted current time.
+
+    Examples:
+        >>> get_formatted_time()
+        '14:30'
+        >>> get_formatted_time(display_seconds=True)
+        '14:30:45'
+        >>> get_formatted_time(display_date=True)
+        '2025-12-29 14:30'
+    """
+
+    format_string = "%H:%M:%S" if display_seconds else "%H:%M"
+    if display_date:
+        format_string = "%Y-%m-%d " + format_string
+    return datetime.now().strftime(format_string)
+
+
 def deprecated(func: Callable) -> Callable:
     """Decorator to mark functions as deprecated.
 
+    When a decorated function is called, it emits a DeprecationWarning
+    to alert users that the function will be removed in a future version.
+
     Args:
-        func (Callable): The function to mark as deprecated.
+        func: The function to mark as deprecated.
+
+    Returns:
+        A wrapper function that emits a warning before calling the original.
+
+    Examples:
+        >>> @deprecated
+        ... def old_function():
+        ...     return "old behavior"
+        >>> old_function()  # Emits DeprecationWarning
     """
 
+    @wraps(func)
     def wrapper(*args, **kwargs):
         warnings.warn(
             f"{func.__name__} is deprecated and will be removed in a future version",

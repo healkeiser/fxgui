@@ -2,8 +2,30 @@ param (
     [string]$incrementType
 )
 
-# Get the latest tag
-$latestTag = git describe --tags (git rev-list --tags --max-count=1)
+# Get the latest tag (handle case where no tags exist)
+try {
+    $tagList = git rev-list --tags --max-count=1 2>$null
+    if ($tagList) {
+        $latestTag = git describe --tags $tagList 2>$null
+    }
+    else {
+        $latestTag = $null
+    }
+}
+catch {
+    $latestTag = $null
+}
+
+# If no tags exist, start with v0.1.0
+if (-not $latestTag) {
+    Write-Host "No existing tags found. Creating initial version v0.1.0..."
+    $newVersion = "0.1.0"
+    git tag -a "v$newVersion" -m "Version $newVersion"
+    git push origin "v$newVersion"
+    Write-Host "Tag v$newVersion pushed. CI will update package.py, create the release, and send Slack notification."
+    Write-Output $newVersion
+    exit 0
+}
 
 # Remove the 'v' prefix if it exists
 if ($latestTag.StartsWith('v')) {
@@ -44,9 +66,11 @@ switch ($incrementType) {
 # Join the version parts into a new version string
 $newVersion = "$($versionParts[0]).$($versionParts[1]).$($versionParts[2])"
 
-# Create and push the new tag
+# Create and push the new tag (CI will handle package.py update)
 git tag -a "v$newVersion" -m "Version $newVersion"
 git push origin "v$newVersion"
+
+Write-Host "Tag v$newVersion pushed. CI will update package.py, create the release, and send Slack notification."
 
 # Output the new version
 Write-Output $newVersion

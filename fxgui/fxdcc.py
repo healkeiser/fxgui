@@ -1,4 +1,37 @@
-"""Utility functions related to DCC packages."""
+"""DCC (Digital Content Creation) utility functions for `fxgui`.
+
+This module provides utility functions for integrating fxgui with various
+DCC applications including Houdini, Maya, and Nuke. It handles the
+detection of the current DCC environment and provides access to their
+main windows and stylesheets.
+
+Constants:
+    STANDALONE: Constant indicating standalone Python mode.
+    HOUDINI: Constant indicating Houdini environment.
+    MAYA: Constant indicating Maya environment.
+    NUKE: Constant indicating Nuke environment.
+
+Functions:
+    get_dcc_main_window: Auto-detect and return the current DCC main window.
+    get_houdini_main_window: Get the Houdini main window.
+    get_houdini_stylesheet: Get the Houdini stylesheet.
+    get_maya_main_window: Get the Maya main window.
+    get_nuke_main_window: Get the Nuke main window.
+
+Examples:
+    Getting the DCC main window automatically:
+
+    >>> from fxgui import fxdcc
+    >>> main_window = fxdcc.get_dcc_main_window()
+    >>> if main_window is not None:
+    ...     my_dialog = MyDialog(parent=main_window)
+    ...     my_dialog.show()
+
+    Explicitly getting a specific DCC window:
+
+    >>> houdini_window = fxdcc.get_houdini_main_window()
+    >>> maya_window = fxdcc.get_maya_main_window()
+"""
 
 # Built-in
 import importlib
@@ -78,11 +111,17 @@ def get_maya_main_window() -> QtWidgets.QWidget:
         qtpy.QtWidgets.QWidget: `TmainWindow` Maya main window.
     """
 
-    import maya.OpenMayaUI
+    import maya.OpenMayaUI as omui
 
-    window = apiUI.MQtUtil.mainWindow()  # type:ignore
+    try:
+        from shiboken6 import wrapInstance
+    except ImportError:
+        from shiboken2 import wrapInstance
+
+    window = omui.MQtUtil.mainWindow()
     if window is not None:
-        return shiboken2.wrapInstance(int(window), QtWidgets.QWidget)
+        return wrapInstance(int(window), QtWidgets.QWidget)
+    return None
 
 
 def get_nuke_main_window() -> QtWidgets.QMainWindow:
@@ -97,7 +136,6 @@ def get_nuke_main_window() -> QtWidgets.QMainWindow:
     for widget in QtWidgets.QApplication.topLevelWidgets():
         if (
             widget.inherits("QMainWindow")
-            and widget.metaObject().className()
-            == "Foundry::UI::DockMainWindow"
+            and widget.metaObject().className() == "Foundry::UI::DockMainWindow"
         ):
             return widget

@@ -14,6 +14,45 @@
         "main": "#8ecd4f",
         "bridge": "#1aa9f3"
     },
+    // Theme colors
+    "theme": {
+        "dark": {
+            "background": "#201f1f",
+            "background_alt": "#2a2929",
+            "surface": "#302f2f",
+            "surface_alt": "#3a3939",
+            "border": "#2a2929",
+            "border_light": "#4a4949",
+            "text": "#b4b4b4",
+            "text_secondary": "#808080",
+            "text_disabled": "#6d6d6d",
+            "icon": "#b4b4b4",
+            "hover": "#4a4949",
+            "pressed": "#5a5959",
+            "selected": "#5a5959",
+            "header_checked": "#5a5959",
+            "slider_handle": "#bbbbbb",
+            "slider_handle_hover": "#cccccc"
+        },
+        "light": {
+            "background": "#f0f0f0",
+            "background_alt": "#e0e0e0",
+            "surface": "#ffffff",
+            "surface_alt": "#f5f5f5",
+            "border": "#c0c0c0",
+            "border_light": "#d0d0d0",
+            "text": "#212121",
+            "text_secondary": "#616161",
+            "text_disabled": "#9e9e9e",
+            "icon": "#424242",
+            "hover": "#e0e0e0",
+            "pressed": "#d0d0d0",
+            "selected": "#d0d0d0",
+            "header_checked": "#c0c0c0",
+            "slider_handle": "#ffffff",
+            "slider_handle_hover": "#f0f0f0"
+        }
+    },
     // Feedback
     "feedback": {
         "debug": {

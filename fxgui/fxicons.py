@@ -1,4 +1,41 @@
-"""This module provides functionality for handling icons."""
+"""Icon management functionality for `fxgui`.
+
+This module provides utilities for loading, caching, and manipulating icons
+from multiple icon libraries including Material Icons, Font Awesome, Simple
+Icons, and custom DCC (Digital Content Creation) icons.
+
+The module supports:
+    - Multiple icon libraries with configurable defaults
+    - Icon color customization
+    - Automatic caching using LRU cache for performance
+    - Icon superposition for composite icons
+    - Pixmap and QIcon conversion utilities
+
+Functions:
+    get_icon: Get a QIcon from an icon library.
+    get_pixmap: Get a QPixmap from an icon library.
+    get_icon_path: Get the file path of an icon.
+    clear_icon_cache: Clear the icon LRU cache.
+    set_default_icon_library: Set the default icon library.
+    set_icon_defaults: Configure default icon parameters.
+    add_library: Add a custom icon library.
+
+Examples:
+    Basic icon usage:
+
+    >>> from fxgui.fxicons import get_icon
+    >>> icon = get_icon("home")
+    >>> colored_icon = get_icon("settings", color="#FF5722")
+
+    Using different libraries:
+
+    >>> fa_icon = get_icon("lemon", library="fontawesome")
+    >>> dcc_icon = get_icon("houdini", library="dcc")
+"""
+
+# Metadata
+__author__ = "Valentin Beaumont"
+__email__ = "valentin.onze@gmail.com"
 
 # Built-in
 from functools import lru_cache
@@ -412,19 +449,13 @@ def get_icon(
     # Create a `QIcon` and add the normal state pixmap
     icon = QIcon(qpixmap)
 
-    # `QPixmap` for disabled state
+    # `QPixmap` for disabled state - use semi-transparent grey overlay
     disabled_pixmap = qpixmap.copy()
     painter = QPainter(disabled_pixmap)
     painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-
-    # Darken the color for the disabled state
-    for y in range(disabled_pixmap.height()):
-        for x in range(disabled_pixmap.width()):
-            pixel_color = disabled_pixmap.toImage().pixelColor(x, y)
-            darker_color = pixel_color.darker(200)
-            painter.setPen(darker_color)
-            painter.drawPoint(x, y)
-
+    # Use a consistent disabled grey color with reduced opacity effect
+    disabled_color = QColor(128, 128, 128, 180)
+    painter.fillRect(disabled_pixmap.rect(), disabled_color)
     painter.end()
 
     # Add disabled state pixmap to the `QIcon`
@@ -496,3 +527,17 @@ def superpose_icons(*icons: QIcon) -> QIcon:
     painter.end()
 
     return QIcon(pixmap)
+
+
+def clear_icon_cache() -> None:
+    """Clear the icon and pixmap LRU caches.
+
+    This should be called when changing themes to ensure icons are
+    regenerated with the new color scheme.
+
+    Examples:
+        >>> clear_icon_cache()
+    """
+
+    get_icon.cache_clear()
+    get_pixmap.cache_clear()

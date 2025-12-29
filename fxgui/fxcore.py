@@ -3,10 +3,26 @@ Wrapper around the `QtCore` module for `fxgui`.
 
 This module provides core functionality and custom classes to enhance the use
 of `QtCore` within the `fxgui` framework.
+
+Classes:
+    FXSortFilterProxyModel: A filter model using fuzzy matching based on
+        SequenceMatcher similarity ratios.
+
+Examples:
+    Using FXSortFilterProxyModel with a search bar:
+
+    >>> from fxgui.fxcore import FXSortFilterProxyModel
+    >>> proxy = FXSortFilterProxyModel(ratio=0.6)
+    >>> proxy.setSourceModel(my_model)
+    >>> search_bar.textChanged.connect(proxy.set_filter_text)
 """
 
+# Metadata
+__author__ = "Valentin Beaumont"
+__email__ = "valentin.onze@gmail.com"
+
 # Built-in
-from difflib import get_close_matches, SequenceMatcher
+from difflib import SequenceMatcher
 from typing import Optional
 
 # Third-party
@@ -126,36 +142,6 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         """
 
         return True
-
-    def __filterAcceptsRow(
-        self, source_row: int, source_parent: QModelIndex
-    ) -> bool:
-        """Determine whether a row should be accepted by the filter.
-
-        Args:
-            source_row: The source row index.
-            source_parent: The source parent index.
-
-        Returns:
-            bool: `True` if the row is accepted, `False` otherwise.
-        """
-
-        if self._ratio <= 0.0 or self._show_all or not self._filter_text:
-            return True
-
-        text = (
-            self.sourceModel().index(source_row, 0, source_parent).data() or ""
-        ).lower()
-        if not text:
-            return False
-
-        if len(self._filter_text) <= 3:
-            return self._filter_text in text
-
-        matches = get_close_matches(
-            self._filter_text, [text], n=1, cutoff=self._ratio
-        )
-        return bool(matches)
 
     def filterAcceptsRow(
         self, source_row: int, source_parent: QModelIndex

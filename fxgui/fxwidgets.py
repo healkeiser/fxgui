@@ -1,15 +1,45 @@
-"""This module provides a wrapper around the `QtWidgets` module for `fxgui`.
+"""Custom Qt widgets for the `fxgui` framework.
 
-It includes custom widgets and utility functions to enhance the functionality
-and ease of use of the standard Qt widgets within the `fxgui` framework.
+This module provides a comprehensive set of customized Qt widgets designed
+for building consistent and modern user interfaces across different
+Digital Content Creation (DCC) applications.
+
+Classes:
+    FXApplication: Customized QApplication with built-in styling.
+    FXMainWindow: Feature-rich main window with menus, toolbar, and status bar.
+    FXSplashScreen: Customizable splash screen with progress bar support.
+    FXStatusBar: Enhanced status bar with severity-based messaging.
+    FXFloatingDialog: Popup dialog appearing at cursor position.
+    FXPasswordLineEdit: Password input with show/hide toggle.
+    FXIconLineEdit: Line edit with embedded icon.
+    FXColorLabelDelegate: Custom delegate for colored item rendering.
+    FXSortedTreeWidgetItem: Natural sorting for tree items.
+    FXSystemTray: System tray icon with context menu.
+    FXWidget: Base widget with UI loading support.
+    FXElidedLabel: Label with automatic text elision.
+
+Constants:
+    CRITICAL, ERROR, WARNING, SUCCESS, INFO, DEBUG: Severity levels.
+
+Examples:
+    Creating a basic application:
+
+    >>> from fxgui import fxwidgets
+    >>> app = fxwidgets.FXApplication()
+    >>> window = fxwidgets.FXMainWindow(title="My App")
+    >>> window.show()
+    >>> app.exec_()
 """
+
+# Metadata
+__author__ = "Valentin Beaumont"
+__email__ = "valentin.onze@gmail.com"
 
 # Built-in
 import os
 from pathlib import Path
 import logging
 from typing import Dict, Tuple, Optional
-from datetime import datetime
 from webbrowser import open_new_tab
 import re
 from urllib.parse import urlparse
@@ -23,7 +53,6 @@ from qtpy.QtCore import (
     QTimer,
     Qt,
     QModelIndex,
-    QCollator,
     Slot,
 )
 from qtpy.QtGui import (
@@ -87,8 +116,88 @@ INFO = 4
 DEBUG = 5
 
 
-# XXX: Not sure if this is needed
+class FXElidedLabel(QLabel):
+    """A QLabel that elides text with '...' when it doesn't fit.
+
+    This label automatically truncates text and adds an ellipsis when the
+    text is too long to fit within the available space.
+    """
+
+    def __init__(self, text: str = "", parent: Optional[QWidget] = None):
+        super().__init__(text, parent)
+        self._full_text = text
+
+    def setText(self, text: str) -> None:
+        """Set the text and store the full text for elision."""
+        self._full_text = text
+        super().setText(text)
+        self._elide_text()
+
+    def resizeEvent(self, event) -> None:
+        """Re-elide text when the label is resized."""
+        super().resizeEvent(event)
+        self._elide_text()
+
+    def _elide_text(self) -> None:
+        """Elide the text to fit within the label's width."""
+        if not self._full_text:
+            return
+
+        metrics = QFontMetrics(self.font())
+        available_width = self.width() - 2  # Small margin
+
+        if self.wordWrap():
+            # For word-wrapped labels, limit by line count
+            available_height = (
+                self.maximumHeight()
+                if self.maximumHeight() < 16777215
+                else self.height()
+            )
+            line_height = metrics.lineSpacing()
+            max_lines = (
+                max(1, available_height // line_height)
+                if line_height > 0
+                else 5
+            )
+
+            # Simple approach: truncate text if it would exceed max lines
+            words = self._full_text.split()
+            current_text = ""
+            line_count = 1
+            current_line_width = 0
+
+            for word in words:
+                word_width = metrics.horizontalAdvance(word + " ")
+                if current_line_width + word_width > available_width:
+                    line_count += 1
+                    current_line_width = word_width
+                    if line_count > max_lines:
+                        current_text = current_text.rstrip() + "..."
+                        break
+                else:
+                    current_line_width += word_width
+                current_text += word + " "
+            else:
+                current_text = self._full_text
+
+            super().setText(current_text.rstrip())
+        else:
+            # Single line elision
+            elided = metrics.elidedText(
+                self._full_text, Qt.ElideRight, available_width
+            )
+            super().setText(elided)
+
+
 class _FXTreeWidget(QTreeWidget):
+    """Custom QTreeWidget with fixed row height.
+
+    Warning:
+        This class is deprecated and kept for reference only.
+        Consider using a standard QTreeWidget with stylesheet-based
+        row height configuration instead.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -105,10 +214,13 @@ class _FXTreeWidget(QTreeWidget):
         return 20  # Row height
 
 
-# ? Keeping for reference
 class _FXColorLabelDelegate(QStyledItemDelegate):
-    """A custom delegate to paint items with specific colors and icons based
-    on their text content."""
+    """A custom delegate to paint items with specific colors and icons.
+
+    Warning:
+        This class is deprecated. Use `FXColorLabelDelegate` instead,
+        which provides improved functionality and margin support.
+    """
 
     # Custom role to skip delegate
     SKIP_DELEGATE_ROLE = Qt.UserRole + 5
@@ -157,11 +269,12 @@ class _FXColorLabelDelegate(QStyledItemDelegate):
             super().paint(painter, option, index)
             return
 
-        # Default colors and icon
+        # Default colors and icon (theme-aware)
+        theme_colors = fxstyle.get_theme_colors()
         background_color, border_color, text_icon_color, icon, color_icon = (
-            QColor("#212121"),
-            QColor("#212121"),
-            QColor("#b4b4b4"),
+            QColor(theme_colors["background"]),
+            QColor(theme_colors["background"]),
+            QColor(theme_colors["text"]),
             fxicons.get_icon("drag_indicator"),
             False,
         )
@@ -347,9 +460,7 @@ class FXColorLabelDelegate(QStyledItemDelegate):
 
         # Margins
         self.margin_left = margin_left
-        self.margin_top = (
-            self.margin_left if margin_top is None else margin_top
-        )
+        self.margin_top = self.margin_left if margin_top is None else margin_top
         self.margin_bottom = (
             self.margin_left if margin_bottom is None else margin_bottom
         )
@@ -388,11 +499,16 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         # Call the base class paint method to draw selection and hover effects
         super().paint(painter, option_modified, index)
 
-        # Set the default colors and icon
+        # Set the default colors and icon (theme-aware)
+        theme_colors = fxstyle.get_theme_colors()
         background_color, border_color, text_icon_color, icon, color_icon = (
-            QColor("#212121"),
-            QColor("#6d6d6d"),
-            QColor("#ffffff"),
+            QColor(theme_colors["background"]),
+            QColor(theme_colors["border_light"]),
+            QColor(
+                theme_colors["surface"]
+                if fxstyle._theme == "dark"
+                else "#ffffff"
+            ),
             fxicons.get_icon("drag_indicator"),
             False,  # Default to not coloring the icon
         )
@@ -523,15 +639,20 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         return QSize(width, height)
 
 
-# ? Keeping for reference
-# TODO: Make it work with `QCollator`
 class _FXSortedTreeWidgetItem(QTreeWidgetItem):
-    """Custom `QTreeWidgetItem` that provides natural sorting for strings
-    containing numbers using QCollator for locale-aware sorting.
+    """Custom QTreeWidgetItem with QCollator-based natural sorting.
+
+    Warning:
+        This class is deprecated and kept for reference only.
+        Use `FXSortedTreeWidgetItem` instead, which provides natural
+        sorting without requiring QCollator import.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Import QCollator locally to avoid unused import warning
+        from qtpy.QtCore import QCollator
+
         self.collator = QCollator()
         self.collator.setNumericMode(True)
 
@@ -670,6 +791,7 @@ class FXSplashScreen(QSplashScreen):
         color_b: str = fxstyle._COLOR_B_DEFAULT,
         fade_in: bool = False,
         set_stylesheet: bool = True,
+        overlay_opacity: float = 1.0,
     ):
         image = self._load_image(image_path)
         super().__init__(image)
@@ -689,6 +811,7 @@ class FXSplashScreen(QSplashScreen):
         self.color_a: str = color_a
         self.color_b: str = color_b
         self.fade_in: bool = fade_in
+        self.overlay_opacity: float = overlay_opacity
 
         # Methods
         self._grey_overlay()
@@ -700,6 +823,9 @@ class FXSplashScreen(QSplashScreen):
                     color_a=self.color_a, color_b=self.color_b
                 )
             )
+
+        # Apply overlay opacity after stylesheet to ensure it's not overridden
+        self._apply_overlay_opacity()
 
     # Private methods
     def _load_image(self, image_path: Optional[str]) -> QPixmap:
@@ -756,11 +882,16 @@ class FXSplashScreen(QSplashScreen):
         return resized_pixmap
 
     def _grey_overlay(self) -> None:
-        frame = QFrame(self)
-        frame.setGeometry(0, 0, self.pixmap.width() // 2, self.pixmap.height())
-        fxutils.add_shadows(self, frame)
+        self.overlay_frame = QFrame(self)
+        self.overlay_frame.setGeometry(
+            0, 0, self.pixmap.width() // 2, self.pixmap.height()
+        )
+        fxutils.add_shadows(self, self.overlay_frame)
 
-        layout = QVBoxLayout(frame)
+        # Apply background opacity via stylesheet
+        self._apply_overlay_opacity()
+
+        layout = QVBoxLayout(self.overlay_frame)
         layout.setContentsMargins(50, 50, 50, 50)
 
         self.icon_label = QLabel()
@@ -784,10 +915,12 @@ class FXSplashScreen(QSplashScreen):
             QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         )
 
-        self.info_label = QLabel(self.information)
+        self.info_label = FXElidedLabel(self.information)
         self.info_label.setAlignment(Qt.AlignJustify)
         self.info_label.setWordWrap(True)
         self.info_label.setStyleSheet("font-size: 10pt;")
+        # Limit height to allow proper text elision
+        self.info_label.setMaximumHeight(120)
         layout.addWidget(self.info_label)
 
         layout.addItem(
@@ -823,22 +956,9 @@ class FXSplashScreen(QSplashScreen):
         layout.addWidget(self.copyright_label)
 
     def _update_copyright_label(self) -> None:
-        project = (
-            self.project
-            if self.project and len(self.project) >= 1
-            else "Project"
-        )
-        version = (
-            self.version
-            if self.version and len(self.version) >= 1
-            else "0.0.0"
-        )
-        company = (
-            self.company
-            if self.company and len(self.company) >= 1
-            else "\u00A9 Company"
-        )
-
+        project = self.project or "Project"
+        version = self.version or "0.0.0"
+        company = self.company or "\u00a9 Company"
         self.copyright_label.setText(f"{project} | {version} | {company}")
 
     def _fade_in(self) -> None:
@@ -869,9 +989,9 @@ class FXSplashScreen(QSplashScreen):
             max_range: The maximum progress value. Defaults to `100`.
         """
 
-        for value in range(max_range):
-            QApplication.processEvents()
-            self.progress_bar.setValue(value)
+        self.progress_bar.setRange(0, max_range)
+        self.progress_bar.setValue(value)
+        QApplication.processEvents()
 
     def set_pixmap(self, image_path: str) -> None:
         """Set the pixmap for the splash screen.
@@ -978,6 +1098,34 @@ class FXSplashScreen(QSplashScreen):
         self.setStyleSheet(
             fxstyle.load_stylesheet(color_a=color_a, color_b=color_b)
         )
+        self._apply_overlay_opacity()
+
+    def set_overlay_opacity(self, opacity: float) -> None:
+        """Set the opacity of the grey overlay background.
+
+        Args:
+            opacity: The opacity value between 0.0 (transparent) and 1.0 (opaque).
+        """
+
+        self.overlay_opacity = max(0.0, min(1.0, opacity))
+        self._apply_overlay_opacity()
+
+    def _apply_overlay_opacity(self) -> None:
+        """Apply the overlay opacity to the frame's background color."""
+
+        alpha = int(self.overlay_opacity * 255)
+        # Set the frame background with opacity, and ensure all child QLabel
+        # widgets have transparent backgrounds so they don't show through
+        self.overlay_frame.setStyleSheet(
+            f"""
+            QFrame {{
+                background-color: rgba(45, 45, 45, {alpha});
+            }}
+            QFrame > QLabel {{
+                background-color: transparent;
+            }}
+            """
+        )
 
     # Events
     def mousePressEvent(self, _):
@@ -1022,7 +1170,7 @@ class FXStatusBar(QStatusBar):
         # Attributes
         self.project = project or "Project"
         self.version = version or "0.0.0"
-        self.company = company or "\u00A9 Company"
+        self.company = company or "\u00a9 Company"
         self.icon_label = QLabel()
         self.message_label = QLabel()
         self.project_label = QLabel(self.project)
@@ -1050,6 +1198,42 @@ class FXStatusBar(QStatusBar):
             self.addPermanentWidget(widget)
 
         self.messageChanged.connect(self._on_status_message_changed)
+
+    def _get_severity_info(
+        self, severity_type: int, colors_dict: dict
+    ) -> Tuple[str, QPixmap, str, str]:
+        """Returns severity information for the given severity type.
+
+        Args:
+            severity_type: The severity level (0-5).
+            colors_dict: The colors dictionary from fxstyle.
+
+        Returns:
+            Tuple of (prefix, icon_pixmap, background_color, border_color).
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        severity_configs = {
+            CRITICAL: ("Critical", "cancel", "error"),
+            ERROR: ("Error", "error", "error"),
+            WARNING: ("Warning", "warning", "warning"),
+            SUCCESS: ("Success", "check_circle", "success"),
+            INFO: ("Info", "info", "info"),
+            DEBUG: ("Debug", "bug_report", "debug"),
+        }
+
+        prefix, icon_name, feedback_key = severity_configs.get(
+            severity_type, ("Info", "info", "info")
+        )
+        feedback = colors_dict["feedback"][feedback_key]
+
+        icon_pixmap = fxicons.get_icon(
+            icon_name, color=feedback["light"]
+        ).pixmap(14, 14)
+
+        return prefix, icon_pixmap, feedback["background"], feedback["dark"]
 
     def showMessage(
         self,
@@ -1098,76 +1282,19 @@ class FXStatusBar(QStatusBar):
         """
 
         # Send fake signal to trigger the `messageChanged` event
-        super().showMessage(" ", timeout=duration * 1000)
+        super().showMessage(" ", timeout=int(duration * 1000))
 
         # Show the icon and message label which were hidden at init time
         self.icon_label.setVisible(True)
         self.message_label.setVisible(True)
 
         colors_dict = fxstyle.load_colors_from_jsonc()
-        severity_mapping = {
-            0: (
-                "Critical",
-                fxicons.get_icon(
-                    "cancel",
-                    color=colors_dict["feedback"]["error"]["light"],
-                ).pixmap(14, 14),
-                colors_dict["feedback"]["error"]["background"],
-                colors_dict["feedback"]["error"]["dark"],
-            ),
-            1: (
-                "Error",
-                fxicons.get_icon(
-                    "error",
-                    color=colors_dict["feedback"]["error"]["light"],
-                ).pixmap(14, 14),
-                colors_dict["feedback"]["error"]["background"],
-                colors_dict["feedback"]["error"]["dark"],
-            ),
-            2: (
-                "Warning",
-                fxicons.get_icon(
-                    "warning",
-                    color=colors_dict["feedback"]["warning"]["light"],
-                ).pixmap(14, 14),
-                colors_dict["feedback"]["warning"]["background"],
-                colors_dict["feedback"]["warning"]["dark"],
-            ),
-            3: (
-                "Success",
-                fxicons.get_icon(
-                    "check_circle",
-                    color=colors_dict["feedback"]["success"]["light"],
-                ).pixmap(14, 14),
-                colors_dict["feedback"]["success"]["background"],
-                colors_dict["feedback"]["success"]["dark"],
-            ),
-            4: (
-                "Info",
-                fxicons.get_icon(
-                    "info",
-                    color=colors_dict["feedback"]["info"]["light"],
-                ).pixmap(14, 14),
-                colors_dict["feedback"]["info"]["background"],
-                colors_dict["feedback"]["info"]["dark"],
-            ),
-            5: (
-                "Debug",
-                fxicons.get_icon(
-                    "bug_report",
-                    color=colors_dict["feedback"]["debug"]["light"],
-                ).pixmap(14, 14),
-                colors_dict["feedback"]["debug"]["background"],
-                colors_dict["feedback"]["debug"]["dark"],
-            ),
-        }
-
         (
             severity_prefix,
             severity_icon,
             status_bar_color,
             status_bar_border_color,
-        ) = severity_mapping[severity_type]
+        ) = self._get_severity_info(severity_type, colors_dict)
 
         # Use custom pixmap if provided
         if pixmap is not None:
@@ -1179,7 +1306,7 @@ class FXStatusBar(QStatusBar):
 
         # Message
         message_prefix = (
-            f"<b>{severity_prefix}</b>: {self._get_current_time()} - "
+            f"<b>{severity_prefix}</b>: {fxutils.get_formatted_time()} - "
             if time
             else f"{severity_prefix}: "
         )
@@ -1190,32 +1317,27 @@ class FXStatusBar(QStatusBar):
 
         if set_color:
             self.setStyleSheet(
-                """QStatusBar {
-                background: """
-                + status_bar_color
-                + """;
-                border-top: 1px solid"""
-                + status_bar_border_color
-                + """;
-                }
-                """
+                f"""QStatusBar {{
+                    background: {status_bar_color};
+                    border-top: 1px solid {status_bar_border_color};
+                }}
+                QStatusBar QLabel {{
+                    color: white;
+                }}"""
             )
 
         # Link `Logger` object
         if logger is not None:
-            # Modify log level according to severity_type
-            if severity_type == 0:
-                logger.critical(message)
-            if severity_type == 1:
-                logger.error(message)
-            elif severity_type == 2:
-                logger.warning(message)
-            elif severity_type == 3:
-                logger.info(message)
-            elif severity_type == 4:
-                logger.info(message)
-            elif severity_type == 5:
-                logger.debug(message)
+            log_methods = {
+                CRITICAL: logger.critical,
+                ERROR: logger.error,
+                WARNING: logger.warning,
+                SUCCESS: logger.info,
+                INFO: logger.info,
+                DEBUG: logger.debug,
+            }
+            log_method = log_methods.get(severity_type, logger.info)
+            log_method(message)
 
     def clearMessage(self):
         """Clears the message from the status bar.
@@ -1230,26 +1352,6 @@ class FXStatusBar(QStatusBar):
         self.message_label.setVisible(False)
         super().clearMessage()
 
-    def _get_current_time(
-        self, display_seconds: bool = False, display_date: bool = False
-    ) -> str:
-        """Returns the current time as a string.
-
-        Args:
-            display_seconds (bool, optional): Whether to display the seconds.
-                Defaults to `False`.
-            display_date (bool, optional): Whether to display the date.
-                Defaults to `False`.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        format_string = "%H:%M:%S" if display_seconds else "%H:%M"
-        if display_date:
-            format_string = "%Y-%m-%d " + format_string
-        return datetime.now().strftime(format_string)
-
     @Slot()
     def _on_status_message_changed(self, args):
         """If there are no arguments, which means the message is being removed,
@@ -1258,13 +1360,15 @@ class FXStatusBar(QStatusBar):
 
         if not args:
             self.clearMessage()
+            # Reset to theme-appropriate colors
+            theme_colors = fxstyle.get_theme_colors()
             self.setStyleSheet(
-                """
-                QStatusBar {
+                f"""
+                QStatusBar {{
                     border: 0px solid transparent;
-                    background: #201f1f;
-                    border-top: 1px solid #2a2929;
-                }
+                    background: {theme_colors['background']};
+                    border-top: 1px solid {theme_colors['border']};
+                }}
             """
             )
 
@@ -1360,7 +1464,7 @@ class FXMainWindow(QMainWindow):
         ...     documentation="https://my_tool_docs.com",
         ...     project="Awesome Project",
         ...     version="v1.0.0",
-        ...     company="\u00A9 Super Company",
+        ...     company="\u00a9 Super Company",
         ...     version="v1.0.0",
         ...     ui_file="path/to/ui_file.ui",
         ... )
@@ -1429,7 +1533,7 @@ class FXMainWindow(QMainWindow):
         self.documentation: str = documentation
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
-        self.company: str = company or "\u00A9 Company"
+        self.company: str = company or "\u00a9 Company"
         self.color_a: str = color_a or fxstyle._COLOR_A_DEFAULT
         self.color_b: str = color_b or fxstyle._COLOR_B_DEFAULT
         self.ui_file: str = ui_file
@@ -1687,7 +1791,6 @@ class FXMainWindow(QMainWindow):
             self.check_updates_action
         )
         self.main_menu.addSeparator()
-        self.close_menu = self.main_menu.addAction(self.close_action)
         self.hide_main_menu = self.main_menu.addAction(self.hide_action)
         self.hide_others_menu = self.main_menu.addAction(
             self.hide_others_action
@@ -1708,13 +1811,11 @@ class FXMainWindow(QMainWindow):
             self.maximize_window_action
         )
         self.window_menu.addSeparator()
-        self.on_top_menu = self.window_menu.addAction(
-            self.window_on_top_action
-        )
+        self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
         self.window_menu.addSeparator()
-
-        # TODO: Finish implementing theme toggling
-        # self.window_menu.addAction(self.toggle_theme_action)
+        self.toggle_theme_menu = self.window_menu.addAction(
+            self.toggle_theme_action
+        )
 
         # Help menu
         self.help_menu = self.menu_bar.addMenu("Help")
@@ -1750,10 +1851,7 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        if attribute is not None and len(attribute) >= 1:
-            return QLabel(attribute)
-        else:
-            return QLabel(default)
+        return QLabel(attribute if attribute else default)
 
     def _create_banner(self) -> None:
         """Creates a banner with the window title for the window.
@@ -1762,10 +1860,12 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
+        theme_colors = fxstyle.get_theme_colors()
         self.banner = QLabel("Banner", self)
         self.banner.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.banner.setStyleSheet(
-            "color: white; font-size: 16px; padding: 10px; border-bottom: 1px solid #3A3939;"
+            f"color: {theme_colors['text']}; font-size: 16px; padding: 10px; "
+            f"border-bottom: 1px solid {theme_colors['border']};"
         )
         self.banner.setFixedHeight(50)
 
@@ -1859,7 +1959,7 @@ class FXMainWindow(QMainWindow):
         project_label.setAlignment(Qt.AlignCenter)
         version_label = self._generate_label(self.version, "0.0.0")
         version_label.setAlignment(Qt.AlignCenter)
-        company_label = self._generate_label(self.company, "\u00A9 Company")
+        company_label = self._generate_label(self.company, "\u00a9 Company")
         company_label.setAlignment(Qt.AlignCenter)
 
         layout = QVBoxLayout()
@@ -1881,22 +1981,16 @@ class FXMainWindow(QMainWindow):
         """
 
         flags = self.windowFlags()
-        action_values = {
-            True: (
-                "Always on Top",
-                fxicons.get_icon("hdr_strong").pixmap(14, 14),
-            ),
-            False: (
-                "Regular Position",
-                fxicons.get_icon("hdr_weak").pixmap(14, 14),
-            ),
-        }
         stays_on_top = bool(flags & Qt.WindowStaysOnTopHint)
-        text, icon = action_values[stays_on_top]
         flags ^= Qt.WindowStaysOnTopHint
-        self.window_on_top_action.setText(text)
-        if icon is not None:
-            self.window_on_top_action.setIcon(icon)
+
+        if stays_on_top:
+            self.window_on_top_action.setText("Always on Top")
+            self.window_on_top_action.setIcon(fxicons.get_icon("hdr_strong"))
+        else:
+            self.window_on_top_action.setText("Regular Position")
+            self.window_on_top_action.setIcon(fxicons.get_icon("hdr_weak"))
+
         self.setWindowFlags(flags)
         self.show()
 
@@ -1916,9 +2010,7 @@ class FXMainWindow(QMainWindow):
             desktop_geometry: QRect = QDesktopWidget().availableGeometry()
 
         center_point = desktop_geometry.center()
-        left_top_point = QPoint(
-            desktop_geometry.left(), desktop_geometry.top()
-        )
+        left_top_point = QPoint(desktop_geometry.left(), desktop_geometry.top())
         right_top_point = QPoint(
             desktop_geometry.right(), desktop_geometry.top()
         )
@@ -1952,10 +2044,12 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
+        if not url:
+            return False
         try:
             result = urlparse(url)
             return all([result.scheme, result.netloc])
-        except:
+        except (ValueError, AttributeError):
             return False
 
     def _check_documentation(self):
@@ -1966,11 +2060,9 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        pass
-        if self._is_valid_url(self.documentation):
-            self.open_documentation_action.setEnabled(True)
-        else:
-            self.open_documentation_action.setEnabled(False)
+        self.open_documentation_action.setEnabled(
+            self._is_valid_url(self.documentation)
+        )
 
     def _add_shadows(
         self,
@@ -1999,26 +2091,6 @@ class FXMainWindow(QMainWindow):
         if status_bar:
             fxutils.add_shadows(self, self.statusBar())
 
-    def _get_current_time(
-        self, display_seconds: bool = False, display_date: bool = False
-    ) -> str:
-        """Returns the current time as a string.
-
-        Args:
-            display_seconds (bool, optional): Whether to display the seconds.
-                Defaults to `False`.
-            display_date (bool, optional): Whether to display the date.
-                Defaults to `False`.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        format_string = "%H:%M:%S" if display_seconds else "%H:%M"
-        if display_date:
-            format_string = "%Y-%m-%d " + format_string
-        return datetime.now().strftime(format_string)
-
     def _toggle_theme(self) -> None:
         """Toggles the theme of the window between light and dark.
 
@@ -2026,25 +2098,121 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        fxicons.set_icon_defaults(
-            color="#b4b4b4" if fxstyle._theme == "dark" else "#131313"
+        # Use centralized theme toggling
+        new_theme = fxstyle.toggle_theme(
+            self, color_a=self.color_a, color_b=self.color_b
         )
 
-        # Window styling
-        self.setStyleSheet(
-            fxstyle.load_stylesheet(
-                color_a=self.color_a,
-                color_b=self.color_b,
-                theme="light" if fxstyle._theme == "dark" else "dark",
-            )
-        )
+        # Get the theme colors for the new theme
+        theme_colors = fxstyle.get_theme_colors()
 
-        # Banner
+        # Update banner for the new theme
         self.banner.setStyleSheet(
-            "color: white; font-size: 16px; padding: 10px; border-bottom: 1px solid #3A3939;"
-            if fxstyle._theme == "dark"
-            else "color: black; font-size: 16px; padding: 10px; border-bottom: 1px solid #3A3939;"
+            f"color: {theme_colors['text']}; font-size: 16px; padding: 10px; "
+            f"border-bottom: 1px solid {theme_colors['border']};"
         )
+
+        # Update status bar colors for the new theme
+        self.status_bar.setStyleSheet(
+            f"""QStatusBar {{
+                background: {theme_colors['background']};
+                border-top: 1px solid {theme_colors['border']};
+            }}"""
+        )
+
+        # Update all action icons for the new theme
+        self._refresh_action_icons()
+
+    def _refresh_action_icons(self) -> None:
+        """Refresh all action icons after a theme change.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        # Map of actions to their icon names
+        action_icon_map = {
+            self.about_action: "help",
+            self.check_updates_action: "update",
+            self.hide_action: "visibility_off",
+            self.hide_others_action: "disabled_visible",
+            self.close_action: "close",
+            self.settings_action: "settings",
+            self.window_on_top_action: "hdr_strong",
+            self.minimize_window_action: "minimize",
+            self.maximize_window_action: "maximize",
+            self.toggle_theme_action: "brightness_4",
+            self.open_documentation_action: "menu_book",
+            self.home_action: "home",
+            self.previous_action: "arrow_back",
+            self.next_action: "arrow_forward",
+            self.refresh_action: "refresh",
+        }
+
+        for action, icon_name in action_icon_map.items():
+            action.setIcon(fxicons.get_icon(icon_name))
+
+        # Also refresh QDialogButtonBox icons throughout the window
+        self._refresh_dialog_button_icons()
+
+    def _refresh_dialog_button_icons(self) -> None:
+        """Refresh all QDialogButtonBox button icons after a theme change.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        from qtpy.QtWidgets import QDialogButtonBox, QPushButton
+
+        # Map of standard button roles to their icon names
+        button_icon_map = {
+            QDialogButtonBox.Ok: "check",
+            QDialogButtonBox.Cancel: "cancel",
+            QDialogButtonBox.Close: "close",
+            QDialogButtonBox.Save: "save",
+            QDialogButtonBox.SaveAll: "save_all",
+            QDialogButtonBox.Open: "open_in_new",
+            QDialogButtonBox.Yes: "check",
+            QDialogButtonBox.YesToAll: "done_all",
+            QDialogButtonBox.No: "cancel",
+            QDialogButtonBox.NoToAll: "do_not_disturb",
+            QDialogButtonBox.Abort: "cancel",
+            QDialogButtonBox.Retry: "restart_alt",
+            QDialogButtonBox.Ignore: "notifications_off",
+            QDialogButtonBox.Discard: "delete",
+            QDialogButtonBox.Help: "help",
+            QDialogButtonBox.Apply: "check",
+            QDialogButtonBox.Reset: "cleaning_services",
+            QDialogButtonBox.RestoreDefaults: "settings_backup_restore",
+        }
+
+        # Find all QDialogButtonBox widgets in the window
+        for button_box in self.findChildren(QDialogButtonBox):
+            for role, icon_name in button_icon_map.items():
+                button = button_box.button(role)
+                if button is not None:
+                    button.setIcon(fxicons.get_icon(icon_name))
+
+    # Public methods
+    def toggle_theme(self) -> str:
+        """Toggle the theme of the window between light and dark.
+
+        This method can be called from external code to switch themes,
+        including when running inside a DCC like Houdini, Maya, or Nuke
+        where you don't have direct access to QApplication.
+
+        Returns:
+            str: The new theme that was applied ("dark" or "light").
+
+        Examples:
+            >>> window = FXMainWindow()
+            >>> window.show()
+            >>> new_theme = window.toggle_theme()
+            >>> print(f"Switched to {new_theme} theme")
+        """
+
+        self._toggle_theme()
+        return fxstyle._theme
 
     # Overrides
     def statusBar(self) -> FXStatusBar:
@@ -2281,7 +2449,10 @@ class FXFloatingDialog(QDialog):
         super().__init__(parent)
 
         # Attributes
-        _icon = fxicons.get_icon("home", color="#b4b4b4").pixmap(32, 32)
+        theme_colors = fxstyle.get_theme_colors()
+        _icon = fxicons.get_icon("home", color=theme_colors["icon"]).pixmap(
+            32, 32
+        )
         self._default_icon = _icon
         self.dialog_icon: QIcon = icon
         self.dialog_title: str = title
@@ -2317,16 +2488,19 @@ class FXFloatingDialog(QDialog):
             pass
 
         elif self.parent_package == fxdcc.HOUDINI:
-            # Custom stylesheet for Houdini
-            self.title_widget.setStyleSheet("background-color: #2b2b2b;")
+            # Custom stylesheet for Houdini (use theme colors)
+            theme_colors = fxstyle.get_theme_colors()
+            self.title_widget.setStyleSheet(
+                f"background-color: {theme_colors['background_alt']};"
+            )
             self.setStyleSheet(
-                """
-                FXFloatingDialog {
-                    border-top: 1px solid #949494;
-                    border-left: 1px solid #949494;
-                    border-bottom: 1px solid #262626;
-                    border-right: 1px solid #262626;
-                }
+                f"""
+                FXFloatingDialog {{
+                    border-top: 1px solid {theme_colors['border_light']};
+                    border-left: 1px solid {theme_colors['border_light']};
+                    border-bottom: 1px solid {theme_colors['background']};
+                    border-right: 1px solid {theme_colors['background']};
+                }}
             """
             )
 
@@ -2341,7 +2515,7 @@ class FXFloatingDialog(QDialog):
 
     # Private methods
     def _setup_title(self):
-        """_summary_
+        """Sets up the title bar with icon and label.
 
         Warning:
             This method is intended for internal use only.
@@ -2364,7 +2538,7 @@ class FXFloatingDialog(QDialog):
         self.title_layout.addWidget(self.title_label)
 
     def _setup_main_widget(self):
-        """_summary_
+        """Sets up the main content widget and layout.
 
         Warning:
             This method is intended for internal use only.
@@ -2375,7 +2549,7 @@ class FXFloatingDialog(QDialog):
         self.main_layout.setContentsMargins(10, 10, 10, 10)
 
     def _setup_buttons(self):
-        """_summary_
+        """Sets up the dialog button box with close button.
 
         Warning:
             This method is intended for internal use only.
@@ -2386,7 +2560,7 @@ class FXFloatingDialog(QDialog):
         self.button_close = self.button_box.addButton(QDialogButtonBox.Close)
 
     def _setup_layout(self):
-        """_summary_
+        """Sets up the main dialog layout with title, content, and buttons.
 
         Warning:
             This method is intended for internal use only.

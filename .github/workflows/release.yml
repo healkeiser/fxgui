@@ -1,0 +1,230 @@
+# This workflow handles the complete release process:
+# 1. Generate changelog from conventional commits
+# 2. Create a GitHub release with changelog content
+# 3. Build and publish Python package to PyPI
+# 4. Deploy documentation to GitHub Pages
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*" # Trigger the workflow on version tags
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version to use for changelog generation"
+        type: string
+        default: "20"
+      python-version:
+        description: "Python version to use for build and documentation"
+        type: string
+        default: "3.11"
+      skip-changelog:
+        description: "Skip changelog generation"
+        type: boolean
+        default: false
+      skip-docs:
+        description: "Skip documentation deployment"
+        type: boolean
+        default: false
+      skip-pypi:
+        description: "Skip PyPI publishing"
+        type: boolean
+        default: false
+    secrets:
+      PYPI_USERNAME:
+        description: "PyPI username for package publishing"
+        required: false
+      PYPI_PASSWORD:
+        description: "PyPI password/token for package publishing"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  # Step 1: Generate changelog FIRST so it can be included in the release
+  generate-changelog:
+    name: Generate Changelog
+    if: ${{ inputs.skip-changelog != true }}
+    runs-on: ubuntu-latest
+    outputs:
+      changelog-section: ${{ steps.extract-changelog.outputs.section }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check for package.json
+        id: check-npm
+        run: |
+          if [ -f "package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "No package.json found, skipping changelog generation"
+          fi
+
+      - name: Setup Node.js
+        if: steps.check-npm.outputs.exists == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version || '20' }}
+
+      - name: Install dependencies
+        if: steps.check-npm.outputs.exists == 'true'
+        run: npm install && npm install -g auto-changelog
+
+      - name: Generate changelog
+        if: steps.check-npm.outputs.exists == 'true'
+        run: npm run changelog
+
+      - name: Extract changelog section for this release
+        id: extract-changelog
+        run: |
+          # Extract the section for the current tag from CHANGELOG.md
+          TAG_NAME="${GITHUB_REF_NAME:-$(git describe --tags --abbrev=0)}"
+          VERSION="${TAG_NAME#v}"
+
+          if [ ! -f "CHANGELOG.md" ]; then
+            echo "section=See release notes for details." >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Extract content between this version header and the next version header
+          SECTION=$(awk "/^## \[?${VERSION}\]?/{found=1; next} /^## \[?[0-9]+\.[0-9]+\.[0-9]+\]?/{if(found) exit} found{print}" CHANGELOG.md)
+
+          # If extraction failed, use a default message
+          if [ -z "$SECTION" ]; then
+            SECTION="See [CHANGELOG.md](CHANGELOG.md) for details."
+          fi
+
+          # Write to output (handle multiline)
+          echo "section<<EOF" >> $GITHUB_OUTPUT
+          echo "$SECTION" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Remove package-lock.json
+        if: steps.check-npm.outputs.exists == 'true'
+        run: rm -f package-lock.json
+
+      - name: Commit and push changelog
+        if: steps.check-npm.outputs.exists == 'true'
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add CHANGELOG.md
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m '[DOC] CHANGELOG' -m '[skip ci]'
+            git push origin main
+          else
+            echo "No changes to commit"
+          fi
+
+  # Step 2: Create release WITH changelog content
+  create-release:
+    name: Create GitHub Release
+    needs: generate-changelog
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: ${{ github.ref_name }}
+          body: |
+            ## What's Changed
+
+            ${{ needs.generate-changelog.outputs.changelog-section || 'See [CHANGELOG.md](CHANGELOG.md) for details.' }}
+
+            ---
+            **Full Changelog**: See [CHANGELOG.md](CHANGELOG.md)
+
+  # Step 3: Build and publish to PyPI
+  publish-pypi:
+    name: Publish to PyPI
+    needs: create-release
+    if: ${{ always() && !cancelled() && inputs.skip-pypi != true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          submodules: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version || '3.11' }}
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install setuptools wheel twine build
+
+      - name: Build package
+        run: |
+          python -m build
+
+      - name: Publish package to PyPI
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          twine upload dist/*
+
+  # Step 4: Deploy documentation
+  deploy-docs:
+    name: Deploy Documentation
+    needs: publish-pypi
+    if: ${{ always() && !cancelled() && inputs.skip-docs != true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check for mkdocs.yml
+        id: check-mkdocs
+        run: |
+          if [ -f "mkdocs.yml" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "No mkdocs.yml found, skipping documentation deployment"
+          fi
+
+      - name: Setup Python
+        if: steps.check-mkdocs.outputs.exists == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version || '3.11' }}
+
+      - name: Install dependencies
+        if: steps.check-mkdocs.outputs.exists == 'true'
+        run: |
+          python3 -m pip install --upgrade pip
+          if [ -f "requirements.txt" ]; then
+            python3 -m pip install -r requirements.txt
+          else
+            python3 -m pip install mkdocs mkdocs-material mkdocstrings mkdocstrings-python
+          fi
+
+      - name: Deploy to GitHub Pages
+        if: steps.check-mkdocs.outputs.exists == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: mkdocs gh-deploy --force

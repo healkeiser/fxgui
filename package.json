@@ -1,5 +1,8 @@
 {
     "scripts": {
         "changelog": "auto-changelog -p --unreleased"
+    },
+    "devDependencies": {
+        "auto-changelog": "^2.5.0"
     }
 }

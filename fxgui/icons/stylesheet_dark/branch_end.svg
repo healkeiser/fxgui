@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="uuid-037f8e09-6cb2-4fab-b22c-d2e89d1982fe" xmlns="http://www.w3.org/2000/svg" width="64"
+    height="64" viewBox="0 0 64 64">
+    <defs>
+        <style>
+            .uuid-branch-line{fill:none;stroke:#a2a2a2;stroke-linecap:square;stroke-miterlimit:10;stroke-width:3px;}</style>
+    </defs>
+    <line class="uuid-branch-line" x1="31.5" x2="31.5" y2="32" />
+    <line class="uuid-branch-line" x1="64" y1="32" x2="31.5" y2="32" />
+</svg>

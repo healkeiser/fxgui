@@ -2,9 +2,23 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Create Initial Version",
+            "type": "shell",
+            "command": "powershell -ExecutionPolicy Bypass -File ./.scripts/git/CreateFirstVersion.ps1",
+            "problemMatcher": [],
+            "group": {
+                "kind": "none",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
             "label": "Show Current Version",
             "type": "shell",
-            "command": "powershell -ExecutionPolicy Bypass -File ./scripts/git/show_current_version.ps1",
+            "command": "powershell -ExecutionPolicy Bypass -File ./.scripts/git/ShowCurrentVersion.ps1",
             "problemMatcher": [],
             "group": {
                 "kind": "none",
@@ -18,7 +32,7 @@
         {
             "label": "Create and Push Git Tag",
             "type": "shell",
-            "command": "powershell -ExecutionPolicy Bypass -File ./scripts/git/increment_version.ps1 ${input:incrementType}",
+            "command": "powershell -ExecutionPolicy Bypass -File ./.scripts/git/IncrementVersion.ps1 ${input:incrementType}",
             "problemMatcher": [],
             "group": {
                 "kind": "none",
@@ -46,7 +60,7 @@
         {
             "label": "Generate Changelog",
             "type": "shell",
-            "command": "npm run changelog",
+            "command": "npm install; npm run changelog",
             "problemMatcher": [],
             "group": {
                 "kind": "none",
@@ -56,7 +70,7 @@
                 "reveal": "always",
                 "panel": "shared"
             }
-        }
+        },
     ],
     "inputs": [
         {

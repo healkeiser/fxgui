@@ -1,4 +1,37 @@
-"""Examples on how to use the `fxgui` module."""
+"""Example implementations demonstrating `fxgui` module usage.
+
+This module contains various example functions showcasing how to use
+the fxgui framework for creating Qt-based applications, including:
+
+- Basic window creation
+- Splash screens with progress bars
+- Login dialogs
+- Custom delegates for tree/list/table widgets
+- System tray integration
+- DCC-specific implementations for Houdini, Maya, and Nuke
+
+Functions:
+    main: Main example function showing complete application setup.
+    show_window: Simple window example with UI file.
+    show_splash_screen: Display a customizable splash screen.
+    show_login_dialog: Modal login dialog example.
+    show_window_houdini: Example for Houdini integration.
+    show_floating_dialog_houdini: Floating dialog in Houdini.
+
+Usage:
+    Run this module directly to see the full example:
+
+    >>> python -m fxgui.examples
+
+    Or import specific examples:
+
+    >>> from fxgui.examples import show_window
+    >>> show_window()
+"""
+
+# Metadata
+__author__ = "Valentin Beaumont"
+__email__ = "valentin.onze@gmail.com"
 
 # Built-in
 from pathlib import Path
@@ -25,7 +58,6 @@ from qtpy.QtWidgets import (
     QStyle,
     QWidgetAction,
 )
-from qtpy.QtUiTools import QUiLoader
 from qtpy.QtCore import Qt, QTimer, QPoint
 from qtpy.QtGui import QColor, QIcon
 
@@ -122,30 +154,19 @@ def show_floating_dialog_houdini():
     floating_dialog.show_under_cursor()
 
 
-def show_splashscreen(time: float = 5.0):
-    """Show the splashscreen.
-
-    Args:
-        time (float): The time in seconds to show the splashscreen.
-    """
-
-    application = fxwidgets.FXApplication()
-    splashscreen = fxwidgets.FXSplashScreen(
-        image_path=str(_pixmap), show_progress_bar=True, fade_in=False
-    )
-    splashscreen.show()
-    splashscreen.progress_bar.setValue(75)
-    QTimer.singleShot(time * 1000, splashscreen.close)
-    QTimer.singleShot(time * 1000, application.quit)
-    application.exec_()
-
-
 def show_window():
     """Show the window."""
 
     # Initialize the QApplication
     application = fxwidgets.FXApplication()
     window = fxwidgets.FXMainWindow(ui_file=str(_ui_file))
+
+    # Set icons on the QDialogButtonBox buttons
+    button_box = window.ui.buttonBox
+    ok_button = button_box.button(QDialogButtonBox.Ok)
+    cancel_button = button_box.button(QDialogButtonBox.Cancel)
+    ok_button.setIcon(get_icon("check"))
+    cancel_button.setIcon(get_icon("cancel"))
 
     # Buttons in `test.ui` example
     window.ui.button_success.clicked.connect(
@@ -181,12 +202,12 @@ def show_window_alt():
     application = fxwidgets.FXApplication()
     window = fxwidgets.FXMainWindow()
     window.set_ui_file(str(_ui_file))
-    button_sucess = window.ui.button_success
+    button_success = window.ui.button_success
 
     # Spining icons
-    animation = qta.Spin(button_sucess)
+    animation = qta.Spin(button_success)
     spin_icon = qta.icon("fa5s.spinner", color="green", animation=animation)
-    button_sucess.setIcon(spin_icon)
+    button_success.setIcon(spin_icon)
 
     window.show()
     application.exec_()
@@ -301,8 +322,19 @@ def get_colors() -> Dict[str, Tuple[QColor, QColor, QColor, QIcon, bool]]:
     return colors
 
 
-def show_splash_screen() -> fxwidgets.FXSplashScreen:
+def show_splash_screen(
+    opacity: float = 0.75,
+    project: str = "fxgui",
+    version: str = "0.1.0",
+    company: str = "\u00a9 Valentin Beaumont",
+) -> fxwidgets.FXSplashScreen:
     """Show the splash screen.
+
+    Args:
+        opacity: The overlay opacity (0.0 to 1.0). Defaults to 0.75.
+        project: The project name. Defaults to "fxgui".
+        version: The version string. Defaults to "0.1.0".
+        company: The company name. Defaults to copyright Valentin Beaumont.
 
     Returns:
         The splash screen instance.
@@ -312,10 +344,11 @@ def show_splash_screen() -> fxwidgets.FXSplashScreen:
         image_path=str(_pixmap),
         fade_in=False,
         show_progress_bar=True,
-        project="fxgui",
-        version="0.1.0",
-        company="\u00A9 Valentin Beaumont",
+        project=project,
+        version=version,
+        company=company,
     )
+    splashscreen.set_overlay_opacity(opacity)
     splashscreen.show()
     return splashscreen
 
@@ -333,7 +366,7 @@ def simulate_loading(
 
     for i in range(101):
         splashscreen.progress_bar.setValue(i)
-        QTimer.singleShot(i, application.processEvents)
+        application.processEvents()
 
 
 def finish_splash_screen(
@@ -431,6 +464,15 @@ def set_button_icons(window: fxwidgets.FXMainWindow) -> None:
     for button, icon in button_icons.items():
         button.setIcon(icon)
 
+    # Set icons on QDialogButtonBox buttons
+    button_box = window.ui.buttonBox
+    ok_button = button_box.button(QDialogButtonBox.Ok)
+    cancel_button = button_box.button(QDialogButtonBox.Cancel)
+    if ok_button:
+        ok_button.setIcon(get_icon("check"))
+    if cancel_button:
+        cancel_button.setIcon(get_icon("cancel"))
+
 
 def set_tooltips(window: fxwidgets.FXMainWindow) -> None:
     """Set tooltips for the buttons.
@@ -465,12 +507,16 @@ def show_context_menu(tree: QTreeWidget, position: QPoint) -> None:
     # Create the context menu
     menu = QMenu()
 
-    # Title
+    # Title (use theme colors)
+    theme_colors = fxstyle.get_theme_colors()
     title = f"Items ({len(selected_items)})"
     label = QLabel(title)
     label.setMargin(2)
     label.setAlignment(Qt.AlignCenter)
-    label.setStyleSheet("background-color: #2b2b2b; color: white;")
+    label.setStyleSheet(
+        f"background-color: {theme_colors['background_alt']}; "
+        f"color: {theme_colors['text']};"
+    )
     label_action = QWidgetAction(menu)
     label_action.setDefaultWidget(label)
     menu.addAction(label_action)
@@ -590,7 +636,7 @@ def setup_refresh_action(window: fxwidgets.FXMainWindow) -> None:
 
     def refresh():
         original_icon = window.refresh_action.icon()
-        window.set_statusbar_message("Refreshing...", fxwidgets.INFO)
+        window.statusBar().showMessage("Refreshing...", fxwidgets.INFO)
         ok_icon = window.style().standardIcon(QStyle.SP_DialogOkButton)
         window.refresh_action.setIcon(ok_icon)
 
@@ -603,7 +649,7 @@ def setup_refresh_action(window: fxwidgets.FXMainWindow) -> None:
     window.refresh_action.triggered.connect(refresh)
 
 
-def main(show_delayed: bool = False):
+def main(show_delayed: bool = True):
     """Main example function.
 
     Args:
@@ -611,6 +657,8 @@ def main(show_delayed: bool = False):
     """
 
     # Initialize the application
+    from qtpy.QtUiTools import QUiLoader
+
     _ = QUiLoader()  # PySide6 bug workaround
     application = fxwidgets.FXApplication()
 
@@ -620,7 +668,7 @@ def main(show_delayed: bool = False):
     window = fxwidgets.FXMainWindow(
         project="fxgui",
         version="0.1.0",
-        company="\u00A9 Valentin Beaumont",
+        company="\u00a9 Valentin Beaumont",
         ui_file=str(_ui_file),
     )
     window.set_banner_text("Example")

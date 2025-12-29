@@ -1,11 +1,49 @@
-"""UI stylesheet, HEX colors and others.
+"""Styling, theming, and color management for `fxgui`.
+
+This module provides comprehensive styling functionality including:
+    - Dark and light theme support with palette management
+    - QSS stylesheet loading with dynamic color replacement
+    - Custom QProxyStyle for standard icon overrides
+    - Theme toggling with icon cache invalidation
+    - Color loading from JSONC configuration files
+
+Classes:
+    FXProxyStyle: Custom style providing Material Design icons for Qt standard icons.
+
+Functions:
+    load_stylesheet: Load and customize QSS stylesheets.
+    load_colors_from_jsonc: Load color definitions from JSONC files.
+    toggle_theme: Switch between dark and light themes.
+    set_dark_palette: Apply dark theme palette to a widget.
+    set_light_palette: Apply light theme palette to a widget.
+    set_style: Apply custom style to a widget.
+    get_theme: Get the current theme of a widget.
+    get_theme_colors: Get the color palette for the current theme.
+
+Constants:
+    STYLE_FILE: Path to the default QSS stylesheet.
+    COLOR_FILE: Path to the default color configuration.
 
 Examples:
-    >>> import style
-    >>> colors = style.load_colors_from_jsonc()
-    >>> houdini_orange = colors["houdini"]["main"]
-    #3cc0fd
+    Loading a stylesheet with custom colors:
+
+    >>> from fxgui import fxstyle
+    >>> stylesheet = fxstyle.load_stylesheet(
+    ...     color_a="#FF5722",
+    ...     color_b="#E64A19",
+    ...     theme="dark"
+    ... )
+    >>> widget.setStyleSheet(stylesheet)
+
+    Toggling theme on a window:
+
+    >>> new_theme = fxstyle.toggle_theme(window)
+    >>> print(f"Switched to {new_theme} theme")
 """
+
+# Metadata
+__author__ = "Valentin Beaumont"
+__email__ = "valentin.onze@gmail.com"
 
 # Built-in
 import os
@@ -41,6 +79,122 @@ _COLOR_B_DEFAULT = "#005A9E"  # Darker
 # Globals
 _colors = None
 _theme = "dark"
+_standard_icon_map = None  # Lazy-loaded icon map cache
+
+
+def get_theme_colors() -> dict:
+    """Get the color palette for the current theme.
+
+    Returns:
+        dict: Dictionary containing theme-specific colors like background,
+        text, border, etc.
+
+    Examples:
+        >>> colors = get_theme_colors()
+        >>> bg = colors["background"]  # "#201f1f" for dark, "#f0f0f0" for light
+    """
+
+    colors_dict = load_colors_from_jsonc()
+    return colors_dict["theme"].get(_theme, colors_dict["theme"]["dark"])
+
+
+def _get_standard_icon_map() -> dict:
+    """Get the standard icon map, creating it lazily on first access.
+
+    Returns:
+        dict: Mapping of QStyle.StandardPixmap to QIcon.
+    """
+
+    global _standard_icon_map
+    if _standard_icon_map is not None:
+        return _standard_icon_map
+
+    colors_dict = load_colors_from_jsonc()
+
+    # fmt: off
+    _standard_icon_map = {
+        QStyle.SP_ArrowBack: fxicons.get_icon("arrow_back"),
+        QStyle.SP_ArrowDown: fxicons.get_icon("arrow_downward"),
+        QStyle.SP_ArrowForward: fxicons.get_icon("arrow_forward"),
+        QStyle.SP_ArrowLeft: fxicons.get_icon("arrow_left"),
+        QStyle.SP_ArrowRight: fxicons.get_icon("arrow_right"),
+        QStyle.SP_ArrowUp: fxicons.get_icon("arrow_upward"),
+        QStyle.SP_BrowserReload: fxicons.get_icon("refresh"),
+        QStyle.SP_BrowserStop: fxicons.get_icon("block"),
+        QStyle.SP_CommandLink: fxicons.get_icon("arrow_forward"),
+        QStyle.SP_ComputerIcon: fxicons.get_icon("desktop_windows"),
+        QStyle.SP_CustomBase: fxicons.get_icon("tune"),
+        QStyle.SP_DesktopIcon: fxicons.get_icon("desktop_mac"),
+        QStyle.SP_DialogAbortButton: fxicons.get_icon("cancel"),
+        QStyle.SP_DialogApplyButton: fxicons.get_icon("check"),
+        QStyle.SP_DialogCancelButton: fxicons.get_icon("cancel"),
+        QStyle.SP_DialogCloseButton: fxicons.get_icon("close"),
+        QStyle.SP_DialogDiscardButton: fxicons.get_icon("delete"),
+        QStyle.SP_DialogHelpButton: fxicons.get_icon("help"),
+        QStyle.SP_DialogIgnoreButton: fxicons.get_icon("notifications_off"),
+        QStyle.SP_DialogNoButton: fxicons.get_icon("cancel"),
+        QStyle.SP_DialogNoToAllButton: fxicons.get_icon("do_not_disturb"),
+        QStyle.SP_DialogOkButton: fxicons.get_icon("check"),
+        QStyle.SP_DialogOpenButton: fxicons.get_icon("open_in_new"),
+        QStyle.SP_DialogResetButton: fxicons.get_icon("cleaning_services"),
+        QStyle.SP_DialogRetryButton: fxicons.get_icon("restart_alt"),
+        QStyle.SP_DialogSaveAllButton: fxicons.get_icon("save_all"),
+        QStyle.SP_DialogSaveButton: fxicons.get_icon("save"),
+        QStyle.SP_DialogYesButton: fxicons.get_icon("check"),
+        QStyle.SP_DialogYesToAllButton: fxicons.get_icon("done_all"),
+        QStyle.SP_DirClosedIcon: fxicons.get_icon("folder"),
+        QStyle.SP_DirHomeIcon: fxicons.get_icon("home"),
+        QStyle.SP_DirIcon: fxicons.get_icon("folder_open"),
+        QStyle.SP_DirLinkIcon: fxicons.get_icon("link"),
+        QStyle.SP_DirLinkOpenIcon: fxicons.get_icon("folder_open"),
+        QStyle.SP_DockWidgetCloseButton: fxicons.get_icon("close"),
+        QStyle.SP_DirOpenIcon: fxicons.get_icon("folder_open"),
+        QStyle.SP_DriveCDIcon: fxicons.get_icon("album"),
+        QStyle.SP_DriveDVDIcon: fxicons.get_icon("album"),
+        QStyle.SP_DriveFDIcon: fxicons.get_icon("usb"),
+        QStyle.SP_DriveHDIcon: fxicons.get_icon("usb"),
+        QStyle.SP_DriveNetIcon: fxicons.get_icon("cloud"),
+        QStyle.SP_FileDialogBack: fxicons.get_icon("arrow_back"),
+        QStyle.SP_FileDialogContentsView: fxicons.get_icon("find_in_page"),
+        QStyle.SP_FileDialogDetailedView: fxicons.get_icon("description"),
+        QStyle.SP_FileDialogEnd: fxicons.get_icon("check_circle"),
+        QStyle.SP_FileDialogInfoView: fxicons.get_icon("info"),
+        QStyle.SP_FileDialogListView: fxicons.get_icon("view_list"),
+        QStyle.SP_FileDialogNewFolder: fxicons.get_icon("create_new_folder"),
+        QStyle.SP_FileDialogStart: fxicons.get_icon("insert_drive_file"),
+        QStyle.SP_FileDialogToParent: fxicons.get_icon("file_upload"),
+        QStyle.SP_FileIcon: fxicons.get_icon("insert_drive_file"),
+        QStyle.SP_FileLinkIcon: fxicons.get_icon("link"),
+        QStyle.SP_LineEditClearButton: fxicons.get_icon("close"),
+        QStyle.SP_MediaPause: fxicons.get_icon("pause"),
+        QStyle.SP_MediaPlay: fxicons.get_icon("play_arrow"),
+        QStyle.SP_MediaSeekBackward: fxicons.get_icon("fast_rewind"),
+        QStyle.SP_MediaSeekForward: fxicons.get_icon("fast_forward"),
+        QStyle.SP_MediaSkipBackward: fxicons.get_icon("skip_previous"),
+        QStyle.SP_MediaSkipForward: fxicons.get_icon("skip_next"),
+        QStyle.SP_MediaStop: fxicons.get_icon("stop"),
+        QStyle.SP_MediaVolume: fxicons.get_icon("volume_up"),
+        QStyle.SP_MediaVolumeMuted: fxicons.get_icon("volume_off"),
+        QStyle.SP_MessageBoxCritical: fxicons.get_icon("error", color=colors_dict["feedback"]["error"]["light"]),
+        QStyle.SP_MessageBoxInformation: fxicons.get_icon("info", color=colors_dict["feedback"]["info"]["light"]),
+        QStyle.SP_MessageBoxQuestion: fxicons.get_icon("help", color=colors_dict["feedback"]["success"]["light"]),
+        QStyle.SP_MessageBoxWarning: fxicons.get_icon("warning", color=colors_dict["feedback"]["warning"]["light"]),
+        QStyle.SP_RestoreDefaultsButton: fxicons.get_icon("restore"),
+        QStyle.SP_TitleBarCloseButton: fxicons.get_icon("close"),
+        QStyle.SP_TitleBarContextHelpButton: fxicons.get_icon("help"),
+        QStyle.SP_TitleBarMaxButton: fxicons.get_icon("maximize"),
+        QStyle.SP_TitleBarMenuButton: fxicons.get_icon("menu"),
+        QStyle.SP_TitleBarMinButton: fxicons.get_icon("minimize"),
+        QStyle.SP_TitleBarNormalButton: fxicons.get_icon("restore"),
+        QStyle.SP_TitleBarShadeButton: fxicons.get_icon("arrow_drop_down"),
+        QStyle.SP_TitleBarUnshadeButton: fxicons.get_icon("arrow_drop_up"),
+        QStyle.SP_ToolBarHorizontalExtensionButton: fxicons.get_icon("arrow_right"),
+        QStyle.SP_ToolBarVerticalExtensionButton: fxicons.get_icon("arrow_downward"),
+        QStyle.SP_TrashIcon: fxicons.get_icon("delete"),
+        QStyle.SP_VistaShield: fxicons.get_icon("security"),
+    }
+    # fmt: on
+    return _standard_icon_map
 
 
 class FXProxyStyle(QProxyStyle):
@@ -71,182 +225,10 @@ class FXProxyStyle(QProxyStyle):
                 the default icon is returned.
         """
 
-        colors_dict = load_colors_from_jsonc()
-
-        # ? Keeping this commented out for reference
-        # fmt: off
-        # STANDARD_ICON_MAP = {
-        #     QStyle.SP_ArrowBack: qta.icon("mdi.arrow-left"),
-        #     QStyle.SP_ArrowDown: qta.icon("mdi.arrow-down"),
-        #     QStyle.SP_ArrowForward: qta.icon("mdi.arrow-right"),
-        #     QStyle.SP_ArrowLeft: qta.icon("mdi.arrow-left"),
-        #     QStyle.SP_ArrowRight: qta.icon("mdi.arrow-right"),
-        #     QStyle.SP_ArrowUp: qta.icon("mdi.arrow-up"),
-        #     QStyle.SP_BrowserReload: qta.icon("mdi.refresh"),
-        #     QStyle.SP_BrowserStop: qta.icon("mdi.block-helper"),
-        #     QStyle.SP_CommandLink: qta.icon("mdi.arrow-right"),
-        #     QStyle.SP_ComputerIcon: qta.icon("mdi.desktop-classic"),
-        #     QStyle.SP_CustomBase: qta.icon("mdi.tune"),
-        #     QStyle.SP_DesktopIcon: qta.icon("mdi.desktop-mac"),
-        #     QStyle.SP_DialogAbortButton: qta.icon("mdi.cancel"),
-        #     QStyle.SP_DialogApplyButton: qta.icon("mdi.check"),
-        #     QStyle.SP_DialogCancelButton: qta.icon("mdi.cancel"),
-        #     QStyle.SP_DialogCloseButton: qta.icon("mdi.close"),
-        #     QStyle.SP_DialogDiscardButton: qta.icon("mdi.delete"),
-        #     QStyle.SP_DialogHelpButton: qta.icon("mdi.help-circle"),
-        #     QStyle.SP_DialogIgnoreButton: qta.icon("mdi.bell-off"),
-        #     QStyle.SP_DialogNoButton: qta.icon("mdi.cancel"),
-        #     QStyle.SP_DialogNoToAllButton: qta.icon("mdi.do-not-disturb"),
-        #     QStyle.SP_DialogOkButton: qta.icon("mdi.check"),
-        #     QStyle.SP_DialogOpenButton: qta.icon("mdi.open-in-new"),
-        #     QStyle.SP_DialogResetButton: qta.icon("mdi.broom"),
-        #     QStyle.SP_DialogRetryButton: qta.icon("mdi.restart"),
-        #     QStyle.SP_DialogSaveAllButton: qta.icon("mdi.content-save-all"),
-        #     QStyle.SP_DialogSaveButton: qta.icon("mdi.content-save"),
-        #     QStyle.SP_DialogYesButton: qta.icon("mdi.check"),
-        #     QStyle.SP_DialogYesToAllButton: qta.icon("mdi.check-all"),
-        #     QStyle.SP_DirClosedIcon: qta.icon("mdi.folder"),
-        #     QStyle.SP_DirHomeIcon: qta.icon("mdi.home"),
-        #     QStyle.SP_DirIcon: qta.icon("mdi.folder-open"),
-        #     QStyle.SP_DirLinkIcon: qta.icon("mdi.link-variant"),
-        #     QStyle.SP_DirLinkOpenIcon: qta.icon("mdi.folder-open"),
-        #     QStyle.SP_DockWidgetCloseButton: qta.icon("mdi.close"),
-        #     QStyle.SP_DirOpenIcon: qta.icon("mdi.folder-open"),
-        #     QStyle.SP_DriveCDIcon: qta.icon("mdi.disc"),
-        #     QStyle.SP_DriveDVDIcon: qta.icon("mdi.disc"),
-        #     QStyle.SP_DriveFDIcon: qta.icon("mdi.usb"),
-        #     QStyle.SP_DriveHDIcon: qta.icon("mdi.harddisk"),
-        #     QStyle.SP_DriveNetIcon: qta.icon("mdi.cloud"),
-        #     QStyle.SP_FileDialogBack: qta.icon("mdi.arrow-left"),
-        #     QStyle.SP_FileDialogContentsView: qta.icon("mdi.file-find"),
-        #     QStyle.SP_FileDialogDetailedView: qta.icon("mdi.file-document"),
-        #     QStyle.SP_FileDialogEnd: qta.icon("mdi.file-check"),
-        #     QStyle.SP_FileDialogInfoView: qta.icon("mdi.information"),
-        #     QStyle.SP_FileDialogListView: qta.icon("mdi.view-list"),
-        #     QStyle.SP_FileDialogNewFolder: qta.icon("mdi.folder-plus"),
-        #     QStyle.SP_FileDialogStart: qta.icon("mdi.file"),
-        #     QStyle.SP_FileDialogToParent: qta.icon("mdi.file-upload"),
-        #     QStyle.SP_FileIcon: qta.icon("mdi.file"),
-        #     QStyle.SP_FileLinkIcon: qta.icon("mdi.link"),
-        #     QStyle.SP_LineEditClearButton: qta.icon("mdi.close"),
-        #     QStyle.SP_MediaPause: qta.icon("mdi.pause"),
-        #     QStyle.SP_MediaPlay: qta.icon("mdi.play"),
-        #     QStyle.SP_MediaSeekBackward: qta.icon("mdi.rewind"),
-        #     QStyle.SP_MediaSeekForward: qta.icon("mdi.fast-forward"),
-        #     QStyle.SP_MediaSkipBackward: qta.icon("mdi.skip-previous"),
-        #     QStyle.SP_MediaSkipForward: qta.icon("mdi.skip-next"),
-        #     QStyle.SP_MediaStop: qta.icon("mdi.stop"),
-        #     QStyle.SP_MediaVolume: qta.icon("mdi.volume-high"),
-        #     QStyle.SP_MediaVolumeMuted: qta.icon("mdi.volume-off"),
-        #     QStyle.SP_MessageBoxCritical: qta.icon("mdi.alert-circle", color=colors_dict["feedback"]["error"]["light"]),
-        #     QStyle.SP_MessageBoxInformation: qta.icon("mdi.information", color=colors_dict["feedback"]["info"]["light"]),
-        #     QStyle.SP_MessageBoxQuestion: qta.icon("mdi.help-circle", color=colors_dict["feedback"]["success"]["light"]),
-        #     QStyle.SP_MessageBoxWarning: qta.icon("mdi.alert", color=colors_dict["feedback"]["warning"]["light"]),
-        #     QStyle.SP_RestoreDefaultsButton: qta.icon("mdi.restore"),
-        #     QStyle.SP_TitleBarCloseButton: qta.icon("mdi.close"),
-        #     QStyle.SP_TitleBarContextHelpButton: qta.icon("mdi.help-circle"),
-        #     QStyle.SP_TitleBarMaxButton: qta.icon("mdi.window-maximize"),
-        #     QStyle.SP_TitleBarMenuButton: qta.icon("mdi.menu"),
-        #     QStyle.SP_TitleBarMinButton: qta.icon("mdi.window-minimize"),
-        #     QStyle.SP_TitleBarNormalButton: qta.icon("mdi.window-restore"),
-        #     QStyle.SP_TitleBarShadeButton: qta.icon("mdi.arrow-collapse-down"),
-        #     QStyle.SP_TitleBarUnshadeButton: qta.icon("mdi.arrow-collapse-up"),
-        #     QStyle.SP_ToolBarHorizontalExtensionButton: qta.icon("mdi.arrow-right"),
-        #     QStyle.SP_ToolBarVerticalExtensionButton: qta.icon("mdi.arrow-down"),
-        #     QStyle.SP_TrashIcon: qta.icon("mdi.delete"),
-        #     QStyle.SP_VistaShield: qta.icon("mdi.shield"),
-        # }
-        # fmt: on
-
-        # fmt: off
-        STANDARD_ICON_MAP = {
-            QStyle.SP_ArrowBack: fxicons.get_icon("arrow_back"),
-            QStyle.SP_ArrowDown: fxicons.get_icon("arrow_downward"),
-            QStyle.SP_ArrowForward: fxicons.get_icon("arrow_forward"),
-            QStyle.SP_ArrowLeft: fxicons.get_icon("arrow_left"),
-            QStyle.SP_ArrowRight: fxicons.get_icon("arrow_right"),
-            QStyle.SP_ArrowUp: fxicons.get_icon("arrow_upward"),
-            QStyle.SP_BrowserReload: fxicons.get_icon("refresh"),
-            QStyle.SP_BrowserStop: fxicons.get_icon("block"),
-            QStyle.SP_CommandLink: fxicons.get_icon("arrow_forward"),
-            QStyle.SP_ComputerIcon: fxicons.get_icon("desktop_windows"),
-            QStyle.SP_CustomBase: fxicons.get_icon("tune"),
-            QStyle.SP_DesktopIcon: fxicons.get_icon("desktop_mac"),
-            QStyle.SP_DialogAbortButton: fxicons.get_icon("cancel"),
-            QStyle.SP_DialogApplyButton: fxicons.get_icon("check"),
-            QStyle.SP_DialogCancelButton: fxicons.get_icon("cancel"),
-            QStyle.SP_DialogCloseButton: fxicons.get_icon("close"),
-            QStyle.SP_DialogDiscardButton: fxicons.get_icon("delete"),
-            QStyle.SP_DialogHelpButton: fxicons.get_icon("help"),
-            QStyle.SP_DialogIgnoreButton: fxicons.get_icon("notifications_off"),
-            QStyle.SP_DialogNoButton: fxicons.get_icon("cancel"),
-            QStyle.SP_DialogNoToAllButton: fxicons.get_icon("do_not_disturb"),
-            QStyle.SP_DialogOkButton: fxicons.get_icon("check"),
-            QStyle.SP_DialogOpenButton: fxicons.get_icon("open_in_new"),
-            QStyle.SP_DialogResetButton: fxicons.get_icon("cleaning_services"),
-            QStyle.SP_DialogRetryButton: fxicons.get_icon("restart_alt"),
-            QStyle.SP_DialogSaveAllButton: fxicons.get_icon("save_all"),
-            QStyle.SP_DialogSaveButton: fxicons.get_icon("save"),
-            QStyle.SP_DialogYesButton: fxicons.get_icon("check"),
-            QStyle.SP_DialogYesToAllButton: fxicons.get_icon("done_all"),
-            QStyle.SP_DirClosedIcon: fxicons.get_icon("folder"),
-            QStyle.SP_DirHomeIcon: fxicons.get_icon("home"),
-            QStyle.SP_DirIcon: fxicons.get_icon("folder_open"),
-            QStyle.SP_DirLinkIcon: fxicons.get_icon("link"),
-            QStyle.SP_DirLinkOpenIcon: fxicons.get_icon("folder_open"),
-            QStyle.SP_DockWidgetCloseButton: fxicons.get_icon("close"),
-            QStyle.SP_DirOpenIcon: fxicons.get_icon("folder_open"),
-            QStyle.SP_DriveCDIcon: fxicons.get_icon("album"),
-            QStyle.SP_DriveDVDIcon: fxicons.get_icon("album"),
-            QStyle.SP_DriveFDIcon: fxicons.get_icon("usb"),
-            QStyle.SP_DriveHDIcon: fxicons.get_icon("usb"),
-            QStyle.SP_DriveNetIcon: fxicons.get_icon("cloud"),
-            QStyle.SP_FileDialogBack: fxicons.get_icon("arrow_back"),
-            QStyle.SP_FileDialogContentsView: fxicons.get_icon("find_in_page"),
-            QStyle.SP_FileDialogDetailedView: fxicons.get_icon("description"),
-            QStyle.SP_FileDialogEnd: fxicons.get_icon("check_circle"),
-            QStyle.SP_FileDialogInfoView: fxicons.get_icon("info"),
-            QStyle.SP_FileDialogListView: fxicons.get_icon("view_list"),
-            QStyle.SP_FileDialogNewFolder: fxicons.get_icon("create_new_folder"),
-            QStyle.SP_FileDialogStart: fxicons.get_icon("insert_drive_file"),
-            QStyle.SP_FileDialogToParent: fxicons.get_icon("file_upload"),
-            QStyle.SP_FileIcon: fxicons.get_icon("insert_drive_file"),
-            QStyle.SP_FileLinkIcon: fxicons.get_icon("link"),
-            QStyle.SP_LineEditClearButton: fxicons.get_icon("close"),
-            QStyle.SP_MediaPause: fxicons.get_icon("pause"),
-            QStyle.SP_MediaPlay: fxicons.get_icon("play_arrow"),
-            QStyle.SP_MediaSeekBackward: fxicons.get_icon("fast_rewind"),
-            QStyle.SP_MediaSeekForward: fxicons.get_icon("fast_forward"),
-            QStyle.SP_MediaSkipBackward: fxicons.get_icon("skip_previous"),
-            QStyle.SP_MediaSkipForward: fxicons.get_icon("skip_next"),
-            QStyle.SP_MediaStop: fxicons.get_icon("stop"),
-            QStyle.SP_MediaVolume: fxicons.get_icon("volume_up"),
-            QStyle.SP_MediaVolumeMuted: fxicons.get_icon("volume_off"),
-            QStyle.SP_MessageBoxCritical: fxicons.get_icon("error", color=colors_dict["feedback"]["error"]["light"]),
-            QStyle.SP_MessageBoxInformation: fxicons.get_icon("info", color=colors_dict["feedback"]["info"]["light"]),
-            QStyle.SP_MessageBoxQuestion: fxicons.get_icon("help", color=colors_dict["feedback"]["success"]["light"]),
-            QStyle.SP_MessageBoxWarning: fxicons.get_icon("warning", color=colors_dict["feedback"]["warning"]["light"]),
-            QStyle.SP_RestoreDefaultsButton: fxicons.get_icon("restore"),
-            QStyle.SP_TitleBarCloseButton: fxicons.get_icon("close"),
-            QStyle.SP_TitleBarContextHelpButton: fxicons.get_icon("help"),
-            QStyle.SP_TitleBarMaxButton: fxicons.get_icon("maximize"),
-            QStyle.SP_TitleBarMenuButton: fxicons.get_icon("menu"),
-            QStyle.SP_TitleBarMinButton: fxicons.get_icon("minimize"),
-            QStyle.SP_TitleBarNormalButton: fxicons.get_icon("restore"),
-            QStyle.SP_TitleBarShadeButton: fxicons.get_icon("arrow_drop_down"),
-            QStyle.SP_TitleBarUnshadeButton: fxicons.get_icon("arrow_drop_up"),
-            QStyle.SP_ToolBarHorizontalExtensionButton: fxicons.get_icon("arrow_right"),
-            QStyle.SP_ToolBarVerticalExtensionButton: fxicons.get_icon("arrow_downward"),
-            QStyle.SP_TrashIcon: fxicons.get_icon("delete"),
-            QStyle.SP_VistaShield: fxicons.get_icon("security"),
-        }
-        # fmt: on
-
-        icon = STANDARD_ICON_MAP.get(standardIcon)
+        icon = _get_standard_icon_map().get(standardIcon)
         if icon is not None:
             return icon
-        else:
-            return super().standardIcon(standardIcon, option, widget)
+        return super().standardIcon(standardIcon, option, widget)
 
     def set_icon_color(self, color: str):
         """Sets the color of the icons.
@@ -324,60 +306,60 @@ def set_dark_palette(widget: QWidget) -> QPalette:
     palette.setColor(QPalette.Active, QPalette.Window, QColor(53, 53, 53))
     palette.setColor(QPalette.Inactive, QPalette.Window, QColor(53, 53, 53))
     palette.setColor(QPalette.Disabled, QPalette.Window, QColor(53, 53, 53))
-    palette.setColor(QPalette.Active, QPalette.WindowText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.WindowText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(169, 169, 169))
+    palette.setColor(QPalette.Active, QPalette.WindowText, QColor(212, 212, 212))
+    palette.setColor(QPalette.Inactive, QPalette.WindowText, QColor(212, 212, 212))
+    palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(128, 128, 128))
     palette.setColor(QPalette.Active, QPalette.Base, QColor(35, 35, 35))
     palette.setColor(QPalette.Inactive, QPalette.Base, QColor(35, 35, 35))
     palette.setColor(QPalette.Disabled, QPalette.Base, QColor(35, 35, 35))
-    palette.setColor(QPalette.Active, QPalette.AlternateBase, QColor(53, 53, 53))
-    palette.setColor(QPalette.Inactive, QPalette.AlternateBase, QColor(53, 53, 53))
-    palette.setColor(QPalette.Disabled, QPalette.AlternateBase, QColor(53, 53, 53))
-    palette.setColor(QPalette.Active, QPalette.ToolTipBase, QColor(25, 25, 25))
-    palette.setColor(QPalette.Inactive, QPalette.ToolTipBase, QColor(25, 25, 25))
-    palette.setColor(QPalette.Disabled, QPalette.ToolTipBase, QColor(25, 25, 25))
-    palette.setColor(QPalette.Active, QPalette.ToolTipText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.ToolTipText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.ToolTipText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Active, QPalette.Text, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.Text, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.Text, QColor(169, 169, 169))
+    palette.setColor(QPalette.Active, QPalette.AlternateBase, QColor(45, 45, 45))
+    palette.setColor(QPalette.Inactive, QPalette.AlternateBase, QColor(45, 45, 45))
+    palette.setColor(QPalette.Disabled, QPalette.AlternateBase, QColor(45, 45, 45))
+    palette.setColor(QPalette.Active, QPalette.ToolTipBase, QColor(37, 37, 37))
+    palette.setColor(QPalette.Inactive, QPalette.ToolTipBase, QColor(37, 37, 37))
+    palette.setColor(QPalette.Disabled, QPalette.ToolTipBase, QColor(37, 37, 37))
+    palette.setColor(QPalette.Active, QPalette.ToolTipText, QColor(240, 240, 240))
+    palette.setColor(QPalette.Inactive, QPalette.ToolTipText, QColor(240, 240, 240))
+    palette.setColor(QPalette.Disabled, QPalette.ToolTipText, QColor(240, 240, 240))
+    palette.setColor(QPalette.Active, QPalette.Text, QColor(212, 212, 212))
+    palette.setColor(QPalette.Inactive, QPalette.Text, QColor(212, 212, 212))
+    palette.setColor(QPalette.Disabled, QPalette.Text, QColor(128, 128, 128))
     palette.setColor(QPalette.Active, QPalette.Button, QColor(53, 53, 53))
     palette.setColor(QPalette.Inactive, QPalette.Button, QColor(53, 53, 53))
     palette.setColor(QPalette.Disabled, QPalette.Button, QColor(53, 53, 53))
-    palette.setColor(QPalette.Active, QPalette.ButtonText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.ButtonText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(169, 169, 169))
-    palette.setColor(QPalette.Active, QPalette.BrightText, QColor(255, 0, 0))
-    palette.setColor(QPalette.Inactive, QPalette.BrightText, QColor(255, 0, 0))
-    palette.setColor(QPalette.Disabled, QPalette.BrightText, QColor(255, 0, 0))
-    palette.setColor(QPalette.Active, QPalette.Link, QColor(42, 130, 218))
-    palette.setColor(QPalette.Inactive, QPalette.Link, QColor(42, 130, 218))
-    palette.setColor(QPalette.Disabled, QPalette.Link, QColor(42, 130, 218))
-    palette.setColor(QPalette.Active, QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.Inactive, QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.Disabled, QPalette.Highlight, QColor(42, 130, 218))
-    palette.setColor(QPalette.Active, QPalette.HighlightedText, QColor(35, 35, 35))
-    palette.setColor(QPalette.Inactive, QPalette.HighlightedText, QColor(35, 35, 35))
-    palette.setColor(QPalette.Disabled, QPalette.HighlightedText, QColor(35, 35, 35))
-    palette.setColor(QPalette.Active, QPalette.Light, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.Light, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.Light, QColor(255, 255, 255))
-    palette.setColor(QPalette.Active, QPalette.Midlight, QColor(227, 227, 227))
-    palette.setColor(QPalette.Inactive, QPalette.Midlight, QColor(227, 227, 227))
-    palette.setColor(QPalette.Disabled, QPalette.Midlight, QColor(247, 247, 247))
-    palette.setColor(QPalette.Active, QPalette.Dark, QColor(160, 160, 160))
-    palette.setColor(QPalette.Inactive, QPalette.Dark, QColor(160, 160, 160))
-    palette.setColor(QPalette.Disabled, QPalette.Dark, QColor(160, 160, 160))
-    palette.setColor(QPalette.Active, QPalette.Mid, QColor(160, 160, 160))
-    palette.setColor(QPalette.Inactive, QPalette.Mid, QColor(160, 160, 160))
-    palette.setColor(QPalette.Disabled, QPalette.Mid, QColor(160, 160, 160))
-    palette.setColor(QPalette.Active, QPalette.Shadow, QColor(105, 105, 105))
-    palette.setColor(QPalette.Inactive, QPalette.Shadow, QColor(105, 105, 105))
+    palette.setColor(QPalette.Active, QPalette.ButtonText, QColor(212, 212, 212))
+    palette.setColor(QPalette.Inactive, QPalette.ButtonText, QColor(212, 212, 212))
+    palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(128, 128, 128))
+    palette.setColor(QPalette.Active, QPalette.BrightText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Inactive, QPalette.BrightText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Disabled, QPalette.BrightText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Active, QPalette.Link, QColor(86, 156, 214))
+    palette.setColor(QPalette.Inactive, QPalette.Link, QColor(86, 156, 214))
+    palette.setColor(QPalette.Disabled, QPalette.Link, QColor(86, 156, 214))
+    palette.setColor(QPalette.Active, QPalette.Highlight, QColor(0, 122, 204))
+    palette.setColor(QPalette.Inactive, QPalette.Highlight, QColor(63, 63, 63))
+    palette.setColor(QPalette.Disabled, QPalette.Highlight, QColor(0, 122, 204))
+    palette.setColor(QPalette.Active, QPalette.HighlightedText, QColor(255, 255, 255))
+    palette.setColor(QPalette.Inactive, QPalette.HighlightedText, QColor(212, 212, 212))
+    palette.setColor(QPalette.Disabled, QPalette.HighlightedText, QColor(128, 128, 128))
+    palette.setColor(QPalette.Active, QPalette.Light, QColor(80, 80, 80))
+    palette.setColor(QPalette.Inactive, QPalette.Light, QColor(80, 80, 80))
+    palette.setColor(QPalette.Disabled, QPalette.Light, QColor(80, 80, 80))
+    palette.setColor(QPalette.Active, QPalette.Midlight, QColor(70, 70, 70))
+    palette.setColor(QPalette.Inactive, QPalette.Midlight, QColor(70, 70, 70))
+    palette.setColor(QPalette.Disabled, QPalette.Midlight, QColor(70, 70, 70))
+    palette.setColor(QPalette.Active, QPalette.Dark, QColor(35, 35, 35))
+    palette.setColor(QPalette.Inactive, QPalette.Dark, QColor(35, 35, 35))
+    palette.setColor(QPalette.Disabled, QPalette.Dark, QColor(35, 35, 35))
+    palette.setColor(QPalette.Active, QPalette.Mid, QColor(50, 50, 50))
+    palette.setColor(QPalette.Inactive, QPalette.Mid, QColor(50, 50, 50))
+    palette.setColor(QPalette.Disabled, QPalette.Mid, QColor(50, 50, 50))
+    palette.setColor(QPalette.Active, QPalette.Shadow, QColor(20, 20, 20))
+    palette.setColor(QPalette.Inactive, QPalette.Shadow, QColor(20, 20, 20))
     palette.setColor(QPalette.Disabled, QPalette.Shadow, QColor(0, 0, 0))
-    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor(255, 0, 255))
-    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(255, 0, 255))
-    palette.setColor(QPalette.Disabled, QPalette.LinkVisited, QColor(255, 0, 255))
+    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor(180, 130, 200))
+    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(180, 130, 200))
+    palette.setColor(QPalette.Disabled, QPalette.LinkVisited, QColor(180, 130, 200))
     palette.setColor(QPalette.Active, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.NoRole, QColor(0, 0, 0))
@@ -402,60 +384,60 @@ def set_light_palette(widget: QWidget) -> QPalette:
     palette.setColor(QPalette.Active, QPalette.Window, QColor(240, 240, 240))
     palette.setColor(QPalette.Inactive, QPalette.Window, QColor(240, 240, 240))
     palette.setColor(QPalette.Disabled, QPalette.Window, QColor(240, 240, 240))
-    palette.setColor(QPalette.Active, QPalette.WindowText, QColor(0, 0, 0))
-    palette.setColor(QPalette.Inactive, QPalette.WindowText, QColor(0, 0, 0))
-    palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(120, 120, 120))
+    palette.setColor(QPalette.Active, QPalette.WindowText, QColor(30, 30, 30))
+    palette.setColor(QPalette.Inactive, QPalette.WindowText, QColor(30, 30, 30))
+    palette.setColor(QPalette.Disabled, QPalette.WindowText, QColor(150, 150, 150))
     palette.setColor(QPalette.Active, QPalette.Base, QColor(255, 255, 255))
     palette.setColor(QPalette.Inactive, QPalette.Base, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.Base, QColor(240, 240, 240))
-    palette.setColor(QPalette.Active, QPalette.AlternateBase, QColor(233, 231, 227))
-    palette.setColor(QPalette.Inactive, QPalette.AlternateBase, QColor(233, 231, 227))
-    palette.setColor(QPalette.Disabled, QPalette.AlternateBase, QColor(247, 247, 247))
-    palette.setColor(QPalette.Active, QPalette.ToolTipBase, QColor(255, 255, 220))
-    palette.setColor(QPalette.Inactive, QPalette.ToolTipBase, QColor(255, 255, 220))
-    palette.setColor(QPalette.Disabled, QPalette.ToolTipBase, QColor(255, 255, 220))
-    palette.setColor(QPalette.Active, QPalette.ToolTipText, QColor(0, 0, 0))
-    palette.setColor(QPalette.Inactive, QPalette.ToolTipText, QColor(0, 0, 0))
-    palette.setColor(QPalette.Disabled, QPalette.ToolTipText, QColor(0, 0, 0))
-    palette.setColor(QPalette.Active, QPalette.Text, QColor(0, 0, 0))
-    palette.setColor(QPalette.Inactive, QPalette.Text, QColor(0, 0, 0))
-    palette.setColor(QPalette.Disabled, QPalette.Text, QColor(120, 120, 120))
+    palette.setColor(QPalette.Disabled, QPalette.Base, QColor(245, 245, 245))
+    palette.setColor(QPalette.Active, QPalette.AlternateBase, QColor(248, 248, 248))
+    palette.setColor(QPalette.Inactive, QPalette.AlternateBase, QColor(248, 248, 248))
+    palette.setColor(QPalette.Disabled, QPalette.AlternateBase, QColor(248, 248, 248))
+    palette.setColor(QPalette.Active, QPalette.ToolTipBase, QColor(255, 255, 225))
+    palette.setColor(QPalette.Inactive, QPalette.ToolTipBase, QColor(255, 255, 225))
+    palette.setColor(QPalette.Disabled, QPalette.ToolTipBase, QColor(255, 255, 225))
+    palette.setColor(QPalette.Active, QPalette.ToolTipText, QColor(30, 30, 30))
+    palette.setColor(QPalette.Inactive, QPalette.ToolTipText, QColor(30, 30, 30))
+    palette.setColor(QPalette.Disabled, QPalette.ToolTipText, QColor(30, 30, 30))
+    palette.setColor(QPalette.Active, QPalette.Text, QColor(30, 30, 30))
+    palette.setColor(QPalette.Inactive, QPalette.Text, QColor(30, 30, 30))
+    palette.setColor(QPalette.Disabled, QPalette.Text, QColor(150, 150, 150))
     palette.setColor(QPalette.Active, QPalette.Button, QColor(240, 240, 240))
     palette.setColor(QPalette.Inactive, QPalette.Button, QColor(240, 240, 240))
     palette.setColor(QPalette.Disabled, QPalette.Button, QColor(240, 240, 240))
-    palette.setColor(QPalette.Active, QPalette.ButtonText, QColor(0, 0, 0))
-    palette.setColor(QPalette.Inactive, QPalette.ButtonText, QColor(0, 0, 0))
-    palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(120, 120, 120))
-    palette.setColor(QPalette.Active, QPalette.BrightText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.BrightText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Disabled, QPalette.BrightText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Active, QPalette.Link, QColor(0, 0, 255))
-    palette.setColor(QPalette.Inactive, QPalette.Link, QColor(0, 0, 255))
-    palette.setColor(QPalette.Disabled, QPalette.Link, QColor(0, 0, 255))
+    palette.setColor(QPalette.Active, QPalette.ButtonText, QColor(30, 30, 30))
+    palette.setColor(QPalette.Inactive, QPalette.ButtonText, QColor(30, 30, 30))
+    palette.setColor(QPalette.Disabled, QPalette.ButtonText, QColor(150, 150, 150))
+    palette.setColor(QPalette.Active, QPalette.BrightText, QColor(0, 0, 0))
+    palette.setColor(QPalette.Inactive, QPalette.BrightText, QColor(0, 0, 0))
+    palette.setColor(QPalette.Disabled, QPalette.BrightText, QColor(0, 0, 0))
+    palette.setColor(QPalette.Active, QPalette.Link, QColor(0, 102, 204))
+    palette.setColor(QPalette.Inactive, QPalette.Link, QColor(0, 102, 204))
+    palette.setColor(QPalette.Disabled, QPalette.Link, QColor(0, 102, 204))
     palette.setColor(QPalette.Active, QPalette.Highlight, QColor(0, 120, 215))
-    palette.setColor(QPalette.Inactive, QPalette.Highlight, QColor(240, 240, 240))
+    palette.setColor(QPalette.Inactive, QPalette.Highlight, QColor(220, 220, 220))
     palette.setColor(QPalette.Disabled, QPalette.Highlight, QColor(0, 120, 215))
     palette.setColor(QPalette.Active, QPalette.HighlightedText, QColor(255, 255, 255))
-    palette.setColor(QPalette.Inactive, QPalette.HighlightedText, QColor(0, 0, 0))
+    palette.setColor(QPalette.Inactive, QPalette.HighlightedText, QColor(30, 30, 30))
     palette.setColor(QPalette.Disabled, QPalette.HighlightedText, QColor(255, 255, 255))
     palette.setColor(QPalette.Active, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Inactive, QPalette.Light, QColor(255, 255, 255))
     palette.setColor(QPalette.Disabled, QPalette.Light, QColor(255, 255, 255))
-    palette.setColor(QPalette.Active, QPalette.Midlight, QColor(227, 227, 227))
-    palette.setColor(QPalette.Inactive, QPalette.Midlight, QColor(227, 227, 227))
-    palette.setColor(QPalette.Disabled, QPalette.Midlight, QColor(247, 247, 247))
-    palette.setColor(QPalette.Active, QPalette.Dark, QColor(160, 160, 160))
-    palette.setColor(QPalette.Inactive, QPalette.Dark, QColor(160, 160, 160))
-    palette.setColor(QPalette.Disabled, QPalette.Dark, QColor(160, 160, 160))
-    palette.setColor(QPalette.Active, QPalette.Mid, QColor(160, 160, 160))
-    palette.setColor(QPalette.Inactive, QPalette.Mid, QColor(160, 160, 160))
-    palette.setColor(QPalette.Disabled, QPalette.Mid, QColor(160, 160, 160))
-    palette.setColor(QPalette.Active, QPalette.Shadow, QColor(105, 105, 105))
-    palette.setColor(QPalette.Inactive, QPalette.Shadow, QColor(105, 105, 105))
-    palette.setColor(QPalette.Disabled, QPalette.Shadow, QColor(0, 0, 0))
-    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor(255, 0, 255))
-    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(255, 0, 255))
-    palette.setColor(QPalette.Disabled, QPalette.LinkVisited, QColor(255, 0, 255))
+    palette.setColor(QPalette.Active, QPalette.Midlight, QColor(230, 230, 230))
+    palette.setColor(QPalette.Inactive, QPalette.Midlight, QColor(230, 230, 230))
+    palette.setColor(QPalette.Disabled, QPalette.Midlight, QColor(245, 245, 245))
+    palette.setColor(QPalette.Active, QPalette.Dark, QColor(180, 180, 180))
+    palette.setColor(QPalette.Inactive, QPalette.Dark, QColor(180, 180, 180))
+    palette.setColor(QPalette.Disabled, QPalette.Dark, QColor(180, 180, 180))
+    palette.setColor(QPalette.Active, QPalette.Mid, QColor(200, 200, 200))
+    palette.setColor(QPalette.Inactive, QPalette.Mid, QColor(200, 200, 200))
+    palette.setColor(QPalette.Disabled, QPalette.Mid, QColor(200, 200, 200))
+    palette.setColor(QPalette.Active, QPalette.Shadow, QColor(150, 150, 150))
+    palette.setColor(QPalette.Inactive, QPalette.Shadow, QColor(150, 150, 150))
+    palette.setColor(QPalette.Disabled, QPalette.Shadow, QColor(100, 100, 100))
+    palette.setColor(QPalette.Active, QPalette.LinkVisited, QColor(128, 78, 160))
+    palette.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(128, 78, 160))
+    palette.setColor(QPalette.Disabled, QPalette.LinkVisited, QColor(128, 78, 160))
     palette.setColor(QPalette.Active, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Inactive, QPalette.NoRole, QColor(0, 0, 0))
     palette.setColor(QPalette.Disabled, QPalette.NoRole, QColor(0, 0, 0))
@@ -522,6 +504,81 @@ def set_theme(widget: QWidget, theme: str) -> None:
         set_light_palette(widget)
 
 
+def invalidate_standard_icon_map() -> None:
+    """Invalidate the cached standard icon map.
+
+    This should be called when changing themes so icons are regenerated
+    with the new color scheme on next access.
+    """
+
+    global _standard_icon_map
+    _standard_icon_map = None
+
+
+def toggle_theme(
+    widget: QWidget,
+    color_a: str = _COLOR_A_DEFAULT,
+    color_b: str = _COLOR_B_DEFAULT,
+) -> str:
+    """Toggle the theme of the widget between light and dark.
+
+    This function handles all necessary state updates including:
+    - Switching the stylesheet
+    - Updating icon colors
+    - Invalidating icon caches
+    - Applying the appropriate palette
+
+    Args:
+        widget: The QWidget subclass to toggle the theme on.
+        color_a: The primary color to use. Defaults to `_COLOR_A_DEFAULT`.
+        color_b: The secondary color to use. Defaults to `_COLOR_B_DEFAULT`.
+
+    Returns:
+        str: The new theme that was applied ("dark" or "light").
+
+    Examples:
+        Toggle theme on a window (standalone or inside a DCC)
+        >>> new_theme = fxstyle.toggle_theme(window)
+        >>> print(f"Switched to {new_theme} theme")
+
+        Toggle theme with custom colors
+        >>> fxstyle.toggle_theme(window, color_a="#FF5722", color_b="#E64A19")
+    """
+
+    global _theme
+
+    # Determine new theme
+    new_theme = "light" if _theme == "dark" else "dark"
+
+    # Update icon colors for the new theme
+    # Dark theme: light gray icons, Light theme: dark gray icons
+    icon_color = "#B4B4B4" if new_theme == "dark" else "#424242"
+    fxicons.set_icon_defaults(color=icon_color)
+
+    # Clear icon caches so they regenerate with new colors
+    fxicons.clear_icon_cache()
+
+    # Invalidate the standard icon map
+    invalidate_standard_icon_map()
+
+    # Apply the new stylesheet
+    widget.setStyleSheet(
+        load_stylesheet(
+            color_a=color_a,
+            color_b=color_b,
+            theme=new_theme,
+        )
+    )
+
+    # Apply palette (works even without access to QApplication)
+    if new_theme == "dark":
+        set_dark_palette(widget)
+    else:
+        set_light_palette(widget)
+
+    return new_theme
+
+
 def _remove_comments(text: str) -> str:
     """Remove single-line and multi-line comments from the input text.
 
@@ -566,19 +623,28 @@ def load_colors_from_jsonc(jsonc_file: str = COLOR_FILE) -> dict:
 def replace_colors(
     stylesheet: str,
     colors_dict: dict = load_colors_from_jsonc(COLOR_FILE),
-    prefix="",
+    prefix: str = "",
 ) -> str:
-    """_summary_
+    """Replace color placeholders in a stylesheet with actual color values.
+
+    This function searches for placeholders in the format `@{prefix}{key}`
+    and replaces them with the corresponding color values from the dictionary.
 
     Args:
-        stylesheet (str): The stylesheet to replace the colors in.
-        colors_dict (dict, optional): The dict to use to search for colors to be
-            replaced. Defaults to `load_colors_from_jsonc(COLOR_FILE)`.
-        prefix (str, optional): The identifier prefix for colors to be replaced.
-            Defaults to `""`.
+        stylesheet: The stylesheet string containing color placeholders.
+        colors_dict: Dictionary containing color definitions. Only top-level
+            non-dict values are used. Defaults to colors from COLOR_FILE.
+        prefix: Prefix for placeholder names. Defaults to empty string.
 
     Returns:
-        str: The stylesheet with replaced colors.
+        The stylesheet with all matching placeholders replaced.
+
+    Examples:
+        >>> colors = {"primary": "#FF5722", "secondary": "#E64A19"}
+        >>> qss = "color: @primary; background: @secondary;"
+        >>> result = replace_colors(qss, colors)
+        >>> print(result)
+        'color: #FF5722; background: #E64A19;'
     """
 
     placeholders = {
@@ -630,10 +696,13 @@ def load_stylesheet(
     }}
     """
 
+    # Determine which icon folder to use based on theme
+    icon_folder = "stylesheet_dark" if theme == "dark" else "stylesheet_light"
+
     replace = {
         "@ColorA": color_a,
         "@ColorB": color_b,
-        "~icons": str(_parent_directory / "icons" / "stylesheet").replace(
+        "~icons": str(_parent_directory / "icons" / icon_folder).replace(
             os.sep, "/"
         ),
     }
@@ -645,6 +714,7 @@ def load_stylesheet(
             {
                 "black": "white",
                 "#181818": "silver",
+                "@SliderHandle": "#BBBBBB",
                 "@GreyH": "#201F1F",
                 "@GreyP": "#2A2929",
                 "@GreyA": "#3A3939",
@@ -668,25 +738,26 @@ def load_stylesheet(
         _theme = "light"
         replace.update(
             {
-                "white": "black",
-                "silver": "#181818",
-                "@GreyH": "#E0E0E0",
-                "@GreyP": "#D3D3D3",
-                "@GreyA": "#C0C0C0",
-                "@GreyB": "#BEBEBE",
-                "@GreyC": "#B0B0B0",
-                "@GreyF": "#A0A0A0",
-                "@GreyQ": "#909090",
-                "@GreyO": "#808080",
-                "@GreyK": "#707070",
-                "@GreyJ": "#606060",
-                "@GreyI": "#505050",
-                "@GreyN": "#404040",
-                "@GreyD": "#303030",
-                "@GreyG": "#202020",
-                "@GreyM": "#101010",
-                "@GreyL": "#080808",
-                "@GreyE": "#000000",
+                "white": "#1E1E1E",  # Text becomes dark
+                "silver": "#2D2D2D",  # Secondary text dark
+                "@SliderHandle": "#FFFFFF",  # White slider handle
+                "@GreyH": "#FFFFFF",  # Lightest background (inputs, lists)
+                "@GreyP": "#F5F5F5",  # Very light (scrollbar bg)
+                "@GreyA": "#E0E0E0",  # Light border
+                "@GreyB": "#FAFAFA",  # Alternate row bg
+                "@GreyC": "#F0F0F0",  # Main widget background
+                "@GreyF": "#BDBDBD",  # Disabled bg
+                "@GreyQ": "#9E9E9E",  # Scrollbar handle
+                "@GreyO": "#EEEEEE",  # Subtle bg
+                "@GreyK": "#BDBDBD",  # Border color
+                "@GreyJ": "#CACACA",  # Subtle border
+                "@GreyI": "#757575",  # Medium gray
+                "@GreyN": "#616161",  # Darker gray
+                "@GreyD": "#757575",  # Disabled text
+                "@GreyG": "#424242",  # Dark accent
+                "@GreyM": "#9E9E9E",  # Medium text
+                "@GreyL": "#616161",  # Secondary text
+                "@GreyE": "#212121",  # Primary text (dark on light)
             }
         )
 
