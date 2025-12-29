@@ -228,4 +228,4 @@ jobs:
         if: steps.check-mkdocs.outputs.exists == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-        run: mkdocs gh-deploy --force
+        run: python -m mkdocs gh-deploy --force
