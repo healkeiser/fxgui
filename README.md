@@ -20,7 +20,7 @@
     <!-- License -->
     <img src="https://img.shields.io/github/license/healkeiser/fxgui?&label=License"/> &nbsp;&nbsp;
     <!-- GitHub build workflow -->
-    <img src="https://img.shields.io/github/actions/workflow/status/healkeiser/fxgui/python-publish.yml?&label=Build&logo=pypi&logoColor=white" alt="Build"> &nbsp;&nbsp;
+    <img src="https://img.shields.io/github/actions/workflow/status/healkeiser/fxgui/release.yml?&label=Build&logo=pypi&logoColor=white" alt="Build"> &nbsp;&nbsp;
     <!-- PyPI version-->
     <a href="https://pypi.org/project/fxgui"><img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=Version" alt="PyPI Version"/></a> &nbsp;&nbsp;
     <!-- PyPI downloads -->
@@ -32,7 +32,7 @@
     <!-- GitHub stars -->
     <img src="https://img.shields.io/github/stars/healkeiser/fxgui" alt="GitHub Stars"/> &nbsp;&nbsp;
   </p>
-      
+
 </div>
 
 
