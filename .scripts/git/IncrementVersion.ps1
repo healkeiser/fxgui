@@ -70,7 +70,7 @@ $newVersion = "$($versionParts[0]).$($versionParts[1]).$($versionParts[2])"
 git tag -a "v$newVersion" -m "Version $newVersion"
 git push origin "v$newVersion"
 
-Write-Host "Tag v$newVersion pushed. CI will update package.py, create the release, and send Slack notification."
+Write-Host "Tag v$newVersion pushed."
 
 # Output the new version
 Write-Output $newVersion
