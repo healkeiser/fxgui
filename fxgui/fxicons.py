@@ -57,6 +57,23 @@ from qtpy.QtCore import Qt, QSize
 from fxgui import fxconstants
 
 
+# Public API
+__all__ = [
+    "set_default_icon_library",
+    "set_icon_defaults",
+    "add_library",
+    "get_available_libraries",
+    "get_available_icons_in_library",
+    "get_icon_path",
+    "get_icon",
+    "get_pixmap",
+    "change_pixmap_color",
+    "convert_icon_to_pixmap",
+    "superpose_icons",
+    "clear_icon_cache",
+]
+
+
 # Globals
 _libraries_info = {
     "beacon": {
@@ -322,14 +339,16 @@ def has_transparency(mask: QBitmap) -> bool:
     Returns:
         bool: `True` if the mask has transparency, `False` otherwise.
     """
-
     image = mask.toImage()
-    size = mask.size()
-    return any(
-        image.pixelIndex(x, y) == 0
-        for x in range(size.width())
-        for y in range(size.height())
-    )
+    width = mask.width()
+    height = mask.height()
+
+    # Early exit: scan row by row for better cache locality
+    for y in range(height):
+        for x in range(width):
+            if image.pixelIndex(x, y) == 0:
+                return True
+    return False
 
 
 def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
@@ -359,7 +378,7 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     return QPixmap.fromImage(qpixmap)
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=512)
 def get_pixmap(
     icon_name: str,
     width: Optional[int] = None,
@@ -412,7 +431,7 @@ def get_pixmap(
     return qpixmap
 
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=512)
 def get_icon(
     icon_name: str,
     width: Optional[int] = None,

@@ -41,6 +41,12 @@ from qtpy.QtWidgets import (
 )
 
 
+# Public API
+__all__ = [
+    "FXSortFilterProxyModel",
+]
+
+
 class FXSortFilterProxyModel(QSortFilterProxyModel):
     """A filter model that uses `SequenceMatcher` to filter items based on
     a similarity ratio. The similarity ratio is a value between 0 and 1,
@@ -63,6 +69,9 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         [LinkedIn post](https://www.linkedin.com/posts/mrminimaleffort_td-python-qt-activity-7270383661680603136-nvzb?utm_source=share&utm_medium=member_desktop)
     """
 
+    # Reusable SequenceMatcher instance for better performance
+    _matcher = SequenceMatcher()
+
     def __init__(
         self,
         ratio: float = 0.5,
@@ -76,7 +85,6 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
             color_match: Whether to enable color matching.
             parent: The parent widget.
         """
-
         super().__init__(parent)
         self._filter_text = ""
         self._ratio = ratio
@@ -155,8 +163,8 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         Returns:
             bool: `True` if the row is accepted, `False` otherwise.
         """
-
-        if self._ratio <= 0.0 or self._show_all or not self._filter_text:
+        # Early exits for common cases
+        if self._show_all or not self._filter_text or self._ratio <= 0.0:
             return True
 
         text = (
@@ -165,8 +173,9 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         if not text:
             return False
 
-        ratio = SequenceMatcher(None, self._filter_text, text).ratio()
-        return ratio >= self._ratio
+        # Reuse class-level matcher for better performance
+        self._matcher.set_seqs(self._filter_text, text)
+        return self._matcher.ratio() >= self._ratio
 
     def lessThan(self, left: QModelIndex, right: QModelIndex) -> bool:
         """Compare two indices to determine their order.
@@ -179,19 +188,17 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
             `True` if the left index is less than the right index,
             `False` otherwise.
         """
-
         if not self._filter_text or self._show_all:
             return left.row() < right.row()
 
         left_text = left.data().lower() if left.data() else ""
         right_text = right.data().lower() if right.data() else ""
 
-        left_ratio = SequenceMatcher(
-            None, self._filter_text, left_text
-        ).quick_ratio()
-        right_ratio = SequenceMatcher(
-            None, self._filter_text, right_text
-        ).quick_ratio()
+        # Reuse class-level matcher for better performance
+        self._matcher.set_seqs(self._filter_text, left_text)
+        left_ratio = self._matcher.quick_ratio()
+        self._matcher.set_seqs(self._filter_text, right_text)
+        right_ratio = self._matcher.quick_ratio()
 
         return left_ratio > right_ratio
 
@@ -207,20 +214,19 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         Returns:
             The data for the given role and index.
         """
-
         if (
             role == Qt.ForegroundRole
             and self._filter_text
             and self._ratio > 0.0
             and self._color_match
         ):
-            ratio = SequenceMatcher(
-                None, self._filter_text, (index.data() or "").lower()
-            ).quick_ratio()
+            # Reuse class-level matcher for better performance
+            self._matcher.set_seqs(self._filter_text, (index.data() or "").lower())
+            ratio = self._matcher.quick_ratio()
 
             t = ratio / self._ratio
-            t = max(0, min(t, 1))  # Ensure `t` is within `[0, 1]`
-            red = int((1 - t) * 255)
+            t = max(0.0, min(t, 1.0))  # Clamp t to [0, 1]
+            red = int((1.0 - t) * 255)
             green = int(t * 255)
             return QBrush(QColor(red, green, 0))
 

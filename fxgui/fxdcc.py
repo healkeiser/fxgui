@@ -52,6 +52,22 @@ MAYA = 2
 NUKE = 3
 
 
+# Public API
+__all__ = [
+    # Constants
+    "STANDALONE",
+    "HOUDINI",
+    "MAYA",
+    "NUKE",
+    # Functions
+    "get_dcc_main_window",
+    "get_houdini_main_window",
+    "get_houdini_stylesheet",
+    "get_maya_main_window",
+    "get_nuke_main_window",
+]
+
+
 def get_dcc_main_window() -> Optional[Any]:
     """Import the current DCC main window.
 
@@ -104,11 +120,12 @@ def get_houdini_stylesheet() -> str:
     return hou.qt.styleSheet()  # type:ignore
 
 
-def get_maya_main_window() -> QtWidgets.QWidget:
+def get_maya_main_window() -> Optional[QtWidgets.QWidget]:
     """Get the Maya main window.
 
     Returns:
-        qtpy.QtWidgets.QWidget: `TmainWindow` Maya main window.
+        qtpy.QtWidgets.QWidget: `TmainWindow` Maya main window,
+            or `None` if not found.
     """
 
     import maya.OpenMayaUI as omui
@@ -124,14 +141,15 @@ def get_maya_main_window() -> QtWidgets.QWidget:
     return None
 
 
-def get_nuke_main_window() -> QtWidgets.QMainWindow:
+def get_nuke_main_window() -> Optional[QtWidgets.QMainWindow]:
     """Get the Nuke main window.
 
     Returns:
-        qtpy.QtWidgets.QMainWindow: `DockMainWindow` Nuke main window.
+        qtpy.QtWidgets.QMainWindow: `DockMainWindow` Nuke main window,
+            or `None` if not found.
     """
-
-    import nuke
+    # Avoid unused import warning
+    import nuke  # noqa: F401
 
     for widget in QtWidgets.QApplication.topLevelWidgets():
         if (
@@ -139,3 +157,4 @@ def get_nuke_main_window() -> QtWidgets.QMainWindow:
             and widget.metaObject().className() == "Foundry::UI::DockMainWindow"
         ):
             return widget
+    return None

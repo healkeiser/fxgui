@@ -67,6 +67,34 @@ from qtpy.QtGui import QIcon, QPalette, QColor, QFontDatabase
 from fxgui import fxicons
 
 
+# Public API
+__all__ = [
+    # Style classes
+    "FXProxyStyle",
+    # Constants
+    "STYLE_FILE",
+    "COLOR_FILE",
+    # Theme functions
+    "get_theme",
+    "set_theme",
+    "toggle_theme",
+    "get_theme_colors",
+    # Palette functions
+    "set_dark_palette",
+    "set_light_palette",
+    "set_style",
+    "get_current_palette",
+    # Stylesheet functions
+    "load_stylesheet",
+    "load_colors_from_jsonc",
+    "replace_colors",
+    # Utility functions
+    "get_luminance",
+    "get_contrast_text_color",
+    "invalidate_standard_icon_map",
+]
+
+
 # Constants
 _parent_directory = Path(__file__).parent
 STYLE_FILE = _parent_directory / "qss" / "style.qss"
@@ -579,6 +607,13 @@ def toggle_theme(
     return new_theme
 
 
+# Pre-compiled regex pattern for comment removal (module-level for reuse)
+_COMMENT_PATTERN = re.compile(
+    r"(\"(?:\\\"|.)*?\"|'.*?'|//.*?$|/\*.*?\*/)",
+    flags=re.DOTALL | re.MULTILINE,
+)
+
+
 def _remove_comments(text: str) -> str:
     """Remove single-line and multi-line comments from the input text.
 
@@ -588,14 +623,9 @@ def _remove_comments(text: str) -> str:
     Returns:
         str: The input text with comments removed.
     """
-
-    # Regular expression to remove single-line and multi-line comments
-    pattern = r"(\"(?:\\\"|.)*?\"|\'.*?\'|//.*?$|/\*.*?\*/)"
-    return re.sub(
-        pattern,
+    return _COMMENT_PATTERN.sub(
         lambda m: "" if m.group(0).startswith("/") else m.group(0),
         text,
-        flags=re.DOTALL | re.MULTILINE,
     )
 
 

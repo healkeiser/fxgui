@@ -83,7 +83,6 @@ from qtpy.QtGui import (
     QPainterPath,
     QPen,
     QPixmap,
-    QRegion,
     QRegularExpressionValidator,
     QTextCharFormat,
     QTextCursor,
@@ -132,6 +131,48 @@ else:
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils, fxdcc
+
+
+# Public API
+__all__ = [
+    # Severity constants
+    "CRITICAL",
+    "ERROR",
+    "WARNING",
+    "SUCCESS",
+    "INFO",
+    "DEBUG",
+    # Core widgets
+    "FXApplication",
+    "FXMainWindow",
+    "FXWidget",
+    "FXSplashScreen",
+    "FXStatusBar",
+    "FXFloatingDialog",
+    "FXSystemTray",
+    # Input widgets
+    "FXPasswordLineEdit",
+    "FXIconButton",
+    "FXIconLineEdit",
+    # Layout widgets
+    "FXCollapsibleWidget",
+    "FXResizedScrollArea",
+    # Tree/List widgets
+    "FXSortedTreeWidgetItem",
+    "FXColorLabelDelegate",
+    # Labels
+    "FXElidedLabel",
+    # Validators
+    "FXCamelCaseValidator",
+    "FXLowerCaseValidator",
+    "FXLettersUnderscoreValidator",
+    "FXCapitalizedLetterValidator",
+    # Log widget
+    "FXOutputLogWidget",
+    "FXOutputLogHandler",
+    # Metaclasses
+    "FXSingleton",
+]
 
 
 # Constants
@@ -578,6 +619,10 @@ class FXOutputLogHandler(logging.Handler):
             self.handleError(record)
 
 
+# Pre-compiled regex for ANSI escape codes (module-level for reuse)
+_ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[([0-9;]+)m")
+
+
 class FXOutputLogWidget(QWidget):
     """A reusable read-only output log widget for displaying application logs.
 
@@ -646,9 +691,6 @@ class FXOutputLogWidget(QWidget):
 
         # Connect signal to slot for thread-safe log appending
         self.log_message.connect(self._queue_log_message)
-
-        # Pre-compile regex for ANSI conversion
-        self._ansi_pattern = re.compile(r"\x1b\[([0-9;]+)m")
 
         # Setup UI
         self._setup_ui()
@@ -985,8 +1027,8 @@ class FXOutputLogWidget(QWidget):
         is_bright = False
         last_end = 0
 
-        # Find all ANSI escape sequences
-        for match in self._ansi_pattern.finditer(text):
+        # Find all ANSI escape sequences using module-level compiled pattern
+        for match in _ANSI_ESCAPE_PATTERN.finditer(text):
             # Insert text before this escape code
             if match.start() > last_end:
                 segment = text[last_end : match.start()]
@@ -1649,6 +1691,10 @@ class _FXSortedTreeWidgetItem(QTreeWidgetItem):
         return self.collator.compare(self.text(column), other.text(column)) < 0
 
 
+# Pre-compiled regex for natural sorting (module-level for reuse)
+_NATURAL_SORT_PATTERN = re.compile(r"([0-9]+)")
+
+
 class FXSortedTreeWidgetItem(QTreeWidgetItem):
     """Custom `QTreeWidgetItem` that provides natural sorting for strings
     containing numbers. This is useful for sorting items like version numbers
@@ -1680,7 +1726,6 @@ class FXSortedTreeWidgetItem(QTreeWidgetItem):
             `True` if the current item is less than the other item according to
             the natural sort order, `False` otherwise.
         """
-
         # Get the index of the column currently being used for sorting
         column = self.treeWidget().sortColumn()
 
@@ -1689,7 +1734,8 @@ class FXSortedTreeWidgetItem(QTreeWidgetItem):
             self.text(column)
         ) < self._generate_natural_sort_key(other.text(column))
 
-    def _generate_natural_sort_key(self, s: str) -> list:
+    @staticmethod
+    def _generate_natural_sort_key(s: str) -> list:
         """Generate a sort key for natural sorting of strings containing
         numbers in a human-friendly way.
 
@@ -1700,12 +1746,10 @@ class FXSortedTreeWidgetItem(QTreeWidgetItem):
             A list of elements where numeric parts are converted to integers
             and other parts are converted to lowercase strings.
         """
-
-        # Split the string into parts, converting numeric parts to integers
-        # and non-numeric parts to lowercase strings
+        # Use pre-compiled regex for better performance
         return [
             int(text) if text.isdigit() else text.lower()
-            for text in re.split("([0-9]+)", s)
+            for text in _NATURAL_SORT_PATTERN.split(s)
         ]
 
 

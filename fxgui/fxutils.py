@@ -54,6 +54,18 @@ from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtCore import QFile
 
 
+# Public API
+__all__ = [
+    "load_ui",
+    "create_action",
+    "add_shadows",
+    "filter_tree",
+    "set_formatted_tooltip",
+    "get_formatted_time",
+    "deprecated",
+]
+
+
 def load_ui(parent: QWidget, ui_file: str) -> QWidget:
     """Load a UI file and return the loaded UI as a QWidget.
 
