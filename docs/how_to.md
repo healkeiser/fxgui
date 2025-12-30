@@ -200,6 +200,56 @@ icon_c = fxicons.get_icon("settings", color="red")
 icon = fxicons.superpose_icons(icon_a, icon_b, icon_c)
 ```
 
+## Theme-Aware Button Icons
+
+When using `FXMainWindow`, icons automatically update their colors when toggling between light and dark themes. To make any button's icon theme-aware, simply set the `icon_name` property on it:
+
+```python
+from qtpy.QtWidgets import QPushButton
+from fxgui import fxicons
+
+# Create a button with a theme-aware icon
+button = QPushButton("Save")
+button.setIcon(fxicons.get_icon("save"))
+button.setProperty("icon_name", "save")
+```
+
+When `FXMainWindow.toggle_theme()` is called (or the user presses the theme toggle shortcut), all buttons with the `icon_name` property will automatically have their icons refreshed to match the new theme colors.
+
+### Using `FXIconButton`
+
+For convenience, you can use `FXIconButton` which handles this automatically:
+
+```python
+from fxgui import fxwidgets
+
+# The icon_name property is set automatically
+button = fxwidgets.FXIconButton("Save", icon_name="save")
+button.clicked.connect(save_action)
+```
+
+### Works with Any Button Widget
+
+The property-based approach works with any `QAbstractButton` subclass:
+
+```python
+from qtpy.QtWidgets import QPushButton, QToolButton
+from fxgui import fxicons
+
+# QPushButton
+push_btn = QPushButton("Delete")
+push_btn.setIcon(fxicons.get_icon("delete"))
+push_btn.setProperty("icon_name", "delete")
+
+# QToolButton
+tool_btn = QToolButton()
+tool_btn.setIcon(fxicons.get_icon("settings"))
+tool_btn.setProperty("icon_name", "settings")
+```
+
+!!! tip
+    This approach is already used internally by widgets like `FXCollapsibleWidget`, `FXOutputLogWidget`, and `FXPasswordLineEdit`, so their icons update automatically on theme change.
+
 ## QtAwesome
 
 `fxgui` comes bundled with [QtAwesome](https://qtawesome.readthedocs.io/en/latest/index.html), so you can use something like:

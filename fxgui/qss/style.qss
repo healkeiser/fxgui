@@ -65,7 +65,7 @@ QWidget
     color: @GreyE;
     background-color: @GreyC;
     selection-background-color: @ColorA;
-    selection-color: white;
+    selection-color: @TextOnAccent;
     background-clip: border;
     border-image: none;
     outline: 0;
@@ -75,12 +75,13 @@ QWidget
 QWidget:item:hover
 {
     background-color: @ColorB;
-    color: white;
+    color: @TextOnAccent;
 }
 
 QWidget:item:selected
 {
     background-color: @ColorA;
+    color: @TextOnAccent;
 }
 
 QCheckBox
@@ -279,7 +280,7 @@ QMenuBar::item
 
 QMenuBar::item:selected
 {
-    color: white;
+    color: @TextOnAccent;
     background-color: @ColorA;
     border-radius: 2px;
     margin: 5px;
@@ -291,7 +292,7 @@ QMenuBar::item:pressed
 {
     border: 1px solid @GreyA;
     background-color: @ColorB;
-    color: white;
+    color: @TextOnAccent;
     padding-bottom:8px;
 }
 
@@ -319,12 +320,12 @@ QMenu::item
 
 QMenu::item:selected
 {
-    color: white;
+    color: @TextOnAccent;
 }
 
 QMenu::item:pressed
 {
-    color: white;
+    color: @TextOnAccent;
     background-color: @ColorB;
 }
 
@@ -407,12 +408,13 @@ QAbstractItemView
 {
     alternate-background-color: @GreyB;
     color: silver;
-    border: 1px solid @GreyB;
-    border-radius: 2px;
+    background-color: @GreyH;
+    border: 1px solid @GreyA;
+    border-radius: 4px;
     padding: 1px;
 }
 
-QWidget:focus,
+/* Only remove focus border on widgets that don't need visible borders */
 QMenuBar:focus
 {
     border: none;
@@ -449,12 +451,7 @@ QGroupBox::title {
     padding-top: 10px;
 }
 
-QAbstractScrollArea
-{
-    border-radius: 2px;
-    border: 1px solid @GreyA;
-    background-color: transparent;
-}
+/* QAbstractScrollArea - styling handled by individual widget classes below */
 
 QScrollBar:horizontal
 {
@@ -609,21 +606,6 @@ QScrollBar::sub-page:vertical
     background: none;
 }
 
-QTextEdit
-{
-    background-color: @GreyH;
-    color: silver;
-    border: 1px solid @GreyA;
-}
-
-QPlainTextEdit
-{
-    background-color: @GreyH;
-    color: silver;
-    border-radius: 2px;
-    border: 1px solid @GreyA;
-}
-
 QSizeGrip {
     background: transparent;
     /* image: url(~icons/sizegrip.svg); */
@@ -635,7 +617,7 @@ QSizeGrip {
 QMainWindow::separator
 {
     background-color: @GreyC;
-    color: white;
+    color: @TextOnAccent;
     padding-left: 4px;
     spacing: 2px;
     border: 1px dashed @GreyA;
@@ -645,7 +627,7 @@ QMainWindow::separator:hover
 {
 
     background-color: @GreyG;
-    color: white;
+    color: @TextOnAccent;
     padding-left: 4px;
     border: 1px solid @GreyA;
     spacing: 2px;
@@ -656,7 +638,7 @@ QMenu::separator
 {
     height: 1px;
     background-color: @GreyA;
-    color: white;
+    color: @TextOnAccent;
     padding-left: 4px;
     margin-left: 10px;
     margin-right: 5px;
@@ -678,6 +660,37 @@ QFrame[frameShape="0"]
 QStackedWidget
 {
     border: 1px transparent;
+}
+
+/* Text widgets - must come AFTER QFrame to override border-radius */
+QTextEdit
+{
+    background-color: @GreyH;
+    color: silver;
+    border: 1px solid @GreyA;
+    border-radius: 4px;
+}
+
+QTextEdit#fxOutputLogArea
+{
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 9pt;
+}
+
+QPlainTextEdit
+{
+    background-color: @GreyH;
+    color: silver;
+    border: 1px solid @GreyA;
+    border-radius: 4px;
+}
+
+QTextBrowser
+{
+    background-color: @GreyH;
+    color: silver;
+    border: 1px solid @GreyA;
+    border-radius: 4px;
 }
 
 QToolBar {
@@ -758,16 +771,26 @@ QPushButton:checked{
 }
 
 QComboBox:hover,
-QPushButton:hover,
 QAbstractSpinBox:hover,
 QLineEdit:hover,
 QTextEdit:hover,
+QTextBrowser:hover,
 QPlainTextEdit:hover,
 QAbstractView:hover,
 QTreeView:hover,
-QListView:hover
+QTreeWidget:hover,
+QListView:hover,
+QTableView:hover,
+QTableWidget:hover
 {
     border: 1px solid @ColorA;
+    color: silver;
+}
+
+QPushButton:hover
+{
+    border: 1px solid @ColorA;
+    background-color: @GreyO;
     color: silver;
 }
 
@@ -893,20 +916,46 @@ QTabBar:focus
     border: 0px transparent;
 }
 
-QTabBar QToolButton::right-arrow:enabled {
-    image: url(~icons/right_arrow.svg);
+QTabBar QToolButton {
+    background-color: @GreyH;
+    border: 1px solid @GreyO;
+    border-radius: 2px;
+    margin: 2px;
+    padding: 4px;
+    width: 18px;
+    height: 18px;
 }
 
- QTabBar QToolButton::left-arrow:enabled {
+QTabBar QToolButton:hover {
+    background-color: @GreyK;
+}
+
+QTabBar QToolButton:pressed {
+    background-color: @GreyL;
+}
+
+QTabBar QToolButton::right-arrow:enabled {
+    image: url(~icons/right_arrow.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QTabBar QToolButton::left-arrow:enabled {
     image: url(~icons/left_arrow.svg);
+    width: 10px;
+    height: 10px;
 }
 
 QTabBar QToolButton::right-arrow:disabled {
     image: url(~icons/right_arrow_disabled.svg);
+    width: 10px;
+    height: 10px;
 }
 
 QTabBar QToolButton::left-arrow:disabled {
     image: url(~icons/left_arrow_disabled.svg);
+    width: 10px;
+    height: 10px;
 }
 
 QTabBar::close-button  {
@@ -950,7 +999,7 @@ QTabBar::tab:top {
 }
 
 QTabBar::tab:top:selected {
-    color: white;
+    color: @GreyE;
     background-color: @GreyC;
     border-bottom: 1px solid @GreyC;
 }
@@ -964,7 +1013,7 @@ QTabBar::tab:top:!selected {
 }
 
 QTabBar::tab:top:!selected:hover {
-    color: white;
+    color: @GreyE;
     background-color: @GreyK;
 }
 
@@ -981,7 +1030,7 @@ QTabBar::tab:left {
 }
 
 QTabBar::tab:left:selected {
-    color: white;
+    color: @GreyE;
     background-color: @GreyC;
     border-right: 1px solid @GreyC;
 }
@@ -995,7 +1044,7 @@ QTabBar::tab:left:!selected {
 }
 
 QTabBar::tab:left:!selected:hover {
-    color: white;
+    color: @GreyE;
     background-color: @GreyK;
 }
 
@@ -1012,7 +1061,7 @@ QTabBar::tab:bottom {
 }
 
 QTabBar::tab:bottom:selected {
-    color: white;
+    color: @GreyE;
     background-color: @GreyC;
     border-top: 1px solid @GreyC;
 }
@@ -1026,7 +1075,7 @@ QTabBar::tab:bottom:!selected {
 }
 
 QTabBar::tab:bottom:!selected:hover {
-    color: white;
+    color: @GreyE;
     background-color: @GreyK;
 }
 
@@ -1043,7 +1092,7 @@ QTabBar::tab:right {
 }
 
 QTabBar::tab:right:selected {
-    color: white;
+    color: @GreyE;
     background-color: @GreyC;
     border-left: 1px solid @GreyC;
 }
@@ -1057,38 +1106,65 @@ QTabBar::tab:right:!selected {
 }
 
 QTabBar::tab:right:!selected:hover {
-    color: white;
+    color: @GreyE;
     background-color: @GreyK;
 }
 
 
 QDockWidget {
     border: 1px solid @GreyO;
+    border-radius: 4px;
     titlebar-close-icon: url(~icons/close.svg);
     titlebar-normal-icon: url(~icons/undock.svg);
 }
 
-QDockWidget::close-button, QDockWidget::float-button {
+QDockWidget::title {
+    text-align: left;
+    background-color: @GreyH;
+    border: 1px solid @GreyO;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    padding: 6px;
+    padding-right: 60px;
+}
+
+QDockWidget::close-button {
     border: 1px solid transparent;
     border-radius: 2px;
     background: transparent;
+    subcontrol-origin: margin;
+    subcontrol-position: top right;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+}
+
+QDockWidget::float-button {
+    border: 1px solid transparent;
+    border-radius: 2px;
+    background: transparent;
+    subcontrol-origin: margin;
+    subcontrol-position: top right;
+    position: absolute;
+    top: 4px;
+    right: 28px;
+    width: 20px;
+    height: 20px;
 }
 
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
-    background: rgba(255, 255, 255, 10);
+    background: @GreyK;
 }
 
 QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
     padding: 1px -1px -1px 1px;
-    background: rgba(255, 255, 255, 10);
+    background: @GreyL;
 }
 
 
-QTreeView, QListView
-{
-    border: 1px solid @GreyJ;
-    background-color: @GreyH;
-}
+/* Item views inherit from QAbstractItemView above */
 
 /* QTreeView:branch:selected, QTreeView:branch:hover
 {
@@ -1154,14 +1230,14 @@ QListView::item:!selected:hover,
 QTreeView::item:!selected:hover  {
     background: @ColorB;
     outline: 0;
-    color: white
+    color: @TextOnAccent
 }
 
 QListView::item:selected:hover,
 QListView::item:selected:hover,
 QTreeView::item:selected:hover  {
     background: @ColorA;
-    color: white;
+    color: @TextOnAccent;
 }
 
 QSlider::groove:horizontal {
@@ -1174,15 +1250,19 @@ QSlider::groove:horizontal {
 
 QSlider::handle:horizontal {
     background: @SliderHandle;
-    border: 1px solid @GreyK;
+    border: 1px solid @GreyO;
     width: 14px;
     height: 14px;
     margin: -4px 0;
-    border-radius: 7px;
+    border-radius: 4px;
 }
 
 QSlider::handle:horizontal:hover {
-    background: @ColorA;
+    background: @GreyM;
+}
+
+QSlider::handle:horizontal:pressed {
+    background: @GreyE;
 }
 
 QSlider::sub-page:horizontal {
@@ -1203,15 +1283,19 @@ QSlider::groove:vertical {
 
 QSlider::handle:vertical {
     background: @SliderHandle;
-    border: 1px solid @GreyK;
+    border: 1px solid @GreyO;
     width: 14px;
     height: 14px;
     margin: 0 -4px;
-    border-radius: 7px;
+    border-radius: 4px;
 }
 
 QSlider::handle:vertical:hover {
-    background: @ColorA;
+    background: @GreyM;
+}
+
+QSlider::handle:vertical:pressed {
+    background: @GreyE;
 }
 
 QToolButton {
@@ -1290,13 +1374,11 @@ QPushButton::menu-indicator:disabled {
 
 QTableView
 {
-    border: 1px solid @GreyJ;
     gridline-color: @GreyI;
-    background-color: @GreyH;
 }
 
 
-QTableView, QHeaderView
+QHeaderView
 {
     border-radius: 0px;
 }
@@ -1306,7 +1388,7 @@ QListView::item:pressed,
 QTreeView::item:pressed  {
     border-color: @ColorA;
     background: @ColorA;
-    color: white;
+    color: @TextOnAccent;
 }
 
 QTableView::item:selected:active,
@@ -1314,7 +1396,7 @@ QTreeView::item:selected:active,
 QListView::item:selected:active  {
     border-color: @ColorB;
     background: @ColorA;
-    color: white;
+    color: @TextOnAccent;
 }
 
 
@@ -1359,7 +1441,7 @@ QHeaderView::section::horizontal
 
 QHeaderView::section:checked
 {
-    color: white;
+    color: @TextOnAccent;
     background-color: @GreyQ;
 }
 

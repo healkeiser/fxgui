@@ -11,12 +11,21 @@ Classes:
     FXStatusBar: Enhanced status bar with severity-based messaging.
     FXFloatingDialog: Popup dialog appearing at cursor position.
     FXPasswordLineEdit: Password input with show/hide toggle.
+    FXIconButton: Button with theme-aware icon refresh.
     FXIconLineEdit: Line edit with embedded icon.
     FXColorLabelDelegate: Custom delegate for colored item rendering.
     FXSortedTreeWidgetItem: Natural sorting for tree items.
     FXSystemTray: System tray icon with context menu.
     FXWidget: Base widget with UI loading support.
     FXElidedLabel: Label with automatic text elision.
+    FXSingleton: Metaclass for Qt singleton classes.
+    FXResizedScrollArea: Scroll area that emits signal on resize.
+    FXCollapsibleWidget: Expandable/collapsible content widget.
+    FXCamelCaseValidator: Validator for camelCase input.
+    FXLowerCaseValidator: Validator for lowercase input.
+    FXLettersUnderscoreValidator: Validator for letters and underscores.
+    FXCapitalizedLetterValidator: Validator for capitalized names.
+    FXOutputLogWidget: Reusable log output widget with search.
 
 Constants:
     CRITICAL, ERROR, WARNING, SUCCESS, INFO, DEBUG: Severity levels.
@@ -46,25 +55,40 @@ from urllib.parse import urlparse
 
 # Third-party
 from qtpy.QtCore import (
+    QAbstractAnimation,
+    QModelIndex,
     QObject,
+    QParallelAnimationGroup,
     QPoint,
+    QPropertyAnimation,
     QRect,
+    QRegularExpression,
     QSize,
     QTimer,
     Qt,
-    QModelIndex,
+    Signal,
     Slot,
 )
 from qtpy.QtGui import (
+    QBitmap,
     QColor,
     QCursor,
     QCloseEvent,
     QFont,
     QFontMetrics,
     QIcon,
+    QKeyEvent,
     QMouseEvent,
     QPainter,
+    QPainterPath,
+    QPen,
     QPixmap,
+    QRegion,
+    QRegularExpressionValidator,
+    QTextCharFormat,
+    QTextCursor,
+    QTextDocument,
+    QValidator,
 )
 from qtpy.QtWidgets import (
     QAction,
@@ -77,7 +101,9 @@ from qtpy.QtWidgets import (
     QLineEdit,
     QMainWindow,
     QMenu,
+    QProgressBar,
     QPushButton,
+    QScrollArea,
     QSizePolicy,
     QSpacerItem,
     QSplashScreen,
@@ -86,12 +112,13 @@ from qtpy.QtWidgets import (
     QStyledItemDelegate,
     QStyleOptionViewItem,
     QSystemTrayIcon,
+    QTextEdit,
     QToolBar,
+    QToolButton,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
-    QProgressBar,
 )
 
 # Conditional import based on Qt version
@@ -114,6 +141,954 @@ WARNING = 2
 SUCCESS = 3
 INFO = 4
 DEBUG = 5
+
+
+class FXSingleton(type(QObject)):
+    """Metaclass for Qt classes that are singletons.
+
+    This metaclass ensures that only one instance of each class can exist.
+    If an instance already exists, it returns the existing instance instead
+    of creating a new one. Each subclass gets its own singleton instance.
+
+    Examples:
+        >>> from fxgui import fxwidgets
+        >>>
+        >>> class MySingletonWindow(fxwidgets.FXMainWindow, metaclass=fxwidgets.FXSingleton):
+        ...     pass
+        >>>
+        >>> window1 = MySingletonWindow()
+        >>> window2 = MySingletonWindow()
+        >>> assert window1 is window2  # Same instance
+    """
+
+    def __init__(cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        cls._instance: QWidget = None
+        cls._initialized: bool = False
+
+    def __call__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__call__(*args, **kwargs)
+            cls._initialized = True
+        else:
+            # If instance already exists, just show it (if it's a window)
+            if hasattr(cls._instance, "show"):
+                cls._instance.show()
+                cls._instance.raise_()
+                cls._instance.activateWindow()
+        return cls._instance
+
+    def reset_instance(cls):
+        """Reset the singleton instance. Useful for testing or cleanup."""
+        cls._instance = None
+        cls._initialized = False
+
+
+class FXResizedScrollArea(QScrollArea):
+    """A custom scroll area that emits a signal when resized.
+
+    This widget extends QScrollArea to emit a `resized` signal whenever
+    the widget is resized, which is useful for responsive layouts.
+
+    Signals:
+        resized: Emitted when the scroll area is resized.
+
+    Examples:
+        >>> scroll_area = FXResizedScrollArea()
+        >>> scroll_area.resized.connect(lambda: print("Resized!"))
+    """
+
+    resized = Signal()
+
+    def resizeEvent(self, event):
+        """Emit the resized signal when the widget is resized."""
+        self.resized.emit()
+        return super().resizeEvent(event)
+
+
+class FXCollapsibleWidget(QWidget):
+    """A widget that can expand or collapse its content.
+
+    The widget consists of a header with a toggle button and a content area
+    that can be shown or hidden with an animation effect.
+
+    Args:
+        parent: Parent widget.
+        title: Title displayed in the header.
+        animation_duration: Duration of expand/collapse animation in ms.
+        max_content_height: Maximum height for content area when
+            expanded (0 = no limit).
+
+    Examples:
+        >>> from qtpy.QtWidgets import QLabel, QVBoxLayout
+        >>> collapsible = FXCollapsibleWidget(title="Settings")
+        >>> layout = QVBoxLayout()
+        >>> layout.addWidget(QLabel("Option 1"))
+        >>> layout.addWidget(QLabel("Option 2"))
+        >>> collapsible.setContentLayout(layout)
+    """
+
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        title: str = "",
+        animation_duration: int = 200,
+        max_content_height: int = 300,
+    ):
+        """Initialize the collapsible section."""
+        super().__init__(parent=parent)
+
+        # Store properties
+        self.animation_duration = animation_duration
+        self.max_content_height = max_content_height
+        self._title = str(title)
+        self._is_expanded = False
+        self._has_been_expanded = False
+        self._content_height = 0
+
+        # Create fixed header layout
+        self.header_widget = QWidget()
+        self.header_widget.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Fixed
+        )
+
+        header_layout = QHBoxLayout(self.header_widget)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(8)
+
+        # Toggle button
+        self.toggle_button = QToolButton()
+        self.toggle_button.setStyleSheet("QToolButton { border: none; }")
+        self.toggle_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toggle_button.setIcon(fxicons.get_icon("chevron_right"))
+        self.toggle_button.setProperty("icon_name", "chevron_right")
+        self.toggle_button.setText(self._title)
+        self.toggle_button.setCheckable(True)
+        self.toggle_button.setChecked(False)
+
+        # Button won't get smaller than this
+        button_width = max(120, self.toggle_button.sizeHint().width())
+        self.toggle_button.setMinimumWidth(button_width)
+        self.toggle_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        # Header line
+        self.header_line = QFrame()
+        self.header_line.setFrameShape(QFrame.HLine)
+        self.header_line.setFrameShadow(QFrame.Sunken)
+        self.header_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        header_layout.addWidget(self.toggle_button)
+        header_layout.addWidget(self.header_line)
+
+        # Content area: always with scrollbars when needed
+        self.content_area = QScrollArea()
+        self.content_area.setWidgetResizable(True)
+        self.content_area.setFrameShape(QFrame.NoFrame)
+        self.content_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.content_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.content_area.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Fixed
+        )
+
+        # Initially collapsed
+        self.content_area.setMaximumHeight(0)
+        self.content_area.setMinimumHeight(0)
+
+        # Main layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        main_layout.addWidget(self.header_widget)
+        main_layout.addWidget(self.content_area)
+
+        # Size policies
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # Set minimum width to ensure button visibility
+        min_width = max(150, button_width + 30)
+        self.setMinimumWidth(min_width)
+
+        # Setup animation
+        self.toggle_animation = QParallelAnimationGroup()
+        self.toggle_animation.addAnimation(
+            QPropertyAnimation(self.content_area, b"maximumHeight")
+        )
+        self.toggle_animation.addAnimation(
+            QPropertyAnimation(self.content_area, b"minimumHeight")
+        )
+
+        # Connect signals
+        self.toggle_button.clicked.connect(self._toggle_content)
+        self.toggle_animation.finished.connect(self._on_animation_finished)
+
+    def _toggle_content(self, checked: bool) -> None:
+        """Toggle content visibility with animation."""
+        # Update button icon and property
+        icon_name = "expand_more" if checked else "chevron_right"
+        self.toggle_button.setIcon(fxicons.get_icon(icon_name))
+        self.toggle_button.setProperty("icon_name", icon_name)
+
+        # Store expanded state
+        self._is_expanded = checked
+
+        if checked and not self._has_been_expanded:
+            # First time expansion: measure content
+            if self.content_area.widget():
+                self._content_height = (
+                    self.content_area.widget().sizeHint().height()
+                )
+            self._has_been_expanded = True
+
+        # Calculate target height for animation
+        target_height = 0
+        if checked:
+            target_height = self._calculate_content_height()
+
+        # Update animations
+        for i in range(self.toggle_animation.animationCount()):
+            anim = self.toggle_animation.animationAt(i)
+            anim.setDuration(self.animation_duration)
+            anim.setStartValue(0)
+            anim.setEndValue(target_height)
+
+        # Run animation
+        direction = (
+            QAbstractAnimation.Forward
+            if checked
+            else QAbstractAnimation.Backward
+        )
+        self.toggle_animation.setDirection(direction)
+        self.toggle_animation.start()
+
+    def _calculate_content_height(self) -> int:
+        """Calculate appropriate content height based on constraints."""
+        if not self.content_area.widget():
+            return 0
+
+        # Get raw content height
+        content_height = self._content_height
+
+        # Apply max_content_height if specified
+        if self.max_content_height > 0:
+            content_height = min(content_height, self.max_content_height)
+
+        return content_height
+
+    def _on_animation_finished(self) -> None:
+        """Handle animation completion."""
+        if not self._is_expanded:
+            # When collapsed, ensure content is hidden
+            self.content_area.setMinimumHeight(0)
+            self.content_area.setMaximumHeight(0)
+            self.content_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.content_area.setHorizontalScrollBarPolicy(
+                Qt.ScrollBarAlwaysOff
+            )
+        else:
+            # When expanded, ensure scrollbars appear as needed
+            height = self._calculate_content_height()
+            self.content_area.setMinimumHeight(height)
+            self.content_area.setMaximumHeight(height)
+
+            # Enable scrollbars only if content exceeds visible area
+            if self.content_area.widget():
+                widget_width = self.content_area.widget().sizeHint().width()
+                widget_height = self.content_area.widget().sizeHint().height()
+
+                h_policy = (
+                    Qt.ScrollBarAsNeeded
+                    if widget_width > self.width()
+                    else Qt.ScrollBarAlwaysOff
+                )
+                v_policy = (
+                    Qt.ScrollBarAsNeeded
+                    if widget_height > height
+                    else Qt.ScrollBarAlwaysOff
+                )
+
+                self.content_area.setHorizontalScrollBarPolicy(h_policy)
+                self.content_area.setVerticalScrollBarPolicy(v_policy)
+
+    def setContentLayout(self, content_layout) -> None:
+        """Set the layout for the content area.
+
+        Args:
+            content_layout: The layout to set for the content area.
+        """
+        # Create content widget
+        content_widget = QWidget()
+        content_widget.setLayout(content_layout)
+        self.content_area.setWidget(content_widget)
+
+        # Measure content height
+        self._content_height = content_widget.sizeHint().height()
+
+        # Initially collapsed
+        self.content_area.setMaximumHeight(0)
+        self.content_area.setMinimumHeight(0)
+
+
+class FXCamelCaseValidator(QRegularExpressionValidator):
+    """Validator for camelCase without special characters or numbers.
+
+    This validator ensures input follows camelCase format: starts with
+    a lowercase letter, followed by zero or more groups of an uppercase
+    letter followed by lowercase letters.
+
+    Examples:
+        >>> from qtpy.QtWidgets import QLineEdit
+        >>> line_edit = QLineEdit()
+        >>> line_edit.setValidator(FXCamelCaseValidator())
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        # Regular expression for camelCase without special characters or
+        # numbers
+        camel_case_regex = QRegularExpression("^[a-z]+([A-Z][a-z]*)*$")
+
+        # Use the correct method based on what's available
+        if hasattr(self, "setRegularExpression"):
+            self.setRegularExpression(camel_case_regex)
+        else:
+            self.setRegExp(camel_case_regex)
+
+
+class FXLowerCaseValidator(QRegularExpressionValidator):
+    """Validator for lowercase letters only, with optional numbers and
+    underscores support.
+
+    Args:
+        allow_numbers: If `True`, allows numbers in addition to lowercase
+            letters.
+        allow_underscores: If `True`, allows underscores in addition to
+            lowercase letters.
+        parent: Parent widget.
+
+    Examples:
+        >>> from qtpy.QtWidgets import QLineEdit
+        >>> line_edit = QLineEdit()
+        >>> line_edit.setValidator(FXLowerCaseValidator(allow_numbers=True))
+    """
+
+    def __init__(
+        self,
+        allow_numbers: bool = False,
+        allow_underscores: bool = False,
+        parent=None,
+    ):
+        super().__init__(parent)
+
+        # Build regex pattern based on options
+        pattern = "^[a-z"
+        if allow_numbers:
+            pattern += "0-9"
+        if allow_underscores:
+            pattern += "_"
+        pattern += "]+$"
+
+        lowercase_regex = QRegularExpression(pattern)
+
+        # Use the correct method based on what's available
+        if hasattr(self, "setRegularExpression"):
+            self.setRegularExpression(lowercase_regex)
+        else:
+            self.setRegExp(lowercase_regex)
+
+
+class FXLettersUnderscoreValidator(QRegularExpressionValidator):
+    """Validator for letters and underscores, with optional numbers support.
+
+    Args:
+        allow_numbers: If `True`, allows numbers in addition to letters and
+            underscores.
+        parent: Parent widget.
+
+    Examples:
+        >>> from qtpy.QtWidgets import QLineEdit
+        >>> line_edit = QLineEdit()
+        >>> line_edit.setValidator(FXLettersUnderscoreValidator(allow_numbers=True))
+    """
+
+    def __init__(self, allow_numbers: bool = False, parent=None):
+        super().__init__(parent)
+
+        # Regular expression for letters, underscores, and optionally numbers
+        if allow_numbers:
+            letters_underscore_regex = QRegularExpression("^[a-zA-Z0-9_]+$")
+        else:
+            letters_underscore_regex = QRegularExpression("^[a-zA-Z_]+$")
+
+        # Use the correct method based on what's available
+        if hasattr(self, "setRegularExpression"):
+            self.setRegularExpression(letters_underscore_regex)
+        else:
+            self.setRegExp(letters_underscore_regex)
+
+
+class FXCapitalizedLetterValidator(QValidator):
+    """Validator for names that must start with a capital letter and contain
+    only letters.
+
+    This validator ensures the first character is uppercase and all
+    characters are alphabetic.
+
+    Examples:
+        >>> from qtpy.QtWidgets import QLineEdit
+        >>> line_edit = QLineEdit()
+        >>> line_edit.setValidator(FXCapitalizedLetterValidator())
+    """
+
+    def validate(self, input_string: str, pos: int):
+        """Allow only letters and must start with a capital letter."""
+        if input_string:
+            if not input_string[0].isupper() or not input_string.isalpha():
+                return (QValidator.Invalid, input_string, pos)
+        return (QValidator.Acceptable, input_string, pos)
+
+    def fixup(self, input_string: str) -> str:
+        """Automatically capitalize the first letter."""
+        if input_string:
+            return input_string[0].upper() + input_string[1:]
+        return input_string
+
+
+class FXOutputLogHandler(logging.Handler):
+    """Custom logging handler that sends log messages to an output log widget.
+
+    This handler is used internally by `FXOutputLogWidget` to capture
+    log messages and display them in the widget.
+
+    Args:
+        log_widget: The `FXOutputLogWidget` to send messages to.
+    """
+
+    def __init__(self, log_widget: "FXOutputLogWidget"):
+        super().__init__()
+        self.log_widget = log_widget
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Emit a log record to the output log widget."""
+        try:
+            msg = self.format(record)
+            # Use the widget's signal to ensure thread-safe delivery
+            self.log_widget.log_message.emit(msg)
+        except Exception:
+            self.handleError(record)
+
+
+class FXOutputLogWidget(QWidget):
+    """A reusable read-only output log widget for displaying application logs.
+
+    This widget provides a text display area that captures and shows
+    logging output from the application. It supports ANSI color codes,
+    search functionality, and log throttling for performance.
+
+    Args:
+        parent: Parent widget.
+        capture_output: If `True`, adds a logging handler to capture
+            log output from Python's logging module.
+
+    Signals:
+        log_message: Emitted when a log message is received (for thread-safe
+            delivery).
+
+    Examples:
+        >>> from fxgui import fxwidgets
+        >>> log_widget = fxwidgets.FXOutputLogWidget(capture_output=True)
+        >>> log_widget.show()
+    """
+
+    # Signal for thread-safe log message delivery
+    log_message = Signal(str)
+
+    # ANSI color mapping for terminal colors
+    ANSI_COLORS = {
+        "30": "#000000",
+        "31": "#cd3131",
+        "32": "#0dbc79",
+        "33": "#e5e510",
+        "34": "#2472c8",
+        "35": "#bc3fbc",
+        "36": "#11a8cd",
+        "37": "#e5e5e5",
+        "90": "#666666",
+        "91": "#f14c4c",
+        "92": "#23d18b",
+        "93": "#f5f543",
+        "94": "#3b8eea",
+        "95": "#d670d6",
+        "96": "#29b8db",
+        "97": "#ffffff",
+    }
+
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        capture_output: bool = False,
+    ):
+        """Initialize the output log widget."""
+        super().__init__(parent)
+
+        self._capture_output = capture_output
+        self._log_handler = None
+        self._modified_loggers = []
+        self._logger_check_timer = None
+
+        # Throttling mechanism to prevent UI freezing during
+        # high-frequency logging
+        self._pending_log = None
+        self._throttle_timer = QTimer(self)
+        self._throttle_timer.setSingleShot(True)
+        self._throttle_timer.timeout.connect(self._flush_pending_log)
+        self._throttle_interval = 16
+
+        # Connect signal to slot for thread-safe log appending
+        self.log_message.connect(self._queue_log_message)
+
+        # Pre-compile regex for ANSI conversion
+        self._ansi_pattern = re.compile(r"\x1b\[([0-9;]+)m")
+
+        # Setup UI
+        self._setup_ui()
+
+        # Setup output capture if requested
+        if self._capture_output:
+            self._setup_output_capture()
+
+    def _setup_ui(self) -> None:
+        """Setup the log widget UI components."""
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(5)
+
+        # Output area (read-only)
+        # We're using `QTextEdit` for HTML support
+        self.output_area = QTextEdit()
+        self.output_area.setReadOnly(True)
+        self.output_area.setLineWrapMode(QTextEdit.WidgetWidth)
+        self.output_area.setObjectName("fxOutputLogArea")
+
+        # Set monospace font (colors will come from theme stylesheet)
+        font = QFont("Consolas", 9)
+        font.setStyleHint(QFont.Monospace)
+        self.output_area.setFont(font)
+
+        layout.addWidget(self.output_area)
+
+        # Bottom bar with search and buttons
+        bottom_layout = QHBoxLayout()
+        bottom_layout.setContentsMargins(0, 0, 0, 0)
+        bottom_layout.setSpacing(5)
+
+        # Search controls (initially hidden)
+        self.search_label = QLabel("Find:")
+        self.search_label.hide()
+        bottom_layout.addWidget(self.search_label)
+
+        self.search_input = FXIconLineEdit(icon_name="search")
+        self.search_input.setPlaceholderText("Search...")
+        self.search_input.returnPressed.connect(self._find_next)
+        self.search_input.textChanged.connect(self._update_search_count)
+        self.search_input.hide()
+        bottom_layout.addWidget(self.search_input)
+
+        # Search count label (shows "X of Y" matches)
+        self.search_count_label = QLabel("")
+        self.search_count_label.setMinimumWidth(60)
+        self.search_count_label.hide()
+        bottom_layout.addWidget(self.search_count_label)
+
+        self.prev_button = QPushButton("Previous")
+        self.prev_button.setIcon(fxicons.get_icon("keyboard_arrow_left"))
+        self.prev_button.setProperty("icon_name", "keyboard_arrow_left")
+        self.prev_button.setMaximumWidth(80)
+        self.prev_button.clicked.connect(self._find_previous)
+        self.prev_button.hide()
+        bottom_layout.addWidget(self.prev_button)
+
+        self.next_button = QPushButton("Next")
+        self.next_button.setIcon(fxicons.get_icon("keyboard_arrow_right"))
+        self.next_button.setProperty("icon_name", "keyboard_arrow_right")
+        self.next_button.setMaximumWidth(80)
+        self.next_button.clicked.connect(self._find_next)
+        self.next_button.hide()
+        bottom_layout.addWidget(self.next_button)
+
+        self.close_search_button = QPushButton("")
+        self.close_search_button.setIcon(fxicons.get_icon("close"))
+        self.close_search_button.setProperty("icon_name", "close")
+        self.close_search_button.setMaximumWidth(30)
+        self.close_search_button.setToolTip("Close search (Esc)")
+        self.close_search_button.clicked.connect(self._hide_search)
+        self.close_search_button.hide()
+        bottom_layout.addWidget(self.close_search_button)
+
+        # Spacer to push Clear button to the right
+        self.log_spacer = QWidget()
+        self.log_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        bottom_layout.addWidget(self.log_spacer)
+
+        # Clear button (always visible)
+        self.clear_button = QPushButton("Clear")
+        self.clear_button.setIcon(fxicons.get_icon("delete"))
+        self.clear_button.setProperty("icon_name", "delete")
+        self.clear_button.setMaximumWidth(80)
+        self.clear_button.clicked.connect(self.clear_log)
+        bottom_layout.addWidget(self.clear_button)
+
+        layout.addLayout(bottom_layout)
+
+    def _show_search(self) -> None:
+        """Show the search bar and focus the input."""
+        self.search_label.show()
+        self.search_input.show()
+        self.search_count_label.show()
+        self.prev_button.show()
+        self.next_button.show()
+        self.close_search_button.show()
+        # Limit spacer width when search is visible
+        self.log_spacer.setMaximumWidth(50)
+        self.search_input.setFocus()
+        self.search_input.selectAll()
+        # Update count on show
+        self._update_search_count()
+
+    def _hide_search(self) -> None:
+        """Hide the search bar and clear highlighting."""
+        self.search_label.hide()
+        self.search_input.hide()
+        self.search_count_label.hide()
+        self.prev_button.hide()
+        self.next_button.hide()
+        self.close_search_button.hide()
+        # Remove spacer width limit when search is hidden
+        self.log_spacer.setMaximumWidth(16777215)  # Qt's QWIDGETSIZE_MAX
+        # Clear any existing search highlighting
+        cursor = self.output_area.textCursor()
+        cursor.clearSelection()
+        self.output_area.setTextCursor(cursor)
+
+    def _update_search_count(self) -> None:
+        """Count total occurrences and update the count label."""
+        search_text = self.search_input.text()
+        if not search_text:
+            self.search_count_label.setText("")
+            return
+
+        # Save current cursor position
+        original_cursor = self.output_area.textCursor()
+
+        # Count total occurrences
+        cursor = QTextCursor(self.output_area.document())
+        total_count = 0
+        current_index = 0
+        found_positions = []
+
+        while True:
+            cursor = self.output_area.document().find(search_text, cursor)
+            if cursor.isNull():
+                break
+            total_count += 1
+            found_positions.append(cursor.position())
+
+        # Determine current position index
+        if total_count > 0 and original_cursor.hasSelection():
+            current_pos = original_cursor.position()
+            for idx, pos in enumerate(found_positions):
+                if pos >= current_pos:
+                    current_index = idx + 1
+                    break
+            if current_index == 0:
+                current_index = len(found_positions)
+
+        # Update label
+        if total_count == 0:
+            self.search_count_label.setText("0 of 0")
+        elif current_index > 0:
+            self.search_count_label.setText(f"{current_index} of {total_count}")
+        else:
+            self.search_count_label.setText(f"0 of {total_count}")
+
+    def _find_next(self) -> None:
+        """Find next occurrence of search text."""
+        search_text = self.search_input.text()
+        if not search_text:
+            return
+
+        # Search forward from current position
+        found = self.output_area.find(search_text)
+
+        # If not found, wrap around to beginning
+        if not found:
+            cursor = self.output_area.textCursor()
+            cursor.movePosition(QTextCursor.Start)
+            self.output_area.setTextCursor(cursor)
+            self.output_area.find(search_text)
+
+        # Update the count display
+        self._update_search_count()
+
+    def _find_previous(self) -> None:
+        """Find previous occurrence of search text."""
+        search_text = self.search_input.text()
+        if not search_text:
+            return
+
+        # Search backward from current position
+        found = self.output_area.find(search_text, QTextDocument.FindBackward)
+
+        # If not found, wrap around to end
+        if not found:
+            cursor = self.output_area.textCursor()
+            cursor.movePosition(QTextCursor.End)
+            self.output_area.setTextCursor(cursor)
+            self.output_area.find(search_text, QTextDocument.FindBackward)
+
+        # Update the count display
+        self._update_search_count()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """Handle keyboard shortcuts."""
+        # CTRL+F to show search
+        if event.key() == Qt.Key_F and event.modifiers() == Qt.ControlModifier:
+            self._show_search()
+            event.accept()
+            return
+
+        # ESC to hide search
+        if event.key() == Qt.Key_Escape and self.search_input.isVisible():
+            self._hide_search()
+            event.accept()
+            return
+
+        super().keyPressEvent(event)
+
+    def _setup_output_capture(self) -> None:
+        """Setup logging capture.
+
+        Adds a handler to the root logger to capture log messages
+        and display them in the widget. Messages from child loggers
+        will propagate up to the root logger automatically.
+        """
+        # Add logging handler to root logger only
+        # Child loggers will propagate messages up to root by default
+        self._log_handler = FXOutputLogHandler(self)
+        self._log_handler.setLevel(logging.DEBUG)
+
+        # Set a standard formatter
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        self._log_handler.setFormatter(formatter)
+
+        # Add to root logger only - messages propagate up from child loggers
+        logging.root.addHandler(self._log_handler)
+
+        # Track loggers with propagate=False that need direct handler attachment
+        self._modified_loggers = []
+        for name in list(logging.root.manager.loggerDict.keys()):
+            logger_instance = logging.getLogger(name)
+            if isinstance(logger_instance, logging.Logger):
+                # Only add handler to loggers that don't propagate
+                if not logger_instance.propagate:
+                    if self._log_handler not in logger_instance.handlers:
+                        logger_instance.addHandler(self._log_handler)
+                        self._modified_loggers.append(name)
+
+        # Setup a timer to periodically check for new loggers
+        self._logger_check_timer = QTimer(self)
+        self._logger_check_timer.timeout.connect(self._check_for_new_loggers)
+        self._logger_check_timer.start(1000)  # Check every second
+
+    def _check_for_new_loggers(self) -> None:
+        """Check for newly created loggers and attach handler to them."""
+        for name in list(logging.root.manager.loggerDict.keys()):
+            if name not in self._modified_loggers:
+                logger_instance = logging.getLogger(name)
+                if isinstance(logger_instance, logging.Logger):
+                    # Only add handler to loggers that don't propagate
+                    if not logger_instance.propagate:
+                        if self._log_handler not in logger_instance.handlers:
+                            logger_instance.addHandler(self._log_handler)
+                            self._modified_loggers.append(name)
+
+    def _queue_log_message(self, text: str) -> None:
+        """Queue a log message for throttled display.
+
+        This ensures the UI stays responsive by limiting update frequency
+        to ~60 FPS while still showing all messages.
+
+        Args:
+            text: Text to queue for display.
+        """
+        # Store the message
+        self._pending_log = text
+
+        # Start timer if not already running
+        if not self._throttle_timer.isActive():
+            # First message arrives immediately for responsiveness
+            self._flush_pending_log()
+
+    def _flush_pending_log(self) -> None:
+        """Flush the pending log message to the display."""
+        if self._pending_log is not None:
+            text = self._pending_log
+            self._pending_log = None
+
+            # Display the message
+            self._insert_text_with_ansi(text)
+
+            # Add extra line break after each log entry
+            cursor = self.output_area.textCursor()
+            cursor.movePosition(QTextCursor.End)
+            self.output_area.setTextCursor(cursor)
+            self.output_area.insertPlainText("\n")
+
+            # Auto-scroll to bottom
+            scrollbar = self.output_area.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
+
+            # Schedule next update if needed
+            self._throttle_timer.start(self._throttle_interval)
+
+    def append_log(self, text: str) -> None:
+        """Append text to the log output with ANSI color conversion.
+
+        Args:
+            text: Text to append (may contain ANSI color codes).
+        """
+        self._queue_log_message(text)
+
+    def _insert_text_with_ansi(self, text: str) -> None:
+        """Insert text with ANSI colors using QTextCharFormat.
+
+        Args:
+            text: Text with ANSI escape codes.
+        """
+        # Move cursor to end
+        cursor = self.output_area.textCursor()
+        cursor.movePosition(QTextCursor.End)
+
+        # Get the widget's font to preserve monospace
+        base_font = self.output_area.font()
+
+        # Fast path: if no ANSI codes, insert plain text directly
+        if "\x1b[" not in text:
+            cursor.insertText(text)
+            return
+
+        # Track current styles
+        current_color = None
+        is_dim = False
+        is_bright = False
+        last_end = 0
+
+        # Find all ANSI escape sequences
+        for match in self._ansi_pattern.finditer(text):
+            # Insert text before this escape code
+            if match.start() > last_end:
+                segment = text[last_end : match.start()]
+
+                # Create format for this segment, preserving monospace font
+                fmt = QTextCharFormat()
+                fmt.setFont(base_font)
+
+                if current_color:
+                    color = QColor(current_color)
+                    if is_dim:
+                        color.setAlpha(128)  # 50% opacity
+                    fmt.setForeground(color)
+                elif is_dim:
+                    fmt.setForeground(QColor("#808080"))
+
+                if is_bright:
+                    font = QFont(base_font)
+                    font.setBold(True)
+                    fmt.setFont(font)
+
+                cursor.insertText(segment, fmt)
+
+            # Parse the escape code
+            codes = match.group(1).split(";")
+            for code in codes:
+                if code == "0" or code == "":  # Reset
+                    current_color = None
+                    is_dim = False
+                    is_bright = False
+                elif code == "1":  # Bright/Bold
+                    is_bright = True
+                elif code == "2":  # Dim
+                    is_dim = True
+                elif code == "22":  # Normal intensity
+                    is_bright = False
+                    is_dim = False
+                elif code in self.ANSI_COLORS:
+                    current_color = self.ANSI_COLORS[code]
+
+            last_end = match.end()
+
+        # Insert remaining text
+        if last_end < len(text):
+            segment = text[last_end:]
+
+            # Create format for this segment, preserving monospace font
+            fmt = QTextCharFormat()
+            fmt.setFont(base_font)
+
+            if current_color:
+                color = QColor(current_color)
+                if is_dim:
+                    color.setAlpha(128)  # 50% opacity
+                fmt.setForeground(color)
+            elif is_dim:
+                fmt.setForeground(QColor("#808080"))
+
+            if is_bright:
+                font = QFont(base_font)
+                font.setBold(True)
+                fmt.setFont(font)
+
+            cursor.insertText(segment, fmt)
+
+    def clear_log(self) -> None:
+        """Clear the log output."""
+        self.output_area.clear()
+
+    def restore_output_streams(self) -> None:
+        """Remove logging handler from all loggers where it was added."""
+        # Flush any pending message
+        if hasattr(self, "_throttle_timer"):
+            self._throttle_timer.stop()
+            if self._pending_log is not None:
+                self._flush_pending_log()
+
+        # Stop the logger check timer if it exists
+        if hasattr(self, "_logger_check_timer") and self._logger_check_timer:
+            self._logger_check_timer.stop()
+            self._logger_check_timer.deleteLater()
+            self._logger_check_timer = None
+
+        # Remove logging handler from all loggers where it was added
+        if self._log_handler:
+            logging.root.removeHandler(self._log_handler)
+
+            # Remove from all modified loggers
+            if hasattr(self, "_modified_loggers"):
+                for logger_name in self._modified_loggers:
+                    logger_instance = logging.getLogger(logger_name)
+                    if (
+                        logger_instance
+                        and self._log_handler in logger_instance.handlers
+                    ):
+                        logger_instance.removeHandler(self._log_handler)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Handle widget close event to restore output streams."""
+        if self._capture_output:
+            self.restore_output_streams()
+        super().closeEvent(event)
 
 
 class FXElidedLabel(QLabel):
@@ -753,7 +1728,7 @@ class FXApplication(QApplication):
         if not self.__initialized:
             super().__init__(*args, **kwargs)
 
-            fxstyle.set_style(self)
+            fxstyle.set_style(self, "Fusion")
             self.setStyleSheet(fxstyle.load_stylesheet())
 
             # Mark the instance as initialized
@@ -768,6 +1743,52 @@ class FXApplication(QApplication):
         # This ensures that `__new__` and `__init__` are called if the instance
         # doesn't exist
         return cls(*args, **kwargs)
+
+
+class _FXBorderWidget(QWidget):
+    """Internal widget to draw the border on top of all other content."""
+
+    def __init__(
+        self,
+        parent: QWidget,
+        border_width: int,
+        border_color: str,
+        corner_radius: int,
+    ):
+        super().__init__(parent)
+        self.border_width = border_width
+        self.border_color = border_color
+        self.corner_radius = corner_radius
+        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+
+    def paintEvent(self, event) -> None:
+        if self.border_width <= 0:
+            return
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+
+        pen = QPen(QColor(self.border_color))
+        pen.setWidthF(self.border_width)
+        pen.setJoinStyle(Qt.RoundJoin)
+        pen.setCapStyle(Qt.RoundCap)
+        painter.setPen(pen)
+        painter.setBrush(Qt.NoBrush)
+
+        rect = self.rect()
+        half_pen = self.border_width / 2.0
+        border_rect = rect.adjusted(half_pen, half_pen, -half_pen, -half_pen)
+
+        if self.corner_radius > 0:
+            adjusted_radius = max(0, self.corner_radius - half_pen)
+            painter.drawRoundedRect(
+                border_rect, adjusted_radius, adjusted_radius
+            )
+        else:
+            painter.drawRect(border_rect)
+
+        painter.end()
 
 
 class FXSplashScreen(QSplashScreen):
@@ -792,6 +1813,9 @@ class FXSplashScreen(QSplashScreen):
         fade_in: bool = False,
         set_stylesheet: bool = True,
         overlay_opacity: float = 1.0,
+        corner_radius: int = 0,
+        border_width: int = 0,
+        border_color: str = "#4a4949",
     ):
         image = self._load_image(image_path)
         super().__init__(image)
@@ -812,9 +1836,20 @@ class FXSplashScreen(QSplashScreen):
         self.color_b: str = color_b
         self.fade_in: bool = fade_in
         self.overlay_opacity: float = overlay_opacity
+        self.corner_radius: int = corner_radius
+        self.border_width: int = border_width
+        self.border_color: str = border_color
+
+        # Enable transparency for smooth anti-aliased corners
+        # Both flags are required for truly transparent rounded corners
+        self.setWindowFlags(
+            Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.SplashScreen
+        )
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
 
         # Methods
         self._grey_overlay()
+        self._create_border_overlay()
 
         # Styling
         if set_stylesheet:
@@ -883,9 +1918,7 @@ class FXSplashScreen(QSplashScreen):
 
     def _grey_overlay(self) -> None:
         self.overlay_frame = QFrame(self)
-        self.overlay_frame.setGeometry(
-            0, 0, self.pixmap.width() // 2, self.pixmap.height()
-        )
+        self._update_overlay_geometry()
         fxutils.add_shadows(self, self.overlay_frame)
 
         # Apply background opacity via stylesheet
@@ -954,6 +1987,39 @@ class FXSplashScreen(QSplashScreen):
         )
 
         layout.addWidget(self.copyright_label)
+
+    def _update_overlay_geometry(self) -> None:
+        """Update overlay frame geometry accounting for border."""
+
+        # Inset the overlay by the full border width so it doesn't cover the border
+        inset = self.border_width
+        x = inset
+        y = inset
+        width = (self.pixmap.width() // 2) - inset
+        height = self.pixmap.height() - (2 * inset)
+        self.overlay_frame.setGeometry(x, y, width, height)
+
+    def _create_border_overlay(self) -> None:
+        """Create a transparent overlay widget that draws the border on top."""
+
+        self._border_widget = _FXBorderWidget(
+            self,
+            self.border_width,
+            self.border_color,
+            self.corner_radius,
+        )
+        self._border_widget.setGeometry(self.rect())
+        self._border_widget.raise_()  # Ensure it's on top
+
+    def _update_border_overlay(self) -> None:
+        """Update the border overlay with current settings."""
+
+        if hasattr(self, "_border_widget"):
+            self._border_widget.border_width = self.border_width
+            self._border_widget.border_color = self.border_color
+            self._border_widget.corner_radius = self.corner_radius
+            self._border_widget.setGeometry(self.rect())
+            self._border_widget.update()
 
     def _update_copyright_label(self) -> None:
         project = self.project or "Project"
@@ -1127,14 +2193,102 @@ class FXSplashScreen(QSplashScreen):
             """
         )
 
+    def set_corner_radius(self, radius: int) -> None:
+        """Set the corner radius for rounded corners.
+
+        Args:
+            radius: The corner radius in pixels. Use 0 for sharp corners.
+        """
+
+        self.corner_radius = max(0, radius)
+        if self.corner_radius > 0:
+            self._apply_rounded_mask()
+        else:
+            self.clearMask()
+        self._update_border_overlay()
+        self.update()
+
+    def set_border(self, width: int, color: str = "#555555") -> None:
+        """Set the border around the splash screen.
+
+        Args:
+            width: The border width in pixels. Use 0 for no border.
+            color: The border color as a hex string.
+        """
+
+        self.border_width = max(0, width)
+        self.border_color = color
+        self._update_overlay_geometry()
+        self._update_border_overlay()
+        self.update()
+
     # Events
+    def paintEvent(self, event) -> None:
+        """Override to draw the pixmap with rounded corners."""
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+
+        # Create rounded rectangle path
+        path = QPainterPath()
+        rect = self.rect()
+
+        if self.corner_radius > 0:
+            path.addRoundedRect(
+                rect.x(),
+                rect.y(),
+                rect.width(),
+                rect.height(),
+                self.corner_radius,
+                self.corner_radius,
+            )
+        else:
+            path.addRect(rect.x(), rect.y(), rect.width(), rect.height())
+
+        # Clip to rounded rectangle and draw pixmap
+        painter.setClipPath(path)
+        painter.drawPixmap(rect, self.pixmap)
+        painter.end()
+
     def mousePressEvent(self, _):
         pass
 
     def showEvent(self, event):
+        super().showEvent(event)
+
+        # Apply rounded mask for true window transparency
+        if self.corner_radius > 0:
+            self._apply_rounded_mask()
+
         if self.fade_in:
-            super().showEvent(event)
             self._fade_in()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        # Reapply mask when resized
+        if self.corner_radius > 0:
+            self._apply_rounded_mask()
+
+    def _apply_rounded_mask(self) -> None:
+        """Apply a rounded rectangle mask for true window transparency."""
+
+        # Create a bitmap mask with anti-aliased rounded corners
+        bitmap = QBitmap(self.size())
+        bitmap.fill(Qt.color0)  # Start fully transparent
+
+        painter = QPainter(bitmap)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setBrush(Qt.color1)  # Opaque brush
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(
+            self.rect(),
+            self.corner_radius,
+            self.corner_radius,
+        )
+        painter.end()
+
+        self.setMask(bitmap)
 
 
 class FXStatusBar(QStatusBar):
@@ -2193,6 +3347,38 @@ class FXMainWindow(QMainWindow):
                 if button is not None:
                     button.setIcon(fxicons.get_icon(icon_name))
 
+        # Also refresh icons in custom widgets that support it
+        self._refresh_custom_widget_icons()
+
+    def _refresh_custom_widget_icons(self) -> None:
+        """Refresh icons on all child widgets that have an 'icon_name' property.
+
+        This method uses Qt's property system to find widgets with icons.
+        Any widget (QPushButton, QToolButton, etc.) with a dynamic property
+        'icon_name' will have its icon refreshed from the cache.
+
+        To make a button's icon theme-aware, simply set the property:
+            button.setProperty("icon_name", "save")
+            button.setIcon(fxicons.get_icon("save"))
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        from qtpy.QtWidgets import QAbstractButton, QToolButton
+
+        # Find all button-like widgets with an icon_name property
+        for widget in self.findChildren(QAbstractButton):
+            icon_name = widget.property("icon_name")
+            if icon_name:
+                widget.setIcon(fxicons.get_icon(icon_name))
+
+        # Also check QToolButtons specifically (for QToolButton in toolbars)
+        for widget in self.findChildren(QToolButton):
+            icon_name = widget.property("icon_name")
+            if icon_name:
+                widget.setIcon(fxicons.get_icon(icon_name))
+
     # Public methods
     def toggle_theme(self) -> str:
         """Toggle the theme of the window between light and dark.
@@ -2650,6 +3836,7 @@ class FXPasswordLineEdit(QWidget):
         # Show/hide button
         self.reveal_button = self.line_edit.icon_button
         self.reveal_button.setIcon(fxicons.get_icon("visibility"))
+        self.reveal_button.setProperty("icon_name", "visibility")
         self.reveal_button.setCursor(Qt.PointingHandCursor)
         self.reveal_button.clicked.connect(self.toggle_reveal)
 
@@ -2669,23 +3856,65 @@ class FXPasswordLineEdit(QWidget):
         if self.line_edit.echoMode() == QLineEdit.Password:
             self.line_edit.setEchoMode(QLineEdit.Normal)
             self.reveal_button.setIcon(fxicons.get_icon("disabled_visible"))
+            self.reveal_button.setProperty("icon_name", "disabled_visible")
         else:
             self.line_edit.setEchoMode(QLineEdit.Password)
             self.reveal_button.setIcon(fxicons.get_icon("visibility"))
+            self.reveal_button.setProperty("icon_name", "visibility")
+
+
+class FXIconButton(QPushButton):
+    """A QPushButton that stores its icon name for theme-aware refresh.
+
+    This button automatically updates its icon when the application theme
+    changes, as long as it's a child of an FXMainWindow.
+
+    Args:
+        text: The button text.
+        icon_name: The name of the icon (from fxicons).
+        parent: The parent widget.
+
+    Examples:
+        >>> btn = FXIconButton("Save", icon_name="save")
+        >>> btn.clicked.connect(save_action)
+    """
+
+    def __init__(
+        self,
+        text: str = "",
+        icon_name: Optional[str] = None,
+        parent: Optional[QWidget] = None,
+    ):
+        super().__init__(text, parent)
+        if icon_name is not None:
+            self.setIcon(fxicons.get_icon(icon_name))
+            self.setProperty("icon_name", icon_name)
+
+    def set_icon_name(self, icon_name: str) -> None:
+        """Set the icon by name.
+
+        Args:
+            icon_name: The name of the icon to display.
+        """
+        self.setIcon(fxicons.get_icon(icon_name))
+        self.setProperty("icon_name", icon_name)
 
 
 class FXIconLineEdit(QLineEdit):
     """A line edit that displays an icon on the left or right side.
 
+    The icon is theme-aware and will refresh automatically when the
+    application theme changes.
+
     Args:
-            icon: The icon to display.
+            icon_name: The name of the icon to display.
             icon_position: The position of the icon ('left' or 'right').
             parent: The parent widget.
     """
 
     def __init__(
         self,
-        icon: Optional[QIcon] = None,
+        icon_name: Optional[str] = None,
         icon_position: str = "left",
         parent: Optional[QWidget] = None,
     ):
@@ -2698,8 +3927,11 @@ class FXIconLineEdit(QLineEdit):
             "background-color: transparent; border: none;"
         )
         self.icon_button.setFixedSize(18, 18)
-        if icon is not None:
-            self.icon_button.setIcon(icon)
+
+        # Set icon using property-based approach
+        if icon_name is not None:
+            self.icon_button.setIcon(fxicons.get_icon(icon_name))
+            self.icon_button.setProperty("icon_name", icon_name)
 
         # Create a layout to hold the icon and the line edit
         self.layout = QHBoxLayout(self)

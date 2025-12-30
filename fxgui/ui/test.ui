@@ -432,8 +432,8 @@ p, li { white-space: pre-wrap; }
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>293</width>
-            <height>153</height>
+            <width>1265</width>
+            <height>330</height>
            </rect>
           </property>
           <attribute name="label">
@@ -504,6 +504,21 @@ p, li { white-space: pre-wrap; }
         </widget>
        </item>
       </layout>
+     </widget>
+     <widget class="QWidget" name="tab_5">
+      <attribute name="title">
+       <string>Page</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="tab_6">
+      <attribute name="title">
+       <string>Page</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="tab_7">
+      <attribute name="title">
+       <string>Page</string>
+      </attribute>
      </widget>
     </widget>
    </item>

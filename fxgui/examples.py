@@ -3,18 +3,27 @@
 This module contains various example functions showcasing how to use
 the fxgui framework for creating Qt-based applications, including:
 
-- Basic window creation
+- Basic window creation and subclassing
 - Splash screens with progress bars
-- Login dialogs
+- Login dialogs with password input
 - Custom delegates for tree/list/table widgets
+- Collapsible widgets with animation
+- Input validators (camelCase, lowercase, etc.)
+- Output log widget with search functionality
+- Singleton pattern for windows
 - System tray integration
-- DCC-specific implementations for Houdini, Maya, and Nuke
+- DCC-specific implementations for Houdini
 
 Functions:
     main: Main example function showing complete application setup.
     show_window: Simple window example with UI file.
     show_splash_screen: Display a customizable splash screen.
     show_login_dialog: Modal login dialog example.
+    show_collapsible_widget: Expandable/collapsible content example.
+    show_validators: Input validation examples.
+    show_output_log: Log output widget example.
+    show_singleton_window: Singleton window pattern example.
+    show_elided_label: Text elision example.
     show_window_houdini: Example for Houdini integration.
     show_floating_dialog_houdini: Floating dialog in Houdini.
 
@@ -34,15 +43,16 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 # Built-in
+import logging
 from pathlib import Path
 from typing import Dict, Tuple
 
 # Third-party
-import qtawesome as qta
 from qtpy.QtWidgets import (
     QDialog,
     QFormLayout,
     QVBoxLayout,
+    QHBoxLayout,
     QLineEdit,
     QCheckBox,
     QDialogButtonBox,
@@ -57,6 +67,7 @@ from qtpy.QtWidgets import (
     QTableWidgetItem,
     QStyle,
     QWidgetAction,
+    QSpinBox,
 )
 from qtpy.QtCore import Qt, QTimer, QPoint
 from qtpy.QtGui import QColor, QIcon
@@ -74,7 +85,18 @@ _ui_file = Path(__file__).parent / "ui" / "test.ui"
 _pixmap = Path(__file__).parent / "images" / "splash.png"
 
 
+###### Login Dialog Example
+
+
 def show_login_dialog():
+    """Show a login dialog with password input.
+
+    Demonstrates:
+        - FXPasswordLineEdit for secure password input
+        - FXApplication for styling
+        - Modal dialog creation
+    """
+
     class FXLoginDialog(QDialog):
         def __init__(self, parent=None):
             super().__init__(parent)
@@ -121,8 +143,344 @@ def show_login_dialog():
     dialog.exec_()
 
 
+###### Collapsible Widget Example
+
+
+def show_collapsible_widget():
+    """Show a collapsible widget with animated expand/collapse.
+
+    Demonstrates:
+        - FXCollapsibleWidget for expandable sections
+        - Animation effects
+        - Nested content layouts
+    """
+
+    application = fxwidgets.FXApplication()
+    window = fxwidgets.FXMainWindow(title="Collapsible Widget Example")
+    window.toolbar.hide()
+
+    # Create central widget with layout
+    central_widget = QWidget()
+    main_layout = QVBoxLayout(central_widget)
+
+    # First collapsible section - Settings
+    settings_section = fxwidgets.FXCollapsibleWidget(
+        title="Settings",
+        animation_duration=200,
+        max_content_height=200,
+    )
+    settings_layout = QFormLayout()
+    settings_layout.addRow("Name:", QLineEdit())
+    settings_layout.addRow("Value:", QSpinBox())
+    settings_layout.addRow("Enabled:", QCheckBox())
+    settings_section.setContentLayout(settings_layout)
+
+    # Second collapsible section - Advanced
+    advanced_section = fxwidgets.FXCollapsibleWidget(
+        title="Advanced Options",
+        animation_duration=300,
+        max_content_height=150,
+    )
+    advanced_layout = QVBoxLayout()
+    advanced_layout.addWidget(QLabel("Option 1: Enable debugging"))
+    advanced_layout.addWidget(QCheckBox("Debug mode"))
+    advanced_layout.addWidget(QLabel("Option 2: Verbose logging"))
+    advanced_layout.addWidget(QCheckBox("Verbose"))
+    advanced_section.setContentLayout(advanced_layout)
+
+    # Third collapsible section - Info
+    info_section = fxwidgets.FXCollapsibleWidget(
+        title="Information",
+        animation_duration=150,
+    )
+    info_layout = QVBoxLayout()
+    info_layout.addWidget(
+        QLabel("This is an example of the FXCollapsibleWidget.")
+    )
+    info_layout.addWidget(
+        QLabel("Click the header to expand or collapse the content.")
+    )
+    info_section.setContentLayout(info_layout)
+
+    main_layout.addWidget(settings_section)
+    main_layout.addWidget(advanced_section)
+    main_layout.addWidget(info_section)
+    main_layout.addStretch()
+
+    window.setCentralWidget(central_widget)
+    window.resize(400, 500)
+    window.show()
+    application.exec_()
+
+
+###### Validators Example
+
+
+def show_validators():
+    """Show input validators for different text formats.
+
+    Demonstrates:
+        - FXCamelCaseValidator for camelCase input
+        - FXLowerCaseValidator for lowercase input
+        - FXLettersUnderscoreValidator for identifiers
+        - FXCapitalizedLetterValidator for names
+    """
+
+    application = fxwidgets.FXApplication()
+    window = fxwidgets.FXMainWindow(title="Input Validators Example")
+    window.toolbar.hide()
+
+    central_widget = QWidget()
+    main_layout = QVBoxLayout(central_widget)
+
+    # Create form layout for validators
+    form_layout = QFormLayout()
+
+    # CamelCase validator
+    camel_case_edit = QLineEdit()
+    camel_case_edit.setValidator(fxwidgets.FXCamelCaseValidator())
+    camel_case_edit.setPlaceholderText("e.g., myVariableName")
+    form_layout.addRow("CamelCase:", camel_case_edit)
+
+    # Lowercase validator
+    lowercase_edit = QLineEdit()
+    lowercase_edit.setValidator(fxwidgets.FXLowerCaseValidator())
+    lowercase_edit.setPlaceholderText("e.g., lowercase")
+    form_layout.addRow("Lowercase:", lowercase_edit)
+
+    # Lowercase with numbers
+    lowercase_num_edit = QLineEdit()
+    lowercase_num_edit.setValidator(
+        fxwidgets.FXLowerCaseValidator(allow_numbers=True)
+    )
+    lowercase_num_edit.setPlaceholderText("e.g., version2")
+    form_layout.addRow("Lowercase + Numbers:", lowercase_num_edit)
+
+    # Lowercase with underscores
+    lowercase_underscore_edit = QLineEdit()
+    lowercase_underscore_edit.setValidator(
+        fxwidgets.FXLowerCaseValidator(allow_underscores=True)
+    )
+    lowercase_underscore_edit.setPlaceholderText("e.g., my_variable")
+    form_layout.addRow("Lowercase + Underscores:", lowercase_underscore_edit)
+
+    # Letters and underscores
+    letters_underscore_edit = QLineEdit()
+    letters_underscore_edit.setValidator(
+        fxwidgets.FXLettersUnderscoreValidator()
+    )
+    letters_underscore_edit.setPlaceholderText("e.g., My_Variable")
+    form_layout.addRow("Letters + Underscores:", letters_underscore_edit)
+
+    # Letters, underscores, and numbers
+    letters_underscore_num_edit = QLineEdit()
+    letters_underscore_num_edit.setValidator(
+        fxwidgets.FXLettersUnderscoreValidator(allow_numbers=True)
+    )
+    letters_underscore_num_edit.setPlaceholderText("e.g., My_Variable_2")
+    form_layout.addRow(
+        "Letters + Underscores + Numbers:", letters_underscore_num_edit
+    )
+
+    # Capitalized validator
+    capitalized_edit = QLineEdit()
+    capitalized_edit.setValidator(fxwidgets.FXCapitalizedLetterValidator())
+    capitalized_edit.setPlaceholderText("e.g., MyName")
+    form_layout.addRow("Capitalized:", capitalized_edit)
+
+    main_layout.addLayout(form_layout)
+    main_layout.addStretch()
+
+    window.setCentralWidget(central_widget)
+    window.resize(500, 400)
+    window.show()
+    application.exec_()
+
+
+###### Output Log Widget Example
+
+
+def show_output_log():
+    """Show the output log widget with logging capture.
+
+    Demonstrates:
+        - FXOutputLogWidget for displaying logs
+        - Log capture from Python's logging module
+        - Search functionality with Ctrl+F
+        - ANSI color code support
+        - FXIconButton for theme-aware button icons
+    """
+
+    application = fxwidgets.FXApplication()
+    window = fxwidgets.FXMainWindow(title="Output Log Example")
+    window.toolbar.hide()
+
+    central_widget = QWidget()
+    main_layout = QVBoxLayout(central_widget)
+
+    # Create log widget with capture enabled
+    log_widget = fxwidgets.FXOutputLogWidget(capture_output=True)
+
+    # Create some buttons to generate log messages
+    # Using FXIconButton so icons refresh when theme changes
+    button_layout = QHBoxLayout()
+
+    debug_btn = fxwidgets.FXIconButton("Debug", icon_name="bug_report")
+    debug_btn.clicked.connect(
+        lambda: logging.getLogger("example").debug("This is a debug message")
+    )
+
+    info_btn = fxwidgets.FXIconButton("Info", icon_name="info")
+    info_btn.clicked.connect(
+        lambda: logging.getLogger("example").info("This is an info message")
+    )
+
+    warning_btn = fxwidgets.FXIconButton("Warning", icon_name="warning")
+    warning_btn.clicked.connect(
+        lambda: logging.getLogger("example").warning(
+            "This is a warning message"
+        )
+    )
+
+    error_btn = fxwidgets.FXIconButton("Error", icon_name="error")
+    error_btn.clicked.connect(
+        lambda: logging.getLogger("example").error("This is an error message")
+    )
+
+    button_layout.addWidget(debug_btn)
+    button_layout.addWidget(info_btn)
+    button_layout.addWidget(warning_btn)
+    button_layout.addWidget(error_btn)
+
+    # Setup the example logger
+    logger = logging.getLogger("example")
+    logger.setLevel(logging.DEBUG)
+
+    # Add instructions
+    instructions = QLabel(
+        "Click buttons to generate log messages. Press Ctrl+F to search."
+    )
+
+    main_layout.addWidget(instructions)
+    main_layout.addLayout(button_layout)
+    main_layout.addWidget(log_widget)
+
+    window.setCentralWidget(central_widget)
+    window.resize(700, 500)
+    window.show()
+    application.exec_()
+
+
+###### Singleton Window Example
+
+
+def show_singleton_window():
+    """Show a singleton window that can only have one instance.
+
+    Demonstrates:
+        - FXSingleton metaclass for single-instance windows
+        - Automatic window focusing when trying to create a second instance
+    """
+
+    class MySingletonWindow(
+        fxwidgets.FXMainWindow, metaclass=fxwidgets.FXSingleton
+    ):
+        """A window that can only have one instance."""
+
+        def __init__(self, parent=None):
+            super().__init__(parent, title="Singleton Window")
+            self.toolbar.hide()
+
+            central_widget = QWidget()
+            layout = QVBoxLayout(central_widget)
+            layout.addWidget(
+                QLabel(
+                    "This window uses the FXSingleton metaclass.\n\n"
+                    "Try creating another instance - it will return\n"
+                    "this same window and bring it to focus."
+                )
+            )
+            layout.addStretch()
+            self.setCentralWidget(central_widget)
+
+    application = fxwidgets.FXApplication()
+
+    # Create first instance
+    window1 = MySingletonWindow()
+    window1.show()
+
+    # Try to create second instance - should return the same window
+    window2 = MySingletonWindow()
+
+    # Verify they are the same
+    assert window1 is window2, "Singleton pattern failed!"
+
+    application.exec_()
+
+    # Reset the singleton for future runs
+    MySingletonWindow.reset_instance()
+
+
+###### Elided Label Example
+
+
+def show_elided_label():
+    """Show the elided label that truncates text with ellipsis.
+
+    Demonstrates:
+        - FXElidedLabel for automatic text elision
+        - Responsive text truncation on resize
+    """
+
+    application = fxwidgets.FXApplication()
+    window = fxwidgets.FXMainWindow(title="Elided Label Example")
+    window.toolbar.hide()
+
+    central_widget = QWidget()
+    main_layout = QVBoxLayout(central_widget)
+
+    # Regular label for comparison
+    main_layout.addWidget(QLabel("Regular QLabel:"))
+    regular_label = QLabel(
+        "This is a very long text that will overflow and not be truncated "
+        "when the window is resized smaller."
+    )
+    main_layout.addWidget(regular_label)
+
+    main_layout.addSpacing(20)
+
+    # Elided label
+    main_layout.addWidget(QLabel("FXElidedLabel:"))
+    elided_label = fxwidgets.FXElidedLabel(
+        "This is a very long text that will be automatically truncated "
+        "with an ellipsis (...) when the window is resized smaller."
+    )
+    main_layout.addWidget(elided_label)
+
+    main_layout.addSpacing(20)
+
+    # Instructions
+    main_layout.addWidget(
+        QLabel("Resize the window to see the difference in behavior.")
+    )
+    main_layout.addStretch()
+
+    window.setCentralWidget(central_widget)
+    window.resize(400, 200)
+    window.show()
+    application.exec_()
+
+
+# DCC Integration Examples
+
+
 def show_window_houdini():
-    """An example FXMainWindow instance launched from inside Houdini."""
+    """An example FXMainWindow instance launched from inside Houdini.
+
+    Demonstrates:
+        - DCC parent window detection
+        - Proper window parenting for DCC integration
+    """
 
     houdini_window = fxdcc.get_houdini_main_window()
     window = fxwidgets.FXMainWindow(
@@ -132,15 +490,15 @@ def show_window_houdini():
 
 
 def show_floating_dialog_houdini():
-    """An example FXFloatingDialog launched from inside Houdini."""
+    """An example FXFloatingDialog launched from inside Houdini.
+
+    Demonstrates:
+        - FXFloatingDialog popup at cursor position
+        - Adding custom widgets to the dialog
+    """
 
     houdini_window = fxdcc.get_dcc_main_window()
     floating_dialog = fxwidgets.FXFloatingDialog(houdini_window)
-
-    # Set icon
-    # icon = hou.qt.Icon("MISC_python")
-    # pixmap = fxicons.convert_icon_to_pixmap(None, QSize(10, 100))
-    # floating_dialog.set_dialog_icon(pixmap)
 
     # Add button to the `button_box`
     floating_dialog.button_box.addButton("Test", QDialogButtonBox.ActionRole)
@@ -154,10 +512,18 @@ def show_floating_dialog_houdini():
     floating_dialog.show_under_cursor()
 
 
-def show_window():
-    """Show the window."""
+###### Basic Window Example
 
-    # Initialize the QApplication
+
+def show_window():
+    """Show a basic window with status bar messages.
+
+    Demonstrates:
+        - FXApplication and FXMainWindow basics
+        - Status bar with different severity levels
+        - Icon usage from fxicons
+    """
+
     application = fxwidgets.FXApplication()
     window = fxwidgets.FXMainWindow(ui_file=str(_ui_file))
 
@@ -197,23 +563,13 @@ def show_window():
     application.exec_()
 
 
-def show_window_alt():
-
-    application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow()
-    window.set_ui_file(str(_ui_file))
-    button_success = window.ui.button_success
-
-    # Spining icons
-    animation = qta.Spin(button_success)
-    spin_icon = qta.icon("fa5s.spinner", color="green", animation=animation)
-    button_success.setIcon(spin_icon)
-
-    window.show()
-    application.exec_()
-
-
 def subclass_window():
+    """Show a subclassed FXMainWindow with custom widgets.
+
+    Demonstrates:
+        - Subclassing FXMainWindow
+        - Creating custom central widgets
+    """
 
     application = fxwidgets.FXApplication()
 
@@ -221,34 +577,16 @@ def subclass_window():
         def __init__(self, parent=None):
             super().__init__(parent)
 
-            self.add_layout()
-            self.add_buttons()
-
-        def add_layout(self):
-            """Adds a vertical layout to the main layout of the widget."""
-
             self.main_layout = QVBoxLayout()
             self.setLayout(self.main_layout)
 
-        def add_buttons(self):
-            """Adds buttons to the main layout of the widget."""
+            # Add some example content
+            self.main_layout.addWidget(QLabel("Custom Widget Content"))
 
-            pulse_button = QPushButton("Pulse Button")
-            pulse_animation = qta.Pulse(pulse_button)
-            pulse_icon = qta.icon(
-                "fa.spinner", color="#b4b4b4", animation=pulse_animation
-            )
-            pulse_button.setIcon(pulse_icon)
+            button = QPushButton("Click Me")
+            button.setIcon(get_icon("touch_app"))
+            self.main_layout.addWidget(button)
 
-            spin_button = QPushButton("Spin Button")
-            spin_animation = qta.Spin(spin_button)
-            spin_icon = qta.icon(
-                "fa5s.spinner", color="#b4b4b4", animation=spin_animation
-            )
-            spin_button.setIcon(spin_icon)
-
-            self.main_layout.addWidget(pulse_button)
-            self.main_layout.addWidget(spin_button)
             self.main_layout.addStretch()
 
     class MyWindow(fxwidgets.FXMainWindow):
@@ -260,12 +598,14 @@ def subclass_window():
             self.adjustSize()
 
     window = MyWindow()
-    window.setWindowTitle("My Window")
+    window.setWindowTitle("Subclassed Window")
     window.show()
     application.exec_()
 
 
-# ' Main
+###### Color Delegate Helper
+
+
 def get_colors() -> Dict[str, Tuple[QColor, QColor, QColor, QIcon, bool]]:
     """Get the colors for the `FXColorLabelDelegate` class.
 
@@ -274,7 +614,7 @@ def get_colors() -> Dict[str, Tuple[QColor, QColor, QColor, QIcon, bool]]:
         border_color, text_icon_color, icon, color_icon)`.
     """
 
-    # Background, border, text/icon, icon
+    # Background, border, text/icon, icon, color_icon
     colors = {
         "blender": (
             QColor("#5a2c13"),
@@ -322,6 +662,9 @@ def get_colors() -> Dict[str, Tuple[QColor, QColor, QColor, QIcon, bool]]:
     return colors
 
 
+###### Splash Screen Functions
+
+
 def show_splash_screen(
     opacity: float = 0.75,
     project: str = "fxgui",
@@ -347,6 +690,9 @@ def show_splash_screen(
         project=project,
         version=version,
         company=company,
+        border_width=2,
+        border_color="#4a4949",
+        corner_radius=15,
     )
     splashscreen.set_overlay_opacity(opacity)
     splashscreen.show()
@@ -388,6 +734,9 @@ def finish_splash_screen(
     else:
         splashscreen.finish(window)
         window.show()
+
+
+###### Main Window Configuration
 
 
 def configure_window(window: fxwidgets.FXMainWindow):
@@ -493,11 +842,6 @@ def show_context_menu(tree: QTreeWidget, position: QPoint) -> None:
         tree: The tree widget to show the context menu in.
         position: The position of the right-click.
     """
-
-    # Retrieve the item at the clicked position
-    # item = tree.itemAt(position)
-    # if not item:
-    #     return
 
     # Retrieve all the items selected
     selected_items = tree.selectedItems()
@@ -649,6 +993,9 @@ def setup_refresh_action(window: fxwidgets.FXMainWindow) -> None:
     window.refresh_action.triggered.connect(refresh)
 
 
+###### Main Function
+
+
 def main(show_delayed: bool = True):
     """Main example function.
 
@@ -662,7 +1009,8 @@ def main(show_delayed: bool = True):
     _ = QUiLoader()  # PySide6 bug workaround
     application = fxwidgets.FXApplication()
 
-    application.setStyle(fxstyle.FXProxyStyle())
+    # Note: FXApplication already sets the style to Fusion with FXProxyStyle
+    # Don't override it here or QSS borders won't work on Windows
 
     # Initialize main window
     window = fxwidgets.FXMainWindow(

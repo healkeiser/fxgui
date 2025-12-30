@@ -73,8 +73,8 @@ STYLE_FILE = _parent_directory / "qss" / "style.qss"
 COLOR_FILE = _parent_directory / "style.jsonc"
 
 # Colors
-_COLOR_A_DEFAULT = "#007ACC"  # Lighter
-_COLOR_B_DEFAULT = "#005A9E"  # Darker
+_COLOR_A_DEFAULT = "#2196F3"  # Lighter (Material Blue 500)
+_COLOR_B_DEFAULT = "#1976D2"  # Darker (Material Blue 700)
 
 # Globals
 _colors = None
@@ -620,6 +620,52 @@ def load_colors_from_jsonc(jsonc_file: str = COLOR_FILE) -> dict:
         return _colors
 
 
+def get_luminance(hex_color: str) -> float:
+    """Calculate the relative luminance of a color.
+
+    Uses the WCAG 2.0 formula for relative luminance.
+
+    Args:
+        hex_color: A hex color string (e.g., "#007ACC" or "007ACC").
+
+    Returns:
+        float: The relative luminance value between 0 (black) and 1 (white).
+    """
+    # Remove # if present
+    hex_color = hex_color.lstrip("#")
+
+    # Handle shorthand hex (e.g., "FFF" -> "FFFFFF")
+    if len(hex_color) == 3:
+        hex_color = "".join(c * 2 for c in hex_color)
+
+    # Parse RGB values
+    r = int(hex_color[0:2], 16) / 255.0
+    g = int(hex_color[2:4], 16) / 255.0
+    b = int(hex_color[4:6], 16) / 255.0
+
+    # Apply gamma correction
+    def gamma(c):
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+    return 0.2126 * gamma(r) + 0.7152 * gamma(g) + 0.0722 * gamma(b)
+
+
+def get_contrast_text_color(background_hex: str) -> str:
+    """Determine whether to use white or black text on a given background.
+
+    Uses WCAG luminance calculation to ensure readable contrast.
+
+    Args:
+        background_hex: The background color as a hex string.
+
+    Returns:
+        str: "#FFFFFF" for dark backgrounds, "#000000" for light backgrounds.
+    """
+    luminance = get_luminance(background_hex)
+    # Use white text on dark backgrounds, black on light
+    return "#FFFFFF" if luminance < 0.5 else "#000000"
+
+
 def replace_colors(
     stylesheet: str,
     colors_dict: dict = load_colors_from_jsonc(COLOR_FILE),
@@ -699,9 +745,13 @@ def load_stylesheet(
     # Determine which icon folder to use based on theme
     icon_folder = "stylesheet_dark" if theme == "dark" else "stylesheet_light"
 
+    # Calculate appropriate text color for accent backgrounds based on contrast
+    text_on_accent = get_contrast_text_color(color_a)
+
     replace = {
         "@ColorA": color_a,
         "@ColorB": color_b,
+        "@TextOnAccent": text_on_accent,
         "~icons": str(_parent_directory / "icons" / icon_folder).replace(
             os.sep, "/"
         ),
@@ -748,7 +798,7 @@ def load_stylesheet(
                 "@GreyC": "#F0F0F0",  # Main widget background
                 "@GreyF": "#BDBDBD",  # Disabled bg
                 "@GreyQ": "#9E9E9E",  # Scrollbar handle
-                "@GreyO": "#EEEEEE",  # Subtle bg
+                "@GreyO": "#D8D8D8",  # Hover bg (darker than @GreyC for visible hover)
                 "@GreyK": "#BDBDBD",  # Border color
                 "@GreyJ": "#CACACA",  # Subtle border
                 "@GreyI": "#757575",  # Medium gray
