@@ -221,7 +221,9 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
             and self._color_match
         ):
             # Reuse class-level matcher for better performance
-            self._matcher.set_seqs(self._filter_text, (index.data() or "").lower())
+            self._matcher.set_seqs(
+                self._filter_text, (index.data() or "").lower()
+            )
             ratio = self._matcher.quick_ratio()
 
             t = ratio / self._ratio
