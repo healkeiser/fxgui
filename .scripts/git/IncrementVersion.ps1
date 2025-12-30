@@ -22,7 +22,7 @@ if (-not $latestTag) {
     $newVersion = "0.1.0"
     git tag -a "v$newVersion" -m "Version $newVersion"
     git push origin "v$newVersion"
-    Write-Host "Tag v$newVersion pushed. CI will update package.py, create the release, and send Slack notification."
+    Write-Host "Tag v$newVersion pushed."
     Write-Output $newVersion
     exit 0
 }
