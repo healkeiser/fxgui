@@ -1165,7 +1165,7 @@ or <code>None</code> if no calls are successful.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_maya_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_maya_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1184,11 +1184,12 @@ or <code>None</code> if no calls are successful.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="qtpy.QtWidgets.QWidget">QWidget</span></code>
+                  <code><span title="typing.Optional">Optional</span>[<span title="qtpy.QtWidgets.QWidget">QWidget</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>qtpy.QtWidgets.QWidget: <code>TmainWindow</code> Maya main window.</p>
+                <p>qtpy.QtWidgets.QWidget: <code>TmainWindow</code> Maya main window,
+or <code>None</code> if not found.</p>
               </div>
             </td>
           </tr>
@@ -1208,7 +1209,7 @@ or <code>None</code> if no calls are successful.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_nuke_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtWidgets.QMainWindow">QMainWindow</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_nuke_main_window</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="qtpy.QtWidgets.QMainWindow">QMainWindow</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1227,11 +1228,12 @@ or <code>None</code> if no calls are successful.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="qtpy.QtWidgets.QMainWindow">QMainWindow</span></code>
+                  <code><span title="typing.Optional">Optional</span>[<span title="qtpy.QtWidgets.QMainWindow">QMainWindow</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>qtpy.QtWidgets.QMainWindow: <code>DockMainWindow</code> Nuke main window.</p>
+                <p>qtpy.QtWidgets.QMainWindow: <code>DockMainWindow</code> Nuke main window,
+or <code>None</code> if not found.</p>
               </div>
             </td>
           </tr>

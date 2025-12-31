@@ -13,3 +13,104 @@
 .scale-in-center {
     animation: scale-in-center .5s cubic-bezier(.25, .46, .45, .94) both
 }
+
+/* Custom color overrides */
+:root>* {
+    /* Accent color shades */
+    --md-accent-fg-color: #2196F3;
+    --md-accent-fg-color--transparent: #2196F310;
+    --md-accent-bg-color: #2196F3;
+    --md-accent-bg-color--light: #2196F310;
+
+    /* Typeset `a` color shades */
+    --md-typeset-a-color: #2196F3;
+}
+
+/* Black primary color overrides */
+[data-md-color-primary="black"] {
+    /* Primary color shades */
+    --md-primary-fg-color: #212121;
+    --md-primary-fg-color--light: #212121;
+    --md-primary-fg-color--dark: #212121;
+
+    /* Typeset `a` color shades */
+    --md-typeset-a-color: #2196F3;
+}
+
+/* Light mode (default scheme) overrides */
+[data-md-color-scheme="default"][data-md-color-primary="black"] {
+
+    /* Header */
+    .md-header {
+        background-color: #151515;
+    }
+
+    /* Navigation tabs */
+    .md-tabs {
+        background-color: #151515;
+    }
+
+    /* Footer */
+    .md-footer {
+        background-color: #151515;
+    }
+}
+
+/* Dark mode (slate scheme) overrides */
+[data-md-color-scheme="slate"][data-md-color-primary="black"] {
+    /* Primary color shades */
+    --md-primary-fg-color: #212121;
+    --md-primary-fg-color--light: #212121;
+    --md-primary-fg-color--dark: #212121;
+
+    /* Default color shades */
+    --md-default-bg-color: #201f1f;
+    --md-default-bg-color--light: #201f1f;
+    --md-default-bg-color--lighter: #201f1f;
+    --md-default-bg-color--lightest: #201f1f;
+
+    /* Footer color shades */
+    --md-footer-bg-color: #151515;
+    --md-footer-bg-color--dark: #151515;
+
+    /* Typeset `a` color shades */
+    --md-typeset-a-color: #2196F3;
+
+    /* Header */
+    .md-header {
+        background-color: #151515;
+    }
+
+    /* Navigation tabs */
+    .md-tabs {
+        background-color: #151515;
+    }
+
+    /* Main content area */
+    .md-main {
+        background-color: #201f1f;
+    }
+
+    /* Sidebar */
+    .md-sidebar {
+        background-color: #201f1f;
+    }
+
+    /* Content container */
+    .md-content {
+        background-color: #201f1f;
+    }
+
+    /* Footer */
+    .md-footer {
+        background-color: #151515 !important;
+    }
+}
+
+/* Link hover effects */
+.md-typeset a:hover,
+.md-typeset a:focus,
+.md-nav__link:hover,
+.md-nav__link:focus {
+    color: #1976D2 !important;
+}
