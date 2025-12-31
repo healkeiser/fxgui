@@ -9,3 +9,4 @@ mkdocs-git-authors-plugin
 mkdocs-git-revision-date-localized-plugin
 mkdocs-git-committers-plugin
 mkdocstrings[python]
+black

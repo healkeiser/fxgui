@@ -97,6 +97,7 @@ from qtpy.QtWidgets import (
     QFrame,
     QLabel,
     QHBoxLayout,
+    QLayout,
     QLineEdit,
     QMainWindow,
     QMenu,
@@ -450,11 +451,11 @@ class FXCollapsibleWidget(QWidget):
                 self.content_area.setHorizontalScrollBarPolicy(h_policy)
                 self.content_area.setVerticalScrollBarPolicy(v_policy)
 
-    def setContentLayout(self, content_layout) -> None:
+    def setContentLayout(self, content_layout: QLayout) -> None:
         """Set the layout for the content area.
 
         Args:
-            content_layout: The layout to set for the content area.
+            content_layout (QLayout): The layout to set for the content area.
         """
         # Create content widget
         content_widget = QWidget()
@@ -517,7 +518,7 @@ class FXLowerCaseValidator(QRegularExpressionValidator):
         self,
         allow_numbers: bool = False,
         allow_underscores: bool = False,
-        parent=None,
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
 
@@ -552,7 +553,9 @@ class FXLettersUnderscoreValidator(QRegularExpressionValidator):
         >>> line_edit.setValidator(FXLettersUnderscoreValidator(allow_numbers=True))
     """
 
-    def __init__(self, allow_numbers: bool = False, parent=None):
+    def __init__(
+        self, allow_numbers: bool = False, parent: Optional[QWidget] = None
+    ):
         super().__init__(parent)
 
         # Regular expression for letters, underscores, and optionally numbers
@@ -3872,7 +3875,9 @@ class FXPasswordLineEdit(QWidget):
         icon_position: The position of the icon ('left' or 'right').
     """
 
-    def __init__(self, parent=None, icon_position: str = "left"):
+    def __init__(
+        self, parent: Optional[QWidget] = None, icon_position: str = "left"
+    ):
         super().__init__(parent)
         self.line_edit = FXIconLineEdit(icon_position=icon_position)
         self.line_edit.setEchoMode(QLineEdit.Password)

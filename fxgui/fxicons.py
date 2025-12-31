@@ -41,7 +41,7 @@ __email__ = "valentin.onze@gmail.com"
 from functools import lru_cache
 from pathlib import Path
 import re
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 # Third-party
 from qtpy.QtGui import (
@@ -149,13 +149,13 @@ def set_default_icon_library(library: str):
     _default_library = library
 
 
-def set_icon_defaults(apply_to: Optional[str] = None, **kwargs):
+def set_icon_defaults(apply_to: Optional[str] = None, **kwargs: Any) -> None:
     """Set the default values for the icons.
 
     Args:
         apply_to: The library to apply the defaults to. If set to `None`, the
             defaults will be applied to all libraries. Defaults to `None`.
-        **kwargs: The default values to set.
+        **kwargs (Any): The default values to set.
 
     Examples:
         >>> set_icon_defaults(color="red", width=32, height=32)
