@@ -10,6 +10,7 @@ the fxgui framework for creating Qt-based applications, including:
 - Collapsible widgets with animation
 - Input validators (camelCase, lowercase, etc.)
 - Output log widget with search functionality
+- Dockable output log panel
 - Singleton pattern for windows
 - System tray integration
 - DCC-specific implementations for Houdini
@@ -22,8 +23,10 @@ Functions:
     show_collapsible_widget: Expandable/collapsible content example.
     show_validators: Input validation examples.
     show_output_log: Log output widget example.
+    show_dockable_output_log: Dockable output log panel example.
     show_singleton_window: Singleton window pattern example.
     show_elided_label: Text elision example.
+    show_thumbnail_delegate: Thumbnail delegate for tree views.
     show_window_houdini: Example for Houdini integration.
     show_floating_dialog_houdini: Floating dialog in Houdini.
 
@@ -50,6 +53,7 @@ from typing import Dict, Tuple
 # Third-party
 from qtpy.QtWidgets import (
     QDialog,
+    QDockWidget,
     QFormLayout,
     QVBoxLayout,
     QHBoxLayout,
@@ -103,6 +107,15 @@ def show_login_dialog():
 
             self.setModal(True)
             self.setWindowTitle("Login")
+            self.setWindowIcon(
+                QIcon(
+                    str(
+                        Path(__file__).parent
+                        / "images"
+                        / "fxgui_logo_background_dark.svg"
+                    )
+                )
+            )
             self.resize(500, 100)
             main_layout = QVBoxLayout()
             form_layout = QFormLayout()
@@ -130,7 +143,11 @@ def show_login_dialog():
                 QDialogButtonBox.Cancel | QDialogButtonBox.Ok
             )
             button_box.button(QDialogButtonBox.Cancel).setText("Cancel")
+            button_box.button(QDialogButtonBox.Cancel).setIcon(
+                get_icon("close")
+            )
             button_box.button(QDialogButtonBox.Ok).setText("Login")
+            button_box.button(QDialogButtonBox.Ok).setIcon(get_icon("login"))
 
             # Close on cancel
             button_box.rejected.connect(self.reject)
@@ -156,7 +173,7 @@ def show_collapsible_widget():
     """
 
     application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow(title="Collapsible Widget Example")
+    window = fxwidgets.FXMainWindow(title="Collapsible")
     window.toolbar.hide()
 
     # Create central widget with layout
@@ -208,6 +225,9 @@ def show_collapsible_widget():
     main_layout.addStretch()
 
     window.setCentralWidget(central_widget)
+    window.set_company_label("\u00a9 Valentin Beaumont")
+    window.set_version_label("v0.1.0")
+    window.set_project_label("fxgui")
     window.resize(400, 500)
     window.show()
     application.exec_()
@@ -227,7 +247,7 @@ def show_validators():
     """
 
     application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow(title="Input Validators Example")
+    window = fxwidgets.FXMainWindow(title="Input Validators")
     window.toolbar.hide()
 
     central_widget = QWidget()
@@ -292,6 +312,9 @@ def show_validators():
     main_layout.addStretch()
 
     window.setCentralWidget(central_widget)
+    window.set_project_label("fxgui")
+    window.set_company_label("\u00a9 Valentin Beaumont")
+    window.set_version_label("v0.1.0")
     window.resize(500, 400)
     window.show()
     application.exec_()
@@ -321,31 +344,42 @@ def show_output_log():
     # Create log widget with capture enabled
     log_widget = fxwidgets.FXOutputLogWidget(capture_output=True)
 
+    # Helper functions to log and show status bar message
+    def log_debug():
+        msg = "This is a debug message"
+        logging.getLogger("example").debug(msg)
+        window.statusBar().showMessage(msg, severity_type=fxwidgets.DEBUG)
+
+    def log_info():
+        msg = "This is an info message"
+        logging.getLogger("example").info(msg)
+        window.statusBar().showMessage(msg, severity_type=fxwidgets.INFO)
+
+    def log_warning():
+        msg = "This is a warning message"
+        logging.getLogger("example").warning(msg)
+        window.statusBar().showMessage(msg, severity_type=fxwidgets.WARNING)
+
+    def log_error():
+        msg = "This is an error message"
+        logging.getLogger("example").error(msg)
+        window.statusBar().showMessage(msg, severity_type=fxwidgets.ERROR)
+
     # Create some buttons to generate log messages
     # Using FXIconButton so icons refresh when theme changes
     button_layout = QHBoxLayout()
 
     debug_btn = fxwidgets.FXIconButton("Debug", icon_name="bug_report")
-    debug_btn.clicked.connect(
-        lambda: logging.getLogger("example").debug("This is a debug message")
-    )
+    debug_btn.clicked.connect(log_debug)
 
     info_btn = fxwidgets.FXIconButton("Info", icon_name="info")
-    info_btn.clicked.connect(
-        lambda: logging.getLogger("example").info("This is an info message")
-    )
+    info_btn.clicked.connect(log_info)
 
     warning_btn = fxwidgets.FXIconButton("Warning", icon_name="warning")
-    warning_btn.clicked.connect(
-        lambda: logging.getLogger("example").warning(
-            "This is a warning message"
-        )
-    )
+    warning_btn.clicked.connect(log_warning)
 
     error_btn = fxwidgets.FXIconButton("Error", icon_name="error")
-    error_btn.clicked.connect(
-        lambda: logging.getLogger("example").error("This is an error message")
-    )
+    error_btn.clicked.connect(log_error)
 
     button_layout.addWidget(debug_btn)
     button_layout.addWidget(info_btn)
@@ -366,7 +400,111 @@ def show_output_log():
     main_layout.addWidget(log_widget)
 
     window.setCentralWidget(central_widget)
+    window.set_project_label("fxgui")
+    window.set_version_label("v0.1.0")
+    window.set_company_label("\u00a9 Valentin Beaumont")
     window.resize(700, 500)
+    window.show()
+    application.exec_()
+
+
+###### Dockable Output Log Example
+
+
+def show_dockable_output_log():
+    """Show the output log widget in a dockable panel.
+
+    Demonstrates:
+        - FXOutputLogWidget in a QDockWidget
+        - Dockable panel at the bottom of the window
+        - Status bar messages with severity colors
+        - Toolbar with log action buttons
+    """
+
+    application = fxwidgets.FXApplication()
+    window = fxwidgets.FXMainWindow(title="Dockable Output Log Example")
+
+    # Create main content area
+    central_widget = QWidget()
+    main_layout = QVBoxLayout(central_widget)
+    main_layout.addWidget(
+        QLabel(
+            "This is the main content area.\n\n"
+            "The output log is docked at the bottom.\n"
+            "Use the toolbar buttons or View menu to generate log messages."
+        )
+    )
+    main_layout.addStretch()
+    window.setCentralWidget(central_widget)
+    window.set_banner_icon(get_icon("home"))
+
+    # Create dockable output log
+    log_dock = QDockWidget("Output Log", window)
+    log_dock.setObjectName("OutputLogDock")
+    log_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
+
+    # Wrap log widget in a container with margins
+    log_container = QWidget()
+    log_container_layout = QVBoxLayout(log_container)
+    log_container_layout.setContentsMargins(10, 10, 10, 10)
+    log_widget = fxwidgets.FXOutputLogWidget(capture_output=True)
+    log_container_layout.addWidget(log_widget)
+
+    log_dock.setWidget(log_container)
+    window.addDockWidget(Qt.BottomDockWidgetArea, log_dock)
+
+    # Setup the example logger
+    logger = logging.getLogger("example")
+    logger.setLevel(logging.DEBUG)
+
+    # Helper functions to log and show status bar message
+    def log_debug():
+        msg = "Debug: Application state checked"
+        logger.debug(msg)
+        window.statusBar().showMessage(msg, severity_type=fxwidgets.DEBUG)
+
+    def log_info():
+        msg = "Info: Operation completed successfully"
+        logger.info(msg)
+        window.statusBar().showMessage(msg, severity_type=fxwidgets.INFO)
+
+    def log_warning():
+        msg = "Warning: Resource usage is high"
+        logger.warning(msg)
+        window.statusBar().showMessage(msg, severity_type=fxwidgets.WARNING)
+
+    def log_error():
+        msg = "Error: Failed to connect to server"
+        logger.error(msg)
+        window.statusBar().showMessage(msg, severity_type=fxwidgets.ERROR)
+
+    # Add actions to toolbar
+    debug_action = window.toolbar.addAction(
+        get_icon("bug_report"), "Debug", log_debug
+    )
+    debug_action.setToolTip("Log a debug message")
+
+    info_action = window.toolbar.addAction(get_icon("info"), "Info", log_info)
+    info_action.setToolTip("Log an info message")
+
+    warning_action = window.toolbar.addAction(
+        get_icon("warning"), "Warning", log_warning
+    )
+    warning_action.setToolTip("Log a warning message")
+
+    error_action = window.toolbar.addAction(
+        get_icon("error"), "Error", log_error
+    )
+    error_action.setToolTip("Log an error message")
+
+    # Add toggle action to View menu for the dock
+    view_menu = window.menuBar().addMenu("View")
+    view_menu.addAction(log_dock.toggleViewAction())
+
+    window.set_project_label("fxgui")
+    window.set_version_label("v0.1.0")
+    window.set_company_label("\u00a9 Valentin Beaumont")
+    window.resize(800, 600)
     window.show()
     application.exec_()
 
@@ -660,6 +798,228 @@ def get_colors() -> Dict[str, Tuple[QColor, QColor, QColor, QIcon, bool]]:
         ),
     }
     return colors
+
+
+###### Thumbnail Delegate Example
+
+
+def show_thumbnail_delegate():
+    """Show a tree widget with thumbnail delegate.
+
+    Demonstrates:
+        - FXThumbnailDelegate for thumbnail display in tree views
+        - Status indicator dots
+        - File status labels
+        - Markdown description support in tooltips
+    """
+
+    application = fxwidgets.FXApplication()
+    window = fxwidgets.FXMainWindow(title="Thumbnail Delegate Example")
+    window.toolbar.hide()
+
+    # Create central widget with layout
+    central_widget = QWidget()
+    main_layout = QVBoxLayout(central_widget)
+
+    # Create tree widget
+    tree = QTreeWidget()
+    tree.setHeaderLabels(
+        [
+            "Asset",
+            "Type",
+            "Status",
+        ]
+    )
+    tree.setColumnCount(3)
+
+    # Set up the thumbnail delegate for the first column
+    thumbnail_delegate = fxwidgets.FXThumbnailDelegate()
+    tree.setItemDelegateForColumn(0, thumbnail_delegate)
+
+    # Get image path for thumbnails
+    images_dir = Path(__file__).parent / "images"
+    splash_image = str(images_dir / "splash.png")
+
+    # Create sample items with thumbnails
+    items_data = [
+        {
+            "name": "Character Model",
+            "type": "Model",
+            "status": "Approved",
+            "description": "**Main character** model with _full rig_.",
+            "thumbnail": splash_image,
+            "status_dot_color": QColor("#4CAF50"),  # Green
+            "status_label_color": QColor("#2196F3"),  # Blue
+            "status_label_text": "LATEST",
+        },
+        {
+            "name": "Environment Props",
+            "type": "Model",
+            "status": "In Progress",
+            "description": "Collection of **environment props** for scene.",
+            "thumbnail": splash_image,
+            "status_dot_color": QColor("#FFC107"),  # Amber
+            "status_label_color": QColor("#FF9800"),  # Orange
+            "status_label_text": "WIP",
+        },
+        {
+            "name": "Hero Texture",
+            "type": "Texture",
+            "status": "Review",
+            "description": "High-res textures for the _hero asset_.",
+            "thumbnail": splash_image,
+            "status_dot_color": QColor("#2196F3"),  # Blue
+            "status_label_color": None,
+            "status_label_text": None,
+        },
+        {
+            "name": "Animation Rig",
+            "type": "Rig",
+            "status": "Pending",
+            "description": "Animation rig with:\n- FK/IK controls\n- Facial rig",
+            "thumbnail": None,  # Will use default missing image
+            "status_dot_color": QColor("#9E9E9E"),  # Grey
+            "status_label_color": QColor("#F44336"),  # Red
+            "status_label_text": "OUTDATED",
+        },
+    ]
+
+    for data in items_data:
+        item = QTreeWidgetItem(tree)
+        item.setText(0, data["name"])
+        item.setText(1, data["type"])
+        item.setText(2, data["status"])
+
+        # Set thumbnail delegate data using role constants
+        item.setData(
+            0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True
+        )
+        item.setData(
+            0,
+            fxwidgets.FXThumbnailDelegate.THUMBNAIL_PATH_ROLE,
+            data["thumbnail"],
+        )
+        item.setData(
+            0,
+            fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE,
+            data["description"],
+        )
+        item.setData(
+            0,
+            fxwidgets.FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
+            data["status_dot_color"],
+        )
+        if data["status_label_color"]:
+            item.setData(
+                0,
+                fxwidgets.FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
+                data["status_label_color"],
+            )
+        if data["status_label_text"]:
+            item.setData(
+                0,
+                fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
+                data["status_label_text"],
+            )
+
+        # Store entity data for tooltip
+        item.setData(
+            0,
+            Qt.UserRole,
+            {
+                "name": data["name"],
+                "type": data["type"],
+            },
+        )
+
+    # Add an item without thumbnail for comparison
+    no_thumb_item = QTreeWidgetItem(tree)
+    no_thumb_item.setText(0, "Simple Item (No Thumbnail)")
+    no_thumb_item.setText(1, "Reference")
+    no_thumb_item.setText(2, "Final")
+    no_thumb_item.setData(
+        0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False
+    )
+    no_thumb_item.setData(
+        0,
+        fxwidgets.FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
+        QColor("#4CAF50"),
+    )
+
+    # Resize columns to content
+    tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
+    tree.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+    tree.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+
+    # Make tree columns user-resizable
+    tree.header().setStretchLastSection(False)
+    tree.header().setSectionResizeMode(0, QHeaderView.Interactive)
+    tree.header().setSectionResizeMode(1, QHeaderView.Interactive)
+    tree.header().setSectionResizeMode(2, QHeaderView.Stretch)
+
+    # Add toggle button to show/hide thumbnails (global toggle)
+    toggle_btn = fxwidgets.FXIconButton(
+        "Toggle Thumbnails", icon_name="visibility"
+    )
+
+    def toggle_thumbnails():
+        thumbnail_delegate.show_thumbnail = (
+            not thumbnail_delegate.show_thumbnail
+        )
+        tree.viewport().update()
+
+    toggle_btn.clicked.connect(toggle_thumbnails)
+
+    # Add toggle button for status dot (global toggle)
+    toggle_dot_btn = fxwidgets.FXIconButton(
+        "Toggle Status Dot", icon_name="circle"
+    )
+
+    def toggle_status_dot():
+        thumbnail_delegate.show_status_dot = (
+            not thumbnail_delegate.show_status_dot
+        )
+        tree.viewport().update()
+
+    toggle_dot_btn.clicked.connect(toggle_status_dot)
+
+    # Add toggle button for status label (global toggle)
+    toggle_label_btn = fxwidgets.FXIconButton(
+        "Toggle Status Label", icon_name="label"
+    )
+
+    def toggle_status_label():
+        thumbnail_delegate.show_status_label = (
+            not thumbnail_delegate.show_status_label
+        )
+        tree.viewport().update()
+
+    toggle_label_btn.clicked.connect(toggle_status_label)
+
+    # Add instructions
+    instructions = QLabel(
+        "Hover over items to see Markdown-formatted tooltips. "
+        "Status dots appear in top-right corner."
+    )
+
+    # Create button layout
+    button_layout = QHBoxLayout()
+    button_layout.addWidget(toggle_btn)
+    button_layout.addWidget(toggle_dot_btn)
+    button_layout.addWidget(toggle_label_btn)
+    button_layout.addStretch()
+
+    main_layout.addWidget(instructions)
+    main_layout.addWidget(tree)
+    main_layout.addLayout(button_layout)
+
+    window.setCentralWidget(central_widget)
+    window.set_company_label("\u00a9 Valentin Beaumont")
+    window.set_version_label("v0.1.0")
+    window.set_project_label("fxgui")
+    window.resize(700, 500)
+    window.show()
+    application.exec_()
 
 
 ###### Splash Screen Functions
@@ -1038,4 +1398,4 @@ def main(show_delayed: bool = True):
 
 
 if __name__ == "__main__":
-    main()
+    show_dockable_output_log()

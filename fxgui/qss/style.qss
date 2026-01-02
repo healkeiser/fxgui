@@ -1,42 +1,3 @@
-/*
-@ColorA: #912D9Af4
-@ColorB: #8C2275B8
-
-@GreyH: #201F1F
-@GreyP: #2A2929
-@GreyB: #2D2C2C
-@GreyC: #302F2F
-@GreyO: #403F3F
-@GreyF: #404040
-@GreyQ: #605F5F
-@GreyJ: #444444
-@GreyK: #4A4949
-@GreyI: #6C6C6C
-@GreyN: #727272
-@GreyD: #777777
-@GreyG: #787876
-@GreyM: #A8A8A8
-@GreyL: #B1B1B1
-@GreyE: #BBBBBB
-
-@Grey80: #201F1F
-@Grey83: #2A2929
-@Grey85: #2D2C2C
-@Grey88: #302F2F
-@Grey75: #403F3F
-@Grey75_2: #404040
-@Grey62: #605F5F
-@Grey73: #444444
-@Grey71: #4A4949
-@Grey58: #6C6C6C
-@Grey55: #727272
-@Grey53: #777777
-@Grey53_2: #787876
-@Grey34: #A8A8A8
-@Grey31: #B1B1B1
-@Grey27: #BBBBBB
-*/
-
 QProgressBar:horizontal {
     border: 1px solid @GreyA;
     border-radius: 4px;
@@ -1605,4 +1566,19 @@ QSplitter::handle:horizontal:hover {
 
 QSplitter {
     border: 0px;
+}
+
+
+/* Banner Toolbar - ensure visibility over other styles */
+#FXBannerToolbar {
+    border-bottom: 1px solid @GreyP;
+    background: @GreyH;
+    spacing: 0px;
+}
+
+#FXBannerLabel {
+    color: @GreyA;
+    font-size: 16px;
+    padding: 10px;
+    background: transparent;
 }
