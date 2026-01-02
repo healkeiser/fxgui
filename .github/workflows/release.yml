@@ -88,19 +88,48 @@ jobs:
         run: |
           # Extract the section for the current tag from CHANGELOG.md
           TAG_NAME="${GITHUB_REF_NAME:-$(git describe --tags --abbrev=0)}"
-          VERSION="${TAG_NAME#v}"
+          VERSION="${TAG_NAME#v}"  # Remove 'v' prefix if present
 
           if [ ! -f "CHANGELOG.md" ]; then
-            echo "section=See release notes for details." >> $GITHUB_OUTPUT
+            echo "section=No changelog available for this release." >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Extract content between this version header and the next version header
-          SECTION=$(awk "/^## \[?${VERSION}\]?/{found=1; next} /^## \[?[0-9]+\.[0-9]+\.[0-9]+\]?/{if(found) exit} found{print}" CHANGELOG.md)
+          echo "Looking for version: ${VERSION} (tag: ${TAG_NAME})"
+          echo "CHANGELOG.md contents:"
+          head -50 CHANGELOG.md
 
-          # If extraction failed, use a default message
+          # Try multiple patterns to find the version section
+          # Pattern 1: [vX.Y.Z] or [X.Y.Z] with link
+          SECTION=$(awk "/^## \[v?${VERSION}\]/{found=1; next} /^## /{if(found) exit} found{print}" CHANGELOG.md)
+
+          # Trim leading/trailing whitespace and empty lines
+          SECTION=$(echo "$SECTION" | sed '/^[[:space:]]*$/d' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+          echo "Extracted section (pattern 1): '$SECTION'"
+
+          # Pattern 2: Try with the v prefix explicitly
           if [ -z "$SECTION" ]; then
-            SECTION="See [CHANGELOG.md](CHANGELOG.md) for details."
+            SECTION=$(awk "/^## \[${TAG_NAME}\]/{found=1; next} /^## /{if(found) exit} found{print}" CHANGELOG.md)
+            SECTION=$(echo "$SECTION" | sed '/^[[:space:]]*$/d' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            echo "Extracted section (pattern 2): '$SECTION'"
+          fi
+
+          # Pattern 3: Without brackets
+          if [ -z "$SECTION" ]; then
+            SECTION=$(awk "/^## v?${VERSION}/{found=1; next} /^## /{if(found) exit} found{print}" CHANGELOG.md)
+            SECTION=$(echo "$SECTION" | sed '/^[[:space:]]*$/d' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+            echo "Extracted section (pattern 3): '$SECTION'"
+          fi
+
+          # If still empty, the version exists but has no documented changes
+          if [ -z "$SECTION" ]; then
+            # Check if the version header exists at all
+            if grep -q "## \[v\?${VERSION}\]" CHANGELOG.md || grep -q "## v\?${VERSION}" CHANGELOG.md; then
+              SECTION="This release contains minor updates. See commit history for details."
+            else
+              SECTION="No changelog entry found for version ${VERSION}."
+            fi
           fi
 
           # Write to output (handle multiline)
@@ -145,10 +174,10 @@ jobs:
           body: |
             ## What's Changed
 
-            ${{ needs.generate-changelog.outputs.changelog-section || 'See [CHANGELOG.md](CHANGELOG.md) for details.' }}
+            ${{ needs.generate-changelog.outputs.changelog-section || 'No detailed changelog available for this release.' }}
 
             ---
-            **Full Changelog**: See [CHANGELOG.md](CHANGELOG.md)
+            📄 **[View Full Changelog](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)**
 
   # Step 3: Build and publish to PyPI
   publish-pypi:
