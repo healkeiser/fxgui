@@ -94,8 +94,6 @@ class FXSplashScreen(QSplashScreen):
         project: Optional[str] = None,
         version: Optional[str] = None,
         company: Optional[str] = None,
-        color_a: str = fxstyle._COLOR_A_DEFAULT,
-        color_b: str = fxstyle._COLOR_B_DEFAULT,
         fade_in: bool = False,
         set_stylesheet: bool = True,
         overlay_opacity: float = 1.0,
@@ -105,6 +103,9 @@ class FXSplashScreen(QSplashScreen):
     ):
         image = self._load_image(image_path)
         super().__init__(image)
+
+        # Get theme colors from JSON
+        _theme_colors = fxstyle.get_theme_colors()
 
         # Attributes
         self.pixmap: QPixmap = image
@@ -120,13 +121,13 @@ class FXSplashScreen(QSplashScreen):
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
         self.company: str = company or "Company"
-        self.color_a: str = color_a
-        self.color_b: str = color_b
         self.fade_in: bool = fade_in
         self.overlay_opacity: float = overlay_opacity
         self.corner_radius: int = corner_radius
         self.border_width: int = border_width
-        self.border_color: str = border_color
+        self.border_color: str = border_color or _theme_colors.get(
+            "border_light", "#4a4949"
+        )
 
         # Enable transparency for smooth anti-aliased corners
         # Both flags are required for truly transparent rounded corners
@@ -139,13 +140,9 @@ class FXSplashScreen(QSplashScreen):
         self._grey_overlay()
         self._create_border_overlay()
 
-        # Styling
+        # Styling - load_stylesheet() automatically uses the saved theme
         if set_stylesheet:
-            self.setStyleSheet(
-                fxstyle.load_stylesheet(
-                    color_a=self.color_a, color_b=self.color_b
-                )
-            )
+            self.setStyleSheet(fxstyle.load_stylesheet())
 
         # Apply overlay opacity after stylesheet to ensure it's not overridden
         self._apply_overlay_opacity()
@@ -438,21 +435,6 @@ class FXSplashScreen(QSplashScreen):
         """
 
         self.fade_in = fade_in
-
-    def set_colors(self, color_a: str, color_b: str) -> None:
-        """Set the color scheme for the splash screen.
-
-        Args:
-            color_a: The primary color.
-            color_b: The secondary color.
-        """
-
-        self.color_a = color_a
-        self.color_b = color_b
-        self.setStyleSheet(
-            fxstyle.load_stylesheet(color_a=color_a, color_b=color_b)
-        )
-        self._apply_overlay_opacity()
 
     def set_overlay_opacity(self, opacity: float) -> None:
         """Set the opacity of the grey overlay background.

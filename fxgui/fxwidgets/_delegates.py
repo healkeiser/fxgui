@@ -105,8 +105,8 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         # Set the default colors and icon (theme-aware)
         theme_colors = fxstyle.get_theme_colors()
         background_color, border_color, text_icon_color, icon, color_icon = (
-            QColor(theme_colors["background"]),
-            QColor(theme_colors["border_light"]),
+            QColor(theme_colors["surface"]),
+            QColor(theme_colors["border_subtle"]),
             QColor(
                 theme_colors["surface"]
                 if fxstyle._theme == "dark"

@@ -78,7 +78,8 @@ from qtpy.QtGui import QColor, QIcon
 
 # Internal
 from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
-from fxgui.fxicons import get_icon
+from fxgui import fxicons
+from fxgui.fxicons import get_icon, set_icon
 
 
 # Constants
@@ -190,7 +191,7 @@ def show_collapsible_widget():
     settings_layout.addRow("Name:", QLineEdit())
     settings_layout.addRow("Value:", QSpinBox())
     settings_layout.addRow("Enabled:", QCheckBox())
-    settings_section.setContentLayout(settings_layout)
+    settings_section.set_content_layout(settings_layout)
 
     # Second collapsible section - Advanced
     advanced_section = fxwidgets.FXCollapsibleWidget(
@@ -203,7 +204,7 @@ def show_collapsible_widget():
     advanced_layout.addWidget(QCheckBox("Debug mode"))
     advanced_layout.addWidget(QLabel("Option 2: Verbose logging"))
     advanced_layout.addWidget(QCheckBox("Verbose"))
-    advanced_section.setContentLayout(advanced_layout)
+    advanced_section.set_content_layout(advanced_layout)
 
     # Third collapsible section - Info
     info_section = fxwidgets.FXCollapsibleWidget(
@@ -217,7 +218,7 @@ def show_collapsible_widget():
     info_layout.addWidget(
         QLabel("Click the header to expand or collapse the content.")
     )
-    info_section.setContentLayout(info_layout)
+    info_section.set_content_layout(info_layout)
 
     main_layout.addWidget(settings_section)
     main_layout.addWidget(advanced_section)
@@ -331,7 +332,7 @@ def show_output_log():
         - Log capture from Python's logging module
         - Search functionality with Ctrl+F
         - ANSI color code support
-        - FXIconButton for theme-aware button icons
+        - Theme-aware button icons with set_icon
     """
 
     application = fxwidgets.FXApplication()
@@ -366,19 +367,22 @@ def show_output_log():
         window.statusBar().showMessage(msg, severity_type=fxwidgets.ERROR)
 
     # Create some buttons to generate log messages
-    # Using FXIconButton so icons refresh when theme changes
     button_layout = QHBoxLayout()
 
-    debug_btn = fxwidgets.FXIconButton("Debug", icon_name="bug_report")
+    debug_btn = QPushButton("Debug")
+    set_icon(debug_btn, "bug_report")
     debug_btn.clicked.connect(log_debug)
 
-    info_btn = fxwidgets.FXIconButton("Info", icon_name="info")
+    info_btn = QPushButton("Info")
+    set_icon(info_btn, "info")
     info_btn.clicked.connect(log_info)
 
-    warning_btn = fxwidgets.FXIconButton("Warning", icon_name="warning")
+    warning_btn = QPushButton("Warning")
+    set_icon(warning_btn, "warning")
     warning_btn.clicked.connect(log_warning)
 
-    error_btn = fxwidgets.FXIconButton("Error", icon_name="error")
+    error_btn = QPushButton("Error")
+    set_icon(error_btn, "error")
     error_btn.clicked.connect(log_error)
 
     button_layout.addWidget(debug_btn)
@@ -478,23 +482,25 @@ def show_dockable_output_log():
         logger.error(msg)
         window.statusBar().showMessage(msg, severity_type=fxwidgets.ERROR)
 
-    # Add actions to toolbar
-    debug_action = window.toolbar.addAction(
-        get_icon("bug_report"), "Debug", log_debug
-    )
+    # Add actions to toolbar (using set_icon for automatic theme updates)
+    debug_action = window.toolbar.addAction("Debug")
+    set_icon(debug_action, "bug_report")
+    debug_action.triggered.connect(log_debug)
     debug_action.setToolTip("Log a debug message")
 
-    info_action = window.toolbar.addAction(get_icon("info"), "Info", log_info)
+    info_action = window.toolbar.addAction("Info")
+    set_icon(info_action, "info")
+    info_action.triggered.connect(log_info)
     info_action.setToolTip("Log an info message")
 
-    warning_action = window.toolbar.addAction(
-        get_icon("warning"), "Warning", log_warning
-    )
+    warning_action = window.toolbar.addAction("Warning")
+    set_icon(warning_action, "warning")
+    warning_action.triggered.connect(log_warning)
     warning_action.setToolTip("Log a warning message")
 
-    error_action = window.toolbar.addAction(
-        get_icon("error"), "Error", log_error
-    )
+    error_action = window.toolbar.addAction("Error")
+    set_icon(error_action, "error")
+    error_action.triggered.connect(log_error)
     error_action.setToolTip("Log an error message")
 
     # Add toggle action to View menu for the dock
@@ -665,12 +671,12 @@ def show_window():
     application = fxwidgets.FXApplication()
     window = fxwidgets.FXMainWindow(ui_file=str(_ui_file))
 
-    # Set icons on the QDialogButtonBox buttons
+    # Set icons on the QDialogButtonBox buttons (using set_icon for theme updates)
     button_box = window.ui.buttonBox
     ok_button = button_box.button(QDialogButtonBox.Ok)
     cancel_button = button_box.button(QDialogButtonBox.Cancel)
-    ok_button.setIcon(get_icon("check"))
-    cancel_button.setIcon(get_icon("cancel"))
+    set_icon(ok_button, "check")
+    set_icon(cancel_button, "cancel")
 
     # Buttons in `test.ui` example
     window.ui.button_success.clicked.connect(
@@ -722,7 +728,7 @@ def subclass_window():
             self.main_layout.addWidget(QLabel("Custom Widget Content"))
 
             button = QPushButton("Click Me")
-            button.setIcon(get_icon("touch_app"))
+            set_icon(button, "touch_app")
             self.main_layout.addWidget(button)
 
             self.main_layout.addStretch()
@@ -958,9 +964,8 @@ def show_thumbnail_delegate():
     tree.header().setSectionResizeMode(2, QHeaderView.Stretch)
 
     # Add toggle button to show/hide thumbnails (global toggle)
-    toggle_btn = fxwidgets.FXIconButton(
-        "Toggle Thumbnails", icon_name="visibility"
-    )
+    toggle_btn = QPushButton("Toggle Thumbnails")
+    set_icon(toggle_btn, "visibility")
 
     def toggle_thumbnails():
         thumbnail_delegate.show_thumbnail = (
@@ -971,9 +976,8 @@ def show_thumbnail_delegate():
     toggle_btn.clicked.connect(toggle_thumbnails)
 
     # Add toggle button for status dot (global toggle)
-    toggle_dot_btn = fxwidgets.FXIconButton(
-        "Toggle Status Dot", icon_name="circle"
-    )
+    toggle_dot_btn = QPushButton("Toggle Status Dot")
+    set_icon(toggle_dot_btn, "circle")
 
     def toggle_status_dot():
         thumbnail_delegate.show_status_dot = (
@@ -984,9 +988,8 @@ def show_thumbnail_delegate():
     toggle_dot_btn.clicked.connect(toggle_status_dot)
 
     # Add toggle button for status label (global toggle)
-    toggle_label_btn = fxwidgets.FXIconButton(
-        "Toggle Status Label", icon_name="label"
-    )
+    toggle_label_btn = QPushButton("Toggle Status Label")
+    set_icon(toggle_label_btn, "label")
 
     def toggle_status_label():
         thumbnail_delegate.show_status_label = (
@@ -1149,13 +1152,13 @@ def set_button_icons(window: fxwidgets.FXMainWindow) -> None:
     """
 
     style = window.style()
-    colors = fxstyle.load_colors_from_jsonc()
+    colors = fxstyle.get_colors()
     button_icons = {
         window.ui.button_debug: get_icon(
-            "bug_report", color=colors["feedback"]["debug"]["light"]
+            "bug_report", color=colors["feedback"]["debug"]["foreground"]
         ),
         window.ui.button_success: get_icon(
-            "check_circle", color=colors["feedback"]["success"]["light"]
+            "check_circle", color=colors["feedback"]["success"]["foreground"]
         ),
         window.ui.button_info: style.standardIcon(
             QStyle.SP_MessageBoxInformation
@@ -1164,7 +1167,7 @@ def set_button_icons(window: fxwidgets.FXMainWindow) -> None:
             QStyle.SP_MessageBoxWarning
         ),
         window.ui.button_error: get_icon(
-            "error", color=colors["feedback"]["error"]["light"]
+            "error", color=colors["feedback"]["error"]["foreground"]
         ),
         window.ui.button_critical: style.standardIcon(
             QStyle.SP_MessageBoxCritical
@@ -1173,14 +1176,14 @@ def set_button_icons(window: fxwidgets.FXMainWindow) -> None:
     for button, icon in button_icons.items():
         button.setIcon(icon)
 
-    # Set icons on QDialogButtonBox buttons
+    # Set icons on QDialogButtonBox buttons (using set_icon for theme updates)
     button_box = window.ui.buttonBox
     ok_button = button_box.button(QDialogButtonBox.Ok)
     cancel_button = button_box.button(QDialogButtonBox.Cancel)
     if ok_button:
-        ok_button.setIcon(get_icon("check"))
+        set_icon(ok_button, "check")
     if cancel_button:
-        cancel_button.setIcon(get_icon("cancel"))
+        set_icon(cancel_button, "cancel")
 
 
 def set_tooltips(window: fxwidgets.FXMainWindow) -> None:
@@ -1218,7 +1221,7 @@ def show_context_menu(tree: QTreeWidget, position: QPoint) -> None:
     label.setMargin(2)
     label.setAlignment(Qt.AlignCenter)
     label.setStyleSheet(
-        f"background-color: {theme_colors['background_alt']}; "
+        f"background-color: {theme_colors['surface_alt']}; "
         f"color: {theme_colors['text']};"
     )
     label_action = QWidgetAction(menu)
@@ -1227,16 +1230,16 @@ def show_context_menu(tree: QTreeWidget, position: QPoint) -> None:
 
     # Actions
     ac_show_in_explorer = menu.addAction("Show in Explorer")
-    ac_show_in_explorer.setIcon(get_icon("folder_open"))
+    set_icon(ac_show_in_explorer, "folder_open")
 
     copy_submenu = menu.addMenu("Copy Path to Clipboard")
     copy_submenu.setIcon(get_icon("content_copy"))
 
     ac_copy_default = copy_submenu.addAction("Default")
-    ac_copy_default.setIcon(get_icon("content_copy"))
+    set_icon(ac_copy_default, "content_copy")
 
     ac_copy_houdini = copy_submenu.addAction("Houdini")
-    ac_copy_houdini.setIcon(get_icon("houdini", library="dcc"))
+    set_icon(ac_copy_houdini, "houdini", library="dcc")
 
     # Show the context menu
     menu.exec_(tree.viewport().mapToGlobal(position))
@@ -1398,4 +1401,4 @@ def main(show_delayed: bool = True):
 
 
 if __name__ == "__main__":
-    show_dockable_output_log()
+    main()

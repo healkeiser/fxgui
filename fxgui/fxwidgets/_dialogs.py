@@ -94,15 +94,15 @@ class FXFloatingDialog(QDialog):
             # Custom stylesheet for Houdini (use theme colors)
             theme_colors = fxstyle.get_theme_colors()
             self.title_widget.setStyleSheet(
-                f"background-color: {theme_colors['background_alt']};"
+                f"background-color: {theme_colors['surface_alt']};"
             )
             self.setStyleSheet(
                 f"""
                 FXFloatingDialog {{
-                    border-top: 1px solid {theme_colors['border_light']};
-                    border-left: 1px solid {theme_colors['border_light']};
-                    border-bottom: 1px solid {theme_colors['background']};
-                    border-right: 1px solid {theme_colors['background']};
+                    border-top: 1px solid {theme_colors['border_subtle']};
+                    border-left: 1px solid {theme_colors['border_subtle']};
+                    border-bottom: 1px solid {theme_colors['surface']};
+                    border-right: 1px solid {theme_colors['surface']};
                 }}
             """
             )

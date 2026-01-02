@@ -41,7 +41,8 @@ __email__ = "valentin.onze@gmail.com"
 from functools import lru_cache
 from pathlib import Path
 import re
-from typing import Any, Dict, List, Optional
+import weakref
+from typing import Any, Dict, List, Optional, Union
 
 # Third-party
 from qtpy.QtGui import (
@@ -66,11 +67,15 @@ __all__ = [
     "get_available_icons_in_library",
     "get_icon_path",
     "get_icon",
+    "get_icon_color",
     "get_pixmap",
     "change_pixmap_color",
     "convert_icon_to_pixmap",
     "superpose_icons",
     "clear_icon_cache",
+    "sync_colors_with_theme",
+    "set_icon",
+    "refresh_all_icons",
 ]
 
 
@@ -128,6 +133,10 @@ _libraries_info = {
     },
 }
 _default_library = "material"
+
+# Widget registry for automatic icon refresh
+# Uses WeakSet to avoid preventing garbage collection of widgets
+_icon_widgets = weakref.WeakSet()
 
 
 def set_default_icon_library(library: str):
@@ -378,7 +387,35 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     return QPixmap.fromImage(qpixmap)
 
 
-@lru_cache(maxsize=512)
+def _get_pixmap_internal(
+    icon_name: str,
+    width: int,
+    height: int,
+    color: Optional[str],
+    library: str,
+    style: Optional[str],
+    extension: Optional[str],
+) -> QPixmap:
+    """Internal function to get a QPixmap with resolved parameters.
+
+    This is the cached version that takes fully resolved parameters.
+    """
+    path = get_icon_path(
+        icon_name,
+        library=library,
+        style=style,
+        extension=extension,
+    )
+    qpixmap = QIcon(path).pixmap(width, height)
+    if color is not None:
+        qpixmap = change_pixmap_color(qpixmap, color)
+    return qpixmap
+
+
+# Apply LRU cache to the internal function
+_get_pixmap_cached = lru_cache(maxsize=512)(_get_pixmap_internal)
+
+
 def get_pixmap(
     icon_name: str,
     width: Optional[int] = None,
@@ -412,6 +449,7 @@ def get_pixmap(
 
     defaults = _libraries_info[library]["defaults"]
 
+    # Resolve defaults BEFORE caching - these become part of the cache key
     if width is None:
         width = defaults["width"]
     if height is None:
@@ -419,19 +457,48 @@ def get_pixmap(
     if color is None:
         color = defaults["color"]
 
-    path = get_icon_path(
-        icon_name,
-        library=library,
-        style=style,
-        extension=extension,
+    return _get_pixmap_cached(
+        icon_name, width, height, color, library, style, extension
     )
-    qpixmap = QIcon(path).pixmap(width, height)
-    if color is not None:
-        qpixmap = change_pixmap_color(qpixmap, color)
-    return qpixmap
 
 
-@lru_cache(maxsize=512)
+def _get_icon_internal(
+    icon_name: str,
+    width: int,
+    height: int,
+    color: Optional[str],
+    disabled_color: str,
+    library: str,
+    style: Optional[str],
+    extension: Optional[str],
+) -> QIcon:
+    """Internal function to get a QIcon with resolved parameters.
+
+    This is the cached version that takes fully resolved parameters.
+    """
+    # Get the `QPixmap` of the icon
+    qpixmap = _get_pixmap_cached(
+        icon_name, width, height, color, library, style, extension
+    )
+
+    # Create a `QIcon` and add the normal state pixmap
+    icon = QIcon(qpixmap)
+
+    # `QPixmap` for disabled state - use derived muted color
+    disabled_pixmap = qpixmap.copy()
+    painter = QPainter(disabled_pixmap)
+    painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+    painter.fillRect(disabled_pixmap.rect(), QColor(disabled_color))
+    painter.end()
+    icon.addPixmap(disabled_pixmap, QIcon.Disabled)
+
+    return icon
+
+
+# Apply LRU cache to the internal function
+_get_icon_cached = lru_cache(maxsize=512)(_get_icon_internal)
+
+
 def get_icon(
     icon_name: str,
     width: Optional[int] = None,
@@ -460,27 +527,32 @@ def get_icon(
         >>> get_icon("lemon", library="fontawesome")
     """
 
-    # Get the `QPixmap` of the icon
-    qpixmap = get_pixmap(
-        icon_name, width, height, color, library, style, extension
+    if library is None:
+        library = _default_library
+
+    defaults = _libraries_info[library]["defaults"]
+
+    # Resolve defaults BEFORE caching - these become part of the cache key
+    if width is None:
+        width = defaults["width"]
+    if height is None:
+        height = defaults["height"]
+    if color is None:
+        color = defaults["color"]
+
+    # Get disabled icon color from theme
+    disabled_color = _get_disabled_icon_color()
+
+    return _get_icon_cached(
+        icon_name,
+        width,
+        height,
+        color,
+        disabled_color,
+        library,
+        style,
+        extension,
     )
-
-    # Create a `QIcon` and add the normal state pixmap
-    icon = QIcon(qpixmap)
-
-    # `QPixmap` for disabled state - use semi-transparent grey overlay
-    disabled_pixmap = qpixmap.copy()
-    painter = QPainter(disabled_pixmap)
-    painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-    # Use a consistent disabled grey color with reduced opacity effect
-    disabled_color = QColor(128, 128, 128, 180)
-    painter.fillRect(disabled_pixmap.rect(), disabled_color)
-    painter.end()
-
-    # Add disabled state pixmap to the `QIcon`
-    icon.addPixmap(disabled_pixmap, QIcon.Disabled)
-
-    return icon
 
 
 def convert_icon_to_pixmap(
@@ -558,5 +630,146 @@ def clear_icon_cache() -> None:
         >>> clear_icon_cache()
     """
 
-    get_icon.cache_clear()
-    get_pixmap.cache_clear()
+    _get_icon_cached.cache_clear()
+    _get_pixmap_cached.cache_clear()
+
+
+def get_icon_color() -> str:
+    """Get the current default icon color.
+
+    Returns the icon color from the default library's settings.
+    This color is synchronized with the current theme when
+    `sync_colors_with_theme()` is called.
+
+    Returns:
+        The current default icon color as a hex string.
+
+    Examples:
+        >>> color = get_icon_color()
+        >>> print(color)  # "#b4b4b4" for dark theme
+    """
+    return _libraries_info[_default_library]["defaults"]["color"]
+
+
+def _get_disabled_icon_color() -> str:
+    """Get the disabled icon color derived from the main icon color.
+
+    Creates a muted version of the icon color by significantly reducing
+    opacity and shifting toward neutral gray for clear visual distinction.
+
+    Returns:
+        The disabled icon color as a hex string (with alpha).
+    """
+    icon_color = get_icon_color()
+    if not icon_color:
+        return "#80808060"
+
+    # Parse the color
+    color = QColor(icon_color)
+    h, s, l, a = color.getHslF()
+
+    # Completely desaturate and move toward middle gray
+    # This ensures disabled icons are clearly distinguishable regardless
+    # of the original icon color
+    new_s = 0  # Fully desaturated (grayscale)
+    new_l = 0.5  # Middle gray lightness
+
+    # Use low alpha for the "faded out" disabled look
+    color.setHslF(h, new_s, new_l, 0.35)
+    return color.name(QColor.HexArgb)
+
+
+def sync_colors_with_theme() -> None:
+    """Synchronize icon colors with the current theme from fxstyle.
+
+    This function reads the icon color from the current theme's JSONC
+    configuration and updates all icon library defaults accordingly.
+    It also clears the icon cache and refreshes all registered widget icons.
+
+    This is automatically called by `fxstyle.apply_theme()`, but can
+    also be called manually when needed.
+
+    Examples:
+        >>> from fxgui import fxicons
+        >>> fxicons.sync_colors_with_theme()
+    """
+    # Import here to avoid circular imports
+    from fxgui import fxstyle
+
+    # Get the icon color from the current theme
+    theme_colors = fxstyle.get_theme_colors()
+    icon_color = theme_colors.get("icon", "#b4b4b4")
+
+    # Update all libraries that support colorization
+    for library_name, library_info in _libraries_info.items():
+        # Only update libraries that have a default color set
+        # (beacon and dcc don't colorize by default)
+        if library_info["defaults"].get("color") is not None:
+            library_info["defaults"]["color"] = icon_color
+
+    # Clear the cache so icons regenerate with new colors
+    clear_icon_cache()
+
+    # Refresh all registered widget icons
+    refresh_all_icons()
+
+
+def set_icon(widget, icon_name: str, **kwargs) -> QIcon:
+    """Set an icon on a widget and register it for automatic theme updates.
+
+    This is the recommended way to set icons on widgets. The icon will
+    automatically refresh when the theme changes.
+
+    Args:
+        widget: The widget to set the icon on (QAction, QPushButton, etc.).
+        icon_name: The name of the icon.
+        **kwargs: Optional parameters passed to get_icon (width, height,
+            color, library, style, extension).
+
+    Returns:
+        The QIcon that was set on the widget.
+
+    Examples:
+        >>> from fxgui import fxicons
+        >>> fxicons.set_icon(my_button, "save")
+        >>> fxicons.set_icon(my_action, "home", library="material")
+    """
+    icon = get_icon(icon_name, **kwargs)
+
+    if hasattr(widget, "setIcon"):
+        widget.setIcon(icon)
+
+    # Store icon name for refresh (kwargs stored only if non-default)
+    widget.setProperty("_fxicon_name", icon_name)
+    if kwargs:
+        widget.setProperty("_fxicon_kwargs", kwargs)
+
+    _icon_widgets.add(widget)
+    return icon
+
+
+def refresh_all_icons() -> None:
+    """Refresh icons on all registered widgets.
+
+    This is automatically called by `sync_colors_with_theme()`, but can
+    be called manually if needed.
+    """
+    from qtpy.QtWidgets import QWidget
+
+    for widget in list(_icon_widgets):
+        icon_name = widget.property("_fxicon_name")
+        if icon_name:
+            kwargs = widget.property("_fxicon_kwargs") or {}
+            # Don't pass stored color - use current theme color
+            kwargs.pop("color", None)
+
+            icon = get_icon(icon_name, **kwargs)
+
+            if hasattr(widget, "setIcon"):
+                widget.setIcon(icon)
+
+                # Force visual update for QActions
+                if hasattr(widget, "associatedWidgets"):
+                    for assoc_widget in widget.associatedWidgets():
+                        if isinstance(assoc_widget, QWidget):
+                            assoc_widget.update()

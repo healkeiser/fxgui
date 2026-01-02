@@ -50,7 +50,6 @@ from fxgui.fxwidgets._labels import FXElidedLabel
 # Input widgets
 from fxgui.fxwidgets._inputs import (
     FXPasswordLineEdit,
-    FXIconButton,
     FXIconLineEdit,
 )
 
@@ -111,7 +110,6 @@ __all__ = [
     "FXElidedLabel",
     # Inputs
     "FXPasswordLineEdit",
-    "FXIconButton",
     "FXIconLineEdit",
     # Tree items
     "FXSortedTreeWidgetItem",

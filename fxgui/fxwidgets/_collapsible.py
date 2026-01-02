@@ -1,16 +1,19 @@
 """Collapsible widget implementation."""
 
-from typing import Optional
+from typing import Optional, Union
 
 from qtpy.QtCore import (
     QAbstractAnimation,
+    QEasingCurve,
     QParallelAnimationGroup,
     QPropertyAnimation,
     Qt,
 )
+from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
+    QLabel,
     QLayout,
     QScrollArea,
     QSizePolicy,
@@ -34,6 +37,8 @@ class FXCollapsibleWidget(QWidget):
         animation_duration: Duration of expand/collapse animation in ms.
         max_content_height: Maximum height for content area when
             expanded (0 = no limit).
+        title_icon: Optional icon to display before the title. Can be a
+            QIcon, an icon name string (for fxicons), or None.
 
     Examples:
         >>> from qtpy.QtWidgets import QLabel, QVBoxLayout
@@ -41,15 +46,22 @@ class FXCollapsibleWidget(QWidget):
         >>> layout = QVBoxLayout()
         >>> layout.addWidget(QLabel("Option 1"))
         >>> layout.addWidget(QLabel("Option 2"))
-        >>> collapsible.setContentLayout(layout)
+        >>> collapsible.set_content_layout(layout)
+        >>>
+        >>> # With an icon
+        >>> collapsible_with_icon = FXCollapsibleWidget(
+        ...     title="Settings",
+        ...     title_icon="settings"
+        ... )
     """
 
     def __init__(
         self,
         parent: Optional[QWidget] = None,
         title: str = "",
-        animation_duration: int = 200,
+        animation_duration: int = 150,
         max_content_height: int = 300,
+        title_icon: Optional[Union[QIcon, str]] = None,
     ):
         """Initialize the collapsible section."""
         super().__init__(parent=parent)
@@ -58,50 +70,61 @@ class FXCollapsibleWidget(QWidget):
         self.animation_duration = animation_duration
         self.max_content_height = max_content_height
         self._title = str(title)
+        self._title_icon: Optional[QIcon] = None
         self._is_expanded = False
         self._has_been_expanded = False
         self._content_height = 0
 
         # Create fixed header layout
-        self.header_widget = QWidget()
+        self.header_widget = QFrame()
+        self.header_widget.setFrameShape(QFrame.StyledPanel)
+        self.header_widget.setFrameShadow(QFrame.Raised)
         self.header_widget.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Fixed
         )
+        # Header background is styled via the QSS stylesheet
 
         header_layout = QHBoxLayout(self.header_widget)
-        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setContentsMargins(4, 2, 4, 2)
         header_layout.setSpacing(8)
 
-        # Toggle button
+        # Toggle button (chevron icon)
         self.toggle_button = QToolButton()
-        self.toggle_button.setStyleSheet("QToolButton { border: none; }")
-        self.toggle_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toggle_button.setStyleSheet(
+            "QToolButton { border: none; background: transparent; }"
+        )
         self.toggle_button.setIcon(fxicons.get_icon("chevron_right"))
         self.toggle_button.setProperty("icon_name", "chevron_right")
-        self.toggle_button.setText(self._title)
         self.toggle_button.setCheckable(True)
         self.toggle_button.setChecked(False)
-
-        # Button won't get smaller than this
-        button_width = max(120, self.toggle_button.sizeHint().width())
-        self.toggle_button.setMinimumWidth(button_width)
         self.toggle_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-        # Header line
-        self.header_line = QFrame()
-        self.header_line.setFrameShape(QFrame.HLine)
-        self.header_line.setFrameShadow(QFrame.Sunken)
-        self.header_line.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # Title icon label (optional)
+        self.title_icon_label = QLabel()
+        self.title_icon_label.setStyleSheet("background: transparent;")
+        self.title_icon_label.setSizePolicy(
+            QSizePolicy.Fixed, QSizePolicy.Fixed
+        )
+        self.title_icon_label.setVisible(False)
 
+        # Title label
+        self.title_label = QLabel(self._title)
+        self.title_label.setStyleSheet("background: transparent;")
+        self.title_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        # Spacer to push content to the left, line spans remaining width
         header_layout.addWidget(self.toggle_button)
-        header_layout.addWidget(self.header_line)
+        header_layout.addWidget(self.title_icon_label)
+        header_layout.addWidget(self.title_label)
+        header_layout.addStretch()
 
         # Content area: always with scrollbars when needed
         self.content_area = QScrollArea()
         self.content_area.setWidgetResizable(True)
         self.content_area.setFrameShape(QFrame.NoFrame)
-        self.content_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.content_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # Start with scrollbars off to prevent flicker on first animation
+        self.content_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.content_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.content_area.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Fixed
         )
@@ -120,22 +143,31 @@ class FXCollapsibleWidget(QWidget):
         # Size policies
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-        # Set minimum width to ensure button visibility
-        min_width = max(150, button_width + 30)
-        self.setMinimumWidth(min_width)
+        # Set minimum width to ensure visibility
+        self.setMinimumWidth(150)
 
-        # Setup animation
+        # Setup animation with ease-out curve
         self.toggle_animation = QParallelAnimationGroup()
-        self.toggle_animation.addAnimation(
-            QPropertyAnimation(self.content_area, b"maximumHeight")
+
+        max_height_anim = QPropertyAnimation(
+            self.content_area, b"maximumHeight"
         )
-        self.toggle_animation.addAnimation(
-            QPropertyAnimation(self.content_area, b"minimumHeight")
+        max_height_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self.toggle_animation.addAnimation(max_height_anim)
+
+        min_height_anim = QPropertyAnimation(
+            self.content_area, b"minimumHeight"
         )
+        min_height_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self.toggle_animation.addAnimation(min_height_anim)
 
         # Connect signals
         self.toggle_button.clicked.connect(self._toggle_content)
         self.toggle_animation.finished.connect(self._on_animation_finished)
+
+        # Set title icon if provided
+        if title_icon is not None:
+            self.set_title_icon(title_icon)
 
     def _toggle_content(self, checked: bool) -> None:
         """Toggle content visibility with animation."""
@@ -225,7 +257,7 @@ class FXCollapsibleWidget(QWidget):
                 self.content_area.setHorizontalScrollBarPolicy(h_policy)
                 self.content_area.setVerticalScrollBarPolicy(v_policy)
 
-    def setContentLayout(self, content_layout: QLayout) -> None:
+    def set_content_layout(self, content_layout: QLayout) -> None:
         """Set the layout for the content area.
 
         Args:
@@ -242,3 +274,56 @@ class FXCollapsibleWidget(QWidget):
         # Initially collapsed
         self.content_area.setMaximumHeight(0)
         self.content_area.setMinimumHeight(0)
+
+    def set_title_icon(self, icon: Union[QIcon, str, None]) -> None:
+        """Set an icon to display before the title.
+
+        Args:
+            icon: The icon to display. Can be:
+                - A QIcon instance
+                - A string icon name (resolved via fxicons.get_icon)
+                - None to remove the icon
+
+        Examples:
+            >>> collapsible = FXCollapsibleWidget(title="Settings")
+            >>> collapsible.set_title_icon("settings")  # Using icon name
+            >>> collapsible.set_title_icon(QIcon("path/to/icon.png"))  # Using QIcon
+            >>> collapsible.set_title_icon(None)  # Remove icon
+        """
+        if icon is None:
+            self._title_icon = None
+            self.title_icon_label.setVisible(False)
+            self.title_icon_label.setPixmap(QIcon().pixmap(16, 16))
+        elif isinstance(icon, str):
+            self._title_icon = fxicons.get_icon(icon)
+            self.title_icon_label.setPixmap(self._title_icon.pixmap(16, 16))
+            self.title_icon_label.setVisible(True)
+        elif isinstance(icon, QIcon):
+            self._title_icon = icon
+            self.title_icon_label.setPixmap(icon.pixmap(16, 16))
+            self.title_icon_label.setVisible(True)
+
+    def get_title_icon(self) -> Optional[QIcon]:
+        """Get the current title icon.
+
+        Returns:
+            The current title icon, or None if no icon is set.
+        """
+        return self._title_icon
+
+    def set_title(self, title: str) -> None:
+        """Set the title text.
+
+        Args:
+            title: The title text to display.
+        """
+        self._title = str(title)
+        self.title_label.setText(self._title)
+
+    def get_title(self) -> str:
+        """Get the current title text.
+
+        Returns:
+            The current title text.
+        """
+        return self._title

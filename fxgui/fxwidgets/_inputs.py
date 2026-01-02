@@ -32,8 +32,7 @@ class FXPasswordLineEdit(QWidget):
 
         # Show/hide button
         self.reveal_button = self.line_edit.icon_button
-        self.reveal_button.setIcon(fxicons.get_icon("visibility"))
-        self.reveal_button.setProperty("icon_name", "visibility")
+        fxicons.set_icon(self.reveal_button, "visibility")
         self.reveal_button.setCursor(Qt.PointingHandCursor)
         self.reveal_button.clicked.connect(self.toggle_reveal)
 
@@ -52,49 +51,10 @@ class FXPasswordLineEdit(QWidget):
 
         if self.line_edit.echoMode() == QLineEdit.Password:
             self.line_edit.setEchoMode(QLineEdit.Normal)
-            self.reveal_button.setIcon(fxicons.get_icon("disabled_visible"))
-            self.reveal_button.setProperty("icon_name", "disabled_visible")
+            fxicons.set_icon(self.reveal_button, "visibility_off")
         else:
             self.line_edit.setEchoMode(QLineEdit.Password)
-            self.reveal_button.setIcon(fxicons.get_icon("visibility"))
-            self.reveal_button.setProperty("icon_name", "visibility")
-
-
-class FXIconButton(QPushButton):
-    """A QPushButton that stores its icon name for theme-aware refresh.
-
-    This button automatically updates its icon when the application theme
-    changes, as long as it's a child of an FXMainWindow.
-
-    Args:
-        text: The button text.
-        icon_name: The name of the icon (from fxicons).
-        parent: The parent widget.
-
-    Examples:
-        >>> btn = FXIconButton("Save", icon_name="save")
-        >>> btn.clicked.connect(save_action)
-    """
-
-    def __init__(
-        self,
-        text: str = "",
-        icon_name: Optional[str] = None,
-        parent: Optional[QWidget] = None,
-    ):
-        super().__init__(text, parent)
-        if icon_name is not None:
-            self.setIcon(fxicons.get_icon(icon_name))
-            self.setProperty("icon_name", icon_name)
-
-    def set_icon_name(self, icon_name: str) -> None:
-        """Set the icon by name.
-
-        Args:
-            icon_name: The name of the icon to display.
-        """
-        self.setIcon(fxicons.get_icon(icon_name))
-        self.setProperty("icon_name", icon_name)
+            fxicons.set_icon(self.reveal_button, "visibility")
 
 
 class FXIconLineEdit(QLineEdit):
@@ -125,10 +85,9 @@ class FXIconLineEdit(QLineEdit):
         )
         self.icon_button.setFixedSize(18, 18)
 
-        # Set icon using property-based approach
+        # Set icon using set_icon for auto-refresh
         if icon_name is not None:
-            self.icon_button.setIcon(fxicons.get_icon(icon_name))
-            self.icon_button.setProperty("icon_name", icon_name)
+            fxicons.set_icon(self.icon_button, icon_name)
 
         # Create a layout to hold the icon and the line edit
         self.layout = QHBoxLayout(self)

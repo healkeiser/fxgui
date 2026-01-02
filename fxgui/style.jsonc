@@ -1,97 +1,176 @@
 {
-    // DCCs
-    "houdini": {
-        "main": "#ff6600",
-        "dark_blue": "#ffffff"
-    },
-    "maya": {
-        "main": "#38a6cc"
-    },
-    "nuke": {
-        "main": "#fcb434"
-    },
-    "megascans": {
-        "main": "#8ecd4f",
-        "bridge": "#1aa9f3"
-    },
-    // Theme colors
-    "theme": {
-        "dark": {
-            "background": "#201f1f",
-            "background_alt": "#2a2929",
-            "surface": "#302f2f",
-            "surface_alt": "#3a3939",
-            "border": "#2a2929",
-            "border_light": "#4a4949",
-            "text": "#b4b4b4",
-            "text_secondary": "#808080",
-            "text_disabled": "#6d6d6d",
-            "icon": "#b4b4b4",
-            "hover": "#4a4949",
-            "pressed": "#5a5959",
-            "selected": "#5a5959",
-            "header_checked": "#5a5959",
-            "slider_handle": "#bbbbbb",
-            "slider_handle_hover": "#cccccc"
-        },
-        "light": {
-            "background": "#f0f0f0",
-            "background_alt": "#e0e0e0",
-            "surface": "#ffffff",
-            "surface_alt": "#f5f5f5",
-            "border": "#c0c0c0",
-            "border_light": "#d0d0d0",
-            "text": "#212121",
-            "text_secondary": "#616161",
-            "text_disabled": "#9e9e9e",
-            "icon": "#424242",
-            "hover": "#e0e0e0",
-            "pressed": "#d0d0d0",
-            "selected": "#d0d0d0",
-            "header_checked": "#c0c0c0",
-            "slider_handle": "#ffffff",
-            "slider_handle_hover": "#f0f0f0"
-        }
-    },
-    // Feedback
+    // This file defines all colors used throughout fxgui. Users can create custom
+    // themes by copying this file and modifying the values.
+    // To use a custom theme, call:
+    // `fxstyle.load_colors_from_jsonc("path/to/your/custom_theme.jsonc")`
+    // -- Feedback Colors
+    // Status and notification colors for user feedback
     "feedback": {
         "debug": {
-            "light": "#26C6DA",
-            "dark": "#00ACC1",
+            "foreground": "#26C6DA",
             "background": "#006064"
         },
         "info": {
-            "light": "#7661f6",
-            "dark": "#5a4ac1",
+            "foreground": "#7661f6",
             "background": "#372d75"
         },
         "success": {
-            "light": "#8ac549",
-            "dark": "#43A047",
+            "foreground": "#8ac549",
             "background": "#466425"
         },
         "warning": {
-            "light": "#ffbb33",
-            "dark": "#ff8800",
+            "foreground": "#ffbb33",
             "background": "#7b5918"
         },
         "error": {
-            "light": "#ff4444",
-            "dark": "#cc0000",
+            "foreground": "#ff4444",
             "background": "#7b2323"
         }
     },
-    // Grey
-    "grey": {
-        "10": "#d3d3d3",
-        "20": "#bebebe",
-        "30": "#a9a9a9",
-        "40": "#949494",
-        "50": "#7f7f7f",
-        "60": "#6a6a6a",
-        "70": "#545454",
-        "80": "#3f3f3f",
-        "90": "#2a2a2a",
-        "100": "#151515"
+    // -- DCC Integration Colors
+    // Colors matching Digital Content Creation software branding
+    "dcc": {
+        "houdini": "#ff6600",
+        "maya": "#38a6cc",
+        "nuke": "#fcb434",
+        "megascans": "#8ecd4f",
+        "bridge": "#1aa9f3"
+    },
+    // -- Theme Definitions
+    // Each theme defines semantic color roles. The same role names are used
+    // across themes to ensure consistent styling.
+    "themes": {
+        "dark": {
+            // -- Accent colors
+            "accent_primary": "#2196F3", // Primary accent (buttons, links, selections)
+            "accent_secondary": "#1976D2", // Secondary accent (hover states, gradients)
+            // -- Surfaces (backgrounds)
+            "surface": "#302f2f", // Main widget background
+            "surface_alt": "#2d2c2c", // Alternate rows, secondary surfaces
+            "input": "#202020", // Input fields, list backgrounds
+            "tooltip": "#202020", // Tooltip background
+            // -- Borders
+            "border": "#3a3939", // Primary border color
+            "border_subtle": "#4a4949", // Subtle/light borders
+            "border_frame": "#444444", // Frame borders
+            // -- Text
+            "text": "#bbbbbb", // Primary text
+            "text_secondary": "#b1b1b1", // Secondary/muted text
+            "text_disabled": "#777777", // Disabled text
+            // -- Interactive states
+            "hover": "#403f3f", // Hover background
+            "pressed": "#4a4949", // Pressed/checked background
+            "selected": "#5a5959", // Selected items
+            "disabled": "#404040", // Disabled background
+            // -- Scrollbar
+            "scrollbar_bg": "#2a2929", // Scrollbar track
+            "scrollbar_handle": "#605f5f", // Scrollbar handle
+            "scrollbar_hover": "#727272", // Scrollbar handle hover
+            // -- Miscellaneous
+            "separator": "#787876", // Separator lines
+            "slider_handle": "#bbbbbb", // Slider handle
+            "slider_hover": "#ffffff", // Slider handle hover
+            // -- Icon color
+            "icon": "#b4b4b4"
+        },
+        "light": {
+            // -- Accent colors
+            "accent_primary": "#1976D2", // Primary accent (buttons, links, selections)
+            "accent_secondary": "#1565C0", // Secondary accent (hover states, gradients)
+            // -- Surfaces (backgrounds)
+            "surface": "#f0f0f0", // Main widget background
+            "surface_alt": "#fafafa", // Alternate rows, secondary surfaces
+            "input": "#ffffff", // Input fields, list backgrounds
+            "tooltip": "#ffffe1", // Tooltip background
+            // -- Borders
+            "border": "#e0e0e0", // Primary border color
+            "border_subtle": "#bdbdbd", // Subtle/light borders
+            "border_frame": "#cacaca", // Frame borders
+            // -- Text
+            "text": "#212121", // Primary text
+            "text_secondary": "#616161", // Secondary/muted text
+            "text_disabled": "#757575", // Disabled text
+            // -- Interactive states
+            "hover": "#d8d8d8", // Hover background
+            "pressed": "#bdbdbd", // Pressed/checked background
+            "selected": "#d0d0d0", // Selected items
+            "disabled": "#bdbdbd", // Disabled background
+            // -- Scrollbar
+            "scrollbar_bg": "#f5f5f5", // Scrollbar track
+            "scrollbar_handle": "#9e9e9e", // Scrollbar handle
+            "scrollbar_hover": "#616161", // Scrollbar handle hover
+            // -- Miscellaneous
+            "separator": "#424242", // Separator lines
+            "slider_handle": "#ffffff", // Slider handle
+            "slider_hover": "#616161", // Slider handle hover
+            // -- Icon color
+            "icon": "#ff0000"
+        },
+        "dracula": {
+            // -- Accent colors
+            "accent_primary": "#bd93f9", // Primary accent (Dracula purple)
+            "accent_secondary": "#ff79c6", // Secondary accent (Dracula pink)
+            // -- Surfaces (backgrounds)
+            "surface": "#282a36", // Main widget background
+            "surface_alt": "#21222c", // Alternate rows, secondary surfaces
+            "input": "#1e1f29", // Input fields, list backgrounds
+            "tooltip": "#44475a", // Tooltip background
+            // -- Borders
+            "border": "#44475a", // Primary border color
+            "border_subtle": "#6272a4", // Subtle/light borders
+            "border_frame": "#44475a", // Frame borders
+            // -- Text
+            "text": "#f8f8f2", // Primary text
+            "text_secondary": "#bfbfbf", // Secondary/muted text
+            "text_disabled": "#6272a4", // Disabled text
+            // -- Interactive states
+            "hover": "#44475a", // Hover background
+            "pressed": "#6272a4", // Pressed/checked background
+            "selected": "#44475a", // Selected items
+            "disabled": "#383a46", // Disabled background
+            // -- Scrollbar
+            "scrollbar_bg": "#21222c", // Scrollbar track
+            "scrollbar_handle": "#44475a", // Scrollbar handle
+            "scrollbar_hover": "#6272a4", // Scrollbar handle hover
+            // -- Miscellaneous
+            "separator": "#6272a4", // Separator lines
+            "slider_handle": "#f8f8f2", // Slider handle
+            "slider_hover": "#ffffff", // Slider handle hover
+            // -- Icon color
+            "icon": "#f8f8f2"
+        },
+        "one_dark_pro": {
+            // -- Accent colors
+            "accent_primary": "#61afef", // Primary accent (One Dark blue)
+            "accent_secondary": "#528bff", // Secondary accent (One Dark vibrant blue)
+            // -- Surfaces (backgrounds)
+            "surface": "#282c34", // Main widget background
+            "surface_alt": "#21252b", // Alternate rows, secondary surfaces
+            "input": "#1b1d23", // Input fields, list backgrounds
+            "tooltip": "#3a3f4b", // Tooltip background
+            // -- Borders
+            "border": "#3a3f4b", // Primary border color
+            "border_subtle": "#4b5263", // Subtle/light borders
+            "border_frame": "#3a3f4b", // Frame borders
+            // -- Text
+            "text": "#abb2bf", // Primary text
+            "text_secondary": "#828997", // Secondary/muted text
+            "text_disabled": "#5c6370", // Disabled text
+            // -- Interactive states
+            "hover": "#3a3f4b", // Hover background
+            "pressed": "#4b5263", // Pressed/checked background
+            "selected": "#3e4451", // Selected items
+            "disabled": "#3a3f4b", // Disabled background
+            // -- Scrollbar
+            "scrollbar_bg": "#21252b", // Scrollbar track
+            "scrollbar_handle": "#4b5263", // Scrollbar handle
+            "scrollbar_hover": "#5c6370", // Scrollbar handle hover
+            // -- Miscellaneous
+            "separator": "#5c6370", // Separator lines
+            "slider_handle": "#abb2bf", // Slider handle
+            "slider_hover": "#d7dae0", // Slider handle hover
+            // -- Icon color
+            "icon": "#abb2bf"
+        }
     }
 }

@@ -51,19 +51,14 @@ class FXStatusBar(QStatusBar):
         project: Optional[str] = None,
         version: Optional[str] = None,
         company: Optional[str] = None,
-        status_line_color_a: Optional[str] = None,
-        status_line_color_b: Optional[str] = None,
     ):
 
         super().__init__(parent)
 
-        # Store colors for status line
-        self._status_line_color_a = (
-            status_line_color_a or fxstyle._COLOR_A_DEFAULT
-        )
-        self._status_line_color_b = (
-            status_line_color_b or fxstyle._COLOR_B_DEFAULT
-        )
+        # Store colors for status line (from current theme)
+        _accent = fxstyle.get_accent_colors()
+        self._status_line_color_a = _accent["primary"]
+        self._status_line_color_b = _accent["secondary"]
 
         # Create status line (gradient bar at the top of the status bar)
         self.status_line = QFrame(self)
@@ -115,7 +110,7 @@ class FXStatusBar(QStatusBar):
             f"""
             QStatusBar {{
                 border: 0px solid transparent;
-                background: {theme_colors['background']};
+                background: {theme_colors['input']};
             }}
         """
         )
@@ -162,10 +157,15 @@ class FXStatusBar(QStatusBar):
         feedback = colors_dict["feedback"][feedback_key]
 
         icon_pixmap = fxicons.get_icon(
-            icon_name, color=feedback["light"]
+            icon_name, color=feedback["foreground"]
         ).pixmap(14, 14)
 
-        return prefix, icon_pixmap, feedback["background"], feedback["dark"]
+        return (
+            prefix,
+            icon_pixmap,
+            feedback["background"],
+            feedback["foreground"],
+        )
 
     def showMessage(
         self,
@@ -220,7 +220,7 @@ class FXStatusBar(QStatusBar):
         self.icon_label.setVisible(True)
         self.message_label.setVisible(True)
 
-        colors_dict = fxstyle.load_colors_from_jsonc()
+        colors_dict = fxstyle.get_colors()
         (
             severity_prefix,
             severity_icon,
@@ -292,10 +292,7 @@ class FXStatusBar(QStatusBar):
 
         if not args:
             self.clearMessage()
-            # Reset to theme-appropriate colors with status line padding
-            self._apply_stylesheet(
-                with_status_line_padding=self.status_line.isVisible()
-            )
+            self._apply_stylesheet()
 
     def _update_status_line_colors(self) -> None:
         """Update the status line gradient colors.
@@ -329,19 +326,15 @@ class FXStatusBar(QStatusBar):
         """
         self.border_line.setStyleSheet(f"background: {color};")
 
-    def _apply_stylesheet(self, with_status_line_padding: bool = True) -> None:
-        """Apply the status bar stylesheet.
-
-        Args:
-            with_status_line_padding: Whether to include padding for status line.
-        """
+    def _apply_stylesheet(self) -> None:
+        """Apply the status bar stylesheet."""
         theme_colors = fxstyle.get_theme_colors()
         self._update_border_line_color(theme_colors["border"])
         self.setStyleSheet(
             f"""
             QStatusBar {{
                 border: 0px solid transparent;
-                background: {theme_colors['background']};
+                background: {theme_colors['input']};
             }}
         """
         )

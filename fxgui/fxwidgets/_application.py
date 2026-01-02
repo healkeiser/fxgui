@@ -6,7 +6,11 @@ from fxgui import fxstyle
 
 
 class FXApplication(QApplication):
-    """Customized QApplication class."""
+    """Customized QApplication class.
+
+    On initialization, the application loads the previously saved theme
+    from persistent storage. If no theme was saved, defaults to "dark".
+    """
 
     _instance = None  # Private class attribute to hold the singleton instance
 
@@ -25,6 +29,9 @@ class FXApplication(QApplication):
             super().__init__(*args, **kwargs)
 
             fxstyle.set_style(self, "Fusion")
+
+            # Load stylesheet with saved theme from persistent storage
+            # load_stylesheet() automatically uses the saved theme
             self.setStyleSheet(fxstyle.load_stylesheet())
 
             # Mark the instance as initialized

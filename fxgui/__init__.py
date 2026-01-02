@@ -5,6 +5,7 @@ consistent user interfaces across different Digital Content Creation (DCC)
 applications like Houdini, Maya, and Nuke.
 
 Modules:
+    fxconfig: Configuration and settings management.
     fxcore: Core functionality and custom Qt classes.
     fxdcc: DCC-specific utility functions.
     fxicons: Icon management and utilities.
@@ -28,6 +29,7 @@ from importlib.metadata import version, PackageNotFoundError
 
 # Internal
 from fxgui import (
+    fxconfig,
     fxconstants,
     fxcore,
     fxdcc,
@@ -38,6 +40,7 @@ from fxgui import (
 )
 
 __all__ = [
+    "fxconfig",
     "fxconstants",
     "fxcore",
     "fxdcc",

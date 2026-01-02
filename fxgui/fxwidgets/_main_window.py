@@ -6,16 +6,13 @@ from urllib.parse import urlparse
 from webbrowser import open_new_tab
 
 from qtpy.QtCore import QPoint, QRect, QSize, Qt
-from qtpy.QtGui import QFont, QIcon
+from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
+    QActionGroup,
     QDialog,
-    QDialogButtonBox,
-    QFrame,
     QHBoxLayout,
     QLabel,
     QMainWindow,
-    QMenu,
-    QSizePolicy,
     QToolBar,
     QVBoxLayout,
     QWidget,
@@ -57,10 +54,6 @@ class FXMainWindow(QMainWindow):
             Defaults to `None`.
         company (str, optional): Company name for the window.
             Defaults to `Company`.
-        color_a (str, optional):Color to be applied to the window.
-            Defaults to `#649eff`.
-        color_b (str, optional): Color to be applied to the window.
-            Defaults to `#4188ff`.
         ui_file (str, optional): Path to the UI file for loading.
             Defaults to `None`.
         set_stylesheet (bool, optional): Whether to set the default stylesheet.
@@ -77,8 +70,6 @@ class FXMainWindow(QMainWindow):
         project: Optional[str] = None,
         version: Optional[str] = None,
         company: Optional[str] = None,
-        color_a: Optional[str] = None,
-        color_b: Optional[str] = None,
         ui_file: Optional[str] = None,
         set_stylesheet: bool = True,
     ):
@@ -97,8 +88,7 @@ class FXMainWindow(QMainWindow):
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
         self.company: str = company or "\u00a9 Company"
-        self.color_a: str = color_a or fxstyle._COLOR_A_DEFAULT
-        self.color_b: str = color_b or fxstyle._COLOR_B_DEFAULT
+
         self.ui_file: str = ui_file
         self.ui = None
 
@@ -122,13 +112,9 @@ class FXMainWindow(QMainWindow):
         self._check_documentation()
         self._add_shadows()
 
-        # Styling
+        # Styling - load_stylesheet() automatically uses the saved theme
         if set_stylesheet:
-            self.setStyleSheet(
-                fxstyle.load_stylesheet(
-                    color_a=self.color_a, color_b=self.color_b
-                )
-            )
+            self.setStyleSheet(fxstyle.load_stylesheet())
 
     # Private methods
     def _load_ui(self) -> None:
@@ -183,148 +169,168 @@ class FXMainWindow(QMainWindow):
         self.about_action = fxutils.create_action(
             self,
             "About",
-            fxicons.get_icon("help"),  # About icon
-            self._show_about_dialog,
+            trigger=self._show_about_dialog,
             enable=True,
             visible=True,
+            icon_name="help",
         )
 
         self.check_updates_action = fxutils.create_action(
             self,
             "Check for Updates...",
-            fxicons.get_icon("update"),  # Update icon
-            None,
+            trigger=None,
             enable=False,
             visible=True,
+            icon_name="update",
         )
 
         self.hide_action = fxutils.create_action(
             self,
             "Hide",
-            fxicons.get_icon("visibility_off"),  # Visibility off icon
-            self.hide,
+            trigger=self.hide,
             enable=False,
             visible=True,
             shortcut="Ctrl+Alt+h",
+            icon_name="visibility_off",
         )
 
         self.hide_others_action = fxutils.create_action(
             self,
             "Hide Others",
-            fxicons.get_icon("disabled_visible"),  # Disabled visible icon
-            None,
+            trigger=None,
             enable=False,
             visible=True,
+            icon_name="disabled_visible",
         )
 
         self.close_action = fxutils.create_action(
             self,
             "Close",
-            fxicons.get_icon("close"),  # Close icon
-            self.close,
+            trigger=self.close,
             enable=True,
             visible=True,
             shortcut="Ctrl+Alt+q",
+            icon_name="close",
         )
 
         # Edit menu
         self.settings_action = fxutils.create_action(
             self,
             "Settings",
-            fxicons.get_icon("settings"),  # Settings icon
-            None,
+            trigger=None,
             enable=False,
             visible=True,
             shortcut="Ctrl+Alt+s",
+            icon_name="settings",
         )
 
         # Window menu
         self.window_on_top_action = fxutils.create_action(
             self,
             "Always On Top",
-            fxicons.get_icon("hdr_strong"),  # Always on top icon
-            self._toggle_window_on_top,
+            trigger=self._toggle_window_on_top,
             enable=True,
             visible=True,
             shortcut="Ctrl+Shift+t",
+            icon_name="hdr_strong",
         )
 
         self.minimize_window_action = fxutils.create_action(
             self,
             "Minimize",
-            fxicons.get_icon("minimize"),  # Minimize icon
-            self.showMinimized,
+            trigger=self.showMinimized,
             enable=True,
             visible=True,
             shortcut="Ctrl+Alt+m",
+            icon_name="minimize",
         )
 
         self.maximize_window_action = fxutils.create_action(
             self,
             "Maximize",
-            fxicons.get_icon("maximize"),  # Maximize icon
-            self.showMaximized,
+            trigger=self.showMaximized,
             enable=True,
             visible=True,
             shortcut="Ctrl+Alt+f",
+            icon_name="maximize",
         )
 
         self.toggle_theme_action = fxutils.create_action(
             self,
             "Toggle Theme",
-            fxicons.get_icon("brightness_4"),  # Toggle theme icon
-            self._toggle_theme,
+            trigger=self._toggle_theme,
             enable=True,
             visible=True,
             shortcut="Ctrl+Alt+t",
+            icon_name="brightness_4",
         )
+
+        # Theme selection actions (populated dynamically from available themes)
+        self.theme_actions = {}
+        self.theme_action_group = QActionGroup(self)
+        self.theme_action_group.setExclusive(True)
+        for theme_name in fxstyle.get_available_themes():
+            action = fxutils.create_action(
+                self,
+                theme_name.title().replace("_", " "),
+                None,
+                lambda checked, t=theme_name: self._apply_theme(t),
+                enable=True,
+                visible=True,
+                checkable=True,
+            )
+            # Check the current theme
+            if theme_name == fxstyle.get_theme():
+                action.setChecked(True)
+            self.theme_action_group.addAction(action)
+            self.theme_actions[theme_name] = action
 
         # Help menu
         self.open_documentation_action = fxutils.create_action(
             self,
             "Documentation",
-            fxicons.get_icon("menu_book"),  # Documentation icon
-            lambda: open_new_tab(self.documentation),
+            trigger=lambda: open_new_tab(self.documentation),
             enable=True,
             visible=True,
+            icon_name="menu_book",
         )
 
         # Toolbar
         self.home_action = fxutils.create_action(
             self,
             "Home",
-            fxicons.get_icon("home"),  # Home icon
-            None,
+            trigger=None,
             enable=False,
             visible=True,
+            icon_name="home",
         )
 
         self.previous_action = fxutils.create_action(
             self,
             "Previous",
-            fxicons.get_icon("arrow_back"),  # Previous icon
-            None,
+            trigger=None,
             enable=False,
             visible=True,
+            icon_name="arrow_back",
         )
 
         self.next_action = fxutils.create_action(
             self,
             "Next",
-            fxicons.get_icon("arrow_forward"),  # Next icon
-            None,
+            trigger=None,
             enable=False,
             visible=True,
+            icon_name="arrow_forward",
         )
 
         self.refresh_action = fxutils.create_action(
             self,
             "Refresh",
-            fxicons.get_icon("refresh"),  # Refresh icon
-            None,
+            trigger=None,
             enable=True,
             visible=True,
             shortcut="Ctrl+Alt+r",
+            icon_name="refresh",
         )
 
     def _create_menu_bar(
@@ -376,9 +382,11 @@ class FXMainWindow(QMainWindow):
         self.window_menu.addSeparator()
         self.on_top_menu = self.window_menu.addAction(self.window_on_top_action)
         self.window_menu.addSeparator()
-        self.toggle_theme_menu = self.window_menu.addAction(
-            self.toggle_theme_action
-        )
+        # Theme submenu with radio-style selection
+        self.theme_menu = self.window_menu.addMenu("Theme")
+        fxicons.set_icon(self.theme_menu, "brightness_4")
+        for theme_name, action in self.theme_actions.items():
+            self.theme_menu.addAction(action)
 
         # Help menu
         self.help_menu = self.menu_bar.addMenu("Help")
@@ -483,8 +491,6 @@ class FXMainWindow(QMainWindow):
             project=self.project,
             version=self.version,
             company=self.company,
-            status_line_color_a=self.color_a,
-            status_line_color_b=self.color_b,
         )
         self.setStatusBar(self.status_bar)
 
@@ -536,10 +542,10 @@ class FXMainWindow(QMainWindow):
 
         if stays_on_top:
             self.window_on_top_action.setText("Always on Top")
-            self.window_on_top_action.setIcon(fxicons.get_icon("hdr_strong"))
+            fxicons.set_icon(self.window_on_top_action, "hdr_strong")
         else:
             self.window_on_top_action.setText("Regular Position")
-            self.window_on_top_action.setIcon(fxicons.get_icon("hdr_weak"))
+            fxicons.set_icon(self.window_on_top_action, "hdr_weak")
 
         self.setWindowFlags(flags)
         self.show()
@@ -641,17 +647,19 @@ class FXMainWindow(QMainWindow):
         if status_bar:
             fxutils.add_shadows(self, self.statusBar())
 
-    def _toggle_theme(self) -> None:
-        """Toggles the theme of the window between light and dark.
+    def _apply_theme(self, theme: str) -> None:
+        """Apply a specific theme to the window.
+
+        Args:
+            theme: The theme name to apply.
 
         Warning:
             This method is intended for internal use only.
         """
 
-        # Use centralized theme toggling
-        new_theme = fxstyle.toggle_theme(
-            self, color_a=self.color_a, color_b=self.color_b
-        )
+        # Use centralized theme application
+        # This automatically syncs icon colors and refreshes all registered icons
+        fxstyle.apply_theme(self, theme=theme)
 
         # Get the theme colors for the new theme
         theme_colors = fxstyle.get_theme_colors()
@@ -665,54 +673,49 @@ class FXMainWindow(QMainWindow):
         # Update status bar colors for the new theme
         self.status_bar.setStyleSheet(
             f"""QStatusBar {{
-                background: {theme_colors['background']};
+                background: {theme_colors['surface']};
                 border-top: 1px solid {theme_colors['border']};
             }}"""
         )
 
-        # Update all action icons for the new theme
-        self._refresh_action_icons()
+        # Force menu bar to repaint with new icons
+        self.menuBar().update()
+        self.menuBar().repaint()
 
-    def _refresh_action_icons(self) -> None:
-        """Refresh all action icons after a theme change.
+        # Update the checked state of theme actions
+        if theme in self.theme_actions:
+            self.theme_actions[theme].setChecked(True)
+
+    def _toggle_theme(self) -> None:
+        """Toggles the theme of the window between available themes.
 
         Warning:
             This method is intended for internal use only.
+            Use `set_theme()` for explicit theme selection.
         """
+        # Get available themes and find the next one
+        themes = fxstyle.get_available_themes()
+        current = fxstyle.get_theme()
+        if current in themes:
+            current_idx = themes.index(current)
+            next_idx = (current_idx + 1) % len(themes)
+            next_theme = themes[next_idx]
+        else:
+            next_theme = themes[0] if themes else "dark"
 
-        # Map of actions to their icon names
-        action_icon_map = {
-            self.about_action: "help",
-            self.check_updates_action: "update",
-            self.hide_action: "visibility_off",
-            self.hide_others_action: "disabled_visible",
-            self.close_action: "close",
-            self.settings_action: "settings",
-            self.window_on_top_action: "hdr_strong",
-            self.minimize_window_action: "minimize",
-            self.maximize_window_action: "maximize",
-            self.toggle_theme_action: "brightness_4",
-            self.open_documentation_action: "menu_book",
-            self.home_action: "home",
-            self.previous_action: "arrow_back",
-            self.next_action: "arrow_forward",
-            self.refresh_action: "refresh",
-        }
-
-        for action, icon_name in action_icon_map.items():
-            action.setIcon(fxicons.get_icon(icon_name))
-
-        # Also refresh QDialogButtonBox icons throughout the window
-        self._refresh_dialog_button_icons()
+        self._apply_theme(next_theme)
 
     def _refresh_dialog_button_icons(self) -> None:
-        """Refresh all QDialogButtonBox button icons after a theme change.
+        """Refresh and register all QDialogButtonBox button icons.
+
+        This method finds all QDialogButtonBox widgets in the window and
+        registers their buttons with fxicons for automatic theme updates.
 
         Warning:
             This method is intended for internal use only.
         """
 
-        from qtpy.QtWidgets import QDialogButtonBox, QPushButton
+        from qtpy.QtWidgets import QDialogButtonBox
 
         # Map of standard button roles to their icon names
         button_icon_map = {
@@ -736,55 +739,46 @@ class FXMainWindow(QMainWindow):
             QDialogButtonBox.RestoreDefaults: "settings_backup_restore",
         }
 
-        # Find all QDialogButtonBox widgets in the window
+        # Find all QDialogButtonBox widgets and register their buttons
         for button_box in self.findChildren(QDialogButtonBox):
             for role, icon_name in button_icon_map.items():
                 button = button_box.button(role)
                 if button is not None:
-                    button.setIcon(fxicons.get_icon(icon_name))
-
-        # Also refresh icons in custom widgets that support it
-        self._refresh_custom_widget_icons()
-
-    def _refresh_custom_widget_icons(self) -> None:
-        """Refresh icons on all child widgets that have an 'icon_name' property.
-
-        This method uses Qt's property system to find widgets with icons.
-        Any widget (QPushButton, QToolButton, etc.) with a dynamic property
-        'icon_name' will have its icon refreshed from the cache.
-
-        To make a button's icon theme-aware, simply set the property:
-            button.setProperty("icon_name", "save")
-            button.setIcon(fxicons.get_icon("save"))
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        from qtpy.QtWidgets import QAbstractButton, QToolButton
-
-        # Find all button-like widgets with an icon_name property
-        for widget in self.findChildren(QAbstractButton):
-            icon_name = widget.property("icon_name")
-            if icon_name:
-                widget.setIcon(fxicons.get_icon(icon_name))
-
-        # Also check QToolButtons specifically (for QToolButton in toolbars)
-        for widget in self.findChildren(QToolButton):
-            icon_name = widget.property("icon_name")
-            if icon_name:
-                widget.setIcon(fxicons.get_icon(icon_name))
+                    fxicons.set_icon(button, icon_name)
 
     # Public methods
-    def toggle_theme(self) -> str:
-        """Toggle the theme of the window between light and dark.
+    def set_theme(self, theme: str) -> str:
+        """Set the theme of the window.
 
-        This method can be called from external code to switch themes,
+        This method can be called from external code to apply a specific theme,
+        including when running inside a DCC like Houdini, Maya, or Nuke
+        where you don't have direct access to QApplication.
+
+        Args:
+            theme: The theme name to apply (e.g., "dark", "light", or custom).
+
+        Returns:
+            str: The theme that was applied.
+
+        Examples:
+            >>> window = FXMainWindow()
+            >>> window.show()
+            >>> window.set_theme("light")
+            >>> window.set_theme("dark")
+        """
+
+        self._apply_theme(theme)
+        return fxstyle.get_theme()
+
+    def toggle_theme(self) -> str:
+        """Toggle the theme of the window to the next available theme.
+
+        This method can be called from external code to cycle through themes,
         including when running inside a DCC like Houdini, Maya, or Nuke
         where you don't have direct access to QApplication.
 
         Returns:
-            str: The new theme that was applied ("dark" or "light").
+            str: The new theme that was applied.
 
         Examples:
             >>> window = FXMainWindow()
@@ -794,7 +788,21 @@ class FXMainWindow(QMainWindow):
         """
 
         self._toggle_theme()
-        return fxstyle._theme
+        return fxstyle.get_theme()
+
+    def get_available_themes(self) -> list:
+        """Get a list of all available theme names.
+
+        Returns:
+            List of theme names (e.g., ["dark", "light"]).
+
+        Examples:
+            >>> window = FXMainWindow()
+            >>> themes = window.get_available_themes()
+            >>> print(themes)  # ['dark', 'light']
+        """
+
+        return fxstyle.get_available_themes()
 
     # Overrides
     def statusBar(self) -> FXStatusBar:
@@ -850,20 +858,6 @@ class FXMainWindow(QMainWindow):
         super().setWindowTitle(title)
 
     # Public methods
-    def set_colors(self, color_a: str, color_b: str) -> None:
-        """Sets the accent color of the window.
-
-        Args:
-            color_a (str): The first color.
-            color_b (str): The second color.
-        """
-
-        self.color_a = color_a
-        self.color_b = color_b
-        self.setStyleSheet(
-            fxstyle.load_stylesheet(color_a=color_a, color_b=color_b)
-        )
-
     def set_banner_text(self, text: str) -> None:
         """Sets the text of the banner.
 

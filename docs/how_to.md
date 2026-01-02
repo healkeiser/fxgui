@@ -200,55 +200,43 @@ icon_c = fxicons.get_icon("settings", color="red")
 icon = fxicons.superpose_icons(icon_a, icon_b, icon_c)
 ```
 
-## Theme-Aware Button Icons
+## Theme-Aware Icons with `set_icon`
 
-When using `FXMainWindow`, icons automatically update their colors when toggling between light and dark themes. To make any button's icon theme-aware, simply set the `icon_name` property on it:
-
-```python
-from qtpy.QtWidgets import QPushButton
-from fxgui import fxicons
-
-# Create a button with a theme-aware icon
-button = QPushButton("Save")
-button.setIcon(fxicons.get_icon("save"))
-button.setProperty("icon_name", "save")
-```
-
-When `FXMainWindow.toggle_theme()` is called (or the user presses the theme toggle shortcut), all buttons with the `icon_name` property will automatically have their icons refreshed to match the new theme colors.
-
-### Using `FXIconButton`
-
-For convenience, you can use `FXIconButton` which handles this automatically:
-
-```python
-from fxgui import fxwidgets
-
-# The icon_name property is set automatically
-button = fxwidgets.FXIconButton("Save", icon_name="save")
-button.clicked.connect(save_action)
-```
-
-### Works with Any Button Widget
-
-The property-based approach works with any `QAbstractButton` subclass:
+Icons automatically update their colors when toggling between light and dark themes. Use `fxicons.set_icon()` to register any widget for automatic icon refresh:
 
 ```python
 from qtpy.QtWidgets import QPushButton, QToolButton
 from fxgui import fxicons
 
-# QPushButton
-push_btn = QPushButton("Delete")
-push_btn.setIcon(fxicons.get_icon("delete"))
-push_btn.setProperty("icon_name", "delete")
+# Create a button with a theme-aware icon
+button = QPushButton("Save")
+fxicons.set_icon(button, "save")
 
-# QToolButton
+# Works with any widget that has setIcon()
 tool_btn = QToolButton()
-tool_btn.setIcon(fxicons.get_icon("settings"))
-tool_btn.setProperty("icon_name", "settings")
+fxicons.set_icon(tool_btn, "settings")
+```
+
+When the theme changes, all widgets registered via `set_icon()` automatically have their icons refreshed to match the new theme colors.
+
+### Using `set_icon` with Actions
+
+For menu and toolbar actions, use the `icon_name` parameter in `fxutils.create_action()`:
+
+```python
+from fxgui import fxutils
+
+# The action is automatically registered for icon refresh
+save_action = fxutils.create_action(
+    parent,
+    "Save",
+    trigger=save_function,
+    icon_name="save",
+)
 ```
 
 !!! tip
-    This approach is already used internally by widgets like `FXCollapsibleWidget`, `FXOutputLogWidget`, and `FXPasswordLineEdit`, so their icons update automatically on theme change.
+    This approach is used internally by widgets like `FXCollapsibleWidget`, `FXOutputLogWidget`, and `FXPasswordLineEdit`, so their icons update automatically on theme change.
 
 ## QtAwesome
 
