@@ -363,6 +363,9 @@ def has_transparency(mask: QBitmap) -> bool:
 def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     """Change the color of a pixmap.
 
+    Uses QPainter with composition mode for efficient colorization
+    while preserving the original alpha channel.
+
     Args:
         pixmap (QPixmap): The pixmap to change the color of.
         color (str): The color to apply.
@@ -370,21 +373,20 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     Returns:
         QPixmap: The pixmap with the new color applied.
     """
-
     mask = pixmap.createMaskFromColor(Qt.transparent)
     if not has_transparency(mask):
         return pixmap
 
-    qcolor = QColor(color)
-    qpixmap = pixmap.toImage()
+    # Create a copy to avoid modifying the original
+    colored_pixmap = pixmap.copy()
 
-    for y in range(qpixmap.height()):
-        for x in range(qpixmap.width()):
-            alpha = qpixmap.pixelColor(x, y).alpha()
-            qcolor.setAlpha(alpha)
-            qpixmap.setPixelColor(x, y, qcolor)
+    # Use QPainter with SourceIn composition to colorize while preserving alpha
+    painter = QPainter(colored_pixmap)
+    painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+    painter.fillRect(colored_pixmap.rect(), QColor(color))
+    painter.end()
 
-    return QPixmap.fromImage(qpixmap)
+    return colored_pixmap
 
 
 def _get_pixmap_internal(
@@ -637,9 +639,8 @@ def clear_icon_cache() -> None:
 def get_icon_color() -> str:
     """Get the current default icon color.
 
-    Returns the icon color from the default library's settings.
-    This color is synchronized with the current theme when
-    `sync_colors_with_theme()` is called.
+    Returns the icon color from the current theme. This is the canonical
+    source for icon color and is synchronized with the theme.
 
     Returns:
         The current default icon color as a hex string.
@@ -648,7 +649,9 @@ def get_icon_color() -> str:
         >>> color = get_icon_color()
         >>> print(color)  # "#b4b4b4" for dark theme
     """
-    return _libraries_info[_default_library]["defaults"]["color"]
+    # Import here to avoid circular imports
+    from fxgui import fxstyle
+    return fxstyle.get_icon_color()
 
 
 def _get_disabled_icon_color() -> str:

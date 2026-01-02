@@ -238,9 +238,15 @@ save_action = fxutils.create_action(
 !!! tip
     This approach is used internally by widgets like `FXCollapsibleWidget`, `FXOutputLogWidget`, and `FXPasswordLineEdit`, so their icons update automatically on theme change.
 
-## QtAwesome
+## QtAwesome (Optional)
 
-`fxgui` comes bundled with [QtAwesome](https://qtawesome.readthedocs.io/en/latest/index.html), so you can use something like:
+[QtAwesome](https://qtawesome.readthedocs.io/en/latest/index.html) is no longer bundled with fxgui, but you can install it separately if you want its features like animated icons. First, install it:
+
+```bash
+pip install qtawesome
+```
+
+Then you can use it like this:
 
 ```python
 import qtawesome as qta

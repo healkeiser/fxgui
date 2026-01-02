@@ -146,22 +146,6 @@ def _remove_comments(text: str) -> str:
     )
 
 
-def _hex_to_qcolor(hex_color: str) -> QColor:
-    """Convert a hex color string to a QColor.
-
-    Args:
-        hex_color: Hex color string (e.g., "#353535").
-
-    Returns:
-        The corresponding QColor object.
-    """
-    hex_color = hex_color.lstrip("#")
-    r = int(hex_color[0:2], 16)
-    g = int(hex_color[2:4], 16)
-    b = int(hex_color[4:6], 16)
-    return QColor(r, g, b)
-
-
 def _load_colors_from_jsonc(jsonc_file: str = None) -> dict:
     """Load colors from a JSONC (JSON with comments) file.
 

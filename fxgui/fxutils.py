@@ -200,6 +200,10 @@ def filter_tree(
     on whether they match the filter text. Both root and child items are
     considered.
 
+    .. deprecated::
+        Consider using :class:`fxgui.fxcore.FXSortFilterProxyModel` for
+        more sophisticated filtering with fuzzy matching support.
+
     Args:
         filter_bar_object (QLineEdit): The QLineEdit widget representing the
             filter bar.
@@ -212,6 +216,12 @@ def filter_tree(
         >>> tree_widget = QTreeWidget()
         >>> filter_tree(filter_bar, tree_widget, column=1)
     """
+    warnings.warn(
+        "filter_tree is deprecated. Consider using FXSortFilterProxyModel "
+        "from fxgui.fxcore for more sophisticated fuzzy filtering.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     filter_text = filter_bar_object.text().lower()
     root = tree_to_filter.invisibleRootItem()

@@ -136,21 +136,6 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         self._color_match = color_match
         self.invalidate()
 
-    def filterAcceptsColumn(
-        self, source_column: int, source_parent: QModelIndex
-    ) -> bool:
-        """Determine whether a column should be accepted by the filter.
-
-        Args:
-            source_column: The source column index.
-            source_parent: The source parent index.
-
-        Returns:
-            `True` if the column is accepted, `False` otherwise.
-        """
-
-        return True
-
     def filterAcceptsRow(
         self, source_row: int, source_parent: QModelIndex
     ) -> bool:

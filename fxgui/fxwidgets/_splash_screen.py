@@ -27,7 +27,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from fxgui import fxstyle, fxutils
+from fxgui import fxconstants, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXElidedLabel
 
 
@@ -109,11 +109,7 @@ class FXSplashScreen(QSplashScreen):
 
         # Attributes
         self.pixmap: QPixmap = image
-        self._default_icon = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            "icons",
-            "favicon_light.png",
-        )
+        self._default_icon = str(fxconstants.FAVICON_LIGHT)
         self.icon: QIcon = QIcon(icon) if icon else QIcon(self._default_icon)
         self.title: str = title or "Untitled"
         self.information: str = information or self._default_information()
