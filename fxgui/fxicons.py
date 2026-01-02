@@ -651,6 +651,7 @@ def get_icon_color() -> str:
     """
     # Import here to avoid circular imports
     from fxgui import fxstyle
+
     return fxstyle.get_icon_color()
 
 
