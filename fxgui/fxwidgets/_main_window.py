@@ -664,10 +664,15 @@ class FXMainWindow(QMainWindow):
         # Get the theme colors for the new theme
         theme_colors = fxstyle.get_theme_colors()
 
-        # Update banner for the new theme
+        # Update banner container for the new theme (match _create_banner style)
         self.banner.setStyleSheet(
-            f"color: {theme_colors['text']}; font-size: 16px; padding: 10px; "
-            f"border-bottom: 1px solid {theme_colors['border']};"
+            f"background: transparent; "
+            f"border-bottom: 1px solid {theme_colors['surface_alt']};"
+        )
+
+        # Update banner label text color
+        self.banner_label.setStyleSheet(
+            f"color: {theme_colors['text']}; font-size: 16px; border: none;"
         )
 
         # Update status bar colors for the new theme

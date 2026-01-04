@@ -5,7 +5,7 @@ import os
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt, Signal, QTimer, QThread, QObject
 from qtpy.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -17,6 +17,39 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+
+
+class _PathValidator(QObject):
+    """Background worker for path validation."""
+
+    finished = Signal(str, bool)  # path, is_valid
+
+    def __init__(self, path: str, mode: str):
+        super().__init__()
+        self._path = path
+        self._mode = mode
+
+    def run(self) -> None:
+        """Perform the validation in background thread."""
+        path = self._path
+        is_valid = False
+
+        if path:
+            if self._mode == "folder":
+                is_valid = os.path.isdir(path)
+            elif self._mode == "save":
+                is_valid = (
+                    os.path.isdir(os.path.dirname(path)) if path else False
+                )
+            elif self._mode == "files":
+                paths = path.split(";")
+                is_valid = all(
+                    os.path.isfile(p.strip()) for p in paths if p.strip()
+                )
+            else:  # file
+                is_valid = os.path.isfile(path)
+
+        self.finished.emit(path, is_valid)
 
 
 class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
@@ -108,6 +141,16 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
 
         # Enable drag and drop
         self.setAcceptDrops(True)
+
+        # Debounce timer for validation
+        self._validation_timer = QTimer(self)
+        self._validation_timer.setSingleShot(True)
+        self._validation_timer.setInterval(300)  # ms
+        self._validation_timer.timeout.connect(self._do_validation)
+
+        # Background validation thread
+        self._validation_thread: Optional[QThread] = None
+        self._validator: Optional[_PathValidator] = None
 
     def _apply_theme_styles(self) -> None:
         """Apply theme-specific styles."""
@@ -208,34 +251,44 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
 
     def _on_text_changed(self, text: str) -> None:
         """Handle text change."""
-        self._validate_path(text)
+        # Restart debounce timer for validation
+        self._validation_timer.start()
         self.path_changed.emit(text)
 
-    def _validate_path(self, path: str) -> None:
-        """Validate the path and update indicator."""
+    def _do_validation(self) -> None:
+        """Start background validation (called after debounce)."""
+        path = self._input.text()
+
+        # Cancel any existing validation
+        if self._validation_thread and self._validation_thread.isRunning():
+            self._validation_thread.quit()
+            self._validation_thread.wait(100)
+
         if not self._validate:
             return
 
         if not path:
             self._is_valid = False
-        elif self._mode == "folder":
-            self._is_valid = os.path.isdir(path)
-        elif self._mode == "save":
-            # For save mode, check if parent directory exists
-            self._is_valid = (
-                os.path.isdir(os.path.dirname(path)) if path else False
-            )
-        elif self._mode == "files":
-            # Check all paths
-            paths = path.split(";")
-            self._is_valid = all(
-                os.path.isfile(p.strip()) for p in paths if p.strip()
-            )
-        else:  # file
-            self._is_valid = os.path.isfile(path)
+            self._update_indicator()
+            self.path_valid.emit(self._is_valid)
+            return
 
-        self._update_indicator()
-        self.path_valid.emit(self._is_valid)
+        # Run validation in background thread
+        self._validation_thread = QThread(self)
+        self._validator = _PathValidator(path, self._mode)
+        self._validator.moveToThread(self._validation_thread)
+        self._validation_thread.started.connect(self._validator.run)
+        self._validator.finished.connect(self._on_validation_finished)
+        self._validator.finished.connect(self._validation_thread.quit)
+        self._validation_thread.start()
+
+    def _on_validation_finished(self, path: str, is_valid: bool) -> None:
+        """Handle validation result from background thread."""
+        # Only update if path hasn't changed
+        if path == self._input.text():
+            self._is_valid = is_valid
+            self._update_indicator()
+            self.path_valid.emit(self._is_valid)
 
     def _update_indicator(self) -> None:
         """Update the validation indicator icon."""
@@ -243,15 +296,25 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
             return
 
         path = self._input.text()
+        colors = fxstyle.get_colors()
+        feedback = colors["feedback"]
 
         if not path:
-            fxicons.set_icon(self._indicator, "remove", color="#888888")
+            fxicons.set_icon(
+                self._indicator, "remove", color=feedback["info"]["foreground"]
+            )
             self._indicator.setToolTip("No path entered")
         elif self._is_valid:
-            fxicons.set_icon(self._indicator, "check_circle", color="#4caf50")
+            fxicons.set_icon(
+                self._indicator,
+                "check_circle",
+                color=feedback["success"]["foreground"],
+            )
             self._indicator.setToolTip("Path exists")
         else:
-            fxicons.set_icon(self._indicator, "error", color="#f44336")
+            fxicons.set_icon(
+                self._indicator, "error", color=feedback["error"]["foreground"]
+            )
             self._indicator.setToolTip("Path does not exist")
 
     def dragEnterEvent(self, event) -> None:
@@ -295,7 +358,7 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     file_layout = QVBoxLayout(file_group)
     file_widget = FXFilePathWidget(
         mode="file",
-        filter="Images (*.png *.jpg);;All Files (*.*)",
+        file_filter="Images (*.png *.jpg);;All Files (*.*)",
         placeholder="Select an image file...",
     )
     file_layout.addWidget(file_widget)
@@ -315,7 +378,7 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     save_layout = QVBoxLayout(save_group)
     save_widget = FXFilePathWidget(
         mode="save",
-        filter="JSON Files (*.json);;All Files (*.*)",
+        file_filter="JSON Files (*.json);;All Files (*.*)",
         placeholder="Enter save location...",
         validate=False,
     )
