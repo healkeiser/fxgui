@@ -122,7 +122,12 @@ plugins:
 nav:
   - Home: index.md
   - Installation: installation.md
-  - How-to: how_to.md
+  - How-to:
+      - Overview: how_to.md
+      - Styling: how_to_styling.md
+      - Theming: how_to_theming.md
+      - Widgets: how_to_widgets.md
+      - Icons: how_to_icons.md
   - Technical:
       - fxconfig: fxconfig.md
       - fxcore: fxcore.md
