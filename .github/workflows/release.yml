@@ -43,6 +43,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   # Step 1: Generate changelog FIRST so it can be included in the release
@@ -220,41 +222,21 @@ jobs:
     needs: publish-pypi
     if: ${{ always() && !cancelled() && inputs.skip-docs != true }}
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.zensical.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-
       - name: Check for mkdocs.yml
-        id: check-mkdocs
+        id: check-config
         run: |
-          if [ -f "mkdocs.yml" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "No mkdocs.yml found, skipping documentation deployment"
-          fi
+          # We'll check after checkout in the action
+          echo "proceed=true" >> $GITHUB_OUTPUT
 
-      - name: Setup Python
-        if: steps.check-mkdocs.outputs.exists == 'true'
-        uses: actions/setup-python@v5
+      - name: Zensical Action
+        id: zensical
+        uses: cssnr/zensical-action@v1
         with:
           python-version: ${{ inputs.python-version || '3.11' }}
-
-      - name: Install dependencies
-        if: steps.check-mkdocs.outputs.exists == 'true'
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f "requirements.txt" ]; then
-            python -m pip install -r requirements.txt
-          else
-            python -m pip install mkdocs mkdocs-material mkdocstrings mkdocstrings-python
-          fi
-
-      - name: Deploy to GitHub Pages
-        if: steps.check-mkdocs.outputs.exists == 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-        run: python -m mkdocs gh-deploy --force
+          # Install mkdocstrings before build for API documentation
+          prepare: |
+            pip install mkdocstrings[python]

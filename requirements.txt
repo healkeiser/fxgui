@@ -2,10 +2,12 @@
 QtPy >= 2.4.2
 
 # Documentation
-mkdocs
-mkdocs-material
-mkdocs-git-authors-plugin
-mkdocs-git-revision-date-localized-plugin
-mkdocs-git-committers-plugin
+# Zensical (replaces MkDocs + Material for MkDocs)
+# Note: Zensical is compatible with mkdocs.yml config files
+zensical
+
+# Required until Zensical reaches full plugin feature parity:
 mkdocstrings[python]
+
+# Code formatting
 black

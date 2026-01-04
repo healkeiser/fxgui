@@ -46,7 +46,7 @@
         {
             "label": "Deploy Documentation",
             "type": "shell",
-            "command": "python -m mkdocs gh-deploy",
+            "command": "zensical gh-deploy",
             "problemMatcher": [],
             "group": {
                 "kind": "none",

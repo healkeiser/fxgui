@@ -12,8 +12,9 @@ edit_uri: edit/main/docs/
 
 ###### Custom ##################################################################
 
-extra_css:
-  - stylesheets/extra.css
+# Disabled to see default Zensical theme
+# extra_css:
+#   - stylesheets/extra.css
 
 ###### Theme ###################################################################
 
@@ -84,13 +85,15 @@ markdown_extensions:
 
 plugins:
   - search
-  - git-authors
-  - git-revision-date-localized:
-      enable_creation_date: true
-  - git-committers:
-      repository: healkeiser/fxgui
-      branch: main
-      # token: !!python/object/apply:os.getenv ["GITHUB_API_KEY"]
+  # Note: The following git plugins are not yet natively supported by Zensical
+  # They are on the roadmap and will be supported in a future release
+  # - git-authors
+  # - git-revision-date-localized:
+  #     enable_creation_date: true
+  # - git-committers:
+  #     repository: healkeiser/fxgui
+  #     branch: main
+  #     # token: !!python/object/apply:os.getenv ["GITHUB_API_KEY"]
   - mkdocstrings:
       enabled: !ENV [ENABLE_MKDOCSTRINGS, true]
       # custom_templates: templates
@@ -123,17 +126,17 @@ nav:
   - Home: index.md
   - Installation: installation.md
   - How-to:
-      - Overview: how_to.md
-      - Styling: how_to_styling.md
-      - Theming: how_to_theming.md
-      - Widgets: how_to_widgets.md
-      - Icons: how_to_icons.md
+      - Overview: how-to/index.md
+      - Styling: how-to/styling.md
+      - Theming: how-to/theming.md
+      - Widgets: how-to/widgets.md
+      - Icons: how-to/icons.md
   - Technical:
-      - fxconfig: fxconfig.md
-      - fxcore: fxcore.md
-      - fxdcc: fxdcc.md
-      - fxicons: fxicons.md
-      - fxstyle: fxstyle.md
-      - fxutils: fxutils.md
-      - fxwidgets: fxwidgets.md
-      - examples: examples.md
+      - fxconfig: technical/fxconfig.md
+      - fxcore: technical/fxcore.md
+      - fxdcc: technical/fxdcc.md
+      - fxicons: technical/fxicons.md
+      - fxstyle: technical/fxstyle.md
+      - fxutils: technical/fxutils.md
+      - fxwidgets: technical/fxwidgets.md
+      - examples: technical/examples.md
