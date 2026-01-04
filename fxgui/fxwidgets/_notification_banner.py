@@ -26,6 +26,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from qtpy.QtGui import QColor
 
 # Internal
 from fxgui import fxicons, fxstyle
@@ -206,7 +207,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         self._shadow_effect = QGraphicsDropShadowEffect(self)
         self._shadow_effect.setBlurRadius(20)
         self._shadow_effect.setOffset(0, 4)
-        self._shadow_effect.setColor(Qt.black)
+        self._shadow_effect.setColor(QColor(0, 0, 0, 60))
         self.setGraphicsEffect(self._shadow_effect)
 
         # Auto-dismiss timer

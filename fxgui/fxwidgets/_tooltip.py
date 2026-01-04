@@ -295,7 +295,7 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
 
         # Drop shadow on content
         shadow = QGraphicsDropShadowEffect(self._content_widget)
-        shadow.setBlurRadius(16)
+        shadow.setBlurRadius(20)
         shadow.setOffset(0, 4)
         shadow.setColor(QColor(0, 0, 0, 60))
         self._content_widget.setGraphicsEffect(shadow)
