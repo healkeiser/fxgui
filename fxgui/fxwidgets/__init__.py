@@ -83,6 +83,22 @@ from fxgui.fxwidgets._dialogs import FXFloatingDialog
 # System tray
 from fxgui.fxwidgets._system_tray import FXSystemTray
 
+# New widgets
+from fxgui.fxwidgets._toggle_switch import FXToggleSwitch
+from fxgui.fxwidgets._tag_input import FXTagInput, FXTagChip
+from fxgui.fxwidgets._range_slider import FXRangeSlider
+from fxgui.fxwidgets._search_bar import FXSearchBar
+from fxgui.fxwidgets._notification_banner import FXNotificationBanner
+from fxgui.fxwidgets._loading_spinner import FXLoadingSpinner, FXLoadingOverlay
+from fxgui.fxwidgets._breadcrumb import FXBreadcrumb
+from fxgui.fxwidgets._color_picker import FXColorPicker, FXColorSwatch
+from fxgui.fxwidgets._timeline_slider import FXTimelineSlider
+from fxgui.fxwidgets._rating_widget import FXRatingWidget
+from fxgui.fxwidgets._accordion import FXAccordion, FXAccordionSection
+from fxgui.fxwidgets._button_group import FXButtonGroup
+from fxgui.fxwidgets._progress_card import FXProgressCard
+from fxgui.fxwidgets._file_path_widget import FXFilePathWidget
+
 
 __all__ = [
     # Constants
@@ -130,4 +146,23 @@ __all__ = [
     "FXFloatingDialog",
     # System tray
     "FXSystemTray",
+    # New widgets
+    "FXToggleSwitch",
+    "FXTagInput",
+    "FXTagChip",
+    "FXRangeSlider",
+    "FXSearchBar",
+    "FXNotificationBanner",
+    "FXLoadingSpinner",
+    "FXLoadingOverlay",
+    "FXBreadcrumb",
+    "FXColorPicker",
+    "FXColorSwatch",
+    "FXTimelineSlider",
+    "FXRatingWidget",
+    "FXAccordion",
+    "FXAccordionSection",
+    "FXButtonGroup",
+    "FXProgressCard",
+    "FXFilePathWidget",
 ]
