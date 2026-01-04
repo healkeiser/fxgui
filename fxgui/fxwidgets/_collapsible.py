@@ -26,10 +26,10 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons
+from fxgui import fxicons, fxstyle
 
 
-class FXCollapsibleWidget(QWidget):
+class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
     """A widget that can expand or collapse its content.
 
     The widget consists of a header with a toggle button and a content area
@@ -83,6 +83,7 @@ class FXCollapsibleWidget(QWidget):
         self.header_widget = QFrame()
         self.header_widget.setFrameShape(QFrame.StyledPanel)
         self.header_widget.setFrameShadow(QFrame.Raised)
+        self.header_widget.setCursor(Qt.PointingHandCursor)
         self.header_widget.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Fixed
         )
@@ -113,7 +114,9 @@ class FXCollapsibleWidget(QWidget):
 
         # Title label
         self.title_label = QLabel(self._title)
-        self.title_label.setStyleSheet("background: transparent;")
+        self.title_label.setStyleSheet(
+            "background: transparent; font-weight: bold;"
+        )
         self.title_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Spacer to push content to the left, line spans remaining width
@@ -182,6 +185,9 @@ class FXCollapsibleWidget(QWidget):
 
         # Store expanded state
         self._is_expanded = checked
+
+        # Update header background based on expanded state
+        self._apply_theme_styles()
 
         if checked and not self._has_been_expanded:
             # First time expansion: measure content
@@ -260,6 +266,18 @@ class FXCollapsibleWidget(QWidget):
 
                 self.content_area.setHorizontalScrollBarPolicy(h_policy)
                 self.content_area.setVerticalScrollBarPolicy(v_policy)
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-aware styling to the header."""
+        colors = fxstyle.get_theme_colors()
+        if self._is_expanded:
+            # Use hover state color when expanded
+            self.header_widget.setStyleSheet(
+                f"QFrame {{ background-color: {colors['state_hover']}; }}"
+            )
+        else:
+            # Use default (transparent) when collapsed
+            self.header_widget.setStyleSheet("")
 
     def set_content_layout(self, content_layout: QLayout) -> None:
         """Set the layout for the content area.

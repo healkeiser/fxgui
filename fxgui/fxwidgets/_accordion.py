@@ -23,10 +23,10 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from fxgui import fxicons
+from fxgui import fxicons, fxstyle
 
 
-class FXAccordionSection(QWidget):
+class FXAccordionSection(fxstyle.FXThemeAware, QWidget):
     """A single section of the accordion.
 
     Args:
@@ -174,6 +174,9 @@ class FXAccordionSection(QWidget):
         self._toggle_btn.setChecked(True)
         fxicons.set_icon(self._toggle_btn, "expand_more")
 
+        # Update header background based on expanded state
+        self._apply_theme_styles()
+
         # First time expansion: measure content
         if not self._has_been_expanded:
             if self._content_area.widget():
@@ -209,6 +212,9 @@ class FXAccordionSection(QWidget):
         self._is_expanded = False
         self._toggle_btn.setChecked(False)
         fxicons.set_icon(self._toggle_btn, "chevron_right")
+
+        # Update header background based on expanded state
+        self._apply_theme_styles()
 
         if animate:
             self._animation.stop()
@@ -263,6 +269,18 @@ class FXAccordionSection(QWidget):
                 self._content_area.setHorizontalScrollBarPolicy(
                     Qt.ScrollBarAlwaysOff
                 )
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-aware styling to the header."""
+        colors = fxstyle.get_theme_colors()
+        if self._is_expanded:
+            # Use hover state color when expanded
+            self._header.setStyleSheet(
+                f"QFrame {{ background-color: {colors['state_hover']}; }}"
+            )
+        else:
+            # Use default (transparent) when collapsed
+            self._header.setStyleSheet("")
 
 
 class FXAccordion(QWidget):

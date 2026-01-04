@@ -1,19 +1,20 @@
 """FXStatusBar - Custom status bar widget."""
 
+# Built-in
 import logging
 from typing import Optional, Tuple
 
+# Third-party
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
     QFrame,
     QLabel,
-    QSizePolicy,
     QStatusBar,
-    QVBoxLayout,
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._constants import (
     CRITICAL,

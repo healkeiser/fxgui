@@ -62,6 +62,7 @@ from fxgui.fxwidgets._rating_widget import FXRatingWidget
 from fxgui.fxwidgets._accordion import FXAccordion, FXAccordionSection
 from fxgui.fxwidgets._progress_card import FXProgressCard
 from fxgui.fxwidgets._file_path_widget import FXFilePathWidget
+from fxgui.fxwidgets._tooltip import FXTooltip, FXTooltipPosition
 
 
 __all__ = [
@@ -111,4 +112,6 @@ __all__ = [
     "FXAccordionSection",
     "FXProgressCard",
     "FXFilePathWidget",
+    "FXTooltip",
+    "FXTooltipPosition",
 ]

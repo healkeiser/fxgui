@@ -1,22 +1,26 @@
 """FXMainWindow - Custom main window widget."""
 
+# Built-in
 import os
-from typing import Optional
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 from webbrowser import open_new_tab
 
+# Third-party
 from qtpy.QtCore import QPoint, QRect, QSize, Qt
-from qtpy.QtGui import QIcon
+from qtpy.QtGui import QAction, QIcon
 from qtpy.QtWidgets import (
     QActionGroup,
+    QApplication,
     QDialog,
+    QDialogButtonBox,
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMenu,
     QToolBar,
     QVBoxLayout,
     QWidget,
-    QApplication,
 )
 
 from qtpy import QT_VERSION
@@ -39,7 +43,7 @@ from fxgui.fxwidgets._constants import (
 from fxgui.fxwidgets._status_bar import FXStatusBar
 
 
-class FXMainWindow(QMainWindow):
+class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
     """Customized QMainWindow class.
 
     Args:
@@ -60,12 +64,20 @@ class FXMainWindow(QMainWindow):
             Defaults to `True`.
     """
 
+    # Class-level severity constants for convenience
+    CRITICAL: int = CRITICAL
+    ERROR: int = ERROR
+    WARNING: int = WARNING
+    SUCCESS: int = SUCCESS
+    INFO: int = INFO
+    DEBUG: int = DEBUG
+
     def __init__(
         self,
         parent: Optional[QWidget] = None,
         icon: Optional[str] = None,
         title: Optional[str] = None,
-        size: Optional[int] = None,
+        size: Optional[Tuple[int, int]] = None,
         documentation: Optional[str] = None,
         project: Optional[str] = None,
         version: Optional[str] = None,
@@ -75,31 +87,30 @@ class FXMainWindow(QMainWindow):
     ):
         super().__init__(parent)
 
-        # Attributes
-        self._default_icon = os.path.join(
+        # Private attributes
+        self._default_icon_path: str = os.path.join(
             os.path.dirname(os.path.dirname(__file__)),
             "images",
             "fxgui_logo_background_dark.svg",
         )
-        self.window_icon: QIcon = icon
-        self.window_title: str = title
-        self.window_size: QSize = size
-        self.documentation: str = documentation
+        self._set_stylesheet: bool = set_stylesheet
+
+        # Public attributes
+        self.window_icon: Optional[str] = icon
+        self.window_title: Optional[str] = title
+        self.window_size: Optional[Tuple[int, int]] = size
+        self.documentation: Optional[str] = documentation
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
         self.company: str = company or "\u00a9 Company"
+        self.ui_file: Optional[str] = ui_file
+        self.ui: Optional[QWidget] = None
 
-        self.ui_file: str = ui_file
-        self.ui = None
+        # Theme action storage
+        self.theme_actions: Dict[str, QAction] = {}
+        self.theme_action_group: Optional[QActionGroup] = None
 
-        self.CRITICAL: int = CRITICAL
-        self.ERROR: int = ERROR
-        self.WARNING: int = WARNING
-        self.SUCCESS: int = SUCCESS
-        self.INFO: int = INFO
-        self.DEBUG: int = DEBUG
-
-        # Methods
+        # Initialize UI components
         self._create_actions()
         self._create_banner()
         self._load_ui()
@@ -113,22 +124,20 @@ class FXMainWindow(QMainWindow):
         self._add_shadows()
 
         # Styling - load_stylesheet() automatically uses the saved theme
-        if set_stylesheet:
+        if self._set_stylesheet:
             self.setStyleSheet(fxstyle.load_stylesheet())
 
     # Private methods
     def _load_ui(self) -> None:
-        """Loads the UI from the specified UI file and sets it as the central
-        widget of the main window.
+        """Load the UI from the specified UI file.
+
+        Sets the loaded UI as the central widget of the main window.
 
         Warning:
             This method is intended for internal use only.
         """
-
         if self.ui_file is not None:
             self.ui = fxutils.load_ui(self, self.ui_file)
-
-            # Add the loaded UI to the main window
             self.setCentralWidget(self.ui)
 
     def _set_window_icon(self) -> None:
@@ -137,34 +146,31 @@ class FXMainWindow(QMainWindow):
         Warning:
             This method is intended for internal use only.
         """
-
         icon_path = (
             self.window_icon
             if self.window_icon and os.path.isfile(self.window_icon)
-            else self._default_icon
+            else self._default_icon_path
         )
         self.setWindowIcon(QIcon(icon_path))
 
     def _set_window_size(self) -> None:
-        """Sets the window size from the specified size.
+        """Set the window size from the specified size.
 
         Warning:
             This method is intended for internal use only.
         """
-
-        self.resize(
-            QSize(*self.window_size)
-            if self.window_size and len(self.window_size) >= 1
-            else QSize(500, 600)
-        )
+        default_size = QSize(500, 600)
+        if self.window_size and len(self.window_size) >= 2:
+            self.resize(QSize(*self.window_size))
+        else:
+            self.resize(default_size)
 
     def _create_actions(self) -> None:
-        """Creates the actions for the window.
+        """Create the actions for the window.
 
         Warning:
             This method is intended for internal use only.
         """
-
         # Main menu
         self.about_action = fxutils.create_action(
             self,
@@ -266,7 +272,6 @@ class FXMainWindow(QMainWindow):
         )
 
         # Theme selection actions (populated dynamically from available themes)
-        self.theme_actions = {}
         self.theme_action_group = QActionGroup(self)
         self.theme_action_group.setExclusive(True)
         for theme_name in fxstyle.get_available_themes():
@@ -274,7 +279,7 @@ class FXMainWindow(QMainWindow):
                 self,
                 theme_name.title().replace("_", " "),
                 None,
-                lambda checked, t=theme_name: self._apply_theme(t),
+                lambda checked, t=theme_name: self._set_theme(t),
                 enable=True,
                 visible=True,
                 checkable=True,
@@ -647,51 +652,63 @@ class FXMainWindow(QMainWindow):
         if status_bar:
             fxutils.add_shadows(self, self.statusBar())
 
-    def _apply_theme(self, theme: str) -> None:
-        """Apply a specific theme to the window.
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles to the window.
+
+        This method is called automatically by the FXThemeAware mixin
+        when the theme changes. Override this method to customize
+        theme-specific styling.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+        # Get the theme colors for the current theme
+        theme_colors = fxstyle.get_theme_colors()
+
+        # Update banner container for the new theme (match _create_banner style)
+        if hasattr(self, "banner") and self.banner is not None:
+            self.banner.setStyleSheet(
+                f"background: transparent; "
+                f"border-bottom: 1px solid {theme_colors['surface_alt']};"
+            )
+
+        # Update banner label text color
+        if hasattr(self, "banner_label") and self.banner_label is not None:
+            self.banner_label.setStyleSheet(
+                f"color: {theme_colors['text']}; font-size: 16px; border: none;"
+            )
+
+        # Force menu bar to repaint with new icons
+        if hasattr(self, "menu_bar") and self.menu_bar is not None:
+            self.menu_bar.update()
+            self.menu_bar.repaint()
+
+        # Update the checked state of theme actions
+        current_theme = fxstyle.get_theme()
+        if current_theme in self.theme_actions:
+            self.theme_actions[current_theme].setChecked(True)
+
+    def _set_theme(self, theme: str) -> None:
+        """Internal method to apply a specific theme to the window.
 
         Args:
             theme: The theme name to apply.
 
         Warning:
             This method is intended for internal use only.
+            Use `set_theme()` for external theme selection.
         """
-
         # Use centralized theme application
         # This automatically syncs icon colors and refreshes all registered icons
+        # and triggers the FXThemeAware mixin to call _apply_theme_styles
         fxstyle.apply_theme(self, theme=theme)
-
-        # Get the theme colors for the new theme
-        theme_colors = fxstyle.get_theme_colors()
-
-        # Update banner container for the new theme (match _create_banner style)
-        self.banner.setStyleSheet(
-            f"background: transparent; "
-            f"border-bottom: 1px solid {theme_colors['surface_alt']};"
-        )
-
-        # Update banner label text color
-        self.banner_label.setStyleSheet(
-            f"color: {theme_colors['text']}; font-size: 16px; border: none;"
-        )
-
-        # Update status bar colors for the new theme
-        self.status_bar._apply_stylesheet()
-
-        # Force menu bar to repaint with new icons
-        self.menuBar().update()
-        self.menuBar().repaint()
-
-        # Update the checked state of theme actions
-        if theme in self.theme_actions:
-            self.theme_actions[theme].setChecked(True)
 
     def _toggle_theme(self) -> None:
         """Toggles the theme of the window between available themes.
 
         Warning:
             This method is intended for internal use only.
-            Use `set_theme()` for explicit theme selection.
+            Use `toggle_theme()` for external theme cycling.
         """
         # Get available themes and find the next one
         themes = fxstyle.get_available_themes()
@@ -703,7 +720,7 @@ class FXMainWindow(QMainWindow):
         else:
             next_theme = themes[0] if themes else "dark"
 
-        self._apply_theme(next_theme)
+        self._set_theme(next_theme)
 
     def _refresh_dialog_button_icons(self) -> None:
         """Refresh and register all QDialogButtonBox button icons.
@@ -714,11 +731,8 @@ class FXMainWindow(QMainWindow):
         Warning:
             This method is intended for internal use only.
         """
-
-        from qtpy.QtWidgets import QDialogButtonBox
-
         # Map of standard button roles to their icon names
-        button_icon_map = {
+        button_icon_map: Dict[QDialogButtonBox.StandardButton, str] = {
             QDialogButtonBox.Ok: "check",
             QDialogButtonBox.Cancel: "cancel",
             QDialogButtonBox.Close: "close",
@@ -766,8 +780,7 @@ class FXMainWindow(QMainWindow):
             >>> window.set_theme("light")
             >>> window.set_theme("dark")
         """
-
-        self._apply_theme(theme)
+        self._set_theme(theme)
         return fxstyle.get_theme()
 
     def toggle_theme(self) -> str:
@@ -786,22 +799,20 @@ class FXMainWindow(QMainWindow):
             >>> new_theme = window.toggle_theme()
             >>> print(f"Switched to {new_theme} theme")
         """
-
         self._toggle_theme()
         return fxstyle.get_theme()
 
-    def get_available_themes(self) -> list:
+    def get_available_themes(self) -> List[str]:
         """Get a list of all available theme names.
 
         Returns:
-            List of theme names (e.g., ["dark", "light"]).
+            List[str]: List of theme names (e.g., ["dark", "light"]).
 
         Examples:
             >>> window = FXMainWindow()
             >>> themes = window.get_available_themes()
             >>> print(themes)  # ['dark', 'light']
         """
-
         return fxstyle.get_available_themes()
 
     # Overrides
@@ -817,12 +828,14 @@ class FXMainWindow(QMainWindow):
 
         return self.status_bar
 
-    def setCentralWidget(self, widget):
-        """Overrides the QMainWindow's setCentralWidget method to ensure that the
-        status line is always at the bottom of the window and the banner is always at the top.
+    def setCentralWidget(self, widget: QWidget) -> None:
+        """Override the QMainWindow's setCentralWidget method.
+
+        Ensures that the status line is always at the bottom of the window
+        and the banner is always at the top.
 
         Args:
-            widget (QWidget): The widget to set as the central widget.
+            widget: The widget to set as the central widget.
 
         Note:
             Overrides the base class method.
@@ -848,109 +861,101 @@ class FXMainWindow(QMainWindow):
         super().setCentralWidget(central_widget)
 
     def setWindowTitle(self, title: str) -> None:
-        """Override the `setWindowTitle` method to use `_set_window_title`.
+        """Override the setWindowTitle method.
 
         Args:
-            title (str): The new window title.
+            title: The new window title.
         """
-
         title = f"{title if title else 'Window'}"
         super().setWindowTitle(title)
 
-    # Public methods
+    # Banner methods
     def set_banner_text(self, text: str) -> None:
         """Sets the text of the banner.
 
         Args:
-            text (str): The text to set in the banner.
+            text: The text to set in the banner.
         """
-
         self.banner_label.setText(text)
 
     def set_banner_icon(self, icon: QIcon, size: int = 20) -> None:
         """Sets the icon of the banner.
 
         Args:
-            icon (QIcon): The icon to set in the banner.
-            size (int): The size of the icon. Defaults to 20.
+            icon: The icon to set in the banner.
+            size: The size of the icon. Defaults to 20.
         """
-
         self.banner_icon.setFixedSize(size, size)
         self.banner_icon.setPixmap(icon.pixmap(size, size))
         self.banner_icon.show()
 
     def hide_banner(self) -> None:
         """Hides the banner."""
-
         self.banner.hide()
 
     def show_banner(self) -> None:
         """Shows the banner."""
-
         self.banner.show()
 
+    # Status line methods
     def set_status_line_colors(self, color_a: str, color_b: str) -> None:
         """Set the colors of the status line.
 
         Args:
-            color_a (str): The first color of the gradient.
-            color_b (str): The second color of the gradient.
+            color_a: The first color of the gradient.
+            color_b: The second color of the gradient.
         """
-
         self.status_bar.set_status_line_colors(color_a, color_b)
 
     def hide_status_line(self) -> None:
         """Hides the status line."""
-
         self.status_bar.hide_status_line()
 
     def show_status_line(self) -> None:
         """Shows the status line."""
-
         self.status_bar.show_status_line()
 
+    # UI file methods
     def set_ui_file(self, ui_file: str) -> None:
-        """Sets the UI file and loads the UI."""
+        """Sets the UI file and loads the UI.
 
+        Args:
+            ui_file: Path to the UI file to load.
+        """
         self.ui_file = ui_file
         self._load_ui()
 
+    # Status bar label methods
     def set_project_label(self, project: str) -> None:
         """Sets the project label in the status bar.
 
         Args:
-            project (str): The project name.
-
-        Note:
-            Overrides the base class method.
+            project: The project name.
         """
-
         self.statusBar().project_label.setText(project)
 
     def set_company_label(self, company: str) -> None:
         """Sets the company label in the status bar.
 
         Args:
-            company (str): The company name.
-
-        Note:
-            Overrides the base class method.
+            company: The company name.
         """
-
         self.statusBar().company_label.setText(company)
 
     def set_version_label(self, version: str) -> None:
         """Sets the version label in the status bar.
 
         Args:
-            version (str): The version string.
-
-        Note:
-            Overrides the base class method.
+            version: The version string.
         """
-
         self.statusBar().version_label.setText(version)
 
     # Events
-    def closeEvent(self, _) -> None:
+    def closeEvent(self, event) -> None:
+        """Handle the window close event.
+
+        Args:
+            event: The close event.
+        """
         self.setParent(None)
+        super().closeEvent(event)
