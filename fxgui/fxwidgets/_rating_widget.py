@@ -1,11 +1,15 @@
 """FXRatingWidget - Star/score rating widget."""
 
+# Built-in
+import os
 from typing import Optional
 
+# Third-party
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QMouseEvent
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
+# Internal
 from fxgui import fxicons, fxstyle
 
 
@@ -60,12 +64,8 @@ class FXRatingWidget(QWidget):
         self._half_icon = half_icon
         self._hover_rating: Optional[float] = None
 
-        # Get theme colors
-        accent_colors = fxstyle.get_accent_colors()
-        theme_colors = fxstyle.get_theme_colors()
-
-        self._filled_color = "#ffc107"  # Gold for filled stars
-        self._empty_color = theme_colors["text_disabled"]
+        # Colors (gold for stars, theme-aware for empty)
+        self._filled_color = "#ffc107"
         self._hover_color = "#ffdb4d"
 
         # Main layout
@@ -130,8 +130,20 @@ class FXRatingWidget(QWidget):
 
     def _update_stars(self) -> None:
         """Update star icons based on current rating."""
-        display_rating = self._hover_rating if self._hover_rating is not None else self._rating
-        color = self._hover_color if self._hover_rating is not None else self._filled_color
+        # Get current theme colors (dynamic for theme switching)
+        theme_colors = fxstyle.get_theme_colors()
+        empty_color = theme_colors["text_disabled"]
+
+        display_rating = (
+            self._hover_rating
+            if self._hover_rating is not None
+            else self._rating
+        )
+        color = (
+            self._hover_color
+            if self._hover_rating is not None
+            else self._filled_color
+        )
 
         for i, star in enumerate(self._stars):
             star_value = i + 1
@@ -144,7 +156,9 @@ class FXRatingWidget(QWidget):
                 icon = fxicons.get_icon(self._half_icon, color=color)
             else:
                 # Empty star
-                icon = fxicons.get_icon(self._empty_icon, color=self._empty_color)
+                icon = fxicons.get_icon(
+                    self._empty_icon, color=empty_color
+                )
 
             star.setPixmap(icon.pixmap(self._icon_size, self._icon_size))
 
@@ -192,7 +206,6 @@ class FXRatingWidget(QWidget):
 
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
     import sys
     from qtpy.QtWidgets import QVBoxLayout, QWidget, QLabel, QHBoxLayout
     from fxgui.fxwidgets import FXApplication, FXMainWindow

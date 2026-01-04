@@ -93,7 +93,7 @@ class FXCollapsibleWidget(QWidget):
         self.toggle_button.setStyleSheet(
             "QToolButton { border: none; background: transparent; }"
         )
-        self.toggle_button.setIcon(fxicons.get_icon("chevron_right"))
+        fxicons.set_icon(self.toggle_button, "chevron_right")
         self.toggle_button.setProperty("icon_name", "chevron_right")
         self.toggle_button.setCheckable(True)
         self.toggle_button.setChecked(False)
@@ -173,7 +173,7 @@ class FXCollapsibleWidget(QWidget):
         """Toggle content visibility with animation."""
         # Update button icon and property
         icon_name = "expand_more" if checked else "chevron_right"
-        self.toggle_button.setIcon(fxicons.get_icon(icon_name))
+        fxicons.set_icon(self.toggle_button, icon_name)
         self.toggle_button.setProperty("icon_name", icon_name)
 
         # Store expanded state

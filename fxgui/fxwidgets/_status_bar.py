@@ -326,8 +326,20 @@ class FXStatusBar(QStatusBar):
         """
         self.border_line.setStyleSheet(f"background: {color};")
 
-    def _apply_stylesheet(self) -> None:
-        """Apply the status bar stylesheet."""
+    def _apply_stylesheet(self, with_status_line_padding: bool = True) -> None:
+        """Apply the status bar stylesheet.
+
+        Args:
+            with_status_line_padding: Whether to include padding for the
+                status line. Defaults to `True`.
+        """
+        # Update accent colors from current theme
+        _accent = fxstyle.get_accent_colors()
+        self._status_line_color_a = _accent["primary"]
+        self._status_line_color_b = _accent["secondary"]
+        self._update_status_line_colors()
+
+        # Update theme colors
         theme_colors = fxstyle.get_theme_colors()
         self._update_border_line_color(theme_colors["border"])
         self.setStyleSheet(

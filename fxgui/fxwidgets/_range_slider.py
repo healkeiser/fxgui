@@ -1,11 +1,15 @@
 """FXRangeSlider - Dual-handle range slider widget."""
 
-from typing import Optional, Tuple
+# Built-in
+import os
+from typing import Optional
 
-from qtpy.QtCore import Property, Qt, Signal
+# Third-party
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QColor, QMouseEvent, QPainter, QPainterPath
 from qtpy.QtWidgets import QSizePolicy, QWidget
 
+# Internal
 from fxgui import fxstyle
 
 
@@ -67,30 +71,23 @@ class FXRangeSlider(QWidget):
         self._handle_radius = 8
         self._track_height = 4
 
-        # Get theme colors
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
-        self._track_color = QColor(theme_colors["surface_alt"])
-        self._range_color = QColor(accent_colors["primary"])
-        self._handle_color = QColor("#ffffff")
-        self._handle_border_color = QColor(accent_colors["primary"])
-
         # Setup widget
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.setMinimumHeight(30)
+        self.setMinimumHeight(70)
         self.setMouseTracking(True)
         self.setCursor(Qt.PointingHandCursor)
 
     def sizeHint(self):
         """Return the preferred size."""
         from qtpy.QtCore import QSize
-        return QSize(200, 30)
+
+        return QSize(200, 70)
 
     def minimumSizeHint(self):
         """Return the minimum size."""
         from qtpy.QtCore import QSize
-        return QSize(100, 30)
+
+        return QSize(100, 70)
 
     @property
     def low(self) -> int:
@@ -192,7 +189,11 @@ class FXRangeSlider(QWidget):
         if low_dist <= self._handle_radius * 1.5:
             if high_dist <= self._handle_radius * 1.5:
                 # Both handles close, pick the nearest
-                return self.HANDLE_LOW if low_dist < high_dist else self.HANDLE_HIGH
+                return (
+                    self.HANDLE_LOW
+                    if low_dist < high_dist
+                    else self.HANDLE_HIGH
+                )
             return self.HANDLE_LOW
         elif high_dist <= self._handle_radius * 1.5:
             return self.HANDLE_HIGH
@@ -204,6 +205,15 @@ class FXRangeSlider(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
+        # Get current theme colors (dynamic for theme switching)
+        theme_colors = fxstyle.get_theme_colors()
+        accent_colors = fxstyle.get_accent_colors()
+
+        track_color = QColor(theme_colors["surface_alt"])
+        range_color = QColor(accent_colors["primary"])
+        handle_color = QColor("#ffffff")
+        handle_border_color = QColor(accent_colors["primary"])
+
         # Calculate positions
         margin = self._handle_radius
         track_y = self.height() // 2
@@ -213,23 +223,32 @@ class FXRangeSlider(QWidget):
         # Draw background track
         track_path = QPainterPath()
         track_path.addRoundedRect(
-            margin, track_y - self._track_height // 2,
-            self.width() - margin * 2, self._track_height,
-            self._track_height // 2, self._track_height // 2
+            margin,
+            track_y - self._track_height // 2,
+            self.width() - margin * 2,
+            self._track_height,
+            self._track_height // 2,
+            self._track_height // 2,
         )
-        painter.fillPath(track_path, self._track_color)
+        painter.fillPath(track_path, track_color)
 
         # Draw range (selected area)
         range_path = QPainterPath()
         range_path.addRoundedRect(
-            low_x, track_y - self._track_height // 2,
-            high_x - low_x, self._track_height,
-            self._track_height // 2, self._track_height // 2
+            low_x,
+            track_y - self._track_height // 2,
+            high_x - low_x,
+            self._track_height,
+            self._track_height // 2,
+            self._track_height // 2,
         )
-        painter.fillPath(range_path, self._range_color)
+        painter.fillPath(range_path, range_color)
 
         # Draw handles
-        for handle_type, x_pos in [(self.HANDLE_LOW, low_x), (self.HANDLE_HIGH, high_x)]:
+        for handle_type, x_pos in [
+            (self.HANDLE_LOW, low_x),
+            (self.HANDLE_HIGH, high_x),
+        ]:
             is_hovered = self._hover_handle == handle_type
             is_pressed = self._pressed_handle == handle_type
 
@@ -240,45 +259,73 @@ class FXRangeSlider(QWidget):
                 int(x_pos - self._handle_radius + 1),
                 int(track_y - self._handle_radius + 1),
                 self._handle_radius * 2,
-                self._handle_radius * 2
+                self._handle_radius * 2,
             )
 
             # Handle fill
-            handle_color = self._handle_color
+            current_handle_color = handle_color
             if is_pressed:
-                handle_color = handle_color.darker(110)
+                current_handle_color = handle_color.darker(110)
             elif is_hovered:
-                handle_color = handle_color.darker(105)
+                current_handle_color = handle_color.darker(105)
 
-            painter.setBrush(handle_color)
-            painter.setPen(self._handle_border_color)
+            painter.setBrush(current_handle_color)
+            painter.setPen(handle_border_color)
             painter.drawEllipse(
                 int(x_pos - self._handle_radius),
                 int(track_y - self._handle_radius),
                 self._handle_radius * 2,
-                self._handle_radius * 2
+                self._handle_radius * 2,
             )
 
         # Draw value labels
         if self._show_values:
-            painter.setPen(QColor(fxstyle.get_theme_colors()["text"]))
             font = painter.font()
             font.setPointSize(8)
+            # font.setBold(True)
             painter.setFont(font)
 
-            # Low value
-            low_text = str(self._low)
-            painter.drawText(
-                int(low_x - 20), 0, 40, 12,
-                Qt.AlignCenter, low_text
-            )
+            theme_colors = fxstyle.get_theme_colors()
+            text_color = QColor(theme_colors["text"])
+            bg_color = QColor(theme_colors["surface"])
+            bg_color.setAlpha(200)
 
-            # High value
-            high_text = str(self._high)
-            painter.drawText(
-                int(high_x - 20), self.height() - 12, 40, 12,
-                Qt.AlignCenter, high_text
+            from qtpy.QtCore import QRectF
+            from qtpy.QtGui import QFontMetrics
+
+            fm = QFontMetrics(font)
+
+            # Low value label
+            low_text = str(self._low)
+            low_text_width = fm.horizontalAdvance(low_text) + 8
+            low_text_height = fm.height() + 4
+            low_rect = QRectF(
+                low_x - low_text_width / 2,
+                track_y - self._handle_radius - low_text_height - 4,
+                low_text_width,
+                low_text_height,
             )
+            painter.setBrush(bg_color)
+            painter.setPen(Qt.NoPen)
+            painter.drawRoundedRect(low_rect, 3, 3)
+            painter.setPen(text_color)
+            painter.drawText(low_rect, Qt.AlignCenter, low_text)
+
+            # High value label
+            high_text = str(self._high)
+            high_text_width = fm.horizontalAdvance(high_text) + 8
+            high_text_height = fm.height() + 4
+            high_rect = QRectF(
+                high_x - high_text_width / 2,
+                track_y + self._handle_radius + 4,
+                high_text_width,
+                high_text_height,
+            )
+            painter.setBrush(bg_color)
+            painter.setPen(Qt.NoPen)
+            painter.drawRoundedRect(high_rect, 3, 3)
+            painter.setPen(text_color)
+            painter.drawText(high_rect, Qt.AlignCenter, high_text)
 
         painter.end()
 
@@ -316,7 +363,6 @@ class FXRangeSlider(QWidget):
 
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
     import sys
     from qtpy.QtWidgets import QLabel, QVBoxLayout, QWidget
     from fxgui.fxwidgets import FXApplication, FXMainWindow

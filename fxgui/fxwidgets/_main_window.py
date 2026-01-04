@@ -671,12 +671,7 @@ class FXMainWindow(QMainWindow):
         )
 
         # Update status bar colors for the new theme
-        self.status_bar.setStyleSheet(
-            f"""QStatusBar {{
-                background: {theme_colors['surface']};
-                border-top: 1px solid {theme_colors['border']};
-            }}"""
-        )
+        self.status_bar._apply_stylesheet()
 
         # Force menu bar to repaint with new icons
         self.menuBar().update()

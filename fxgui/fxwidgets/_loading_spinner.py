@@ -1,12 +1,16 @@
 """FXLoadingSpinner - Animated loading indicator widget."""
 
+# Built-in
+import os
 import math
 from typing import Optional
 
-from qtpy.QtCore import Property, QPropertyAnimation, Qt, QTimer
+# Third-party
+from qtpy.QtCore import Property, Qt, QTimer
 from qtpy.QtGui import QColor, QPainter, QPen
 from qtpy.QtWidgets import QSizePolicy, QWidget
 
+# Internal
 from fxgui import fxstyle
 
 
@@ -40,13 +44,10 @@ class FXLoadingSpinner(QWidget):
     ):
         super().__init__(parent)
 
-        # Get theme colors
-        accent_colors = fxstyle.get_accent_colors()
-
         # Properties
         self._size = size
         self._line_width = line_width
-        self._color = QColor(color or accent_colors["primary"])
+        self._custom_color = color  # Store custom color (None means use theme)
         self._style = style
         self._angle = 0
         self._is_spinning = False
@@ -92,8 +93,15 @@ class FXLoadingSpinner(QWidget):
         Args:
             color: Color string (hex, rgb, etc.).
         """
-        self._color = QColor(color)
+        self._custom_color = color
         self.update()
+
+    def _get_color(self) -> QColor:
+        """Get the current spinner color (theme-aware)."""
+        if self._custom_color:
+            return QColor(self._custom_color)
+        accent_colors = fxstyle.get_accent_colors()
+        return QColor(accent_colors["primary"])
 
     def set_style(self, style: str) -> None:
         """Set the animation style.
@@ -131,8 +139,11 @@ class FXLoadingSpinner(QWidget):
         center = self._size // 2
         radius = center - self._line_width
 
+        # Get current color (theme-aware)
+        color = self._get_color()
+
         # Create gradient arc
-        pen = QPen(self._color)
+        pen = QPen(color)
         pen.setWidth(self._line_width)
         pen.setCapStyle(Qt.RoundCap)
         painter.setPen(pen)
@@ -144,7 +155,7 @@ class FXLoadingSpinner(QWidget):
         for i in range(num_segments):
             # Calculate opacity based on segment position
             opacity = (i + 1) / num_segments
-            segment_color = QColor(self._color)
+            segment_color = QColor(color)
             segment_color.setAlphaF(opacity)
 
             pen.setColor(segment_color)
@@ -155,10 +166,12 @@ class FXLoadingSpinner(QWidget):
 
             # Draw arc segment
             painter.drawArc(
-                self._line_width, self._line_width,
+                self._line_width,
+                self._line_width,
                 self._size - self._line_width * 2,
                 self._size - self._line_width * 2,
-                start_angle * 16, segment_angle * 16
+                start_angle * 16,
+                segment_angle * 16,
             )
 
     def _paint_dots(self, painter: QPainter) -> None:
@@ -168,6 +181,9 @@ class FXLoadingSpinner(QWidget):
         num_dots = 8
         dot_radius = 3
 
+        # Get current color (theme-aware)
+        color = self._get_color()
+
         for i in range(num_dots):
             # Calculate dot position
             angle_rad = math.radians(self._angle + i * (360 / num_dots))
@@ -176,19 +192,24 @@ class FXLoadingSpinner(QWidget):
 
             # Calculate opacity based on position
             opacity = (i + 1) / num_dots
-            dot_color = QColor(self._color)
+            dot_color = QColor(color)
             dot_color.setAlphaF(opacity)
 
             painter.setBrush(dot_color)
             painter.setPen(Qt.NoPen)
             painter.drawEllipse(
-                int(x - dot_radius), int(y - dot_radius),
-                dot_radius * 2, dot_radius * 2
+                int(x - dot_radius),
+                int(y - dot_radius),
+                dot_radius * 2,
+                dot_radius * 2,
             )
 
     def _paint_pulse(self, painter: QPainter) -> None:
         """Paint the pulse style."""
         center = self._size // 2
+
+        # Get current color (theme-aware)
+        color = self._get_color()
 
         # Calculate pulse scale based on angle
         scale = 0.5 + 0.5 * abs(math.sin(math.radians(self._angle * 2)))
@@ -197,7 +218,7 @@ class FXLoadingSpinner(QWidget):
         # Calculate opacity (inverse of scale for breathing effect)
         opacity = 1.0 - scale * 0.5
 
-        pulse_color = QColor(self._color)
+        pulse_color = QColor(color)
         pulse_color.setAlphaF(opacity)
 
         pen = QPen(pulse_color)
@@ -206,8 +227,7 @@ class FXLoadingSpinner(QWidget):
         painter.setBrush(Qt.NoBrush)
 
         painter.drawEllipse(
-            center - radius, center - radius,
-            radius * 2, radius * 2
+            center - radius, center - radius, radius * 2, radius * 2
         )
 
         # Inner circle
@@ -217,8 +237,10 @@ class FXLoadingSpinner(QWidget):
         painter.setBrush(inner_color)
         painter.setPen(Qt.NoPen)
         painter.drawEllipse(
-            center - inner_radius, center - inner_radius,
-            inner_radius * 2, inner_radius * 2
+            center - inner_radius,
+            center - inner_radius,
+            inner_radius * 2,
+            inner_radius * 2,
         )
 
 
@@ -253,11 +275,13 @@ class FXLoadingOverlay(QWidget):
 
         # Setup overlay
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             FXLoadingOverlay {{
                 background-color: rgba(0, 0, 0, 0.5);
             }}
-        """)
+        """
+        )
 
         # Layout
         layout = QVBoxLayout(self)
@@ -270,13 +294,15 @@ class FXLoadingOverlay(QWidget):
         # Message label
         if message:
             self._message_label = QLabel(message)
-            self._message_label.setStyleSheet(f"""
+            self._message_label.setStyleSheet(
+                f"""
                 QLabel {{
                     color: {theme_colors['text']};
                     font-size: 14px;
                     margin-top: 12px;
                 }}
-            """)
+            """
+            )
             layout.addWidget(self._message_label, 0, Qt.AlignCenter)
 
         self.hide()
@@ -308,7 +334,6 @@ class FXLoadingOverlay(QWidget):
 
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
     import sys
     from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QGroupBox
     from fxgui.fxwidgets import FXApplication, FXMainWindow
@@ -344,6 +369,6 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     pulse_layout.addWidget(pulse)
     layout.addWidget(pulse_group)
 
-    window.resize(400, 200)
+    window.adjustSize()
     window.show()
     sys.exit(app.exec())

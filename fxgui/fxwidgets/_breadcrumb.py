@@ -1,18 +1,24 @@
 """FXBreadcrumb - Navigation breadcrumb widget."""
 
+# Built-in
+import os
 from typing import List, Optional
 
-from qtpy.QtCore import Qt, Signal
+# Third-party
+from qtpy.QtCore import QEvent, Qt, Signal
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPushButton,
     QScrollArea,
     QSizePolicy,
+    QStackedWidget,
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 
 
@@ -20,89 +26,220 @@ class FXBreadcrumb(QWidget):
     """A clickable breadcrumb trail for hierarchical navigation.
 
     This widget provides a navigation breadcrumb with clickable path
-    segments, separator icons, and overflow handling.
+    segments, separator icons, and optional back/forward navigation.
+    Double-click the breadcrumb to switch to edit mode for typing paths.
 
     Args:
         parent: Parent widget.
-        separator: Separator string or icon name between segments.
+        separator: Icon name for separator between segments.
         home_icon: Icon name for the home/root segment.
-        max_visible: Maximum visible segments before truncation (0 = no limit).
+        show_navigation: Show back/forward navigation buttons.
+        path_separator: Character used to join path segments in edit mode.
+        home_path: Path segments to navigate to when home is clicked.
+            If None, navigates to the first segment only.
 
     Signals:
         segment_clicked: Emitted when a segment is clicked (index, path list).
         home_clicked: Emitted when the home segment is clicked.
+        path_edited: Emitted when user submits a typed path (raw string).
+        navigated_back: Emitted when navigating back in history.
+        navigated_forward: Emitted when navigating forward in history.
 
     Examples:
-        >>> breadcrumb = FXBreadcrumb()
+        >>> breadcrumb = FXBreadcrumb(show_navigation=True)
         >>> breadcrumb.set_path(["Home", "Projects", "MyProject", "Assets"])
         >>> breadcrumb.segment_clicked.connect(
         ...     lambda idx, path: print(f"Navigate to: {'/'.join(path[:idx+1])}")
         ... )
+        >>> breadcrumb.path_edited.connect(lambda text: print(f"User typed: {text}"))
     """
 
     segment_clicked = Signal(int, list)
     home_clicked = Signal()
+    path_edited = Signal(str)
+    navigated_back = Signal(list)
+    navigated_forward = Signal(list)
 
     def __init__(
         self,
         parent: Optional[QWidget] = None,
         separator: str = "chevron_right",
         home_icon: str = "home",
-        max_visible: int = 0,
+        show_navigation: bool = False,
+        path_separator: str = "/",
+        home_path: Optional[List[str]] = None,
     ):
         super().__init__(parent)
 
         self._path: List[str] = []
         self._separator = separator
         self._home_icon = home_icon
-        self._max_visible = max_visible
+        self._show_navigation = show_navigation
+        self._path_separator = path_separator
+        self._home_path = home_path
 
-        # Get theme colors
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
-        self._text_color = theme_colors["text"]
-        self._text_secondary = theme_colors["text_secondary"]
-        self._accent_color = accent_colors["primary"]
+        # History tracking
+        self._history: List[List[str]] = []
+        self._history_index: int = -1
 
         # Main layout
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        main_layout.setSpacing(4)
 
-        # Scroll area for overflow
+        # Navigation buttons (optional)
+        if self._show_navigation:
+            self._back_button = QPushButton()
+            self._back_button.setCursor(Qt.PointingHandCursor)
+            self._back_button.setFixedSize(28, 28)
+            self._back_button.setToolTip("Back")
+            fxicons.set_icon(self._back_button, "arrow_back")
+            self._back_button.clicked.connect(self.go_back)
+
+            self._forward_button = QPushButton()
+            self._forward_button.setCursor(Qt.PointingHandCursor)
+            self._forward_button.setFixedSize(28, 28)
+            self._forward_button.setToolTip("Forward")
+            fxicons.set_icon(self._forward_button, "arrow_forward")
+            self._forward_button.clicked.connect(self.go_forward)
+
+            main_layout.addWidget(self._back_button)
+            main_layout.addWidget(self._forward_button)
+
+        # Stacked widget to switch between breadcrumb and edit mode
+        self._stacked = QStackedWidget()
+        self._stacked.setFixedHeight(28)
+
+        # Scroll area for breadcrumb overflow
         self._scroll_area = QScrollArea()
         self._scroll_area.setWidgetResizable(True)
         self._scroll_area.setFrameShape(QFrame.NoFrame)
         self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._scroll_area.setFixedHeight(28)
+        self._scroll_area.mouseDoubleClickEvent = self._on_double_click
 
-        # Container widget
+        # Container widget for breadcrumb segments
         self._container = QWidget()
+        self._container.mouseDoubleClickEvent = self._on_double_click
         self._layout = QHBoxLayout(self._container)
-        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setContentsMargins(4, 0, 4, 0)
         self._layout.setSpacing(2)
         self._layout.addStretch()
 
         self._scroll_area.setWidget(self._container)
-        main_layout.addWidget(self._scroll_area)
+
+        # Line edit for manual path entry
+        self._line_edit = QLineEdit()
+        self._line_edit.setPlaceholderText("Enter path...")
+        self._line_edit.returnPressed.connect(self._on_path_submitted)
+        self._line_edit.installEventFilter(self)
+
+        self._stacked.addWidget(self._scroll_area)  # Index 0: Breadcrumb
+        self._stacked.addWidget(self._line_edit)  # Index 1: Edit mode
+        self._stacked.setCurrentIndex(0)
+
+        main_layout.addWidget(self._stacked)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setFixedHeight(32)
+
+        # Apply initial styling
+        self._apply_theme_styles()
+
+        if self._show_navigation:
+            self._update_nav_buttons()
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-aware styles to all widgets."""
+        # Re-apply icons with current theme color
+        if self._show_navigation:
+            fxicons.set_icon(self._back_button, "arrow_back")
+            fxicons.set_icon(self._forward_button, "arrow_forward")
+
+        # Rebuild breadcrumb to apply new segment styles
+        self._rebuild_breadcrumb()
+
+    def changeEvent(self, event) -> None:
+        """Handle theme/palette changes."""
+        if event.type() == QEvent.Type.PaletteChange:
+            self._apply_theme_styles()
+        super().changeEvent(event)
+
+    def eventFilter(self, obj, event):
+        """Handle escape key and focus loss to exit edit mode."""
+        if obj == self._line_edit:
+            if event.type() == QEvent.Type.KeyPress:
+                if event.key() == Qt.Key_Escape:
+                    self._exit_edit_mode()
+                    return True
+            elif event.type() == QEvent.Type.FocusOut:
+                # Exit edit mode when clicking outside
+                self._exit_edit_mode()
+        return super().eventFilter(obj, event)
+
+    def _on_double_click(self, event) -> None:
+        """Handle double-click to enter edit mode."""
+        self._enter_edit_mode()
+
+    def _enter_edit_mode(self) -> None:
+        """Switch to edit mode with the line edit visible."""
+        # Build path string, stripping trailing slashes from segments
+        # to handle Windows drive letters like 'C:\\'
+        if self._path:
+            parts = [p.rstrip("\\/") for p in self._path]
+            path_str = self._path_separator.join(parts)
+        else:
+            path_str = ""
+        self._line_edit.setText(path_str)
+        self._stacked.setCurrentIndex(1)
+        self._line_edit.setFocus()
+        self._line_edit.selectAll()
+
+    def _exit_edit_mode(self) -> None:
+        """Switch back to breadcrumb mode."""
+        self._stacked.setCurrentIndex(0)
+
+    def _on_path_submitted(self) -> None:
+        """Handle path submission from line edit."""
+        text = self._line_edit.text().strip()
+        if text:
+            self.path_edited.emit(text)
+        self._exit_edit_mode()
+
+    def _update_nav_buttons(self) -> None:
+        """Update the enabled state of navigation buttons."""
+        if not self._show_navigation:
+            return
+        self._back_button.setEnabled(self._history_index > 0)
+        self._forward_button.setEnabled(
+            self._history_index < len(self._history) - 1
+        )
 
     @property
     def path(self) -> List[str]:
         """Return the current path segments."""
         return self._path.copy()
 
-    def set_path(self, path: List[str]) -> None:
+    def set_path(self, path: List[str], record_history: bool = True) -> None:
         """Set the breadcrumb path.
 
         Args:
             path: List of path segment strings.
+            record_history: Whether to record this path in navigation history.
         """
         self._path = path.copy()
         self._rebuild_breadcrumb()
+
+        if record_history and path:
+            # Truncate forward history when navigating to new path
+            if self._history_index < len(self._history) - 1:
+                self._history = self._history[: self._history_index + 1]
+            # Avoid duplicates
+            if not self._history or self._history[-1] != path:
+                self._history.append(path.copy())
+                self._history_index = len(self._history) - 1
+            if self._show_navigation:
+                self._update_nav_buttons()
 
     def append_segment(self, segment: str) -> None:
         """Append a segment to the path.
@@ -111,7 +248,7 @@ class FXBreadcrumb(QWidget):
             segment: The segment string to append.
         """
         self._path.append(segment)
-        self._rebuild_breadcrumb()
+        self.set_path(self._path)
 
     def pop_segment(self) -> Optional[str]:
         """Remove and return the last segment.
@@ -121,7 +258,7 @@ class FXBreadcrumb(QWidget):
         """
         if self._path:
             segment = self._path.pop()
-            self._rebuild_breadcrumb()
+            self.set_path(self._path)
             return segment
         return None
 
@@ -132,7 +269,7 @@ class FXBreadcrumb(QWidget):
             index: The index to navigate to.
         """
         if 0 <= index < len(self._path):
-            self._path = self._path[:index + 1]
+            self._path = self._path[: index + 1]
             self._rebuild_breadcrumb()
             self.segment_clicked.emit(index, self._path)
 
@@ -140,6 +277,61 @@ class FXBreadcrumb(QWidget):
         """Clear the breadcrumb path."""
         self._path.clear()
         self._rebuild_breadcrumb()
+
+    def go_back(self) -> bool:
+        """Navigate to the previous path in history.
+
+        Returns:
+            True if navigation occurred, False if at beginning of history.
+        """
+        if self._history_index > 0:
+            self._history_index -= 1
+            self._path = self._history[self._history_index].copy()
+            self._rebuild_breadcrumb()
+            if self._show_navigation:
+                self._update_nav_buttons()
+            self.navigated_back.emit(self._path)
+            return True
+        return False
+
+    def go_forward(self) -> bool:
+        """Navigate to the next path in history.
+
+        Returns:
+            True if navigation occurred, False if at end of history.
+        """
+        if self._history_index < len(self._history) - 1:
+            self._history_index += 1
+            self._path = self._history[self._history_index].copy()
+            self._rebuild_breadcrumb()
+            if self._show_navigation:
+                self._update_nav_buttons()
+            self.navigated_forward.emit(self._path)
+            return True
+        return False
+
+    def can_go_back(self) -> bool:
+        """Check if back navigation is available."""
+        return self._history_index > 0
+
+    def can_go_forward(self) -> bool:
+        """Check if forward navigation is available."""
+        return self._history_index < len(self._history) - 1
+
+    def clear_history(self) -> None:
+        """Clear the navigation history."""
+        self._history.clear()
+        self._history_index = -1
+        if self._show_navigation:
+            self._update_nav_buttons()
+
+    def is_editing(self) -> bool:
+        """Check if currently in edit mode."""
+        return self._stacked.currentIndex() == 1
+
+    def enter_edit_mode(self) -> None:
+        """Programmatically enter edit mode."""
+        self._enter_edit_mode()
 
     def _rebuild_breadcrumb(self) -> None:
         """Rebuild the breadcrumb UI."""
@@ -152,123 +344,111 @@ class FXBreadcrumb(QWidget):
         if not self._path:
             return
 
-        # Determine which segments to show
-        segments_to_show = self._path
-        start_index = 0
-        show_ellipsis = False
-
-        if self._max_visible > 0 and len(self._path) > self._max_visible:
-            # Show home + ellipsis + last (max_visible - 2) segments
-            segments_to_show = [self._path[0], "...", *self._path[-(self._max_visible - 2):]]
-            start_index = len(self._path) - (self._max_visible - 2)
-            show_ellipsis = True
-
-        for i, segment in enumerate(segments_to_show):
-            # Calculate actual index in path
-            if show_ellipsis:
-                if i == 0:
-                    actual_index = 0
-                elif segment == "...":
-                    actual_index = -1  # Ellipsis, not clickable
-                else:
-                    actual_index = start_index + (i - 2)
-            else:
-                actual_index = i
-
+        for i, segment in enumerate(self._path):
             # Add separator before segment (except first)
             if i > 0:
                 self._add_separator()
 
-            # Add segment
-            if segment == "...":
-                self._add_ellipsis()
-            else:
-                is_last = (i == len(segments_to_show) - 1)
-                is_home = (actual_index == 0)
-                self._add_segment(segment, actual_index, is_home, is_last)
+            is_last = i == len(self._path) - 1
+            is_home = i == 0
+            self._add_segment(segment, i, is_home, is_last)
 
     def _add_segment(
         self, text: str, index: int, is_home: bool, is_last: bool
     ) -> None:
         """Add a segment button."""
         button = QPushButton()
-        button.setCursor(Qt.PointingHandCursor if not is_last else Qt.ArrowCursor)
+        button.setCursor(
+            Qt.PointingHandCursor if not is_last else Qt.ArrowCursor
+        )
         button.setFlat(True)
 
         if is_home and self._home_icon:
-            button.setIcon(fxicons.get_icon(self._home_icon))
+            fxicons.set_icon(button, self._home_icon)
             button.setToolTip(text)
         else:
             button.setText(text)
 
-        # Style based on position
-        if is_last:
-            color = self._text_color
-            hover_bg = "transparent"
-        else:
-            color = self._text_secondary
-            hover_bg = "rgba(128, 128, 128, 0.2)"
-
-        button.setStyleSheet(f"""
+        # Minimal styling for flat segment buttons
+        font_weight = "bold" if is_last else "normal"
+        button.setStyleSheet(
+            f"""
             QPushButton {{
-                color: {color};
                 background: transparent;
                 border: none;
                 padding: 4px 6px;
-                border-radius: 3px;
-                font-weight: {'bold' if is_last else 'normal'};
+                font-weight: {font_weight};
             }}
-            QPushButton:hover {{
-                background: {hover_bg};
-                color: {self._accent_color if not is_last else color};
-            }}
-        """)
+        """
+        )
 
         if not is_last:
-            button.clicked.connect(
-                lambda checked, idx=index: self._on_segment_clicked(idx)
-            )
             if is_home:
-                button.clicked.connect(lambda: self.home_clicked.emit())
+                # Home button only triggers home navigation, not segment click
+                button.clicked.connect(self._on_home_clicked)
+            else:
+                button.clicked.connect(
+                    lambda checked, idx=index: self._on_segment_clicked(idx)
+                )
+
+        # Enable double-click on button to enter edit mode
+        button.mouseDoubleClickEvent = self._on_double_click
 
         # Insert before stretch
         self._layout.insertWidget(self._layout.count() - 1, button)
 
     def _add_separator(self) -> None:
         """Add a separator icon."""
+        theme_colors = fxstyle.get_theme_colors()
+
         label = QLabel()
-        label.setPixmap(
-            fxicons.get_icon(
-                self._separator, color=self._text_secondary
-            ).pixmap(12, 12)
+        icon = fxicons.get_icon(
+            self._separator, color=theme_colors["text_secondary"]
         )
+        label.setPixmap(icon.pixmap(12, 12))
         label.setStyleSheet("background: transparent;")
         label.setFixedSize(16, 16)
         label.setAlignment(Qt.AlignCenter)
+        label.mouseDoubleClickEvent = self._on_double_click
 
-        self._layout.insertWidget(self._layout.count() - 1, label)
-
-    def _add_ellipsis(self) -> None:
-        """Add an ellipsis indicator."""
-        label = QLabel("...")
-        label.setStyleSheet(f"""
-            QLabel {{
-                color: {self._text_secondary};
-                background: transparent;
-                padding: 4px 2px;
-            }}
-        """)
         self._layout.insertWidget(self._layout.count() - 1, label)
 
     def _on_segment_clicked(self, index: int) -> None:
         """Handle segment click."""
         self.navigate_to(index)
 
+    def _on_home_clicked(self) -> None:
+        """Handle home segment click."""
+        self.home_clicked.emit()
+        if self._home_path is not None:
+            self.set_path(self._home_path)
+            # Emit segment_clicked so external code can handle navigation
+            self.segment_clicked.emit(len(self._home_path) - 1, self._path)
+        else:
+            # Navigate to first segment if no home_path set
+            self.navigate_to(0)
+
+    @property
+    def home_path(self) -> Optional[List[str]]:
+        """Get the home path."""
+        return self._home_path.copy() if self._home_path else None
+
+    @home_path.setter
+    def home_path(self, path: Optional[List[str]]) -> None:
+        """Set the home path."""
+        self._home_path = path.copy() if path else None
+
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
     import sys
-    from qtpy.QtWidgets import QVBoxLayout, QWidget, QLabel
+    from pathlib import Path
+    from qtpy.QtWidgets import (
+        QVBoxLayout,
+        QWidget,
+        QLabel,
+        QTreeView,
+    )
+    from qtpy.QtWidgets import QFileSystemModel
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 
     app = FXApplication(sys.argv)
@@ -278,20 +458,86 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.setCentralWidget(widget)
     layout = QVBoxLayout(widget)
 
-    breadcrumb = FXBreadcrumb()
-    breadcrumb.set_segments(["Home", "Projects", "My Project", "Assets", "Textures"])
+    # Start from home directory
+    home_path = Path.home()
+    print(home_path)
 
-    info_label = QLabel("Click on a segment to navigate")
+    breadcrumb = FXBreadcrumb(
+        show_navigation=True,
+        home_path=list(home_path.parts),
+    )
+    info_label = QLabel()
 
-    def on_navigate(index, segment):
-        info_label.setText(f"Navigated to: {segment} (index {index})")
+    # File system model and tree view
+    model = QFileSystemModel()
+    model.setRootPath(str(home_path))
 
-    breadcrumb.navigated.connect(on_navigate)
+    tree_view = QTreeView()
+    tree_view.setModel(model)
+    tree_view.setRootIndex(model.index(str(home_path)))
+    tree_view.setColumnWidth(0, 250)
+    # Hide Size, Type, Date Modified columns for cleaner view
+    tree_view.setHeaderHidden(False)
+    for col in range(1, model.columnCount()):
+        tree_view.hideColumn(col)
+
+    def navigate_to_path(path: Path):
+        """Navigate to a filesystem path."""
+        if path.exists() and path.is_dir():
+            tree_view.setRootIndex(model.index(str(path)))
+            breadcrumb.set_path(list(path.parts))
+            info_label.setText(f"Current: {path}")
+        else:
+            info_label.setText(f"Invalid path: {path}")
+
+    def on_tree_double_clicked(index):
+        """Handle double-click on a directory in tree view."""
+        path = Path(model.filePath(index))
+        if path.is_dir():
+            tree_view.setRootIndex(index)
+            breadcrumb.set_path(list(path.parts))
+            info_label.setText(f"Current: {path}")
+
+    def on_segment_clicked(index: int, segments: List[str]):
+        """Handle segment click navigation."""
+        if segments:
+            path = Path(*segments)
+            tree_view.setRootIndex(model.index(str(path)))
+            info_label.setText(f"Current: {path}")
+
+    def on_navigated_back(segments: List[str]):
+        """Handle back navigation."""
+        if segments:
+            path = Path(*segments)
+            tree_view.setRootIndex(model.index(str(path)))
+            info_label.setText(f"Current: {path}")
+
+    def on_navigated_forward(segments: List[str]):
+        """Handle forward navigation."""
+        if segments:
+            path = Path(*segments)
+            tree_view.setRootIndex(model.index(str(path)))
+            info_label.setText(f"Current: {path}")
+
+    def on_path_edited(text: str):
+        """Handle manually typed path."""
+        path = Path(text)
+        navigate_to_path(path)
+
+    breadcrumb.segment_clicked.connect(on_segment_clicked)
+    breadcrumb.navigated_back.connect(on_navigated_back)
+    breadcrumb.navigated_forward.connect(on_navigated_forward)
+    breadcrumb.path_edited.connect(on_path_edited)
+    tree_view.doubleClicked.connect(on_tree_double_clicked)
+
+    # Initialize
+    breadcrumb.set_path(list(home_path.parts))
+    info_label.setText(f"Current: {home_path}")
 
     layout.addWidget(breadcrumb)
+    layout.addWidget(tree_view)
     layout.addWidget(info_label)
-    layout.addStretch()
 
-    window.resize(500, 150)
+    window.resize(600, 500)
     window.show()
     sys.exit(app.exec())

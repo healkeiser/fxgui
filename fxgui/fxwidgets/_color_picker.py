@@ -1,9 +1,12 @@
 """FXColorPicker - Styled color selector widget."""
 
+# Built-in
+import os
 from typing import List, Optional
 
+# Third-party
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtGui import QColor, QPainter
+from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QColorDialog,
     QFrame,
@@ -17,6 +20,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 
 
@@ -54,7 +58,8 @@ class FXColorSwatch(QPushButton):
 
     def _update_style(self) -> None:
         """Update the button style."""
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             QPushButton {{
                 background-color: {self._color.name()};
                 border: 1px solid rgba(0, 0, 0, 0.3);
@@ -63,7 +68,8 @@ class FXColorSwatch(QPushButton):
             QPushButton:hover {{
                 border: 2px solid {fxstyle.get_accent_colors()['primary']};
             }}
-        """)
+        """
+        )
 
     def set_color(self, color: str) -> None:
         """Set the swatch color.
@@ -105,12 +111,30 @@ class FXColorPicker(QWidget):
 
     # Default preset colors (Material Design palette)
     DEFAULT_PRESETS = [
-        "#f44336", "#e91e63", "#9c27b0", "#673ab7",
-        "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4",
-        "#009688", "#4caf50", "#8bc34a", "#cddc39",
-        "#ffeb3b", "#ffc107", "#ff9800", "#ff5722",
-        "#795548", "#9e9e9e", "#607d8b", "#000000",
-        "#ffffff", "#b71c1c", "#1a237e", "#004d40",
+        "#f44336",
+        "#e91e63",
+        "#9c27b0",
+        "#673ab7",
+        "#3f51b5",
+        "#2196f3",
+        "#03a9f4",
+        "#00bcd4",
+        "#009688",
+        "#4caf50",
+        "#8bc34a",
+        "#cddc39",
+        "#ffeb3b",
+        "#ffc107",
+        "#ff9800",
+        "#ff5722",
+        "#795548",
+        "#9e9e9e",
+        "#607d8b",
+        "#000000",
+        "#ffffff",
+        "#b71c1c",
+        "#1a237e",
+        "#004d40",
     ]
 
     def __init__(
@@ -156,7 +180,8 @@ class FXColorPicker(QWidget):
             self._input.setPlaceholderText("#RRGGBB")
             self._input.setMaxLength(7)
             self._input.setText(self._color.name())
-            self._input.setStyleSheet(f"""
+            self._input.setStyleSheet(
+                f"""
                 QLineEdit {{
                     background-color: {theme_colors['input']};
                     border: 1px solid {theme_colors['border']};
@@ -164,7 +189,8 @@ class FXColorPicker(QWidget):
                     padding: 8px;
                     font-family: monospace;
                 }}
-            """)
+            """
+            )
             self._input.returnPressed.connect(self._on_input_changed)
             self._input.editingFinished.connect(self._on_input_changed)
             preview_layout.addWidget(self._input, 1)
@@ -172,7 +198,7 @@ class FXColorPicker(QWidget):
         # Dialog button
         if show_dialog_button:
             self._dialog_button = QPushButton()
-            self._dialog_button.setIcon(fxicons.get_icon("colorize"))
+            fxicons.set_icon(self._dialog_button, "colorize")
             self._dialog_button.setFixedSize(40, 40)
             self._dialog_button.setToolTip("Open full color dialog")
             self._dialog_button.setCursor(Qt.PointingHandCursor)
@@ -183,7 +209,9 @@ class FXColorPicker(QWidget):
 
         # Preset swatches grid
         self._presets_label = QLabel("Presets")
-        self._presets_label.setStyleSheet(f"color: {theme_colors['text_secondary']};")
+        self._presets_label.setStyleSheet(
+            f"color: {theme_colors['text_secondary']};"
+        )
         main_layout.addWidget(self._presets_label)
 
         presets_frame = QFrame()
@@ -202,7 +230,9 @@ class FXColorPicker(QWidget):
 
         # Recent colors
         self._recent_label = QLabel("Recent")
-        self._recent_label.setStyleSheet(f"color: {theme_colors['text_secondary']};")
+        self._recent_label.setStyleSheet(
+            f"color: {theme_colors['text_secondary']};"
+        )
         self._recent_label.setVisible(False)
         main_layout.addWidget(self._recent_label)
 
@@ -245,7 +275,8 @@ class FXColorPicker(QWidget):
         luminance = fxstyle.get_luminance(self._color)
         text_color = "#000000" if luminance > 0.5 else "#ffffff"
 
-        self._preview.setStyleSheet(f"""
+        self._preview.setStyleSheet(
+            f"""
             QPushButton {{
                 background-color: {self._color.name()};
                 border: 1px solid rgba(0, 0, 0, 0.3);
@@ -255,7 +286,8 @@ class FXColorPicker(QWidget):
             QPushButton:hover {{
                 border: 2px solid {fxstyle.get_accent_colors()['primary']};
             }}
-        """)
+        """
+        )
 
     def _on_color_selected(self, color: str) -> None:
         """Handle color selection."""
@@ -264,7 +296,7 @@ class FXColorPicker(QWidget):
 
         # Update UI
         self._update_preview()
-        if hasattr(self, '_input'):
+        if hasattr(self, "_input"):
             self._input.setText(self._color.name())
 
         # Add to recent colors
@@ -289,10 +321,7 @@ class FXColorPicker(QWidget):
     def _open_color_dialog(self) -> None:
         """Open the full color dialog."""
         color = QColorDialog.getColor(
-            self._color,
-            self,
-            "Select Color",
-            QColorDialog.ShowAlphaChannel
+            self._color, self, "Select Color", QColorDialog.ShowAlphaChannel
         )
         if color.isValid():
             self._on_color_selected(color.name())
@@ -307,7 +336,7 @@ class FXColorPicker(QWidget):
         self._recent_colors.insert(0, color)
 
         # Trim to max
-        self._recent_colors = self._recent_colors[:self._max_recent]
+        self._recent_colors = self._recent_colors[: self._max_recent]
 
         # Rebuild recent swatches
         self._rebuild_recent()
@@ -333,7 +362,6 @@ class FXColorPicker(QWidget):
 
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
     import sys
     from qtpy.QtWidgets import QVBoxLayout, QWidget, QLabel
     from fxgui.fxwidgets import FXApplication, FXMainWindow
@@ -350,7 +378,9 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
 
     def on_color_selected(color):
         selected_label.setText(f"Selected: {color}")
-        selected_label.setStyleSheet(f"background-color: {color}; padding: 8px;")
+        selected_label.setStyleSheet(
+            f"background-color: {color}; padding: 8px;"
+        )
 
     picker.color_selected.connect(on_color_selected)
 

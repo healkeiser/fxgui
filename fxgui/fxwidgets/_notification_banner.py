@@ -1,9 +1,17 @@
 """FXNotificationBanner - Toast/banner notification widget."""
 
+# Built-in
+import os
 from typing import Optional
 
-from qtpy.QtCore import Property, QEasingCurve, QPropertyAnimation, Qt, QTimer, Signal
-from qtpy.QtGui import QColor
+# Third-party
+from qtpy.QtCore import (
+    QEasingCurve,
+    QPropertyAnimation,
+    Qt,
+    QTimer,
+    Signal,
+)
 from qtpy.QtWidgets import (
     QFrame,
     QGraphicsOpacityEffect,
@@ -15,6 +23,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 from fxgui.fxwidgets._constants import (
     CRITICAL,
@@ -108,19 +117,22 @@ class FXNotificationBanner(QFrame):
         # Message
         self._message_label = QLabel(message)
         self._message_label.setWordWrap(True)
-        self._message_label.setStyleSheet(f"""
+        self._message_label.setStyleSheet(
+            f"""
             QLabel {{
                 color: {self._colors['text']};
                 background: transparent;
             }}
-        """)
+        """
+        )
         layout.addWidget(self._message_label, 1)
 
         # Action button (optional)
         if action_text:
             self._action_button = QPushButton(action_text)
             self._action_button.setCursor(Qt.PointingHandCursor)
-            self._action_button.setStyleSheet(f"""
+            self._action_button.setStyleSheet(
+                f"""
                 QPushButton {{
                     background: transparent;
                     color: {self._colors['action']};
@@ -132,20 +144,22 @@ class FXNotificationBanner(QFrame):
                 QPushButton:hover {{
                     background: rgba(255, 255, 255, 0.1);
                 }}
-            """)
+            """
+            )
             self._action_button.clicked.connect(self.action_clicked.emit)
             layout.addWidget(self._action_button)
 
         # Close button
         if closable:
             self._close_button = QPushButton()
-            self._close_button.setIcon(
-                fxicons.get_icon("close", color=self._colors["icon"])
+            fxicons.set_icon(
+                self._close_button, "close", color=self._colors["icon"]
             )
             self._close_button.setFixedSize(24, 24)
             self._close_button.setFlat(True)
             self._close_button.setCursor(Qt.PointingHandCursor)
-            self._close_button.setStyleSheet("""
+            self._close_button.setStyleSheet(
+                """
                 QPushButton {
                     background: transparent;
                     border: none;
@@ -154,7 +168,8 @@ class FXNotificationBanner(QFrame):
                 QPushButton:hover {
                     background: rgba(255, 255, 255, 0.2);
                 }
-            """)
+            """
+            )
             self._close_button.clicked.connect(self.dismiss)
             layout.addWidget(self._close_button)
 
@@ -179,61 +194,44 @@ class FXNotificationBanner(QFrame):
 
     def _get_severity_colors(self, severity: int, theme_colors: dict) -> dict:
         """Get colors based on severity level."""
-        severity_map = {
-            CRITICAL: {
-                "background": "#b71c1c",
-                "border": "#d32f2f",
-                "text": "#ffffff",
-                "icon": "#ffffff",
-                "action": "#ffffff",
-            },
-            ERROR: {
-                "background": "#c62828",
-                "border": "#e53935",
-                "text": "#ffffff",
-                "icon": "#ffffff",
-                "action": "#ffffff",
-            },
-            WARNING: {
-                "background": "#f57c00",
-                "border": "#ff9800",
-                "text": "#ffffff",
-                "icon": "#ffffff",
-                "action": "#ffffff",
-            },
-            SUCCESS: {
-                "background": "#2e7d32",
-                "border": "#43a047",
-                "text": "#ffffff",
-                "icon": "#ffffff",
-                "action": "#ffffff",
-            },
-            INFO: {
-                "background": "#1565c0",
-                "border": "#1976d2",
-                "text": "#ffffff",
-                "icon": "#ffffff",
-                "action": "#ffffff",
-            },
-            DEBUG: {
-                "background": theme_colors["surface_alt"],
-                "border": theme_colors["border"],
-                "text": theme_colors["text"],
-                "icon": theme_colors["text_secondary"],
-                "action": fxstyle.get_accent_colors()["primary"],
-            },
+        # Get feedback colors from theme JSONC
+        colors = fxstyle.get_colors()
+        feedback = colors.get("feedback", {})
+
+        # Map severity to feedback key
+        severity_to_key = {
+            CRITICAL: "error",
+            ERROR: "error",
+            WARNING: "warning",
+            SUCCESS: "success",
+            INFO: "info",
+            DEBUG: "debug",
         }
-        return severity_map.get(severity, severity_map[INFO])
+
+        key = severity_to_key.get(severity, "info")
+        fb = feedback.get(key, {})
+        foreground = fb.get("foreground", "#ffffff")
+        background = fb.get("background", "#372d75")
+
+        return {
+            "background": background,
+            "border": foreground,
+            "text": "#ffffff",
+            "icon": foreground,
+            "action": "#ffffff",
+        }
 
     def _apply_styling(self) -> None:
         """Apply styling based on severity."""
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             FXNotificationBanner {{
                 background-color: {self._colors['background']};
                 border: 1px solid {self._colors['border']};
                 border-radius: 6px;
             }}
-        """)
+        """
+        )
 
     def show(self) -> None:
         """Show the notification with fade-in animation."""
@@ -285,52 +283,155 @@ class FXNotificationBanner(QFrame):
 
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
     import sys
-    from qtpy.QtWidgets import QVBoxLayout, QWidget
+    from qtpy.QtWidgets import (
+        QVBoxLayout,
+        QHBoxLayout,
+        QWidget,
+        QPushButton,
+        QLineEdit,
+        QTextEdit,
+        QComboBox,
+        QCheckBox,
+        QSlider,
+        QGroupBox,
+        QFormLayout,
+    )
+    from qtpy.QtCore import Qt
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 
     app = FXApplication(sys.argv)
     window = FXMainWindow()
     window.setWindowTitle("FXNotificationBanner Demo")
-    widget = QWidget()
-    window.setCentralWidget(widget)
-    layout = QVBoxLayout(widget)
 
-    success_banner = FXNotificationBanner(
-        message="Operation completed successfully!",
-        severity=SUCCESS,
-        timeout=0,
-        action_text="Undo"
+    # Main content widget
+    content_widget = QWidget()
+    content_layout = QVBoxLayout(content_widget)
+
+    # Sample form content
+    form_group = QGroupBox("Sample Form")
+    form_layout = QFormLayout(form_group)
+
+    name_input = QLineEdit()
+    name_input.setPlaceholderText("Enter your name...")
+    form_layout.addRow("Name:", name_input)
+
+    email_input = QLineEdit()
+    email_input.setPlaceholderText("Enter your email...")
+    form_layout.addRow("Email:", email_input)
+
+    category_combo = QComboBox()
+    category_combo.addItems(
+        ["General", "Bug Report", "Feature Request", "Support"]
     )
-    success_banner.show()
-    layout.addWidget(success_banner)
+    form_layout.addRow("Category:", category_combo)
 
-    warning_banner = FXNotificationBanner(
-        message="This is a warning message.",
-        severity=WARNING,
-        timeout=0
+    priority_slider = QSlider(Qt.Horizontal)
+    priority_slider.setRange(1, 5)
+    priority_slider.setValue(3)
+    form_layout.addRow("Priority:", priority_slider)
+
+    subscribe_check = QCheckBox("Subscribe to newsletter")
+    form_layout.addRow("", subscribe_check)
+
+    content_layout.addWidget(form_group)
+
+    # Text area
+    notes_group = QGroupBox("Notes")
+    notes_layout = QVBoxLayout(notes_group)
+    notes_edit = QTextEdit()
+    notes_edit.setPlaceholderText("Enter additional notes here...")
+    notes_edit.setMaximumHeight(100)
+    notes_layout.addWidget(notes_edit)
+    content_layout.addWidget(notes_group)
+
+    # Track active banners for stacking
+    active_banners = []
+
+    def reposition_banners():
+        """Reposition all active banners at the top of the window."""
+        y_offset = 10
+        for banner in active_banners:
+            banner.setGeometry(
+                10,
+                y_offset,
+                content_widget.width() - 20,
+                banner.sizeHint().height(),
+            )
+            banner.raise_()
+            y_offset += banner.sizeHint().height() + 8
+
+    def show_notification(severity, message, timeout=3000):
+        banner = FXNotificationBanner(
+            parent=content_widget,
+            message=message,
+            severity=severity,
+            timeout=timeout,
+            action_text="Undo" if severity == SUCCESS else None,
+        )
+        active_banners.insert(0, banner)
+
+        def on_closed():
+            if banner in active_banners:
+                active_banners.remove(banner)
+            banner.deleteLater()
+            reposition_banners()
+
+        banner.closed.connect(on_closed)
+        banner.show()
+        reposition_banners()
+
+    # Buttons to trigger notifications
+    buttons_group = QGroupBox("Trigger Notifications")
+    buttons_layout = QHBoxLayout(buttons_group)
+
+    success_btn = QPushButton("Success")
+    success_btn.clicked.connect(
+        lambda: show_notification(SUCCESS, "Operation completed successfully!")
     )
-    warning_banner.show()
-    layout.addWidget(warning_banner)
+    buttons_layout.addWidget(success_btn)
 
-    error_banner = FXNotificationBanner(
-        message="An error occurred during the operation.",
-        severity=ERROR,
-        timeout=0
+    warning_btn = QPushButton("Warning")
+    warning_btn.clicked.connect(
+        lambda: show_notification(WARNING, "This action may have side effects.")
     )
-    error_banner.show()
-    layout.addWidget(error_banner)
+    buttons_layout.addWidget(warning_btn)
 
-    info_banner = FXNotificationBanner(
-        message="Informational message.",
-        severity=INFO,
-        timeout=0
+    error_btn = QPushButton("Error")
+    error_btn.clicked.connect(
+        lambda: show_notification(
+            ERROR, "An error occurred during the operation."
+        )
     )
-    info_banner.show()
-    layout.addWidget(info_banner)
+    buttons_layout.addWidget(error_btn)
 
-    layout.addStretch()
-    window.resize(500, 300)
+    info_btn = QPushButton("Info")
+    info_btn.clicked.connect(
+        lambda: show_notification(INFO, "Informational message for the user.")
+    )
+    buttons_layout.addWidget(info_btn)
+
+    debug_btn = QPushButton("Debug")
+    debug_btn.clicked.connect(
+        lambda: show_notification(DEBUG, "Debug: variable_x = 42")
+    )
+    buttons_layout.addWidget(debug_btn)
+
+    content_layout.addWidget(buttons_group)
+    content_layout.addStretch()
+
+    window.setCentralWidget(content_widget)
+
+    # Handle resize to reposition banners
+    original_resize = content_widget.resizeEvent
+
+    def on_resize(event):
+        reposition_banners()
+        if original_resize:
+            original_resize(event)
+
+    content_widget.resizeEvent = on_resize
+
+    window.resize(550, 500)
     window.show()
     sys.exit(app.exec())

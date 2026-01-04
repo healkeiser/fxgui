@@ -71,7 +71,7 @@ class FXAccordionSection(QWidget):
         self._toggle_btn.setStyleSheet(
             "QToolButton { border: none; background: transparent; }"
         )
-        self._toggle_btn.setIcon(fxicons.get_icon("chevron_right"))
+        fxicons.set_icon(self._toggle_btn, "chevron_right")
         self._toggle_btn.setCheckable(True)
         header_layout.addWidget(self._toggle_btn)
 
@@ -160,7 +160,7 @@ class FXAccordionSection(QWidget):
 
         self._is_expanded = True
         self._toggle_btn.setChecked(True)
-        self._toggle_btn.setIcon(fxicons.get_icon("expand_more"))
+        fxicons.set_icon(self._toggle_btn, "expand_more")
 
         if animate:
             self._animation.stop()
@@ -183,7 +183,7 @@ class FXAccordionSection(QWidget):
 
         self._is_expanded = False
         self._toggle_btn.setChecked(False)
-        self._toggle_btn.setIcon(fxicons.get_icon("chevron_right"))
+        fxicons.set_icon(self._toggle_btn, "chevron_right")
 
         if animate:
             self._animation.stop()

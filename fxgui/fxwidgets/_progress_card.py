@@ -1,7 +1,10 @@
 """FXProgressCard - Task progress card widget."""
 
+# Built-in
+import os
 from typing import Optional
 
+# Third-party
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QFrame,
@@ -13,6 +16,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 from fxgui.fxwidgets._constants import (
     CRITICAL,
@@ -40,6 +44,7 @@ class FXProgressCard(QFrame):
         progress: Initial progress value (0-100).
         status: Status icon type (SUCCESS, ERROR, WARNING, INFO, etc.).
         show_percentage: Whether to show percentage text.
+        icon: Optional icon name to display next to the title.
 
     Signals:
         progress_changed: Emitted when progress changes.
@@ -57,15 +62,15 @@ class FXProgressCard(QFrame):
     progress_changed = Signal(int)
     completed = Signal()
 
-    # Status icons
+    # Status icon names mapped to feedback color keys
     STATUS_ICONS = {
         None: None,
-        CRITICAL: ("cancel", "#b71c1c"),
-        ERROR: ("error", "#c62828"),
-        WARNING: ("warning", "#f57c00"),
-        SUCCESS: ("check_circle", "#2e7d32"),
-        INFO: ("info", "#1565c0"),
-        DEBUG: ("bug_report", "#607d8b"),
+        CRITICAL: ("cancel", "error"),
+        ERROR: ("error", "error"),
+        WARNING: ("warning", "warning"),
+        SUCCESS: ("check_circle", "success"),
+        INFO: ("info", "info"),
+        DEBUG: ("bug_report", "debug"),
     }
 
     def __init__(
@@ -76,6 +81,7 @@ class FXProgressCard(QFrame):
         progress: int = 0,
         status: Optional[int] = None,
         show_percentage: bool = True,
+        icon: Optional[str] = None,
     ):
         super().__init__(parent)
 
@@ -84,6 +90,7 @@ class FXProgressCard(QFrame):
         self._progress = progress
         self._status = status
         self._show_percentage = show_percentage
+        self._icon = icon
 
         # Get theme colors
         theme_colors = fxstyle.get_theme_colors()
@@ -91,33 +98,48 @@ class FXProgressCard(QFrame):
 
         # Frame styling
         self.setFrameShape(QFrame.StyledPanel)
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             FXProgressCard {{
                 background-color: {theme_colors['surface']};
                 border: 1px solid {theme_colors['border']};
                 border-radius: 8px;
             }}
-        """)
+        """
+        )
 
         # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(16, 12, 16, 12)
         main_layout.setSpacing(8)
 
-        # Header row (title + status icon)
+        # Header row (icon + title + status icon)
         header_layout = QHBoxLayout()
         header_layout.setSpacing(8)
 
+        # Task icon
+        self._icon_label = QLabel()
+        self._icon_label.setFixedSize(20, 20)
+        self._icon_label.setStyleSheet("background: transparent;")
+        if icon:
+            task_icon = fxicons.get_icon(
+                icon, color=theme_colors["text_secondary"]
+            )
+            self._icon_label.setPixmap(task_icon.pixmap(18, 18))
+            header_layout.addWidget(self._icon_label)
+
         # Title
         self._title_label = QLabel(title)
-        self._title_label.setStyleSheet(f"""
+        self._title_label.setStyleSheet(
+            f"""
             QLabel {{
                 color: {theme_colors['text']};
                 font-weight: bold;
                 font-size: 14px;
                 background: transparent;
             }}
-        """)
+        """
+        )
         header_layout.addWidget(self._title_label)
 
         header_layout.addStretch()
@@ -135,13 +157,15 @@ class FXProgressCard(QFrame):
         if description:
             self._description_label = QLabel(description)
             self._description_label.setWordWrap(True)
-            self._description_label.setStyleSheet(f"""
+            self._description_label.setStyleSheet(
+                f"""
                 QLabel {{
                     color: {theme_colors['text_secondary']};
                     font-size: 12px;
                     background: transparent;
                 }}
-            """)
+            """
+            )
             main_layout.addWidget(self._description_label)
 
         # Progress row
@@ -154,7 +178,8 @@ class FXProgressCard(QFrame):
         self._progress_bar.setValue(progress)
         self._progress_bar.setTextVisible(False)
         self._progress_bar.setFixedHeight(6)
-        self._progress_bar.setStyleSheet(f"""
+        self._progress_bar.setStyleSheet(
+            f"""
             QProgressBar {{
                 background-color: {theme_colors['surface_alt']};
                 border: none;
@@ -164,7 +189,8 @@ class FXProgressCard(QFrame):
                 background-color: {accent_colors['primary']};
                 border-radius: 3px;
             }}
-        """)
+        """
+        )
         progress_layout.addWidget(self._progress_bar, 1)
 
         # Percentage label
@@ -172,13 +198,15 @@ class FXProgressCard(QFrame):
             self._percentage_label = QLabel(f"{progress}%")
             self._percentage_label.setFixedWidth(40)
             self._percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            self._percentage_label.setStyleSheet(f"""
+            self._percentage_label.setStyleSheet(
+                f"""
                 QLabel {{
                     color: {theme_colors['text_secondary']};
                     font-size: 12px;
                     background: transparent;
                 }}
-            """)
+            """
+            )
             progress_layout.addWidget(self._percentage_label)
 
         main_layout.addLayout(progress_layout)
@@ -228,7 +256,7 @@ class FXProgressCard(QFrame):
             description: The new description.
         """
         self._description = description
-        if hasattr(self, '_description_label'):
+        if hasattr(self, "_description_label"):
             self._description_label.setText(description)
 
     def set_status(self, status: Optional[int]) -> None:
@@ -246,7 +274,9 @@ class FXProgressCard(QFrame):
             self._status_icon.clear()
             self._status_icon.setVisible(False)
         else:
-            icon_name, color = self.STATUS_ICONS[self._status]
+            icon_name, feedback_key = self.STATUS_ICONS[self._status]
+            colors = fxstyle.get_colors()
+            color = colors["feedback"][feedback_key]["foreground"]
             icon = fxicons.get_icon(icon_name, color=color)
             self._status_icon.setPixmap(icon.pixmap(18, 18))
             self._status_icon.setVisible(True)
@@ -266,10 +296,8 @@ class FXProgressCard(QFrame):
 
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
     import sys
     from qtpy.QtWidgets import QVBoxLayout, QWidget, QPushButton, QHBoxLayout
-    from qtpy.QtCore import QTimer
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 
     app = FXApplication(sys.argv)
@@ -282,14 +310,14 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     card1 = FXProgressCard(
         title="Rendering Scene",
         description="Processing frames 1-100...",
-        icon="movie"
+        icon="movie",
     )
     card1.set_progress(35)
 
     card2 = FXProgressCard(
         title="Export Complete",
         description="All assets exported successfully.",
-        icon="upload"
+        icon="upload",
     )
     card2.set_progress(100)
     card2.set_status(SUCCESS)
@@ -297,7 +325,7 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     card3 = FXProgressCard(
         title="Texture Baking",
         description="Error: Out of memory",
-        icon="texture"
+        icon="texture",
     )
     card3.set_progress(67)
     card3.set_status(ERROR)

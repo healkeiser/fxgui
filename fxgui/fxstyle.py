@@ -692,6 +692,9 @@ def load_stylesheet(
     # Update the global theme state to keep it in sync
     _theme = theme
 
+    # Sync icon colors with the theme (important for startup with saved theme)
+    fxicons.sync_colors_with_theme()
+
     # Load colors from JSON
     colors_dict = get_colors()
 

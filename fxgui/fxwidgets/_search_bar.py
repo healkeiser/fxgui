@@ -1,7 +1,10 @@
 """FXSearchBar - Enhanced search input widget."""
 
+# Built-in
+import os
 from typing import Optional
 
+# Third-party
 from qtpy.QtCore import Qt, Signal, QTimer
 from qtpy.QtWidgets import (
     QComboBox,
@@ -12,6 +15,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 
 
@@ -82,7 +86,8 @@ class FXSearchBar(QWidget):
         search_layout.setContentsMargins(8, 0, 4, 0)
         search_layout.setSpacing(4)
 
-        search_container.setStyleSheet(f"""
+        search_container.setStyleSheet(
+            f"""
             QWidget {{
                 background-color: {theme_colors['input']};
                 border: 1px solid {theme_colors['border']};
@@ -91,37 +96,43 @@ class FXSearchBar(QWidget):
             QWidget:focus-within {{
                 border-color: {accent_colors['primary']};
             }}
-        """)
+        """
+        )
 
         # Search icon
         self._search_icon = QPushButton()
-        self._search_icon.setIcon(fxicons.get_icon("search"))
+        fxicons.set_icon(self._search_icon, "search")
         self._search_icon.setFixedSize(20, 20)
         self._search_icon.setFlat(True)
-        self._search_icon.setStyleSheet("background: transparent; border: none;")
+        self._search_icon.setStyleSheet(
+            "background: transparent; border: none;"
+        )
         search_layout.addWidget(self._search_icon)
 
         # Search input
         self._input = QLineEdit()
         self._input.setPlaceholderText(placeholder)
-        self._input.setStyleSheet("""
+        self._input.setStyleSheet(
+            """
             QLineEdit {
                 background: transparent;
                 border: none;
                 padding: 6px 0;
             }
-        """)
+        """
+        )
         self._input.textChanged.connect(self._on_text_changed)
         self._input.returnPressed.connect(self._on_return_pressed)
         search_layout.addWidget(self._input, 1)
 
         # Clear button
         self._clear_button = QPushButton()
-        self._clear_button.setIcon(fxicons.get_icon("close"))
+        fxicons.set_icon(self._clear_button, "close")
         self._clear_button.setFixedSize(20, 20)
         self._clear_button.setFlat(True)
         self._clear_button.setCursor(Qt.PointingHandCursor)
-        self._clear_button.setStyleSheet("""
+        self._clear_button.setStyleSheet(
+            """
             QPushButton {
                 background: transparent;
                 border: none;
@@ -130,7 +141,8 @@ class FXSearchBar(QWidget):
             QPushButton:hover {
                 background: rgba(128, 128, 128, 0.2);
             }
-        """)
+        """
+        )
         self._clear_button.clicked.connect(self.clear)
         self._clear_button.setVisible(False)
         search_layout.addWidget(self._clear_button)
@@ -214,9 +226,8 @@ class FXSearchBar(QWidget):
 
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
     import sys
-    from qtpy.QtWidgets import QLabel, QVBoxLayout, QWidget
+    from qtpy.QtWidgets import QLabel, QListWidget, QVBoxLayout, QWidget
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 
     app = FXApplication(sys.argv)
@@ -226,21 +237,54 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.setCentralWidget(widget)
     layout = QVBoxLayout(widget)
 
-    layout.addWidget(QLabel("Basic Search:"))
-    search1 = FXSearchBar(placeholder="Search assets...")
-    search1.search_changed.connect(lambda t: print(f"Search: {t}"))
-    layout.addWidget(search1)
+    # Sample data
+    ASSETS = [
+        ("Models", "character_hero.fbx"),
+        ("Models", "vehicle_car.fbx"),
+        ("Models", "prop_chair.fbx"),
+        ("Textures", "wood_diffuse.png"),
+        ("Textures", "metal_normal.png"),
+        ("Textures", "brick_albedo.png"),
+        ("Materials", "glass_shader.mat"),
+        ("Materials", "skin_subsurface.mat"),
+        ("Scripts", "player_controller.py"),
+        ("Scripts", "enemy_ai.py"),
+    ]
 
-    layout.addWidget(QLabel("Search with Filter:"))
-    search2 = FXSearchBar(
-        placeholder="Search...",
+    # Search bar with filter
+    search = FXSearchBar(
+        placeholder="Search assets...",
         show_filter=True,
-        filters=["All", "Models", "Textures", "Materials", "Scripts"]
+        filters=["All", "Models", "Textures", "Materials", "Scripts"],
     )
-    search2.filter_changed.connect(lambda f: print(f"Filter: {f}"))
-    layout.addWidget(search2)
+    layout.addWidget(search)
 
-    layout.addStretch()
-    window.resize(400, 200)
+    # Results list
+    results_label = QLabel("Results:")
+    layout.addWidget(results_label)
+    results_list = QListWidget()
+    layout.addWidget(results_list)
+
+    def update_results():
+        results_list.clear()
+        query = search.text.lower()
+        filter_type = search.filter
+
+        for category, name in ASSETS:
+            if filter_type != "All" and category != filter_type:
+                continue
+            if query and query not in name.lower():
+                continue
+            results_list.addItem(f"[{category}] {name}")
+
+        results_label.setText(f"Results: {results_list.count()} items")
+
+    search.search_changed.connect(lambda _: update_results())
+    search.filter_changed.connect(lambda _: update_results())
+
+    # Initial population
+    update_results()
+
+    window.resize(400, 350)
     window.show()
     sys.exit(app.exec())

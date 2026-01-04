@@ -176,7 +176,7 @@ class FXOutputLogWidget(QWidget):
         bottom_layout.addWidget(self.search_count_label)
 
         self.prev_button = QPushButton("Previous")
-        self.prev_button.setIcon(fxicons.get_icon("keyboard_arrow_left"))
+        fxicons.set_icon(self.prev_button, "keyboard_arrow_left")
         self.prev_button.setProperty("icon_name", "keyboard_arrow_left")
         self.prev_button.setMaximumWidth(100)
         self.prev_button.clicked.connect(self._find_previous)
@@ -184,7 +184,7 @@ class FXOutputLogWidget(QWidget):
         bottom_layout.addWidget(self.prev_button)
 
         self.next_button = QPushButton("Next")
-        self.next_button.setIcon(fxicons.get_icon("keyboard_arrow_right"))
+        fxicons.set_icon(self.next_button, "keyboard_arrow_right")
         self.next_button.setProperty("icon_name", "keyboard_arrow_right")
         self.next_button.setMaximumWidth(80)
         self.next_button.clicked.connect(self._find_next)
@@ -192,7 +192,7 @@ class FXOutputLogWidget(QWidget):
         bottom_layout.addWidget(self.next_button)
 
         self.close_search_button = QPushButton("")
-        self.close_search_button.setIcon(fxicons.get_icon("close"))
+        fxicons.set_icon(self.close_search_button, "close")
         self.close_search_button.setProperty("icon_name", "close")
         self.close_search_button.setMaximumWidth(30)
         self.close_search_button.setToolTip("Close search (Esc)")
@@ -207,7 +207,7 @@ class FXOutputLogWidget(QWidget):
 
         # Clear button (always visible)
         self.clear_button = QPushButton("Clear")
-        self.clear_button.setIcon(fxicons.get_icon("delete"))
+        fxicons.set_icon(self.clear_button, "delete")
         self.clear_button.setProperty("icon_name", "delete")
         self.clear_button.setMaximumWidth(80)
         self.clear_button.clicked.connect(self.clear_log)

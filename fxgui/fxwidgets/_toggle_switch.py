@@ -1,19 +1,21 @@
 """FXToggleSwitch - Animated toggle switch widget."""
 
+# Built-in
 import os
 from typing import Optional
 
+# Third-party
 from qtpy.QtCore import (
     Property,
     QEasingCurve,
     QPropertyAnimation,
     QRect,
     Qt,
-    Signal,
 )
-from qtpy.QtGui import QColor, QMouseEvent, QPainter, QPainterPath
+from qtpy.QtGui import QColor, QPainter, QPainterPath
 from qtpy.QtWidgets import QAbstractButton, QSizePolicy, QWidget
 
+# Internal
 from fxgui import fxstyle
 
 
@@ -47,15 +49,10 @@ class FXToggleSwitch(QAbstractButton):
     ):
         super().__init__(parent)
 
-        # Get theme colors
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
-        # Colors
-        self._on_color = QColor(on_color or accent_colors["primary"])
-        self._off_color = QColor(off_color or theme_colors["surface_alt"])
-        self._thumb_color = QColor(thumb_color or "#ffffff")
-        self._disabled_color = QColor(theme_colors["text_disabled"])
+        # Store user-provided colors (None means use theme colors)
+        self._custom_on_color = on_color
+        self._custom_off_color = off_color
+        self._custom_thumb_color = thumb_color
 
         # Animation position (0.0 = off, 1.0 = on)
         self._position = 0.0
@@ -110,6 +107,18 @@ class FXToggleSwitch(QAbstractButton):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
+        # Get current theme colors (dynamic for theme switching)
+        theme_colors = fxstyle.get_theme_colors()
+        accent_colors = fxstyle.get_accent_colors()
+
+        on_color = QColor(self._custom_on_color or accent_colors["primary"])
+        off_color = QColor(
+            self._custom_off_color or theme_colors["surface_alt"]
+        )
+        thumb_color = QColor(self._custom_thumb_color or "#ffffff")
+        thumb_border_color = QColor(accent_colors["primary"])
+        disabled_color = QColor(theme_colors["text_disabled"])
+
         # Calculate dimensions
         width = self.width()
         height = self.height()
@@ -118,14 +127,15 @@ class FXToggleSwitch(QAbstractButton):
 
         # Determine colors based on state
         if not self.isEnabled():
-            track_color = self._disabled_color
-            thumb_color = self._disabled_color.lighter(150)
+            track_color = disabled_color
+            thumb_color = disabled_color.lighter(150)
+            border_color = disabled_color
         else:
             # Interpolate between off and on colors
             track_color = self._interpolate_color(
-                self._off_color, self._on_color, self._position
+                off_color, on_color, self._position
             )
-            thumb_color = self._thumb_color
+            border_color = thumb_border_color
 
         # Draw track (rounded rectangle)
         track_path = QPainterPath()
@@ -139,7 +149,7 @@ class FXToggleSwitch(QAbstractButton):
 
         # Draw thumb shadow (subtle)
         if self.isEnabled():
-            shadow_color = QColor(0, 0, 0, 40)
+            shadow_color = QColor(0, 0, 0, 30)
             painter.setBrush(shadow_color)
             painter.setPen(Qt.NoPen)
             painter.drawEllipse(
@@ -149,9 +159,9 @@ class FXToggleSwitch(QAbstractButton):
                 thumb_radius * 2,
             )
 
-        # Draw thumb
+        # Draw thumb with border (matching range slider style)
         painter.setBrush(thumb_color)
-        painter.setPen(Qt.NoPen)
+        painter.setPen(border_color)
         painter.drawEllipse(
             int(thumb_x), int(thumb_y), thumb_radius * 2, thumb_radius * 2
         )
@@ -167,15 +177,8 @@ class FXToggleSwitch(QAbstractButton):
         b = int(color1.blue() + (color2.blue() - color1.blue()) * ratio)
         return QColor(r, g, b)
 
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse release to toggle state."""
-        if event.button() == Qt.LeftButton and self.hitButton(event.pos()):
-            self.setChecked(not self.isChecked())
-        super().mouseReleaseEvent(event)
-
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
     import sys
     from qtpy.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
     from fxgui.fxwidgets import FXApplication, FXMainWindow

@@ -1,8 +1,10 @@
 """FXFilePathWidget - Path input with browse button."""
 
+# Built-in
 import os
 from typing import Optional
 
+# Third-party
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QFileDialog,
@@ -13,6 +15,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 
 
@@ -81,7 +84,8 @@ class FXFilePathWidget(QWidget):
         self._input.setAcceptDrops(True)
 
         # Style
-        self._input.setStyleSheet(f"""
+        self._input.setStyleSheet(
+            f"""
             QLineEdit {{
                 background-color: {theme_colors['input']};
                 border: 1px solid {theme_colors['border']};
@@ -91,7 +95,8 @@ class FXFilePathWidget(QWidget):
             QLineEdit:focus {{
                 border-color: {accent_colors['primary']};
             }}
-        """)
+        """
+        )
         layout.addWidget(self._input, 1)
 
         # Validation indicator
@@ -99,7 +104,9 @@ class FXFilePathWidget(QWidget):
             self._indicator = QPushButton()
             self._indicator.setFixedSize(24, 24)
             self._indicator.setFlat(True)
-            self._indicator.setStyleSheet("background: transparent; border: none;")
+            self._indicator.setStyleSheet(
+                "background: transparent; border: none;"
+            )
             self._update_indicator()
             layout.addWidget(self._indicator)
 
@@ -110,9 +117,9 @@ class FXFilePathWidget(QWidget):
 
         # Set icon based on mode
         if mode == "folder":
-            self._browse_btn.setIcon(fxicons.get_icon("folder_open"))
+            fxicons.set_icon(self._browse_btn, "folder_open")
         else:
-            self._browse_btn.setIcon(fxicons.get_icon("file_open"))
+            fxicons.set_icon(self._browse_btn, "file_open")
 
         self._browse_btn.setFixedSize(32, 32)
         self._browse_btn.clicked.connect(self._browse)
@@ -162,9 +169,9 @@ class FXFilePathWidget(QWidget):
         self._mode = mode
 
         if mode == "folder":
-            self._browse_btn.setIcon(fxicons.get_icon("folder_open"))
+            fxicons.set_icon(self._browse_btn, "folder_open")
         else:
-            self._browse_btn.setIcon(fxicons.get_icon("file_open"))
+            fxicons.set_icon(self._browse_btn, "file_open")
 
     def set_file_filter(self, filter_str: str) -> None:
         """Set the file filter.
@@ -180,32 +187,20 @@ class FXFilePathWidget(QWidget):
 
         if self._mode == "folder":
             path = QFileDialog.getExistingDirectory(
-                self,
-                "Select Folder",
-                start_path,
-                QFileDialog.ShowDirsOnly
+                self, "Select Folder", start_path, QFileDialog.ShowDirsOnly
             )
         elif self._mode == "files":
             paths, _ = QFileDialog.getOpenFileNames(
-                self,
-                "Select Files",
-                start_path,
-                self._file_filter
+                self, "Select Files", start_path, self._file_filter
             )
             path = ";".join(paths) if paths else ""
         elif self._mode == "save":
             path, _ = QFileDialog.getSaveFileName(
-                self,
-                "Save File",
-                start_path,
-                self._file_filter
+                self, "Save File", start_path, self._file_filter
             )
         else:  # file
             path, _ = QFileDialog.getOpenFileName(
-                self,
-                "Select File",
-                start_path,
-                self._file_filter
+                self, "Select File", start_path, self._file_filter
             )
 
         if path:
@@ -227,11 +222,15 @@ class FXFilePathWidget(QWidget):
             self._is_valid = os.path.isdir(path)
         elif self._mode == "save":
             # For save mode, check if parent directory exists
-            self._is_valid = os.path.isdir(os.path.dirname(path)) if path else False
+            self._is_valid = (
+                os.path.isdir(os.path.dirname(path)) if path else False
+            )
         elif self._mode == "files":
             # Check all paths
             paths = path.split(";")
-            self._is_valid = all(os.path.isfile(p.strip()) for p in paths if p.strip())
+            self._is_valid = all(
+                os.path.isfile(p.strip()) for p in paths if p.strip()
+            )
         else:  # file
             self._is_valid = os.path.isfile(path)
 
@@ -246,13 +245,13 @@ class FXFilePathWidget(QWidget):
         path = self._input.text()
 
         if not path:
-            self._indicator.setIcon(fxicons.get_icon("remove", color="#888888"))
+            fxicons.set_icon(self._indicator, "remove", color="#888888")
             self._indicator.setToolTip("No path entered")
         elif self._is_valid:
-            self._indicator.setIcon(fxicons.get_icon("check_circle", color="#4caf50"))
+            fxicons.set_icon(self._indicator, "check_circle", color="#4caf50")
             self._indicator.setToolTip("Path exists")
         else:
-            self._indicator.setIcon(fxicons.get_icon("error", color="#f44336"))
+            fxicons.set_icon(self._indicator, "error", color="#f44336")
             self._indicator.setToolTip("Path does not exist")
 
     def dragEnterEvent(self, event) -> None:
@@ -270,7 +269,11 @@ class FXFilePathWidget(QWidget):
             elif self._mode != "folder" and os.path.isfile(path):
                 self._input.setText(path)
             elif self._mode == "files":
-                paths = [url.toLocalFile() for url in urls if os.path.isfile(url.toLocalFile())]
+                paths = [
+                    url.toLocalFile()
+                    for url in urls
+                    if os.path.isfile(url.toLocalFile())
+                ]
                 self._input.setText(";".join(paths))
 
 
@@ -293,7 +296,7 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     file_widget = FXFilePathWidget(
         mode="file",
         filter="Images (*.png *.jpg);;All Files (*.*)",
-        placeholder="Select an image file..."
+        placeholder="Select an image file...",
     )
     file_layout.addWidget(file_widget)
     layout.addWidget(file_group)
@@ -302,8 +305,7 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     folder_group = QGroupBox("Select Folder")
     folder_layout = QVBoxLayout(folder_group)
     folder_widget = FXFilePathWidget(
-        mode="folder",
-        placeholder="Select a project folder..."
+        mode="folder", placeholder="Select a project folder..."
     )
     folder_layout.addWidget(folder_widget)
     layout.addWidget(folder_group)
@@ -315,7 +317,7 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
         mode="save",
         filter="JSON Files (*.json);;All Files (*.*)",
         placeholder="Enter save location...",
-        validate=False
+        validate=False,
     )
     save_layout.addWidget(save_widget)
     layout.addWidget(save_group)

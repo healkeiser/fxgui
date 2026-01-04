@@ -104,7 +104,7 @@
             "slider_handle": "#ffffff", // Slider handle
             "slider_hover": "#616161", // Slider handle hover
             // -- Icon color
-            "icon": "#ff0000"
+            "icon": "#424242"
         },
         "dracula": {
             // -- Accent colors

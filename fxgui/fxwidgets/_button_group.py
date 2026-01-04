@@ -1,9 +1,11 @@
 """FXButtonGroup - Segmented button control widget."""
 
+# Built-in
+import os
 from typing import List, Optional, Union
 
+# Third-party
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QButtonGroup,
     QHBoxLayout,
@@ -12,6 +14,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 
 
@@ -107,7 +110,7 @@ class FXButtonGroup(QWidget):
         button.setCursor(Qt.PointingHandCursor)
 
         if icon_name:
-            button.setIcon(fxicons.get_icon(icon_name))
+            fxicons.set_icon(button, icon_name)
 
         # Determine position
         if index is None:
@@ -191,7 +194,8 @@ class FXButtonGroup(QWidget):
             else:
                 border = f"1px solid {self._border_color}; border-left: none"
 
-            button.setStyleSheet(f"""
+            button.setStyleSheet(
+                f"""
                 QPushButton {{
                     background-color: {self._inactive_bg};
                     color: {self._inactive_text};
@@ -212,7 +216,8 @@ class FXButtonGroup(QWidget):
                 QPushButton:disabled {{
                     opacity: 0.5;
                 }}
-            """)
+            """
+            )
 
     def _on_button_clicked(self, button: QPushButton) -> None:
         """Handle button click."""
@@ -231,7 +236,6 @@ class FXButtonGroup(QWidget):
 
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
     import sys
     from qtpy.QtWidgets import QVBoxLayout, QWidget, QLabel
     from fxgui.fxwidgets import FXApplication, FXMainWindow

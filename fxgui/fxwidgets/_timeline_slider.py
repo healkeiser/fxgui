@@ -1,8 +1,11 @@
 """FXTimelineSlider - Timeline/scrubber widget for DCC applications."""
 
+# Built-in
+import os
 from typing import List, Optional, Tuple
 
-from qtpy.QtCore import Qt, Signal
+# Third-party
+from qtpy.QtCore import Qt, Signal, QTimer
 from qtpy.QtGui import QColor, QMouseEvent, QPainter, QPen
 from qtpy.QtWidgets import (
     QHBoxLayout,
@@ -13,6 +16,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 
 
@@ -30,6 +34,7 @@ class FXTimelineSlider(QWidget):
         start_frame: Start frame of the timeline.
         end_frame: End frame of the timeline.
         current_frame: Initial current frame.
+        fps: Frames per second for playback (default 24).
         show_controls: Whether to show playback controls.
         show_spinbox: Whether to show the frame spinbox.
 
@@ -55,6 +60,7 @@ class FXTimelineSlider(QWidget):
         start_frame: int = 1,
         end_frame: int = 100,
         current_frame: Optional[int] = None,
+        fps: int = 24,
         show_controls: bool = True,
         show_spinbox: bool = True,
     ):
@@ -66,6 +72,11 @@ class FXTimelineSlider(QWidget):
         self._keyframes: List[int] = []
         self._is_playing = False
         self._is_dragging = False
+        self._fps = fps
+
+        # Playback timer
+        self._playback_timer = QTimer(self)
+        self._playback_timer.timeout.connect(self._on_playback_tick)
 
         # Get theme colors
         theme_colors = fxstyle.get_theme_colors()
@@ -81,12 +92,14 @@ class FXTimelineSlider(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(8)
 
-        # Start frame label
-        self._start_label = QLabel(str(self._start_frame))
-        self._start_label.setStyleSheet(f"color: {theme_colors['text_secondary']};")
-        self._start_label.setFixedWidth(40)
-        self._start_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        main_layout.addWidget(self._start_label)
+        # Start frame spinbox (editable)
+        self._start_spinbox = QSpinBox()
+        self._start_spinbox.setRange(-99999, 99999)
+        self._start_spinbox.setValue(self._start_frame)
+        self._start_spinbox.setFixedWidth(55)
+        self._start_spinbox.setToolTip("Start frame")
+        self._start_spinbox.valueChanged.connect(self._on_start_changed)
+        main_layout.addWidget(self._start_spinbox)
 
         # Playback controls
         if show_controls:
@@ -95,7 +108,7 @@ class FXTimelineSlider(QWidget):
 
             # Go to start
             self._goto_start_btn = QPushButton()
-            self._goto_start_btn.setIcon(fxicons.get_icon("skip_previous"))
+            fxicons.set_icon(self._goto_start_btn, "skip_previous")
             self._goto_start_btn.setFixedSize(24, 24)
             self._goto_start_btn.setFlat(True)
             self._goto_start_btn.setToolTip("Go to start")
@@ -104,7 +117,7 @@ class FXTimelineSlider(QWidget):
 
             # Previous frame
             self._prev_btn = QPushButton()
-            self._prev_btn.setIcon(fxicons.get_icon("chevron_left"))
+            fxicons.set_icon(self._prev_btn, "chevron_left")
             self._prev_btn.setFixedSize(24, 24)
             self._prev_btn.setFlat(True)
             self._prev_btn.setToolTip("Previous frame")
@@ -113,7 +126,7 @@ class FXTimelineSlider(QWidget):
 
             # Play/Pause
             self._play_btn = QPushButton()
-            self._play_btn.setIcon(fxicons.get_icon("play_arrow"))
+            fxicons.set_icon(self._play_btn, "play_arrow")
             self._play_btn.setFixedSize(28, 28)
             self._play_btn.setToolTip("Play")
             self._play_btn.clicked.connect(self.toggle_playback)
@@ -121,7 +134,7 @@ class FXTimelineSlider(QWidget):
 
             # Next frame
             self._next_btn = QPushButton()
-            self._next_btn.setIcon(fxicons.get_icon("chevron_right"))
+            fxicons.set_icon(self._next_btn, "chevron_right")
             self._next_btn.setFixedSize(24, 24)
             self._next_btn.setFlat(True)
             self._next_btn.setToolTip("Next frame")
@@ -130,7 +143,7 @@ class FXTimelineSlider(QWidget):
 
             # Go to end
             self._goto_end_btn = QPushButton()
-            self._goto_end_btn.setIcon(fxicons.get_icon("skip_next"))
+            fxicons.set_icon(self._goto_end_btn, "skip_next")
             self._goto_end_btn.setFixedSize(24, 24)
             self._goto_end_btn.setFlat(True)
             self._goto_end_btn.setToolTip("Go to end")
@@ -142,7 +155,9 @@ class FXTimelineSlider(QWidget):
         # Timeline track (custom painted)
         self._track_widget = _TimelineTrack(self)
         self._track_widget.setMinimumHeight(24)
-        self._track_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self._track_widget.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Fixed
+        )
         main_layout.addWidget(self._track_widget, 1)
 
         # Frame spinbox
@@ -154,11 +169,24 @@ class FXTimelineSlider(QWidget):
             self._spinbox.valueChanged.connect(self._on_spinbox_changed)
             main_layout.addWidget(self._spinbox)
 
-        # End frame label
-        self._end_label = QLabel(str(self._end_frame))
-        self._end_label.setStyleSheet(f"color: {theme_colors['text_secondary']};")
-        self._end_label.setFixedWidth(40)
-        main_layout.addWidget(self._end_label)
+        # End frame spinbox (editable)
+        self._end_spinbox = QSpinBox()
+        self._end_spinbox.setRange(-99999, 99999)
+        self._end_spinbox.setValue(self._end_frame)
+        self._end_spinbox.setFixedWidth(55)
+        self._end_spinbox.setToolTip("End frame")
+        self._end_spinbox.valueChanged.connect(self._on_end_changed)
+        main_layout.addWidget(self._end_spinbox)
+
+        # FPS spinbox (editable)
+        self._fps_spinbox = QSpinBox()
+        self._fps_spinbox.setRange(1, 120)
+        self._fps_spinbox.setValue(self._fps)
+        self._fps_spinbox.setSuffix(" fps")
+        self._fps_spinbox.setFixedWidth(65)
+        self._fps_spinbox.setToolTip("Frames per second")
+        self._fps_spinbox.valueChanged.connect(self._on_fps_changed)
+        main_layout.addWidget(self._fps_spinbox)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setMinimumHeight(30)
@@ -188,7 +216,7 @@ class FXTimelineSlider(QWidget):
         frame = max(self._start_frame, min(frame, self._end_frame))
         if frame != self._current_frame:
             self._current_frame = frame
-            if hasattr(self, '_spinbox'):
+            if hasattr(self, "_spinbox"):
                 self._spinbox.blockSignals(True)
                 self._spinbox.setValue(frame)
                 self._spinbox.blockSignals(False)
@@ -205,12 +233,60 @@ class FXTimelineSlider(QWidget):
         """
         self._start_frame = start
         self._end_frame = end
-        self._start_label.setText(str(start))
-        self._end_label.setText(str(end))
-        if hasattr(self, '_spinbox'):
+        self._start_spinbox.blockSignals(True)
+        self._end_spinbox.blockSignals(True)
+        self._start_spinbox.setValue(start)
+        self._end_spinbox.setValue(end)
+        self._start_spinbox.blockSignals(False)
+        self._end_spinbox.blockSignals(False)
+        if hasattr(self, "_spinbox"):
             self._spinbox.setRange(start, end)
         self._current_frame = max(start, min(self._current_frame, end))
         self._track_widget.update()
+
+    def set_fps(self, fps: int) -> None:
+        """Set the frames per second.
+
+        Args:
+            fps: Frames per second for playback.
+        """
+        self._fps = max(1, min(120, fps))
+        self._fps_spinbox.blockSignals(True)
+        self._fps_spinbox.setValue(self._fps)
+        self._fps_spinbox.blockSignals(False)
+        if self._is_playing:
+            self._playback_timer.setInterval(1000 // self._fps)
+
+    @property
+    def fps(self) -> int:
+        """Return the current FPS."""
+        return self._fps
+
+    def _on_fps_changed(self, value: int) -> None:
+        """Handle FPS spinbox change."""
+        self._fps = value
+        if self._is_playing:
+            self._playback_timer.setInterval(1000 // self._fps)
+
+    def _on_start_changed(self, value: int) -> None:
+        """Handle start frame spinbox change."""
+        if value < self._end_frame:
+            self._start_frame = value
+            if hasattr(self, "_spinbox"):
+                self._spinbox.setRange(value, self._end_frame)
+            if self._current_frame < value:
+                self.set_frame(value)
+            self._track_widget.update()
+
+    def _on_end_changed(self, value: int) -> None:
+        """Handle end frame spinbox change."""
+        if value > self._start_frame:
+            self._end_frame = value
+            if hasattr(self, "_spinbox"):
+                self._spinbox.setRange(self._start_frame, value)
+            if self._current_frame > value:
+                self.set_frame(value)
+            self._track_widget.update()
 
     def add_keyframe(self, frame: int) -> None:
         """Add a keyframe marker.
@@ -264,18 +340,27 @@ class FXTimelineSlider(QWidget):
     def play(self) -> None:
         """Start playback."""
         self._is_playing = True
-        if hasattr(self, '_play_btn'):
-            self._play_btn.setIcon(fxicons.get_icon("pause"))
+        self._playback_timer.start(1000 // self._fps)
+        if hasattr(self, "_play_btn"):
+            fxicons.set_icon(self._play_btn, "pause")
             self._play_btn.setToolTip("Pause")
         self.playback_started.emit()
 
     def stop(self) -> None:
         """Stop playback."""
         self._is_playing = False
-        if hasattr(self, '_play_btn'):
-            self._play_btn.setIcon(fxicons.get_icon("play_arrow"))
+        self._playback_timer.stop()
+        if hasattr(self, "_play_btn"):
+            fxicons.set_icon(self._play_btn, "play_arrow")
             self._play_btn.setToolTip("Play")
         self.playback_stopped.emit()
+
+    def _on_playback_tick(self) -> None:
+        """Handle playback timer tick."""
+        next_frame = self._current_frame + 1
+        if next_frame > self._end_frame:
+            next_frame = self._start_frame  # Loop back to start
+        self.set_frame(next_frame)
 
     def _on_spinbox_changed(self, value: int) -> None:
         """Handle spinbox value change."""
@@ -315,9 +400,46 @@ class _TimelineTrack(QWidget):
             ratio = (frame - self._timeline._start_frame) / frame_range
             return ratio * width
 
+        # Draw frame tick marks
+        tick_color = QColor(self._timeline._text_color)
+        tick_color.setAlpha(80)
+        tick_pen = QPen(tick_color)
+        tick_pen.setWidth(1)
+        painter.setPen(tick_pen)
+
+        # Determine tick spacing based on frame range and width
+        pixels_per_frame = width / max(1, frame_range)
+        if pixels_per_frame >= 4:  # Show all frames if there's enough space
+            tick_interval = 1
+        elif pixels_per_frame >= 1:
+            tick_interval = 5
+        elif pixels_per_frame >= 0.4:
+            tick_interval = 10
+        else:
+            tick_interval = max(1, frame_range // 20)
+
+        for frame in range(
+            self._timeline._start_frame, self._timeline._end_frame + 1
+        ):
+            if (frame - self._timeline._start_frame) % tick_interval == 0:
+                x = frame_to_x(frame)
+                # Major tick every 10 frames, minor otherwise
+                is_major = (
+                    (frame - self._timeline._start_frame) % (tick_interval * 5)
+                    == 0
+                    or frame == self._timeline._start_frame
+                    or frame == self._timeline._end_frame
+                )
+                tick_height = 6 if is_major else 3
+                painter.drawLine(int(x), track_y - tick_height, int(x), track_y)
+
         # Draw keyframe markers
         for keyframe in self._timeline._keyframes:
-            if self._timeline._start_frame <= keyframe <= self._timeline._end_frame:
+            if (
+                self._timeline._start_frame
+                <= keyframe
+                <= self._timeline._end_frame
+            ):
                 x = frame_to_x(keyframe)
                 painter.setBrush(self._timeline._keyframe_color)
                 painter.setPen(Qt.NoPen)
@@ -330,6 +452,7 @@ class _TimelineTrack(QWidget):
                 ]
                 from qtpy.QtGui import QPolygonF
                 from qtpy.QtCore import QPointF
+
                 polygon = QPolygonF([QPointF(p[0], p[1]) for p in points])
                 painter.drawPolygon(polygon)
 
@@ -348,11 +471,14 @@ class _TimelineTrack(QWidget):
         handle_size = 8
         from qtpy.QtGui import QPolygonF
         from qtpy.QtCore import QPointF
-        handle = QPolygonF([
-            QPointF(playhead_x - handle_size // 2, 0),
-            QPointF(playhead_x + handle_size // 2, 0),
-            QPointF(playhead_x, handle_size),
-        ])
+
+        handle = QPolygonF(
+            [
+                QPointF(playhead_x - handle_size // 2, 0),
+                QPointF(playhead_x + handle_size // 2, 0),
+                QPointF(playhead_x, handle_size),
+            ]
+        )
         painter.drawPolygon(handle)
 
         painter.end()
@@ -386,9 +512,15 @@ class _TimelineTrack(QWidget):
 
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
+
     import sys
-    from qtpy.QtWidgets import QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout
+    from qtpy.QtWidgets import (
+        QVBoxLayout,
+        QWidget,
+        QLabel,
+        QPushButton,
+        QHBoxLayout,
+    )
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 
     app = FXApplication(sys.argv)
@@ -414,10 +546,12 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
 
     # Playback controls
     controls_layout = QHBoxLayout()
-    prev_btn = QPushButton("◀ Prev Key")
-    next_btn = QPushButton("Next Key ▶")
-    prev_btn.clicked.connect(timeline.go_to_previous_keyframe)
-    next_btn.clicked.connect(timeline.go_to_next_keyframe)
+    prev_btn = QPushButton("Prev Key")
+    fxicons.set_icon(prev_btn, "skip_previous")
+    next_btn = QPushButton("Next Key")
+    fxicons.set_icon(next_btn, "skip_next")
+    # prev_btn.clicked.connect(timeline.go_to_previous_keyframe)
+    # next_btn.clicked.connect(timeline.go_to_next_keyframe)
     controls_layout.addWidget(prev_btn)
     controls_layout.addWidget(next_btn)
 

@@ -1,10 +1,11 @@
 """FXTagInput - Tag/chip input widget."""
 
+# Built-in
 import os
 from typing import List, Optional
 
+# Third-party
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtGui import QKeyEvent
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -17,6 +18,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 
 
@@ -80,9 +82,7 @@ class FXTagChip(QFrame):
         # Remove button
         if removable:
             self.remove_button = QPushButton()
-            self.remove_button.setIcon(
-                fxicons.get_icon("close", color="#ffffff")
-            )
+            fxicons.set_icon(self.remove_button, "close", color="#ffffff")
             self.remove_button.setFixedSize(16, 16)
             self.remove_button.setFlat(True)
             self.remove_button.setCursor(Qt.PointingHandCursor)
@@ -303,7 +303,7 @@ class FXTagInput(QWidget):
 
 if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     import sys
-    from qtpy.QtWidgets import QApplication, QVBoxLayout, QWidget
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 
     app = FXApplication(sys.argv)

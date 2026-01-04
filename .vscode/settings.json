@@ -2,10 +2,12 @@
     "terminal.integrated.env.windows": {
         "PYTHONPATH": "${env:PYTHONPATH};${workspaceFolder};",
         "QT_API": "pyside6",
+        "DEVELOPER_MODE": "1",
     },
     "terminal.integrated.env.linux": {
         "PYTHONPATH": "${env:PYTHONPATH}:${workspaceFolder}",
         "QT_API": "pyside6",
+        "DEVELOPER_MODE": "1",
     },
     "git.ignoreLimitWarning": true,
 }
