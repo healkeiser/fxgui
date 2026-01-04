@@ -4,6 +4,7 @@ import os
 from typing import List, Optional, Tuple, Union
 
 from qtpy.QtCore import (
+    QAbstractAnimation,
     QEasingCurve,
     QParallelAnimationGroup,
     QPropertyAnimation,
@@ -55,6 +56,7 @@ class FXAccordionSection(QWidget):
         self._icon_name = icon
         self._animation_duration = animation_duration
         self._is_expanded = False
+        self._has_been_expanded = False
         self._content_height = 0
 
         # Header
@@ -94,8 +96,9 @@ class FXAccordionSection(QWidget):
         self._content_area = QScrollArea()
         self._content_area.setWidgetResizable(True)
         self._content_area.setFrameShape(QFrame.NoFrame)
+        # Start with scrollbars off to prevent flicker on first animation
         self._content_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._content_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self._content_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._content_area.setMaximumHeight(0)
         self._content_area.setMinimumHeight(0)
 
@@ -106,16 +109,25 @@ class FXAccordionSection(QWidget):
         main_layout.addWidget(self._header)
         main_layout.addWidget(self._content_area)
 
-        # Animation
-        self._animation = QPropertyAnimation(
+        # Animation - use QParallelAnimationGroup like FXCollapsibleWidget
+        self._animation = QParallelAnimationGroup()
+
+        max_height_anim = QPropertyAnimation(
             self._content_area, b"maximumHeight"
         )
-        self._animation.setEasingCurve(QEasingCurve.InOutCubic)
-        self._animation.setDuration(animation_duration)
+        max_height_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._animation.addAnimation(max_height_anim)
+
+        min_height_anim = QPropertyAnimation(
+            self._content_area, b"minimumHeight"
+        )
+        min_height_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._animation.addAnimation(min_height_anim)
 
         # Connections
         self._toggle_btn.clicked.connect(self._on_toggle)
         self._header.mousePressEvent = lambda e: self._on_toggle()
+        self._animation.finished.connect(self._on_animation_finished)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
@@ -162,12 +174,25 @@ class FXAccordionSection(QWidget):
         self._toggle_btn.setChecked(True)
         fxicons.set_icon(self._toggle_btn, "expand_more")
 
+        # First time expansion: measure content
+        if not self._has_been_expanded:
+            if self._content_area.widget():
+                self._content_height = min(
+                    300, self._content_area.widget().sizeHint().height()
+                )
+            self._has_been_expanded = True
+
         if animate:
             self._animation.stop()
-            self._animation.setStartValue(0)
-            self._animation.setEndValue(self._content_height)
+            for i in range(self._animation.animationCount()):
+                anim = self._animation.animationAt(i)
+                anim.setDuration(self._animation_duration)
+                anim.setStartValue(0)
+                anim.setEndValue(self._content_height)
+            self._animation.setDirection(QAbstractAnimation.Forward)
             self._animation.start()
         else:
+            self._content_area.setMinimumHeight(self._content_height)
             self._content_area.setMaximumHeight(self._content_height)
 
         self.expanded.emit()
@@ -187,10 +212,15 @@ class FXAccordionSection(QWidget):
 
         if animate:
             self._animation.stop()
-            self._animation.setStartValue(self._content_area.height())
-            self._animation.setEndValue(0)
+            for i in range(self._animation.animationCount()):
+                anim = self._animation.animationAt(i)
+                anim.setDuration(self._animation_duration)
+                anim.setStartValue(0)
+                anim.setEndValue(self._content_height)
+            self._animation.setDirection(QAbstractAnimation.Backward)
             self._animation.start()
         else:
+            self._content_area.setMinimumHeight(0)
             self._content_area.setMaximumHeight(0)
 
         self.collapsed.emit()
@@ -205,6 +235,34 @@ class FXAccordionSection(QWidget):
     def _on_toggle(self) -> None:
         """Handle toggle button click."""
         self.toggle()
+
+    def _on_animation_finished(self) -> None:
+        """Handle animation completion."""
+        if not self._is_expanded:
+            # When collapsed, ensure content is hidden and scrollbars off
+            self._content_area.setMinimumHeight(0)
+            self._content_area.setMaximumHeight(0)
+            self._content_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self._content_area.setHorizontalScrollBarPolicy(
+                Qt.ScrollBarAlwaysOff
+            )
+        else:
+            # When expanded, enable scrollbars as needed
+            self._content_area.setMinimumHeight(self._content_height)
+            self._content_area.setMaximumHeight(self._content_height)
+
+            # Enable scrollbars only if content exceeds visible area
+            if self._content_area.widget():
+                widget_height = self._content_area.widget().sizeHint().height()
+                v_policy = (
+                    Qt.ScrollBarAsNeeded
+                    if widget_height > self._content_height
+                    else Qt.ScrollBarAlwaysOff
+                )
+                self._content_area.setVerticalScrollBarPolicy(v_policy)
+                self._content_area.setHorizontalScrollBarPolicy(
+                    Qt.ScrollBarAlwaysOff
+                )
 
 
 class FXAccordion(QWidget):

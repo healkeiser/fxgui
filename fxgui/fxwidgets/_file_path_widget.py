@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 
 
-class FXFilePathWidget(QWidget):
+class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
     """A line edit with integrated browse button for file/folder selection.
 
     This widget provides:
@@ -68,10 +68,6 @@ class FXFilePathWidget(QWidget):
         self._validate = validate
         self._is_valid = False
 
-        # Get theme colors
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
         # Main layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -82,21 +78,6 @@ class FXFilePathWidget(QWidget):
         self._input.setPlaceholderText(placeholder)
         self._input.textChanged.connect(self._on_text_changed)
         self._input.setAcceptDrops(True)
-
-        # Style
-        self._input.setStyleSheet(
-            f"""
-            QLineEdit {{
-                background-color: {theme_colors['input']};
-                border: 1px solid {theme_colors['border']};
-                border-radius: 4px;
-                padding: 6px 8px;
-            }}
-            QLineEdit:focus {{
-                border-color: {accent_colors['primary']};
-            }}
-        """
-        )
         layout.addWidget(self._input, 1)
 
         # Validation indicator
@@ -127,6 +108,25 @@ class FXFilePathWidget(QWidget):
 
         # Enable drag and drop
         self.setAcceptDrops(True)
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        theme_colors = fxstyle.get_theme_colors()
+        accent_colors = fxstyle.get_accent_colors()
+
+        self._input.setStyleSheet(
+            f"""
+            QLineEdit {{
+                background-color: {theme_colors['surface_sunken']};
+                border: 1px solid {theme_colors['border']};
+                border-radius: 4px;
+                padding: 6px 8px;
+            }}
+            QLineEdit:focus {{
+                border-color: {accent_colors['primary']};
+            }}
+        """
+        )
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 

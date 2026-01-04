@@ -23,7 +23,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxdcc, fxicons, fxstyle
 
 
-class FXFloatingDialog(QDialog):
+class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
     """A floating dialog that appears at the cursor's position.
     It closes when any mouse button except the right one is pressed.
 
@@ -52,11 +52,7 @@ class FXFloatingDialog(QDialog):
         super().__init__(parent)
 
         # Attributes
-        theme_colors = fxstyle.get_theme_colors()
-        _icon = fxicons.get_icon("home", color=theme_colors["icon"]).pixmap(
-            32, 32
-        )
-        self._default_icon = _icon
+        self._default_icon = None  # Set in _apply_theme_styles
         self.dialog_icon: QPixmap = icon
         self.dialog_title: str = title
 
@@ -84,37 +80,30 @@ class FXFloatingDialog(QDialog):
         if popup:
             self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
 
-        if (
-            self.parent_package == fxdcc.STANDALONE
-            or self.parent_package == None
-        ):
-            pass
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        theme_colors = fxstyle.get_theme_colors()
 
-        elif self.parent_package == fxdcc.HOUDINI:
-            # Custom stylesheet for Houdini (use theme colors)
-            theme_colors = fxstyle.get_theme_colors()
+        # Update default icon
+        self._default_icon = fxicons.get_icon(
+            "home", color=theme_colors["icon"]
+        ).pixmap(32, 32)
+
+        # Apply DCC-specific styling
+        if self.parent_package == fxdcc.HOUDINI:
             self.title_widget.setStyleSheet(
                 f"background-color: {theme_colors['surface_alt']};"
             )
             self.setStyleSheet(
                 f"""
                 FXFloatingDialog {{
-                    border-top: 1px solid {theme_colors['border_subtle']};
-                    border-left: 1px solid {theme_colors['border_subtle']};
+                    border-top: 1px solid {theme_colors['border_light']};
+                    border-left: 1px solid {theme_colors['border_light']};
                     border-bottom: 1px solid {theme_colors['surface']};
                     border-right: 1px solid {theme_colors['surface']};
                 }}
             """
             )
-
-        elif self.parent_package == fxdcc.MAYA:
-            pass
-
-        elif self.parent_package == fxdcc.NUKE:
-            pass
-
-        else:
-            pass
 
     # Private methods
     def _setup_title(self):

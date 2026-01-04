@@ -20,7 +20,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 
 
-class FXTimelineSlider(QWidget):
+class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
     """A timeline/scrubber widget perfect for DCC applications.
 
     This widget provides a timeline slider with:
@@ -78,14 +78,11 @@ class FXTimelineSlider(QWidget):
         self._playback_timer = QTimer(self)
         self._playback_timer.timeout.connect(self._on_playback_tick)
 
-        # Get theme colors
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
-        self._track_color = QColor(theme_colors["surface_alt"])
-        self._playhead_color = QColor(accent_colors["primary"])
+        # Theme colors (will be set in _apply_theme_styles)
+        self._track_color = None
+        self._playhead_color = None
         self._keyframe_color = QColor("#ff9800")
-        self._text_color = QColor(theme_colors["text"])
+        self._text_color = None
 
         # Main layout
         main_layout = QHBoxLayout(self)
@@ -190,6 +187,19 @@ class FXTimelineSlider(QWidget):
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setMinimumHeight(30)
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        theme_colors = fxstyle.get_theme_colors()
+        accent_colors = fxstyle.get_accent_colors()
+
+        self._track_color = QColor(theme_colors["surface_alt"])
+        self._playhead_color = QColor(accent_colors["primary"])
+        self._text_color = QColor(theme_colors["text"])
+
+        # Trigger repaint of track widget
+        if hasattr(self, "_track_widget"):
+            self._track_widget.update()
 
     @property
     def current_frame(self) -> int:

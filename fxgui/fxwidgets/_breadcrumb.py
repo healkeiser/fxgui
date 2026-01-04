@@ -22,7 +22,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 
 
-class FXBreadcrumb(QWidget):
+class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
     """A clickable breadcrumb trail for hierarchical navigation.
 
     This widget provides a navigation breadcrumb with clickable path
@@ -143,9 +143,6 @@ class FXBreadcrumb(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setFixedHeight(32)
 
-        # Apply initial styling
-        self._apply_theme_styles()
-
         if self._show_navigation:
             self._update_nav_buttons()
 
@@ -158,12 +155,6 @@ class FXBreadcrumb(QWidget):
 
         # Rebuild breadcrumb to apply new segment styles
         self._rebuild_breadcrumb()
-
-    def changeEvent(self, event) -> None:
-        """Handle theme/palette changes."""
-        if event.type() == QEvent.Type.PaletteChange:
-            self._apply_theme_styles()
-        super().changeEvent(event)
 
     def eventFilter(self, obj, event):
         """Handle escape key and focus loss to exit edit mode."""
@@ -403,7 +394,7 @@ class FXBreadcrumb(QWidget):
 
         label = QLabel()
         icon = fxicons.get_icon(
-            self._separator, color=theme_colors["text_secondary"]
+            self._separator, color=theme_colors["text_muted"]
         )
         label.setPixmap(icon.pixmap(12, 12))
         label.setStyleSheet("background: transparent;")

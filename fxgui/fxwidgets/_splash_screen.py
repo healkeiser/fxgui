@@ -77,7 +77,7 @@ class _FXBorderWidget(QWidget):
         painter.end()
 
 
-class FXSplashScreen(QSplashScreen):
+class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
     """Customized QSplashScreen class."""
 
     ICON_HEIGHT = 32
@@ -104,9 +104,6 @@ class FXSplashScreen(QSplashScreen):
         image = self._load_image(image_path)
         super().__init__(image)
 
-        # Get theme colors from JSON
-        _theme_colors = fxstyle.get_theme_colors()
-
         # Attributes
         self.pixmap: QPixmap = image
         self._default_icon = str(fxconstants.FAVICON_LIGHT)
@@ -121,9 +118,7 @@ class FXSplashScreen(QSplashScreen):
         self.overlay_opacity: float = overlay_opacity
         self.corner_radius: int = corner_radius
         self.border_width: int = border_width
-        self.border_color: str = border_color or _theme_colors.get(
-            "border_light", "#4a4949"
-        )
+        self.border_color: str = border_color  # Will use theme default if None
 
         # Enable transparency for smooth anti-aliased corners
         # Both flags are required for truly transparent rounded corners
@@ -142,6 +137,17 @@ class FXSplashScreen(QSplashScreen):
 
         # Apply overlay opacity after stylesheet to ensure it's not overridden
         self._apply_overlay_opacity()
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-aware colors. Called on init and theme changes."""
+        _theme_colors = fxstyle.get_theme_colors()
+
+        # Update border color if using theme default (no explicit color set)
+        if self.border_color is None:
+            border_color = _theme_colors.get("border_light", "#4a4949")
+            if hasattr(self, "_border_widget"):
+                self._border_widget.border_color = border_color
+                self._border_widget.update()
 
     # Private methods
     def _load_image(self, image_path: Optional[str]) -> QPixmap:
@@ -283,10 +289,15 @@ class FXSplashScreen(QSplashScreen):
     def _create_border_overlay(self) -> None:
         """Create a transparent overlay widget that draws the border on top."""
 
+        # Use theme color if no explicit border color was provided
+        _theme_colors = fxstyle.get_theme_colors()
+        border_color = self.border_color or _theme_colors.get(
+            "border_light", "#4a4949"
+        )
         self._border_widget = _FXBorderWidget(
             self,
             self.border_width,
-            self.border_color,
+            border_color,
             self.corner_radius,
         )
         self._border_widget.setGeometry(self.rect())
@@ -296,8 +307,13 @@ class FXSplashScreen(QSplashScreen):
         """Update the border overlay with current settings."""
 
         if hasattr(self, "_border_widget"):
+            # Use theme color if no explicit border color was provided
+            _theme_colors = fxstyle.get_theme_colors()
+            border_color = self.border_color or _theme_colors.get(
+                "border_light", "#4a4949"
+            )
             self._border_widget.border_width = self.border_width
-            self._border_widget.border_color = self.border_color
+            self._border_widget.border_color = border_color
             self._border_widget.corner_radius = self.corner_radius
             self._border_widget.setGeometry(self.rect())
             self._border_widget.update()

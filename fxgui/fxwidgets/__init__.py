@@ -19,6 +19,7 @@ from fxgui.fxwidgets._constants import (
     INFO,
     DEBUG,
 )
+from fxgui.fxstyle import FXThemeAware, FXThemeManager, theme_manager
 from fxgui.fxwidgets._singleton import FXSingleton
 from fxgui.fxwidgets._validators import (
     FXCamelCaseValidator,
@@ -56,11 +57,9 @@ from fxgui.fxwidgets._search_bar import FXSearchBar
 from fxgui.fxwidgets._notification_banner import FXNotificationBanner
 from fxgui.fxwidgets._loading_spinner import FXLoadingSpinner, FXLoadingOverlay
 from fxgui.fxwidgets._breadcrumb import FXBreadcrumb
-from fxgui.fxwidgets._color_picker import FXColorPicker, FXColorSwatch
 from fxgui.fxwidgets._timeline_slider import FXTimelineSlider
 from fxgui.fxwidgets._rating_widget import FXRatingWidget
 from fxgui.fxwidgets._accordion import FXAccordion, FXAccordionSection
-from fxgui.fxwidgets._button_group import FXButtonGroup
 from fxgui.fxwidgets._progress_card import FXProgressCard
 from fxgui.fxwidgets._file_path_widget import FXFilePathWidget
 
@@ -72,6 +71,9 @@ __all__ = [
     "SUCCESS",
     "INFO",
     "DEBUG",
+    "FXThemeAware",
+    "FXThemeManager",
+    "theme_manager",
     "FXSingleton",
     "FXCamelCaseValidator",
     "FXLowerCaseValidator",
@@ -103,13 +105,10 @@ __all__ = [
     "FXLoadingSpinner",
     "FXLoadingOverlay",
     "FXBreadcrumb",
-    "FXColorPicker",
-    "FXColorSwatch",
     "FXTimelineSlider",
     "FXRatingWidget",
     "FXAccordion",
     "FXAccordionSection",
-    "FXButtonGroup",
     "FXProgressCard",
     "FXFilePathWidget",
 ]

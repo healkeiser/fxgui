@@ -35,7 +35,7 @@ from fxgui.fxwidgets._constants import (
 )
 
 
-class FXNotificationBanner(QFrame):
+class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
     """Animated notification banners that slide in from top or bottom.
 
     This widget provides toast-style notifications with severity levels,
@@ -92,10 +92,11 @@ class FXNotificationBanner(QFrame):
         self._severity = severity
         self._timeout = timeout
         self._position = position
+        self._action_text = action_text
+        self._closable = closable
 
-        # Get colors
-        theme_colors = fxstyle.get_theme_colors()
-        self._colors = self._get_severity_colors(severity, theme_colors)
+        # Get colors (will be refreshed in _apply_theme_styles)
+        self._colors = self._get_severity_colors(severity)
 
         # Setup frame styling
         self.setFrameShape(QFrame.StyledPanel)
@@ -192,7 +193,7 @@ class FXNotificationBanner(QFrame):
         # Size policy
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-    def _get_severity_colors(self, severity: int, theme_colors: dict) -> dict:
+    def _get_severity_colors(self, severity: int) -> dict:
         """Get colors based on severity level."""
         # Get feedback colors from theme JSONC
         colors = fxstyle.get_colors()
@@ -232,6 +233,51 @@ class FXNotificationBanner(QFrame):
             }}
         """
         )
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        # Refresh severity colors
+        self._colors = self._get_severity_colors(self._severity)
+        self._apply_styling()
+
+        # Update icon
+        icon_name = self.SEVERITY_ICONS.get(self._severity, "info")
+        icon = fxicons.get_icon(icon_name, color=self._colors["icon"])
+        self._icon_label.setPixmap(icon.pixmap(20, 20))
+
+        # Update message label
+        self._message_label.setStyleSheet(
+            f"""
+            QLabel {{
+                color: {self._colors['text']};
+                background: transparent;
+            }}
+        """
+        )
+
+        # Update action button if exists
+        if hasattr(self, "_action_button"):
+            self._action_button.setStyleSheet(
+                f"""
+                QPushButton {{
+                    background: transparent;
+                    color: {self._colors['action']};
+                    border: 1px solid {self._colors['action']};
+                    border-radius: 3px;
+                    padding: 4px 12px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background: rgba(255, 255, 255, 0.1);
+                }}
+            """
+            )
+
+        # Update close button if exists
+        if hasattr(self, "_close_button"):
+            fxicons.set_icon(
+                self._close_button, "close", color=self._colors["icon"]
+            )
 
     def show(self) -> None:
         """Show the notification with fade-in animation."""

@@ -14,7 +14,7 @@ from qtpy.QtWidgets import QSizePolicy, QWidget
 from fxgui import fxstyle
 
 
-class FXLoadingSpinner(QWidget):
+class FXLoadingSpinner(fxstyle.FXThemeAware, QWidget):
     """A themeable animated loading indicator.
 
     This widget provides a modern spinning/pulsing loading indicator
@@ -244,7 +244,7 @@ class FXLoadingSpinner(QWidget):
         )
 
 
-class FXLoadingOverlay(QWidget):
+class FXLoadingOverlay(fxstyle.FXThemeAware, QWidget):
     """A loading overlay that blocks the parent widget.
 
     This widget creates a semi-transparent overlay with a loading
@@ -270,16 +270,13 @@ class FXLoadingOverlay(QWidget):
 
         from qtpy.QtWidgets import QVBoxLayout, QLabel
 
-        # Get theme colors
-        theme_colors = fxstyle.get_theme_colors()
-
         # Setup overlay
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setStyleSheet(
-            f"""
-            FXLoadingOverlay {{
+            """
+            FXLoadingOverlay {
                 background-color: rgba(0, 0, 0, 0.5);
-            }}
+            }
         """
         )
 
@@ -292,8 +289,17 @@ class FXLoadingOverlay(QWidget):
         layout.addWidget(self._spinner, 0, Qt.AlignCenter)
 
         # Message label
+        self._message_label = None
         if message:
             self._message_label = QLabel(message)
+            layout.addWidget(self._message_label, 0, Qt.AlignCenter)
+
+        self.hide()
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        if self._message_label:
+            theme_colors = fxstyle.get_theme_colors()
             self._message_label.setStyleSheet(
                 f"""
                 QLabel {{
@@ -303,9 +309,6 @@ class FXLoadingOverlay(QWidget):
                 }}
             """
             )
-            layout.addWidget(self._message_label, 0, Qt.AlignCenter)
-
-        self.hide()
 
     def show(self) -> None:
         """Show the overlay and start the spinner."""

@@ -19,7 +19,7 @@ from qtpy.QtWidgets import QAbstractButton, QSizePolicy, QWidget
 from fxgui import fxstyle
 
 
-class FXToggleSwitch(QAbstractButton):
+class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
     """A modern iOS/Material-style animated toggle switch.
 
     This widget provides a sleek alternative to QCheckBox with smooth

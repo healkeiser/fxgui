@@ -25,7 +25,7 @@ from fxgui.fxwidgets._constants import (
 )
 
 
-class FXStatusBar(QStatusBar):
+class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
     """Customized QStatusBar class.
 
     Args:
@@ -55,16 +55,14 @@ class FXStatusBar(QStatusBar):
 
         super().__init__(parent)
 
-        # Store colors for status line (from current theme)
-        _accent = fxstyle.get_accent_colors()
-        self._status_line_color_a = _accent["primary"]
-        self._status_line_color_b = _accent["secondary"]
+        # Store colors for status line (will be set in _apply_theme_styles)
+        self._status_line_color_a = None
+        self._status_line_color_b = None
 
         # Create status line (gradient bar at the top of the status bar)
         self.status_line = QFrame(self)
         self.status_line.setFrameShape(QFrame.NoFrame)
         self.status_line.setFixedHeight(3)
-        self._update_status_line_colors()
 
         # Create border line (sits just below the status line)
         self.border_line = QFrame(self)
@@ -102,18 +100,6 @@ class FXStatusBar(QStatusBar):
             self.addPermanentWidget(widget)
 
         self.messageChanged.connect(self._on_status_message_changed)
-
-        # Set initial stylesheet and border line color
-        theme_colors = fxstyle.get_theme_colors()
-        self._update_border_line_color(theme_colors["border"])
-        self.setStyleSheet(
-            f"""
-            QStatusBar {{
-                border: 0px solid transparent;
-                background: {theme_colors['input']};
-            }}
-        """
-        )
 
     def resizeEvent(self, event) -> None:
         """Handle resize to position the status line and border correctly."""
@@ -346,10 +332,14 @@ class FXStatusBar(QStatusBar):
             f"""
             QStatusBar {{
                 border: 0px solid transparent;
-                background: {theme_colors['input']};
+                background: {theme_colors['surface_sunken']};
             }}
         """
         )
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        self._apply_stylesheet()
 
     def hide_status_line(self) -> None:
         """Hide the status line and border line."""

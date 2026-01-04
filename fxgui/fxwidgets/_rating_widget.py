@@ -13,7 +13,7 @@ from qtpy.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 from fxgui import fxicons, fxstyle
 
 
-class FXRatingWidget(QWidget):
+class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
     """A clickable star rating widget.
 
     This widget provides a configurable star rating with:

@@ -22,7 +22,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 
 
-class FXTagChip(QFrame):
+class FXTagChip(fxstyle.FXThemeAware, QFrame):
     """A single removable tag chip.
 
     Args:
@@ -44,22 +44,10 @@ class FXTagChip(QFrame):
     ):
         super().__init__(parent)
         self._text = text
-
-        # Get theme colors
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
+        self._removable = removable
 
         # Setup styling
         self.setFrameShape(QFrame.StyledPanel)
-        self.setStyleSheet(
-            f"""
-            FXTagChip {{
-                background-color: {accent_colors['primary']};
-                border-radius: 12px;
-                padding: 2px 4px;
-            }}
-        """
-        )
 
         # Layout
         layout = QHBoxLayout(self)
@@ -68,21 +56,12 @@ class FXTagChip(QFrame):
 
         # Tag label
         self.label = QLabel(text)
-        self.label.setStyleSheet(
-            f"""
-            QLabel {{
-                color: white;
-                background: transparent;
-                font-size: 11px;
-            }}
-        """
-        )
         layout.addWidget(self.label)
 
         # Remove button
+        self.remove_button = None
         if removable:
             self.remove_button = QPushButton()
-            fxicons.set_icon(self.remove_button, "close", color="#ffffff")
             self.remove_button.setFixedSize(16, 16)
             self.remove_button.setFlat(True)
             self.remove_button.setCursor(Qt.PointingHandCursor)
@@ -103,6 +82,33 @@ class FXTagChip(QFrame):
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        accent_colors = fxstyle.get_accent_colors()
+
+        self.setStyleSheet(
+            f"""
+            FXTagChip {{
+                background-color: {accent_colors['primary']};
+                border-radius: 12px;
+                padding: 2px 4px;
+            }}
+        """
+        )
+
+        self.label.setStyleSheet(
+            """
+            QLabel {
+                color: white;
+                background: transparent;
+                font-size: 11px;
+            }
+        """
+        )
+
+        if self.remove_button:
+            fxicons.set_icon(self.remove_button, "close", color="#ffffff")
+
     @property
     def text(self) -> str:
         """Return the tag text."""
@@ -113,7 +119,7 @@ class FXTagChip(QFrame):
         self.removed.emit(self._text)
 
 
-class FXTagInput(QWidget):
+class FXTagInput(fxstyle.FXThemeAware, QWidget):
     """A styled input widget that displays tags as removable chips.
 
     This widget provides an input field where users can type and press
@@ -155,9 +161,6 @@ class FXTagInput(QWidget):
         self._max_tags = max_tags
         self._allow_duplicates = allow_duplicates
 
-        # Get theme colors
-        theme_colors = fxstyle.get_theme_colors()
-
         # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -184,25 +187,31 @@ class FXTagInput(QWidget):
         self._input = QLineEdit()
         self._input.setPlaceholderText(placeholder)
         self._input.returnPressed.connect(self._on_return_pressed)
-        self._input.setStyleSheet(
-            f"""
-            QLineEdit {{
-                background-color: {theme_colors['input']};
-                border: 1px solid {theme_colors['border']};
-                border-radius: 4px;
-                padding: 6px 8px;
-            }}
-            QLineEdit:focus {{
-                border-color: {fxstyle.get_accent_colors()['primary']};
-            }}
-        """
-        )
 
         main_layout.addWidget(self._scroll_area)
         main_layout.addWidget(self._input)
 
         # Hide scroll area initially if no tags
         self._scroll_area.setVisible(False)
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        theme_colors = fxstyle.get_theme_colors()
+        accent_colors = fxstyle.get_accent_colors()
+
+        self._input.setStyleSheet(
+            f"""
+            QLineEdit {{
+                background-color: {theme_colors['surface_sunken']};
+                border: 1px solid {theme_colors['border']};
+                border-radius: 4px;
+                padding: 6px 8px;
+            }}
+            QLineEdit:focus {{
+                border-color: {accent_colors['primary']};
+            }}
+        """
+        )
 
     @property
     def tags(self) -> List[str]:

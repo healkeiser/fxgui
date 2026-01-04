@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 
 
-class FXSearchBar(QWidget):
+class FXSearchBar(fxstyle.FXThemeAware, QWidget):
     """An enhanced search input widget with built-in features.
 
     This widget provides a search input with:
@@ -62,10 +62,6 @@ class FXSearchBar(QWidget):
 
         self._debounce_ms = debounce_ms
 
-        # Get theme colors
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
         # Main layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -81,23 +77,10 @@ class FXSearchBar(QWidget):
         layout.addWidget(self._filter_combo)
 
         # Search container
-        search_container = QWidget()
-        search_layout = QHBoxLayout(search_container)
+        self._search_container = QWidget()
+        search_layout = QHBoxLayout(self._search_container)
         search_layout.setContentsMargins(8, 0, 4, 0)
         search_layout.setSpacing(4)
-
-        search_container.setStyleSheet(
-            f"""
-            QWidget {{
-                background-color: {theme_colors['input']};
-                border: 1px solid {theme_colors['border']};
-                border-radius: 4px;
-            }}
-            QWidget:focus-within {{
-                border-color: {accent_colors['primary']};
-            }}
-        """
-        )
 
         # Search icon
         self._search_icon = QPushButton()
@@ -147,7 +130,7 @@ class FXSearchBar(QWidget):
         self._clear_button.setVisible(False)
         search_layout.addWidget(self._clear_button)
 
-        layout.addWidget(search_container, 1)
+        layout.addWidget(self._search_container, 1)
 
         # Debounce timer
         self._debounce_timer = QTimer(self)
@@ -155,6 +138,24 @@ class FXSearchBar(QWidget):
         self._debounce_timer.timeout.connect(self._emit_search_changed)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        theme_colors = fxstyle.get_theme_colors()
+        accent_colors = fxstyle.get_accent_colors()
+
+        self._search_container.setStyleSheet(
+            f"""
+            QWidget {{
+                background-color: {theme_colors['surface_sunken']};
+                border: 1px solid {theme_colors['border']};
+                border-radius: 4px;
+            }}
+            QWidget:focus-within {{
+                border-color: {accent_colors['primary']};
+            }}
+        """
+        )
 
     @property
     def text(self) -> str:

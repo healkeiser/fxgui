@@ -1,7 +1,10 @@
 """Collapsible widget implementation."""
 
+# Built-in
+import os
 from typing import Optional, Union
 
+# Third-party
 from qtpy.QtCore import (
     QAbstractAnimation,
     QEasingCurve,
@@ -22,6 +25,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons
 
 
@@ -327,3 +331,52 @@ class FXCollapsibleWidget(QWidget):
             The current title text.
         """
         return self._title
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    import sys
+    from qtpy.QtWidgets import QPushButton, QCheckBox
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app = FXApplication(sys.argv)
+    window = FXMainWindow()
+    window.setWindowTitle("FXCollapsibleWidget Demo")
+    widget = QWidget()
+    window.setCentralWidget(widget)
+    layout = QVBoxLayout(widget)
+
+    # Basic collapsible section
+    collapsible1 = FXCollapsibleWidget(title="Basic Settings")
+    content_layout1 = QVBoxLayout()
+    content_layout1.addWidget(QLabel("Option 1"))
+    content_layout1.addWidget(QLabel("Option 2"))
+    content_layout1.addWidget(QCheckBox("Enable feature"))
+    collapsible1.set_content_layout(content_layout1)
+    layout.addWidget(collapsible1)
+
+    # Collapsible with icon
+    collapsible2 = FXCollapsibleWidget(
+        title="Advanced Settings", title_icon="settings"
+    )
+    content_layout2 = QVBoxLayout()
+    content_layout2.addWidget(QLabel("Advanced option 1"))
+    content_layout2.addWidget(QLabel("Advanced option 2"))
+    content_layout2.addWidget(QPushButton("Apply"))
+    collapsible2.set_content_layout(content_layout2)
+    layout.addWidget(collapsible2)
+
+    # Collapsible with more content
+    collapsible3 = FXCollapsibleWidget(
+        title="Info", title_icon="info", max_content_height=150
+    )
+    content_layout3 = QVBoxLayout()
+    for i in range(10):
+        content_layout3.addWidget(QLabel(f"Info line {i + 1}"))
+    collapsible3.set_content_layout(content_layout3)
+    layout.addWidget(collapsible3)
+
+    layout.addStretch()
+
+    window.resize(400, 400)
+    window.show()
+    sys.exit(app.exec())

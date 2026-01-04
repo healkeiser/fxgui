@@ -13,7 +13,7 @@ from qtpy.QtWidgets import QSizePolicy, QWidget
 from fxgui import fxstyle
 
 
-class FXRangeSlider(QWidget):
+class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
     """A slider with two handles for selecting a min/max range.
 
     This widget provides a dual-handle slider perfect for filtering

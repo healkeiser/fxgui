@@ -28,7 +28,7 @@ from fxgui.fxwidgets._constants import (
 )
 
 
-class FXProgressCard(QFrame):
+class FXProgressCard(fxstyle.FXThemeAware, QFrame):
     """A card widget showing task/step progress.
 
     This widget provides a styled card with:
@@ -92,21 +92,8 @@ class FXProgressCard(QFrame):
         self._show_percentage = show_percentage
         self._icon = icon
 
-        # Get theme colors
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
         # Frame styling
         self.setFrameShape(QFrame.StyledPanel)
-        self.setStyleSheet(
-            f"""
-            FXProgressCard {{
-                background-color: {theme_colors['surface']};
-                border: 1px solid {theme_colors['border']};
-                border-radius: 8px;
-            }}
-        """
-        )
 
         # Main layout
         main_layout = QVBoxLayout(self)
@@ -122,24 +109,10 @@ class FXProgressCard(QFrame):
         self._icon_label.setFixedSize(20, 20)
         self._icon_label.setStyleSheet("background: transparent;")
         if icon:
-            task_icon = fxicons.get_icon(
-                icon, color=theme_colors["text_secondary"]
-            )
-            self._icon_label.setPixmap(task_icon.pixmap(18, 18))
             header_layout.addWidget(self._icon_label)
 
         # Title
         self._title_label = QLabel(title)
-        self._title_label.setStyleSheet(
-            f"""
-            QLabel {{
-                color: {theme_colors['text']};
-                font-weight: bold;
-                font-size: 14px;
-                background: transparent;
-            }}
-        """
-        )
         header_layout.addWidget(self._title_label)
 
         header_layout.addStretch()
@@ -154,18 +127,10 @@ class FXProgressCard(QFrame):
         main_layout.addLayout(header_layout)
 
         # Description
+        self._description_label = None
         if description:
             self._description_label = QLabel(description)
             self._description_label.setWordWrap(True)
-            self._description_label.setStyleSheet(
-                f"""
-                QLabel {{
-                    color: {theme_colors['text_secondary']};
-                    font-size: 12px;
-                    background: transparent;
-                }}
-            """
-            )
             main_layout.addWidget(self._description_label)
 
         # Progress row
@@ -178,6 +143,68 @@ class FXProgressCard(QFrame):
         self._progress_bar.setValue(progress)
         self._progress_bar.setTextVisible(False)
         self._progress_bar.setFixedHeight(6)
+        progress_layout.addWidget(self._progress_bar, 1)
+
+        # Percentage label
+        self._percentage_label = None
+        if show_percentage:
+            self._percentage_label = QLabel(f"{progress}%")
+            self._percentage_label.setFixedWidth(40)
+            self._percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            progress_layout.addWidget(self._percentage_label)
+
+        main_layout.addLayout(progress_layout)
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        theme_colors = fxstyle.get_theme_colors()
+        accent_colors = fxstyle.get_accent_colors()
+
+        # Frame styling
+        self.setStyleSheet(
+            f"""
+            FXProgressCard {{
+                background-color: {theme_colors['surface']};
+                border: 1px solid {theme_colors['border']};
+                border-radius: 8px;
+            }}
+        """
+        )
+
+        # Task icon
+        if self._icon:
+            task_icon = fxicons.get_icon(
+                self._icon, color=theme_colors["text_muted"]
+            )
+            self._icon_label.setPixmap(task_icon.pixmap(18, 18))
+
+        # Title label
+        self._title_label.setStyleSheet(
+            f"""
+            QLabel {{
+                color: {theme_colors['text']};
+                font-weight: bold;
+                font-size: 14px;
+                background: transparent;
+            }}
+        """
+        )
+
+        # Description label
+        if self._description_label:
+            self._description_label.setStyleSheet(
+                f"""
+                QLabel {{
+                    color: {theme_colors['text_muted']};
+                    font-size: 12px;
+                    background: transparent;
+                }}
+            """
+            )
+
+        # Progress bar
         self._progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
@@ -191,27 +218,21 @@ class FXProgressCard(QFrame):
             }}
         """
         )
-        progress_layout.addWidget(self._progress_bar, 1)
 
         # Percentage label
-        if show_percentage:
-            self._percentage_label = QLabel(f"{progress}%")
-            self._percentage_label.setFixedWidth(40)
-            self._percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        if self._percentage_label:
             self._percentage_label.setStyleSheet(
                 f"""
                 QLabel {{
-                    color: {theme_colors['text_secondary']};
+                    color: {theme_colors['text_muted']};
                     font-size: 12px;
                     background: transparent;
                 }}
             """
             )
-            progress_layout.addWidget(self._percentage_label)
 
-        main_layout.addLayout(progress_layout)
-
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # Update status icon
+        self._update_status_icon()
 
     @property
     def progress(self) -> int:
