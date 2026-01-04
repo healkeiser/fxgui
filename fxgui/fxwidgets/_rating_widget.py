@@ -156,9 +156,7 @@ class FXRatingWidget(QWidget):
                 icon = fxicons.get_icon(self._half_icon, color=color)
             else:
                 # Empty star
-                icon = fxicons.get_icon(
-                    self._empty_icon, color=empty_color
-                )
+                icon = fxicons.get_icon(self._empty_icon, color=empty_color)
 
             star.setPixmap(icon.pixmap(self._icon_size, self._icon_size))
 
