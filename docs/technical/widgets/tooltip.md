@@ -2,6 +2,8 @@
 
 Enhanced tooltips with custom positioning and styling.
 
+![FXTooltip](../../images/widgets/tooltip.png)
+
 ## Classes
 
 ::: fxgui.fxwidgets.FXTooltip

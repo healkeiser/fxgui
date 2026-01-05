@@ -2,6 +2,8 @@
 
 Enhanced line edit widgets with additional functionality.
 
+![FXInputs](../../images/widgets/inputs.png)
+
 ## Classes
 
 ::: fxgui.fxwidgets.FXIconLineEdit

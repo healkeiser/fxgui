@@ -2,6 +2,8 @@
 
 Input validators for enforcing text formatting rules.
 
+![FXValidators](../../images/widgets/validators.png)
+
 ## Classes
 
 ::: fxgui.fxwidgets.FXCamelCaseValidator

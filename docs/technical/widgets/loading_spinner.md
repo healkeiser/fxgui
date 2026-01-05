@@ -2,6 +2,8 @@
 
 Widgets for displaying loading states and progress indicators.
 
+![FXLoadingSpinner](../../images/widgets/loading_spinner.png)
+
 ## Classes
 
 ::: fxgui.fxwidgets.FXLoadingSpinner

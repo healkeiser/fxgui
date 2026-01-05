@@ -208,7 +208,7 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
         theme_colors = fxstyle.get_theme_colors()
         accent_colors = fxstyle.get_accent_colors()
 
-        track_color = QColor(theme_colors["surface_alt"])
+        track_color = QColor(theme_colors["surface_sunken"])
         range_color = QColor(accent_colors["primary"])
         handle_color = QColor("#ffffff")
         handle_border_color = QColor(accent_colors["primary"])

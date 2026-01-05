@@ -2,6 +2,8 @@
 
 Widgets for displaying and handling log output.
 
+![FXLogWidget](../../images/widgets/log_widget.png)
+
 ## Classes
 
 ::: fxgui.fxwidgets.FXOutputLogWidget

@@ -2,6 +2,8 @@
 
 Custom item delegates for Qt views (QListView, QTreeView, QTableView).
 
+![FXDelegates](../../images/widgets/delegates.png)
+
 ## Classes
 
 ::: fxgui.fxwidgets.FXColorLabelDelegate
