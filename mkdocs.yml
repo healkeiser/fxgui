@@ -55,33 +55,33 @@ theme:
 
 ###### Markdown extensions #####################################################
 
-markdown_extensions: {}
-  # - footnotes
-  # - admonition
-  # - attr_list
-  # - md_in_html
-  # - def_list
-  # - tables
-  # - pymdownx.details
-  # - pymdownx.inlinehilite
-  # - pymdownx.snippets
-  # - pymdownx.superfences
-  # - pymdownx.critic
-  # - pymdownx.caret
-  # - pymdownx.keys
-  # - pymdownx.mark
-  # - pymdownx.tilde
-  # - pymdownx.b64
-  # - pymdownx.smartsymbols
-  # - pymdownx.highlight:
-  #     anchor_linenums: true
-  # - pymdownx.tasklist:
-  #     custom_checkbox: true
-  # - pymdownx.tabbed:
-  #     alternate_style: true
-  # - pymdownx.emoji:
-  #     emoji_index: !!python/name:material.extensions.emoji.twemoji
-  #     emoji_generator: !!python/name:material.extensions.emoji.to_svg
+# markdown_extensions:
+#   - footnotes
+#   - admonition
+#   - attr_list
+#   - md_in_html
+#   - def_list
+#   - tables
+#   - pymdownx.details
+#   - pymdownx.inlinehilite
+#   - pymdownx.snippets
+#   - pymdownx.superfences
+#   - pymdownx.critic
+#   - pymdownx.caret
+#   - pymdownx.keys
+#   - pymdownx.mark
+#   - pymdownx.tilde
+#   - pymdownx.b64
+#   - pymdownx.smartsymbols
+#   - pymdownx.highlight:
+#       anchor_linenums: true
+#   - pymdownx.tasklist:
+#       custom_checkbox: true
+#   - pymdownx.tabbed:
+#       alternate_style: true
+#   - pymdownx.emoji:
+#       emoji_index: !!python/name:material.extensions.emoji.twemoji
+#       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 plugins:
   - search

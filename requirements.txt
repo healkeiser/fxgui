@@ -5,10 +5,11 @@ PyYAML >= 6.0
 # Documentation
 # Zensical (replaces MkDocs + Material for MkDocs)
 # Note: Zensical is compatible with mkdocs.yml config files
-zensical
+zensical >= 0.0.15
 
 # Required until Zensical reaches full plugin feature parity:
-mkdocstrings[python]
+# mkdocstrings >= 1.0.0 is required for Zensical compatibility
+mkdocstrings-python >= 2.0.0
 
 # Code formatting
 black
