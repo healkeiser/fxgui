@@ -135,9 +135,6 @@ class FXLoadingSpinner(fxstyle.FXThemeAware, QWidget):
 
     def _paint_spinner(self, painter: QPainter) -> None:
         """Paint the spinner style."""
-        # Calculate dimensions
-        center = self._size // 2
-        radius = center - self._line_width
 
         # Get current color (theme-aware)
         color = self._get_color()
@@ -232,7 +229,7 @@ class FXLoadingSpinner(fxstyle.FXThemeAware, QWidget):
 
         # Inner circle
         inner_radius = int(radius * 0.5)
-        inner_color = QColor(self._color)
+        inner_color = QColor(color)
         inner_color.setAlphaF(opacity * 0.5)
         painter.setBrush(inner_color)
         painter.setPen(Qt.NoPen)

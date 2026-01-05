@@ -839,6 +839,7 @@ def example() -> None:
 
     # Button with simple tooltip
     btn1 = QPushButton("Hover for Simple Tooltip")
+    # XXX: Variable assigned to prevent Python's garbage collection
     tooltip1 = FXTooltip(
         parent=btn1,
         title="Save File",
@@ -850,6 +851,7 @@ def example() -> None:
 
     # Button with rich tooltip
     btn2 = QPushButton("Hover for Rich Tooltip")
+    # XXX: Variable assigned to prevent Python's garbage collection
     tooltip2 = FXTooltip(
         parent=btn2,
         title="New Feature!",
