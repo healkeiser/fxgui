@@ -101,6 +101,22 @@ from fxgui import examples
 examples.main()
 ```
 
+### Widget Examples
+
+Each widget in the `fxwidgets` module includes a standalone example that can be run directly. Set the `DEVELOPER_MODE` environment variable to `1` to enable examples:
+
+``` shell
+# Set the environment variable first
+set DEVELOPER_MODE=1  # Windows
+export DEVELOPER_MODE=1  # Linux/macOS
+
+# Run any widget file directly to see its example
+python -m fxgui.fxwidgets._breadcrumb
+python -m fxgui.fxwidgets._accordion
+python -m fxgui.fxwidgets._collapsible
+# ... and more
+```
+
 
 
 <!-- DOCUMENTATION -->
