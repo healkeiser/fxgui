@@ -2,7 +2,10 @@
 
 An enhanced status bar with additional features and styling.
 
-![FXStatusBar](../../images/widgets/status_bar.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXStatusBar](../../images/widgets/status_bar.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXStatusBar
     options:

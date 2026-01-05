@@ -2,7 +2,10 @@
 
 Input validators for enforcing text formatting rules.
 
-![FXValidators](../../images/widgets/validators.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXValidators](../../images/widgets/validators.png)
+    </p>
 
 ## Classes
 

@@ -2,7 +2,10 @@
 
 A timeline slider with markers for frame-based or time-based navigation.
 
-![FXTimelineSlider](../../images/widgets/timeline_slider.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXTimelineSlider](../../images/widgets/timeline_slider.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXTimelineSlider
     options:

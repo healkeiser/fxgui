@@ -2,7 +2,10 @@
 
 Widgets for displaying loading states and progress indicators.
 
-![FXLoadingSpinner](../../images/widgets/loading_spinner.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXLoadingSpinner](../../images/widgets/loading_spinner.png)
+    </p>
 
 ## Classes
 

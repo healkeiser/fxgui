@@ -2,7 +2,10 @@
 
 A dual-handle slider for selecting a range of values.
 
-![FXRangeSlider](../../images/widgets/range_slider.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXRangeSlider](../../images/widgets/range_slider.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXRangeSlider
     options:

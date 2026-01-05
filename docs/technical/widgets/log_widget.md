@@ -2,7 +2,10 @@
 
 Widgets for displaying and handling log output.
 
-![FXLogWidget](../../images/widgets/log_widget.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXLogWidget](../../images/widgets/log_widget.png)
+    </p>
 
 ## Classes
 

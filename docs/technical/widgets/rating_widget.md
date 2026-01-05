@@ -2,7 +2,10 @@
 
 A star rating input widget for collecting user ratings.
 
-![FXRatingWidget](../../images/widgets/rating_widget.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXRatingWidget](../../images/widgets/rating_widget.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXRatingWidget
     options:

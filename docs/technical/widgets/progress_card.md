@@ -2,7 +2,10 @@
 
 A card widget displaying progress with title, description, and progress bar.
 
-![FXProgressCard](../../images/widgets/progress_card.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXProgressCard](../../images/widgets/progress_card.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXProgressCard
     options:

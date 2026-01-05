@@ -42,8 +42,6 @@ application.setStyle(fxstyle.FXProxyStyle())
     The `FXApplication` class found inside [fxwidgets](../technical/widgets/index.md) already applies this custom style.
 
 
-![Screenshot](../images/screenshot_built_in_icons.png)
-
 You can now use the icons by doing:
 
 ```python

@@ -2,7 +2,10 @@
 
 Enhanced label widgets with additional functionality.
 
-![FXLabels](../../images/widgets/labels.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXLabels](../../images/widgets/labels.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXElidedLabel
     options:

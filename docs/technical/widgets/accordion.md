@@ -2,7 +2,10 @@
 
 The accordion widget provides a container with multiple collapsible sections, where only one or multiple sections can be expanded at a time.
 
-![FXAccordion](../../images/widgets/accordion.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXAccordion](../../images/widgets/accordion.png)
+    </p>
 
 ## Classes
 

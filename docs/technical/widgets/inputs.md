@@ -2,7 +2,10 @@
 
 Enhanced line edit widgets with additional functionality.
 
-![FXInputs](../../images/widgets/inputs.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXInputs](../../images/widgets/inputs.png)
+    </p>
 
 ## Classes
 

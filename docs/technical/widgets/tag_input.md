@@ -2,7 +2,10 @@
 
 A tag/chip input widget for entering and managing multiple tags.
 
-![FXTagInput](../../images/widgets/tag_input.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXTagInput](../../images/widgets/tag_input.png)
+    </p>
 
 ## Classes
 

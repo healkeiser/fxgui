@@ -2,7 +2,10 @@
 
 The base widget class with theme support and common functionality.
 
-![FXWidget](../../images/widgets/widget.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXWidget](../../images/widgets/widget.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXWidget
     options:

@@ -2,7 +2,10 @@
 
 An iOS-style toggle switch widget for boolean input.
 
-![FXToggleSwitch](../../images/widgets/toggle_switch.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXToggleSwitch](../../images/widgets/toggle_switch.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXToggleSwitch
     options:
