@@ -1,0 +1,6 @@
+# CODEOWNERS file
+# These owners will be automatically requested for review when someone opens a pull request
+
+# Default owners for everything in the repo
+* @healkeiser
+
