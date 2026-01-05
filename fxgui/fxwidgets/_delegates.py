@@ -12,12 +12,14 @@ from qtpy.QtGui import (
     QColor,
     QFont,
     QFontMetrics,
+    QHelpEvent,
     QIcon,
     QPainter,
     QPen,
     QPixmap,
 )
 from qtpy.QtWidgets import (
+    QAbstractItemView,
     QApplication,
     QStyle,
     QStyledItemDelegate,
@@ -426,18 +428,18 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     def helpEvent(
         self,
-        event,
-        view,
+        event: QHelpEvent,
+        view: QAbstractItemView,
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ) -> bool:
         """Provide Markdown-formatted tooltips.
 
         Args:
-            event: The help event.
-            view: The view widget.
-            option: Style options.
-            index: The model index.
+            event (QHelpEvent): The help event.
+            view (QAbstractItemView): The view widget.
+            option (QStyleOptionViewItem): Style options.
+            index (QModelIndex): The model index.
 
         Returns:
             True if the event was handled.

@@ -8,7 +8,7 @@ from webbrowser import open_new_tab
 
 # Third-party
 from qtpy.QtCore import QPoint, QRect, QSize, Qt
-from qtpy.QtGui import QAction, QIcon
+from qtpy.QtGui import QAction, QCloseEvent, QIcon
 from qtpy.QtWidgets import (
     QActionGroup,
     QApplication,
@@ -345,10 +345,8 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         """Creates the menu bar for the window.
 
         Args:
-            native_menu_bar: Whether to use the native menu bar.
+            native_menu_bar (bool): Whether to use the native menu bar.
                 Defaults to `False`.
-            enable_logo_menu_bar: Whether to enable the logo menu bar.
-                Defaults to `True`.
 
         Warning:
             This method is intended for internal use only.
@@ -951,11 +949,11 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self.statusBar().version_label.setText(version)
 
     # Events
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         """Handle the window close event.
 
         Args:
-            event: The close event.
+            event (QCloseEvent): The close event.
         """
         self.setParent(None)
         super().closeEvent(event)

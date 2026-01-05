@@ -718,16 +718,16 @@ def sync_colors_with_theme() -> None:
     refresh_all_icons()
 
 
-def set_icon(widget, icon_name: str, **kwargs) -> QIcon:
+def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
     """Set an icon on a widget and register it for automatic theme updates.
 
     This is the recommended way to set icons on widgets. The icon will
     automatically refresh when the theme changes.
 
     Args:
-        widget: The widget to set the icon on (QAction, QPushButton, etc.).
-        icon_name: The name of the icon.
-        **kwargs: Optional parameters passed to get_icon (width, height,
+        widget (Any): The widget to set the icon on (QAction, QPushButton, etc.).
+        icon_name (str): The name of the icon.
+        **kwargs (Any): Optional parameters passed to get_icon (width, height,
             color, library, style, extension).
 
     Returns:

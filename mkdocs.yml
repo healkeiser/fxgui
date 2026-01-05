@@ -55,33 +55,33 @@ theme:
 
 ###### Markdown extensions #####################################################
 
-markdown_extensions:
-  - footnotes
-  - admonition
-  - attr_list
-  - md_in_html
-  - def_list
-  - tables
-  - pymdownx.details
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
-  - pymdownx.critic
-  - pymdownx.caret
-  - pymdownx.keys
-  - pymdownx.mark
-  - pymdownx.tilde
-  - pymdownx.b64
-  - pymdownx.smartsymbols
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.tasklist:
-      custom_checkbox: true
-  - pymdownx.tabbed:
-      alternate_style: true
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+markdown_extensions: {}
+  # - footnotes
+  # - admonition
+  # - attr_list
+  # - md_in_html
+  # - def_list
+  # - tables
+  # - pymdownx.details
+  # - pymdownx.inlinehilite
+  # - pymdownx.snippets
+  # - pymdownx.superfences
+  # - pymdownx.critic
+  # - pymdownx.caret
+  # - pymdownx.keys
+  # - pymdownx.mark
+  # - pymdownx.tilde
+  # - pymdownx.b64
+  # - pymdownx.smartsymbols
+  # - pymdownx.highlight:
+  #     anchor_linenums: true
+  # - pymdownx.tasklist:
+  #     custom_checkbox: true
+  # - pymdownx.tabbed:
+  #     alternate_style: true
+  # - pymdownx.emoji:
+  #     emoji_index: !!python/name:material.extensions.emoji.twemoji
+  #     emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 plugins:
   - search
@@ -138,5 +138,45 @@ nav:
       - fxicons: technical/fxicons.md
       - fxstyle: technical/fxstyle.md
       - fxutils: technical/fxutils.md
-      - fxwidgets: technical/fxwidgets.md
+      - fxwidgets:
+          - Overview: technical/widgets/index.md
+          - Core:
+              - Widget: technical/widgets/widget.md
+              - Main Window: technical/widgets/main_window.md
+              - Application: technical/widgets/application.md
+          - Layout:
+              - Accordion: technical/widgets/accordion.md
+              - Collapsible: technical/widgets/collapsible.md
+              - Scroll Area: technical/widgets/scroll_area.md
+          - Input:
+              - Inputs: technical/widgets/inputs.md
+              - Search Bar: technical/widgets/search_bar.md
+              - Tag Input: technical/widgets/tag_input.md
+              - File Path: technical/widgets/file_path_widget.md
+              - Range Slider: technical/widgets/range_slider.md
+              - Timeline Slider: technical/widgets/timeline_slider.md
+              - Toggle Switch: technical/widgets/toggle_switch.md
+              - Rating: technical/widgets/rating_widget.md
+          - Display:
+              - Labels: technical/widgets/labels.md
+              - Breadcrumb: technical/widgets/breadcrumb.md
+              - Notification Banner: technical/widgets/notification_banner.md
+              - Progress Card: technical/widgets/progress_card.md
+              - Loading Spinner: technical/widgets/loading_spinner.md
+              - Tooltip: technical/widgets/tooltip.md
+          - Dialogs:
+              - Dialogs: technical/widgets/dialogs.md
+              - Splash Screen: technical/widgets/splash_screen.md
+          - Tree & List:
+              - Tree Items: technical/widgets/tree_items.md
+              - Delegates: technical/widgets/delegates.md
+          - System:
+              - Status Bar: technical/widgets/status_bar.md
+              - System Tray: technical/widgets/system_tray.md
+          - Logging:
+              - Log Widget: technical/widgets/log_widget.md
+          - Validators: technical/widgets/validators.md
+          - Utilities:
+              - Singleton: technical/widgets/singleton.md
+              - Constants: technical/widgets/constants.md
       - examples: technical/examples.md

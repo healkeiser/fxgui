@@ -42,13 +42,13 @@ app.exec_()
 
 | Module | Description |
 |--------|-------------|
-| [fxconfig](fxconfig.md) | Configuration and settings management |
-| [fxcore](fxcore.md) | Core functionality (fuzzy filtering proxy model) |
-| [fxdcc](fxdcc.md) | DCC-specific utilities (Houdini, Maya, Nuke) |
-| [fxicons](fxicons.md) | Icon management with multiple libraries |
-| [fxstyle](fxstyle.md) | Theming, stylesheets, and color management |
-| [fxutils](fxutils.md) | General utility functions |
-| [fxwidgets](fxwidgets.md) | Custom Qt widgets |
+| [fxconfig](technical/fxconfig.md) | Configuration and settings management |
+| [fxcore](technical/fxcore.md) | Core functionality (fuzzy filtering proxy model) |
+| [fxdcc](technical/fxdcc.md) | DCC-specific utilities (Houdini, Maya, Nuke) |
+| [fxicons](technical/fxicons.md) | Icon management with multiple libraries |
+| [fxstyle](technical/fxstyle.md) | Theming, stylesheets, and color management |
+| [fxutils](technical/fxutils.md) | General utility functions |
+| [fxwidgets](technical/widgets/index.md) | Custom Qt widgets |
 
 !!! note
     This documentation is updated regularly to reflect the most recent changes.<br>

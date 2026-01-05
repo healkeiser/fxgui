@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QScrollArea,
     QSizePolicy,
     QToolButton,
@@ -149,11 +150,11 @@ class FXAccordionSection(fxstyle.FXThemeAware, QWidget):
         # Calculate content height
         self._content_height = min(300, widget.sizeHint().height())
 
-    def set_content_layout(self, layout) -> None:
+    def set_content_layout(self, layout: QLayout) -> None:
         """Set the content layout for this section.
 
         Args:
-            layout: The layout to use for content.
+            layout (QLayout): The layout to use for content.
         """
         container = QWidget()
         container.setLayout(layout)

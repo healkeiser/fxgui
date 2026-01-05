@@ -78,7 +78,7 @@ python -m fxgui.fxwidgets._range_slider
 
 ## Available Widgets
 
-The [fxwidgets](fxwidgets.md) module provides many pre-styled widgets:
+The [fxwidgets](../technical/widgets/index.md) module provides many pre-styled widgets:
 
 | Widget | Description |
 |--------|-------------|
