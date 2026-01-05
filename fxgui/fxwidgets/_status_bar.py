@@ -1,19 +1,20 @@
-"""FXStatusBar - Custom status bar widget."""
+"""Custom status bar widget."""
 
+# Built-in
 import logging
 from typing import Optional, Tuple
 
+# Third-party
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
     QFrame,
     QLabel,
-    QSizePolicy,
     QStatusBar,
-    QVBoxLayout,
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._constants import (
     CRITICAL,
@@ -25,7 +26,7 @@ from fxgui.fxwidgets._constants import (
 )
 
 
-class FXStatusBar(QStatusBar):
+class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
     """Customized QStatusBar class.
 
     Args:
@@ -55,16 +56,14 @@ class FXStatusBar(QStatusBar):
 
         super().__init__(parent)
 
-        # Store colors for status line (from current theme)
-        _accent = fxstyle.get_accent_colors()
-        self._status_line_color_a = _accent["primary"]
-        self._status_line_color_b = _accent["secondary"]
+        # Store colors for status line (will be set in _apply_theme_styles)
+        self._status_line_color_a = None
+        self._status_line_color_b = None
 
         # Create status line (gradient bar at the top of the status bar)
         self.status_line = QFrame(self)
         self.status_line.setFrameShape(QFrame.NoFrame)
         self.status_line.setFixedHeight(3)
-        self._update_status_line_colors()
 
         # Create border line (sits just below the status line)
         self.border_line = QFrame(self)
@@ -102,18 +101,6 @@ class FXStatusBar(QStatusBar):
             self.addPermanentWidget(widget)
 
         self.messageChanged.connect(self._on_status_message_changed)
-
-        # Set initial stylesheet and border line color
-        theme_colors = fxstyle.get_theme_colors()
-        self._update_border_line_color(theme_colors["border"])
-        self.setStyleSheet(
-            f"""
-            QStatusBar {{
-                border: 0px solid transparent;
-                background: {theme_colors['input']};
-            }}
-        """
-        )
 
     def resizeEvent(self, event) -> None:
         """Handle resize to position the status line and border correctly."""
@@ -326,18 +313,34 @@ class FXStatusBar(QStatusBar):
         """
         self.border_line.setStyleSheet(f"background: {color};")
 
-    def _apply_stylesheet(self) -> None:
-        """Apply the status bar stylesheet."""
+    def _apply_stylesheet(self, with_status_line_padding: bool = True) -> None:
+        """Apply the status bar stylesheet.
+
+        Args:
+            with_status_line_padding: Whether to include padding for the
+                status line. Defaults to `True`.
+        """
+        # Update accent colors from current theme
+        _accent = fxstyle.get_accent_colors()
+        self._status_line_color_a = _accent["primary"]
+        self._status_line_color_b = _accent["secondary"]
+        self._update_status_line_colors()
+
+        # Update theme colors
         theme_colors = fxstyle.get_theme_colors()
         self._update_border_line_color(theme_colors["border"])
         self.setStyleSheet(
             f"""
             QStatusBar {{
                 border: 0px solid transparent;
-                background: {theme_colors['input']};
+                background: {theme_colors['surface_sunken']};
             }}
         """
         )
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles."""
+        self._apply_stylesheet()
 
     def hide_status_line(self) -> None:
         """Hide the status line and border line."""
@@ -350,3 +353,54 @@ class FXStatusBar(QStatusBar):
         self.status_line.show()
         self.border_line.show()
         self._apply_stylesheet(with_status_line_padding=True)
+
+
+def example() -> None:
+    import sys
+    from qtpy.QtCore import QTimer
+    from qtpy.QtWidgets import QVBoxLayout, QWidget, QPushButton
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app = FXApplication(sys.argv)
+    window = FXMainWindow()
+    window.setWindowTitle("FXStatusBar Demo")
+
+    widget = QWidget()
+    window.setCentralWidget(widget)
+    layout = QVBoxLayout(widget)
+
+    # Create buttons to show different message types
+    btn_info = QPushButton("Show Info Message")
+    btn_success = QPushButton("Show Success Message")
+    btn_warning = QPushButton("Show Warning Message")
+    btn_error = QPushButton("Show Error Message")
+
+    layout.addWidget(btn_info)
+    layout.addWidget(btn_success)
+    layout.addWidget(btn_warning)
+    layout.addWidget(btn_error)
+
+    # Connect buttons to show messages
+    btn_info.clicked.connect(
+        lambda: window.status_bar.showMessage("Info message", INFO)
+    )
+    btn_success.clicked.connect(
+        lambda: window.status_bar.showMessage("Success message", SUCCESS)
+    )
+    btn_warning.clicked.connect(
+        lambda: window.status_bar.showMessage("Warning message", WARNING)
+    )
+    btn_error.clicked.connect(
+        lambda: window.status_bar.showMessage("Error message", ERROR)
+    )
+
+    window.resize(500, 300)
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

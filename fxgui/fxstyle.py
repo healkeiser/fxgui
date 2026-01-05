@@ -6,10 +6,58 @@ This module provides comprehensive styling functionality including:
     - QSS stylesheet loading with dynamic color replacement
     - Custom QProxyStyle for standard icon overrides
     - Theme toggling with icon cache invalidation
-    - Color loading from JSONC configuration files
+    - Color loading from YAML configuration files with inheritance support
+
+Theme Color Reference
+---------------------
+Each theme in ``style.yaml`` defines these semantic color roles:
+
+**Accent Colors** (interactive highlights):
+    - ``accent_primary``: Hover borders, selections, progress gradients (end)
+    - ``accent_secondary``: Gradient starts, item hover backgrounds
+
+**Surface Colors** (backgrounds):
+    - ``surface``: Main widget/window backgrounds, buttons, selected tabs
+    - ``surface_alt``: Alternate row backgrounds in lists/tables
+    - ``surface_sunken``: Recessed areas - inputs, lists, menus, status bar
+    - ``tooltip``: Tooltip backgrounds
+
+**Border Colors**:
+    - ``border``: Standard borders on inputs, containers, menus
+    - ``border_light``: Subtle borders - tooltips, buttons, tabs
+    - ``border_strong``: Emphasized borders - frames, separators
+
+**Text Colors**:
+    - ``text``: Primary text for all widgets
+    - ``text_muted``: De-emphasized text - inactive tabs, placeholders
+    - ``text_disabled``: Disabled widget text
+    - ``text_on_accent_primary``: Text on accent_primary backgrounds (optional, auto-computed)
+    - ``text_on_accent_secondary``: Text on accent_secondary backgrounds (optional, auto-computed)
+
+**Interactive States**:
+    - ``state_hover``: Hover state backgrounds
+    - ``state_pressed``: Pressed/checked/active backgrounds
+
+**Scrollbar**:
+    - ``scrollbar_track``: Track/gutter background
+    - ``scrollbar_thumb``: Draggable thumb
+    - ``scrollbar_thumb_hover``: Thumb hover state
+
+**Layout**:
+    - ``grid``: Table gridlines, header borders
+    - ``separator``: Separator/splitter hover backgrounds
+
+**Slider**:
+    - ``slider_thumb``: Slider handle color
+    - ``slider_thumb_hover``: Slider handle hover/pressed
+
+**Icon**:
+    - ``icon``: Monochrome icon tint color
 
 Classes:
     FXProxyStyle: Custom style providing Material Design icons for Qt standard icons.
+    FXThemeManager: Singleton that emits signals when theme changes.
+    FXThemeAware: Mixin for widgets that auto-update on theme changes.
 
 Functions:
     load_stylesheet: Load and customize QSS stylesheets.
@@ -19,6 +67,8 @@ Functions:
     get_available_themes: Get list of available theme names.
     get_theme: Get the current theme name.
     get_theme_colors: Get the color palette for the current theme.
+    get_accent_colors: Get primary/secondary accent colors.
+    get_icon_color: Get the icon tint color for current theme.
     save_theme: Save the current theme to persistent storage.
     load_saved_theme: Load the previously saved theme.
 
@@ -37,6 +87,13 @@ Examples:
 
     >>> fxstyle.apply_theme(window, "one_dark_pro")
 
+    Getting colors for custom widgets:
+
+    >>> colors = fxstyle.get_theme_colors()
+    >>> surface = colors["surface"]  # Main background
+    >>> sunken = colors["surface_sunken"]  # Input/list backgrounds
+    >>> text = colors["text"]  # Primary text color
+
     Theme persistence (automatic):
     Themes are automatically saved when using `apply_theme()`.
     On next application startup, the saved theme is automatically loaded.
@@ -50,14 +107,14 @@ __email__ = "valentin.onze@gmail.com"
 ###### Imports
 
 # Built-in
-import json
 import os
-import re
 import sys
 from pathlib import Path
 from typing import Optional
 
 # Third-party
+import yaml
+from qtpy.QtCore import QEvent, QObject, QTimer, Signal
 from qtpy.QtGui import QColor, QFontDatabase, QIcon
 from qtpy.QtWidgets import (
     QProxyStyle,
@@ -71,11 +128,109 @@ from qtpy.QtWidgets import (
 from fxgui import fxconfig, fxicons
 
 
+###### Theme Management
+
+
+class FXThemeManager(QObject):
+    """Singleton that emits theme_changed(str) when the theme changes."""
+
+    theme_changed = Signal(str)
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if hasattr(self, "_initialized") and self._initialized:
+            return
+        super().__init__()
+        self._initialized = True
+        self._current_theme: str = ""
+
+    def notify_theme_changed(self, theme_name: str) -> None:
+        """Called by apply_theme() when theme changes."""
+        self._current_theme = theme_name
+        self.theme_changed.emit(theme_name)
+
+    @property
+    def current_theme(self) -> str:
+        """Return the current theme name."""
+        return self._current_theme
+
+
+# Global singleton instance
+theme_manager = FXThemeManager()
+
+
+class FXThemeAware:
+    """Mixin that makes widgets automatically respond to theme changes.
+
+    Usage:
+        1. Inherit from FXThemeAware **FIRST**: `class MyWidget(FXThemeAware, QWidget)`
+        2. Override `_apply_theme_styles()` to apply your colors
+
+    Example:
+        >>> from fxgui import fxstyle
+        >>> class FXMyWidget(FXThemeAware, QWidget):
+        ...     def _apply_theme_styles(self):
+        ...         colors = fxstyle.get_theme_colors()
+        ...         self.setStyleSheet(f"background: {colors['surface']};")
+
+    That's it! Colors update automatically when theme changes.
+    """
+
+    _applying_theme: bool = False  # Guard against recursion
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._applying_theme = False
+        theme_manager.theme_changed.connect(self._on_theme_changed)
+        # Auto-call _apply_theme_styles after widget is fully initialized
+        QTimer.singleShot(0, self._safe_apply_theme_styles)
+
+    def changeEvent(self, event) -> None:
+        """Handle Qt palette change events."""
+        # Only respond to palette changes if we're not already applying theme
+        # This prevents recursion when setStyleSheet triggers PaletteChange
+        if (
+            event.type() == QEvent.Type.PaletteChange
+            and not self._applying_theme
+        ):
+            self._safe_apply_theme_styles()
+        super().changeEvent(event)
+
+    def _on_theme_changed(self, theme_name: str) -> None:
+        """Handle theme change from FXThemeManager."""
+        self._safe_apply_theme_styles()
+        if hasattr(self, "update"):
+            self.update()
+
+    def _safe_apply_theme_styles(self) -> None:
+        """Wrapper that prevents recursion when applying styles."""
+        if self._applying_theme:
+            return
+        self._applying_theme = True
+        try:
+            self._apply_theme_styles()
+        finally:
+            self._applying_theme = False
+
+    def _apply_theme_styles(self) -> None:
+        """Override this to apply theme colors. Called automatically."""
+        pass
+
+
 ###### Public API
 
 __all__ = [
     # Classes
     "FXProxyStyle",
+    "FXThemeManager",
+    "FXThemeAware",
+    # Singleton
+    "theme_manager",
     # Constants
     "STYLE_FILE",
     "DEFAULT_COLOR_FILE",
@@ -107,7 +262,7 @@ __all__ = [
 
 _parent_directory = Path(__file__).parent
 STYLE_FILE = _parent_directory / "qss" / "style.qss"
-DEFAULT_COLOR_FILE = _parent_directory / "style.jsonc"
+DEFAULT_COLOR_FILE = _parent_directory / "style.yaml"
 
 # Theme persistence keys
 _SETTINGS_THEME_KEY = "theme/current"
@@ -121,36 +276,18 @@ _color_file = None  # Tracks which color file is currently loaded
 _theme = None  # Will be loaded from settings on first access
 _standard_icon_map = None  # Lazy-loaded icon map cache
 
-# Pre-compiled regex pattern for JSONC comment removal
-_COMMENT_PATTERN = re.compile(
-    r"(\"(?:\\\"|.)*?\"|'.*?'|//.*?$|/\*.*?\*/)",
-    flags=re.DOTALL | re.MULTILINE,
-)
-
 
 ###### Private Helper Functions
 
 
-def _remove_comments(text: str) -> str:
-    """Remove single-line and multi-line comments from the input text.
+def _load_colors_from_yaml(yaml_file: str = None) -> dict:
+    """Load colors from a YAML configuration file.
+
+    YAML supports anchors and aliases for theme inheritance, allowing
+    themes to extend base themes and override specific colors.
 
     Args:
-        text: The input text containing comments.
-
-    Returns:
-        The input text with comments removed.
-    """
-    return _COMMENT_PATTERN.sub(
-        lambda m: "" if m.group(0).startswith("/") else m.group(0),
-        text,
-    )
-
-
-def _load_colors_from_jsonc(jsonc_file: str = None) -> dict:
-    """Load colors from a JSONC (JSON with comments) file.
-
-    Args:
-        jsonc_file: The path to the JSONC file. Defaults to
+        yaml_file: The path to the YAML file. Defaults to
             `DEFAULT_COLOR_FILE` or the file set via `set_color_file()`.
 
     Returns:
@@ -159,43 +296,43 @@ def _load_colors_from_jsonc(jsonc_file: str = None) -> dict:
     global _colors, _color_file
 
     # Use the set color file, or fall back to default
-    if jsonc_file is None:
-        jsonc_file = _color_file if _color_file else DEFAULT_COLOR_FILE
+    if yaml_file is None:
+        yaml_file = _color_file if _color_file else DEFAULT_COLOR_FILE
 
     # Convert to string for comparison
-    jsonc_file_str = str(jsonc_file)
+    yaml_file_str = str(yaml_file)
 
     # Return cached if same file, otherwise reload
-    if _colors is not None and _color_file == jsonc_file_str:
+    if _colors is not None and _color_file == yaml_file_str:
         return _colors
 
-    with open(jsonc_file, "r") as f:
-        jsonc_content = f.read()
-        json_content = _remove_comments(jsonc_content)
-        _colors = json.loads(json_content)
-        _color_file = jsonc_file_str
+    with open(yaml_file, "r", encoding="utf-8") as f:
+        _colors = yaml.safe_load(f)
+        _color_file = yaml_file_str
         return _colors
 
 
 ###### Color Configuration
 
 
-def set_color_file(jsonc_file: str) -> None:
+def set_color_file(color_file: str) -> None:
     """Set a custom color configuration file.
 
     This clears the color cache and sets the new file as the active
     color source. The next call to `get_colors()` will load from this file.
 
+    Supports both YAML (.yaml, .yml) files with inheritance via anchors.
+
     Args:
-        jsonc_file: Path to the custom JSONC color configuration file.
+        color_file: Path to the custom YAML color configuration file.
 
     Examples:
-        >>> fxstyle.set_color_file("path/to/custom_theme.jsonc")
+        >>> fxstyle.set_color_file("path/to/custom_theme.yaml")
         >>> colors = fxstyle.get_colors()  # Loads from custom file
     """
     global _colors, _color_file, _standard_icon_map
     _colors = None  # Clear cache to force reload
-    _color_file = str(jsonc_file)
+    _color_file = str(color_file)
     _standard_icon_map = None  # Clear icon cache as colors may have changed
 
 
@@ -203,23 +340,32 @@ def get_colors() -> dict:
     """Get the cached color configuration dictionary.
 
     This is the preferred way to access colors throughout the application.
-    Colors are loaded once from the JSONC file and cached for subsequent calls.
+    Colors are loaded once from the YAML file and cached for subsequent calls.
 
     Returns:
-        The complete color configuration containing 'accent', 'feedback',
-        'dcc', and 'themes' sections.
+        The complete color configuration containing 'feedback', 'dcc', and
+        'themes' sections.
 
     Examples:
         >>> colors = fxstyle.get_colors()
-        >>> primary_accent = colors["accent"]["primary"]
         >>> error_color = colors["feedback"]["error"]["foreground"]
         >>> dark_surface = colors["themes"]["dark"]["surface"]
     """
-    return _load_colors_from_jsonc()
+    return _load_colors_from_yaml()
 
 
 def get_accent_colors() -> dict:
     """Get the accent colors for the current theme.
+
+    Accent colors are used for interactive elements:
+
+    - **primary**: Hover borders on input widgets (QLineEdit, QComboBox, etc.),
+      selection backgrounds, progress bar/slider gradients (end color),
+      menu bar selections, pressed/selected items in item views.
+
+    - **secondary**: Progress bar/slider gradients (start color),
+      widget item hover backgrounds, menu pressed backgrounds,
+      list/tree item hover highlights.
 
     Returns:
         Dictionary containing 'primary' and 'secondary' accent colors
@@ -240,13 +386,62 @@ def get_accent_colors() -> dict:
 def get_theme_colors() -> dict:
     """Get the color palette for the current theme.
 
+    Returns a dictionary with all semantic color roles:
+
+    **Surface Colors (Backgrounds)**:
+
+    - ``surface``: Main widget/window backgrounds, buttons, selected tabs
+    - ``surface_alt``: Alternate row backgrounds in lists/tables
+    - ``surface_sunken``: Recessed areas - input fields, lists, menus
+    - ``tooltip``: Tooltip backgrounds
+
+    **Border Colors**:
+
+    - ``border``: Standard borders on inputs, containers, menus
+    - ``border_light``: Subtle borders - tooltips, buttons, tabs
+    - ``border_strong``: Emphasized borders - frames, separators
+
+    **Text Colors**:
+
+    - ``text``: Primary text for all widgets
+    - ``text_muted``: De-emphasized text - inactive tabs, placeholders
+    - ``text_disabled``: Disabled widget text
+    - ``text_on_accent_primary``: Text on accent_primary backgrounds (optional)
+    - ``text_on_accent_secondary``: Text on accent_secondary backgrounds (optional)
+
+    **Interactive States**:
+
+    - ``state_hover``: Hover state backgrounds
+    - ``state_pressed``: Pressed/checked/active backgrounds
+
+    **Scrollbar Colors**:
+
+    - ``scrollbar_track``: Track/gutter background
+    - ``scrollbar_thumb``: Draggable thumb
+    - ``scrollbar_thumb_hover``: Thumb hover state
+
+    **Layout Colors**:
+
+    - ``grid``: Table gridlines, header borders
+    - ``separator``: Separator/splitter hover backgrounds
+
+    **Slider Colors**:
+
+    - ``slider_thumb``: Slider handle color
+    - ``slider_thumb_hover``: Slider handle hover/pressed
+
+    **Icon**:
+
+    - ``icon``: Tint color for monochrome icons
+
     Returns:
-        Dictionary containing theme-specific colors like surface,
-        text, border, etc.
+        Dictionary containing theme-specific colors.
 
     Examples:
         >>> colors = get_theme_colors()
-        >>> bg = colors["surface"]  # "#302f2f" for dark, "#f0f0f0" for light
+        >>> bg = colors["surface"]  # "#302f2f" for dark
+        >>> sunken = colors["surface_sunken"]  # Input/list backgrounds
+        >>> text = colors["text"]  # Primary text color
     """
     colors_dict = get_colors()
     return colors_dict["themes"].get(_theme, colors_dict["themes"]["dark"])
@@ -256,11 +451,11 @@ def get_available_themes() -> list:
     """Get a list of all available theme names from the color configuration.
 
     Returns:
-        List of theme names (e.g., ["dark", "light", "custom"]).
+        List of theme names (e.g., ["dark", "light", "dracula", "one_dark_pro"]).
 
     Examples:
         >>> themes = fxstyle.get_available_themes()
-        >>> print(themes)  # ['dark', 'light']
+        >>> print(themes)  # ['dark', 'light', 'dracula', 'one_dark_pro']
     """
     colors_dict = get_colors()
     return list(colors_dict.get("themes", {}).keys())
@@ -268,6 +463,10 @@ def get_available_themes() -> list:
 
 def get_icon_color() -> str:
     """Get the icon color for the current theme.
+
+    This color is used to tint monochrome SVG icons so they match the theme.
+    It's applied by ``fxicons.get_icon()`` and ``FXProxyStyle`` for standard
+    Qt icons.
 
     Returns:
         The icon color as a hex string from the current theme's configuration.
@@ -360,7 +559,7 @@ def load_saved_theme() -> str:
 
     # Validate the saved theme exists
     # We need to load colors first to get available themes
-    colors = _load_colors_from_jsonc()
+    colors = _load_colors_from_yaml()
     available_themes = list(colors.get("themes", {}).keys())
 
     if saved_theme in available_themes:
@@ -440,6 +639,9 @@ def apply_theme(
 
     # Apply the new stylesheet
     widget.setStyleSheet(load_stylesheet(theme=theme))
+
+    # Notify theme manager so FXThemeAware widgets update
+    theme_manager.notify_theme_changed(theme)
 
     return theme
 
@@ -692,6 +894,9 @@ def load_stylesheet(
     # Update the global theme state to keep it in sync
     _theme = theme
 
+    # Sync icon colors with the theme (important for startup with saved theme)
+    fxicons.sync_colors_with_theme()
+
     # Load colors from JSON
     colors_dict = get_colors()
 
@@ -725,43 +930,59 @@ def load_stylesheet(
         "stylesheet_dark" if surface_luminance < 0.5 else "stylesheet_light"
     )
 
-    # Calculate appropriate text color for accent backgrounds based on contrast
-    text_on_accent = get_contrast_text_color(accent_primary)
+    # Text color for accent backgrounds: use theme value if defined,
+    # otherwise compute based on each accent's luminance
+    text_on_accent_primary = theme_data.get(
+        "text_on_accent_primary", get_contrast_text_color(accent_primary)
+    )
+    text_on_accent_secondary = theme_data.get(
+        "text_on_accent_secondary", get_contrast_text_color(accent_secondary)
+    )
 
     # Build replacement map for all placeholders
+    # Uses new semantic naming scheme
     replace = {
         # Accent colors
         "@accent_primary": accent_primary,
         "@accent_secondary": accent_secondary,
-        "@text_on_accent": text_on_accent,
+        "@text_on_accent_primary": text_on_accent_primary,
+        "@text_on_accent_secondary": text_on_accent_secondary,
         # Icon path
         "~icons": str(_parent_directory / "icons" / icon_folder).replace(
             os.sep, "/"
         ),
-        # Theme colors
+        # Surface colors
         "@surface": theme_data.get("surface", "#302f2f"),
         "@surface_alt": theme_data.get("surface_alt", "#2d2c2c"),
-        "@input": theme_data.get("input", "#201f1f"),
+        "@surface_sunken": theme_data.get("surface_sunken", "#201f1f"),
+        "@tooltip": theme_data.get("tooltip", "#202020"),
+        # Border colors
         "@border": theme_data.get("border", "#3a3939"),
-        "@border_subtle": theme_data.get("border_subtle", "#4a4949"),
-        "@border_frame": theme_data.get("border_frame", "#444444"),
+        "@border_light": theme_data.get("border_light", "#4a4949"),
+        "@border_strong": theme_data.get("border_strong", "#444444"),
+        # Text colors
         "@text": theme_data.get("text", "#bbbbbb"),
-        "@text_secondary": theme_data.get("text_secondary", "#b1b1b1"),
+        "@text_muted": theme_data.get("text_muted", "#b1b1b1"),
         "@text_disabled": theme_data.get("text_disabled", "#777777"),
-        "@hover": theme_data.get("hover", "#403f3f"),
-        "@pressed": theme_data.get("pressed", "#4a4949"),
-        "@selected": theme_data.get("selected", "#5a5959"),
-        "@disabled": theme_data.get("disabled", "#404040"),
-        "@scrollbar_bg": theme_data.get("scrollbar_bg", "#2a2929"),
-        "@scrollbar_handle": theme_data.get("scrollbar_handle", "#605f5f"),
-        "@scrollbar_hover": theme_data.get("scrollbar_hover", "#727272"),
+        # Interactive states
+        "@state_hover": theme_data.get("state_hover", "#403f3f"),
+        "@state_pressed": theme_data.get("state_pressed", "#4a4949"),
+        # Scrollbar colors
+        "@scrollbar_track": theme_data.get("scrollbar_track", "#2a2929"),
+        "@scrollbar_thumb": theme_data.get("scrollbar_thumb", "#605f5f"),
+        "@scrollbar_thumb_hover": theme_data.get(
+            "scrollbar_thumb_hover", "#727272"
+        ),
+        # Layout colors
+        "@grid": theme_data.get("grid", "#4a4949"),
         "@separator": theme_data.get("separator", "#787876"),
-        "@slider_handle": theme_data.get("slider_handle", "#bbbbbb"),
-        "@slider_hover": theme_data.get("slider_hover", "#ffffff"),
+        # Slider colors
+        "@slider_thumb": theme_data.get("slider_thumb", "#bbbbbb"),
+        "@slider_thumb_hover": theme_data.get("slider_thumb_hover", "#ffffff"),
     }
 
     # Sort by key length descending to avoid partial replacements
-    # (e.g., @border before @border_subtle)
+    # (e.g., @border before @border_light)
     for key in sorted(replace.keys(), key=len, reverse=True):
         stylesheet = stylesheet.replace(key, replace[key])
 

@@ -56,23 +56,61 @@ window.show()
 application.exec_()
 ```
 
+## Running Widget Examples
+
+Every widget in the `fxwidgets` module includes a standalone example that demonstrates its usage. Set the `DEVELOPER_MODE` environment variable to `1` to enable examples:
+
+```bash
+# Set the environment variable first
+set DEVELOPER_MODE=1  # Windows
+export DEVELOPER_MODE=1  # Linux/macOS
+
+# Run any widget file directly
+python -m fxgui.fxwidgets._breadcrumb
+python -m fxgui.fxwidgets._accordion
+python -m fxgui.fxwidgets._collapsible
+python -m fxgui.fxwidgets._range_slider
+# ... and more
+```
+
+!!! tip "Explore Widgets Interactively"
+    This is a great way to explore the available widgets and see how they behave before integrating them into your application.
+
 ## Available Widgets
 
-The [fxwidgets](fxwidgets.md) module provides many pre-styled widgets:
+The [fxwidgets](../technical/widgets/index.md) module provides many pre-styled widgets:
 
 | Widget | Description |
 |--------|-------------|
+| `FXAccordion` | Accordion container with expandable sections |
 | `FXApplication` | Application with automatic theming and style |
-| `FXMainWindow` | Main window with toolbar, status bar, and theme toggle |
-| `FXWidget` | Base widget with optional UI file loading |
-| `FXSplashScreen` | Customizable splash screen |
+| `FXBreadcrumb` | Clickable breadcrumb trail for hierarchical navigation |
 | `FXCollapsibleWidget` | Expandable/collapsible container |
-| `FXDialog` | Styled dialog base class |
-| `FXMessageBox` | Themed message boxes |
-| `FXPasswordLineEdit` | Password input with visibility toggle |
+| `FXColorLabelDelegate` | Delegate for color label rendering in views |
+| `FXElidedLabel` | Label with automatic text elision |
+| `FXFilePathWidget` | File/folder path input with browse button |
+| `FXFloatingDialog` | Styled floating dialog |
+| `FXIconLineEdit` | Line edit with icon support |
+| `FXLoadingSpinner` | Animated loading spinner |
+| `FXLoadingOverlay` | Loading overlay for widgets |
+| `FXMainWindow` | Main window with toolbar, status bar, and theme toggle |
+| `FXNotificationBanner` | Notification banner for messages |
 | `FXOutputLogWidget` | Log display with level filtering |
-| `FXScrollArea` | Smooth-scrolling scroll area |
-| `FXSystemTrayIcon` | System tray icon with menu |
+| `FXPasswordLineEdit` | Password input with visibility toggle |
+| `FXProgressCard` | Progress indicator card |
+| `FXRangeSlider` | Dual-handle range slider |
+| `FXRatingWidget` | Star rating input widget |
+| `FXResizedScrollArea` | Smooth-scrolling scroll area |
+| `FXSearchBar` | Search input with filtering |
+| `FXSplashScreen` | Customizable splash screen |
+| `FXStatusBar` | Themed status bar |
+| `FXSystemTray` | System tray icon with menu |
+| `FXTagInput` | Tag/chip input widget |
+| `FXThumbnailDelegate` | Delegate for thumbnail rendering in views |
+| `FXTimelineSlider` | Timeline slider for media/animation |
+| `FXToggleSwitch` | iOS-style toggle switch |
+| `FXTooltip` | Custom styled tooltips |
+| `FXWidget` | Base widget with optional UI file loading |
 
 !!! tip
     All widgets automatically inherit the current theme and update when the theme changes.

@@ -1,0 +1,291 @@
+# =============================================================================
+# FXGUI THEME CONFIGURATION FILE
+# =============================================================================
+# This file defines all colors used throughout fxgui. Users can create custom
+# themes by copying this file and modifying the values.
+#
+# To use a custom theme, call:
+#   fxstyle.set_color_file("path/to/your/custom_theme.yaml")
+#
+# Color Format: All colors use hexadecimal format (#RRGGBB or #AARRGGBB)
+#
+# YAML Inheritance: Themes can inherit from base themes using YAML anchors.
+# Define a base with `&anchor_name` and inherit with `<<: *anchor_name`.
+# Override specific colors after inheritance as needed.
+# =============================================================================
+
+# =============================================================================
+# FEEDBACK COLORS
+# =============================================================================
+# Status and notification colors used by FXNotificationBanner, FXLogWidget,
+# and other feedback-related widgets.
+#
+# Each level has two colors:
+#   - foreground: Text/icon color for the message
+#   - background: Background color for the notification/log entry
+
+feedback:
+  debug:
+    foreground: "#26C6DA"
+    background: "#006064"
+  info:
+    foreground: "#7661f6"
+    background: "#372d75"
+  success:
+    foreground: "#8ac549"
+    background: "#466425"
+  warning:
+    foreground: "#ffbb33"
+    background: "#7b5918"
+  error:
+    foreground: "#ff4444"
+    background: "#7b2323"
+
+# =============================================================================
+# DCC INTEGRATION COLORS
+# =============================================================================
+# Branding colors for Digital Content Creation software.
+
+dcc:
+  houdini: "#ff6600"
+  maya: "#38a6cc"
+  nuke: "#fcb434"
+  megascans: "#8ecd4f"
+  bridge: "#1aa9f3"
+
+# =============================================================================
+# THEME DEFINITIONS
+# =============================================================================
+# Themes use YAML anchors for inheritance. The dark theme serves as the base,
+# and other themes inherit from it, overriding only the colors that differ.
+#
+# COLOR REFERENCE:
+#
+# Accent Colors:
+#   accent_primary    - Primary interactive color (hover borders, selections, progress bars)
+#   accent_secondary  - Secondary interactive color (gradients, item hovers)
+#
+# Surface Colors (Backgrounds):
+#   surface           - Main widget/window backgrounds
+#   surface_alt       - Alternating row backgrounds
+#   surface_sunken    - Input fields, lists, menus, status bar
+#   tooltip           - Tooltip backgrounds
+#
+# Border Colors:
+#   border            - Standard borders (inputs, containers, menus)
+#   border_light      - Subtle borders (tooltips, buttons, tabs)
+#   border_strong     - Emphasized borders (frames, separators)
+#
+# Text Colors:
+#   text              - Primary text
+#   text_muted        - Secondary/de-emphasized text
+#   text_disabled     - Disabled widget text
+#   text_on_accent_primary   - (Optional) Text on accent_primary backgrounds, auto-computed if omitted
+#   text_on_accent_secondary - (Optional) Text on accent_secondary backgrounds, auto-computed if omitted
+#
+# Interactive State Colors:
+#   state_hover       - Hover state backgrounds
+#   state_pressed     - Pressed/checked/active backgrounds
+#
+# Scrollbar Colors:
+#   scrollbar_track       - Scrollbar track/gutter
+#   scrollbar_thumb       - Scrollbar draggable handle
+#   scrollbar_thumb_hover - Scrollbar thumb on hover
+#
+# Layout Colors:
+#   grid              - Table/header gridlines
+#   separator         - Separator/splitter hover backgrounds
+#
+# Slider Colors:
+#   slider_thumb       - Slider handle color
+#   slider_thumb_hover - Slider handle hover/pressed
+#
+# Icon Color:
+#   icon              - Tint color for monochrome icons
+
+themes:
+  # ===========================================================================
+  # DARK THEME (Default) - Base theme for dark variants
+  # ===========================================================================
+  dark: &dark # Accent colors
+    accent_primary: "#2196F3"
+    accent_secondary: "#1976D2"
+
+    # Surface colors
+    surface: "#302f2f"
+    surface_alt: "#2d2c2c"
+    surface_sunken: "#202020"
+    tooltip: "#202020"
+
+    # Border colors
+    border: "#3a3939"
+    border_light: "#4a4949"
+    border_strong: "#444444"
+
+    # Text colors
+    text: "#bbbbbb"
+    text_muted: "#b1b1b1"
+    text_disabled: "#777777"
+    text_on_accent_primary: "#ffffff"
+    text_on_accent_secondary: "#ffffff"
+
+    # Interactive states
+    state_hover: "#403f3f"
+    state_pressed: "#4a4949"
+
+    # Scrollbar
+    scrollbar_track: "#2a2929"
+    scrollbar_thumb: "#605f5f"
+    scrollbar_thumb_hover: "#727272"
+
+    # Layout
+    grid: "#4a4949"
+    separator: "#787876"
+
+    # Slider
+    slider_thumb: "#bbbbbb"
+    slider_thumb_hover: "#ffffff"
+
+    # Icon
+    icon: "#b4b4b4"
+
+  # ===========================================================================
+  # LIGHT THEME
+  # ===========================================================================
+  light: &light # Accent colors
+    accent_primary: "#1976D2"
+    accent_secondary: "#1565C0"
+
+    # Surface colors
+    surface: "#f0f0f0"
+    surface_alt: "#fafafa"
+    surface_sunken: "#ffffff"
+    tooltip: "#ffffe1"
+
+    # Border colors
+    border: "#e0e0e0"
+    border_light: "#bdbdbd"
+    border_strong: "#cacaca"
+
+    # Text colors
+    text: "#212121"
+    text_muted: "#616161"
+    text_disabled: "#757575"
+    text_on_accent_primary: "#ffffff"
+    text_on_accent_secondary: "#ffffff"
+
+    # Interactive states
+    state_hover: "#d8d8d8"
+    state_pressed: "#bdbdbd"
+
+    # Scrollbar
+    scrollbar_track: "#f5f5f5"
+    scrollbar_thumb: "#9e9e9e"
+    scrollbar_thumb_hover: "#616161"
+
+    # Layout
+    grid: "#bdbdbd"
+    separator: "#424242"
+
+    # Slider
+    slider_thumb: "#ffffff"
+    slider_thumb_hover: "#616161"
+
+    # Icon
+    icon: "#424242"
+
+  # ===========================================================================
+  # DRACULA THEME - Inherits from dark, overrides accent and surface colors
+  # ===========================================================================
+  dracula:
+    <<: *dark # Inherit all dark theme colors
+
+    # Override accent colors
+    accent_primary: "#bd93f9"
+    accent_secondary: "#ff79c6"
+
+    # Override surface colors
+    surface: "#282a36"
+    surface_alt: "#21222c"
+    surface_sunken: "#1e1f29"
+    tooltip: "#44475a"
+
+    # Override border colors
+    border: "#44475a"
+    border_light: "#6272a4"
+    border_strong: "#44475a"
+
+    # Override text colors
+    text: "#f8f8f2"
+    text_muted: "#bfbfbf"
+    text_disabled: "#6272a4"
+    text_on_accent_primary: "#282a36"
+    text_on_accent_secondary: "#282a36"
+
+    # Override interactive states
+    state_hover: "#44475a"
+    state_pressed: "#6272a4"
+
+    # Override scrollbar
+    scrollbar_track: "#21222c"
+    scrollbar_thumb: "#44475a"
+    scrollbar_thumb_hover: "#6272a4"
+
+    # Override layout
+    grid: "#6272a4"
+    separator: "#6272a4"
+
+    # Override slider
+    slider_thumb: "#f8f8f2"
+    slider_thumb_hover: "#ffffff"
+
+    # Override icon
+    icon: "#f8f8f2"
+
+  # ===========================================================================
+  # ONE DARK PRO THEME - Inherits from dark
+  # ===========================================================================
+  one_dark_pro:
+    <<: *dark # Inherit all dark theme colors
+
+    # Override accent colors
+    accent_primary: "#61afef"
+    accent_secondary: "#528bff"
+
+    # Override surface colors
+    surface: "#282c34"
+    surface_alt: "#21252b"
+    surface_sunken: "#1b1d23"
+    tooltip: "#3a3f4b"
+
+    # Override border colors
+    border: "#3a3f4b"
+    border_light: "#4b5263"
+    border_strong: "#3a3f4b"
+
+    # Override text colors
+    text: "#abb2bf"
+    text_muted: "#828997"
+    text_disabled: "#5c6370"
+    text_on_accent_primary: "#282c34"
+    text_on_accent_secondary: "#ffffff"
+
+    # Override interactive states
+    state_hover: "#3a3f4b"
+    state_pressed: "#4b5263"
+
+    # Override scrollbar
+    scrollbar_track: "#21252b"
+    scrollbar_thumb: "#4b5263"
+    scrollbar_thumb_hover: "#5c6370"
+
+    # Override layout
+    grid: "#4b5263"
+    separator: "#5c6370"
+
+    # Override slider
+    slider_thumb: "#abb2bf"
+    slider_thumb_hover: "#d7dae0"
+
+    # Override icon
+    icon: "#abb2bf"

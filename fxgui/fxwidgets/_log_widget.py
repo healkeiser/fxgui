@@ -1,9 +1,12 @@
 """Output log widget with ANSI color support."""
 
+# Built-in
+import os
 import logging
 import re
 from typing import Optional
 
+# Third-party
 from qtpy.QtCore import Qt, QTimer, Signal
 from qtpy.QtGui import (
     QCloseEvent,
@@ -24,6 +27,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons
 from fxgui.fxwidgets._inputs import FXIconLineEdit
 
@@ -176,7 +180,7 @@ class FXOutputLogWidget(QWidget):
         bottom_layout.addWidget(self.search_count_label)
 
         self.prev_button = QPushButton("Previous")
-        self.prev_button.setIcon(fxicons.get_icon("keyboard_arrow_left"))
+        fxicons.set_icon(self.prev_button, "keyboard_arrow_left")
         self.prev_button.setProperty("icon_name", "keyboard_arrow_left")
         self.prev_button.setMaximumWidth(100)
         self.prev_button.clicked.connect(self._find_previous)
@@ -184,7 +188,7 @@ class FXOutputLogWidget(QWidget):
         bottom_layout.addWidget(self.prev_button)
 
         self.next_button = QPushButton("Next")
-        self.next_button.setIcon(fxicons.get_icon("keyboard_arrow_right"))
+        fxicons.set_icon(self.next_button, "keyboard_arrow_right")
         self.next_button.setProperty("icon_name", "keyboard_arrow_right")
         self.next_button.setMaximumWidth(80)
         self.next_button.clicked.connect(self._find_next)
@@ -192,7 +196,7 @@ class FXOutputLogWidget(QWidget):
         bottom_layout.addWidget(self.next_button)
 
         self.close_search_button = QPushButton("")
-        self.close_search_button.setIcon(fxicons.get_icon("close"))
+        fxicons.set_icon(self.close_search_button, "close")
         self.close_search_button.setProperty("icon_name", "close")
         self.close_search_button.setMaximumWidth(30)
         self.close_search_button.setToolTip("Close search (Esc)")
@@ -207,7 +211,7 @@ class FXOutputLogWidget(QWidget):
 
         # Clear button (always visible)
         self.clear_button = QPushButton("Clear")
-        self.clear_button.setIcon(fxicons.get_icon("delete"))
+        fxicons.set_icon(self.clear_button, "delete")
         self.clear_button.setProperty("icon_name", "delete")
         self.clear_button.setMaximumWidth(80)
         self.clear_button.clicked.connect(self.clear_log)
@@ -564,3 +568,86 @@ class FXOutputLogWidget(QWidget):
         if self._capture_output:
             self.restore_output_streams()
         super().closeEvent(event)
+
+
+def example() -> None:
+    import sys
+    from qtpy.QtWidgets import QVBoxLayout, QGroupBox, QPushButton, QHBoxLayout
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app: FXApplication = FXApplication(sys.argv)
+
+    # Main window
+    window = FXMainWindow()
+    window.setWindowTitle("FXOutputLogWidget")
+    window.resize(700, 500)
+    widget = QWidget()
+    window.setCentralWidget(widget)
+    layout = QVBoxLayout(widget)
+    layout.setSpacing(12)
+
+    # Log widget group
+    log_group = QGroupBox("Output Log Widget")
+    log_layout = QVBoxLayout(log_group)
+
+    # Create the log widget with output capture
+    log_widget = FXOutputLogWidget(capture_output=True)
+    log_layout.addWidget(log_widget)
+
+    # Buttons to simulate logging
+    button_layout = QHBoxLayout()
+
+    # Create a logger
+    logger = logging.getLogger("example")
+    logger.setLevel(logging.DEBUG)
+
+    def log_debug():
+        logger.debug("This is a debug message")
+
+    def log_info():
+        logger.info("This is an info message")
+
+    def log_warning():
+        logger.warning("This is a warning message")
+
+    def log_error():
+        logger.error("This is an error message")
+
+    def log_ansi():
+        # Log with ANSI colors
+        log_widget.append_log(
+            "\x1b[32mGreen text\x1b[0m - \x1b[31mRed text\x1b[0m - \x1b[34mBlue text\x1b[0m\x1b[0m"
+        )
+
+    debug_btn = QPushButton("Log Debug")
+    debug_btn.clicked.connect(log_debug)
+    button_layout.addWidget(debug_btn)
+
+    info_btn = QPushButton("Log Info")
+    info_btn.clicked.connect(log_info)
+    button_layout.addWidget(info_btn)
+
+    warning_btn = QPushButton("Log Warning")
+    warning_btn.clicked.connect(log_warning)
+    button_layout.addWidget(warning_btn)
+
+    error_btn = QPushButton("Log Error")
+    error_btn.clicked.connect(log_error)
+    button_layout.addWidget(error_btn)
+
+    ansi_btn = QPushButton("Log ANSI Colors")
+    ansi_btn.clicked.connect(log_ansi)
+    button_layout.addWidget(ansi_btn)
+
+    log_layout.addLayout(button_layout)
+    layout.addWidget(log_group)
+
+    # Add initial log message
+    log_widget.append_log("Log widget initialized. Press Ctrl+F to search.")
+
+    window.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    example()

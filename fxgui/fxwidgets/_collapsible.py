@@ -1,7 +1,9 @@
 """Collapsible widget implementation."""
 
+# Built-in
 from typing import Optional, Union
 
+# Third-party
 from qtpy.QtCore import (
     QAbstractAnimation,
     QEasingCurve,
@@ -22,10 +24,11 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from fxgui import fxicons
+# Internal
+from fxgui import fxicons, fxstyle
 
 
-class FXCollapsibleWidget(QWidget):
+class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
     """A widget that can expand or collapse its content.
 
     The widget consists of a header with a toggle button and a content area
@@ -79,6 +82,7 @@ class FXCollapsibleWidget(QWidget):
         self.header_widget = QFrame()
         self.header_widget.setFrameShape(QFrame.StyledPanel)
         self.header_widget.setFrameShadow(QFrame.Raised)
+        self.header_widget.setCursor(Qt.PointingHandCursor)
         self.header_widget.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Fixed
         )
@@ -93,7 +97,7 @@ class FXCollapsibleWidget(QWidget):
         self.toggle_button.setStyleSheet(
             "QToolButton { border: none; background: transparent; }"
         )
-        self.toggle_button.setIcon(fxicons.get_icon("chevron_right"))
+        fxicons.set_icon(self.toggle_button, "chevron_right")
         self.toggle_button.setProperty("icon_name", "chevron_right")
         self.toggle_button.setCheckable(True)
         self.toggle_button.setChecked(False)
@@ -109,7 +113,9 @@ class FXCollapsibleWidget(QWidget):
 
         # Title label
         self.title_label = QLabel(self._title)
-        self.title_label.setStyleSheet("background: transparent;")
+        self.title_label.setStyleSheet(
+            "background: transparent; font-weight: bold;"
+        )
         self.title_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Spacer to push content to the left, line spans remaining width
@@ -173,11 +179,14 @@ class FXCollapsibleWidget(QWidget):
         """Toggle content visibility with animation."""
         # Update button icon and property
         icon_name = "expand_more" if checked else "chevron_right"
-        self.toggle_button.setIcon(fxicons.get_icon(icon_name))
+        fxicons.set_icon(self.toggle_button, icon_name)
         self.toggle_button.setProperty("icon_name", icon_name)
 
         # Store expanded state
         self._is_expanded = checked
+
+        # Update header background based on expanded state
+        self._apply_theme_styles()
 
         if checked and not self._has_been_expanded:
             # First time expansion: measure content
@@ -257,6 +266,18 @@ class FXCollapsibleWidget(QWidget):
                 self.content_area.setHorizontalScrollBarPolicy(h_policy)
                 self.content_area.setVerticalScrollBarPolicy(v_policy)
 
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-aware styling to the header."""
+        colors = fxstyle.get_theme_colors()
+        if self._is_expanded:
+            # Use hover state color when expanded
+            self.header_widget.setStyleSheet(
+                f"QFrame {{ background-color: {colors['state_hover']}; }}"
+            )
+        else:
+            # Use default (transparent) when collapsed
+            self.header_widget.setStyleSheet("")
+
     def set_content_layout(self, content_layout: QLayout) -> None:
         """Set the layout for the content area.
 
@@ -327,3 +348,59 @@ class FXCollapsibleWidget(QWidget):
             The current title text.
         """
         return self._title
+
+
+def example() -> None:
+    import sys
+    from qtpy.QtWidgets import QPushButton, QCheckBox
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app = FXApplication(sys.argv)
+    window = FXMainWindow()
+    window.setWindowTitle("FXCollapsibleWidget Demo")
+    widget = QWidget()
+    window.setCentralWidget(widget)
+    layout = QVBoxLayout(widget)
+
+    # Basic collapsible section
+    collapsible1 = FXCollapsibleWidget(title="Basic Settings")
+    content_layout1 = QVBoxLayout()
+    content_layout1.addWidget(QLabel("Option 1"))
+    content_layout1.addWidget(QLabel("Option 2"))
+    content_layout1.addWidget(QCheckBox("Enable feature"))
+    collapsible1.set_content_layout(content_layout1)
+    layout.addWidget(collapsible1)
+
+    # Collapsible with icon
+    collapsible2 = FXCollapsibleWidget(
+        title="Advanced Settings", title_icon="settings"
+    )
+    content_layout2 = QVBoxLayout()
+    content_layout2.addWidget(QLabel("Advanced option 1"))
+    content_layout2.addWidget(QLabel("Advanced option 2"))
+    content_layout2.addWidget(QPushButton("Apply"))
+    collapsible2.set_content_layout(content_layout2)
+    layout.addWidget(collapsible2)
+
+    # Collapsible with more content
+    collapsible3 = FXCollapsibleWidget(
+        title="Info", title_icon="info", max_content_height=150
+    )
+    content_layout3 = QVBoxLayout()
+    for i in range(10):
+        content_layout3.addWidget(QLabel(f"Info line {i + 1}"))
+    collapsible3.set_content_layout(content_layout3)
+    layout.addWidget(collapsible3)
+
+    layout.addStretch()
+
+    window.resize(400, 400)
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

@@ -1,5 +1,6 @@
 """Singleton metaclass for Qt widgets."""
 
+# Third-party
 from qtpy.QtCore import QObject
 from qtpy.QtWidgets import QWidget
 
