@@ -688,6 +688,7 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
         try:
             self._fade_animation.finished.disconnect(self._on_fade_out_finished)
         except (RuntimeError, TypeError):
+            # Signal may already be disconnected or object deleted
             pass
 
         # Remove app-wide event filter
@@ -747,6 +748,7 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
             try:
                 self._anchor.destroyed.disconnect(self._on_anchor_destroyed)
             except (RuntimeError, TypeError):
+                # Signal may already be disconnected or anchor deleted
                 pass
 
         # Set new anchor

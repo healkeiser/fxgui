@@ -8,7 +8,6 @@ from qtpy.QtCore import Qt, Signal, QTimer
 from qtpy.QtGui import QColor, QMouseEvent, QPainter, QPen
 from qtpy.QtWidgets import (
     QHBoxLayout,
-    QLabel,
     QPushButton,
     QSizePolicy,
     QSpinBox,

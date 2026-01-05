@@ -1108,7 +1108,7 @@ def example() -> None:
     tree1.setItemDelegate(delegate1)
 
     for status in ["Success", "Warning", "Error", "Info", "Unknown"]:
-        item = QTreeWidgetItem(tree1, [status])
+        QTreeWidgetItem(tree1, [status])
     tree1.setMaximumHeight(150)
     layout.addWidget(tree1)
 
