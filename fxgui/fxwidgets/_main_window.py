@@ -1,4 +1,4 @@
-"""FXMainWindow - Custom main window widget."""
+"""Custom main window widget."""
 
 # Built-in
 import os
@@ -443,7 +443,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self.banner.setFixedHeight(50)
         self.banner.setStyleSheet(
             f"background: transparent; "
-            f"border-bottom: 1px solid {theme_colors['surface_alt']};"
+            f"border-bottom: 1px solid {theme_colors['border']};"
         )
 
         # Create layout for banner
@@ -669,7 +669,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         if hasattr(self, "banner") and self.banner is not None:
             self.banner.setStyleSheet(
                 f"background: transparent; "
-                f"border-bottom: 1px solid {theme_colors['surface_alt']};"
+                f"border-bottom: 1px solid {theme_colors['border']};"
             )
 
         # Update banner label text color
@@ -959,3 +959,20 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         """
         self.setParent(None)
         super().closeEvent(event)
+
+
+def example() -> None:
+    import sys
+    from fxgui.fxwidgets import FXApplication
+
+    app = FXApplication(sys.argv)
+    window = FXMainWindow()
+    window.setWindowTitle("FXMainWindow Demo")
+
+    window.resize(550, 500)
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    example()

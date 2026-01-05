@@ -1,7 +1,6 @@
 """Collapsible widget implementation."""
 
 # Built-in
-import os
 from typing import Optional, Union
 
 # Third-party
@@ -351,7 +350,7 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         return self._title
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+def example() -> None:
     import sys
     from qtpy.QtWidgets import QPushButton, QCheckBox
     from fxgui.fxwidgets import FXApplication, FXMainWindow
@@ -398,3 +397,10 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.resize(400, 400)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

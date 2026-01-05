@@ -1,4 +1,4 @@
-"""FXStatusBar - Custom status bar widget."""
+"""Custom status bar widget."""
 
 # Built-in
 import logging
@@ -353,3 +353,54 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
         self.status_line.show()
         self.border_line.show()
         self._apply_stylesheet(with_status_line_padding=True)
+
+
+def example() -> None:
+    import sys
+    from qtpy.QtCore import QTimer
+    from qtpy.QtWidgets import QVBoxLayout, QWidget, QPushButton
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app = FXApplication(sys.argv)
+    window = FXMainWindow()
+    window.setWindowTitle("FXStatusBar Demo")
+
+    widget = QWidget()
+    window.setCentralWidget(widget)
+    layout = QVBoxLayout(widget)
+
+    # Create buttons to show different message types
+    btn_info = QPushButton("Show Info Message")
+    btn_success = QPushButton("Show Success Message")
+    btn_warning = QPushButton("Show Warning Message")
+    btn_error = QPushButton("Show Error Message")
+
+    layout.addWidget(btn_info)
+    layout.addWidget(btn_success)
+    layout.addWidget(btn_warning)
+    layout.addWidget(btn_error)
+
+    # Connect buttons to show messages
+    btn_info.clicked.connect(
+        lambda: window.status_bar.showMessage("Info message", INFO)
+    )
+    btn_success.clicked.connect(
+        lambda: window.status_bar.showMessage("Success message", SUCCESS)
+    )
+    btn_warning.clicked.connect(
+        lambda: window.status_bar.showMessage("Warning message", WARNING)
+    )
+    btn_error.clicked.connect(
+        lambda: window.status_bar.showMessage("Error message", ERROR)
+    )
+
+    window.resize(500, 300)
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

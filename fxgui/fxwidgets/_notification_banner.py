@@ -1,4 +1,4 @@
-"""FXNotificationBanner - Toast/banner notification widget."""
+"""Toast/banner notification widget."""
 
 # Built-in
 import logging
@@ -206,8 +206,8 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         # Setup drop shadow effect
         self._shadow_effect = QGraphicsDropShadowEffect(self)
         self._shadow_effect.setBlurRadius(20)
-        self._shadow_effect.setOffset(0, 4)
-        self._shadow_effect.setColor(QColor(0, 0, 0, 60))
+        self._shadow_effect.setOffset(0, 0)
+        self._shadow_effect.setColor(QColor(0, 0, 0, 80))
         self.setGraphicsEffect(self._shadow_effect)
 
         # Auto-dismiss timer
@@ -540,7 +540,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         log_method(self._message)
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+def example() -> None:
     import sys
     from qtpy.QtWidgets import (
         QVBoxLayout,
@@ -662,3 +662,7 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.resize(550, 500)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    example()

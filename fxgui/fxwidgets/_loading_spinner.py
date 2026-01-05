@@ -1,4 +1,4 @@
-"""FXLoadingSpinner - Animated loading indicator widget."""
+"""Animated loading indicator widget."""
 
 # Built-in
 import os
@@ -336,7 +336,7 @@ class FXLoadingOverlay(fxstyle.FXThemeAware, QWidget):
         painter.end()
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+def example() -> None:
     import sys
     from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QGroupBox
     from fxgui.fxwidgets import FXApplication, FXMainWindow
@@ -375,3 +375,7 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.adjustSize()
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    example()

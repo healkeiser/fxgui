@@ -1,7 +1,6 @@
-"""FXToggleSwitch - Animated toggle switch widget."""
+"""Animated toggle switch widget."""
 
 # Built-in
-import os
 from typing import Optional
 
 # Third-party
@@ -113,38 +112,47 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
 
         on_color = QColor(self._custom_on_color or accent_colors["primary"])
         off_color = QColor(
-            self._custom_off_color or theme_colors["surface_alt"]
+            self._custom_off_color or theme_colors["surface_sunken"]
         )
         thumb_color = QColor(self._custom_thumb_color or "#ffffff")
-        thumb_border_color = QColor(accent_colors["primary"])
+        border_color = QColor(theme_colors["border"])
         disabled_color = QColor(theme_colors["text_disabled"])
 
         # Calculate dimensions
         width = self.width()
         height = self.height()
-        margin = 2
-        thumb_radius = (height - margin * 2) // 2
+        margin = 3
+        corner_radius = 4  # Less rounded, more rectangular
+        thumb_size = height - margin * 2
+        thumb_corner_radius = (
+            corner_radius - 1
+        )  # Slightly smaller to fit inside
 
         # Determine colors based on state
         if not self.isEnabled():
             track_color = disabled_color
             thumb_color = disabled_color.lighter(150)
-            border_color = disabled_color
+            current_border_color = disabled_color
         else:
             # Interpolate between off and on colors
             track_color = self._interpolate_color(
                 off_color, on_color, self._position
             )
-            border_color = thumb_border_color
+            current_border_color = border_color
 
-        # Draw track (rounded rectangle)
+        # Draw track (rounded rectangle with border)
         track_path = QPainterPath()
         track_rect = QRect(0, 0, width, height)
-        track_path.addRoundedRect(track_rect, height / 2, height / 2)
+        track_path.addRoundedRect(track_rect, corner_radius, corner_radius)
         painter.fillPath(track_path, track_color)
 
+        # Draw track border
+        painter.setPen(current_border_color)
+        painter.setBrush(Qt.NoBrush)
+        painter.drawRoundedRect(track_rect, corner_radius, corner_radius)
+
         # Calculate thumb position
-        thumb_x = margin + self._position * (width - height)
+        thumb_x = margin + self._position * (width - thumb_size - margin * 2)
         thumb_y = margin
 
         # Draw thumb shadow (subtle)
@@ -152,18 +160,25 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
             shadow_color = QColor(0, 0, 0, 30)
             painter.setBrush(shadow_color)
             painter.setPen(Qt.NoPen)
-            painter.drawEllipse(
+            painter.drawRoundedRect(
                 int(thumb_x + 1),
                 int(thumb_y + 1),
-                thumb_radius * 2,
-                thumb_radius * 2,
+                thumb_size,
+                thumb_size,
+                thumb_corner_radius,
+                thumb_corner_radius,
             )
 
-        # Draw thumb with border (matching range slider style)
+        # Draw thumb with border (matching track roundness)
         painter.setBrush(thumb_color)
-        painter.setPen(border_color)
-        painter.drawEllipse(
-            int(thumb_x), int(thumb_y), thumb_radius * 2, thumb_radius * 2
+        painter.setPen(current_border_color)
+        painter.drawRoundedRect(
+            int(thumb_x),
+            int(thumb_y),
+            thumb_size,
+            thumb_size,
+            thumb_corner_radius,
+            thumb_corner_radius,
         )
 
         painter.end()
@@ -178,7 +193,7 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
         return QColor(r, g, b)
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+def example() -> None:
     import sys
     from qtpy.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
     from fxgui.fxwidgets import FXApplication, FXMainWindow
@@ -224,3 +239,10 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.resize(300, 200)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

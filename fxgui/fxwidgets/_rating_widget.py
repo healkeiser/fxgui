@@ -1,7 +1,6 @@
-"""FXRatingWidget - Star/score rating widget."""
+"""Star/score rating widget."""
 
 # Built-in
-import os
 from typing import Optional
 
 # Third-party
@@ -63,10 +62,6 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
         self._empty_icon = empty_icon
         self._half_icon = half_icon
         self._hover_rating: Optional[float] = None
-
-        # Colors (gold for stars, theme-aware for empty)
-        self._filled_color = "#ffc107"
-        self._hover_color = "#ffdb4d"
 
         # Main layout
         layout = QHBoxLayout(self)
@@ -132,18 +127,18 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
         """Update star icons based on current rating."""
         # Get current theme colors (dynamic for theme switching)
         theme_colors = fxstyle.get_theme_colors()
+        accent_colors = fxstyle.get_accent_colors()
+
         empty_color = theme_colors["text_disabled"]
+        filled_color = accent_colors["primary"]
+        hover_color = accent_colors["secondary"]
 
         display_rating = (
             self._hover_rating
             if self._hover_rating is not None
             else self._rating
         )
-        color = (
-            self._hover_color
-            if self._hover_rating is not None
-            else self._filled_color
-        )
+        color = hover_color if self._hover_rating is not None else filled_color
 
         for i, star in enumerate(self._stars):
             star_value = i + 1
@@ -203,7 +198,7 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
         pass  # Just to ensure tracking works
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+def example() -> None:
     import sys
     from qtpy.QtWidgets import QVBoxLayout, QWidget, QLabel, QHBoxLayout
     from fxgui.fxwidgets import FXApplication, FXMainWindow
@@ -256,3 +251,10 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.resize(400, 200)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

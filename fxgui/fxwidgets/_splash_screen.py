@@ -1,8 +1,10 @@
-"""FXSplashScreen - Custom splash screen widget."""
+"""Custom splash screen widget."""
 
+# Built-in
 import os
 from typing import Optional
 
+# Third-party
 from qtpy.QtCore import Qt, QRect, QTimer, Slot
 from qtpy.QtGui import (
     QBitmap,
@@ -27,6 +29,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxconstants, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXElidedLabel
 
@@ -571,3 +574,37 @@ class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
         painter.end()
 
         self.setMask(bitmap)
+
+
+def example() -> None:
+    import sys
+    import time
+    from fxgui.fxwidgets import FXApplication
+
+    app = FXApplication(sys.argv)
+
+    splash = FXSplashScreen(
+        title="FXSplashScreen",
+        information="Loading resources and preparing the application...",
+        show_progress_bar=True,
+        project="Demo Project",
+        version="1.0.0",
+        company="Demo Company",
+        corner_radius=12,
+        border_width=1,
+        fade_in=True,
+    )
+    splash.show()
+
+    # Simulate loading progress
+    for i in range(101):
+        splash.set_progress(i)
+        app.processEvents()
+        time.sleep(0.02)
+
+    splash.close()
+    sys.exit(0)
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    example()

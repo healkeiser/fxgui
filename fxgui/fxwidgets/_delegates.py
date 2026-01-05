@@ -1,8 +1,11 @@
 """Custom item delegates for tree/list views."""
 
+# Built-in
+import os
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
+# Third-party
 from qtpy.QtCore import QEvent, QMargins, QModelIndex, QRect, QSize, Qt
 from qtpy.QtGui import (
     QBrush,
@@ -22,6 +25,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 
 
@@ -1035,3 +1039,168 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         # For other columns, use default painting
         super().paint(painter, option, index)
         painter.restore()
+
+
+def example() -> None:
+    import sys
+    from qtpy.QtWidgets import (
+        QHBoxLayout,
+        QTreeWidget,
+        QTreeWidgetItem,
+        QVBoxLayout,
+        QWidget,
+        QCheckBox,
+        QLabel,
+    )
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app = FXApplication(sys.argv)
+    window = FXMainWindow()
+    window.setWindowTitle("FXDelegates Demo")
+    widget = QWidget()
+    window.setCentralWidget(widget)
+    layout = QVBoxLayout(widget)
+
+    # Get feedback colors from theme
+    colors = fxstyle.get_colors()
+    feedback = colors["feedback"]
+
+    ###### FXColorLabelDelegate
+    layout.addWidget(QLabel("FXColorLabelDelegate:"))
+    tree1 = QTreeWidget()
+    tree1.setHeaderLabels(["Status"])
+    tree1.setRootIsDecorated(False)
+
+    # Define colors and icons for different statuses using feedback colors
+    colors_icons = {
+        "success": (
+            QColor(feedback["success"]["background"]),
+            QColor(feedback["success"]["foreground"]),
+            QColor(feedback["success"]["foreground"]),
+            fxicons.get_icon("check_circle"),
+            True,
+        ),
+        "warning": (
+            QColor(feedback["warning"]["background"]),
+            QColor(feedback["warning"]["foreground"]),
+            QColor(feedback["warning"]["foreground"]),
+            fxicons.get_icon("warning"),
+            True,
+        ),
+        "error": (
+            QColor(feedback["error"]["background"]),
+            QColor(feedback["error"]["foreground"]),
+            QColor(feedback["error"]["foreground"]),
+            fxicons.get_icon("error"),
+            True,
+        ),
+        "info": (
+            QColor(feedback["info"]["background"]),
+            QColor(feedback["info"]["foreground"]),
+            QColor(feedback["info"]["foreground"]),
+            fxicons.get_icon("info"),
+            True,
+        ),
+    }
+    delegate1 = FXColorLabelDelegate(colors_icons)
+    tree1.setItemDelegate(delegate1)
+
+    for status in ["Success", "Warning", "Error", "Info", "Unknown"]:
+        item = QTreeWidgetItem(tree1, [status])
+    tree1.setMaximumHeight(150)
+    layout.addWidget(tree1)
+
+    ###### FXThumbnailDelegate
+    layout.addWidget(QLabel("FXThumbnailDelegate:"))
+    tree2 = QTreeWidget()
+    tree2.setHeaderLabels(["Name", "Type"])
+    tree2.setRootIsDecorated(False)
+
+    delegate2 = FXThumbnailDelegate()
+    delegate2.show_thumbnail = True
+    delegate2.show_status_dot = True
+    delegate2.show_status_label = True
+    tree2.setItemDelegateForColumn(0, delegate2)
+
+    # Sample items with thumbnails and status using feedback colors
+    items_data = [
+        (
+            "Asset 001",
+            "Character",
+            QColor(feedback["success"]["foreground"]),
+            "Ready",
+            QColor(feedback["success"]["background"]),
+        ),
+        (
+            "Asset 002",
+            "Prop",
+            QColor(feedback["warning"]["foreground"]),
+            "Review",
+            QColor(feedback["warning"]["background"]),
+        ),
+        (
+            "Asset 003",
+            "Environment",
+            QColor(feedback["error"]["foreground"]),
+            "WIP",
+            QColor(feedback["error"]["background"]),
+        ),
+    ]
+
+    for name, asset_type, dot_color, label_text, label_color in items_data:
+        item = QTreeWidgetItem(tree2, [name, asset_type])
+        item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True)
+        item.setData(
+            0,
+            FXThumbnailDelegate.DESCRIPTION_ROLE,
+            f"A **{asset_type.lower()}** asset",
+        )
+        item.setData(0, FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE, dot_color)
+        item.setData(0, FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, label_text)
+        item.setData(
+            0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, label_color
+        )
+
+    tree2.setColumnWidth(0, 300)
+    layout.addWidget(tree2)
+
+    # Controls
+    controls = QWidget()
+    controls_layout = QHBoxLayout(controls)
+    controls_layout.setContentsMargins(0, 0, 0, 0)
+
+    show_thumb_cb = QCheckBox("Show Thumbnails")
+    show_thumb_cb.setChecked(True)
+    show_thumb_cb.toggled.connect(
+        lambda checked: setattr(delegate2, "show_thumbnail", checked)
+        or tree2.viewport().update()
+    )
+    controls_layout.addWidget(show_thumb_cb)
+
+    show_dot_cb = QCheckBox("Show Status Dot")
+    show_dot_cb.setChecked(True)
+    show_dot_cb.toggled.connect(
+        lambda checked: setattr(delegate2, "show_status_dot", checked)
+        or tree2.viewport().update()
+    )
+    controls_layout.addWidget(show_dot_cb)
+
+    show_label_cb = QCheckBox("Show Status Label")
+    show_label_cb.setChecked(True)
+    show_label_cb.toggled.connect(
+        lambda checked: setattr(delegate2, "show_status_label", checked)
+        or tree2.viewport().update()
+    )
+    controls_layout.addWidget(show_label_cb)
+
+    controls_layout.addStretch()
+    layout.addWidget(controls)
+
+    layout.addStretch()
+    window.resize(500, 500)
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    example()

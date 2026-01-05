@@ -1,7 +1,6 @@
-"""FXTagInput - Tag/chip input widget."""
+"""Tag/chip input widget."""
 
 # Built-in
-import os
 from typing import List, Optional
 
 # Third-party
@@ -310,7 +309,7 @@ class FXTagInput(fxstyle.FXThemeAware, QWidget):
             self._input.clear()
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+def example() -> None:
     import sys
     from qtpy.QtWidgets import QVBoxLayout, QWidget
     from fxgui.fxwidgets import FXApplication, FXMainWindow
@@ -329,3 +328,10 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.show()
 
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

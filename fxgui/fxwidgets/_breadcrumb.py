@@ -1,7 +1,6 @@
-"""FXBreadcrumb - Navigation breadcrumb widget."""
+"""Navigation breadcrumb widget."""
 
 # Built-in
-import os
 from typing import List, Optional
 
 # Third-party
@@ -430,7 +429,7 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
         self._home_path = path.copy() if path else None
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+def example() -> None:
     import sys
     from pathlib import Path
     from qtpy.QtWidgets import (
@@ -532,3 +531,10 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.resize(600, 500)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

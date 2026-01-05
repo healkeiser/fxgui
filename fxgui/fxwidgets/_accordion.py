@@ -1,7 +1,6 @@
-"""FXAccordion - Multi-section collapsible widget."""
+"""Multi-section collapsible widget."""
 
-import os
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 from qtpy.QtCore import (
     QAbstractAnimation,
@@ -11,7 +10,6 @@ from qtpy.QtCore import (
     Qt,
     Signal,
 )
-from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -446,7 +444,7 @@ class FXAccordion(QWidget):
         return iter(self._sections)
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+def example() -> None:
     import sys
     from qtpy.QtWidgets import QVBoxLayout, QWidget
     from fxgui.fxwidgets import FXApplication, FXMainWindow
@@ -480,3 +478,10 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.resize(400, 300)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

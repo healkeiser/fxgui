@@ -1,7 +1,9 @@
 """Custom label widgets."""
 
+# Built-in
 from typing import Optional
 
+# Third-party
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QFontMetrics
 from qtpy.QtWidgets import QLabel, QWidget
@@ -78,3 +80,70 @@ class FXElidedLabel(QLabel):
                 self._full_text, Qt.ElideRight, available_width
             )
             super().setText(elided)
+
+
+def example() -> None:
+    import sys
+
+    from qtpy.QtWidgets import (
+        QApplication,
+        QGroupBox,
+        QVBoxLayout,
+        QWidget,
+    )
+
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app: FXApplication = FXApplication(sys.argv)
+
+    # Main window
+    window = FXMainWindow()
+    window.setWindowTitle("Labels Example")
+    window.resize(400, 200)
+    widget = QWidget()
+    window.setCentralWidget(widget)
+    layout = QVBoxLayout(widget)
+    layout.setSpacing(12)
+
+    # Elided label examples
+    elided_group = QGroupBox("Elided Labels")
+    elided_layout = QVBoxLayout(elided_group)
+
+    # Short text (won't be elided)
+    short_label = FXElidedLabel("1. Short text that fits")
+    elided_layout.addWidget(short_label)
+
+    # Long text (will be elided)
+    long_text = (
+        "2. This is a very long text that will be automatically truncated "
+        "with an ellipsis when it doesn't fit within the available width "
+        "of the label widget."
+    )
+    long_label = FXElidedLabel(long_text)
+    long_label.setFixedWidth(250)
+    elided_layout.addWidget(long_label)
+
+    # Word-wrapped elided label
+    wrapped_text = (
+        "3. This is a very long text that will be automatically truncated "
+        "with an ellipsis when it doesn't fit within the available width "
+        "of the label widget."
+    )
+    wrapped_label = FXElidedLabel(wrapped_text)
+    wrapped_label.setWordWrap(True)
+    wrapped_label.setFixedWidth(200)
+    wrapped_label.setMaximumHeight(50)
+    elided_layout.addWidget(wrapped_label)
+
+    layout.addWidget(elided_group)
+    layout.addStretch()
+
+    window.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

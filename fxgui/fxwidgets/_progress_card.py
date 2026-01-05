@@ -1,13 +1,13 @@
-"""FXProgressCard - Task progress card widget."""
+"""Task progress card widget."""
 
 # Built-in
-import os
 from typing import Optional
 
 # Third-party
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QFrame,
+    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QProgressBar,
@@ -15,6 +15,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from qtpy.QtGui import QColor
 
 # Internal
 from fxgui import fxicons, fxstyle
@@ -153,6 +154,13 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
             self._percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             progress_layout.addWidget(self._percentage_label)
 
+        # Setup drop shadow effect
+        self._shadow_effect = QGraphicsDropShadowEffect(self)
+        self._shadow_effect.setBlurRadius(20)
+        self._shadow_effect.setOffset(0, 0)
+        self._shadow_effect.setColor(QColor(0, 0, 0, 80))
+        self.setGraphicsEffect(self._shadow_effect)
+
         main_layout.addLayout(progress_layout)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -208,13 +216,13 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
         self._progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
-                background-color: {theme_colors['surface_alt']};
+                background-color: {theme_colors['surface_sunken']};
                 border: none;
                 border-radius: 3px;
             }}
             QProgressBar::chunk {{
                 background-color: {accent_colors['primary']};
-                border-radius: 3px;
+                border-radius: 2px;
             }}
         """
         )
@@ -316,9 +324,14 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
         self.set_status(None)
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+def example() -> None:
     import sys
-    from qtpy.QtWidgets import QVBoxLayout, QWidget, QPushButton, QHBoxLayout
+    from qtpy.QtWidgets import (
+        QVBoxLayout,
+        QWidget,
+        QPushButton,
+        QHBoxLayout,
+    )
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 
     app = FXApplication(sys.argv)
@@ -369,3 +382,10 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.resize(400, 350)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

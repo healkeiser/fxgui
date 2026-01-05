@@ -1,7 +1,6 @@
-"""FXTimelineSlider - Timeline/scrubber widget for DCC applications."""
+"""Timeline/scrubber widget for DCC applications."""
 
 # Built-in
-import os
 from typing import List, Optional, Tuple
 
 # Third-party
@@ -521,8 +520,7 @@ class _TimelineTrack(QWidget):
         self._timeline.set_frame(frame)
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-
+def example() -> None:
     import sys
     from qtpy.QtWidgets import (
         QVBoxLayout,
@@ -573,3 +571,10 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.resize(600, 150)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

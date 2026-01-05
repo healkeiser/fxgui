@@ -1,7 +1,9 @@
 """Tree widget items with natural sorting."""
 
+# Built-in
 import re
 
+# Third-party
 from qtpy.QtWidgets import QTreeWidgetItem
 
 
@@ -65,3 +67,48 @@ class FXSortedTreeWidgetItem(QTreeWidgetItem):
             int(text) if text.isdigit() else text.lower()
             for text in _NATURAL_SORT_PATTERN.split(s)
         ]
+
+
+def example() -> None:
+    import sys
+    from qtpy.QtWidgets import QVBoxLayout, QWidget, QTreeWidget
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app = FXApplication(sys.argv)
+    window = FXMainWindow()
+    window.setWindowTitle("FXSortedTreeWidgetItem Demo")
+
+    widget = QWidget()
+    window.setCentralWidget(widget)
+    layout = QVBoxLayout(widget)
+
+    tree = QTreeWidget()
+    tree.setHeaderLabels(["Name", "Value"])
+    tree.setSortingEnabled(True)
+
+    # Add items with numbers that need natural sorting
+    items = [
+        "Version 1",
+        "Version 9",
+        "Version 10",
+        "Version 2",
+        "Version 20",
+        "Version 11",
+    ]
+
+    for item_text in items:
+        item = FXSortedTreeWidgetItem([item_text, "Some value"])
+        tree.addTopLevelItem(item)
+
+    layout.addWidget(tree)
+
+    window.resize(400, 300)
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

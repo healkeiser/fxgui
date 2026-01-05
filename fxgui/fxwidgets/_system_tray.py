@@ -1,7 +1,9 @@
-"""FXSystemTray - System tray icon widget."""
+"""System tray icon widget."""
 
+# Built-in
 from pathlib import Path
 
+# Third-party
 from qtpy.QtCore import QObject, QPoint, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
@@ -11,6 +13,7 @@ from qtpy.QtWidgets import (
     QSystemTrayIcon,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._application import FXApplication
 
@@ -189,3 +192,41 @@ class FXSystemTray(QObject):
         FXApplication.instance().quit()
         QApplication.instance().quit()
         self.setParent(None)
+
+
+def example() -> None:
+    import sys
+
+    app = FXApplication(sys.argv)
+
+    # Create system tray
+    system_tray = FXSystemTray()
+
+    # Add custom actions
+    hello_action = QAction(
+        fxicons.get_icon("visibility"), "Show Notification", system_tray
+    )
+    hello_action.triggered.connect(
+        lambda: system_tray.tray_icon.showMessage(
+            "Hello", "This is a system tray notification!"
+        )
+    )
+
+    settings_action = QAction(
+        fxicons.get_icon("settings"), "Settings", system_tray
+    )
+
+    # Insert actions before the quit action
+    system_tray.tray_menu.insertAction(system_tray.quit_action, hello_action)
+    system_tray.tray_menu.insertAction(system_tray.quit_action, settings_action)
+    system_tray.tray_menu.insertSeparator(system_tray.quit_action)
+
+    system_tray.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

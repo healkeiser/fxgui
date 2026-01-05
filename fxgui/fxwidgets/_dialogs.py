@@ -1,10 +1,14 @@
-"""FXFloatingDialog - Floating popup dialog."""
+"""Floating popup dialog."""
 
+# Built-in
+import os
 from typing import Optional
 
+# Third-party
 from qtpy.QtCore import Qt
 from qtpy.QtGui import (
     QCloseEvent,
+    QColor,
     QCursor,
     QFont,
     QMouseEvent,
@@ -13,6 +17,8 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import (
     QDialog,
     QDialogButtonBox,
+    QFrame,
+    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QSizePolicy,
@@ -20,6 +26,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxdcc, fxicons, fxstyle
 
 
@@ -55,6 +62,7 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
         self._default_icon = None  # Set in _apply_theme_styles
         self.dialog_icon: QPixmap = icon
         self.dialog_title: str = title
+        self._popup = popup
 
         self.drop_position = QCursor.pos()
         self.dialog_position = (
@@ -73,30 +81,112 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
         self.set_dialog_icon(self.dialog_icon)
         self.set_dialog_title(self.dialog_title)
 
-        # Window
+        # Window - frameless with transparent background for rounded corners
         self.setAttribute(Qt.WA_DeleteOnClose)
-        self.resize(200, 40)
-
         if popup:
-            self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+            self.setWindowFlags(
+                Qt.Popup | Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint
+            )
+        else:
+            self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.resize(200, 40)
 
     def _apply_theme_styles(self) -> None:
         """Apply theme-specific styles."""
         theme_colors = fxstyle.get_theme_colors()
+        accent_colors = fxstyle.get_accent_colors()
 
         # Update default icon
         self._default_icon = fxicons.get_icon(
             "home", color=theme_colors["icon"]
         ).pixmap(32, 32)
 
+        # Update icon if needed
+        if self.dialog_icon is None:
+            self.set_dialog_icon(self._default_icon)
+
+        # Modern dialog styling
+        bg_color = theme_colors.get("surface", "#2d2d2d")
+        bg_alt = theme_colors.get("surface_alt", "#353535")
+        bg_sunken = theme_colors.get("surface_sunken", "#202020")
+        border_color = theme_colors.get("border", "#3d3d3d")
+        text_color = theme_colors.get("text", "#ffffff")
+        text_secondary = theme_colors.get("text_secondary", "#aaaaaa")
+        accent = accent_colors.get("primary", "#4fc3f7")
+
+        # Container styling (opaque background with rounded corners)
+        self._container.setStyleSheet(
+            f"""
+            #FXFloatingDialogContainer {{
+                background-color: {bg_color};
+                border: 1px solid {border_color};
+                border-radius: 12px;
+            }}
+            """
+        )
+
+        # Title bar styling
+        self.title_widget.setStyleSheet(
+            f"""
+            QWidget {{
+                background-color: {bg_sunken};
+                border-top-left-radius: 11px;
+                border-top-right-radius: 11px;
+            }}
+            QLabel {{
+                background: transparent;
+                color: {text_color};
+            }}
+            """
+        )
+
+        # Main content styling
+        self.main_widget.setStyleSheet(
+            f"""
+            QWidget {{
+                background: transparent;
+            }}
+            QLabel {{
+                color: {text_secondary};
+                background: transparent;
+            }}
+            """
+        )
+
+        # Button styling
+        self.button_box.setStyleSheet(
+            f"""
+            QDialogButtonBox {{
+                background: transparent;
+            }}
+            QPushButton {{
+                background-color: {bg_alt};
+                color: {text_color};
+                border: 1px solid {border_color};
+                border-radius: 6px;
+                padding: 6px 16px;
+                min-width: 60px;
+            }}
+            QPushButton:hover {{
+                background-color: {accent};
+                border-color: {accent};
+                color: #000000;
+            }}
+            QPushButton:pressed {{
+                background-color: {accent};
+            }}
+            """
+        )
+
         # Apply DCC-specific styling
         if self.parent_package == fxdcc.HOUDINI:
             self.title_widget.setStyleSheet(
                 f"background-color: {theme_colors['surface_alt']};"
             )
-            self.setStyleSheet(
+            self._container.setStyleSheet(
                 f"""
-                FXFloatingDialog {{
+                #FXFloatingDialogContainer {{
                     border-top: 1px solid {theme_colors['border_light']};
                     border-left: 1px solid {theme_colors['border_light']};
                     border-bottom: 1px solid {theme_colors['surface']};
@@ -104,6 +194,14 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
                 }}
             """
             )
+
+        # Apply drop shadow only for non-popup dialogs (avoids artifacts)
+        if not self._popup and self._shadow_effect is None:
+            self._shadow_effect = QGraphicsDropShadowEffect(self._container)
+            self._shadow_effect.setBlurRadius(24)
+            self._shadow_effect.setOffset(0, 4)
+            self._shadow_effect.setColor(QColor(0, 0, 0, 100))
+            self._container.setGraphicsEffect(self._shadow_effect)
 
     # Private methods
     def _setup_title(self):
@@ -115,19 +213,22 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
 
         self._icon_label = QLabel(self)
         self._icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._icon_label.setFixedSize(24, 24)
         self.title_widget = QWidget(self)
 
         font = QFont()
-        font.setPointSize(12)
+        font.setPointSize(11)
         font.setBold(True)
         self.title_label = QLabel("", self)
-        self.title_label.setAlignment(Qt.AlignLeft)
+        self.title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.title_label.setFont(font)
 
         self.title_layout = QHBoxLayout(self.title_widget)
+        self.title_layout.setContentsMargins(12, 10, 12, 10)
         self.title_layout.setSpacing(10)
         self.title_layout.addWidget(self._icon_label)
         self.title_layout.addWidget(self.title_label)
+        self.title_layout.addStretch()
 
     def _setup_main_widget(self):
         """Sets up the main content widget and layout.
@@ -138,7 +239,8 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
 
         self.main_widget = QWidget(self)
         self.main_layout = QVBoxLayout(self.main_widget)
-        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.main_layout.setContentsMargins(16, 12, 16, 12)
+        self.main_layout.setSpacing(8)
 
     def _setup_buttons(self):
         """Sets up the dialog button box with close button.
@@ -148,7 +250,7 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
         """
 
         self.button_box = QDialogButtonBox(self)
-        self.button_box.setContentsMargins(10, 10, 10, 10)
+        self.button_box.setContentsMargins(12, 8, 12, 12)
         self.button_close = self.button_box.addButton(QDialogButtonBox.Close)
 
     def _setup_layout(self):
@@ -158,11 +260,25 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
             This method is intended for internal use only.
         """
 
+        # Container frame for opaque background with rounded corners
+        self._container = QFrame(self)
+        self._container.setObjectName("FXFloatingDialogContainer")
+
+        # Container layout
+        container_layout = QVBoxLayout(self._container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+        container_layout.addWidget(self.title_widget)
+        container_layout.addWidget(self.main_widget, 1)
+        container_layout.addWidget(self.button_box)
+
+        # Main dialog layout (transparent, holds the container)
         self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(1, 1, 1, 1)
-        self.layout.addWidget(self.title_widget)
-        self.layout.addWidget(self.main_widget)
-        self.layout.addWidget(self.button_box)
+        self.layout.setContentsMargins(8, 8, 8, 8)  # Margin for shadow
+        self.layout.addWidget(self._container)
+
+        # Add drop shadow effect to container (skip for popup to avoid artifacts)
+        self._shadow_effect = None
 
     def _handle_connections(self) -> None:
         """Connects the dialog's slots."""
@@ -179,9 +295,10 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
         """
 
         icon = icon if icon else self._default_icon
-        self._icon_label.setPixmap(
-            icon.scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        )
+        if icon is not None:
+            self._icon_label.setPixmap(
+                icon.scaled(22, 22, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            )
         self.dialog_icon = icon
 
     def set_dialog_title(self, title: str = None) -> None:
@@ -223,3 +340,64 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
         """
 
         self.setParent(None)
+
+
+def example() -> None:
+    import sys
+    from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget, QLabel
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app = FXApplication(sys.argv)
+    window = FXMainWindow()
+    window.setWindowTitle("FXFloatingDialog Demo")
+    widget = QWidget()
+    window.setCentralWidget(widget)
+    layout = QVBoxLayout(widget)
+
+    # Basic floating dialog
+    def show_basic_dialog():
+        dialog = FXFloatingDialog(window, title="Basic Dialog")
+        dialog.main_layout.addWidget(QLabel("This is a basic floating dialog."))
+        dialog.show_under_cursor()
+
+    # Dialog with custom icon
+    def show_icon_dialog():
+        icon = fxicons.get_icon("settings").pixmap(32, 32)
+        dialog = FXFloatingDialog(window, icon=icon, title="Settings")
+        dialog.main_layout.addWidget(QLabel("Configure your settings here."))
+        dialog.main_layout.addWidget(QLabel("Option 1: Enabled"))
+        dialog.main_layout.addWidget(QLabel("Option 2: Disabled"))
+        dialog.resize(250, 150)
+        dialog.show_under_cursor()
+
+    # Popup style dialog
+    def show_popup_dialog():
+        dialog = FXFloatingDialog(window, title="Quick Info", popup=True)
+        dialog.main_layout.addWidget(
+            QLabel("This is a popup dialog.\nClick outside to close.")
+        )
+        dialog.resize(200, 80)
+        dialog.show_under_cursor()
+
+    # Buttons to trigger dialogs
+    btn_basic = QPushButton("Show Basic Dialog")
+    btn_basic.clicked.connect(show_basic_dialog)
+    layout.addWidget(btn_basic)
+
+    btn_icon = QPushButton("Show Dialog with Icon")
+    btn_icon.clicked.connect(show_icon_dialog)
+    layout.addWidget(btn_icon)
+
+    btn_popup = QPushButton("Show Popup Dialog")
+    btn_popup.clicked.connect(show_popup_dialog)
+    layout.addWidget(btn_popup)
+
+    layout.addStretch()
+
+    window.resize(300, 200)
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    example()

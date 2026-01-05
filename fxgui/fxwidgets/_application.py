@@ -1,7 +1,9 @@
-"""FXApplication - Custom QApplication."""
+"""Custom QApplication."""
 
+# Third-party
 from qtpy.QtWidgets import QApplication
 
+# Internal
 from fxgui import fxstyle
 
 
@@ -34,8 +36,15 @@ class FXApplication(QApplication):
             # load_stylesheet() automatically uses the saved theme
             self.setStyleSheet(fxstyle.load_stylesheet())
 
+            # Connect to theme changes to update application stylesheet
+            fxstyle.theme_manager.theme_changed.connect(self._on_theme_changed)
+
             # Mark the instance as initialized
             self.__initialized = True
+
+    def _on_theme_changed(self, theme_name: str) -> None:
+        """Update application stylesheet when theme changes."""
+        self.setStyleSheet(fxstyle.load_stylesheet())
 
     @classmethod
     def instance(cls, *args, **kwargs):
@@ -46,3 +55,31 @@ class FXApplication(QApplication):
         # This ensures that `__new__` and `__init__` are called if the instance
         # doesn't exist
         return cls(*args, **kwargs)
+
+
+def example() -> None:
+    import sys
+    from qtpy.QtWidgets import QLabel, QVBoxLayout, QWidget
+    from fxgui.fxwidgets import FXMainWindow
+
+    app = FXApplication(sys.argv)
+    window = FXMainWindow()
+    window.setWindowTitle("FXApplication Demo")
+
+    widget = QWidget()
+    window.setCentralWidget(widget)
+    layout = QVBoxLayout(widget)
+
+    label = QLabel("This is a demo of FXApplication with styled theme.")
+    layout.addWidget(label)
+
+    window.resize(400, 200)
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()

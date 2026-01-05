@@ -1,4 +1,4 @@
-"""FXFilePathWidget - Path input with browse button."""
+"""Path input with browse button and validation indicator."""
 
 # Built-in
 import os
@@ -154,23 +154,6 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
 
     def _apply_theme_styles(self) -> None:
         """Apply theme-specific styles."""
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
-        self._input.setStyleSheet(
-            f"""
-            QLineEdit {{
-                background-color: {theme_colors['surface_sunken']};
-                border: 1px solid {theme_colors['border']};
-                border-radius: 4px;
-                padding: 6px 8px;
-            }}
-            QLineEdit:focus {{
-                border-color: {accent_colors['primary']};
-            }}
-        """
-        )
-
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
     @property
@@ -298,10 +281,11 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
         path = self._input.text()
         colors = fxstyle.get_colors()
         feedback = colors["feedback"]
+        theme_colors = fxstyle.get_theme_colors()
 
         if not path:
             fxicons.set_icon(
-                self._indicator, "remove", color=feedback["info"]["foreground"]
+                self._indicator, "remove", color=theme_colors["text_disabled"]
             )
             self._indicator.setToolTip("No path entered")
         elif self._is_valid:
@@ -340,8 +324,7 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
                 self._input.setText(";".join(paths))
 
 
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    import os
+def example() -> None:
     import sys
     from qtpy.QtWidgets import QVBoxLayout, QWidget, QLabel, QGroupBox
     from fxgui.fxwidgets import FXApplication, FXMainWindow
@@ -400,3 +383,7 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.resize(500, 350)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    example()

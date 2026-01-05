@@ -1,7 +1,10 @@
 """Input validators for Qt widgets."""
 
+# Built-in
+import os
 from typing import Optional
 
+# Third-party
 from qtpy.QtCore import QRegularExpression
 from qtpy.QtGui import QRegularExpressionValidator, QValidator
 from qtpy.QtWidgets import QWidget
@@ -133,3 +136,101 @@ class FXCapitalizedLetterValidator(QValidator):
         if input_string:
             return input_string[0].upper() + input_string[1:]
         return input_string
+
+
+def example() -> None:
+    import sys
+    from qtpy.QtWidgets import (
+        QFormLayout,
+        QLabel,
+        QLineEdit,
+        QVBoxLayout,
+        QWidget,
+    )
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app: FXApplication = FXApplication(sys.argv)
+
+    # Main window
+    window = FXMainWindow()
+    window.setWindowTitle("FXValidators Demo")
+    window.resize(400, 300)
+
+    # Central widget with form layout
+    widget = QWidget()
+    layout = QVBoxLayout(widget)
+
+    # Description
+    description = QLabel(
+        "Test different validators by typing in the fields below.\n"
+        "Invalid input will be rejected."
+    )
+    layout.addWidget(description)
+
+    # Form layout for validators
+    form_layout = QFormLayout()
+    layout.addLayout(form_layout)
+
+    # CamelCase validator
+    camel_case_edit = QLineEdit()
+    camel_case_edit.setValidator(FXCamelCaseValidator())
+    camel_case_edit.setPlaceholderText("camelCase (e.g., myVariableName)")
+    form_layout.addRow("CamelCase:", camel_case_edit)
+
+    # Lowercase validator
+    lowercase_edit = QLineEdit()
+    lowercase_edit.setValidator(FXLowerCaseValidator())
+    lowercase_edit.setPlaceholderText("lowercase only (e.g., hello)")
+    form_layout.addRow("Lowercase:", lowercase_edit)
+
+    # Lowercase with numbers
+    lowercase_num_edit = QLineEdit()
+    lowercase_num_edit.setValidator(FXLowerCaseValidator(allow_numbers=True))
+    lowercase_num_edit.setPlaceholderText("lowercase + numbers (e.g., test123)")
+    form_layout.addRow("Lowercase + Numbers:", lowercase_num_edit)
+
+    # Lowercase with underscores
+    lowercase_underscore_edit = QLineEdit()
+    lowercase_underscore_edit.setValidator(
+        FXLowerCaseValidator(allow_numbers=True, allow_underscores=True)
+    )
+    lowercase_underscore_edit.setPlaceholderText(
+        "lowercase + numbers + underscores (e.g., my_var_1)"
+    )
+    form_layout.addRow("Snake Case:", lowercase_underscore_edit)
+
+    # Letters and underscores
+    letters_underscore_edit = QLineEdit()
+    letters_underscore_edit.setValidator(FXLettersUnderscoreValidator())
+    letters_underscore_edit.setPlaceholderText(
+        "letters + underscores (e.g., My_Variable)"
+    )
+    form_layout.addRow("Letters + Underscore:", letters_underscore_edit)
+
+    # Letters, underscores, and numbers
+    letters_underscore_num_edit = QLineEdit()
+    letters_underscore_num_edit.setValidator(
+        FXLettersUnderscoreValidator(allow_numbers=True)
+    )
+    letters_underscore_num_edit.setPlaceholderText(
+        "letters + underscores + numbers (e.g., My_Var_1)"
+    )
+    form_layout.addRow(
+        "Letters + Underscore + Num:", letters_underscore_num_edit
+    )
+
+    # Capitalized letter validator
+    capitalized_edit = QLineEdit()
+    capitalized_edit.setValidator(FXCapitalizedLetterValidator())
+    capitalized_edit.setPlaceholderText("starts with capital (e.g., Hello)")
+    form_layout.addRow("Capitalized:", capitalized_edit)
+
+    layout.addStretch()
+    window.setCentralWidget(widget)
+
+    window.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    example()

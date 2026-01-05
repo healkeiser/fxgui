@@ -1,4 +1,4 @@
-"""FXTooltip - Rich, theme-aware tooltip widget."""
+"""Rich, theme-aware tooltip widget."""
 
 # TODO: Find a way to use the FXTooltip by default for standard Qt tooltips?
 # TODO: Peristent tooltip should follow their anchor when it moves
@@ -296,8 +296,8 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
         # Drop shadow on content
         shadow = QGraphicsDropShadowEffect(self._content_widget)
         shadow.setBlurRadius(20)
-        shadow.setOffset(0, 4)
-        shadow.setColor(QColor(0, 0, 0, 60))
+        shadow.setOffset(0, 0)
+        shadow.setColor(QColor(0, 0, 0, 80))
         self._content_widget.setGraphicsEffect(shadow)
 
     def _apply_theme_styles(self) -> None:
@@ -805,12 +805,11 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
 
 
 # Example usage
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+def example() -> None:
     import sys
 
     from qtpy.QtWidgets import (
         QVBoxLayout,
-        QHBoxLayout,
         QWidget,
         QPushButton,
         QGroupBox,
@@ -914,3 +913,7 @@ if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
     window.resize(450, 400)
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
+    example()

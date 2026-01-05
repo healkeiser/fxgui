@@ -1,13 +1,16 @@
-"""FXWidget - Base widget with UI loading support."""
+"""Base widget with UI loading support."""
 
+# Built-in
 from typing import Optional
 
+# Third-party
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
+# Internal
 from fxgui import fxstyle, fxutils
 
 
-class FXWidget(QWidget):
+class FXWidget(fxstyle.FXThemeAware, QWidget):
     def __init__(
         self,
         parent=None,
@@ -22,9 +25,6 @@ class FXWidget(QWidget):
         # Methods
         self._load_ui()
         self._set_layout()
-
-        # Styling
-        self.setStyleSheet(fxstyle.load_stylesheet())
 
     # Private methods
     def _load_ui(self) -> None:
@@ -49,3 +49,42 @@ class FXWidget(QWidget):
         self.layout.setContentsMargins(9, 9, 9, 9)
         if self.ui:
             self.layout.addWidget(self.ui)
+
+    def _apply_theme_styles(self) -> None:
+        """Apply theme-specific styles to the widget.
+
+        This method is called automatically by the FXThemeAware mixin
+        when the theme changes.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+
+        self.setStyleSheet(fxstyle.load_stylesheet())
+
+
+def example() -> None:
+    import sys
+    from qtpy.QtWidgets import QLabel, QPushButton
+    from fxgui.fxwidgets import FXApplication, FXMainWindow
+
+    app = FXApplication(sys.argv)
+    window = FXMainWindow()
+    window.setWindowTitle("FXWidget Demo")
+
+    # Create a simple FXWidget
+    widget = FXWidget()
+    widget.layout.addWidget(QLabel("This is an FXWidget with styled theme."))
+    widget.layout.addWidget(QPushButton("Click Me"))
+
+    window.setCentralWidget(widget)
+    window.resize(400, 200)
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    import os
+
+    if os.getenv("DEVELOPER_MODE") == "1":
+        example()
