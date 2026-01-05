@@ -2,7 +2,10 @@
 
 A notification banner widget for displaying alerts and messages.
 
-![FXNotificationBanner](../../images/widgets/notification_banner.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXNotificationBanner](../../images/widgets/notification_banner.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXNotificationBanner
     options:

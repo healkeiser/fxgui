@@ -2,7 +2,10 @@
 
 A search input widget with optional suggestions and filtering.
 
-![FXSearchBar](../../images/widgets/search_bar.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXSearchBar](../../images/widgets/search_bar.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXSearchBar
     options:

@@ -2,7 +2,10 @@
 
 An enhanced scroll area that automatically resizes based on content.
 
-![FXScrollArea](../../images/widgets/scroll_area.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXScrollArea](../../images/widgets/scroll_area.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXResizedScrollArea
     options:

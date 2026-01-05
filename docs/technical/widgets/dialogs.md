@@ -2,7 +2,10 @@
 
 Dialog widgets for modal and non-modal user interactions.
 
-![FXDialogs](../../images/widgets/dialogs.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXDialogs](../../images/widgets/dialogs.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXFloatingDialog
     options:

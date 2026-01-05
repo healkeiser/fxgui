@@ -2,7 +2,10 @@
 
 Custom item delegates for Qt views (QListView, QTreeView, QTableView).
 
-![FXDelegates](../../images/widgets/delegates.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXDelegates](../../images/widgets/delegates.png)
+    </p>
 
 ## Classes
 

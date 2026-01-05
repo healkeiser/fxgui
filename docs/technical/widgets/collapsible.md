@@ -2,7 +2,10 @@
 
 The collapsible widget provides a single expandable/collapsible section with a header and content area.
 
-![FXCollapsibleWidget](../../images/widgets/collapsible.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXCollapsibleWidget](../../images/widgets/collapsible.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXCollapsibleWidget
     options:

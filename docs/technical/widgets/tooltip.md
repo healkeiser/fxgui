@@ -2,7 +2,10 @@
 
 Enhanced tooltips with custom positioning and styling.
 
-![FXTooltip](../../images/widgets/tooltip.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXTooltip](../../images/widgets/tooltip.png)
+    </p>
 
 ## Classes
 

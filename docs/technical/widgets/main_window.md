@@ -2,7 +2,10 @@
 
 An enhanced QMainWindow with built-in theme support, status bar, and DCC integration.
 
-![FXMainWindow](../../images/widgets/main_window.png)
+??? quote "Preview"
+    <p align="center">
+    ![FXMainWindow](../../images/widgets/main_window.png)
+    </p>
 
 ::: fxgui.fxwidgets.FXMainWindow
     options:

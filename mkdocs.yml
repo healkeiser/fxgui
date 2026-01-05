@@ -25,6 +25,8 @@ theme:
   logo: images/fxgui_logo_light.svg
   icon:
     repo: material/github
+    admonition:
+      quote: material/image-outline
   features:
     - announce.dismiss
     - navigation.tabs
