@@ -215,28 +215,3 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
           twine upload dist/*
-
-  # Step 4: Deploy documentation
-  deploy-docs:
-    name: Deploy Documentation
-    needs: publish-pypi
-    if: ${{ always() && !cancelled() && inputs.skip-docs != true }}
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.zensical.outputs.page_url }}
-    steps:
-      - name: Check for mkdocs.yml
-        id: check-config
-        run: |
-          # We'll check after checkout in the action
-          echo "proceed=true" >> $GITHUB_OUTPUT
-
-      - name: Zensical Action
-        id: zensical
-        uses: cssnr/zensical-action@v1
-        with:
-          python-version: ${{ inputs.python-version || '3.11' }}
-          # Install mkdocstrings before build for API documentation
-          prepare: |
-            pip install mkdocstrings[python]
