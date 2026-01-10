@@ -114,7 +114,7 @@ from typing import Optional
 
 # Third-party
 import yaml
-from qtpy.QtCore import QEvent, QObject, QTimer, Signal
+from qtpy.QtCore import QObject, QTimer, Signal
 from qtpy.QtGui import QColor, QFontDatabase, QIcon
 from qtpy.QtWidgets import (
     QProxyStyle,
@@ -129,6 +129,32 @@ from fxgui import fxconfig, fxicons
 
 
 ###### Theme Management
+
+
+class FXThemeColors:
+    """Namespace for accessing theme colors with dot notation.
+
+    This class provides a convenient way to access theme colors using
+    attribute access instead of dictionary lookup.
+
+    Examples:
+        >>> colors = FXThemeColors(fxstyle.get_theme_colors())
+        >>> colors.surface  # "#302f2f"
+        >>> colors.accent_primary  # "#2196F3"
+    """
+
+    def __init__(self, colors_dict: dict):
+        """Initialize with a colors dictionary.
+
+        Args:
+            colors_dict: Dictionary of color name to hex value mappings.
+        """
+        for key, value in colors_dict.items():
+            setattr(self, key, value)
+
+    def __repr__(self) -> str:
+        attrs = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f"FXThemeColors({attrs})"
 
 
 class FXThemeManager(QObject):
@@ -167,59 +193,158 @@ theme_manager = FXThemeManager()
 class FXThemeAware:
     """Mixin that makes widgets automatically respond to theme changes.
 
+    This mixin provides automatic theme updates for custom widgets. When the
+    theme changes, connected widgets are notified and can update their appearance.
+
     Usage:
         1. Inherit from FXThemeAware **FIRST**: `class MyWidget(FXThemeAware, QWidget)`
-        2. Override `_apply_theme_styles()` to apply your colors
+        2. Override `_on_theme_changed()` to apply custom colors (optional)
+        3. Use `self.theme` property to access current theme colors
+        4. Optionally declare a `theme_style` class attribute for automatic QSS
 
-    Example:
+    Examples:
+        New API (recommended):
         >>> from fxgui import fxstyle
+        >>> class FXMyWidget(FXThemeAware, QWidget):
+        ...     # Option 1: Declarative QSS with color tokens
+        ...     theme_style = '''
+        ...         FXMyWidget {
+        ...             background: @surface;
+        ...             border: 1px solid @border;
+        ...         }
+        ...     '''
+        ...
+        ...     # Option 2: Programmatic colors in paintEvent
+        ...     def paintEvent(self, event):
+        ...         painter = QPainter(self)
+        ...         painter.fillRect(self.rect(), QColor(self.theme.surface))
+
+        Legacy API (deprecated, still works):
         >>> class FXMyWidget(FXThemeAware, QWidget):
         ...     def _apply_theme_styles(self):
         ...         colors = fxstyle.get_theme_colors()
         ...         self.setStyleSheet(f"background: {colors['surface']};")
 
-    That's it! Colors update automatically when theme changes.
+    Attributes:
+        theme: Property returning current theme colors as a FXThemeColors object.
+        theme_style: Optional class attribute with QSS containing @color tokens.
     """
 
-    _applying_theme: bool = False  # Guard against recursion
+    # Class attribute for declarative QSS styling (optional)
+    theme_style: str = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._applying_theme = False
-        theme_manager.theme_changed.connect(self._on_theme_changed)
-        # Auto-call _apply_theme_styles after widget is fully initialized
-        QTimer.singleShot(0, self._safe_apply_theme_styles)
+        theme_manager.theme_changed.connect(self.__handle_theme_change)
+        # Auto-apply theme after widget is fully initialized
+        QTimer.singleShot(0, self.__handle_theme_change)
 
-    def changeEvent(self, event) -> None:
-        """Handle Qt palette change events."""
-        # Only respond to palette changes if we're not already applying theme
-        # This prevents recursion when setStyleSheet triggers PaletteChange
-        if (
-            event.type() == QEvent.Type.PaletteChange
-            and not self._applying_theme
-        ):
-            self._safe_apply_theme_styles()
-        super().changeEvent(event)
+    @property
+    def theme(self) -> FXThemeColors:
+        """Get current theme colors as a namespace object.
 
-    def _on_theme_changed(self, theme_name: str) -> None:
-        """Handle theme change from FXThemeManager."""
-        self._safe_apply_theme_styles()
+        Returns:
+            FXThemeColors object with color attributes (e.g., theme.surface,
+            theme.accent_primary, theme.text).
+
+        Examples:
+            >>> def paintEvent(self, event):
+            ...     painter = QPainter(self)
+            ...     painter.fillRect(self.rect(), QColor(self.theme.surface))
+            ...     painter.setPen(QColor(self.theme.text))
+        """
+        return FXThemeColors(get_theme_colors())
+
+    def __handle_theme_change(self, _theme_name: str = None) -> None:
+        """Internal handler for theme changes."""
+        # Process theme_style class attribute if defined
+        if self.theme_style:
+            self.__apply_theme_style_attribute()
+
+        # Call the override point for custom logic
+        self._on_theme_changed()
+
+        # Always trigger repaint
         if hasattr(self, "update"):
             self.update()
 
-    def _safe_apply_theme_styles(self) -> None:
-        """Wrapper that prevents recursion when applying styles."""
-        if self._applying_theme:
+    def __apply_theme_style_attribute(self) -> None:
+        """Process the theme_style class attribute and apply it."""
+        if not self.theme_style:
             return
-        self._applying_theme = True
-        try:
+
+        stylesheet = self.theme_style
+        colors = get_theme_colors()
+
+        # Replace @tokens with actual colors
+        for key, value in colors.items():
+            stylesheet = stylesheet.replace(f"@{key}", value)
+
+        if hasattr(self, "setStyleSheet"):
+            self.setStyleSheet(stylesheet)
+
+    def _on_theme_changed(self) -> None:
+        """Override this to apply custom theme styling.
+
+        Called automatically when the theme changes. Use this for:
+        - Updating child widget styles
+        - Refreshing cached colors
+        - Any custom theme-dependent logic
+
+        Note:
+            You don't need to call `self.update()` - it's called automatically
+            after this method returns.
+
+        Examples:
+            >>> def _on_theme_changed(self):
+            ...     # Update a child widget that isn't theme-aware
+            ...     self.custom_label.setStyleSheet(
+            ...         f"color: {self.theme.text};"
+            ...     )
+        """
+        # Check if subclass overrides the deprecated _apply_theme_styles
+        # If so, call it for backward compatibility
+        if (
+            self.__class__._apply_theme_styles
+            is not FXThemeAware._apply_theme_styles
+        ):
+            import warnings
+
+            warnings.warn(
+                f"{self.__class__.__name__}._apply_theme_styles() is deprecated. "
+                "Override _on_theme_changed() instead, or use the theme_style "
+                "class attribute for declarative QSS.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             self._apply_theme_styles()
-        finally:
-            self._applying_theme = False
 
     def _apply_theme_styles(self) -> None:
-        """Override this to apply theme colors. Called automatically."""
+        """Deprecated: Override _on_theme_changed() instead.
+
+        .. deprecated::
+            This method is deprecated. Use `_on_theme_changed()` for custom
+            logic or the `theme_style` class attribute for declarative QSS.
+        """
         pass
+
+    # Deprecated methods kept for backward compatibility
+    def _safe_apply_theme_styles(self) -> None:
+        """Deprecated: No longer needed, theme changes are handled automatically.
+
+        .. deprecated::
+            This internal method is no longer used. Override `_on_theme_changed()`
+            for custom theme logic.
+        """
+        import warnings
+
+        warnings.warn(
+            "_safe_apply_theme_styles() is deprecated and no longer used. "
+            "Override _on_theme_changed() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self._apply_theme_styles()
 
 
 ###### Public API
@@ -229,6 +354,7 @@ __all__ = [
     "FXProxyStyle",
     "FXThemeManager",
     "FXThemeAware",
+    "FXThemeColors",
     # Singleton
     "theme_manager",
     # Constants
@@ -238,6 +364,7 @@ __all__ = [
     "get_colors",
     "set_color_file",
     "get_accent_colors",
+    "get_feedback_colors",
     "get_theme_colors",
     "get_icon_color",
     # Theme functions
@@ -381,6 +508,38 @@ def get_accent_colors() -> dict:
         "primary": theme_colors.get("accent_primary", "#2196F3"),
         "secondary": theme_colors.get("accent_secondary", "#1976D2"),
     }
+
+
+def get_feedback_colors() -> dict:
+    """Get the feedback/status colors for notifications and logging.
+
+    These colors are used by ``FXNotificationBanner``, ``FXLogWidget``,
+    and other status/feedback widgets.
+
+    Each level provides both a ``foreground`` (text/icon) and ``background``
+    color designed to work together with appropriate contrast.
+
+    Returns:
+        Dictionary with keys: 'debug', 'info', 'success', 'warning', 'error'.
+        Each value is a dict with 'foreground' and 'background' keys.
+
+    Examples:
+        >>> colors = fxstyle.get_feedback_colors()
+        >>> colors["error"]["foreground"]  # "#ff4444"
+        >>> colors["error"]["background"]  # "#7b2323"
+        >>> colors["success"]["foreground"]  # "#8ac549"
+    """
+    colors_dict = get_colors()
+    return colors_dict.get(
+        "feedback",
+        {
+            "debug": {"foreground": "#26C6DA", "background": "#006064"},
+            "info": {"foreground": "#7661f6", "background": "#372d75"},
+            "success": {"foreground": "#8ac549", "background": "#466425"},
+            "warning": {"foreground": "#ffbb33", "background": "#7b5918"},
+            "error": {"foreground": "#ff4444", "background": "#7b2323"},
+        },
+    )
 
 
 def get_theme_colors() -> dict:

@@ -48,7 +48,7 @@ app.exec_()
 | [fxicons](technical/fxicons.md) | Icon management with multiple libraries |
 | [fxstyle](technical/fxstyle.md) | Theming, stylesheets, and color management |
 | [fxutils](technical/fxutils.md) | General utility functions |
-| [fxwidgets](technical/widgets/index.md) | Custom Qt widgets |
+| [fxwidgets](technical/fxwidgets/index.md) | Custom Qt widgets |
 
 !!! note
     This documentation is updated regularly to reflect the most recent changes.<br>

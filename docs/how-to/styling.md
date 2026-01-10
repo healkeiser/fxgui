@@ -2,7 +2,7 @@
 
 ## Style an Existing Application
 
-In the case where you already have made some custom applications, and don't want to be bothered by subclassing the widgets inside the [fxwidgets](../technical/widgets/index.md) module but still want all applications to look and feel the same, you can call the `fxstyle.load_stylesheet()` function and apply the returned stylesheet to your current application/widget.
+In the case where you already have made some custom applications, and don't want to be bothered by subclassing the widgets inside the [fxwidgets](../technical/fxwidgets/index.md) module but still want all applications to look and feel the same, you can call the `fxstyle.load_stylesheet()` function and apply the returned stylesheet to your current application/widget.
 
 ```python
 from qtpy.QtWidgets import QApplication
@@ -39,7 +39,7 @@ application.setStyle(fxstyle.FXProxyStyle())
 ```
 
 !!! tip
-    The `FXApplication` class found inside [fxwidgets](../technical/widgets/index.md) already applies this custom style.
+    The `FXApplication` class found inside [fxwidgets](../technical/fxwidgets/index.md) already applies this custom style.
 
 
 You can now use the icons by doing:
@@ -59,7 +59,7 @@ application.exec_()
 ```
 
 !!! note
-    By default, the `FXApplication` found inside [fxwidgets](../technical/widgets/index.md) already applies this custom style.
+    By default, the `FXApplication` found inside [fxwidgets](../technical/fxwidgets/index.md) already applies this custom style.
 
 !!! warning
     Applying the `FXProxyStyle` is only allowed on a `QApplication` instance! So if you're instantiating a `FXMainWindow` inside a parent DCC, **do not** set the style on it.

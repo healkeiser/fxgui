@@ -30,7 +30,7 @@ Functions:
     show_window_houdini: Example for Houdini integration.
     show_floating_dialog_houdini: Floating dialog in Houdini.
 
-Usage:
+Examples:
     Run this module directly to see the full example:
 
     >>> python -m fxgui.examples

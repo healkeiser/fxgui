@@ -3,15 +3,17 @@
 This script runs each widget module as a subprocess and captures a screenshot
 before the app exits by patching the example() function.
 
-Usage:
-    python .scripts/capture_widget_screenshots.py
-    python .scripts/capture_widget_screenshots.py --widget accordion
-    python .scripts/capture_widget_screenshots.py --list
+Examples:
+    >>> python .scripts/capture_widget_screenshots.py
+    >>> python .scripts/capture_widget_screenshots.py --widget accordion
+    >>> python .scripts/capture_widget_screenshots.py --list
 """
 
+# Built-in
 import sys
 import subprocess
 from pathlib import Path
+
 
 # Project root
 PROJECT_ROOT = Path(__file__).parent.parent

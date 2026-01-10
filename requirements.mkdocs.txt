@@ -1,0 +1,10 @@
+mkdocs-material
+mkdocs-gen-files
+mkdocs-literate-nav
+mkdocs-section-index
+mkdocs-git-revision-date-localized-plugin
+mkdocs-git-authors-plugin
+mkdocs-git-committers-plugin-2
+mkdocstrings[python]
+mike
+black

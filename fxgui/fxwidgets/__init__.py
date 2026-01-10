@@ -4,7 +4,7 @@ This package provides a collection of custom Qt widgets built on top of qtpy,
 offering enhanced functionality and consistent styling for DCC applications.
 """
 
-from fxgui.fxstyle import FXThemeAware, FXThemeManager, theme_manager
+from fxgui.fxstyle import FXThemeAware, FXThemeManager, FXThemeColors, theme_manager
 from fxgui.fxwidgets._accordion import FXAccordion, FXAccordionSection
 from fxgui.fxwidgets._application import FXApplication
 from fxgui.fxwidgets._breadcrumb import FXBreadcrumb
@@ -97,6 +97,7 @@ __all__ = [
     "FXTagInput",
     "FXThemeAware",
     "FXThemeManager",
+    "FXThemeColors",
     "FXThumbnailDelegate",
     "FXTimelineSlider",
     "FXToggleSwitch",
