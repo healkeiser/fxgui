@@ -165,17 +165,14 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         # Frame styling
         self.setStyleSheet(
             f"""
             FXProgressCard {{
-                background-color: {theme_colors['surface']};
-                border: 1px solid {theme_colors['border']};
+                background-color: {self.theme.surface};
+                border: 1px solid {self.theme.border};
                 border-radius: 8px;
             }}
         """
@@ -184,7 +181,7 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
         # Task icon
         if self._icon:
             task_icon = fxicons.get_icon(
-                self._icon, color=theme_colors["text_muted"]
+                self._icon, color=self.theme.text_muted
             )
             self._icon_label.setPixmap(task_icon.pixmap(18, 18))
 
@@ -192,7 +189,7 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
         self._title_label.setStyleSheet(
             f"""
             QLabel {{
-                color: {theme_colors['text']};
+                color: {self.theme.text};
                 font-weight: bold;
                 font-size: 14px;
                 background: transparent;
@@ -205,7 +202,7 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
             self._description_label.setStyleSheet(
                 f"""
                 QLabel {{
-                    color: {theme_colors['text_muted']};
+                    color: {self.theme.text_muted};
                     font-size: 12px;
                     background: transparent;
                 }}
@@ -216,12 +213,12 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
         self._progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
-                background-color: {theme_colors['surface_sunken']};
+                background-color: {self.theme.surface_sunken};
                 border: none;
                 border-radius: 3px;
             }}
             QProgressBar::chunk {{
-                background-color: {accent_colors['primary']};
+                background-color: {self.theme.accent_primary};
                 border-radius: 2px;
             }}
         """
@@ -232,7 +229,7 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
             self._percentage_label.setStyleSheet(
                 f"""
                 QLabel {{
-                    color: {theme_colors['text_muted']};
+                    color: {self.theme.text_muted};
                     font-size: 12px;
                     background: transparent;
                 }}

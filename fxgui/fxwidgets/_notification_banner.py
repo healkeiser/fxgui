@@ -222,7 +222,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
 
         # Apply initial styling
-        self._apply_theme_styles()
+        self._on_theme_changed()
 
         # Ensure widget sizes to fit content
         self.adjustSize()
@@ -259,16 +259,11 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
     def _get_severity_colors(self, severity: Optional[int]) -> dict:
         """Get colors based on severity level."""
-        # Get feedback colors from theme JSONC
-        colors = fxstyle.get_colors()
-        feedback = colors.get("feedback", {})
-        theme_colors = fxstyle.get_theme_colors()
-
         # If no severity, use default text color
         if severity is None:
             return {
-                "icon": theme_colors.get("text", "#ffffff"),
-                "accent": theme_colors.get("text", "#ffffff"),
+                "icon": self.theme.text,
+                "accent": self.theme.text,
             }
 
         # Map severity to feedback key
@@ -282,25 +277,23 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         }
 
         key = severity_to_key.get(severity, "info")
-        fb = feedback.get(key, {})
-        foreground = fb.get("foreground", "#ffffff")
+        foreground = self.theme.get_feedback_color(key, "foreground")
 
         return {
             "icon": foreground,
             "accent": foreground,
         }
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles (similar to FXProgressCard)."""
-        theme_colors = fxstyle.get_theme_colors()
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         severity_colors = self._get_severity_colors(self._severity_type)
 
         # Frame styling (card-like, darker background to stand out)
         self.setStyleSheet(
             f"""
             FXNotificationBanner {{
-                background-color: {theme_colors['surface_sunken']};
-                border: 1px solid {theme_colors['border']};
+                background-color: {self.theme.surface_sunken};
+                border: 1px solid {self.theme.border};
                 border-radius: 8px;
             }}
         """
@@ -333,7 +326,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         self._message_label.setStyleSheet(
             f"""
             QLabel {{
-                color: {theme_colors['text_muted']};
+                color: {self.theme.text_muted};
                 font-size: 12px;
                 background: transparent;
             }}
@@ -343,7 +336,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         # Close button styling
         if hasattr(self, "_close_button"):
             fxicons.set_icon(
-                self._close_button, "close", color=theme_colors["text_muted"]
+                self._close_button, "close", color=self.theme.text_muted
             )
             self._close_button.setStyleSheet(
                 f"""
@@ -353,18 +346,17 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
                     border-radius: 10px;
                 }}
                 QPushButton:hover {{
-                    background: {theme_colors['surface_alt']};
+                    background: {self.theme.surface_alt};
                 }}
             """
             )
 
         # Action button styling
         if hasattr(self, "_action_button"):
-            accent_colors = fxstyle.get_accent_colors()
             self._action_button.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background: {accent_colors['primary']};
+                    background: {self.theme.accent_primary};
                     color: #ffffff;
                     border: none;
                     border-radius: 4px;
@@ -373,7 +365,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
                     font-size: 12px;
                 }}
                 QPushButton:hover {{
-                    background: {accent_colors['secondary']};
+                    background: {self.theme.accent_secondary};
                 }}
             """
             )

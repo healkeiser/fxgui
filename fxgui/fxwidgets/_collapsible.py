@@ -186,7 +186,7 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         self._is_expanded = checked
 
         # Update header background based on expanded state
-        self._apply_theme_styles()
+        self._on_theme_changed()
 
         if checked and not self._has_been_expanded:
             # First time expansion: measure content
@@ -266,13 +266,12 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
                 self.content_area.setHorizontalScrollBarPolicy(h_policy)
                 self.content_area.setVerticalScrollBarPolicy(v_policy)
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-aware styling to the header."""
-        colors = fxstyle.get_theme_colors()
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         if self._is_expanded:
             # Use hover state color when expanded
             self.header_widget.setStyleSheet(
-                f"QFrame {{ background-color: {colors['state_hover']}; }}"
+                f"QFrame {{ background-color: {self.theme.state_hover}; }}"
             )
         else:
             # Use default (transparent) when collapsed

@@ -205,13 +205,10 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
 
         # Get current theme colors (dynamic for theme switching)
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
-        track_color = QColor(theme_colors["surface_sunken"])
-        range_color = QColor(accent_colors["primary"])
+        track_color = QColor(self.theme.surface_sunken)
+        range_color = QColor(self.theme.accent_primary)
         handle_color = QColor("#ffffff")
-        handle_border_color = QColor(accent_colors["primary"])
+        handle_border_color = QColor(self.theme.accent_primary)
 
         # Calculate positions
         margin = self._handle_radius
@@ -284,9 +281,8 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
             # font.setBold(True)
             painter.setFont(font)
 
-            theme_colors = fxstyle.get_theme_colors()
-            text_color = QColor(theme_colors["text"])
-            bg_color = QColor(theme_colors["surface"])
+            text_color = QColor(self.theme.text)
+            bg_color = QColor(self.theme.surface)
             bg_color.setAlpha(200)
 
             from qtpy.QtCore import QRectF

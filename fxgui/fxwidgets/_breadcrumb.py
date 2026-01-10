@@ -145,8 +145,8 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
         if self._show_navigation:
             self._update_nav_buttons()
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-aware styles to all widgets."""
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         # Re-apply icons with current theme color
         if self._show_navigation:
             fxicons.set_icon(self._back_button, "arrow_back")
@@ -389,11 +389,9 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
 
     def _add_separator(self) -> None:
         """Add a separator icon."""
-        theme_colors = fxstyle.get_theme_colors()
-
         label = QLabel()
         icon = fxicons.get_icon(
-            self._separator, color=theme_colors["text_muted"]
+            self._separator, color=self.theme.text_muted
         )
         label.setPixmap(icon.pixmap(12, 12))
         label.setStyleSheet("background: transparent;")

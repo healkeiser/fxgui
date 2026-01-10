@@ -300,17 +300,14 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
         shadow.setColor(QColor(0, 0, 0, 80))
         self._content_widget.setGraphicsEffect(shadow)
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         # Background and text colors - use surface_sunken for darker card
-        bg_color = theme_colors.get("surface_sunken", "#1a1a1a")
-        text_color = theme_colors.get("text", "#ffffff")
-        text_secondary = theme_colors.get("text_secondary", "#aaaaaa")
-        border_color = theme_colors.get("border", "#333333")
-        accent = accent_colors.get("primary", "#4fc3f7")
+        bg_color = self.theme.surface_sunken
+        text_color = self.theme.text
+        text_secondary = self.theme.text_secondary
+        border_color = self.theme.border
+        accent = self.theme.accent_primary
 
         self._content_widget.setStyleSheet(
             f"""
@@ -647,7 +644,7 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
         """Actually show the tooltip."""
         # Ensure theme styles are applied before showing
         if not hasattr(self, "_bg_color"):
-            self._apply_theme_styles()
+            self._on_theme_changed()
 
         pos, arrow_pos, arrow_offset = self._calculate_position()
         self._arrow_offset = arrow_offset
@@ -734,7 +731,7 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
             self._shortcut_label.setText(shortcut)
         if icon is not None:
             self._icon_name = icon
-            self._apply_theme_styles()
+            self._on_theme_changed()
 
     def set_anchor(self, widget: QWidget) -> None:
         """Change the anchor widget.

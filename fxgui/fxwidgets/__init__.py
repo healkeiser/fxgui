@@ -8,6 +8,7 @@ from fxgui.fxstyle import FXThemeAware, FXThemeManager, FXThemeColors, theme_man
 from fxgui.fxwidgets._accordion import FXAccordion, FXAccordionSection
 from fxgui.fxwidgets._application import FXApplication
 from fxgui.fxwidgets._breadcrumb import FXBreadcrumb
+from fxgui.fxwidgets._code_block import FXCodeBlock
 from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 from fxgui.fxwidgets._constants import (
     CRITICAL,
@@ -68,6 +69,7 @@ __all__ = [
     "FXBreadcrumb",
     "FXCamelCaseValidator",
     "FXCapitalizedLetterValidator",
+    "FXCodeBlock",
     "FXCollapsibleWidget",
     "FXColorLabelDelegate",
     "FXElidedLabel",

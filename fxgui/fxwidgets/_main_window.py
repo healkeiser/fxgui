@@ -650,8 +650,8 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         if status_bar:
             fxutils.add_shadows(self, self.statusBar())
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles to the window.
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes for the window.
 
         This method is called automatically by the FXThemeAware mixin
         when the theme changes. Override this method to customize
@@ -660,20 +660,17 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         Warning:
             This method is intended for internal use only.
         """
-        # Get the theme colors for the current theme
-        theme_colors = fxstyle.get_theme_colors()
-
         # Update banner container for the new theme (match _create_banner style)
         if hasattr(self, "banner") and self.banner is not None:
             self.banner.setStyleSheet(
                 f"background: transparent; "
-                f"border-bottom: 1px solid {theme_colors['border']};"
+                f"border-bottom: 1px solid {self.theme.border};"
             )
 
         # Update banner label text color
         if hasattr(self, "banner_label") and self.banner_label is not None:
             self.banner_label.setStyleSheet(
-                f"color: {theme_colors['text']}; font-size: 16px; border: none;"
+                f"color: {self.theme.text}; font-size: 16px; border: none;"
             )
 
         # Force menu bar to repaint with new icons

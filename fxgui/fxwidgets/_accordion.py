@@ -177,7 +177,7 @@ class FXAccordionSection(fxstyle.FXThemeAware, QWidget):
         fxicons.set_icon(self._toggle_btn, "expand_more")
 
         # Update header background based on expanded state
-        self._apply_theme_styles()
+        self._on_theme_changed()
 
         # First time expansion: measure content
         if not self._has_been_expanded:
@@ -216,7 +216,7 @@ class FXAccordionSection(fxstyle.FXThemeAware, QWidget):
         fxicons.set_icon(self._toggle_btn, "chevron_right")
 
         # Update header background based on expanded state
-        self._apply_theme_styles()
+        self._on_theme_changed()
 
         if animate:
             self._animation.stop()
@@ -272,13 +272,12 @@ class FXAccordionSection(fxstyle.FXThemeAware, QWidget):
                     Qt.ScrollBarAlwaysOff
                 )
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-aware styling to the header."""
-        colors = fxstyle.get_theme_colors()
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         if self._is_expanded:
             # Use hover state color when expanded
             self._header.setStyleSheet(
-                f"QFrame {{ background-color: {colors['state_hover']}; }}"
+                f"QFrame {{ background-color: {self.theme.state_hover}; }}"
             )
         else:
             # Use default (transparent) when collapsed

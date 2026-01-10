@@ -81,14 +81,12 @@ class FXTagChip(fxstyle.FXThemeAware, QFrame):
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
-        accent_colors = fxstyle.get_accent_colors()
-
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         self.setStyleSheet(
             f"""
             FXTagChip {{
-                background-color: {accent_colors['primary']};
+                background-color: {self.theme.accent_primary};
                 border-radius: 12px;
                 padding: 2px 4px;
             }}
@@ -193,21 +191,18 @@ class FXTagInput(fxstyle.FXThemeAware, QWidget):
         # Hide scroll area initially if no tags
         self._scroll_area.setVisible(False)
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         self._input.setStyleSheet(
             f"""
             QLineEdit {{
-                background-color: {theme_colors['surface_sunken']};
-                border: 1px solid {theme_colors['border']};
+                background-color: {self.theme.surface_sunken};
+                border: 1px solid {self.theme.border};
                 border-radius: 4px;
                 padding: 6px 8px;
             }}
             QLineEdit:focus {{
-                border-color: {accent_colors['primary']};
+                border-color: {self.theme.accent_primary};
             }}
         """
         )

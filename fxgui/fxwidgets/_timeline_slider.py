@@ -186,14 +186,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setMinimumHeight(30)
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
-        self._track_color = QColor(theme_colors["surface_alt"])
-        self._playhead_color = QColor(accent_colors["primary"])
-        self._text_color = QColor(theme_colors["text"])
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
+        self._track_color = QColor(self.theme.surface_alt)
+        self._playhead_color = QColor(self.theme.accent_primary)
+        self._text_color = QColor(self.theme.text)
 
         # Trigger repaint of track widget
         if hasattr(self, "_track_widget"):

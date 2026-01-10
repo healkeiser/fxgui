@@ -100,8 +100,7 @@ class FXLoadingSpinner(fxstyle.FXThemeAware, QWidget):
         """Get the current spinner color (theme-aware)."""
         if self._custom_color:
             return QColor(self._custom_color)
-        accent_colors = fxstyle.get_accent_colors()
-        return QColor(accent_colors["primary"])
+        return QColor(self.theme.accent_primary)
 
     def set_style(self, style: str) -> None:
         """Set the animation style.
@@ -293,14 +292,13 @@ class FXLoadingOverlay(fxstyle.FXThemeAware, QWidget):
 
         self.hide()
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         if self._message_label:
-            theme_colors = fxstyle.get_theme_colors()
             self._message_label.setStyleSheet(
                 f"""
                 QLabel {{
-                    color: {theme_colors['text']};
+                    color: {self.theme.text};
                     font-size: 14px;
                     margin-top: 12px;
                 }}

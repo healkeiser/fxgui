@@ -321,25 +321,23 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
                 status line. Defaults to `True`.
         """
         # Update accent colors from current theme
-        _accent = fxstyle.get_accent_colors()
-        self._status_line_color_a = _accent["primary"]
-        self._status_line_color_b = _accent["secondary"]
+        self._status_line_color_a = self.theme.accent_primary
+        self._status_line_color_b = self.theme.accent_secondary
         self._update_status_line_colors()
 
         # Update theme colors
-        theme_colors = fxstyle.get_theme_colors()
-        self._update_border_line_color(theme_colors["border"])
+        self._update_border_line_color(self.theme.border)
         self.setStyleSheet(
             f"""
             QStatusBar {{
                 border: 0px solid transparent;
-                background: {theme_colors['surface_sunken']};
+                background: {self.theme.surface_sunken};
             }}
         """
         )
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         self._apply_stylesheet()
 
     def hide_status_line(self) -> None:

@@ -59,13 +59,8 @@ class FXPasswordLineEdit(fxstyle.FXThemeAware, QWidget):
             self.line_edit.setEchoMode(QLineEdit.Password)
             fxicons.set_icon(self.reveal_button, "visibility")
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
-        theme_colors = fxstyle.get_theme_colors()
-        hover_color = theme_colors.get(
-            "state_hover", "rgba(128, 128, 128, 0.2)"
-        )
-
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         self.reveal_button.setStyleSheet(
             f"""
             QPushButton {{
@@ -74,7 +69,7 @@ class FXPasswordLineEdit(fxstyle.FXThemeAware, QWidget):
                 border-radius: 4px;
             }}
             QPushButton:hover {{
-                background-color: {hover_color};
+                background-color: {self.theme.state_hover};
             }}
             """
         )
@@ -142,8 +137,8 @@ class FXIconLineEdit(fxstyle.FXThemeAware, QLineEdit):
         super().resizeEvent(event)
         self._position_icon()
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         # Only reposition, don't set stylesheet (parent widget may override)
         self._position_icon()
 
