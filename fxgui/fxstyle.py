@@ -115,7 +115,7 @@ from typing import Optional
 # Third-party
 import yaml
 from qtpy.QtCore import QObject, QTimer, Signal
-from qtpy.QtGui import QColor, QFontDatabase, QIcon
+from qtpy.QtGui import QFontDatabase, QIcon
 from qtpy.QtWidgets import (
     QProxyStyle,
     QStyle,

@@ -42,7 +42,7 @@ from functools import lru_cache
 from pathlib import Path
 import re
 import weakref
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 # Third-party
 from qtpy.QtGui import (

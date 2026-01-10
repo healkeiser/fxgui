@@ -1,110 +1,67 @@
+/* Custom CSS variables for fxgui documentation */
+:root {
+    --fx-accent: #2196F3;
+    --fx-accent-hover: #1976D2;
+    --fx-accent-transparent: #2196F310;
+    --fx-primary: #212121;
+    --fx-header-bg: #151515;
+    --fx-dark-bg: #201f1f;
+}
+
+/* Animation */
 @keyframes scale-in-center {
     0% {
         transform: scale(0);
-        opacity: 1
+        opacity: 1;
     }
-
     100% {
         transform: scale(1);
-        opacity: 1
+        opacity: 1;
     }
 }
 
 .scale-in-center {
-    animation: scale-in-center .5s cubic-bezier(.25, .46, .45, .94) both
+    animation: scale-in-center 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
-/* Custom color overrides */
-:root>* {
-    /* Accent color shades */
-    --md-accent-fg-color: #2196F3;
-    --md-accent-fg-color--transparent: #2196F310;
-    --md-accent-bg-color: #2196F3;
-    --md-accent-bg-color--light: #2196F310;
-
-    /* Typeset `a` color shades */
-    --md-typeset-a-color: #2196F3;
+/* Accent color overrides */
+:root > * {
+    --md-accent-fg-color: var(--fx-accent);
+    --md-accent-fg-color--transparent: var(--fx-accent-transparent);
+    --md-accent-bg-color: var(--fx-accent);
+    --md-accent-bg-color--light: var(--fx-accent-transparent);
+    --md-typeset-a-color: var(--fx-accent);
 }
 
 /* Black primary color overrides */
 [data-md-color-primary="black"] {
-    /* Primary color shades */
-    --md-primary-fg-color: #212121;
-    --md-primary-fg-color--light: #212121;
-    --md-primary-fg-color--dark: #212121;
-
-    /* Typeset `a` color shades */
-    --md-typeset-a-color: #2196F3;
+    --md-primary-fg-color: var(--fx-primary);
+    --md-primary-fg-color--light: var(--fx-primary);
+    --md-primary-fg-color--dark: var(--fx-primary);
+    --md-typeset-a-color: var(--fx-accent);
 }
 
-/* Light mode (default scheme) overrides */
-[data-md-color-scheme="default"][data-md-color-primary="black"] {
-
-    /* Header */
-    .md-header {
-        background-color: #151515;
-    }
-
-    /* Navigation tabs */
-    .md-tabs {
-        background-color: #151515;
-    }
-
-    /* Footer */
-    .md-footer {
-        background-color: #151515;
-    }
+/* Shared header/tabs/footer styling for black primary */
+[data-md-color-primary="black"] .md-header,
+[data-md-color-primary="black"] .md-tabs,
+[data-md-color-primary="black"] .md-footer {
+    background-color: var(--fx-header-bg);
 }
 
-/* Dark mode (slate scheme) overrides */
+/* Dark mode (slate scheme) specific overrides */
 [data-md-color-scheme="slate"][data-md-color-primary="black"] {
-    /* Primary color shades */
-    --md-primary-fg-color: #212121;
-    --md-primary-fg-color--light: #212121;
-    --md-primary-fg-color--dark: #212121;
+    --md-default-bg-color: var(--fx-dark-bg);
+    --md-default-bg-color--light: var(--fx-dark-bg);
+    --md-default-bg-color--lighter: var(--fx-dark-bg);
+    --md-default-bg-color--lightest: var(--fx-dark-bg);
+    --md-footer-bg-color: var(--fx-header-bg);
+    --md-footer-bg-color--dark: var(--fx-header-bg);
+}
 
-    /* Default color shades */
-    --md-default-bg-color: #201f1f;
-    --md-default-bg-color--light: #201f1f;
-    --md-default-bg-color--lighter: #201f1f;
-    --md-default-bg-color--lightest: #201f1f;
-
-    /* Footer color shades */
-    --md-footer-bg-color: #151515;
-    --md-footer-bg-color--dark: #151515;
-
-    /* Typeset `a` color shades */
-    --md-typeset-a-color: #2196F3;
-
-    /* Header */
-    .md-header {
-        background-color: #151515;
-    }
-
-    /* Navigation tabs */
-    .md-tabs {
-        background-color: #151515;
-    }
-
-    /* Main content area */
-    .md-main {
-        background-color: #201f1f;
-    }
-
-    /* Sidebar */
-    .md-sidebar {
-        background-color: #201f1f;
-    }
-
-    /* Content container */
-    .md-content {
-        background-color: #201f1f;
-    }
-
-    /* Footer */
-    .md-footer {
-        background-color: #151515 !important;
-    }
+[data-md-color-scheme="slate"][data-md-color-primary="black"] .md-main,
+[data-md-color-scheme="slate"][data-md-color-primary="black"] .md-sidebar,
+[data-md-color-scheme="slate"][data-md-color-primary="black"] .md-content {
+    background-color: var(--fx-dark-bg);
 }
 
 /* Link hover effects */
@@ -112,5 +69,5 @@
 .md-typeset a:focus,
 .md-nav__link:hover,
 .md-nav__link:focus {
-    color: #1976D2 !important;
+    color: var(--fx-accent-hover);
 }

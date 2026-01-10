@@ -1,7 +1,9 @@
 """Multi-section collapsible widget."""
 
+# Built-in
 from typing import List, Optional, Union
 
+# Third-party
 from qtpy.QtCore import (
     QAbstractAnimation,
     QEasingCurve,
@@ -22,6 +24,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+# Internal
 from fxgui import fxicons, fxstyle
 
 

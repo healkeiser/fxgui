@@ -34,7 +34,13 @@ from fxgui import fxicons, fxstyle
 
 class FXColorLabelDelegate(QStyledItemDelegate):
     """A custom delegate to paint items with specific colors and icons based
-    on their text content."""
+    on their text content.
+
+    Note:
+        This delegate automatically refreshes when the theme changes, ensuring
+        that default colors (for items without explicit color mappings) stay
+        in sync with the current theme.
+    """
 
     # Custom role to skip delegate
     SKIP_DELEGATE_ROLE = Qt.UserRole + 5
@@ -63,6 +69,9 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         """
 
         super().__init__(parent)
+
+        # Connect to theme changes to trigger repaint
+        fxstyle.theme_manager.theme_changed.connect(self._on_theme_changed)
 
         # Dictionary mapping item texts to (background_color, border_color,
         # text_icon_color, icon, color_icon)
@@ -244,6 +253,14 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         )
         return QSize(width, height)
 
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme change by triggering a repaint of the parent view."""
+        parent = self.parent()
+        if parent and hasattr(parent, "viewport"):
+            parent.viewport().update()
+        elif parent and hasattr(parent, "update"):
+            parent.update()
+
 
 class FXThumbnailDelegate(QStyledItemDelegate):
     """Custom item delegate for showing thumbnails in tree/list views.
@@ -369,6 +386,17 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         self._show_thumbnail = True
         self._show_status_dot = True
         self._show_status_label = True
+
+        # Connect to theme changes to trigger repaint
+        fxstyle.theme_manager.theme_changed.connect(self._on_theme_changed)
+
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme change by triggering a repaint of the parent view."""
+        parent = self.parent()
+        if parent and hasattr(parent, "viewport"):
+            parent.viewport().update()
+        elif parent and hasattr(parent, "update"):
+            parent.update()
 
     @property
     def show_thumbnail(self) -> bool:
@@ -1244,7 +1272,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             has_thumbnail = item_show_thumbnail is None or item_show_thumbnail
 
         # Check if the item has a description (needs more height)
-        description = col0_index.data(self.DESCRIPTION_ROLE) if index.model() else None
+        description = (
+            col0_index.data(self.DESCRIPTION_ROLE) if index.model() else None
+        )
         has_description = bool(description and description != "-")
 
         # Use consistent height based on content:
@@ -1399,7 +1429,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         # Draw hover/selection overlay for custom backgrounds
         if has_custom_background:
-            self._draw_hover_selection(painter, rect, opt, index, column_position)
+            self._draw_hover_selection(
+                painter, rect, opt, index, column_position
+            )
 
         painter.restore()
 
@@ -1441,8 +1473,7 @@ def example() -> None:
     layout = QVBoxLayout(widget)
 
     # Get feedback colors from theme
-    colors = fxstyle.get_colors()
-    feedback = colors["feedback"]
+    feedback = fxstyle.get_feedback_colors()
 
     ###### FXColorLabelDelegate
     layout.addWidget(QLabel("FXColorLabelDelegate:"))
@@ -1490,6 +1521,7 @@ def example() -> None:
     layout.addWidget(tree1)
 
     ###### FXThumbnailDelegate - With Thumbnails and Custom Backgrounds
+
     layout.addWidget(
         QLabel("FXThumbnailDelegate (thumbnails + custom backgrounds):")
     )
@@ -1511,37 +1543,14 @@ def example() -> None:
         Path(__file__).parent.parent / "images" / "missing_image.png"
     )
 
-    # Custom background colors for thumbnail items
-    thumb_bg_colors = ["#2a3a2a", "#3a2a2a", "#2a2a3a"]
-
-    # Sample items with thumbnails and status using feedback colors
+    # Sample items with thumbnails - we'll set backgrounds via helper function
     items_data = [
-        (
-            "Asset 001",
-            "Character",
-            QColor(feedback["success"]["foreground"]),
-            "Ready",
-            QColor(feedback["success"]["background"]),
-        ),
-        (
-            "Asset 002",
-            "Prop",
-            QColor(feedback["warning"]["foreground"]),
-            "Review",
-            QColor(feedback["warning"]["background"]),
-        ),
-        (
-            "Asset 003",
-            "Environment",
-            QColor(feedback["error"]["foreground"]),
-            "WIP",
-            QColor(feedback["error"]["background"]),
-        ),
+        ("Asset 001", "Character", "Ready", "success"),
+        ("Asset 002", "Prop", "Review", "warning"),
+        ("Asset 003", "Environment", "WIP", "error"),
     ]
 
-    for i, (name, asset_type, dot_color, label_text, label_color) in enumerate(
-        items_data
-    ):
+    for name, asset_type, label_text, feedback_key in items_data:
         item = QTreeWidgetItem(tree2, [name, asset_type, label_text])
         item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True)
         item.setData(0, FXThumbnailDelegate.THUMBNAIL_PATH_ROLE, thumbnail_path)
@@ -1550,21 +1559,15 @@ def example() -> None:
             FXThumbnailDelegate.DESCRIPTION_ROLE,
             f"A **{asset_type.lower()}** asset",
         )
-        item.setData(0, FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE, dot_color)
         item.setData(0, FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, label_text)
-        item.setData(
-            0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, label_color
-        )
-        # Set custom background color - spans all columns
-        bg_color = QColor(thumb_bg_colors[i % len(thumb_bg_colors)])
-        item.setBackground(0, bg_color)
-        item.setBackground(1, bg_color)
-        item.setBackground(2, bg_color)
+        # Store the feedback key for dynamic color updates
+        item.setData(0, Qt.UserRole + 100, feedback_key)
 
     tree2.setColumnWidth(0, 300)
     layout.addWidget(tree2)
 
     ###### FXThumbnailDelegate - With Custom Backgrounds
+
     layout.addWidget(QLabel("FXThumbnailDelegate (custom backgrounds):"))
     tree3 = QTreeWidget()
     tree3.setHeaderLabels(["Name", "Type", "Status"])
@@ -1578,71 +1581,109 @@ def example() -> None:
     # Apply transparent selection style for custom backgrounds
     FXThumbnailDelegate.apply_transparent_selection(tree3)
 
-    # Custom background colors
-    bg_colors = ["#2d2d30", "#252424", "#1e3a5f", "#3d2b1f"]
-
+    # Items with custom backgrounds - we'll set backgrounds via helper function
     items_with_bg = [
-        (
-            "Project Alpha",
-            "Feature",
-            "In Progress",
-            "#4a9eff",
-            fxicons.get_icon("folder"),
-        ),
-        (
-            "Bug Fix #123",
-            "Bug",
-            "Testing",
-            "#ff9f43",
-            fxicons.get_icon("bug_report"),
-        ),
-        (
-            "Documentation",
-            "Task",
-            "Done",
-            "#26de81",
-            fxicons.get_icon("description"),
-        ),
-        (
-            "API Refactor",
-            "Enhancement",
-            "Review",
-            "#a55eea",
-            fxicons.get_icon("code"),
-        ),
+        ("Project Alpha", "Feature", "In Progress", "info", "folder"),
+        ("Bug Fix #123", "Bug", "Testing", "warning", "bug_report"),
+        ("Documentation", "Task", "Done", "success", "description"),
+        ("API Refactor", "Enhancement", "Review", "error", "code"),
     ]
 
-    for i, (name, item_type, status, status_color, icon) in enumerate(
-        items_with_bg
-    ):
+    for name, item_type, status, feedback_key, icon_name in items_with_bg:
         item = QTreeWidgetItem(tree3, [name, item_type, status])
-        # Set custom background color - spans all columns
-        bg_color = QColor(bg_colors[i % len(bg_colors)])
-        item.setBackground(0, bg_color)
-        item.setBackground(1, bg_color)
-        item.setBackground(2, bg_color)
         # Set icon for column 0
-        item.setIcon(0, icon)
+        item.setIcon(0, fxicons.get_icon(icon_name))
         # Set description
         item.setData(
             0,
             FXThumbnailDelegate.DESCRIPTION_ROLE,
             f"A {item_type.lower()} item",
         )
-        # Set status indicators
-        item.setData(
-            0, FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE, QColor(status_color)
-        )
         item.setData(0, FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, status)
-        item.setData(
-            0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, QColor(status_color)
-        )
+        # Store the feedback key for dynamic color updates
+        item.setData(0, Qt.UserRole + 100, feedback_key)
         # Disable thumbnails for this item
         item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False)
 
     tree3.setColumnWidth(0, 250)
     tree3.setColumnWidth(1, 100)
     layout.addWidget(tree3)
+
+    ###### Theme awareness for custom backgrounds
+    # Theme-aware custom backgrounds: Update colors when theme changes
+    #
+    # This helper function updates all item backgrounds and status colors
+    # based on the current theme. Call it at startup and connect it to the
+    # theme_changed signal to keep colors in sync with the active theme
+    def update_item_colors(_theme_name: str = None) -> None:
+        """Update item backgrounds and status colors based on current theme.
+
+        This function demonstrates how to make custom BackgroundRole colors
+        theme-aware. It reads the current theme colors and applies them to
+        all items in the tree widgets.
+
+        Args:
+            _theme_name: The name of the new theme (unused, provided by signal).
+        """
+        # Get fresh theme colors
+        theme = fxstyle.FXThemeColors(fxstyle.get_theme_colors())
+        feedback = fxstyle.get_feedback_colors()
+
+        # Base surface color for custom backgrounds
+        base_surface = QColor(theme.surface_sunken)
+
+        # Update tree2 items (with thumbnails)
+        for i in range(tree2.topLevelItemCount()):
+            item = tree2.topLevelItem(i)
+            feedback_key = item.data(0, Qt.UserRole + 100)
+            if feedback_key and feedback_key in feedback:
+                # Set status colors from feedback
+                item.setData(
+                    0,
+                    FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
+                    QColor(feedback[feedback_key]["foreground"]),
+                )
+                item.setData(
+                    0,
+                    FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
+                    QColor(feedback[feedback_key]["background"]),
+                )
+            # Set background color (darker variations of base surface)
+            darkness = 110 + (i % 3) * 5  # 110, 115, 120
+            bg_color = base_surface.darker(darkness)
+            item.setBackground(0, bg_color)
+            item.setBackground(1, bg_color)
+            item.setBackground(2, bg_color)
+
+        # Update tree3 items (without thumbnails)
+        for i in range(tree3.topLevelItemCount()):
+            item = tree3.topLevelItem(i)
+            feedback_key = item.data(0, Qt.UserRole + 100)
+            if feedback_key and feedback_key in feedback:
+                # Set status colors from feedback
+                status_color = QColor(feedback[feedback_key]["foreground"])
+                item.setData(
+                    0, FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE, status_color
+                )
+                item.setData(
+                    0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, status_color
+                )
+            # Set background color
+            darkness = 105 + (i % 4) * 5  # 105, 110, 115, 120
+            bg_color = base_surface.darker(darkness)
+            item.setBackground(0, bg_color)
+            item.setBackground(1, bg_color)
+            item.setBackground(2, bg_color)
+
+        # Trigger repaint
+        tree2.viewport().update()
+        tree3.viewport().update()
+
+    # Apply initial colors
+    update_item_colors()
+
+    # Connect to theme changes so colors update when user switches theme
+    fxstyle.theme_manager.theme_changed.connect(update_item_colors)
 
     # Controls
     controls = QWidget()
