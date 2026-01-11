@@ -29,6 +29,8 @@ from fxgui.fxwidgets._delegates import (
 )
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
 from fxgui.fxwidgets._file_path_widget import FXFilePathWidget
+from fxgui.fxwidgets._fuzzy_search_list import FXFuzzySearchList
+from fxgui.fxwidgets._fuzzy_search_tree import FXFuzzySearchTree
 from fxgui.fxwidgets._inputs import (
     FXIconLineEdit,
     FXPasswordLineEdit,
@@ -84,6 +86,8 @@ __all__ = [
     "FXElidedLabel",
     "FXFilePathWidget",
     "FXFloatingDialog",
+    "FXFuzzySearchList",
+    "FXFuzzySearchTree",
     "FXIconLineEdit",
     "FXLettersUnderscoreValidator",
     "FXLoadingOverlay",

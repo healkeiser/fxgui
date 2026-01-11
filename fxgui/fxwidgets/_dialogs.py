@@ -109,7 +109,7 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
         bg_sunken = self.theme.surface_sunken
         border_color = self.theme.border
         text_color = self.theme.text
-        text_secondary = self.theme.text_secondary
+        text_muted = self.theme.text_muted
         accent = self.theme.accent_primary
 
         # Container styling (opaque background with rounded corners)
@@ -145,7 +145,7 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
                 background: transparent;
             }}
             QLabel {{
-                color: {text_secondary};
+                color: {text_muted};
                 background: transparent;
             }}
             """

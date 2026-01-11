@@ -30,6 +30,7 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons
 from fxgui.fxwidgets._inputs import FXIconLineEdit
+from fxgui.fxwidgets._tooltip import FXTooltip
 
 
 class FXOutputLogHandler(logging.Handler):
@@ -148,6 +149,12 @@ class FXOutputLogWidget(QWidget):
         self.output_area.setReadOnly(True)
         self.output_area.setLineWrapMode(QTextEdit.WidgetWidth)
         self.output_area.setObjectName("fxOutputLogArea")
+        self._output_area_tooltip = FXTooltip(
+            parent=self.output_area,
+            title="Output Area",
+            description="Displays log messages from the application<br>Press <code>Ctrl+F</code> to search",
+            shortcut="Ctrl+F",
+        )
 
         # Set monospace font (colors will come from theme stylesheet)
         font = QFont("Consolas", 9)
@@ -184,6 +191,12 @@ class FXOutputLogWidget(QWidget):
         self.prev_button.setProperty("icon_name", "keyboard_arrow_left")
         self.prev_button.setMaximumWidth(100)
         self.prev_button.clicked.connect(self._find_previous)
+        self._prev_button_tooltip = FXTooltip(
+            parent=self.prev_button,
+            title="Find Previous",
+            description="Find previous match",
+            shortcut="Shift+Enter",
+        )
         self.prev_button.hide()
         bottom_layout.addWidget(self.prev_button)
 
@@ -192,6 +205,12 @@ class FXOutputLogWidget(QWidget):
         self.next_button.setProperty("icon_name", "keyboard_arrow_right")
         self.next_button.setMaximumWidth(80)
         self.next_button.clicked.connect(self._find_next)
+        self._next_button_tooltip = FXTooltip(
+            parent=self.next_button,
+            title="Find Next",
+            description="Find next match",
+            shortcut="Enter",
+        )
         self.next_button.hide()
         bottom_layout.addWidget(self.next_button)
 
@@ -199,7 +218,12 @@ class FXOutputLogWidget(QWidget):
         fxicons.set_icon(self.close_search_button, "close")
         self.close_search_button.setProperty("icon_name", "close")
         self.close_search_button.setMaximumWidth(30)
-        self.close_search_button.setToolTip("Close search (Esc)")
+        self._close_search_tooltip = FXTooltip(
+            parent=self.close_search_button,
+            title="Close Search",
+            description="Close the search bar",
+            shortcut="Esc",
+        )
         self.close_search_button.clicked.connect(self._hide_search)
         self.close_search_button.hide()
         bottom_layout.addWidget(self.close_search_button)
@@ -215,6 +239,11 @@ class FXOutputLogWidget(QWidget):
         self.clear_button.setProperty("icon_name", "delete")
         self.clear_button.setMaximumWidth(80)
         self.clear_button.clicked.connect(self.clear_log)
+        self._clear_button_tooltip = FXTooltip(
+            parent=self.clear_button,
+            title="Clear Log",
+            description="Clear all log messages",
+        )
         bottom_layout.addWidget(self.clear_button)
 
         layout.addLayout(bottom_layout)

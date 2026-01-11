@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._tooltip import FXTooltip
 
 
 class _PathValidator(QObject):
@@ -126,7 +127,6 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
 
         # Browse button
         self._browse_btn = QPushButton()
-        self._browse_btn.setToolTip("Browse...")
         self._browse_btn.setCursor(Qt.PointingHandCursor)
 
         # Set icon based on mode
@@ -137,6 +137,11 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
 
         self._browse_btn.setFixedSize(32, 32)
         self._browse_btn.clicked.connect(self._browse)
+        self._browse_btn_tooltip = FXTooltip(
+            parent=self._browse_btn,
+            title="Browse",
+            description="Open file browser to select a path",
+        )
         layout.addWidget(self._browse_btn)
 
         # Enable drag and drop

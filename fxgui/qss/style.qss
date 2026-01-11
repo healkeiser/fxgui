@@ -4,6 +4,7 @@ QProgressBar:horizontal {
     text-align: center;
     padding: 1px;
     background: @surface_sunken;
+    color: @text_on_accent_primary;
     height: 8px;
 }
 
@@ -1181,9 +1182,8 @@ QTreeView::branch:!has-children:!has-siblings:adjoins-item {
     border-image: url(~icons/transparent.png);
 } */
 
-QTreeView:branch:selected, QTreeView:branch:hover
-{
-    background: url(~icons/transparent.png);
+QTreeView::branch {
+    background: transparent;
 }
 
 QTreeView::branch:has-siblings:!adjoins-item {
@@ -1222,6 +1222,12 @@ QTreeView::branch:open:has-children:has-siblings:hover  {
     image: url(~icons/branch_open_on.svg);
 }
 
+
+QListView::item,
+QTreeView::item {
+    padding: 6px 8px;
+    border-radius: 2px;
+}
 
 QListView::item:!selected:hover,
 QTreeView::item:!selected:hover {
@@ -1286,6 +1292,14 @@ QSlider::handle:vertical {
 QSlider::handle:vertical:hover,
 QSlider::handle:vertical:pressed {
     background: @slider_thumb_hover;
+}
+
+QSlider::sub-page:vertical {
+    border: none;
+    width: 6px;
+    background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 @accent_primary, stop:1 @accent_secondary);
+    margin: 0 0px;
+    border-radius: 3px;
 }
 
 QToolButton {

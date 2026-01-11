@@ -158,9 +158,13 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         if not text:
             return False
 
-        # Reuse class-level matcher for better performance
+        # Substring match takes priority (handles short search strings well)
+        if self._filter_text in text:
+            return True
+
+        # Fall back to fuzzy matching for typos and partial matches
         self._matcher.set_seqs(self._filter_text, text)
-        return self._matcher.ratio() >= self._ratio
+        return self._matcher.quick_ratio() >= self._ratio
 
     def lessThan(self, left: QModelIndex, right: QModelIndex) -> bool:
         """Compare two indices to determine their order.
@@ -205,16 +209,20 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
             and self._ratio > 0.0
             and self._color_match
         ):
+            # Get text from source model to avoid recursion
+            source_index = self.mapToSource(index)
+            text = (
+                self.sourceModel().data(source_index, Qt.DisplayRole) or ""
+            ).lower()
+
             # Reuse class-level matcher for better performance
-            self._matcher.set_seqs(
-                self._filter_text, (index.data() or "").lower()
-            )
+            self._matcher.set_seqs(self._filter_text, text)
             ratio = self._matcher.quick_ratio()
 
-            t = ratio / self._ratio
-            t = max(0.0, min(t, 1.0))  # Clamp t to [0, 1]
-            red = int((1.0 - t) * 255)
-            green = int(t * 255)
+            # Use the raw ratio (0-1) for color gradient
+            # 0.0 = red (poor match), 1.0 = green (perfect match)
+            red = int((1.0 - ratio) * 255)
+            green = int(ratio * 255)
             return QBrush(QColor(red, green, 0))
 
         return super().data(index, role)

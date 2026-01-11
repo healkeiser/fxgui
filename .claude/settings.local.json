@@ -6,7 +6,8 @@
       "Bash(echo:*)",
       "Bash(pip install:*)",
       "Bash(tree:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(DEVELOPER_MODE=1 python:*)"
     ]
   }
 }

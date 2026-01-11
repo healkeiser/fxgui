@@ -29,9 +29,7 @@ Theme Awareness Guide:
         ...     "light": {"red": QColor("#ffcccc")},
         ... }
         >>> def update_colors(_theme_name: str = None):
-        ...     theme = fxstyle.FXThemeColors(fxstyle.get_theme_colors())
-        ...     is_light = QColor(theme.surface).lightness() > 128
-        ...     palette = COLORS["light" if is_light else "dark"]
+        ...     palette = COLORS["light" if fxstyle.is_light_theme() else "dark"]
         ...     item.setBackground(0, palette["red"])
         >>> fxstyle.theme_manager.theme_changed.connect(update_colors)
 
@@ -67,6 +65,7 @@ from pathlib import Path
 
 # Third-party
 from qtpy.QtWidgets import (
+    QDockWidget,
     QFormLayout,
     QVBoxLayout,
     QHBoxLayout,
@@ -273,17 +272,15 @@ CUSTOM_COLORS = {
 }
 
 def update_item_colors(_theme_name: str = None):
-    theme = FXThemeColors(get_theme_colors())
-    # Detect theme type by surface brightness
-    is_light = QColor(theme.surface).lightness() > 128
-    palette = CUSTOM_COLORS["light" if is_light else "dark"]
+    # Use fxstyle.is_light_theme() to detect current theme type
+    palette = CUSTOM_COLORS["light" if fxstyle.is_light_theme() else "dark"]
 
     for i, item in enumerate(items):
         color_key = ["red", "blue"][i % 2]
         item.setBackground(0, palette[color_key])
     tree.viewport().update()
 
-theme_manager.theme_changed.connect(update_item_colors)
+fxstyle.theme_manager.theme_changed.connect(update_item_colors)
 """
     )
     code_layout.addWidget(code_block)
@@ -569,6 +566,154 @@ theme_manager.theme_changed.connect(update_item_colors)
     update_episodic_colors()
     fxstyle.theme_manager.theme_changed.connect(update_episodic_colors)
 
+    # Third tree: Fuzzy Search Tree with FXThumbnailDelegate
+    fuzzy_group = QGroupBox("Fuzzy Search Tree with Thumbnails")
+    fuzzy_layout = QVBoxLayout(fuzzy_group)
+
+    fuzzy_tree = fxwidgets.FXFuzzySearchTree(
+        placeholder="Search assets (try 'hero', 'char', 'veh')...",
+        ratio=0.4,
+        show_ratio_slider=True,
+        color_match=False,  # We handle colors via delegate backgrounds
+    )
+
+    # Set up the delegate
+    fuzzy_delegate = fxwidgets.FXThumbnailDelegate()
+    fuzzy_delegate.show_thumbnail = True
+    fuzzy_delegate.show_status_dot = True
+    fuzzy_delegate.show_status_label = True
+    fuzzy_tree.tree_view.setItemDelegate(fuzzy_delegate)
+    fxwidgets.FXThumbnailDelegate.apply_transparent_selection(fuzzy_tree.tree_view)
+
+    # Role for storing icon name for theme-aware updates
+    FUZZY_ICON_NAME_ROLE = Qt.UserRole + 301
+
+    # Asset data with metadata
+    fuzzy_assets = {
+        "Characters": {
+            "items": [
+                ("character_hero_body", "Main hero body mesh", "Approved"),
+                ("character_hero_head", "Hero facial rig", "WIP"),
+                ("character_villain_body", "Antagonist body", "Review"),
+                ("character_sidekick", "Supporting character", "Approved"),
+            ],
+            "icon": "person",
+        },
+        "Vehicles": {
+            "items": [
+                ("vehicle_car_sports", "Red sports car", "Approved"),
+                ("vehicle_truck_pickup", "Utility truck", "WIP"),
+                ("vehicle_motorcycle", "Motorcycle asset", "Review"),
+            ],
+            "icon": "directions_car",
+        },
+        "Environment": {
+            "items": [
+                ("environment_tree_oak", "Oak tree with leaves", "Approved"),
+                ("environment_tree_pine", "Pine tree variations", "Approved"),
+                ("environment_rock_large", "Boulder asset", "WIP"),
+            ],
+            "icon": "park",
+        },
+    }
+
+    fuzzy_items = []  # Store all items for theme updates
+
+    for category_name, category_data in fuzzy_assets.items():
+        # Add category as parent
+        category_item = fuzzy_tree.add_item(category_name)
+        category_item.setIcon(get_icon(category_data["icon"]))
+        category_item.setData(category_data["icon"], FUZZY_ICON_NAME_ROLE)
+        category_item.setData(
+            "Category", fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE
+        )
+        category_item.setData(
+            False, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE
+        )
+        category_item.setData("category", Qt.UserRole + 300)  # Level marker
+        fuzzy_items.append(category_item)
+
+        for asset_name, description, status in category_data["items"]:
+            # Add asset as child
+            asset_item = fuzzy_tree.add_item(asset_name, parent=category_name)
+            asset_item.setIcon(get_icon("image"))
+            asset_item.setData("image", FUZZY_ICON_NAME_ROLE)
+            asset_item.setData(
+                description, fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE
+            )
+            asset_item.setData(
+                True, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE
+            )
+            asset_item.setData(
+                str(thumbnail_path),
+                fxwidgets.FXThumbnailDelegate.THUMBNAIL_PATH_ROLE,
+            )
+            asset_item.setData(
+                status, fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE
+            )
+            asset_item.setData("asset", Qt.UserRole + 300)  # Level marker
+            asset_item.setData(status, Qt.UserRole + 302)  # Store status
+            fuzzy_items.append(asset_item)
+
+    fuzzy_tree.expand_all()
+    fuzzy_layout.addWidget(fuzzy_tree)
+    layout.addWidget(fuzzy_group)
+
+    # Colors for fuzzy tree
+    fuzzy_colors = {
+        "dark": {
+            "category": QColor("#2a2a3a"),
+            "asset": QColor("#1f3a2a"),
+        },
+        "light": {
+            "category": QColor("#d8d8e8"),
+            "asset": QColor("#d0e8d8"),
+        },
+    }
+
+    # Status to feedback mapping
+    status_feedback_map = {
+        "Approved": "success",
+        "WIP": "warning",
+        "Review": "info",
+    }
+
+    def update_fuzzy_colors(_theme_name: str = None):
+        """Update fuzzy tree backgrounds and status colors based on theme."""
+        feedback = fxstyle.get_feedback_colors()
+        palette_key = "light" if fxstyle.is_light_theme() else "dark"
+
+        for item in fuzzy_items:
+            # Update icon
+            icon_name = item.data(FUZZY_ICON_NAME_ROLE)
+            if icon_name:
+                item.setIcon(get_icon(icon_name))
+
+            level = item.data(Qt.UserRole + 300)
+            if level in fuzzy_colors[palette_key]:
+                bg_color = fuzzy_colors[palette_key][level]
+                item.setBackground(bg_color)
+
+            # Set status colors
+            status = item.data(Qt.UserRole + 302)
+            if status and status in status_feedback_map:
+                feedback_key = status_feedback_map[status]
+                status_color = QColor(feedback[feedback_key]["foreground"])
+                item.setData(
+                    status_color,
+                    fxwidgets.FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
+                )
+                item.setData(
+                    status_color,
+                    fxwidgets.FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
+                )
+
+        fuzzy_tree.tree_view.viewport().update()
+
+    # Apply initial and connect to theme changes
+    update_fuzzy_colors()
+    fxstyle.theme_manager.theme_changed.connect(update_fuzzy_colors)
+
     layout.addStretch()
     scroll_area.setWidget(scroll_content)
 
@@ -840,6 +985,25 @@ def main():
 
     central_layout.addWidget(tabs)
     window.setCentralWidget(central_widget)
+
+    # Add dockable log widget at the bottom
+    log_dock = QDockWidget("Output Log", window)
+    log_dock.setObjectName("OutputLogDock")
+    log_container = QWidget()
+    log_container_layout = QVBoxLayout(log_container)
+    log_container_layout.setContentsMargins(10, 10, 10, 10)
+    log_widget = fxwidgets.FXOutputLogWidget(capture_output=True)
+    log_container_layout.addWidget(log_widget)
+    log_dock.setWidget(log_container)
+    window.addDockWidget(Qt.BottomDockWidgetArea, log_dock)
+
+    # Log some initial messages to demonstrate the widget
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.info("fxgui Showcase application started")
+    logger.debug("Theme system initialized")
+    logger.warning("This is a sample warning message")
 
     # Finish splash screen and show window
     splashscreen.finish(window)

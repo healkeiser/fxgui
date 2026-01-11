@@ -876,6 +876,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             is_first_column, is_last_column = column_position
 
         # Adjust the rectangle based on position
+        # Use consistent 1px inset on all sides for proper spacing
         if is_first_column:
             rect = option.rect.adjusted(1, 1, 0, -1)
         elif is_last_column:
@@ -1412,9 +1413,9 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         # Draw background
         if has_custom_background:
-            # Custom background with border - fill surface first to cover
-            # any selection Qt may have drawn before calling delegate
-            surface_color = QColor(self.theme.surface)
+            # Fill with surface_sunken first to ensure consistent gap color
+            # between items (matches non-custom-background items)
+            surface_color = QColor(self.theme.surface_sunken)
             painter.fillRect(opt.rect, surface_color)
 
             # Draw custom background with border

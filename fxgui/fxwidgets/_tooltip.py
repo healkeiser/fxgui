@@ -305,7 +305,7 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
         # Background and text colors - use surface_sunken for darker card
         bg_color = self.theme.surface_sunken
         text_color = self.theme.text
-        text_secondary = self.theme.text_secondary
+        text_muted = self.theme.text_muted
         border_color = self.theme.border
         accent = self.theme.accent_primary
 
@@ -326,12 +326,12 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
             }}
             #FXTooltipDescription {{
                 background: transparent;
-                color: {text_secondary};
+                color: {text_muted};
                 font-size: 12px;
             }}
             #FXTooltipShortcut {{
                 background-color: {border_color};
-                color: {text_secondary};
+                color: {text_muted};
                 padding: 2px 6px;
                 border-radius: 4px;
                 font-size: 11px;

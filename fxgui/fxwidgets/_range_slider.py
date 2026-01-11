@@ -5,7 +5,13 @@ from typing import Optional
 
 # Third-party
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtGui import QColor, QMouseEvent, QPainter, QPainterPath
+from qtpy.QtGui import (
+    QColor,
+    QLinearGradient,
+    QMouseEvent,
+    QPainter,
+    QPainterPath,
+)
 from qtpy.QtWidgets import QSizePolicy, QWidget
 
 # Internal
@@ -206,7 +212,6 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
 
         # Get current theme colors (dynamic for theme switching)
         track_color = QColor(self.theme.surface_sunken)
-        range_color = QColor(self.theme.accent_primary)
         handle_color = QColor("#ffffff")
         handle_border_color = QColor(self.theme.accent_primary)
 
@@ -228,7 +233,7 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
         )
         painter.fillPath(track_path, track_color)
 
-        # Draw range (selected area)
+        # Draw range (selected area) with gradient
         range_path = QPainterPath()
         range_path.addRoundedRect(
             low_x,
@@ -238,7 +243,10 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
             self._track_height // 2,
             self._track_height // 2,
         )
-        painter.fillPath(range_path, range_color)
+        range_gradient = QLinearGradient(low_x, 0, high_x, 0)
+        range_gradient.setColorAt(0, QColor(self.theme.accent_primary))
+        range_gradient.setColorAt(1, QColor(self.theme.accent_secondary))
+        painter.fillPath(range_path, range_gradient)
 
         # Draw handles
         for handle_type, x_pos in [
