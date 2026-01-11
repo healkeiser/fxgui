@@ -17,28 +17,31 @@ Theme Awareness Guide:
         >>> from fxgui.fxicons import set_icon
         >>> set_icon(button, "check")  # Updates on theme change
 
-    2. **Custom Widgets** - Connect to `theme_manager.theme_changed`:
-        >>> from fxgui import fxstyle
+    2. **FXThemeAware Mixin** - For custom widget classes (recommended):
+        >>> class MyWidget(fxstyle.FXThemeAware, QWidget):
+        ...     def _on_theme_changed(self, _theme_name: str = None):
+        ...         # Called on init and theme changes
+        ...         self.setStyleSheet(f"background: {self.theme.surface};")
+
+    3. **Custom Colors** - Define palettes for dark/light themes:
+        >>> COLORS = {
+        ...     "dark": {"red": QColor("#4a2020")},
+        ...     "light": {"red": QColor("#ffcccc")},
+        ... }
         >>> def update_colors(_theme_name: str = None):
         ...     theme = fxstyle.FXThemeColors(fxstyle.get_theme_colors())
-        ...     widget.setStyleSheet(f"background: {theme.surface};")
+        ...     is_light = QColor(theme.surface).lightness() > 128
+        ...     palette = COLORS["light" if is_light else "dark"]
+        ...     item.setBackground(0, palette["red"])
         >>> fxstyle.theme_manager.theme_changed.connect(update_colors)
-        >>> update_colors()  # Apply initial
 
-    3. **Delegate Backgrounds** - Update item data on theme change:
+    4. **Delegate Backgrounds** - Update item data on theme change:
         >>> def update_item_colors(_theme_name: str = None):
         ...     theme = fxstyle.FXThemeColors(fxstyle.get_theme_colors())
         ...     for item in items:
         ...         item.setBackground(0, QColor(theme.surface_sunken))
         ...     tree.viewport().update()
         >>> fxstyle.theme_manager.theme_changed.connect(update_item_colors)
-
-    4. **FXThemeAware Mixin** - For custom widget classes:
-        >>> class MyWidget(fxstyle.FXThemeAware, QWidget):
-        ...     def _apply_theme_styles(self):
-        ...         # Called on init and theme changes
-        ...         colors = fxstyle.get_theme_colors()
-        ...         self.setStyleSheet(f"background: {colors['surface']};")
 
 Note:
     Most widgets have their own `example()` function in their module.
@@ -119,11 +122,16 @@ def _create_theme_awareness_tab() -> QWidget:
     icons_group = QGroupBox("1. Icons with set_icon()")
     icons_layout = QVBoxLayout(icons_group)
     icons_layout.addWidget(
-        QLabel("Use set_icon() instead of setIcon() for automatic color updates:")
+        QLabel(
+            "Use <code>set_icon()</code> instead of <code>setIcon()</code> "
+            "for automatic color updates:"
+        )
     )
-    icons_layout.addWidget(fxwidgets.FXCodeBlock(
-        'set_icon(button, "check")  # Updates on theme change'
-    ))
+    icons_layout.addWidget(
+        fxwidgets.FXCodeBlock(
+            'set_icon(button, "check")  # Updates on theme change'
+        )
+    )
 
     icons_row = QHBoxLayout()
     for icon_name in ["check", "close", "settings", "folder", "search"]:
@@ -138,10 +146,14 @@ def _create_theme_awareness_tab() -> QWidget:
     colors_group = QGroupBox("2. Theme Colors (FXThemeColors)")
     colors_layout = QVBoxLayout(colors_group)
     colors_layout.addWidget(QLabel("Access theme colors with dot notation:"))
-    colors_layout.addWidget(fxwidgets.FXCodeBlock("""
+    colors_layout.addWidget(
+        fxwidgets.FXCodeBlock(
+            """
 theme = FXThemeColors(get_theme_colors())
 widget.setStyleSheet(f"background: {theme.surface};")
-"""))
+"""
+        )
+    )
 
     # Color swatches that update with theme
     swatches_frame = QFrame()
@@ -161,13 +173,17 @@ widget.setStyleSheet(f"background: {theme.surface};")
     feedback_group = QGroupBox("3. Feedback Colors (get_feedback_colors)")
     feedback_layout = QVBoxLayout(feedback_group)
     feedback_layout.addWidget(QLabel("Semantic colors for status indicators:"))
-    feedback_layout.addWidget(fxwidgets.FXCodeBlock("""
+    feedback_layout.addWidget(
+        fxwidgets.FXCodeBlock(
+            """
 feedback = get_feedback_colors()
 color = feedback["success"]["foreground"]
-"""))
+"""
+        )
+    )
 
     feedback_labels = {}
-    for key in ["success", "warning", "error", "info"]:
+    for key in ["success", "warning", "error", "info", "debug"]:
         feedback_labels[key] = QLabel()
         feedback_layout.addWidget(feedback_labels[key])
 
@@ -205,7 +221,9 @@ color = feedback["success"]["foreground"]
             label.setText(f"{key}: {feedback[key]['foreground']}")
             label.setStyleSheet(
                 f"background-color: {feedback[key]['background']}; "
-                f"color: {feedback[key]['foreground']}; padding: 8px;"
+                f"color: {feedback[key]['foreground']}; "
+                f"border: 1px solid {feedback[key]['foreground']}; "
+                f"border-radius: 4px; padding: 8px;"
             )
 
     # Apply initial and connect to theme changes
@@ -228,8 +246,10 @@ def _create_delegates_tab() -> QWidget:
         Widget containing delegate demonstrations.
     """
 
-    tab = QWidget()
-    layout = QVBoxLayout(tab)
+    scroll_area = fxwidgets.FXResizedScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_content = QWidget()
+    layout = QVBoxLayout(scroll_content)
     layout.setSpacing(16)
 
     # Header
@@ -241,27 +261,38 @@ def _create_delegates_tab() -> QWidget:
     layout.addWidget(header)
 
     # Code example with syntax-highlighted code block
-    code_group = QGroupBox("Theme-Aware Background Pattern")
+    code_group = QGroupBox("Theme-Aware Custom Colors Pattern")
     code_layout = QVBoxLayout(code_group)
 
-    code_block = fxwidgets.FXCodeBlock("""
+    code_block = fxwidgets.FXCodeBlock(
+        """
+# Define custom color palettes for dark and light themes
+CUSTOM_COLORS = {
+    "dark": {"red": QColor("#4a2020"), "blue": QColor("#1a3a5c")},
+    "light": {"red": QColor("#ffcccc"), "blue": QColor("#cce5ff")},
+}
+
 def update_item_colors(_theme_name: str = None):
     theme = FXThemeColors(get_theme_colors())
-    feedback = get_feedback_colors()
+    # Detect theme type by surface brightness
+    is_light = QColor(theme.surface).lightness() > 128
+    palette = CUSTOM_COLORS["light" if is_light else "dark"]
 
-    for item in items:
-        bg = QColor(theme.surface_sunken).darker(110)
-        item.setBackground(0, bg)
+    for i, item in enumerate(items):
+        color_key = ["red", "blue"][i % 2]
+        item.setBackground(0, palette[color_key])
     tree.viewport().update()
 
-# Apply initial and connect to theme changes
-update_item_colors()
 theme_manager.theme_changed.connect(update_item_colors)
-""")
+"""
+    )
     code_layout.addWidget(code_block)
     layout.addWidget(code_group)
 
     # Tree widget with thumbnail delegate
+    tree_group = QGroupBox("Task Tracker with Status Indicators")
+    tree_group_layout = QVBoxLayout(tree_group)
+
     tree = QTreeWidget()
     tree.setHeaderLabels(["Name", "Type", "Status"])
     tree.setRootIsDecorated(False)
@@ -271,10 +302,10 @@ theme_manager.theme_changed.connect(update_item_colors)
     delegate.show_status_dot = True
     delegate.show_status_label = True
     tree.setItemDelegate(delegate)
+    # Apply transparent selection for branch area (items handled by delegate)
     fxwidgets.FXThumbnailDelegate.apply_transparent_selection(tree)
 
     # Sample items
-    from fxgui import fxicons
 
     items_data = [
         ("Project Alpha", "Feature", "Ready", "success", "folder"),
@@ -283,10 +314,14 @@ theme_manager.theme_changed.connect(update_item_colors)
         ("API Refactor", "Enhancement", "Review", "error", "code"),
     ]
 
+    # Role for storing icon name for theme-aware updates
+    ICON_NAME_ROLE = Qt.UserRole + 101
+
     tree_items = []
     for name, item_type, status, feedback_key, icon_name in items_data:
         item = QTreeWidgetItem(tree, [name, item_type, status])
-        item.setIcon(0, fxicons.get_icon(icon_name))
+        item.setIcon(0, get_icon(icon_name))
+        item.setData(0, ICON_NAME_ROLE, icon_name)  # Store icon name
         item.setData(
             0,
             fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE,
@@ -303,16 +338,39 @@ theme_manager.theme_changed.connect(update_item_colors)
 
     tree.setColumnWidth(0, 200)
     tree.setColumnWidth(1, 100)
-    layout.addWidget(tree)
+    tree_group_layout.addWidget(tree)
+    layout.addWidget(tree_group)
+
+    # Custom color palettes for dark and light themes
+    # These semantic colors adapt to the current theme
+    custom_colors = {
+        "dark": {
+            "red": QColor("#4a2020"),  # Dark red for dark theme
+            "blue": QColor("#1a3a5c"),  # Dark blue for dark theme
+            "green": QColor("#1a3a1a"),  # Dark green for dark theme
+            "purple": QColor("#3a1a4a"),  # Dark purple for dark theme
+        },
+        "light": {
+            "red": QColor("#ffcccc"),  # Light red/pink for light theme
+            "blue": QColor("#cce5ff"),  # Light blue for light theme
+            "green": QColor("#ccffcc"),  # Light green for light theme
+            "purple": QColor("#e5ccff"),  # Light purple for light theme
+        },
+    }
+    color_keys = ["red", "blue", "green", "purple"]
 
     # Theme-aware background update function
     def update_delegate_colors(_theme_name: str = None):
-        """Update item backgrounds and status colors based on current theme."""
-        theme = fxwidgets.FXThemeColors(fxstyle.get_theme_colors())
+        """Update item backgrounds, status colors, and icons based on theme."""
         feedback = fxstyle.get_feedback_colors()
-        base_surface = QColor(theme.surface_sunken)
+        palette_key = "light" if fxstyle.is_light_theme() else "dark"
 
         for i, item in enumerate(tree_items):
+            # Update icon with current theme color
+            icon_name = item.data(0, ICON_NAME_ROLE)
+            if icon_name:
+                item.setIcon(0, get_icon(icon_name))
+
             feedback_key = item.data(0, Qt.UserRole + 100)
             if feedback_key and feedback_key in feedback:
                 status_color = QColor(feedback[feedback_key]["foreground"])
@@ -327,9 +385,9 @@ theme_manager.theme_changed.connect(update_item_colors)
                     status_color,
                 )
 
-            # Varied background colors for visual hierarchy
-            darkness = 105 + (i % 4) * 5
-            bg_color = base_surface.darker(darkness)
+            # Custom theme-aware background colors
+            color_key = color_keys[i % len(color_keys)]
+            bg_color = custom_colors[palette_key][color_key]
             item.setBackground(0, bg_color)
             item.setBackground(1, bg_color)
             item.setBackground(2, bg_color)
@@ -340,8 +398,186 @@ theme_manager.theme_changed.connect(update_item_colors)
     update_delegate_colors()
     fxstyle.theme_manager.theme_changed.connect(update_delegate_colors)
 
+    # Second tree: Episodic production hierarchy with thumbnails
+    episodic_group = QGroupBox("Episodic Production Hierarchy")
+    episodic_layout = QVBoxLayout(episodic_group)
+
+    episodic_tree = QTreeWidget()
+    episodic_tree.setHeaderLabels(["Name", "Frame Range", "Status"])
+    episodic_tree.setRootIsDecorated(True)
+
+    episodic_delegate = fxwidgets.FXThumbnailDelegate()
+    episodic_delegate.show_thumbnail = True
+    episodic_delegate.show_status_dot = True
+    episodic_delegate.show_status_label = True
+    episodic_tree.setItemDelegate(episodic_delegate)
+    # Apply transparent selection for branch area (items handled by delegate)
+    fxwidgets.FXThumbnailDelegate.apply_transparent_selection(episodic_tree)
+
+    # Thumbnail path
+    thumbnail_path = Path(__file__).parent / "images" / "missing_image.png"
+
+    # Episodic data structure: Episode > Sequence > Shot
+    episodic_data = {
+        "ep101": {
+            "seq010": ["sh0010", "sh0020", "sh0030"],
+            "seq020": ["sh0010", "sh0020"],
+        },
+        "ep102": {
+            "seq010": ["sh0010", "sh0020", "sh0030", "sh0040"],
+            "seq020": ["sh0010"],
+            "seq030": ["sh0010", "sh0020"],
+        },
+    }
+
+    episodic_items = []  # Store all items for theme updates
+
+    # Role for storing icon name for theme-aware updates
+    EPISODIC_ICON_NAME_ROLE = Qt.UserRole + 201
+
+    for episode_name, sequences in episodic_data.items():
+        # Episode level (darkest)
+        episode_item = QTreeWidgetItem(
+            episodic_tree, [episode_name, "", "In Progress"]
+        )
+        episode_item.setIcon(0, get_icon("movie"))
+        episode_item.setData(0, EPISODIC_ICON_NAME_ROLE, "movie")
+        episode_item.setData(
+            0, fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE, "Episode"
+        )
+        episode_item.setData(
+            0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False
+        )
+        episode_item.setData(
+            0,
+            fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
+            "In Progress",
+        )
+        episode_item.setData(0, Qt.UserRole + 200, "episode")  # Level marker
+        episodic_items.append(episode_item)
+
+        for seq_name, shots in sequences.items():
+            # Sequence level (medium)
+            seq_item = QTreeWidgetItem(episode_item, [seq_name, "", "Active"])
+            seq_item.setIcon(0, get_icon("video_library"))
+            seq_item.setData(0, EPISODIC_ICON_NAME_ROLE, "video_library")
+            seq_item.setData(
+                0, fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE, "Sequence"
+            )
+            seq_item.setData(
+                0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False
+            )
+            seq_item.setData(
+                0,
+                fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
+                "Active",
+            )
+            seq_item.setData(0, Qt.UserRole + 200, "sequence")  # Level marker
+            episodic_items.append(seq_item)
+
+            for shot_name in shots:
+                # Shot level (lightest) - with thumbnail
+                frame_range = f"1001-1{len(shot_name) * 10:03d}"
+                shot_item = QTreeWidgetItem(
+                    seq_item, [shot_name, frame_range, "WIP"]
+                )
+                shot_item.setIcon(0, get_icon("image"))
+                shot_item.setData(0, EPISODIC_ICON_NAME_ROLE, "image")
+                shot_item.setData(
+                    0,
+                    fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE,
+                    f"{episode_name}_{seq_name}_{shot_name}",
+                )
+                shot_item.setData(
+                    0,
+                    fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE,
+                    True,
+                )
+                shot_item.setData(
+                    0,
+                    fxwidgets.FXThumbnailDelegate.THUMBNAIL_PATH_ROLE,
+                    str(thumbnail_path),
+                )
+                shot_item.setData(
+                    0,
+                    fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
+                    "WIP",
+                )
+                shot_item.setData(0, Qt.UserRole + 200, "shot")  # Level marker
+                episodic_items.append(shot_item)
+
+    episodic_tree.setColumnWidth(0, 250)
+    episodic_tree.setColumnWidth(1, 100)
+    episodic_tree.expandAll()
+    episodic_layout.addWidget(episodic_tree)
+    layout.addWidget(episodic_group)
+
+    # Hierarchy colors for dark and light themes
+    hierarchy_colors = {
+        "dark": {
+            "episode": QColor("#1a1a2e"),  # Darkest blue
+            "sequence": QColor("#16213e"),  # Medium blue
+            "shot": QColor("#1f4068"),  # Lightest blue
+        },
+        "light": {
+            "episode": QColor("#b8c5d6"),  # Darkest (still light)
+            "sequence": QColor("#d0dae8"),  # Medium
+            "shot": QColor("#e8eff7"),  # Lightest
+        },
+    }
+
+    # Theme-aware update function for episodic tree
+    def update_episodic_colors(_theme_name: str = None):
+        """Update episodic tree backgrounds, icons, and colors based on theme."""
+        feedback = fxstyle.get_feedback_colors()
+        palette_key = "light" if fxstyle.is_light_theme() else "dark"
+
+        for item in episodic_items:
+            # Update icon with current theme color
+            icon_name = item.data(0, EPISODIC_ICON_NAME_ROLE)
+            if icon_name:
+                item.setIcon(0, get_icon(icon_name))
+
+            level = item.data(0, Qt.UserRole + 200)
+            if level in hierarchy_colors[palette_key]:
+                bg_color = hierarchy_colors[palette_key][level]
+                for col in range(3):
+                    item.setBackground(col, bg_color)
+
+            # Set status colors based on level
+            if level == "episode":
+                status_color = QColor(feedback["info"]["foreground"])
+            elif level == "sequence":
+                status_color = QColor(feedback["warning"]["foreground"])
+            else:  # shot
+                status_color = QColor(feedback["success"]["foreground"])
+
+            item.setData(
+                0,
+                fxwidgets.FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
+                status_color,
+            )
+            item.setData(
+                0,
+                fxwidgets.FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
+                status_color,
+            )
+
+        episodic_tree.viewport().update()
+
+    # Apply initial and connect to theme changes
+    update_episodic_colors()
+    fxstyle.theme_manager.theme_changed.connect(update_episodic_colors)
+
     layout.addStretch()
-    return tab
+    scroll_area.setWidget(scroll_content)
+
+    # Return a container with the scroll area
+    container = QWidget()
+    container_layout = QVBoxLayout(container)
+    container_layout.setContentsMargins(0, 0, 0, 0)
+    container_layout.addWidget(scroll_area)
+    return container
 
 
 def _create_widgets_tab() -> QWidget:
@@ -351,21 +587,25 @@ def _create_widgets_tab() -> QWidget:
         Widget containing widget demonstrations.
     """
 
-    tab = QWidget()
-    layout = QVBoxLayout(tab)
+    scroll_area = fxwidgets.FXResizedScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_content = QWidget()
+    layout = QVBoxLayout(scroll_content)
     layout.setSpacing(16)
 
     # Header
     header = QLabel(
-        "A selection of fxgui widgets. Each widget has its own example() "
-        "function - run with: DEVELOPER_MODE=1 python -m fxgui.fxwidgets._<module>"
+        "A selection of fxgui widgets. Each widget has its own "
+        "<code>example()</code> function - run with: "
+        "<code>DEVELOPER_MODE=1 python -m fxgui.fxwidgets._&lt;module&gt;</code>"
     )
     header.setWordWrap(True)
     layout.addWidget(header)
 
     # Collapsible sections
     settings_section = fxwidgets.FXCollapsibleWidget(
-        title="Settings (FXCollapsibleWidget)",
+        title="FXCollapsibleWidget",
+        icon="settings",
         animation_duration=200,
     )
     settings_layout = QFormLayout()
@@ -377,7 +617,8 @@ def _create_widgets_tab() -> QWidget:
 
     # Toggle switches
     toggles_section = fxwidgets.FXCollapsibleWidget(
-        title="Toggle Switches (FXToggleSwitch)",
+        title="FXToggleSwitch",
+        icon="toggle_on",
         animation_duration=200,
     )
     toggles_layout = QHBoxLayout()
@@ -393,30 +634,128 @@ def _create_widgets_tab() -> QWidget:
     toggles_section.set_content_layout(toggles_layout)
     layout.addWidget(toggles_section)
 
-    # Input validators
+    # Input validators with visual feedback
     validators_section = fxwidgets.FXCollapsibleWidget(
-        title="Input Validators",
+        title="FXValidatedLineEdit",
+        icon="spellcheck",
         animation_duration=200,
     )
     validators_layout = QFormLayout()
 
-    camel_edit = QLineEdit()
+    validators_hint = QLabel(
+        "Type invalid characters to see the shake + red flash feedback."
+    )
+    validators_hint.setWordWrap(True)
+    validators_layout.addRow(validators_hint)
+
+    camel_edit = fxwidgets.FXValidatedLineEdit()
     camel_edit.setValidator(fxwidgets.FXCamelCaseValidator())
     camel_edit.setPlaceholderText("e.g., myVariableName")
-    validators_layout.addRow("CamelCase:", camel_edit)
+    validators_layout.addRow("<code>FXCamelCaseValidator</code>:", camel_edit)
 
-    lower_edit = QLineEdit()
+    lower_edit = fxwidgets.FXValidatedLineEdit()
     lower_edit.setValidator(
         fxwidgets.FXLowerCaseValidator(allow_underscores=True)
     )
     lower_edit.setPlaceholderText("e.g., my_variable")
-    validators_layout.addRow("Lowercase:", lower_edit)
+    validators_layout.addRow("<code>FXLowerCaseValidator</code>:", lower_edit)
 
     validators_section.set_content_layout(validators_layout)
     layout.addWidget(validators_section)
 
+    # Search bar
+    search_section = fxwidgets.FXCollapsibleWidget(
+        title="FXSearchBar",
+        icon="search",
+        animation_duration=200,
+    )
+    search_layout = QVBoxLayout()
+    search_bar = fxwidgets.FXSearchBar(placeholder="Search...")
+    search_layout.addWidget(search_bar)
+    search_section.set_content_layout(search_layout)
+    layout.addWidget(search_section)
+
+    # Tag input
+    tags_section = fxwidgets.FXCollapsibleWidget(
+        title="FXTagInput",
+        icon="label",
+        animation_duration=200,
+    )
+    tags_layout = QVBoxLayout()
+    tag_input = fxwidgets.FXTagInput()
+    tag_input.add_tag("Python")
+    tag_input.add_tag("Qt")
+    tag_input.add_tag("fxgui")
+    tags_layout.addWidget(tag_input)
+    tags_section.set_content_layout(tags_layout)
+    layout.addWidget(tags_section)
+
+    # Range slider
+    slider_section = fxwidgets.FXCollapsibleWidget(
+        title="FXRangeSlider",
+        icon="tune",
+        animation_duration=200,
+    )
+    slider_layout = QVBoxLayout()
+    range_slider = fxwidgets.FXRangeSlider()
+    range_slider.set_range(0, 100)
+    range_slider.set_minimum(25)
+    range_slider.set_maximum(75)
+    slider_layout.addWidget(range_slider)
+    slider_section.set_content_layout(slider_layout)
+    layout.addWidget(slider_section)
+
+    # Rating widget
+    rating_section = fxwidgets.FXCollapsibleWidget(
+        title="FXRatingWidget",
+        icon="star",
+        animation_duration=200,
+    )
+    rating_layout = QHBoxLayout()
+    rating_widget = fxwidgets.FXRatingWidget()
+    rating_widget.set_rating(3)
+    rating_layout.addWidget(rating_widget)
+    rating_layout.addStretch()
+    rating_section.set_content_layout(rating_layout)
+    layout.addWidget(rating_section)
+
+    # Loading spinner
+    spinner_section = fxwidgets.FXCollapsibleWidget(
+        title="FXLoadingSpinner",
+        icon="refresh",
+        animation_duration=200,
+    )
+    spinner_layout = QHBoxLayout()
+    spinner = fxwidgets.FXLoadingSpinner()
+    spinner.setFixedSize(32, 32)
+    spinner.start()
+    spinner_layout.addWidget(spinner)
+    spinner_layout.addWidget(QLabel("Loading..."))
+    spinner_layout.addStretch()
+    spinner_section.set_content_layout(spinner_layout)
+    layout.addWidget(spinner_section)
+
+    # File path widget
+    filepath_section = fxwidgets.FXCollapsibleWidget(
+        title="FXFilePathWidget",
+        icon="folder",
+        animation_duration=200,
+    )
+    filepath_layout = QVBoxLayout()
+    filepath_widget = fxwidgets.FXFilePathWidget(mode="directory")
+    filepath_layout.addWidget(filepath_widget)
+    filepath_section.set_content_layout(filepath_layout)
+    layout.addWidget(filepath_section)
+
     layout.addStretch()
-    return tab
+    scroll_area.setWidget(scroll_content)
+
+    # Return a container with the scroll area
+    container = QWidget()
+    container_layout = QVBoxLayout(container)
+    container_layout.setContentsMargins(0, 0, 0, 0)
+    container_layout.addWidget(scroll_area)
+    return container
 
 
 def main():
@@ -487,28 +826,44 @@ def main():
         company="\u00a9 Valentin Beaumont",
     )
     window.set_banner_text("Showcase")
-    window.set_banner_icon(get_icon("widgets"))
+    window.set_banner_icon("widgets")
 
-    # Create tabbed interface
+    # Create tabbed interface with margins
+    central_widget = QWidget()
+    central_layout = QVBoxLayout(central_widget)
+    central_layout.setContentsMargins(8, 8, 8, 8)
+
     tabs = QTabWidget()
-
-    # Add tabs
     tabs.addTab(_create_theme_awareness_tab(), "Theme Awareness")
     tabs.addTab(_create_delegates_tab(), "Delegates")
     tabs.addTab(_create_widgets_tab(), "Widgets")
 
-    window.setCentralWidget(tabs)
+    central_layout.addWidget(tabs)
+    window.setCentralWidget(central_widget)
 
     # Finish splash screen and show window
     splashscreen.finish(window)
-    window.resize(800, 700)
+    window.resize(800, 900)
     window.show()
+    # Center after show() so frame geometry is accurate
+    window.center_on_screen()
 
-    # Show welcome message
+    # Show welcome message in status bar
+    _message = "Welcome to fxgui! Toggle theme with the toolbar menu in <b>Window</b> > <b>Theme</b>."
     window.statusBar().showMessage(
-        "Welcome to fxgui! Toggle theme with the toolbar button.",
+        _message,
         fxwidgets.INFO,
     )
+
+    # Show welcome notification banner
+    welcome_banner = fxwidgets.FXNotificationBanner(
+        parent=window.centralWidget(),
+        message=_message,
+        severity_type=fxwidgets.INFO,
+        timeout=8000,
+    )
+    welcome_banner.closed.connect(welcome_banner.deleteLater)
+    welcome_banner.show()
 
     # Start application event loop
     application.exec_()

@@ -69,6 +69,7 @@ Functions:
     get_theme_colors: Get the color palette for the current theme.
     get_accent_colors: Get primary/secondary accent colors.
     get_icon_color: Get the icon tint color for current theme.
+    is_light_theme: Check if the current theme is light or dark.
     save_theme: Save the current theme to persistent storage.
     load_saved_theme: Load the previously saved theme.
 
@@ -257,6 +258,12 @@ class FXThemeAware:
 
     def __handle_theme_change(self, _theme_name: str = None) -> None:
         """Internal handler for theme changes."""
+        # Check if the C++ object is still valid (prevents RuntimeError)
+        from qtpy.shiboken import isValid as is_valid
+
+        if not is_valid(self):
+            return
+
         # Process theme_style class attribute if defined
         if self.theme_style:
             self.__apply_theme_style_attribute()
@@ -519,6 +526,10 @@ def get_feedback_colors() -> dict:
     Each level provides both a ``foreground`` (text/icon) and ``background``
     color designed to work together with appropriate contrast.
 
+    The function first checks for theme-specific feedback colors (defined
+    within the current theme), then falls back to the global feedback colors
+    for backward compatibility.
+
     Returns:
         Dictionary with keys: 'debug', 'info', 'success', 'warning', 'error'.
         Each value is a dict with 'foreground' and 'background' keys.
@@ -529,17 +540,23 @@ def get_feedback_colors() -> dict:
         >>> colors["error"]["background"]  # "#7b2323"
         >>> colors["success"]["foreground"]  # "#8ac549"
     """
+    # Default fallback colors
+    default_feedback = {
+        "debug": {"foreground": "#26C6DA", "background": "#006064"},
+        "info": {"foreground": "#7661f6", "background": "#372d75"},
+        "success": {"foreground": "#8ac549", "background": "#466425"},
+        "warning": {"foreground": "#ffbb33", "background": "#7b5918"},
+        "error": {"foreground": "#ff4444", "background": "#7b2323"},
+    }
+
+    # First, try to get theme-specific feedback colors
+    theme_colors = get_theme_colors()
+    if "feedback" in theme_colors:
+        return theme_colors["feedback"]
+
+    # Fall back to global feedback colors for backward compatibility
     colors_dict = get_colors()
-    return colors_dict.get(
-        "feedback",
-        {
-            "debug": {"foreground": "#26C6DA", "background": "#006064"},
-            "info": {"foreground": "#7661f6", "background": "#372d75"},
-            "success": {"foreground": "#8ac549", "background": "#466425"},
-            "warning": {"foreground": "#ffbb33", "background": "#7b5918"},
-            "error": {"foreground": "#ff4444", "background": "#7b2323"},
-        },
-    )
+    return colors_dict.get("feedback", default_feedback)
 
 
 def get_theme_colors() -> dict:
@@ -685,6 +702,29 @@ def get_contrast_text_color(background_hex: str) -> str:
     luminance = get_luminance(background_hex)
     # Use white text on dark backgrounds, black on light
     return "#FFFFFF" if luminance < 0.5 else "#000000"
+
+
+def is_light_theme() -> bool:
+    """Check if the current theme is a light theme.
+
+    Determines theme brightness by analyzing the surface color's lightness.
+    This is more reliable than checking the theme name since it works with
+    any custom theme.
+
+    Returns:
+        True if the current theme is light, False if dark.
+
+    Examples:
+        >>> if fxstyle.is_light_theme():
+        ...     use_dark_icons()
+        ... else:
+        ...     use_light_icons()
+    """
+    from qtpy.QtGui import QColor
+
+    colors = get_theme_colors()
+    surface_color = QColor(colors.get("surface", "#000000"))
+    return surface_color.lightness() > 128
 
 
 ###### Theme Functions

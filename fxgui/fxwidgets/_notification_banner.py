@@ -188,6 +188,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
         # Message label
         self._message_label = QLabel(message)
+        self._message_label.setTextFormat(Qt.RichText)
         self._message_label.setWordWrap(True)
         main_layout.addWidget(self._message_label)
 
@@ -277,7 +278,8 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         }
 
         key = severity_to_key.get(severity, "info")
-        foreground = self.theme.get_feedback_color(key, "foreground")
+        feedback = fxstyle.get_feedback_colors()
+        foreground = feedback[key]["foreground"]
 
         return {
             "icon": foreground,
@@ -323,14 +325,10 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         )
 
         # Message label (muted text, like FXProgressCard description)
+        # Note: We avoid setting font properties via stylesheet to preserve
+        # rich text formatting (bold, italic, etc.) from HTML tags
         self._message_label.setStyleSheet(
-            f"""
-            QLabel {{
-                color: {self.theme.text_muted};
-                font-size: 12px;
-                background: transparent;
-            }}
-        """
+            f"color: {self.theme.text_muted}; background: transparent;"
         )
 
         # Close button styling

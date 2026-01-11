@@ -718,7 +718,9 @@ def sync_colors_with_theme() -> None:
     refresh_all_icons()
 
 
-def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
+def set_icon(
+    widget: Any, icon_name: str, theme_color: bool = True, **kwargs: Any
+) -> QIcon:
     """Set an icon on a widget and register it for automatic theme updates.
 
     This is the recommended way to set icons on widgets. The icon will
@@ -727,6 +729,9 @@ def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
     Args:
         widget (Any): The widget to set the icon on (QAction, QPushButton, etc.).
         icon_name (str): The name of the icon.
+        theme_color (bool): If True (default), the icon color will update to
+            match the theme on theme changes. If False, the explicit color
+            passed in kwargs will be preserved across theme changes.
         **kwargs (Any): Optional parameters passed to get_icon (width, height,
             color, library, style, extension).
 
@@ -735,16 +740,19 @@ def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
 
     Examples:
         >>> from fxgui import fxicons
+        >>> # Icon follows theme color
         >>> fxicons.set_icon(my_button, "save")
-        >>> fxicons.set_icon(my_action, "home", library="material")
+        >>> # Icon keeps explicit color across theme changes
+        >>> fxicons.set_icon(indicator, "check", theme_color=False, color="#00ff00")
     """
     icon = get_icon(icon_name, **kwargs)
 
     if hasattr(widget, "setIcon"):
         widget.setIcon(icon)
 
-    # Store icon name for refresh (kwargs stored only if non-default)
+    # Store icon name and settings for refresh
     widget.setProperty("_fxicon_name", icon_name)
+    widget.setProperty("_fxicon_theme_color", theme_color)
     if kwargs:
         widget.setProperty("_fxicon_kwargs", kwargs)
 
@@ -759,21 +767,33 @@ def refresh_all_icons() -> None:
     be called manually if needed.
     """
     from qtpy.QtWidgets import QWidget
+    from qtpy.shiboken import isValid as is_valid
 
     for widget in list(_icon_widgets):
-        icon_name = widget.property("_fxicon_name")
-        if icon_name:
-            kwargs = widget.property("_fxicon_kwargs") or {}
-            # Don't pass stored color - use current theme color
-            kwargs.pop("color", None)
+        # Skip widgets whose C++ object has been deleted
+        if not is_valid(widget):
+            continue
 
-            icon = get_icon(icon_name, **kwargs)
+        try:
+            icon_name = widget.property("_fxicon_name")
+            if icon_name:
+                kwargs = widget.property("_fxicon_kwargs") or {}
+                theme_color = widget.property("_fxicon_theme_color")
 
-            if hasattr(widget, "setIcon"):
-                widget.setIcon(icon)
+                # Only reset color if theme_color is True (or not set, for backwards compat)
+                if theme_color is not False:
+                    kwargs.pop("color", None)
 
-                # Force visual update for QActions
-                if hasattr(widget, "associatedWidgets"):
-                    for assoc_widget in widget.associatedWidgets():
-                        if isinstance(assoc_widget, QWidget):
-                            assoc_widget.update()
+                icon = get_icon(icon_name, **kwargs)
+
+                if hasattr(widget, "setIcon"):
+                    widget.setIcon(icon)
+
+                    # Force visual update for QActions
+                    if hasattr(widget, "associatedWidgets"):
+                        for assoc_widget in widget.associatedWidgets():
+                            if isinstance(assoc_widget, QWidget):
+                                assoc_widget.update()
+        except RuntimeError:
+            # Widget was deleted between validity check and access
+            pass

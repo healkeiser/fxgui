@@ -2,7 +2,7 @@
 
 # Built-in
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 from webbrowser import open_new_tab
 
@@ -109,6 +109,10 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         # Theme action storage
         self.theme_actions: Dict[str, QAction] = {}
         self.theme_action_group: Optional[QActionGroup] = None
+
+        # Banner icon storage for theme-aware updates
+        self._banner_icon_name: Optional[str] = None
+        self._banner_icon_size: int = 20
 
         # Initialize UI components
         self._create_actions()
@@ -434,14 +438,12 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             This method is intended for internal use only.
         """
 
-        theme_colors = fxstyle.get_theme_colors()
-
         # Create banner container widget
         self.banner = QWidget(self)
         self.banner.setFixedHeight(50)
         self.banner.setStyleSheet(
             f"background: transparent; "
-            f"border-bottom: 1px solid {theme_colors['border']};"
+            f"border-bottom: 1px solid {self.theme.border};"
         )
 
         # Create layout for banner
@@ -459,7 +461,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self.banner_label = QLabel("Banner", self.banner)
         self.banner_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.banner_label.setStyleSheet(
-            f"color: {theme_colors['text']}; font-size: 16px; border: none;"
+            f"color: {self.theme.text}; font-size: 16px; border: none;"
         )
 
         banner_layout.addWidget(self.banner_icon)
@@ -673,6 +675,10 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
                 f"color: {self.theme.text}; font-size: 16px; border: none;"
             )
 
+        # Update banner icon with new theme colors
+        if self._banner_icon_name is not None:
+            self._update_banner_icon()
+
         # Force menu bar to repaint with new icons
         if hasattr(self, "menu_bar") and self.menu_bar is not None:
             self.menu_bar.update()
@@ -810,6 +816,30 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         """
         return fxstyle.get_available_themes()
 
+    def center_on_screen(self) -> None:
+        """Center the window on the primary screen.
+
+        This method centers the window on the available screen geometry,
+        accounting for taskbars and other system UI elements.
+
+        Examples:
+            >>> window = FXMainWindow()
+            >>> window.resize(800, 600)
+            >>> window.center_on_screen()
+            >>> window.show()
+        """
+        frame_geo = self.frameGeometry()
+
+        if QT_VERSION_MAJOR >= 6:
+            screen: QScreen = QApplication.primaryScreen()
+            desktop_geometry = screen.availableGeometry()
+        else:
+            desktop_geometry: QRect = QDesktopWidget().availableGeometry()
+
+        center_point = desktop_geometry.center()
+        frame_geo.moveCenter(center_point)
+        self.move(frame_geo.topLeft())
+
     # Overrides
     def statusBar(self) -> FXStatusBar:
         """Returns the FXStatusBar instance associated with this window.
@@ -873,16 +903,46 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         """
         self.banner_label.setText(text)
 
-    def set_banner_icon(self, icon: QIcon, size: int = 20) -> None:
+    def set_banner_icon(
+        self, icon: Optional[Union[QIcon, str]], size: int = 20
+    ) -> None:
         """Sets the icon of the banner.
 
         Args:
-            icon: The icon to set in the banner.
+            icon: The icon to set in the banner. Can be a QIcon or an icon
+                name string for theme-aware icons.
             size: The size of the icon. Defaults to 20.
+
+        Note:
+            Using an icon name string (e.g., "widgets") is recommended for
+            theme-aware icons that automatically update when the theme changes.
         """
+        self._banner_icon_size = size
         self.banner_icon.setFixedSize(size, size)
-        self.banner_icon.setPixmap(icon.pixmap(size, size))
+
+        if isinstance(icon, str):
+            # Store icon name for theme-aware updates
+            self._banner_icon_name = icon
+            self._update_banner_icon()
+        else:
+            # Direct QIcon - not theme-aware
+            self._banner_icon_name = None
+            self.banner_icon.setPixmap(icon.pixmap(size, size))
+
         self.banner_icon.show()
+
+    def _update_banner_icon(self) -> None:
+        """Update the banner icon with current theme colors.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+        if self._banner_icon_name is None:
+            return
+
+        icon = fxicons.get_icon(self._banner_icon_name)
+        size = self._banner_icon_size
+        self.banner_icon.setPixmap(icon.pixmap(size, size))
 
     def hide_banner(self) -> None:
         """Hides the banner."""

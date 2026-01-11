@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fxgui"
+dynamic = ["version"]
+description = "Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications."
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Valentin Beaumont", email = "valentin.onze@gmail.com" }
+]
+keywords = ["Qt", "PySide2", "PySide6", "PyQt5", "PyQt6", "VFX", "DCC", "UI"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: User Interfaces",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "QtPy>=2.4.2",
+    "PyYAML>=6.0",
+    "Pygments>=2.0",
+]
+
+[project.optional-dependencies]
+mkdocs = [
+    "mkdocs-material",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
+    "mkdocs-section-index",
+    "mkdocs-git-revision-date-localized-plugin",
+    "mkdocs-git-authors-plugin",
+    "mkdocs-git-committers-plugin-2",
+    "mkdocstrings[python]",
+    "mike",
+    "black",
+]
+zensical = [
+    "zensical>=0.0.15",
+    "mkdocstrings-python>=2.0.0",
+    "black",
+]
+
+[project.urls]
+Documentation = "https://healkeiser.github.io/fxgui"
+GitHub = "https://github.com/healkeiser/fxgui"
+Changelog = "https://github.com/healkeiser/fxgui/blob/main/CHANGELOG.md"
+Source = "https://github.com/healkeiser/fxgui"
+Funding = "https://github.com/sponsors/healkeiser"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["fxgui*"]
+
+[tool.setuptools_scm]
+write_to = "fxgui/_version.py"

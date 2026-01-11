@@ -129,11 +129,7 @@ def get_maya_main_window() -> Optional[QtWidgets.QWidget]:
     """
 
     import maya.OpenMayaUI as omui
-
-    try:
-        from shiboken6 import wrapInstance
-    except ImportError:
-        from shiboken2 import wrapInstance
+    from qtpy.shiboken import wrapInstance
 
     window = omui.MQtUtil.mainWindow()
     if window is not None:

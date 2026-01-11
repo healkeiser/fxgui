@@ -155,6 +155,8 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
     def _on_theme_changed(self, _theme_name: str = None) -> None:
         """Handle theme changes."""
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # Update indicator icon with new theme's feedback colors
+        self._update_indicator()
 
     @property
     def path(self) -> str:
@@ -280,21 +282,30 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
 
         path = self._input.text()
 
+        feedback = fxstyle.get_feedback_colors()
+
         if not path:
             fxicons.set_icon(
-                self._indicator, "remove", color=self.theme.text_disabled
+                self._indicator,
+                "remove",
+                theme_color=False,
+                color=self.theme.text_disabled,
             )
             self._indicator.setToolTip("No path entered")
         elif self._is_valid:
             fxicons.set_icon(
                 self._indicator,
                 "check_circle",
-                color=self.theme.get_feedback_color("success", "foreground"),
+                theme_color=False,
+                color=feedback["success"]["foreground"],
             )
             self._indicator.setToolTip("Path exists")
         else:
             fxicons.set_icon(
-                self._indicator, "error", color=self.theme.get_feedback_color("error", "foreground")
+                self._indicator,
+                "error",
+                theme_color=False,
+                color=feedback["error"]["foreground"],
             )
             self._indicator.setToolTip("Path does not exist")
 

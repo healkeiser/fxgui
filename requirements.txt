@@ -1,0 +1,3 @@
+# Install fxgui and all its dependencies
+# For editable/development mode: pip install -e .
+-e .

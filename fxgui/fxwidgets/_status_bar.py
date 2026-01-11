@@ -224,10 +224,11 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
             status_bar_color = background_color
 
         # Message
+        # Use inline style for bold as QSS can interfere with <b> tag rendering
         message_prefix = (
             f"<b>{severity_prefix}</b>: {fxutils.get_formatted_time()} - "
             if time
-            else f"{severity_prefix}: "
+            else f"<b>{severity_prefix}</b>: "
         )
         notification_message = f"{message_prefix} {message}"
         self.icon_label.setPixmap(severity_icon)

@@ -48,10 +48,15 @@ feedback:
 
 dcc:
   houdini: "#ff6600"
-  maya: "#38a6cc"
-  nuke: "#fcb434"
+  maya: "#38a5cc"
+  nuke: "#f9b621"
   megascans: "#8ecd4f"
   bridge: "#1aa9f3"
+  3dsmax: "#38a5cc"
+  blender: "#eb7a08"
+  cinema4d: "#6796fa"
+  redshit: "#f94067"
+
 
 # =============================================================================
 # THEME DEFINITIONS
@@ -149,6 +154,24 @@ themes:
     # Icon
     icon: "#b4b4b4"
 
+    # Feedback colors (dark theme)
+    feedback:
+      debug:
+        foreground: "#26C6DA"
+        background: "#006064"
+      info:
+        foreground: "#7661f6"
+        background: "#372d75"
+      success:
+        foreground: "#8ac549"
+        background: "#466425"
+      warning:
+        foreground: "#ffbb33"
+        background: "#7b5918"
+      error:
+        foreground: "#ff4444"
+        background: "#7b2323"
+
   # ===========================================================================
   # LIGHT THEME
   # ===========================================================================
@@ -193,6 +216,24 @@ themes:
 
     # Icon
     icon: "#424242"
+
+    # Feedback colors (light theme)
+    feedback:
+      debug:
+        foreground: "#00838F"
+        background: "#B2EBF2"
+      info:
+        foreground: "#5E35B1"
+        background: "#D1C4E9"
+      success:
+        foreground: "#2E7D32"
+        background: "#C8E6C9"
+      warning:
+        foreground: "#F57C00"
+        background: "#FFE0B2"
+      error:
+        foreground: "#C62828"
+        background: "#FFCDD2"
 
   # ===========================================================================
   # DRACULA THEME - Inherits from dark, overrides accent and surface colors

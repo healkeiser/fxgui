@@ -60,24 +60,50 @@ Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DC
 <!-- INSTALLATION -->
 ## Installation
 
-The package is available on [PyPI](https://pypi.org/project/fxgui) and can be installed via `pip`:
+### From PyPI
 
+The package is available on [PyPI](https://pypi.org/project/fxgui):
 
 ``` shell
-python -m pip install fxgui
+pip install fxgui
 ```
 
-The repository contains submodules, so make sure to clone the repository with the `--recurse-submodules` flag:
+### From Source
+
+Clone the repository with submodules:
 
 ``` shell
 git clone --recurse-submodules https://github.com/healkeiser/fxgui
+cd fxgui
+pip install -e .
 ```
 
-Or, if you already cloned the repository, you can initialize the submodules with:
+Or using the requirements file:
 
 ``` shell
-git submodule update --init --recursive
+pip install -r requirements.txt
 ```
+
+### Optional Dependencies
+
+For building documentation with MkDocs:
+
+``` shell
+pip install -e ".[mkdocs]"
+# or
+pip install -r requirements.mkdocs.txt
+```
+
+For building documentation with Zensical:
+
+``` shell
+pip install -e ".[zensical]"
+# or
+pip install -r requirements.zensical.txt
+```
+
+> [!NOTE]
+> Zensical is still in early development and does not yet support all MkDocs plugins.
 
 > [!IMPORTANT]
 > In order to have access to the module inside your application, make sure to add `fxgui` to the `$PYTHONPATH` of the DCCs. For Houdini, you can find the [`houdini_package.json` example file](./houdini_package.json).

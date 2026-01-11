@@ -21,7 +21,6 @@ from qtpy.QtGui import (
 )
 from qtpy.QtWidgets import (
     QAbstractItemView,
-    QApplication,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -32,7 +31,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 
 
-class FXColorLabelDelegate(QStyledItemDelegate):
+class FXColorLabelDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     """A custom delegate to paint items with specific colors and icons based
     on their text content.
 
@@ -69,9 +68,6 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         """
 
         super().__init__(parent)
-
-        # Connect to theme changes to trigger repaint
-        fxstyle.theme_manager.theme_changed.connect(self._on_theme_changed)
 
         # Dictionary mapping item texts to (background_color, border_color,
         # text_icon_color, icon, color_icon)
@@ -119,11 +115,10 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         super().paint(painter, option_modified, index)
 
         # Set the default colors and icon (theme-aware)
-        theme_colors = fxstyle.get_theme_colors()
         background_color, border_color, text_icon_color, icon, color_icon = (
-            QColor(theme_colors["surface"]),
-            QColor(theme_colors["border_light"]),
-            QColor(theme_colors["text"]),
+            QColor(self.theme.surface),
+            QColor(self.theme.border_light),
+            QColor(self.theme.text),
             fxicons.get_icon("drag_indicator"),
             False,  # Default to not coloring the icon
         )
@@ -262,7 +257,7 @@ class FXColorLabelDelegate(QStyledItemDelegate):
             parent.update()
 
 
-class FXThumbnailDelegate(QStyledItemDelegate):
+class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     """Custom item delegate for showing thumbnails in tree/list views.
 
     This delegate displays items with thumbnails, titles, descriptions,
@@ -335,45 +330,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     STATUS_DOT_VISIBLE_ROLE = Qt.UserRole + 7
     STATUS_LABEL_VISIBLE_ROLE = Qt.UserRole + 8
 
-    # Stylesheet to disable native selection/hover (delegate handles these)
-    TRANSPARENT_SELECTION_STYLE = """
-        QTreeWidget::item,
-        QTreeView::item,
-        QListWidget::item,
-        QListView::item {
-            background: transparent;
-            background-color: transparent;
-        }
-        QTreeWidget::item:selected,
-        QTreeView::item:selected,
-        QListWidget::item:selected,
-        QListView::item:selected {
-            background: transparent;
-            background-color: transparent;
-            selection-background-color: transparent;
-        }
-        QTreeWidget::item:selected:active,
-        QTreeView::item:selected:active,
-        QListWidget::item:selected:active,
-        QListView::item:selected:active {
-            background: transparent;
-            background-color: transparent;
-        }
-        QTreeWidget::item:selected:!active,
-        QTreeView::item:selected:!active,
-        QListWidget::item:selected:!active,
-        QListView::item:selected:!active {
-            background: transparent;
-            background-color: transparent;
-        }
-        QTreeWidget::item:hover,
-        QTreeView::item:hover,
-        QListWidget::item:hover,
-        QListView::item:hover {
-            background: transparent;
-            background-color: transparent;
-        }
-    """
+    # Stylesheet constant is no longer used - apply_transparent_selection
+    # now sets the stylesheet directly on the widget
+    TRANSPARENT_SELECTION_STYLE = ""
 
     def __init__(self, parent: Optional[QWidget] = None):
         """Initialize the thumbnail delegate.
@@ -386,9 +345,6 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         self._show_thumbnail = True
         self._show_status_dot = True
         self._show_status_label = True
-
-        # Connect to theme changes to trigger repaint
-        fxstyle.theme_manager.theme_changed.connect(self._on_theme_changed)
 
     def _on_theme_changed(self, _theme_name: str = None) -> None:
         """Handle theme change by triggering a repaint of the parent view."""
@@ -431,31 +387,76 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         """Set whether the status label is shown."""
         self._show_status_label = value
 
+    # Stylesheet to disable default QTreeWidget selection (delegate handles it)
+    TRANSPARENT_SELECTION_STYLE = """
+        QTreeWidget {
+            selection-background-color: transparent;
+        }
+        QTreeWidget::item {
+            background: transparent;
+        }
+        QTreeWidget::item:selected {
+            background: transparent;
+            background-color: transparent;
+            selection-background-color: transparent;
+        }
+        QTreeWidget::item:selected:active {
+            background: transparent;
+            background-color: transparent;
+        }
+        QTreeWidget::item:selected:!active {
+            background: transparent;
+            background-color: transparent;
+        }
+        QTreeWidget::item:hover {
+            background: transparent;
+            background-color: transparent;
+        }
+        QTreeView {
+            selection-background-color: transparent;
+        }
+        QTreeView::item:selected {
+            background: transparent;
+            background-color: transparent;
+        }
+        QTreeView::item:selected:active {
+            background: transparent;
+            background-color: transparent;
+        }
+        QTreeView::item:selected:!active {
+            background: transparent;
+            background-color: transparent;
+        }
+        QTreeView::item:hover {
+            background: transparent;
+            background-color: transparent;
+        }
+        QTreeView::branch:selected {
+            background: transparent;
+        }
+        QTreeView::branch:hover {
+            background: transparent;
+        }
+    """
+
     @staticmethod
     def apply_transparent_selection(view: QWidget) -> None:
-        """Apply transparent selection stylesheet to a view widget.
+        """Apply transparent selection stylesheet to a tree view widget.
 
-        This method applies the TRANSPARENT_SELECTION_STYLE stylesheet to
-        the given view widget, which disables the native selection and hover
-        backgrounds. This is useful when using custom backgrounds, as the
-        delegate handles selection/hover highlighting itself.
+        This method disables the default Qt selection/hover backgrounds by
+        applying a comprehensive stylesheet directly to the widget. The
+        delegate handles all selection and hover highlighting itself.
+
+        Call this on QTreeView/QTreeWidget instances that use custom
+        backgrounds with FXThumbnailDelegate.
 
         Args:
-            view: The view widget (QTreeWidget, QTreeView, QListWidget, etc.)
-                to apply the stylesheet to.
-
-        Examples:
-            >>> tree = QTreeWidget()
-            >>> delegate = FXThumbnailDelegate()
-            >>> tree.setItemDelegate(delegate)
-            >>> FXThumbnailDelegate.apply_transparent_selection(tree)
+            view: The tree view widget to apply transparent selection to.
         """
-
         current_style = view.styleSheet()
-        if FXThumbnailDelegate.TRANSPARENT_SELECTION_STYLE not in current_style:
-            view.setStyleSheet(
-                current_style + FXThumbnailDelegate.TRANSPARENT_SELECTION_STYLE
-            )
+        view.setStyleSheet(
+            current_style + FXThumbnailDelegate.TRANSPARENT_SELECTION_STYLE
+        )
 
     @staticmethod
     def markdown_to_html(text: str) -> str:
@@ -926,8 +927,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         ):
             return
 
-        accents = fxstyle.get_accent_colors()
-        accent_color = QColor(accents.get("primary", "#2196F3"))
+        accent_color = QColor(self.theme.accent_primary)
 
         if option.state & QStyle.State_Selected:
             fill_color = accent_color
@@ -1412,26 +1412,23 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         # Draw background
         if has_custom_background:
-            # Custom background with border
+            # Custom background with border - fill surface first to cover
+            # any selection Qt may have drawn before calling delegate
+            surface_color = QColor(self.theme.surface)
+            painter.fillRect(opt.rect, surface_color)
+
+            # Draw custom background with border
             rect = self._draw_background_and_border(
                 painter, opt, index, bg_color, column_position
             )
         else:
-            # Use QStyle to draw the row background consistently
-            # This ensures hover, selection, and alternating colors match
-            style = opt.widget.style() if opt.widget else QApplication.style()
-            style.drawPrimitive(
-                QStyle.PE_PanelItemViewRow, opt, painter, opt.widget
-            )
-            style.drawPrimitive(
-                QStyle.PE_PanelItemViewItem, opt, painter, opt.widget
-            )
+            # Fill with theme surface color for items without custom background
+            # This covers any selection Qt drew before calling delegate
+            surface_color = QColor(self.theme.surface_sunken)
+            painter.fillRect(opt.rect, surface_color)
 
-        # Draw hover/selection overlay for custom backgrounds
-        if has_custom_background:
-            self._draw_hover_selection(
-                painter, rect, opt, index, column_position
-            )
+        # Draw hover/selection overlay (consistent for all items)
+        self._draw_hover_selection(painter, rect, opt, index, column_position)
 
         painter.restore()
 
@@ -1615,6 +1612,27 @@ def example() -> None:
     # This helper function updates all item backgrounds and status colors
     # based on the current theme. Call it at startup and connect it to the
     # theme_changed signal to keep colors in sync with the active theme
+
+    # Define custom color palettes for dark and light themes
+    # These are semantic colors that adapt to the theme
+    CUSTOM_COLORS = {
+        "dark": {
+            "red": QColor("#4a2020"),  # Dark red for dark theme
+            "blue": QColor("#1a3a5c"),  # Dark blue for dark theme
+            "green": QColor("#1a3a1a"),  # Dark green for dark theme
+            "purple": QColor("#3a1a4a"),  # Dark purple for dark theme
+        },
+        "light": {
+            "red": QColor("#ffcccc"),  # Light red/pink for light theme
+            "blue": QColor("#cce5ff"),  # Light blue for light theme
+            "green": QColor("#ccffcc"),  # Light green for light theme
+            "purple": QColor("#e5ccff"),  # Light purple for light theme
+        },
+    }
+
+    # Assign a color key to each item for theme-aware backgrounds
+    color_keys = ["red", "blue", "green", "purple"]
+
     def update_item_colors(_theme_name: str = None) -> None:
         """Update item backgrounds and status colors based on current theme.
 
@@ -1628,11 +1646,9 @@ def example() -> None:
         # Get fresh theme colors
         theme = fxstyle.FXThemeColors(fxstyle.get_theme_colors())
         feedback = fxstyle.get_feedback_colors()
+        palette_key = "light" if fxstyle.is_light_theme() else "dark"
 
-        # Base surface color for custom backgrounds
-        base_surface = QColor(theme.surface_sunken)
-
-        # Update tree2 items (with thumbnails)
+        # Update tree2 items (with thumbnails) - uses custom colors
         for i in range(tree2.topLevelItemCount()):
             item = tree2.topLevelItem(i)
             feedback_key = item.data(0, Qt.UserRole + 100)
@@ -1648,14 +1664,15 @@ def example() -> None:
                     FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
                     QColor(feedback[feedback_key]["background"]),
                 )
-            # Set background color (darker variations of base surface)
-            darkness = 110 + (i % 3) * 5  # 110, 115, 120
-            bg_color = base_surface.darker(darkness)
+            # Set background color from custom palette (cycles through colors)
+            color_key = color_keys[i % len(color_keys)]
+            bg_color = CUSTOM_COLORS[palette_key][color_key]
             item.setBackground(0, bg_color)
             item.setBackground(1, bg_color)
             item.setBackground(2, bg_color)
 
-        # Update tree3 items (without thumbnails)
+        # Update tree3 items (without thumbnails) - uses surface variations
+        base_surface = QColor(theme.surface_sunken)
         for i in range(tree3.topLevelItemCount()):
             item = tree3.topLevelItem(i)
             feedback_key = item.data(0, Qt.UserRole + 100)
@@ -1668,7 +1685,7 @@ def example() -> None:
                 item.setData(
                     0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, status_color
                 )
-            # Set background color
+            # Set background color (darker variations of base surface)
             darkness = 105 + (i % 4) * 5  # 105, 110, 115, 120
             bg_color = base_surface.darker(darkness)
             item.setBackground(0, bg_color)

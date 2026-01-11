@@ -1,11 +1,16 @@
-"""Code block widget with syntax highlighting."""
+"""Code block widget with syntax highlighting.
+
+Uses Pygments for syntax highlighting, supporting 500+ programming languages.
+"""
 
 # Built-in
 import os
-import re
 from typing import Optional
 
 # Third-party
+from pygments import lex
+from pygments.lexers import get_lexer_by_name, get_all_lexers
+from pygments.styles import get_style_by_name
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QFont, QSyntaxHighlighter, QTextCharFormat
 from qtpy.QtWidgets import QTextEdit, QVBoxLayout, QWidget
@@ -14,250 +19,198 @@ from qtpy.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 from fxgui import fxstyle
 
 
-class FXPythonHighlighter(QSyntaxHighlighter):
-    """Syntax highlighter for Python code with theme-aware colors."""
+def get_supported_languages() -> list[str]:
+    """Get a list of all supported language names.
 
-    # Python keywords
-    KEYWORDS = [
-        "and",
-        "as",
-        "assert",
-        "async",
-        "await",
-        "break",
-        "class",
-        "continue",
-        "def",
-        "del",
-        "elif",
-        "else",
-        "except",
-        "finally",
-        "for",
-        "from",
-        "global",
-        "if",
-        "import",
-        "in",
-        "is",
-        "lambda",
-        "None",
-        "nonlocal",
-        "not",
-        "or",
-        "pass",
-        "raise",
-        "return",
-        "True",
-        "False",
-        "try",
-        "while",
-        "with",
-        "yield",
-    ]
+    Returns:
+        A sorted list of language names that can be used with FXCodeBlock.
 
-    # Python builtins
-    BUILTINS = [
-        "abs",
-        "all",
-        "any",
-        "bin",
-        "bool",
-        "bytearray",
-        "bytes",
-        "callable",
-        "chr",
-        "classmethod",
-        "compile",
-        "complex",
-        "delattr",
-        "dict",
-        "dir",
-        "divmod",
-        "enumerate",
-        "eval",
-        "exec",
-        "filter",
-        "float",
-        "format",
-        "frozenset",
-        "getattr",
-        "globals",
-        "hasattr",
-        "hash",
-        "help",
-        "hex",
-        "id",
-        "input",
-        "int",
-        "isinstance",
-        "issubclass",
-        "iter",
-        "len",
-        "list",
-        "locals",
-        "map",
-        "max",
-        "memoryview",
-        "min",
-        "next",
-        "object",
-        "oct",
-        "open",
-        "ord",
-        "pow",
-        "print",
-        "property",
-        "range",
-        "repr",
-        "reversed",
-        "round",
-        "set",
-        "setattr",
-        "slice",
-        "sorted",
-        "staticmethod",
-        "str",
-        "sum",
-        "super",
-        "tuple",
-        "type",
-        "vars",
-        "zip",
-    ]
+    Example:
+        >>> languages = get_supported_languages()
+        >>> "python" in languages
+        True
+        >>> "javascript" in languages
+        True
+    """
+    languages = set()
+    for name, aliases, _, _ in get_all_lexers():
+        languages.add(name.lower())
+        for alias in aliases:
+            languages.add(alias.lower())
+    return sorted(languages)
 
-    def __init__(self, document):
+
+class FXPygmentsHighlighter(fxstyle.FXThemeAware, QSyntaxHighlighter):
+    """Syntax highlighter using Pygments for multi-language support.
+
+    This highlighter uses Pygments lexers and styles to tokenize and format code.
+    It leverages Pygments' built-in style system for consistent token coloring.
+
+    Args:
+        document: The QTextDocument to highlight.
+        language: The programming language name (e.g., "python", "javascript").
+
+    Example:
+        >>> highlighter = FXPygmentsHighlighter(text_edit.document(), "python")
+    """
+
+    # Pygments style to use (One Dark-like theme)
+    _DARK_STYLE = "one-dark"
+    _LIGHT_STYLE = "friendly"
+
+    def __init__(self, document, language: str = "python"):
         super().__init__(document)
+        self._language = language
+        self._lexer = None
+        self._style = None
         self._formats = {}
+
+        # Get the lexer for the specified language
+        self._update_lexer(language)
+        # Initialize formats from Pygments style
         self._update_formats()
 
-    def _update_formats(self) -> None:
+        # Connect to document changes to trigger rehighlight
+        document.contentsChanged.connect(self._on_content_changed)
+
+    def _on_content_changed(self) -> None:
+        """Handle document content changes."""
+        # QSyntaxHighlighter automatically rehighlights on content change
+        pass
+
+    def _update_lexer(self, language: str) -> None:
+        """Update the Pygments lexer for the specified language.
+
+        Args:
+            language: The programming language name.
+        """
+        try:
+            self._lexer = get_lexer_by_name(language, stripall=True)
+            self._language = language
+        except Exception:
+            # Fallback to text if language not found
+            self._lexer = get_lexer_by_name("text", stripall=True)
+            self._language = "text"
+
+    def set_language(self, language: str) -> None:
+        """Change the syntax highlighting language.
+
+        Args:
+            language: The programming language name.
+        """
+        self._update_lexer(language)
+        self.rehighlight()
+
+    def language(self) -> str:
+        """Get the current language.
+
+        Returns:
+            The current language name.
+        """
+        return self._language
+
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
         """Update syntax highlighting formats based on current theme."""
-        theme = fxstyle.FXThemeColors(fxstyle.get_theme_colors())
-        feedback = fxstyle.get_feedback_colors()
+        self._update_formats()
+        self.rehighlight()
 
-        # Keyword format (purple/magenta)
-        keyword_fmt = QTextCharFormat()
-        keyword_fmt.setForeground(QColor("#c678dd"))
-        keyword_fmt.setFontWeight(QFont.Bold)
-        self._formats["keyword"] = keyword_fmt
+    def _update_formats(self) -> None:
+        """Build format dictionary from Pygments style."""
+        self._formats = {}
 
-        # Builtin format (cyan)
-        builtin_fmt = QTextCharFormat()
-        builtin_fmt.setForeground(QColor("#56b6c2"))
-        self._formats["builtin"] = builtin_fmt
+        # Select style based on theme brightness
+        style_name = self._LIGHT_STYLE if fxstyle.is_light_theme() else self._DARK_STYLE
 
-        # String format (green)
-        string_fmt = QTextCharFormat()
-        string_fmt.setForeground(QColor(feedback["success"]["foreground"]))
-        self._formats["string"] = string_fmt
+        try:
+            self._style = get_style_by_name(style_name)
+        except Exception:
+            self._style = get_style_by_name("default")
 
-        # Comment format (gray)
-        comment_fmt = QTextCharFormat()
-        comment_fmt.setForeground(QColor(theme.text_disabled))
-        comment_fmt.setFontItalic(True)
-        self._formats["comment"] = comment_fmt
+        # Build formats for all token types from the style
+        for token_type, style_dict in self._style:
+            fmt = QTextCharFormat()
 
-        # Number format (orange)
-        number_fmt = QTextCharFormat()
-        number_fmt.setForeground(QColor(feedback["warning"]["foreground"]))
-        self._formats["number"] = number_fmt
+            # Foreground color
+            if style_dict.get("color"):
+                fmt.setForeground(QColor(f"#{style_dict['color']}"))
 
-        # Function/method format (blue)
-        function_fmt = QTextCharFormat()
-        function_fmt.setForeground(QColor(feedback["info"]["foreground"]))
-        self._formats["function"] = function_fmt
+            # Background color (usually not set for code editors)
+            if style_dict.get("bgcolor"):
+                fmt.setBackground(QColor(f"#{style_dict['bgcolor']}"))
 
-        # Decorator format (yellow)
-        decorator_fmt = QTextCharFormat()
-        decorator_fmt.setForeground(QColor("#e5c07b"))
-        self._formats["decorator"] = decorator_fmt
+            # Font weight
+            if style_dict.get("bold"):
+                fmt.setFontWeight(QFont.Bold)
 
-        # Self format (red/italic)
-        self_fmt = QTextCharFormat()
-        self_fmt.setForeground(QColor(feedback["error"]["foreground"]))
-        self_fmt.setFontItalic(True)
-        self._formats["self"] = self_fmt
+            # Italic
+            if style_dict.get("italic"):
+                fmt.setFontItalic(True)
+
+            # Underline
+            if style_dict.get("underline"):
+                fmt.setFontUnderline(True)
+
+            self._formats[token_type] = fmt
+
+    def _get_format_for_token(self, token_type) -> Optional[QTextCharFormat]:
+        """Get the format for a token type, checking parent types.
+
+        Args:
+            token_type: The Pygments token type.
+
+        Returns:
+            The QTextCharFormat for the token, or None if not found.
+        """
+        # Walk up the token type hierarchy until we find a match
+        while token_type:
+            if token_type in self._formats:
+                return self._formats[token_type]
+            # Move to parent token type
+            token_type = token_type.parent
+        return None
 
     def highlightBlock(self, text: str) -> None:
-        """Apply syntax highlighting to a block of text."""
+        """Apply syntax highlighting to a block of text.
 
-        # Keywords
-        keyword_pattern = r"\b(" + "|".join(self.KEYWORDS) + r")\b"
-        for match in re.finditer(keyword_pattern, text):
-            self.setFormat(
-                match.start(),
-                match.end() - match.start(),
-                self._formats["keyword"],
-            )
+        Args:
+            text: The text to highlight.
+        """
+        if not self._lexer or not text:
+            return
 
-        # Builtins
-        builtin_pattern = r"\b(" + "|".join(self.BUILTINS) + r")\b"
-        for match in re.finditer(builtin_pattern, text):
-            self.setFormat(
-                match.start(),
-                match.end() - match.start(),
-                self._formats["builtin"],
-            )
+        # Get the starting position of this block in the full document
+        block = self.currentBlock()
+        block_start = block.position()
 
-        # Self
-        for match in re.finditer(r"\bself\b", text):
-            self.setFormat(
-                match.start(),
-                match.end() - match.start(),
-                self._formats["self"],
-            )
+        # Get full document text for proper context
+        document = self.document()
+        full_text = document.toPlainText()
 
-        # Function definitions and calls
-        for match in re.finditer(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", text):
-            name = match.group(1)
-            if name not in self.KEYWORDS and name not in self.BUILTINS:
-                self.setFormat(
-                    match.start(),
-                    len(name),
-                    self._formats["function"],
-                )
+        # Tokenize the entire document to get proper context
+        # Then filter to tokens that affect this block
+        block_end = block_start + len(text)
 
-        # Decorators
-        for match in re.finditer(r"@[a-zA-Z_][a-zA-Z0-9_]*", text):
-            self.setFormat(
-                match.start(),
-                match.end() - match.start(),
-                self._formats["decorator"],
-            )
+        current_pos = 0
+        for token_type, token_value in lex(full_text, self._lexer):
+            token_len = len(token_value)
+            token_end = current_pos + token_len
 
-        # Numbers
-        for match in re.finditer(r"\b\d+\.?\d*\b", text):
-            self.setFormat(
-                match.start(),
-                match.end() - match.start(),
-                self._formats["number"],
-            )
+            # Check if this token overlaps with the current block
+            if token_end > block_start and current_pos < block_end:
+                # Calculate the portion of this token that falls within the block
+                rel_start = max(0, current_pos - block_start)
+                rel_end = min(len(text), token_end - block_start)
 
-        # Strings (single and double quoted)
-        string_patterns = [
-            r'""".*?"""',  # Triple double quotes
-            r"'''.*?'''",  # Triple single quotes
-            r'"[^"\\]*(\\.[^"\\]*)*"',  # Double quotes
-            r"'[^'\\]*(\\.[^'\\]*)*'",  # Single quotes
-            r'f"[^"\\]*(\\.[^"\\]*)*"',  # f-strings double
-            r"f'[^'\\]*(\\.[^'\\]*)*'",  # f-strings single
-        ]
-        for pattern in string_patterns:
-            for match in re.finditer(pattern, text, re.DOTALL):
-                self.setFormat(
-                    match.start(),
-                    match.end() - match.start(),
-                    self._formats["string"],
-                )
+                if rel_end > rel_start:
+                    fmt = self._get_format_for_token(token_type)
+                    if fmt:
+                        self.setFormat(rel_start, rel_end - rel_start, fmt)
 
-        # Comments (must be last to override other formats)
-        for match in re.finditer(r"#.*$", text):
-            self.setFormat(
-                match.start(),
-                match.end() - match.start(),
-                self._formats["comment"],
-            )
+            # Skip processing once we're past this block
+            if current_pos > block_end:
+                break
+
+            current_pos = token_end
 
     def refresh_formats(self) -> None:
         """Refresh formats when theme changes."""
@@ -269,15 +222,14 @@ class FXCodeBlock(fxstyle.FXThemeAware, QWidget):
     """A code block widget with syntax highlighting and theme-aware styling.
 
     This widget displays code with:
-    - Syntax highlighting for Python code
+    - Syntax highlighting for 500+ languages via Pygments
     - Theme-aware background and text colors
     - Monospace font
     - Read-only, selectable text
-    - Optional line numbers (future)
 
     Args:
         code: The code string to display.
-        language: The programming language (currently only "python" supported).
+        language: The programming language (e.g., "python", "javascript").
         parent: The parent widget.
 
     Example:
@@ -314,10 +266,10 @@ class FXCodeBlock(fxstyle.FXThemeAware, QWidget):
         font.setStyleHint(QFont.Monospace)
         self._text_edit.setFont(font)
 
-        # Set up syntax highlighter
-        self._highlighter = None
-        if language == "python":
-            self._highlighter = FXPythonHighlighter(self._text_edit.document())
+        # Set up syntax highlighter for any language
+        self._highlighter = FXPygmentsHighlighter(
+            self._text_edit.document(), language
+        )
 
         # Set the code
         self._text_edit.setPlainText(code.strip())
@@ -345,32 +297,6 @@ class FXCodeBlock(fxstyle.FXThemeAware, QWidget):
                 padding: 8px;
                 selection-background-color: {theme.accent_primary};
                 selection-color: {theme.text};
-            }}
-            QScrollBar:vertical {{
-                background: {theme.surface};
-                width: 8px;
-                border-radius: 4px;
-            }}
-            QScrollBar::handle:vertical {{
-                background: {theme.border};
-                border-radius: 4px;
-                min-height: 20px;
-            }}
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-                height: 0px;
-            }}
-            QScrollBar:horizontal {{
-                background: {theme.surface};
-                height: 8px;
-                border-radius: 4px;
-            }}
-            QScrollBar::handle:horizontal {{
-                background: {theme.border};
-                border-radius: 4px;
-                min-width: 20px;
-            }}
-            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
-                width: 0px;
             }}
             """
         )
@@ -412,22 +338,16 @@ class FXCodeBlock(fxstyle.FXThemeAware, QWidget):
         """Set the programming language for syntax highlighting.
 
         Args:
-            language: The language name (currently only "python" supported).
+            language: The language name. Supports 500+ languages via Pygments
+                (e.g., "python", "javascript", "cpp", "rust", "go", "java").
+                Use get_supported_languages() to see all available options.
         """
         self._language = language
-
-        # Remove old highlighter
-        if self._highlighter:
-            self._highlighter.setDocument(None)
-            self._highlighter = None
-
-        # Create new highlighter
-        if language == "python":
-            self._highlighter = FXPythonHighlighter(self._text_edit.document())
+        self._highlighter.set_language(language)
 
 
 def example() -> None:
-    """Example demonstrating the FXCodeBlock widget."""
+    """Example demonstrating the FXCodeBlock widget with multiple languages."""
     import sys
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 
@@ -436,44 +356,91 @@ def example() -> None:
     window = FXMainWindow(title="FXCodeBlock Example")
     window.toolbar.hide()
 
-    from qtpy.QtWidgets import QVBoxLayout, QWidget, QLabel
+    from qtpy.QtWidgets import QVBoxLayout, QWidget, QLabel, QScrollArea
+
+    scroll = QScrollArea()
+    scroll.setWidgetResizable(True)
 
     central = QWidget()
     layout = QVBoxLayout(central)
 
-    layout.addWidget(QLabel("Python code with syntax highlighting:"))
+    # Python example
+    layout.addWidget(QLabel("Python:"))
+    python_code = '''
+def fibonacci(n: int) -> int:
+    """Calculate the nth Fibonacci number."""
+    if n <= 1:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
 
-    code = '''
-def update_item_colors(_theme_name: str = None):
-    """Update item backgrounds based on current theme."""
-    theme = FXThemeColors(get_theme_colors())
-    feedback = get_feedback_colors()
-
-    for i, item in enumerate(items):
-        # Get feedback color for status
-        status_key = item.data(0, Qt.UserRole + 100)
-        if status_key in feedback:
-            color = QColor(feedback[status_key]["foreground"])
-            item.setData(0, STATUS_DOT_COLOR_ROLE, color)
-
-        # Apply themed background
-        bg = QColor(theme.surface_sunken).darker(110 + i * 5)
-        item.setBackground(0, bg)
-
-    tree.viewport().update()
-
-# Apply initial colors and connect to theme changes
-update_item_colors()
-theme_manager.theme_changed.connect(update_item_colors)
+# Print first 10 Fibonacci numbers
+for i in range(10):
+    print(f"F({i}) = {fibonacci(i)}")
 '''
+    layout.addWidget(FXCodeBlock(python_code, language="python"))
 
-    code_block = FXCodeBlock(code)
-    layout.addWidget(code_block)
+    # JavaScript example
+    layout.addWidget(QLabel("JavaScript:"))
+    js_code = """
+async function fetchUserData(userId) {
+    // Fetch user data from API
+    const response = await fetch(`/api/users/${userId}`);
+    if (!response.ok) {
+        throw new Error("Failed to fetch user");
+    }
+    return response.json();
+}
+
+const users = ["alice", "bob", "charlie"];
+users.forEach(user => console.log(user.toUpperCase()));
+"""
+    layout.addWidget(FXCodeBlock(js_code, language="javascript"))
+
+    # C++ example
+    layout.addWidget(QLabel("C++:"))
+    cpp_code = """
+#include <iostream>
+#include <vector>
+
+template<typename T>
+T sum(const std::vector<T>& values) {
+    T result = 0;
+    for (const auto& val : values) {
+        result += val;
+    }
+    return result;
+}
+
+int main() {
+    std::vector<int> nums = {1, 2, 3, 4, 5};
+    std::cout << "Sum: " << sum(nums) << std::endl;
+    return 0;
+}
+"""
+    layout.addWidget(FXCodeBlock(cpp_code, language="cpp"))
+
+    # Rust example
+    layout.addWidget(QLabel("Rust:"))
+    rust_code = """
+fn main() {
+    let numbers: Vec<i32> = (1..=5).collect();
+
+    // Using iterators and closures
+    let doubled: Vec<i32> = numbers
+        .iter()
+        .map(|x| x * 2)
+        .collect();
+
+    println!("Doubled: {:?}", doubled);
+}
+"""
+    layout.addWidget(FXCodeBlock(rust_code, language="rust"))
 
     layout.addStretch()
 
-    window.setCentralWidget(central)
-    window.resize(600, 500)
+    scroll.setWidget(central)
+    window.setCentralWidget(scroll)
+    window.resize(700, 600)
     window.show()
 
     sys.exit(app.exec_())

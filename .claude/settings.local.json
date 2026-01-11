@@ -4,7 +4,9 @@
       "Bash(python -m py_compile:*)",
       "Bash(python -c:*)",
       "Bash(echo:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)"
     ]
   }
 }
