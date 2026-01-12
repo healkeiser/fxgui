@@ -1018,7 +1018,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         # Use fallback if thumbnail is null/invalid
         if thumbnail.isNull():
             fallback_path = (
-                Path(__file__).parent.parent / "images" / "splash.png"
+                Path(__file__).parent.parent / "images" / "missing_image.png"
             )
             if fallback_path.exists():
                 thumbnail = QPixmap(str(fallback_path))
