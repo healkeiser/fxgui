@@ -1,5 +1,17 @@
 recursive-include fxgui *
 
+# Root-level directories to exclude (safety)
+prune .vscode
+prune .github
+prune .claude
+prune .cache
+prune .venv
+prune .scripts
+prune build
+prune docs
+prune site
+prune *.egg-info
+
 # Bytecode and cache
 global-exclude __pycache__/*
 global-exclude *.pyc
