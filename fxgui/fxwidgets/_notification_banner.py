@@ -144,7 +144,6 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
         # Fixed width for pop notification style
         self.setFixedWidth(width)
-        self.setMinimumHeight(60)
 
         # Setup frame styling
         self.setFrameShape(QFrame.StyledPanel)
@@ -190,6 +189,9 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         self._message_label = QLabel(message)
         self._message_label.setTextFormat(Qt.RichText)
         self._message_label.setWordWrap(True)
+        self._message_label.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Minimum
+        )
         main_layout.addWidget(self._message_label)
 
         # Action button (optional)
@@ -250,7 +252,9 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
                 parent_width = parent.width()
                 end_x = parent_width - self._notification_width - self._margin
                 current_end = self._slide_animation.endValue()
-                self._slide_animation.setEndValue(QPoint(end_x, current_end.y()))
+                self._slide_animation.setEndValue(
+                    QPoint(end_x, current_end.y())
+                )
             return
 
         parent_width = parent.width()
@@ -401,8 +405,12 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
             y_offset = self._margin
             for notification in active_list:
                 if notification is not self and notification.isVisible():
-                    notification_bottom = notification.y() + notification.height()
-                    y_offset = max(y_offset, notification_bottom + self._spacing)
+                    notification_bottom = (
+                        notification.y() + notification.height()
+                    )
+                    y_offset = max(
+                        y_offset, notification_bottom + self._spacing
+                    )
 
             parent_width = parent.width()
             # Start position: off-screen to the right
@@ -427,7 +435,9 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
     def _on_slide_in_finished(self) -> None:
         """Handle slide-in completion to ensure correct final position."""
         try:
-            self._slide_animation.finished.disconnect(self._on_slide_in_finished)
+            self._slide_animation.finished.disconnect(
+                self._on_slide_in_finished
+            )
         except RuntimeError:
             pass  # Already disconnected
 
@@ -665,6 +675,20 @@ def example() -> None:
         lambda: show_notification(DEBUG, "Debug: variable_x = 42")
     )
     buttons_layout.addWidget(debug_btn)
+
+    long_btn = QPushButton("Long Rich Text")
+    long_btn.clicked.connect(
+        lambda: show_notification(
+            INFO,
+            "This is a <b>long notification</b> with <i>rich text formatting</i> "
+            "to test how the banner adapts its height to content. "
+            "It includes <b>bold</b>, <i>italic</i>, and even "
+            "<span style='color: #ff6b6b;'>colored text</span>. "
+            "The notification should grow vertically to accommodate all this text.<br><br>"
+            "Make sure to test line breaks and overall appearance!",
+        )
+    )
+    buttons_layout.addWidget(long_btn)
 
     content_layout.addWidget(buttons_group)
     content_layout.addStretch()
