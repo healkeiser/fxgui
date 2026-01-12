@@ -684,7 +684,8 @@ def example() -> None:
             "to test how the banner adapts its height to content. "
             "It includes <b>bold</b>, <i>italic</i>, and even "
             "<span style='color: #ff6b6b;'>colored text</span>. "
-            "The notification should grow vertically to accommodate all this text.",
+            "The notification should grow vertically to accommodate all this text.<br><br>"
+            "Make sure to test line breaks and overall appearance!",
         )
     )
     buttons_layout.addWidget(long_btn)
