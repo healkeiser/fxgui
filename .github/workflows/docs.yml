@@ -35,11 +35,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          # Get version from tag or use 'dev' for main branch
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-            mike deploy --push --update-aliases "$VERSION" latest
-            mike set-default --push latest
-          else
-            mike deploy --push dev
-          fi
+          # Always use the latest git tag as version
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          mike deploy --push --update-aliases "$VERSION" latest
+          mike set-default --push latest
