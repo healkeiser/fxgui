@@ -1,3 +1,75 @@
 recursive-include fxgui *
+
+# Bytecode and cache
 global-exclude __pycache__/*
+global-exclude *.pyc
+global-exclude *.pyo
+
+# Version control
+global-exclude .git
+global-exclude .git/*
+global-exclude .gitignore
+global-exclude .gitattributes
+global-exclude .gitmodules
+prune **/.git
+prune **/.github
+
+# IDE and editor files
 global-exclude *.ai
+global-exclude .DS_Store
+global-exclude Thumbs.db
+global-exclude *.swp
+global-exclude *.swo
+global-exclude *~
+
+# JavaScript/Node (not needed for Python Qt library)
+global-exclude *.js
+global-exclude *.mjs
+global-exclude *.ts
+global-exclude *.d.ts
+global-exclude package.json
+global-exclude package-lock.json
+global-exclude composer.json
+global-exclude yarn.lock
+global-exclude *.npmignore
+global-exclude .npmrc
+global-exclude .nvmrc
+global-exclude .node-version
+prune **/node_modules
+prune **/js
+prune **/js-packages
+
+# Web assets (not needed)
+global-exclude *.css
+global-exclude *.less
+global-exclude *.scss
+global-exclude *.woff
+global-exclude *.woff2
+global-exclude *.ttf
+global-exclude *.eot
+global-exclude *.otf
+prune **/css
+prune **/webfonts
+prune **/less
+prune **/scss
+prune **/sprites
+prune **/metadata
+
+# Documentation in submodules
+global-exclude CHANGELOG.md
+global-exclude CONTRIBUTING.md
+global-exclude CODE_OF_CONDUCT.md
+global-exclude PULL_REQUEST_TEMPLATE.md
+prune **/.github
+prune **/ISSUE_TEMPLATE
+
+# Config/tooling files from submodules
+global-exclude .editorconfig
+global-exclude .prettierrc*
+global-exclude .prettierignore
+global-exclude .markdownlint*
+global-exclude .jsonschema.json
+global-exclude .dockerignore
+global-exclude Dockerfile
+prune **/.devcontainer
+prune **/.husky
