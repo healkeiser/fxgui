@@ -31,6 +31,15 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
 
+      - name: Fetch gh-pages branch
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
+            git fetch origin gh-pages:gh-pages
+            echo "Fetched existing gh-pages branch"
+          else
+            echo "gh-pages branch does not exist yet, mike will create it"
+          fi
+
       - name: Deploy docs (versioned)
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -38,4 +47,11 @@ jobs:
           # Always use the latest git tag as version
           VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
           mike deploy --push --update-aliases "$VERSION" latest
+
+          # Re-fetch gh-pages after deploy to get the updated branch
+          git fetch origin gh-pages:gh-pages --force
           mike set-default --push latest
+
+          # Verify
+          echo "Mike versions:"
+          mike list
