@@ -39,6 +39,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
             mike deploy --push --update-aliases "$VERSION" latest
+            mike set-default --push latest
           else
             mike deploy --push dev
           fi
