@@ -107,16 +107,13 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
         painter.setRenderHint(QPainter.Antialiasing)
 
         # Get current theme colors (dynamic for theme switching)
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
-        on_color = QColor(self._custom_on_color or accent_colors["primary"])
+        on_color = QColor(self._custom_on_color or self.theme.accent_primary)
         off_color = QColor(
-            self._custom_off_color or theme_colors["surface_sunken"]
+            self._custom_off_color or self.theme.surface_sunken
         )
         thumb_color = QColor(self._custom_thumb_color or "#ffffff")
-        border_color = QColor(theme_colors["border"])
-        disabled_color = QColor(theme_colors["text_disabled"])
+        border_color = QColor(self.theme.border)
+        disabled_color = QColor(self.theme.text_disabled)
 
         # Calculate dimensions
         width = self.width()

@@ -4,6 +4,7 @@ QProgressBar:horizontal {
     text-align: center;
     padding: 1px;
     background: @surface_sunken;
+    color: @text_on_accent_primary;
     height: 8px;
 }
 
@@ -595,17 +596,6 @@ QMainWindow::separator:hover
 }
 
 
-QMenu::separator
-{
-    height: 1px;
-    background-color: @border;
-    color: @text;
-    padding-left: 4px;
-    margin-left: 10px;
-    margin-right: 5px;
-}
-
-
 QFrame
 {
     border-radius: 2px;
@@ -624,34 +614,18 @@ QStackedWidget
 }
 
 /* Text widgets - must come AFTER QFrame to override border-radius */
-QTextEdit
-{
+QTextEdit,
+QPlainTextEdit,
+QTextBrowser {
     background-color: @surface_sunken;
     color: @text;
     border: 1px solid @border;
     border-radius: 4px;
 }
 
-QTextEdit#fxOutputLogArea
-{
+QTextEdit#fxOutputLogArea {
     font-family: "Consolas", "Courier New", monospace;
     font-size: 9pt;
-}
-
-QPlainTextEdit
-{
-    background-color: @surface_sunken;
-    color: @text;
-    border: 1px solid @border;
-    border-radius: 4px;
-}
-
-QTextBrowser
-{
-    background-color: @surface_sunken;
-    color: @text;
-    border: 1px solid @border;
-    border-radius: 4px;
 }
 
 QToolBar {
@@ -1208,9 +1182,8 @@ QTreeView::branch:!has-children:!has-siblings:adjoins-item {
     border-image: url(~icons/transparent.png);
 } */
 
-QTreeView:branch:selected, QTreeView:branch:hover
-{
-    background: url(~icons/transparent.png);
+QTreeView::branch {
+    background: transparent;
 }
 
 QTreeView::branch:has-siblings:!adjoins-item {
@@ -1250,17 +1223,21 @@ QTreeView::branch:open:has-children:has-siblings:hover  {
 }
 
 
+QListView::item,
+QTreeView::item {
+    padding: 6px 8px;
+    border-radius: 2px;
+}
+
 QListView::item:!selected:hover,
-QListView::item:!selected:hover,
-QTreeView::item:!selected:hover  {
+QTreeView::item:!selected:hover {
     background: @accent_secondary;
     outline: 0;
-    color: @text_on_accent_secondary
+    color: @text_on_accent_secondary;
 }
 
 QListView::item:selected:hover,
-QListView::item:selected:hover,
-QTreeView::item:selected:hover  {
+QTreeView::item:selected:hover {
     background: @accent_primary;
     color: @text_on_accent_primary;
 }
@@ -1282,10 +1259,7 @@ QSlider::handle:horizontal {
     border-radius: 4px;
 }
 
-QSlider::handle:horizontal:hover {
-    background: @slider_thumb_hover;
-}
-
+QSlider::handle:horizontal:hover,
 QSlider::handle:horizontal:pressed {
     background: @slider_thumb_hover;
 }
@@ -1315,12 +1289,17 @@ QSlider::handle:vertical {
     border-radius: 4px;
 }
 
-QSlider::handle:vertical:hover {
+QSlider::handle:vertical:hover,
+QSlider::handle:vertical:pressed {
     background: @slider_thumb_hover;
 }
 
-QSlider::handle:vertical:pressed {
-    background: @slider_thumb_hover;
+QSlider::sub-page:vertical {
+    border: none;
+    width: 6px;
+    background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 @accent_primary, stop:1 @accent_secondary);
+    margin: 0 0px;
+    border-radius: 3px;
 }
 
 QToolButton {
@@ -1402,11 +1381,6 @@ QTableView
     gridline-color: @grid;
 }
 
-
-QHeaderView
-{
-    border-radius: 0px;
-}
 
 QTableView::item:pressed,
 QListView::item:pressed,

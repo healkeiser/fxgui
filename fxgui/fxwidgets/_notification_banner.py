@@ -188,6 +188,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
         # Message label
         self._message_label = QLabel(message)
+        self._message_label.setTextFormat(Qt.RichText)
         self._message_label.setWordWrap(True)
         main_layout.addWidget(self._message_label)
 
@@ -202,6 +203,9 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         self._slide_animation = QPropertyAnimation(self, b"pos", self)
         self._slide_animation.setEasingCurve(QEasingCurve.OutCubic)
         self._slide_animation.setDuration(250)
+
+        # Track if we're sliding in (to update position after animation)
+        self._is_sliding_in = False
 
         # Setup drop shadow effect
         self._shadow_effect = QGraphicsDropShadowEffect(self)
@@ -219,7 +223,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
 
         # Apply initial styling
-        self._apply_theme_styles()
+        self._on_theme_changed()
 
         # Ensure widget sizes to fit content
         self.adjustSize()
@@ -240,8 +244,13 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         if not parent or not self.isVisible():
             return
 
-        # Only reposition if not currently animating
+        # If currently animating a slide-in, update the animation end value
         if self._slide_animation.state() == QPropertyAnimation.Running:
+            if self._is_sliding_in:
+                parent_width = parent.width()
+                end_x = parent_width - self._notification_width - self._margin
+                current_end = self._slide_animation.endValue()
+                self._slide_animation.setEndValue(QPoint(end_x, current_end.y()))
             return
 
         parent_width = parent.width()
@@ -251,16 +260,11 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
     def _get_severity_colors(self, severity: Optional[int]) -> dict:
         """Get colors based on severity level."""
-        # Get feedback colors from theme JSONC
-        colors = fxstyle.get_colors()
-        feedback = colors.get("feedback", {})
-        theme_colors = fxstyle.get_theme_colors()
-
         # If no severity, use default text color
         if severity is None:
             return {
-                "icon": theme_colors.get("text", "#ffffff"),
-                "accent": theme_colors.get("text", "#ffffff"),
+                "icon": self.theme.text,
+                "accent": self.theme.text,
             }
 
         # Map severity to feedback key
@@ -274,25 +278,24 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         }
 
         key = severity_to_key.get(severity, "info")
-        fb = feedback.get(key, {})
-        foreground = fb.get("foreground", "#ffffff")
+        feedback = fxstyle.get_feedback_colors()
+        foreground = feedback[key]["foreground"]
 
         return {
             "icon": foreground,
             "accent": foreground,
         }
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles (similar to FXProgressCard)."""
-        theme_colors = fxstyle.get_theme_colors()
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         severity_colors = self._get_severity_colors(self._severity_type)
 
         # Frame styling (card-like, darker background to stand out)
         self.setStyleSheet(
             f"""
             FXNotificationBanner {{
-                background-color: {theme_colors['surface_sunken']};
-                border: 1px solid {theme_colors['border']};
+                background-color: {self.theme.surface_sunken};
+                border: 1px solid {self.theme.border};
                 border-radius: 8px;
             }}
         """
@@ -322,20 +325,16 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         )
 
         # Message label (muted text, like FXProgressCard description)
+        # Note: We avoid setting font properties via stylesheet to preserve
+        # rich text formatting (bold, italic, etc.) from HTML tags
         self._message_label.setStyleSheet(
-            f"""
-            QLabel {{
-                color: {theme_colors['text_muted']};
-                font-size: 12px;
-                background: transparent;
-            }}
-        """
+            f"color: {self.theme.text_muted}; background: transparent;"
         )
 
         # Close button styling
         if hasattr(self, "_close_button"):
             fxicons.set_icon(
-                self._close_button, "close", color=theme_colors["text_muted"]
+                self._close_button, "close", color=self.theme.text_muted
             )
             self._close_button.setStyleSheet(
                 f"""
@@ -345,18 +344,17 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
                     border-radius: 10px;
                 }}
                 QPushButton:hover {{
-                    background: {theme_colors['surface_alt']};
+                    background: {self.theme.surface_alt};
                 }}
             """
             )
 
         # Action button styling
         if hasattr(self, "_action_button"):
-            accent_colors = fxstyle.get_accent_colors()
             self._action_button.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background: {accent_colors['primary']};
+                    background: {self.theme.accent_primary};
                     color: #ffffff;
                     border: none;
                     border-radius: 4px;
@@ -365,7 +363,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
                     font-size: 12px;
                 }}
                 QPushButton:hover {{
-                    background: {accent_colors['secondary']};
+                    background: {self.theme.accent_secondary};
                 }}
             """
             )
@@ -376,6 +374,9 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         Automatically calculates position based on other active notifications
         for the same parent widget, stacking them vertically with spacing.
         """
+        # Ensure layout is calculated before showing
+        self.adjustSize()
+
         super().show()
 
         # Log message if logger is provided
@@ -395,16 +396,13 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
             if self not in active_list:
                 active_list.append(self)
 
-            # Calculate y position based on existing notifications
+            # Calculate y position based on existing visible notifications
+            # Find the bottom-most notification to stack below it
             y_offset = self._margin
             for notification in active_list:
                 if notification is not self and notification.isVisible():
-                    y_offset = max(
-                        y_offset,
-                        notification.y()
-                        + notification.height()
-                        + self._spacing,
-                    )
+                    notification_bottom = notification.y() + notification.height()
+                    y_offset = max(y_offset, notification_bottom + self._spacing)
 
             parent_width = parent.width()
             # Start position: off-screen to the right
@@ -414,15 +412,29 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
             self.move(start_x, y_offset)
 
-            # Slide in animation
+            # Mark as sliding in and connect to finished signal
+            self._is_sliding_in = True
             self._slide_animation.stop()
             self._slide_animation.setStartValue(QPoint(start_x, y_offset))
             self._slide_animation.setEndValue(QPoint(end_x, y_offset))
+            self._slide_animation.finished.connect(self._on_slide_in_finished)
             self._slide_animation.start()
 
         # Start auto-dismiss timer
         if self._timeout > 0:
             self._dismiss_timer.start(self._timeout)
+
+    def _on_slide_in_finished(self) -> None:
+        """Handle slide-in completion to ensure correct final position."""
+        try:
+            self._slide_animation.finished.disconnect(self._on_slide_in_finished)
+        except RuntimeError:
+            pass  # Already disconnected
+
+        self._is_sliding_in = False
+
+        # Ensure final position is correct (handles any resize during animation)
+        self._update_position()
 
     def dismiss(self) -> None:
         """Dismiss the notification with slide-out animation to the right."""

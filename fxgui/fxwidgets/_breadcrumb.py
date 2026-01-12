@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._tooltip import FXTooltip
 
 
 class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
@@ -91,16 +92,24 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
             self._back_button = QPushButton()
             self._back_button.setCursor(Qt.PointingHandCursor)
             self._back_button.setFixedSize(28, 28)
-            self._back_button.setToolTip("Back")
             fxicons.set_icon(self._back_button, "arrow_back")
             self._back_button.clicked.connect(self.go_back)
+            self._back_button_tooltip = FXTooltip(
+                parent=self._back_button,
+                title="Back",
+                description="Navigate to previous location",
+            )
 
             self._forward_button = QPushButton()
             self._forward_button.setCursor(Qt.PointingHandCursor)
             self._forward_button.setFixedSize(28, 28)
-            self._forward_button.setToolTip("Forward")
             fxicons.set_icon(self._forward_button, "arrow_forward")
             self._forward_button.clicked.connect(self.go_forward)
+            self._forward_button_tooltip = FXTooltip(
+                parent=self._forward_button,
+                title="Forward",
+                description="Navigate to next location",
+            )
 
             main_layout.addWidget(self._back_button)
             main_layout.addWidget(self._forward_button)
@@ -145,8 +154,8 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
         if self._show_navigation:
             self._update_nav_buttons()
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-aware styles to all widgets."""
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         # Re-apply icons with current theme color
         if self._show_navigation:
             fxicons.set_icon(self._back_button, "arrow_back")
@@ -389,11 +398,9 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
 
     def _add_separator(self) -> None:
         """Add a separator icon."""
-        theme_colors = fxstyle.get_theme_colors()
-
         label = QLabel()
         icon = fxicons.get_icon(
-            self._separator, color=theme_colors["text_muted"]
+            self._separator, color=self.theme.text_muted
         )
         label.setPixmap(icon.pixmap(12, 12))
         label.setStyleSheet("background: transparent;")

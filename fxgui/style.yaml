@@ -23,6 +23,8 @@
 # Each level has two colors:
 #   - foreground: Text/icon color for the message
 #   - background: Background color for the notification/log entry
+#
+# ! Deprecated, these are now defined within each theme
 
 feedback:
   debug:
@@ -48,10 +50,15 @@ feedback:
 
 dcc:
   houdini: "#ff6600"
-  maya: "#38a6cc"
-  nuke: "#fcb434"
+  maya: "#38a5cc"
+  nuke: "#f9b621"
   megascans: "#8ecd4f"
   bridge: "#1aa9f3"
+  3dsmax: "#38a5cc"
+  blender: "#eb7a08"
+  cinema4d: "#6796fa"
+  redshit: "#f94067"
+
 
 # =============================================================================
 # THEME DEFINITIONS
@@ -149,6 +156,24 @@ themes:
     # Icon
     icon: "#b4b4b4"
 
+    # Feedback colors (dark theme)
+    feedback:
+      debug:
+        foreground: "#26C6DA"
+        background: "#006064"
+      info:
+        foreground: "#7661f6"
+        background: "#372d75"
+      success:
+        foreground: "#8ac549"
+        background: "#466425"
+      warning:
+        foreground: "#ffbb33"
+        background: "#7b5918"
+      error:
+        foreground: "#ff4444"
+        background: "#7b2323"
+
   # ===========================================================================
   # LIGHT THEME
   # ===========================================================================
@@ -194,8 +219,27 @@ themes:
     # Icon
     icon: "#424242"
 
+    # Feedback colors (light theme)
+    feedback:
+      debug:
+        foreground: "#00838F"
+        background: "#80DEEA"
+      info:
+        foreground: "#5E35B1"
+        background: "#B39DDB"
+      success:
+        foreground: "#2E7D32"
+        background: "#A5D6A7"
+      warning:
+        foreground: "#E65100"
+        background: "#FFCC80"
+      error:
+        foreground: "#C62828"
+        background: "#EF9A9A"
+
   # ===========================================================================
   # DRACULA THEME - Inherits from dark, overrides accent and surface colors
+  # Source: https://draculatheme.com/contribute
   # ===========================================================================
   dracula:
     <<: *dark # Inherit all dark theme colors
@@ -244,13 +288,14 @@ themes:
 
   # ===========================================================================
   # ONE DARK PRO THEME - Inherits from dark
+  # Source: https://github.com/Binaryify/OneDark-Pro
   # ===========================================================================
   one_dark_pro:
     <<: *dark # Inherit all dark theme colors
 
     # Override accent colors
     accent_primary: "#61afef"
-    accent_secondary: "#528bff"
+    accent_secondary: "#4d8cc9"
 
     # Override surface colors
     surface: "#282c34"
@@ -268,7 +313,7 @@ themes:
     text_muted: "#828997"
     text_disabled: "#5c6370"
     text_on_accent_primary: "#282c34"
-    text_on_accent_secondary: "#ffffff"
+    text_on_accent_secondary: "#282c34"
 
     # Override interactive states
     state_hover: "#3a3f4b"
@@ -289,3 +334,346 @@ themes:
 
     # Override icon
     icon: "#abb2bf"
+
+  # ===========================================================================
+  # GITHUB DARK THEME - GitHub's official dark theme
+  # Source: https://primer.style/foundations/color
+  # ===========================================================================
+  github_dark:
+    <<: *dark # Inherit all dark theme colors
+
+    # Override accent colors
+    accent_primary: "#58a6ff"
+    accent_secondary: "#388bfd"
+
+    # Override surface colors
+    surface: "#0d1117"
+    surface_alt: "#161b22"
+    surface_sunken: "#010409"
+    tooltip: "#1f242a"
+
+    # Override border colors
+    border: "#30363d"
+    border_light: "#484f58"
+    border_strong: "#30363d"
+
+    # Override text colors
+    text: "#e6edf3"
+    text_muted: "#8b949e"
+    text_disabled: "#484f58"
+    text_on_accent_primary: "#0d1117"
+    text_on_accent_secondary: "#0d1117"
+
+    # Override interactive states
+    state_hover: "#1f242a"
+    state_pressed: "#30363d"
+
+    # Override scrollbar
+    scrollbar_track: "#161b22"
+    scrollbar_thumb: "#30363d"
+    scrollbar_thumb_hover: "#484f58"
+
+    # Override layout
+    grid: "#30363d"
+    separator: "#484f58"
+
+    # Override slider
+    slider_thumb: "#8b949e"
+    slider_thumb_hover: "#e6edf3"
+
+    # Override icon
+    icon: "#8b949e"
+
+  # ===========================================================================
+  # GITHUB LIGHT THEME - GitHub's official light theme
+  # Source: https://primer.style/foundations/color
+  # ===========================================================================
+  github_light:
+    <<: *light # Inherit all light theme colors
+
+    # Override accent colors
+    accent_primary: "#0969da"
+    accent_secondary: "#0550ae"
+
+    # Override surface colors
+    surface: "#ffffff"
+    surface_alt: "#f6f8fa"
+    surface_sunken: "#f6f8fa"
+    tooltip: "#eaeef2"
+
+    # Override border colors
+    border: "#d0d7de"
+    border_light: "#afb8c1"
+    border_strong: "#d0d7de"
+
+    # Override text colors
+    text: "#1f2328"
+    text_muted: "#656d76"
+    text_disabled: "#8c959f"
+    text_on_accent_primary: "#ffffff"
+    text_on_accent_secondary: "#ffffff"
+
+    # Override interactive states
+    state_hover: "#f3f4f6"
+    state_pressed: "#eaeef2"
+
+    # Override scrollbar
+    scrollbar_track: "#f6f8fa"
+    scrollbar_thumb: "#afb8c1"
+    scrollbar_thumb_hover: "#8c959f"
+
+    # Override layout
+    grid: "#d0d7de"
+    separator: "#afb8c1"
+
+    # Override slider
+    slider_thumb: "#656d76"
+    slider_thumb_hover: "#1f2328"
+
+    # Override icon
+    icon: "#656d76"
+
+  # ===========================================================================
+  # CATPPUCCIN MOCHA THEME - Soothing pastel dark theme
+  # Source: https://github.com/catppuccin/catppuccin
+  # ===========================================================================
+  catppuccin_mocha:
+    <<: *dark # Inherit all dark theme colors
+
+    # Override accent colors
+    accent_primary: "#89b4fa"
+    accent_secondary: "#74c7ec"
+
+    # Override surface colors
+    surface: "#1e1e2e"
+    surface_alt: "#181825"
+    surface_sunken: "#11111b"
+    tooltip: "#313244"
+
+    # Override border colors
+    border: "#313244"
+    border_light: "#45475a"
+    border_strong: "#313244"
+
+    # Override text colors
+    text: "#cdd6f4"
+    text_muted: "#a6adc8"
+    text_disabled: "#585b70"
+    text_on_accent_primary: "#1e1e2e"
+    text_on_accent_secondary: "#1e1e2e"
+
+    # Override interactive states
+    state_hover: "#313244"
+    state_pressed: "#45475a"
+
+    # Override scrollbar
+    scrollbar_track: "#181825"
+    scrollbar_thumb: "#45475a"
+    scrollbar_thumb_hover: "#585b70"
+
+    # Override layout
+    grid: "#45475a"
+    separator: "#585b70"
+
+    # Override slider
+    slider_thumb: "#a6adc8"
+    slider_thumb_hover: "#cdd6f4"
+
+    # Override icon
+    icon: "#cdd6f4"
+
+  # ===========================================================================
+  # CATPPUCCIN LATTE THEME - Soothing pastel light theme
+  # Source: https://github.com/catppuccin/catppuccin
+  # ===========================================================================
+  catppuccin_latte:
+    <<: *light # Inherit all light theme colors
+
+    # Override accent colors
+    accent_primary: "#1e66f5"
+    accent_secondary: "#04a5e5"
+
+    # Override surface colors
+    surface: "#eff1f5"
+    surface_alt: "#e6e9ef"
+    surface_sunken: "#dce0e8"
+    tooltip: "#ccd0da"
+
+    # Override border colors
+    border: "#ccd0da"
+    border_light: "#bcc0cc"
+    border_strong: "#ccd0da"
+
+    # Override text colors
+    text: "#4c4f69"
+    text_muted: "#6c6f85"
+    text_disabled: "#9ca0b0"
+    text_on_accent_primary: "#eff1f5"
+    text_on_accent_secondary: "#eff1f5"
+
+    # Override interactive states
+    state_hover: "#e6e9ef"
+    state_pressed: "#ccd0da"
+
+    # Override scrollbar
+    scrollbar_track: "#e6e9ef"
+    scrollbar_thumb: "#bcc0cc"
+    scrollbar_thumb_hover: "#9ca0b0"
+
+    # Override layout
+    grid: "#bcc0cc"
+    separator: "#9ca0b0"
+
+    # Override slider
+    slider_thumb: "#6c6f85"
+    slider_thumb_hover: "#4c4f69"
+
+    # Override icon
+    icon: "#4c4f69"
+
+  # ===========================================================================
+  # NORD THEME - Arctic, north-bluish color palette
+  # Source: https://www.nordtheme.com/docs/colors-and-palettes
+  # ===========================================================================
+  nord:
+    <<: *dark # Inherit all dark theme colors
+
+    # Override accent colors
+    accent_primary: "#88c0d0"
+    accent_secondary: "#81a1c1"
+
+    # Override surface colors
+    surface: "#2e3440"
+    surface_alt: "#3b4252"
+    surface_sunken: "#242932"
+    tooltip: "#3b4252"
+
+    # Override border colors
+    border: "#3b4252"
+    border_light: "#434c5e"
+    border_strong: "#3b4252"
+
+    # Override text colors
+    text: "#eceff4"
+    text_muted: "#d8dee9"
+    text_disabled: "#4c566a"
+    text_on_accent_primary: "#2e3440"
+    text_on_accent_secondary: "#2e3440"
+
+    # Override interactive states
+    state_hover: "#3b4252"
+    state_pressed: "#434c5e"
+
+    # Override scrollbar
+    scrollbar_track: "#3b4252"
+    scrollbar_thumb: "#4c566a"
+    scrollbar_thumb_hover: "#5e6779"
+
+    # Override layout
+    grid: "#434c5e"
+    separator: "#4c566a"
+
+    # Override slider
+    slider_thumb: "#d8dee9"
+    slider_thumb_hover: "#eceff4"
+
+    # Override icon
+    icon: "#d8dee9"
+
+  # ===========================================================================
+  # MATERIAL DARK THEME - Google Material Design dark
+  # Source: https://m3.material.io/styles/color
+  # ===========================================================================
+  material_dark:
+    <<: *dark # Inherit all dark theme colors
+
+    # Override accent colors
+    accent_primary: "#82aaff"
+    accent_secondary: "#6182b8"
+
+    # Override surface colors
+    surface: "#212121"
+    surface_alt: "#1a1a1a"
+    surface_sunken: "#121212"
+    tooltip: "#2d2d2d"
+
+    # Override border colors
+    border: "#2d2d2d"
+    border_light: "#424242"
+    border_strong: "#2d2d2d"
+
+    # Override text colors
+    text: "#eeffff"
+    text_muted: "#b0bec5"
+    text_disabled: "#546e7a"
+    text_on_accent_primary: "#212121"
+    text_on_accent_secondary: "#212121"
+
+    # Override interactive states
+    state_hover: "#2d2d2d"
+    state_pressed: "#424242"
+
+    # Override scrollbar
+    scrollbar_track: "#1a1a1a"
+    scrollbar_thumb: "#424242"
+    scrollbar_thumb_hover: "#546e7a"
+
+    # Override layout
+    grid: "#424242"
+    separator: "#546e7a"
+
+    # Override slider
+    slider_thumb: "#b0bec5"
+    slider_thumb_hover: "#eeffff"
+
+    # Override icon
+    icon: "#b0bec5"
+
+  # ===========================================================================
+  # SOLARIZED LIGHT THEME - Precision colors for readability
+  # Source: https://ethanschoonover.com/solarized/
+  # ===========================================================================
+  solarized_light:
+    <<: *light # Inherit all light theme colors
+
+    # Override accent colors
+    accent_primary: "#268bd2"
+    accent_secondary: "#2aa198"
+
+    # Override surface colors
+    surface: "#fdf6e3"
+    surface_alt: "#eee8d5"
+    surface_sunken: "#fdf6e3"
+    tooltip: "#eee8d5"
+
+    # Override border colors
+    border: "#93a1a1"
+    border_light: "#839496"
+    border_strong: "#93a1a1"
+
+    # Override text colors
+    text: "#657b83"
+    text_muted: "#839496"
+    text_disabled: "#93a1a1"
+    text_on_accent_primary: "#fdf6e3"
+    text_on_accent_secondary: "#fdf6e3"
+
+    # Override interactive states
+    state_hover: "#eee8d5"
+    state_pressed: "#93a1a1"
+
+    # Override scrollbar
+    scrollbar_track: "#eee8d5"
+    scrollbar_thumb: "#93a1a1"
+    scrollbar_thumb_hover: "#839496"
+
+    # Override layout
+    grid: "#93a1a1"
+    separator: "#839496"
+
+    # Override slider
+    slider_thumb: "#839496"
+    slider_thumb_hover: "#657b83"
+
+    # Override icon
+    icon: "#657b83"

@@ -2,23 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Create Initial Version",
+            "label": "Get Current Git Tag",
             "type": "shell",
-            "command": "powershell -ExecutionPolicy Bypass -File ./.scripts/git/CreateFirstVersion.ps1",
-            "problemMatcher": [],
-            "group": {
-                "kind": "none",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Show Current Version",
-            "type": "shell",
-            "command": "powershell -ExecutionPolicy Bypass -File ./.scripts/git/ShowCurrentVersion.ps1",
+            "command": "powershell -ExecutionPolicy Bypass -File ./.scripts/git/Get-CurrentGitTag.ps1",
             "problemMatcher": [],
             "group": {
                 "kind": "none",
@@ -32,7 +18,7 @@
         {
             "label": "Create and Push Git Tag",
             "type": "shell",
-            "command": "powershell -ExecutionPolicy Bypass -File ./.scripts/git/IncrementVersion.ps1 ${input:incrementType}",
+            "command": "powershell -ExecutionPolicy Bypass -File ./.scripts/git/Update-GitTag.ps1 ${input:incrementType}",
             "problemMatcher": [],
             "group": {
                 "kind": "none",
@@ -44,9 +30,9 @@
             }
         },
         {
-            "label": "Deploy Documentation",
+            "label": "Deploy Documentation (MkDocs)",
             "type": "shell",
-            "command": "zensical gh-deploy",
+            "command": "python -m mkdocs gh-deploy",
             "problemMatcher": [],
             "group": {
                 "kind": "none",
@@ -58,9 +44,9 @@
             }
         },
         {
-            "label": "Serve Documentation",
+            "label": "Deploy Documentation (MkDocs, Local Preview)",
             "type": "shell",
-            "command": "zensical serve",
+            "command": "python -m mkdocs serve",
             "problemMatcher": [],
             "group": {
                 "kind": "none",

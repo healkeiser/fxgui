@@ -92,14 +92,11 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.resize(200, 40)
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         # Update default icon
         self._default_icon = fxicons.get_icon(
-            "home", color=theme_colors["icon"]
+            "home", color=self.theme.icon
         ).pixmap(32, 32)
 
         # Update icon if needed
@@ -107,13 +104,13 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
             self.set_dialog_icon(self._default_icon)
 
         # Modern dialog styling
-        bg_color = theme_colors.get("surface", "#2d2d2d")
-        bg_alt = theme_colors.get("surface_alt", "#353535")
-        bg_sunken = theme_colors.get("surface_sunken", "#202020")
-        border_color = theme_colors.get("border", "#3d3d3d")
-        text_color = theme_colors.get("text", "#ffffff")
-        text_secondary = theme_colors.get("text_secondary", "#aaaaaa")
-        accent = accent_colors.get("primary", "#4fc3f7")
+        bg_color = self.theme.surface
+        bg_alt = self.theme.surface_alt
+        bg_sunken = self.theme.surface_sunken
+        border_color = self.theme.border
+        text_color = self.theme.text
+        text_muted = self.theme.text_muted
+        accent = self.theme.accent_primary
 
         # Container styling (opaque background with rounded corners)
         self._container.setStyleSheet(
@@ -148,7 +145,7 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
                 background: transparent;
             }}
             QLabel {{
-                color: {text_secondary};
+                color: {text_muted};
                 background: transparent;
             }}
             """
@@ -182,15 +179,15 @@ class FXFloatingDialog(fxstyle.FXThemeAware, QDialog):
         # Apply DCC-specific styling
         if self.parent_package == fxdcc.HOUDINI:
             self.title_widget.setStyleSheet(
-                f"background-color: {theme_colors['surface_alt']};"
+                f"background-color: {self.theme.surface_alt};"
             )
             self._container.setStyleSheet(
                 f"""
                 #FXFloatingDialogContainer {{
-                    border-top: 1px solid {theme_colors['border_light']};
-                    border-left: 1px solid {theme_colors['border_light']};
-                    border-bottom: 1px solid {theme_colors['surface']};
-                    border-right: 1px solid {theme_colors['surface']};
+                    border-top: 1px solid {self.theme.border_light};
+                    border-left: 1px solid {self.theme.border_light};
+                    border-bottom: 1px solid {self.theme.surface};
+                    border-right: 1px solid {self.theme.surface};
                 }}
             """
             )

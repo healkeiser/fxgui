@@ -263,7 +263,13 @@ else:
 
 When you create your own widgets, you'll want them to automatically update when the user switches themes. fxgui provides `FXThemeAware`, a mixin that handles this for you.
 
-### Basic Usage
+### Basic Usage (Recommended)
+
+There are three ways to make your widgets theme-aware, from simplest to most flexible:
+
+#### Option 1: Declarative QSS with `theme_style` (Simplest)
+
+Declare a `theme_style` class attribute with QSS containing `@color` tokens:
 
 ```python
 from qtpy.QtWidgets import QWidget, QLabel, QVBoxLayout
@@ -271,7 +277,19 @@ from fxgui import fxstyle
 
 
 class MyCustomWidget(fxstyle.FXThemeAware, QWidget):
-    """A simple theme-aware widget."""
+    """A simple theme-aware widget using declarative styling."""
+
+    # Declare your styles with @token placeholders - they auto-update!
+    theme_style = """
+        MyCustomWidget {
+            background-color: @surface;
+            border: 1px solid @border;
+            border-radius: 4px;
+        }
+        MyCustomWidget QLabel {
+            color: @text;
+        }
+    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -279,63 +297,13 @@ class MyCustomWidget(fxstyle.FXThemeAware, QWidget):
         layout = QVBoxLayout(self)
         self.label = QLabel("Hello, World!")
         layout.addWidget(self.label)
-
-    def _apply_theme_styles(self):
-        """Called automatically when theme changes."""
-        colors = fxstyle.get_theme_colors()
-
-        self.setStyleSheet(f"""
-            QWidget {{
-                background-color: {colors['surface']};
-                border: 1px solid {colors['border']};
-                border-radius: 4px;
-            }}
-            QLabel {{
-                color: {colors['text']};
-            }}
-        """)
 ```
 
-That's it! Your widget will now:
+That's it! The `@surface`, `@border`, and `@text` tokens are automatically replaced with the current theme colors, and the stylesheet is reapplied whenever the theme changes.
 
-- Apply styles when first created
-- Automatically update when `fxstyle.apply_theme()` is called
-- React to Qt palette changes
+#### Option 2: Using `self.theme` in `paintEvent()` (For Custom Painting)
 
-### Key Points
-
-| Rule | Description |
-|------|-------------|
-| Inherit first | Always list `FXThemeAware` **before** the Qt class: `class MyWidget(fxstyle.FXThemeAware, QWidget)` |
-| Override `_apply_theme_styles()` | This method is called automatically - just define your styling logic here |
-| Fetch colors dynamically | Always call `fxstyle.get_theme_colors()` inside `_apply_theme_styles()`, never cache colors in `__init__` |
-
-### Using Accent Colors
-
-For interactive elements like buttons or links, use accent colors:
-
-```python
-def _apply_theme_styles(self):
-    colors = fxstyle.get_theme_colors()
-    accents = fxstyle.get_accent_colors()
-
-    self.button.setStyleSheet(f"""
-        QPushButton {{
-            background-color: {accents['primary']};
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-        }}
-        QPushButton:hover {{
-            background-color: {accents['secondary']};
-        }}
-    """)
-```
-
-### Custom-Painted Widgets
-
-For widgets that use `paintEvent()` instead of stylesheets, fetch colors in the paint method:
+For widgets that use custom painting, access colors via the `self.theme` property:
 
 ```python
 from qtpy.QtWidgets import QWidget
@@ -349,63 +317,144 @@ class MyPaintedWidget(fxstyle.FXThemeAware, QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        # Fetch colors dynamically each paint
-        colors = fxstyle.get_theme_colors()
-        accents = fxstyle.get_accent_colors()
-
-        # Use the colors
-        painter.fillRect(self.rect(), QColor(colors['surface']))
-        painter.setPen(QColor(accents['primary']))
+        # Access colors via self.theme - always returns current theme colors
+        painter.fillRect(self.rect(), QColor(self.theme.surface))
+        painter.setPen(QColor(self.theme.accent_primary))
         painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
+
+        # Draw text with theme color
+        painter.setPen(QColor(self.theme.text))
+        painter.drawText(self.rect(), "Hello!")
 ```
 
-The `FXThemeAware` mixin automatically calls `update()` on theme change, triggering a repaint.
+The `FXThemeAware` mixin automatically calls `update()` on theme change, triggering a repaint with the new colors.
 
-### Available Color Keys
+#### Option 3: Override `_on_theme_changed()` (For Complex Logic)
 
-Use `fxstyle.get_theme_colors()` for these:
+For widgets that need custom logic when the theme changes:
 
 ```python
-colors = fxstyle.get_theme_colors()
+from qtpy.QtWidgets import QWidget, QLabel, QVBoxLayout
+from fxgui import fxstyle
 
-# Surface colors
-colors['surface']        # Main window/dialog background
-colors['surface_alt']    # Alternate/secondary panels
-colors['surface_sunken'] # Input fields, code blocks
-colors['tooltip']        # Tooltip background
 
-# Border colors
-colors['border']         # Primary borders
-colors['border_light']   # Subtle separators, dividers
-colors['border_strong']  # Emphasized borders, focus rings
+class MyCustomWidget(fxstyle.FXThemeAware, QWidget):
+    """A theme-aware widget with custom update logic."""
 
-# Text colors
-colors['text']           # Primary text
-colors['text_muted']     # Secondary/hint text
-colors['text_disabled']  # Disabled elements
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-# Interactive states
-colors['state_hover']    # Hover state background
-colors['state_pressed']  # Pressed/checked background
+        layout = QVBoxLayout(self)
+        self.label = QLabel("Hello, World!")
+        self.status_indicator = QWidget()
+        layout.addWidget(self.label)
+        layout.addWidget(self.status_indicator)
 
-# Component-specific
-colors['scrollbar_track']       # Scrollbar track
-colors['scrollbar_thumb']       # Scrollbar handle
-colors['scrollbar_thumb_hover'] # Scrollbar handle on hover
-colors['slider_thumb']          # Slider handle
-colors['slider_thumb_hover']    # Slider handle on hover
-colors['grid']                  # Table/tree gridlines
-colors['separator']             # Menu/toolbar separators
-colors['icon']                  # Icon tint color
+    def _on_theme_changed(self):
+        """Called automatically when theme changes."""
+        # Access colors via self.theme property
+        self.setStyleSheet(f"""
+            MyCustomWidget {{
+                background-color: {self.theme.surface};
+                border: 1px solid {self.theme.border};
+                border-radius: 4px;
+            }}
+        """)
+
+        self.label.setStyleSheet(f"color: {self.theme.text};")
+
+        # Custom logic - update a non-theme-aware child
+        self.status_indicator.setStyleSheet(
+            f"background: {self.theme.accent_primary};"
+        )
 ```
 
-Use `fxstyle.get_accent_colors()` for these:
+!!! note
+    You don't need to call `self.update()` - it's called automatically after `_on_theme_changed()` returns.
+
+### Key Points
+
+| Rule | Description |
+|------|-------------|
+| Inherit first | Always list `FXThemeAware` **before** the Qt class: `class MyWidget(fxstyle.FXThemeAware, QWidget)` |
+| Use `self.theme` | Access colors via `self.theme.surface`, `self.theme.text`, etc. |
+| Prefer `theme_style` | For simple QSS, use the declarative `theme_style` class attribute |
+| Override `_on_theme_changed()` | For complex logic that runs when the theme changes |
+
+### Using Accent Colors
+
+For interactive elements like buttons or links, use accent colors:
 
 ```python
-accents = fxstyle.get_accent_colors()
-accents['primary']       # Primary accent (buttons, links)
-accents['secondary']     # Secondary accent (hover states)
+class MyButton(fxstyle.FXThemeAware, QWidget):
+    theme_style = """
+        QPushButton {
+            background-color: @accent_primary;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+        }
+        QPushButton:hover {
+            background-color: @accent_secondary;
+        }
+    """
 ```
+
+Or programmatically:
+
+```python
+def _on_theme_changed(self):
+    self.button.setStyleSheet(f"""
+        QPushButton {{
+            background-color: {self.theme.accent_primary};
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+        }}
+        QPushButton:hover {{
+            background-color: {self.theme.accent_secondary};
+        }}
+    """)
+```
+
+### Available Color Tokens
+
+These tokens can be used in `theme_style` (with `@` prefix) or accessed via `self.theme`:
+
+```python
+# Via self.theme property (recommended)
+self.theme.surface          # Main window/dialog background
+self.theme.surface_alt      # Alternate/secondary panels
+self.theme.surface_sunken   # Input fields, code blocks
+self.theme.tooltip          # Tooltip background
+
+self.theme.border           # Primary borders
+self.theme.border_light     # Subtle separators, dividers
+self.theme.border_strong    # Emphasized borders, focus rings
+
+self.theme.text             # Primary text
+self.theme.text_muted       # Secondary/hint text
+self.theme.text_disabled    # Disabled elements
+
+self.theme.state_hover      # Hover state background
+self.theme.state_pressed    # Pressed/checked background
+
+self.theme.accent_primary   # Primary accent (buttons, links)
+self.theme.accent_secondary # Secondary accent (hover states)
+
+self.theme.scrollbar_track        # Scrollbar track
+self.theme.scrollbar_thumb        # Scrollbar handle
+self.theme.scrollbar_thumb_hover  # Scrollbar handle on hover
+self.theme.slider_thumb           # Slider handle
+self.theme.slider_thumb_hover     # Slider handle on hover
+self.theme.grid                   # Table/tree gridlines
+self.theme.separator              # Menu/toolbar separators
+self.theme.icon                   # Icon tint color
+```
+
+In `theme_style`, use these as `@surface`, `@text`, `@accent_primary`, etc.
 
 ### Complete Example
 
@@ -416,6 +465,15 @@ from fxgui import fxstyle, fxwidgets
 
 class FXInfoCard(fxstyle.FXThemeAware, QWidget):
     """A themed info card with title and action button."""
+
+    # Declarative styling with @tokens
+    theme_style = """
+        FXInfoCard {
+            background-color: @surface;
+            border: 1px solid @border;
+            border-radius: 8px;
+        }
+    """
 
     def __init__(self, title="Info", parent=None):
         super().__init__(parent)
@@ -430,39 +488,26 @@ class FXInfoCard(fxstyle.FXThemeAware, QWidget):
         layout.addStretch()
         layout.addWidget(self.action_btn)
 
-    def _apply_theme_styles(self):
-        colors = fxstyle.get_theme_colors()
-        accents = fxstyle.get_accent_colors()
-
-        # Card container
-        self.setStyleSheet(f"""
-            FXInfoCard {{
-                background-color: {colors['surface']};
-                border: 1px solid {colors['border']};
-                border-radius: 8px;
-            }}
-        """)
-
-        # Title
+    def _on_theme_changed(self):
+        # For child widgets that need programmatic styling
         self.title_label.setStyleSheet(f"""
             QLabel {{
-                color: {colors['text']};
+                color: {self.theme.text};
                 font-size: 16px;
                 font-weight: bold;
             }}
         """)
 
-        # Button
         self.action_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {accents['primary']};
+                background-color: {self.theme.accent_primary};
                 color: white;
                 border: none;
                 padding: 8px 16px;
                 border-radius: 4px;
             }}
             QPushButton:hover {{
-                background-color: {accents['secondary']};
+                background-color: {self.theme.accent_secondary};
             }}
         """)
 
@@ -480,3 +525,58 @@ if __name__ == "__main__":
 
     app.exec_()
 ```
+
+---
+
+## Legacy API (Deprecated)
+
+!!! warning "Deprecated"
+    The following API still works but is deprecated. Please migrate to the new API described above.
+
+The old way of creating theme-aware widgets used `_apply_theme_styles()` and `fxstyle.get_theme_colors()`:
+
+```python
+from qtpy.QtWidgets import QWidget, QLabel, QVBoxLayout
+from fxgui import fxstyle
+
+
+class MyCustomWidget(fxstyle.FXThemeAware, QWidget):
+    """Legacy theme-aware widget (deprecated)."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        layout = QVBoxLayout(self)
+        self.label = QLabel("Hello, World!")
+        layout.addWidget(self.label)
+
+    def _apply_theme_styles(self):
+        """Deprecated: Use _on_theme_changed() or theme_style instead."""
+        colors = fxstyle.get_theme_colors()
+
+        self.setStyleSheet(f"""
+            QWidget {{
+                background-color: {colors['surface']};
+                border: 1px solid {colors['border']};
+                border-radius: 4px;
+            }}
+            QLabel {{
+                color: {colors['text']};
+            }}
+        """)
+```
+
+### Migration Guide
+
+| Old API | New API |
+|---------|---------|
+| `_apply_theme_styles()` | `_on_theme_changed()` or `theme_style` class attribute |
+| `fxstyle.get_theme_colors()['surface']` | `self.theme.surface` |
+| `fxstyle.get_accent_colors()['primary']` | `self.theme.accent_primary` |
+
+### Why Migrate?
+
+- **Simpler**: `theme_style` attribute requires no method override
+- **Cleaner**: `self.theme.surface` is more readable than `colors['surface']`
+- **Automatic repaints**: `self.update()` is called automatically after `_on_theme_changed()`
+- **Less boilerplate**: No need to fetch colors dictionary in every method

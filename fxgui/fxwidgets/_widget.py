@@ -50,16 +50,14 @@ class FXWidget(fxstyle.FXThemeAware, QWidget):
         if self.ui:
             self.layout.addWidget(self.ui)
 
-    def _apply_theme_styles(self) -> None:
+    def _on_theme_changed(self) -> None:
         """Apply theme-specific styles to the widget.
 
-        This method is called automatically by the FXThemeAware mixin
-        when the theme changes.
+        This method is called automatically when the theme changes.
 
         Warning:
             This method is intended for internal use only.
         """
-
         self.setStyleSheet(fxstyle.load_stylesheet())
 
 

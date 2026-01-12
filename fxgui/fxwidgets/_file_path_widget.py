@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._tooltip import FXTooltip
 
 
 class _PathValidator(QObject):
@@ -126,7 +127,6 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
 
         # Browse button
         self._browse_btn = QPushButton()
-        self._browse_btn.setToolTip("Browse...")
         self._browse_btn.setCursor(Qt.PointingHandCursor)
 
         # Set icon based on mode
@@ -137,6 +137,11 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
 
         self._browse_btn.setFixedSize(32, 32)
         self._browse_btn.clicked.connect(self._browse)
+        self._browse_btn_tooltip = FXTooltip(
+            parent=self._browse_btn,
+            title="Browse",
+            description="Open file browser to select a path",
+        )
         layout.addWidget(self._browse_btn)
 
         # Enable drag and drop
@@ -152,9 +157,11 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
         self._validation_thread: Optional[QThread] = None
         self._validator: Optional[_PathValidator] = None
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # Update indicator icon with new theme's feedback colors
+        self._update_indicator()
 
     @property
     def path(self) -> str:
@@ -279,25 +286,31 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
             return
 
         path = self._input.text()
-        colors = fxstyle.get_colors()
-        feedback = colors["feedback"]
-        theme_colors = fxstyle.get_theme_colors()
+
+        feedback = fxstyle.get_feedback_colors()
 
         if not path:
             fxicons.set_icon(
-                self._indicator, "remove", color=theme_colors["text_disabled"]
+                self._indicator,
+                "remove",
+                theme_color=False,
+                color=self.theme.text_disabled,
             )
             self._indicator.setToolTip("No path entered")
         elif self._is_valid:
             fxicons.set_icon(
                 self._indicator,
                 "check_circle",
+                theme_color=False,
                 color=feedback["success"]["foreground"],
             )
             self._indicator.setToolTip("Path exists")
         else:
             fxicons.set_icon(
-                self._indicator, "error", color=feedback["error"]["foreground"]
+                self._indicator,
+                "error",
+                theme_color=False,
+                color=feedback["error"]["foreground"],
             )
             self._indicator.setToolTip("Path does not exist")
 

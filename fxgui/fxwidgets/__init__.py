@@ -1,13 +1,19 @@
-"""FXWidgets - Custom Qt widgets for fxgui.
+"""Custom Qt widgets for fxgui.
 
 This package provides a collection of custom Qt widgets built on top of qtpy,
 offering enhanced functionality and consistent styling for DCC applications.
 """
 
-from fxgui.fxstyle import FXThemeAware, FXThemeManager, theme_manager
+from fxgui.fxstyle import (
+    FXThemeAware,
+    FXThemeManager,
+    FXThemeColors,
+    theme_manager,
+)
 from fxgui.fxwidgets._accordion import FXAccordion, FXAccordionSection
 from fxgui.fxwidgets._application import FXApplication
 from fxgui.fxwidgets._breadcrumb import FXBreadcrumb
+from fxgui.fxwidgets._code_block import FXCodeBlock
 from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 from fxgui.fxwidgets._constants import (
     CRITICAL,
@@ -23,9 +29,12 @@ from fxgui.fxwidgets._delegates import (
 )
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
 from fxgui.fxwidgets._file_path_widget import FXFilePathWidget
+from fxgui.fxwidgets._fuzzy_search_list import FXFuzzySearchList
+from fxgui.fxwidgets._fuzzy_search_tree import FXFuzzySearchTree
 from fxgui.fxwidgets._inputs import (
     FXIconLineEdit,
     FXPasswordLineEdit,
+    FXValidatedLineEdit,
 )
 from fxgui.fxwidgets._labels import FXElidedLabel
 from fxgui.fxwidgets._loading_spinner import FXLoadingOverlay, FXLoadingSpinner
@@ -62,17 +71,23 @@ __all__ = [
     "CRITICAL",
     "DEBUG",
     "ERROR",
+    "INFO",
+    "SUCCESS",
+    "WARNING",
     "FXAccordion",
     "FXAccordionSection",
     "FXApplication",
     "FXBreadcrumb",
     "FXCamelCaseValidator",
     "FXCapitalizedLetterValidator",
+    "FXCodeBlock",
     "FXCollapsibleWidget",
     "FXColorLabelDelegate",
     "FXElidedLabel",
     "FXFilePathWidget",
     "FXFloatingDialog",
+    "FXFuzzySearchList",
+    "FXFuzzySearchTree",
     "FXIconLineEdit",
     "FXLettersUnderscoreValidator",
     "FXLoadingOverlay",
@@ -97,14 +112,13 @@ __all__ = [
     "FXTagInput",
     "FXThemeAware",
     "FXThemeManager",
+    "FXThemeColors",
     "FXThumbnailDelegate",
     "FXTimelineSlider",
     "FXToggleSwitch",
     "FXTooltip",
     "FXTooltipPosition",
+    "FXValidatedLineEdit",
     "FXWidget",
-    "INFO",
-    "SUCCESS",
-    "WARNING",
     "theme_manager",
 ]

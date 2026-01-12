@@ -1,44 +1,59 @@
 """Example implementations demonstrating `fxgui` module usage.
 
-This module contains various example functions showcasing how to use
-the fxgui framework for creating Qt-based applications, including:
+This module provides a comprehensive showcase application demonstrating
+the fxgui framework's capabilities, including:
 
-- Basic window creation and subclassing
-- Splash screens with progress bars
-- Login dialogs with password input
-- Custom delegates for tree/list/table widgets
-- Collapsible widgets with animation
-- Input validators (camelCase, lowercase, etc.)
-- Output log widget with search functionality
-- Dockable output log panel
-- Singleton pattern for windows
-- System tray integration
-- DCC-specific implementations for Houdini
+- **Full Application Flow**: Splash screen -> Main window with widgets
+- **Theme Awareness**: Complete guide to making widgets theme-aware
+- **Custom Delegates**: Thumbnail and color label delegates
+- **Various Widgets**: Collapsible sections, validators, log output, etc.
 
-Functions:
-    main: Main example function showing complete application setup.
-    show_window: Simple window example with UI file.
-    show_splash_screen: Display a customizable splash screen.
-    show_login_dialog: Modal login dialog example.
-    show_collapsible_widget: Expandable/collapsible content example.
-    show_validators: Input validation examples.
-    show_output_log: Log output widget example.
-    show_dockable_output_log: Dockable output log panel example.
-    show_singleton_window: Singleton window pattern example.
-    show_elided_label: Text elision example.
-    show_thumbnail_delegate: Thumbnail delegate for tree views.
-    show_window_houdini: Example for Houdini integration.
-    show_floating_dialog_houdini: Floating dialog in Houdini.
+Theme Awareness Guide:
+    fxgui provides a complete theme system with automatic updates when
+    the user switches themes. There are several ways to make your code
+    theme-aware:
 
-Usage:
-    Run this module directly to see the full example:
+    1. **Icons** - Use `set_icon()` for automatic icon color updates:
+        >>> from fxgui.fxicons import set_icon
+        >>> set_icon(button, "check")  # Updates on theme change
+
+    2. **FXThemeAware Mixin** - For custom widget classes (recommended):
+        >>> class MyWidget(fxstyle.FXThemeAware, QWidget):
+        ...     def _on_theme_changed(self, _theme_name: str = None):
+        ...         # Called on init and theme changes
+        ...         self.setStyleSheet(f"background: {self.theme.surface};")
+
+    3. **Custom Colors** - Define palettes for dark/light themes:
+        >>> COLORS = {
+        ...     "dark": {"red": QColor("#4a2020")},
+        ...     "light": {"red": QColor("#ffcccc")},
+        ... }
+        >>> def update_colors(_theme_name: str = None):
+        ...     palette = COLORS["light" if fxstyle.is_light_theme() else "dark"]
+        ...     item.setBackground(0, palette["red"])
+        >>> fxstyle.theme_manager.theme_changed.connect(update_colors)
+
+    4. **Delegate Backgrounds** - Update item data on theme change:
+        >>> def update_item_colors(_theme_name: str = None):
+        ...     theme = fxstyle.FXThemeColors(fxstyle.get_theme_colors())
+        ...     for item in items:
+        ...         item.setBackground(0, QColor(theme.surface_sunken))
+        ...     tree.viewport().update()
+        >>> fxstyle.theme_manager.theme_changed.connect(update_item_colors)
+
+Note:
+    Most widgets have their own `example()` function in their module.
+    Run individual widget examples with:
+        DEVELOPER_MODE=1 python -m fxgui.fxwidgets._<module>
+
+    For example:
+        DEVELOPER_MODE=1 python -m fxgui.fxwidgets._accordion
+        DEVELOPER_MODE=1 python -m fxgui.fxwidgets._delegates
+
+Examples:
+    Run this module directly to see the full showcase application:
 
     >>> python -m fxgui.examples
-
-    Or import specific examples:
-
-    >>> from fxgui.examples import show_window
-    >>> show_window()
 """
 
 # Metadata
@@ -46,1324 +61,862 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 # Built-in
-import logging
 from pathlib import Path
-from typing import Dict, Tuple
 
 # Third-party
 from qtpy.QtWidgets import (
-    QDialog,
     QDockWidget,
     QFormLayout,
     QVBoxLayout,
     QHBoxLayout,
     QLineEdit,
     QCheckBox,
-    QDialogButtonBox,
-    QComboBox,
     QWidget,
     QPushButton,
     QLabel,
     QTreeWidget,
     QTreeWidgetItem,
-    QMenu,
-    QHeaderView,
-    QTableWidgetItem,
-    QStyle,
-    QWidgetAction,
     QSpinBox,
+    QTabWidget,
+    QGroupBox,
+    QFrame,
 )
-from qtpy.QtCore import Qt, QTimer, QPoint
-from qtpy.QtGui import QColor, QIcon
+from qtpy.QtCore import Qt, QTimer
+from qtpy.QtGui import QColor
 
 # Internal
-from fxgui import fxwidgets, fxutils, fxdcc, fxstyle
-from fxgui import fxicons
+from fxgui import fxwidgets, fxstyle
 from fxgui.fxicons import get_icon, set_icon
 
 
 # Constants
-SPLASH_DELAY_MS = 3000
-RESTORE_ICON_DELAY_MS = 1000
-
-_ui_file = Path(__file__).parent / "ui" / "test.ui"
 _pixmap = Path(__file__).parent / "images" / "splash.png"
 
 
-###### Login Dialog Example
+def _create_theme_awareness_tab() -> QWidget:
+    """Create the Theme Awareness demonstration tab.
 
+    This tab demonstrates three key patterns for making widgets theme-aware:
+    1. Icons with set_icon() - automatic updates
+    2. Custom widgets connecting to theme_changed signal
+    3. Delegate backgrounds with dynamic color updates
 
-def show_login_dialog():
-    """Show a login dialog with password input.
-
-    Demonstrates:
-        - FXPasswordLineEdit for secure password input
-        - FXApplication for styling
-        - Modal dialog creation
+    Returns:
+        Widget containing theme awareness demonstrations.
     """
 
-    class FXLoginDialog(QDialog):
-        def __init__(self, parent=None):
-            super().__init__(parent)
+    tab = QWidget()
+    layout = QVBoxLayout(tab)
+    layout.setSpacing(16)
 
-            self.setModal(True)
-            self.setWindowTitle("Login")
-            self.setWindowIcon(
-                QIcon(
-                    str(
-                        Path(__file__).parent
-                        / "images"
-                        / "fxgui_logo_background_dark.svg"
-                    )
+    # Header
+    header = QLabel(
+        "Theme Awareness demonstrates how to make your widgets respond "
+        "to theme changes. Use the theme toggle in the toolbar to see updates."
+    )
+    header.setWordWrap(True)
+    layout.addWidget(header)
+
+    # Section 1: Icons with set_icon()
+    icons_group = QGroupBox("1. Icons with set_icon()")
+    icons_layout = QVBoxLayout(icons_group)
+    icons_layout.addWidget(
+        QLabel(
+            "Use <code>set_icon()</code> instead of <code>setIcon()</code> "
+            "for automatic color updates:"
+        )
+    )
+    icons_layout.addWidget(
+        fxwidgets.FXCodeBlock(
+            'set_icon(button, "check")  # Updates on theme change'
+        )
+    )
+
+    icons_row = QHBoxLayout()
+    for icon_name in ["check", "close", "settings", "folder", "search"]:
+        btn = QPushButton(icon_name)
+        set_icon(btn, icon_name)
+        icons_row.addWidget(btn)
+    icons_row.addStretch()
+    icons_layout.addLayout(icons_row)
+    layout.addWidget(icons_group)
+
+    # Section 2: Theme Colors with FXThemeColors
+    colors_group = QGroupBox("2. Theme Colors (FXThemeColors)")
+    colors_layout = QVBoxLayout(colors_group)
+    colors_layout.addWidget(QLabel("Access theme colors with dot notation:"))
+    colors_layout.addWidget(
+        fxwidgets.FXCodeBlock(
+            """
+theme = FXThemeColors(get_theme_colors())
+widget.setStyleSheet(f"background: {theme.surface};")
+"""
+        )
+    )
+
+    # Color swatches that update with theme
+    swatches_frame = QFrame()
+    swatches_frame.setFrameShape(QFrame.StyledPanel)
+    swatches_layout = QVBoxLayout(swatches_frame)
+
+    surface_label = QLabel()
+    text_label = QLabel()
+    border_label = QLabel()
+
+    swatches_layout.addWidget(surface_label)
+    swatches_layout.addWidget(text_label)
+    swatches_layout.addWidget(border_label)
+    colors_layout.addWidget(swatches_frame)
+
+    # Section 3: Feedback Colors
+    feedback_group = QGroupBox("3. Feedback Colors (get_feedback_colors)")
+    feedback_layout = QVBoxLayout(feedback_group)
+    feedback_layout.addWidget(QLabel("Semantic colors for status indicators:"))
+    feedback_layout.addWidget(
+        fxwidgets.FXCodeBlock(
+            """
+feedback = get_feedback_colors()
+color = feedback["success"]["foreground"]
+"""
+        )
+    )
+
+    feedback_labels = {}
+    for key in ["success", "warning", "error", "info", "debug"]:
+        feedback_labels[key] = QLabel()
+        feedback_layout.addWidget(feedback_labels[key])
+
+    colors_layout.addWidget(feedback_group)
+    layout.addWidget(colors_group)
+
+    # Theme update function
+    def update_theme_swatches(_theme_name: str = None):
+        """Update color swatches based on current theme."""
+        theme = fxwidgets.FXThemeColors(fxstyle.get_theme_colors())
+        feedback = fxstyle.get_feedback_colors()
+
+        # Update theme color labels
+        surface_label.setText(f"surface: {theme.surface}")
+        surface_label.setStyleSheet(
+            f"background-color: {theme.surface}; "
+            f"color: {theme.text}; padding: 8px;"
+        )
+
+        text_label.setText(f"text: {theme.text}")
+        text_label.setStyleSheet(
+            f"background-color: {theme.surface_alt}; "
+            f"color: {theme.text}; padding: 8px;"
+        )
+
+        border_label.setText(f"border: {theme.border}")
+        border_label.setStyleSheet(
+            f"background-color: {theme.surface}; "
+            f"color: {theme.text}; "
+            f"border: 2px solid {theme.border}; padding: 8px;"
+        )
+
+        # Update feedback color labels
+        for key, label in feedback_labels.items():
+            label.setText(f"{key}: {feedback[key]['foreground']}")
+            label.setStyleSheet(
+                f"background-color: {feedback[key]['background']}; "
+                f"color: {feedback[key]['foreground']}; "
+                f"border: 1px solid {feedback[key]['foreground']}; "
+                f"border-radius: 4px; padding: 8px;"
+            )
+
+    # Apply initial and connect to theme changes
+    update_theme_swatches()
+    fxstyle.theme_manager.theme_changed.connect(update_theme_swatches)
+
+    layout.addStretch()
+    return tab
+
+
+def _create_delegates_tab() -> QWidget:
+    """Create the Delegates demonstration tab with theme-aware backgrounds.
+
+    This tab demonstrates:
+    - FXThumbnailDelegate with custom backgrounds
+    - Theme-aware BackgroundRole colors
+    - Status dots and labels
+
+    Returns:
+        Widget containing delegate demonstrations.
+    """
+
+    scroll_area = fxwidgets.FXResizedScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_content = QWidget()
+    layout = QVBoxLayout(scroll_content)
+    layout.setSpacing(16)
+
+    # Header
+    header = QLabel(
+        "Custom delegates with theme-aware backgrounds. The item colors "
+        "update automatically when you switch themes."
+    )
+    header.setWordWrap(True)
+    layout.addWidget(header)
+
+    # Code example with syntax-highlighted code block
+    code_group = QGroupBox("Theme-Aware Custom Colors Pattern")
+    code_layout = QVBoxLayout(code_group)
+
+    code_block = fxwidgets.FXCodeBlock(
+        """
+# Define custom color palettes for dark and light themes
+CUSTOM_COLORS = {
+    "dark": {"red": QColor("#4a2020"), "blue": QColor("#1a3a5c")},
+    "light": {"red": QColor("#ffcccc"), "blue": QColor("#cce5ff")},
+}
+
+def update_item_colors(_theme_name: str = None):
+    # Use fxstyle.is_light_theme() to detect current theme type
+    palette = CUSTOM_COLORS["light" if fxstyle.is_light_theme() else "dark"]
+
+    for i, item in enumerate(items):
+        color_key = ["red", "blue"][i % 2]
+        item.setBackground(0, palette[color_key])
+    tree.viewport().update()
+
+fxstyle.theme_manager.theme_changed.connect(update_item_colors)
+"""
+    )
+    code_layout.addWidget(code_block)
+    layout.addWidget(code_group)
+
+    # Tree widget with thumbnail delegate
+    tree_group = QGroupBox("Task Tracker with Status Indicators")
+    tree_group_layout = QVBoxLayout(tree_group)
+
+    tree = QTreeWidget()
+    tree.setHeaderLabels(["Name", "Type", "Status"])
+    tree.setRootIsDecorated(False)
+
+    delegate = fxwidgets.FXThumbnailDelegate()
+    delegate.show_thumbnail = False
+    delegate.show_status_dot = True
+    delegate.show_status_label = True
+    tree.setItemDelegate(delegate)
+    # Apply transparent selection for branch area (items handled by delegate)
+    fxwidgets.FXThumbnailDelegate.apply_transparent_selection(tree)
+
+    # Sample items
+
+    items_data = [
+        ("Project Alpha", "Feature", "Ready", "success", "folder"),
+        ("Bug Fix #123", "Bug", "Testing", "warning", "bug_report"),
+        ("Documentation", "Task", "Done", "success", "description"),
+        ("API Refactor", "Enhancement", "Review", "error", "code"),
+    ]
+
+    # Role for storing icon name for theme-aware updates
+    ICON_NAME_ROLE = Qt.UserRole + 101
+
+    tree_items = []
+    for name, item_type, status, feedback_key, icon_name in items_data:
+        item = QTreeWidgetItem(tree, [name, item_type, status])
+        item.setIcon(0, get_icon(icon_name))
+        item.setData(0, ICON_NAME_ROLE, icon_name)  # Store icon name
+        item.setData(
+            0,
+            fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE,
+            f"A {item_type.lower()} item",
+        )
+        item.setData(
+            0, fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, status
+        )
+        item.setData(0, Qt.UserRole + 100, feedback_key)
+        item.setData(
+            0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False
+        )
+        tree_items.append(item)
+
+    tree.setColumnWidth(0, 200)
+    tree.setColumnWidth(1, 100)
+    tree_group_layout.addWidget(tree)
+    layout.addWidget(tree_group)
+
+    # Custom color palettes for dark and light themes
+    # These semantic colors adapt to the current theme
+    custom_colors = {
+        "dark": {
+            "red": QColor("#4a2020"),  # Dark red for dark theme
+            "blue": QColor("#1a3a5c"),  # Dark blue for dark theme
+            "green": QColor("#1a3a1a"),  # Dark green for dark theme
+            "purple": QColor("#3a1a4a"),  # Dark purple for dark theme
+        },
+        "light": {
+            "red": QColor("#ffcccc"),  # Light red/pink for light theme
+            "blue": QColor("#cce5ff"),  # Light blue for light theme
+            "green": QColor("#ccffcc"),  # Light green for light theme
+            "purple": QColor("#e5ccff"),  # Light purple for light theme
+        },
+    }
+    color_keys = ["red", "blue", "green", "purple"]
+
+    # Theme-aware background update function
+    def update_delegate_colors(_theme_name: str = None):
+        """Update item backgrounds, status colors, and icons based on theme."""
+        feedback = fxstyle.get_feedback_colors()
+        palette_key = "light" if fxstyle.is_light_theme() else "dark"
+
+        for i, item in enumerate(tree_items):
+            # Update icon with current theme color
+            icon_name = item.data(0, ICON_NAME_ROLE)
+            if icon_name:
+                item.setIcon(0, get_icon(icon_name))
+
+            feedback_key = item.data(0, Qt.UserRole + 100)
+            if feedback_key and feedback_key in feedback:
+                status_color = QColor(feedback[feedback_key]["foreground"])
+                item.setData(
+                    0,
+                    fxwidgets.FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
+                    status_color,
                 )
+                item.setData(
+                    0,
+                    fxwidgets.FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
+                    status_color,
+                )
+
+            # Custom theme-aware background colors
+            color_key = color_keys[i % len(color_keys)]
+            bg_color = custom_colors[palette_key][color_key]
+            item.setBackground(0, bg_color)
+            item.setBackground(1, bg_color)
+            item.setBackground(2, bg_color)
+
+        tree.viewport().update()
+
+    # Apply initial and connect to theme changes
+    update_delegate_colors()
+    fxstyle.theme_manager.theme_changed.connect(update_delegate_colors)
+
+    # Second tree: Episodic production hierarchy with thumbnails
+    episodic_group = QGroupBox("Episodic Production Hierarchy")
+    episodic_layout = QVBoxLayout(episodic_group)
+
+    episodic_tree = QTreeWidget()
+    episodic_tree.setHeaderLabels(["Name", "Frame Range", "Status"])
+    episodic_tree.setRootIsDecorated(True)
+
+    episodic_delegate = fxwidgets.FXThumbnailDelegate()
+    episodic_delegate.show_thumbnail = True
+    episodic_delegate.show_status_dot = True
+    episodic_delegate.show_status_label = True
+    episodic_tree.setItemDelegate(episodic_delegate)
+    # Apply transparent selection for branch area (items handled by delegate)
+    fxwidgets.FXThumbnailDelegate.apply_transparent_selection(episodic_tree)
+
+    # Thumbnail path
+    thumbnail_path = Path(__file__).parent / "images" / "missing_image.png"
+
+    # Episodic data structure: Episode > Sequence > Shot
+    episodic_data = {
+        "ep101": {
+            "seq010": ["sh0010", "sh0020", "sh0030"],
+            "seq020": ["sh0010", "sh0020"],
+        },
+        "ep102": {
+            "seq010": ["sh0010", "sh0020", "sh0030", "sh0040"],
+            "seq020": ["sh0010"],
+            "seq030": ["sh0010", "sh0020"],
+        },
+    }
+
+    episodic_items = []  # Store all items for theme updates
+
+    # Role for storing icon name for theme-aware updates
+    EPISODIC_ICON_NAME_ROLE = Qt.UserRole + 201
+
+    for episode_name, sequences in episodic_data.items():
+        # Episode level (darkest)
+        episode_item = QTreeWidgetItem(
+            episodic_tree, [episode_name, "", "In Progress"]
+        )
+        episode_item.setIcon(0, get_icon("movie"))
+        episode_item.setData(0, EPISODIC_ICON_NAME_ROLE, "movie")
+        episode_item.setData(
+            0, fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE, "Episode"
+        )
+        episode_item.setData(
+            0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False
+        )
+        episode_item.setData(
+            0,
+            fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
+            "In Progress",
+        )
+        episode_item.setData(0, Qt.UserRole + 200, "episode")  # Level marker
+        episodic_items.append(episode_item)
+
+        for seq_name, shots in sequences.items():
+            # Sequence level (medium)
+            seq_item = QTreeWidgetItem(episode_item, [seq_name, "", "Active"])
+            seq_item.setIcon(0, get_icon("video_library"))
+            seq_item.setData(0, EPISODIC_ICON_NAME_ROLE, "video_library")
+            seq_item.setData(
+                0, fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE, "Sequence"
             )
-            self.resize(500, 100)
-            main_layout = QVBoxLayout()
-            form_layout = QFormLayout()
-            form_layout.setLabelAlignment(Qt.AlignRight)
-
-            # Login
-            self.login_line_edit = QLineEdit()
-            self.login_line_edit.setPlaceholderText("Mail...")
-            form_layout.addRow("Login", self.login_line_edit)
-
-            # Password
-            self.password_line_edit = fxwidgets.FXPasswordLineEdit()
-            self.password_line_edit.line_edit.setPlaceholderText("Password...")
-            form_layout.addRow("Password", self.password_line_edit)
-
-            # Remember Me
-            self.remember_me_checkbox = QCheckBox("Remember Me")
-            form_layout.addRow("", self.remember_me_checkbox)
-
-            # Add form layout to main layout
-            main_layout.addLayout(form_layout)
-
-            # Buttons
-            button_box = QDialogButtonBox(
-                QDialogButtonBox.Cancel | QDialogButtonBox.Ok
+            seq_item.setData(
+                0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False
             )
-            button_box.button(QDialogButtonBox.Cancel).setText("Cancel")
-            button_box.button(QDialogButtonBox.Cancel).setIcon(
-                get_icon("close")
+            seq_item.setData(
+                0,
+                fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
+                "Active",
             )
-            button_box.button(QDialogButtonBox.Ok).setText("Login")
-            button_box.button(QDialogButtonBox.Ok).setIcon(get_icon("login"))
+            seq_item.setData(0, Qt.UserRole + 200, "sequence")  # Level marker
+            episodic_items.append(seq_item)
 
-            # Close on cancel
-            button_box.rejected.connect(self.reject)
+            for shot_name in shots:
+                # Shot level (lightest) - with thumbnail
+                frame_range = f"1001-1{len(shot_name) * 10:03d}"
+                shot_item = QTreeWidgetItem(
+                    seq_item, [shot_name, frame_range, "WIP"]
+                )
+                shot_item.setIcon(0, get_icon("image"))
+                shot_item.setData(0, EPISODIC_ICON_NAME_ROLE, "image")
+                shot_item.setData(
+                    0,
+                    fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE,
+                    f"{episode_name}_{seq_name}_{shot_name}",
+                )
+                shot_item.setData(
+                    0,
+                    fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE,
+                    True,
+                )
+                shot_item.setData(
+                    0,
+                    fxwidgets.FXThumbnailDelegate.THUMBNAIL_PATH_ROLE,
+                    str(thumbnail_path),
+                )
+                shot_item.setData(
+                    0,
+                    fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
+                    "WIP",
+                )
+                shot_item.setData(0, Qt.UserRole + 200, "shot")  # Level marker
+                episodic_items.append(shot_item)
 
-            main_layout.addWidget(button_box)
-            self.setLayout(main_layout)
+    episodic_tree.setColumnWidth(0, 250)
+    episodic_tree.setColumnWidth(1, 100)
+    episodic_tree.expandAll()
+    episodic_layout.addWidget(episodic_tree)
+    layout.addWidget(episodic_group)
 
-    application = fxwidgets.FXApplication()
-    dialog = FXLoginDialog()
-    dialog.exec_()
+    # Hierarchy colors for dark and light themes
+    hierarchy_colors = {
+        "dark": {
+            "episode": QColor("#1a1a2e"),  # Darkest blue
+            "sequence": QColor("#16213e"),  # Medium blue
+            "shot": QColor("#1f4068"),  # Lightest blue
+        },
+        "light": {
+            "episode": QColor("#b8c5d6"),  # Darkest (still light)
+            "sequence": QColor("#d0dae8"),  # Medium
+            "shot": QColor("#e8eff7"),  # Lightest
+        },
+    }
+
+    # Theme-aware update function for episodic tree
+    def update_episodic_colors(_theme_name: str = None):
+        """Update episodic tree backgrounds, icons, and colors based on theme."""
+        feedback = fxstyle.get_feedback_colors()
+        palette_key = "light" if fxstyle.is_light_theme() else "dark"
+
+        for item in episodic_items:
+            # Update icon with current theme color
+            icon_name = item.data(0, EPISODIC_ICON_NAME_ROLE)
+            if icon_name:
+                item.setIcon(0, get_icon(icon_name))
+
+            level = item.data(0, Qt.UserRole + 200)
+            if level in hierarchy_colors[palette_key]:
+                bg_color = hierarchy_colors[palette_key][level]
+                for col in range(3):
+                    item.setBackground(col, bg_color)
+
+            # Set status colors based on level
+            if level == "episode":
+                status_color = QColor(feedback["info"]["foreground"])
+            elif level == "sequence":
+                status_color = QColor(feedback["warning"]["foreground"])
+            else:  # shot
+                status_color = QColor(feedback["success"]["foreground"])
+
+            item.setData(
+                0,
+                fxwidgets.FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
+                status_color,
+            )
+            item.setData(
+                0,
+                fxwidgets.FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
+                status_color,
+            )
+
+        episodic_tree.viewport().update()
+
+    # Apply initial and connect to theme changes
+    update_episodic_colors()
+    fxstyle.theme_manager.theme_changed.connect(update_episodic_colors)
+
+    # Third tree: Fuzzy Search Tree with FXThumbnailDelegate
+    fuzzy_group = QGroupBox("Fuzzy Search Tree with Thumbnails")
+    fuzzy_layout = QVBoxLayout(fuzzy_group)
+
+    fuzzy_tree = fxwidgets.FXFuzzySearchTree(
+        placeholder="Search assets (try 'hero', 'char', 'veh')...",
+        ratio=0.4,
+        show_ratio_slider=True,
+        color_match=False,  # We handle colors via delegate backgrounds
+    )
+
+    # Set up the delegate
+    fuzzy_delegate = fxwidgets.FXThumbnailDelegate()
+    fuzzy_delegate.show_thumbnail = True
+    fuzzy_delegate.show_status_dot = True
+    fuzzy_delegate.show_status_label = True
+    fuzzy_tree.tree_view.setItemDelegate(fuzzy_delegate)
+    fxwidgets.FXThumbnailDelegate.apply_transparent_selection(fuzzy_tree.tree_view)
+
+    # Role for storing icon name for theme-aware updates
+    FUZZY_ICON_NAME_ROLE = Qt.UserRole + 301
+
+    # Asset data with metadata
+    fuzzy_assets = {
+        "Characters": {
+            "items": [
+                ("character_hero_body", "Main hero body mesh", "Approved"),
+                ("character_hero_head", "Hero facial rig", "WIP"),
+                ("character_villain_body", "Antagonist body", "Review"),
+                ("character_sidekick", "Supporting character", "Approved"),
+            ],
+            "icon": "person",
+        },
+        "Vehicles": {
+            "items": [
+                ("vehicle_car_sports", "Red sports car", "Approved"),
+                ("vehicle_truck_pickup", "Utility truck", "WIP"),
+                ("vehicle_motorcycle", "Motorcycle asset", "Review"),
+            ],
+            "icon": "directions_car",
+        },
+        "Environment": {
+            "items": [
+                ("environment_tree_oak", "Oak tree with leaves", "Approved"),
+                ("environment_tree_pine", "Pine tree variations", "Approved"),
+                ("environment_rock_large", "Boulder asset", "WIP"),
+            ],
+            "icon": "park",
+        },
+    }
+
+    fuzzy_items = []  # Store all items for theme updates
+
+    for category_name, category_data in fuzzy_assets.items():
+        # Add category as parent
+        category_item = fuzzy_tree.add_item(category_name)
+        category_item.setIcon(get_icon(category_data["icon"]))
+        category_item.setData(category_data["icon"], FUZZY_ICON_NAME_ROLE)
+        category_item.setData(
+            "Category", fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE
+        )
+        category_item.setData(
+            False, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE
+        )
+        category_item.setData("category", Qt.UserRole + 300)  # Level marker
+        fuzzy_items.append(category_item)
+
+        for asset_name, description, status in category_data["items"]:
+            # Add asset as child
+            asset_item = fuzzy_tree.add_item(asset_name, parent=category_name)
+            asset_item.setIcon(get_icon("image"))
+            asset_item.setData("image", FUZZY_ICON_NAME_ROLE)
+            asset_item.setData(
+                description, fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE
+            )
+            asset_item.setData(
+                True, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE
+            )
+            asset_item.setData(
+                str(thumbnail_path),
+                fxwidgets.FXThumbnailDelegate.THUMBNAIL_PATH_ROLE,
+            )
+            asset_item.setData(
+                status, fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE
+            )
+            asset_item.setData("asset", Qt.UserRole + 300)  # Level marker
+            asset_item.setData(status, Qt.UserRole + 302)  # Store status
+            fuzzy_items.append(asset_item)
+
+    fuzzy_tree.expand_all()
+    fuzzy_layout.addWidget(fuzzy_tree)
+    layout.addWidget(fuzzy_group)
+
+    # Colors for fuzzy tree
+    fuzzy_colors = {
+        "dark": {
+            "category": QColor("#2a2a3a"),
+            "asset": QColor("#1f3a2a"),
+        },
+        "light": {
+            "category": QColor("#d8d8e8"),
+            "asset": QColor("#d0e8d8"),
+        },
+    }
+
+    # Status to feedback mapping
+    status_feedback_map = {
+        "Approved": "success",
+        "WIP": "warning",
+        "Review": "info",
+    }
+
+    def update_fuzzy_colors(_theme_name: str = None):
+        """Update fuzzy tree backgrounds and status colors based on theme."""
+        feedback = fxstyle.get_feedback_colors()
+        palette_key = "light" if fxstyle.is_light_theme() else "dark"
+
+        for item in fuzzy_items:
+            # Update icon
+            icon_name = item.data(FUZZY_ICON_NAME_ROLE)
+            if icon_name:
+                item.setIcon(get_icon(icon_name))
+
+            level = item.data(Qt.UserRole + 300)
+            if level in fuzzy_colors[palette_key]:
+                bg_color = fuzzy_colors[palette_key][level]
+                item.setBackground(bg_color)
+
+            # Set status colors
+            status = item.data(Qt.UserRole + 302)
+            if status and status in status_feedback_map:
+                feedback_key = status_feedback_map[status]
+                status_color = QColor(feedback[feedback_key]["foreground"])
+                item.setData(
+                    status_color,
+                    fxwidgets.FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
+                )
+                item.setData(
+                    status_color,
+                    fxwidgets.FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
+                )
+
+        fuzzy_tree.tree_view.viewport().update()
+
+    # Apply initial and connect to theme changes
+    update_fuzzy_colors()
+    fxstyle.theme_manager.theme_changed.connect(update_fuzzy_colors)
+
+    layout.addStretch()
+    scroll_area.setWidget(scroll_content)
+
+    # Return a container with the scroll area
+    container = QWidget()
+    container_layout = QVBoxLayout(container)
+    container_layout.setContentsMargins(0, 0, 0, 0)
+    container_layout.addWidget(scroll_area)
+    return container
 
 
-###### Collapsible Widget Example
+def _create_widgets_tab() -> QWidget:
+    """Create a tab showcasing various fxgui widgets.
 
-
-def show_collapsible_widget():
-    """Show a collapsible widget with animated expand/collapse.
-
-    Demonstrates:
-        - FXCollapsibleWidget for expandable sections
-        - Animation effects
-        - Nested content layouts
+    Returns:
+        Widget containing widget demonstrations.
     """
 
-    application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow(title="Collapsible")
-    window.toolbar.hide()
+    scroll_area = fxwidgets.FXResizedScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_content = QWidget()
+    layout = QVBoxLayout(scroll_content)
+    layout.setSpacing(16)
 
-    # Create central widget with layout
-    central_widget = QWidget()
-    main_layout = QVBoxLayout(central_widget)
+    # Header
+    header = QLabel(
+        "A selection of fxgui widgets. Each widget has its own "
+        "<code>example()</code> function - run with: "
+        "<code>DEVELOPER_MODE=1 python -m fxgui.fxwidgets._&lt;module&gt;</code>"
+    )
+    header.setWordWrap(True)
+    layout.addWidget(header)
 
-    # First collapsible section - Settings
+    # Collapsible sections
     settings_section = fxwidgets.FXCollapsibleWidget(
-        title="Settings",
+        title="FXCollapsibleWidget",
+        icon="settings",
         animation_duration=200,
-        max_content_height=200,
     )
     settings_layout = QFormLayout()
     settings_layout.addRow("Name:", QLineEdit())
     settings_layout.addRow("Value:", QSpinBox())
     settings_layout.addRow("Enabled:", QCheckBox())
     settings_section.set_content_layout(settings_layout)
+    layout.addWidget(settings_section)
 
-    # Second collapsible section - Advanced
-    advanced_section = fxwidgets.FXCollapsibleWidget(
-        title="Advanced Options",
-        animation_duration=300,
-        max_content_height=150,
+    # Toggle switches
+    toggles_section = fxwidgets.FXCollapsibleWidget(
+        title="FXToggleSwitch",
+        icon="toggle_on",
+        animation_duration=200,
     )
-    advanced_layout = QVBoxLayout()
-    advanced_layout.addWidget(QLabel("Option 1: Enable debugging"))
-    advanced_layout.addWidget(QCheckBox("Debug mode"))
-    advanced_layout.addWidget(QLabel("Option 2: Verbose logging"))
-    advanced_layout.addWidget(QCheckBox("Verbose"))
-    advanced_section.set_content_layout(advanced_layout)
+    toggles_layout = QHBoxLayout()
+    for label in ["Option A", "Option B", "Option C"]:
+        toggle = fxwidgets.FXToggleSwitch()
+        toggle_container = QWidget()
+        toggle_hlayout = QHBoxLayout(toggle_container)
+        toggle_hlayout.setContentsMargins(0, 0, 0, 0)
+        toggle_hlayout.addWidget(QLabel(label))
+        toggle_hlayout.addWidget(toggle)
+        toggles_layout.addWidget(toggle_container)
+    toggles_layout.addStretch()
+    toggles_section.set_content_layout(toggles_layout)
+    layout.addWidget(toggles_section)
 
-    # Third collapsible section - Info
-    info_section = fxwidgets.FXCollapsibleWidget(
-        title="Information",
-        animation_duration=150,
+    # Input validators with visual feedback
+    validators_section = fxwidgets.FXCollapsibleWidget(
+        title="FXValidatedLineEdit",
+        icon="spellcheck",
+        animation_duration=200,
     )
-    info_layout = QVBoxLayout()
-    info_layout.addWidget(
-        QLabel("This is an example of the FXCollapsibleWidget.")
+    validators_layout = QFormLayout()
+
+    validators_hint = QLabel(
+        "Type invalid characters to see the shake + red flash feedback."
     )
-    info_layout.addWidget(
-        QLabel("Click the header to expand or collapse the content.")
-    )
-    info_section.set_content_layout(info_layout)
+    validators_hint.setWordWrap(True)
+    validators_layout.addRow(validators_hint)
 
-    main_layout.addWidget(settings_section)
-    main_layout.addWidget(advanced_section)
-    main_layout.addWidget(info_section)
-    main_layout.addStretch()
+    camel_edit = fxwidgets.FXValidatedLineEdit()
+    camel_edit.setValidator(fxwidgets.FXCamelCaseValidator())
+    camel_edit.setPlaceholderText("e.g., myVariableName")
+    validators_layout.addRow("<code>FXCamelCaseValidator</code>:", camel_edit)
 
-    window.setCentralWidget(central_widget)
-    window.set_company_label("\u00a9 Valentin Beaumont")
-    window.set_version_label("v0.1.0")
-    window.set_project_label("fxgui")
-    window.resize(400, 500)
-    window.show()
-    application.exec_()
-
-
-###### Validators Example
-
-
-def show_validators():
-    """Show input validators for different text formats.
-
-    Demonstrates:
-        - FXCamelCaseValidator for camelCase input
-        - FXLowerCaseValidator for lowercase input
-        - FXLettersUnderscoreValidator for identifiers
-        - FXCapitalizedLetterValidator for names
-    """
-
-    application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow(title="Input Validators")
-    window.toolbar.hide()
-
-    central_widget = QWidget()
-    main_layout = QVBoxLayout(central_widget)
-
-    # Create form layout for validators
-    form_layout = QFormLayout()
-
-    # CamelCase validator
-    camel_case_edit = QLineEdit()
-    camel_case_edit.setValidator(fxwidgets.FXCamelCaseValidator())
-    camel_case_edit.setPlaceholderText("e.g., myVariableName")
-    form_layout.addRow("CamelCase:", camel_case_edit)
-
-    # Lowercase validator
-    lowercase_edit = QLineEdit()
-    lowercase_edit.setValidator(fxwidgets.FXLowerCaseValidator())
-    lowercase_edit.setPlaceholderText("e.g., lowercase")
-    form_layout.addRow("Lowercase:", lowercase_edit)
-
-    # Lowercase with numbers
-    lowercase_num_edit = QLineEdit()
-    lowercase_num_edit.setValidator(
-        fxwidgets.FXLowerCaseValidator(allow_numbers=True)
-    )
-    lowercase_num_edit.setPlaceholderText("e.g., version2")
-    form_layout.addRow("Lowercase + Numbers:", lowercase_num_edit)
-
-    # Lowercase with underscores
-    lowercase_underscore_edit = QLineEdit()
-    lowercase_underscore_edit.setValidator(
+    lower_edit = fxwidgets.FXValidatedLineEdit()
+    lower_edit.setValidator(
         fxwidgets.FXLowerCaseValidator(allow_underscores=True)
     )
-    lowercase_underscore_edit.setPlaceholderText("e.g., my_variable")
-    form_layout.addRow("Lowercase + Underscores:", lowercase_underscore_edit)
+    lower_edit.setPlaceholderText("e.g., my_variable")
+    validators_layout.addRow("<code>FXLowerCaseValidator</code>:", lower_edit)
 
-    # Letters and underscores
-    letters_underscore_edit = QLineEdit()
-    letters_underscore_edit.setValidator(
-        fxwidgets.FXLettersUnderscoreValidator()
+    validators_section.set_content_layout(validators_layout)
+    layout.addWidget(validators_section)
+
+    # Search bar
+    search_section = fxwidgets.FXCollapsibleWidget(
+        title="FXSearchBar",
+        icon="search",
+        animation_duration=200,
     )
-    letters_underscore_edit.setPlaceholderText("e.g., My_Variable")
-    form_layout.addRow("Letters + Underscores:", letters_underscore_edit)
+    search_layout = QVBoxLayout()
+    search_bar = fxwidgets.FXSearchBar(placeholder="Search...")
+    search_layout.addWidget(search_bar)
+    search_section.set_content_layout(search_layout)
+    layout.addWidget(search_section)
 
-    # Letters, underscores, and numbers
-    letters_underscore_num_edit = QLineEdit()
-    letters_underscore_num_edit.setValidator(
-        fxwidgets.FXLettersUnderscoreValidator(allow_numbers=True)
+    # Tag input
+    tags_section = fxwidgets.FXCollapsibleWidget(
+        title="FXTagInput",
+        icon="label",
+        animation_duration=200,
     )
-    letters_underscore_num_edit.setPlaceholderText("e.g., My_Variable_2")
-    form_layout.addRow(
-        "Letters + Underscores + Numbers:", letters_underscore_num_edit
+    tags_layout = QVBoxLayout()
+    tag_input = fxwidgets.FXTagInput()
+    tag_input.add_tag("Python")
+    tag_input.add_tag("Qt")
+    tag_input.add_tag("fxgui")
+    tags_layout.addWidget(tag_input)
+    tags_section.set_content_layout(tags_layout)
+    layout.addWidget(tags_section)
+
+    # Range slider
+    slider_section = fxwidgets.FXCollapsibleWidget(
+        title="FXRangeSlider",
+        icon="tune",
+        animation_duration=200,
     )
+    slider_layout = QVBoxLayout()
+    range_slider = fxwidgets.FXRangeSlider()
+    range_slider.set_range(0, 100)
+    range_slider.set_minimum(25)
+    range_slider.set_maximum(75)
+    slider_layout.addWidget(range_slider)
+    slider_section.set_content_layout(slider_layout)
+    layout.addWidget(slider_section)
 
-    # Capitalized validator
-    capitalized_edit = QLineEdit()
-    capitalized_edit.setValidator(fxwidgets.FXCapitalizedLetterValidator())
-    capitalized_edit.setPlaceholderText("e.g., MyName")
-    form_layout.addRow("Capitalized:", capitalized_edit)
-
-    main_layout.addLayout(form_layout)
-    main_layout.addStretch()
-
-    window.setCentralWidget(central_widget)
-    window.set_project_label("fxgui")
-    window.set_company_label("\u00a9 Valentin Beaumont")
-    window.set_version_label("v0.1.0")
-    window.resize(500, 400)
-    window.show()
-    application.exec_()
-
-
-###### Output Log Widget Example
-
-
-def show_output_log():
-    """Show the output log widget with logging capture.
-
-    Demonstrates:
-        - FXOutputLogWidget for displaying logs
-        - Log capture from Python's logging module
-        - Search functionality with Ctrl+F
-        - ANSI color code support
-        - Theme-aware button icons with set_icon
-    """
-
-    application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow(title="Output Log Example")
-    window.toolbar.hide()
-
-    central_widget = QWidget()
-    main_layout = QVBoxLayout(central_widget)
-
-    # Create log widget with capture enabled
-    log_widget = fxwidgets.FXOutputLogWidget(capture_output=True)
-
-    # Helper functions to log and show status bar message
-    def log_debug():
-        msg = "This is a debug message"
-        logging.getLogger("example").debug(msg)
-        window.statusBar().showMessage(msg, severity_type=fxwidgets.DEBUG)
-
-    def log_info():
-        msg = "This is an info message"
-        logging.getLogger("example").info(msg)
-        window.statusBar().showMessage(msg, severity_type=fxwidgets.INFO)
-
-    def log_warning():
-        msg = "This is a warning message"
-        logging.getLogger("example").warning(msg)
-        window.statusBar().showMessage(msg, severity_type=fxwidgets.WARNING)
-
-    def log_error():
-        msg = "This is an error message"
-        logging.getLogger("example").error(msg)
-        window.statusBar().showMessage(msg, severity_type=fxwidgets.ERROR)
-
-    # Create some buttons to generate log messages
-    button_layout = QHBoxLayout()
-
-    debug_btn = QPushButton("Debug")
-    set_icon(debug_btn, "bug_report")
-    debug_btn.clicked.connect(log_debug)
-
-    info_btn = QPushButton("Info")
-    set_icon(info_btn, "info")
-    info_btn.clicked.connect(log_info)
-
-    warning_btn = QPushButton("Warning")
-    set_icon(warning_btn, "warning")
-    warning_btn.clicked.connect(log_warning)
-
-    error_btn = QPushButton("Error")
-    set_icon(error_btn, "error")
-    error_btn.clicked.connect(log_error)
-
-    button_layout.addWidget(debug_btn)
-    button_layout.addWidget(info_btn)
-    button_layout.addWidget(warning_btn)
-    button_layout.addWidget(error_btn)
-
-    # Setup the example logger
-    logger = logging.getLogger("example")
-    logger.setLevel(logging.DEBUG)
-
-    # Add instructions
-    instructions = QLabel(
-        "Click buttons to generate log messages. Press Ctrl+F to search."
+    # Rating widget
+    rating_section = fxwidgets.FXCollapsibleWidget(
+        title="FXRatingWidget",
+        icon="star",
+        animation_duration=200,
     )
+    rating_layout = QHBoxLayout()
+    rating_widget = fxwidgets.FXRatingWidget()
+    rating_widget.set_rating(3)
+    rating_layout.addWidget(rating_widget)
+    rating_layout.addStretch()
+    rating_section.set_content_layout(rating_layout)
+    layout.addWidget(rating_section)
 
-    main_layout.addWidget(instructions)
-    main_layout.addLayout(button_layout)
-    main_layout.addWidget(log_widget)
-
-    window.setCentralWidget(central_widget)
-    window.set_project_label("fxgui")
-    window.set_version_label("v0.1.0")
-    window.set_company_label("\u00a9 Valentin Beaumont")
-    window.resize(700, 500)
-    window.show()
-    application.exec_()
-
-
-###### Dockable Output Log Example
-
-
-def show_dockable_output_log():
-    """Show the output log widget in a dockable panel.
-
-    Demonstrates:
-        - FXOutputLogWidget in a QDockWidget
-        - Dockable panel at the bottom of the window
-        - Status bar messages with severity colors
-        - Toolbar with log action buttons
-    """
-
-    application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow(title="Dockable Output Log Example")
-
-    # Create main content area
-    central_widget = QWidget()
-    main_layout = QVBoxLayout(central_widget)
-    main_layout.addWidget(
-        QLabel(
-            "This is the main content area.\n\n"
-            "The output log is docked at the bottom.\n"
-            "Use the toolbar buttons or View menu to generate log messages."
-        )
+    # Loading spinner
+    spinner_section = fxwidgets.FXCollapsibleWidget(
+        title="FXLoadingSpinner",
+        icon="refresh",
+        animation_duration=200,
     )
-    main_layout.addStretch()
-    window.setCentralWidget(central_widget)
-    window.set_banner_icon(get_icon("home"))
+    spinner_layout = QHBoxLayout()
+    spinner = fxwidgets.FXLoadingSpinner()
+    spinner.setFixedSize(32, 32)
+    spinner.start()
+    spinner_layout.addWidget(spinner)
+    spinner_layout.addWidget(QLabel("Loading..."))
+    spinner_layout.addStretch()
+    spinner_section.set_content_layout(spinner_layout)
+    layout.addWidget(spinner_section)
 
-    # Create dockable output log
-    log_dock = QDockWidget("Output Log", window)
-    log_dock.setObjectName("OutputLogDock")
-    log_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
-
-    # Wrap log widget in a container with margins
-    log_container = QWidget()
-    log_container_layout = QVBoxLayout(log_container)
-    log_container_layout.setContentsMargins(10, 10, 10, 10)
-    log_widget = fxwidgets.FXOutputLogWidget(capture_output=True)
-    log_container_layout.addWidget(log_widget)
-
-    log_dock.setWidget(log_container)
-    window.addDockWidget(Qt.BottomDockWidgetArea, log_dock)
-
-    # Setup the example logger
-    logger = logging.getLogger("example")
-    logger.setLevel(logging.DEBUG)
-
-    # Helper functions to log and show status bar message
-    def log_debug():
-        msg = "Debug: Application state checked"
-        logger.debug(msg)
-        window.statusBar().showMessage(msg, severity_type=fxwidgets.DEBUG)
-
-    def log_info():
-        msg = "Info: Operation completed successfully"
-        logger.info(msg)
-        window.statusBar().showMessage(msg, severity_type=fxwidgets.INFO)
-
-    def log_warning():
-        msg = "Warning: Resource usage is high"
-        logger.warning(msg)
-        window.statusBar().showMessage(msg, severity_type=fxwidgets.WARNING)
-
-    def log_error():
-        msg = "Error: Failed to connect to server"
-        logger.error(msg)
-        window.statusBar().showMessage(msg, severity_type=fxwidgets.ERROR)
-
-    # Add actions to toolbar (using set_icon for automatic theme updates)
-    debug_action = window.toolbar.addAction("Debug")
-    set_icon(debug_action, "bug_report")
-    debug_action.triggered.connect(log_debug)
-    debug_action.setToolTip("Log a debug message")
-
-    info_action = window.toolbar.addAction("Info")
-    set_icon(info_action, "info")
-    info_action.triggered.connect(log_info)
-    info_action.setToolTip("Log an info message")
-
-    warning_action = window.toolbar.addAction("Warning")
-    set_icon(warning_action, "warning")
-    warning_action.triggered.connect(log_warning)
-    warning_action.setToolTip("Log a warning message")
-
-    error_action = window.toolbar.addAction("Error")
-    set_icon(error_action, "error")
-    error_action.triggered.connect(log_error)
-    error_action.setToolTip("Log an error message")
-
-    # Add toggle action to View menu for the dock
-    view_menu = window.menuBar().addMenu("View")
-    view_menu.addAction(log_dock.toggleViewAction())
-
-    window.set_project_label("fxgui")
-    window.set_version_label("v0.1.0")
-    window.set_company_label("\u00a9 Valentin Beaumont")
-    window.resize(800, 600)
-    window.show()
-    application.exec_()
-
-
-###### Singleton Window Example
-
-
-def show_singleton_window():
-    """Show a singleton window that can only have one instance.
-
-    Demonstrates:
-        - FXSingleton metaclass for single-instance windows
-        - Automatic window focusing when trying to create a second instance
-    """
-
-    class MySingletonWindow(
-        fxwidgets.FXMainWindow, metaclass=fxwidgets.FXSingleton
-    ):
-        """A window that can only have one instance."""
-
-        def __init__(self, parent=None):
-            super().__init__(parent, title="Singleton Window")
-            self.toolbar.hide()
-
-            central_widget = QWidget()
-            layout = QVBoxLayout(central_widget)
-            layout.addWidget(
-                QLabel(
-                    "This window uses the FXSingleton metaclass.\n\n"
-                    "Try creating another instance - it will return\n"
-                    "this same window and bring it to focus."
-                )
-            )
-            layout.addStretch()
-            self.setCentralWidget(central_widget)
-
-    application = fxwidgets.FXApplication()
-
-    # Create first instance
-    window1 = MySingletonWindow()
-    window1.show()
-
-    # Try to create second instance - should return the same window
-    window2 = MySingletonWindow()
-
-    # Verify they are the same
-    assert window1 is window2, "Singleton pattern failed!"
-
-    application.exec_()
-
-    # Reset the singleton for future runs
-    MySingletonWindow.reset_instance()
-
-
-###### Elided Label Example
-
-
-def show_elided_label():
-    """Show the elided label that truncates text with ellipsis.
-
-    Demonstrates:
-        - FXElidedLabel for automatic text elision
-        - Responsive text truncation on resize
-    """
-
-    application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow(title="Elided Label Example")
-    window.toolbar.hide()
-
-    central_widget = QWidget()
-    main_layout = QVBoxLayout(central_widget)
-
-    # Regular label for comparison
-    main_layout.addWidget(QLabel("Regular QLabel:"))
-    regular_label = QLabel(
-        "This is a very long text that will overflow and not be truncated "
-        "when the window is resized smaller."
+    # File path widget
+    filepath_section = fxwidgets.FXCollapsibleWidget(
+        title="FXFilePathWidget",
+        icon="folder",
+        animation_duration=200,
     )
-    main_layout.addWidget(regular_label)
-
-    main_layout.addSpacing(20)
-
-    # Elided label
-    main_layout.addWidget(QLabel("FXElidedLabel:"))
-    elided_label = fxwidgets.FXElidedLabel(
-        "This is a very long text that will be automatically truncated "
-        "with an ellipsis (...) when the window is resized smaller."
-    )
-    main_layout.addWidget(elided_label)
-
-    main_layout.addSpacing(20)
-
-    # Instructions
-    main_layout.addWidget(
-        QLabel("Resize the window to see the difference in behavior.")
-    )
-    main_layout.addStretch()
-
-    window.setCentralWidget(central_widget)
-    window.resize(400, 200)
-    window.show()
-    application.exec_()
-
-
-# DCC Integration Examples
-
-
-def show_window_houdini():
-    """An example FXMainWindow instance launched from inside Houdini.
-
-    Demonstrates:
-        - DCC parent window detection
-        - Proper window parenting for DCC integration
-    """
-
-    houdini_window = fxdcc.get_houdini_main_window()
-    window = fxwidgets.FXMainWindow(
-        parent=houdini_window, ui_file=str(_ui_file)
-    )
-    window.show()
-
-
-def show_floating_dialog_houdini():
-    """An example FXFloatingDialog launched from inside Houdini.
-
-    Demonstrates:
-        - FXFloatingDialog popup at cursor position
-        - Adding custom widgets to the dialog
-    """
-
-    houdini_window = fxdcc.get_dcc_main_window()
-    floating_dialog = fxwidgets.FXFloatingDialog(houdini_window)
-
-    # Add button to the `button_box`
-    floating_dialog.button_box.addButton("Test", QDialogButtonBox.ActionRole)
-
-    # Add combo box
-    combo_box = QComboBox(floating_dialog)
-    combo_box.addItems(["Item 1", "Item 2", "Item 3"])
-    floating_dialog.main_layout.addWidget(combo_box)
-
-    # Show under the cursor
-    floating_dialog.show_under_cursor()
-
-
-###### Basic Window Example
-
-
-def show_window():
-    """Show a basic window with status bar messages.
-
-    Demonstrates:
-        - FXApplication and FXMainWindow basics
-        - Status bar with different severity levels
-        - Icon usage from fxicons
-    """
-
-    application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow(ui_file=str(_ui_file))
-
-    # Set icons on the QDialogButtonBox buttons (using set_icon for theme updates)
-    button_box = window.ui.buttonBox
-    ok_button = button_box.button(QDialogButtonBox.Ok)
-    cancel_button = button_box.button(QDialogButtonBox.Cancel)
-    set_icon(ok_button, "check")
-    set_icon(cancel_button, "cancel")
-
-    # Buttons in `test.ui` example
-    window.ui.button_success.clicked.connect(
-        lambda: window.statusBar().showMessage(
-            "Success message", fxwidgets.SUCCESS
-        )
-    )
-    window.ui.button_info.clicked.connect(
-        lambda: window.statusBar().showMessage("Info message", fxwidgets.INFO),
-    )
-    window.ui.button_warning.clicked.connect(
-        lambda: window.statusBar().showMessage(
-            "Warning message", fxwidgets.WARNING
-        )
-    )
-    window.ui.button_error.clicked.connect(
-        lambda: window.statusBar().showMessage(
-            "Error message", fxwidgets.ERROR
-        ),
-    )
-    window.ui.button_critical.clicked.connect(
-        lambda: window.statusBar().showMessage(
-            "Critical message", fxwidgets.CRITICAL
-        )
-    )
-
-    window.show()
-    application.exec_()
-
-
-def subclass_window():
-    """Show a subclassed FXMainWindow with custom widgets.
-
-    Demonstrates:
-        - Subclassing FXMainWindow
-        - Creating custom central widgets
-    """
-
-    application = fxwidgets.FXApplication()
-
-    class MyWidget(QWidget):
-        def __init__(self, parent=None):
-            super().__init__(parent)
-
-            self.main_layout = QVBoxLayout()
-            self.setLayout(self.main_layout)
-
-            # Add some example content
-            self.main_layout.addWidget(QLabel("Custom Widget Content"))
-
-            button = QPushButton("Click Me")
-            set_icon(button, "touch_app")
-            self.main_layout.addWidget(button)
-
-            self.main_layout.addStretch()
-
-    class MyWindow(fxwidgets.FXMainWindow):
-        def __init__(self, parent=None):
-            super().__init__(parent)
-
-            self.toolbar.hide()
-            self.setCentralWidget(MyWidget(parent=self))
-            self.adjustSize()
-
-    window = MyWindow()
-    window.setWindowTitle("Subclassed Window")
-    window.show()
-    application.exec_()
-
-
-###### Color Delegate Helper
-
-
-def get_colors() -> Dict[str, Tuple[QColor, QColor, QColor, QIcon, bool]]:
-    """Get the colors for the `FXColorLabelDelegate` class.
-
-    Returns:
-        A dictionary mapping item texts to `(background_color,
-        border_color, text_icon_color, icon, color_icon)`.
-    """
-
-    # Background, border, text/icon, icon, color_icon
-    colors = {
-        "blender": (
-            QColor("#5a2c13"),
-            QColor("#a65123"),
-            QColor("#ffffff"),
-            get_icon("blender", library="dcc"),
-            False,
-        ),
-        "maya": (
-            QColor("#203e4c"),
-            QColor("#407c98"),
-            QColor("#ffffff"),
-            get_icon("maya", library="dcc"),
-            False,
-        ),
-        "exr": (
-            QColor("#541431"),
-            QColor("#891720"),
-            QColor("#ffffff"),
-            get_icon("open_exr", library="dcc"),
-            False,
-        ),
-        "usd": (
-            QColor("#203e4c"),
-            QColor("#407c98"),
-            QColor("#ffffff"),
-            get_icon("usd", library="dcc"),
-            False,
-        ),
-        "houdini": (
-            QColor("#5a2c13"),
-            QColor("#a65123"),
-            QColor("#ffffff"),
-            get_icon("houdini", library="dcc"),
-            False,
-        ),
-        "nuke": (
-            QColor("#181a1b"),
-            QColor("#5c6367"),
-            QColor("#ffffff"),
-            get_icon("nuke", library="dcc"),
-            False,
-        ),
-    }
-    return colors
-
-
-###### Thumbnail Delegate Example
-
-
-def show_thumbnail_delegate():
-    """Show a tree widget with thumbnail delegate.
-
-    Demonstrates:
-        - FXThumbnailDelegate for thumbnail display in tree views
-        - Status indicator dots
-        - File status labels
-        - Markdown description support in tooltips
-    """
-
-    application = fxwidgets.FXApplication()
-    window = fxwidgets.FXMainWindow(title="Thumbnail Delegate Example")
-    window.toolbar.hide()
-
-    # Create central widget with layout
-    central_widget = QWidget()
-    main_layout = QVBoxLayout(central_widget)
-
-    # Create tree widget
-    tree = QTreeWidget()
-    tree.setHeaderLabels(
-        [
-            "Asset",
-            "Type",
-            "Status",
-        ]
-    )
-    tree.setColumnCount(3)
-
-    # Set up the thumbnail delegate for the first column
-    thumbnail_delegate = fxwidgets.FXThumbnailDelegate()
-    tree.setItemDelegateForColumn(0, thumbnail_delegate)
-
-    # Get image path for thumbnails
-    images_dir = Path(__file__).parent / "images"
-    splash_image = str(images_dir / "splash.png")
-
-    # Create sample items with thumbnails
-    items_data = [
-        {
-            "name": "Character Model",
-            "type": "Model",
-            "status": "Approved",
-            "description": "**Main character** model with _full rig_.",
-            "thumbnail": splash_image,
-            "status_dot_color": QColor("#4CAF50"),  # Green
-            "status_label_color": QColor("#2196F3"),  # Blue
-            "status_label_text": "LATEST",
-        },
-        {
-            "name": "Environment Props",
-            "type": "Model",
-            "status": "In Progress",
-            "description": "Collection of **environment props** for scene.",
-            "thumbnail": splash_image,
-            "status_dot_color": QColor("#FFC107"),  # Amber
-            "status_label_color": QColor("#FF9800"),  # Orange
-            "status_label_text": "WIP",
-        },
-        {
-            "name": "Hero Texture",
-            "type": "Texture",
-            "status": "Review",
-            "description": "High-res textures for the _hero asset_.",
-            "thumbnail": splash_image,
-            "status_dot_color": QColor("#2196F3"),  # Blue
-            "status_label_color": None,
-            "status_label_text": None,
-        },
-        {
-            "name": "Animation Rig",
-            "type": "Rig",
-            "status": "Pending",
-            "description": "Animation rig with:\n- FK/IK controls\n- Facial rig",
-            "thumbnail": None,  # Will use default missing image
-            "status_dot_color": QColor("#9E9E9E"),  # Grey
-            "status_label_color": QColor("#F44336"),  # Red
-            "status_label_text": "OUTDATED",
-        },
-    ]
-
-    for data in items_data:
-        item = QTreeWidgetItem(tree)
-        item.setText(0, data["name"])
-        item.setText(1, data["type"])
-        item.setText(2, data["status"])
-
-        # Set thumbnail delegate data using role constants
-        item.setData(
-            0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True
-        )
-        item.setData(
-            0,
-            fxwidgets.FXThumbnailDelegate.THUMBNAIL_PATH_ROLE,
-            data["thumbnail"],
-        )
-        item.setData(
-            0,
-            fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE,
-            data["description"],
-        )
-        item.setData(
-            0,
-            fxwidgets.FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
-            data["status_dot_color"],
-        )
-        if data["status_label_color"]:
-            item.setData(
-                0,
-                fxwidgets.FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
-                data["status_label_color"],
-            )
-        if data["status_label_text"]:
-            item.setData(
-                0,
-                fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
-                data["status_label_text"],
-            )
-
-        # Store entity data for tooltip
-        item.setData(
-            0,
-            Qt.UserRole,
-            {
-                "name": data["name"],
-                "type": data["type"],
-            },
-        )
-
-    # Add an item without thumbnail for comparison
-    no_thumb_item = QTreeWidgetItem(tree)
-    no_thumb_item.setText(0, "Simple Item (No Thumbnail)")
-    no_thumb_item.setText(1, "Reference")
-    no_thumb_item.setText(2, "Final")
-    no_thumb_item.setData(
-        0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False
-    )
-    no_thumb_item.setData(
-        0,
-        fxwidgets.FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
-        QColor("#4CAF50"),
-    )
-
-    # Resize columns to content
-    tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
-    tree.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-    tree.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-
-    # Make tree columns user-resizable
-    tree.header().setStretchLastSection(False)
-    tree.header().setSectionResizeMode(0, QHeaderView.Interactive)
-    tree.header().setSectionResizeMode(1, QHeaderView.Interactive)
-    tree.header().setSectionResizeMode(2, QHeaderView.Stretch)
-
-    # Add toggle button to show/hide thumbnails (global toggle)
-    toggle_btn = QPushButton("Toggle Thumbnails")
-    set_icon(toggle_btn, "visibility")
-
-    def toggle_thumbnails():
-        thumbnail_delegate.show_thumbnail = (
-            not thumbnail_delegate.show_thumbnail
-        )
-        tree.viewport().update()
-
-    toggle_btn.clicked.connect(toggle_thumbnails)
-
-    # Add toggle button for status dot (global toggle)
-    toggle_dot_btn = QPushButton("Toggle Status Dot")
-    set_icon(toggle_dot_btn, "circle")
-
-    def toggle_status_dot():
-        thumbnail_delegate.show_status_dot = (
-            not thumbnail_delegate.show_status_dot
-        )
-        tree.viewport().update()
-
-    toggle_dot_btn.clicked.connect(toggle_status_dot)
-
-    # Add toggle button for status label (global toggle)
-    toggle_label_btn = QPushButton("Toggle Status Label")
-    set_icon(toggle_label_btn, "label")
-
-    def toggle_status_label():
-        thumbnail_delegate.show_status_label = (
-            not thumbnail_delegate.show_status_label
-        )
-        tree.viewport().update()
-
-    toggle_label_btn.clicked.connect(toggle_status_label)
-
-    # Add instructions
-    instructions = QLabel(
-        "Hover over items to see Markdown-formatted tooltips. "
-        "Status dots appear in top-right corner."
-    )
-
-    # Create button layout
-    button_layout = QHBoxLayout()
-    button_layout.addWidget(toggle_btn)
-    button_layout.addWidget(toggle_dot_btn)
-    button_layout.addWidget(toggle_label_btn)
-    button_layout.addStretch()
-
-    main_layout.addWidget(instructions)
-    main_layout.addWidget(tree)
-    main_layout.addLayout(button_layout)
-
-    window.setCentralWidget(central_widget)
-    window.set_company_label("\u00a9 Valentin Beaumont")
-    window.set_version_label("v0.1.0")
-    window.set_project_label("fxgui")
-    window.resize(700, 500)
-    window.show()
-    application.exec_()
-
-
-###### Splash Screen Functions
-
-
-def show_splash_screen(
-    opacity: float = 0.75,
-    project: str = "fxgui",
-    version: str = "0.1.0",
-    company: str = "\u00a9 Valentin Beaumont",
-) -> fxwidgets.FXSplashScreen:
-    """Show the splash screen.
-
-    Args:
-        opacity: The overlay opacity (0.0 to 1.0). Defaults to 0.75.
-        project: The project name. Defaults to "fxgui".
-        version: The version string. Defaults to "0.1.0".
-        company: The company name. Defaults to copyright Valentin Beaumont.
-
-    Returns:
-        The splash screen instance.
-    """
-
-    splashscreen = fxwidgets.FXSplashScreen(
-        image_path=str(_pixmap),
-        fade_in=False,
-        show_progress_bar=True,
-        project=project,
-        version=version,
-        company=company,
-        border_width=2,
-        border_color="#4a4949",
-        corner_radius=15,
-    )
-    splashscreen.set_overlay_opacity(opacity)
-    splashscreen.show()
-    return splashscreen
-
-
-def simulate_loading(
-    splashscreen: fxwidgets.FXSplashScreen,
-    application: fxwidgets.FXApplication,
-) -> None:
-    """Simulate a loading process on the splash screen.
-
-    Args:
-        splashscreen: The splash screen instance.
-        application: The application instance.
-    """
-
-    for i in range(101):
-        splashscreen.progress_bar.setValue(i)
-        application.processEvents()
-
-
-def finish_splash_screen(
-    splashscreen: fxwidgets.FXSplashScreen,
-    window: fxwidgets.FXMainWindow,
-    show_delayed: bool,
-) -> None:
-    """Finish the splash screen and show the main window.
-
-    Args:
-        splashscreen: The splash screen instance.
-        window: The main window instance.
-        show_delayed: Whether to show the window after a delay.
-    """
-
-    if show_delayed:
-        QTimer.singleShot(SPLASH_DELAY_MS, lambda: splashscreen.finish(window))
-        QTimer.singleShot(SPLASH_DELAY_MS + 200, window.show)
-    else:
-        splashscreen.finish(window)
-        window.show()
-
-
-###### Main Window Configuration
-
-
-def configure_window(window: fxwidgets.FXMainWindow):
-    """Configure the main window.
-
-    Args:
-        window: The main window instance.
-    """
-
-    window.statusBar().showMessage("Window initialized", fxwidgets.INFO)
-    window.toolbar.hide()
-
-    setup_status_buttons(window)
-    set_button_icons(window)
-    set_tooltips(window)
-    setup_tree_widget(window)
-    setup_list_widget(window)
-    setup_table_widget(window)
-    setup_refresh_action(window)
-
-
-def setup_status_buttons(window: fxwidgets.FXMainWindow):
-    """Connect status buttons to display messages.
-
-    Args:
-       window: The main window instance.
-    """
-
-    status_buttons = {
-        window.ui.button_debug: ("Debug message", fxwidgets.DEBUG),
-        window.ui.button_success: ("Success message", fxwidgets.SUCCESS),
-        window.ui.button_info: ("Info message", fxwidgets.INFO),
-        window.ui.button_warning: ("Warning message", fxwidgets.WARNING),
-        window.ui.button_error: ("Error message", fxwidgets.ERROR),
-        window.ui.button_critical: ("Critical message", fxwidgets.CRITICAL),
-    }
-    for button, (message, level) in status_buttons.items():
-        button.clicked.connect(
-            lambda msg=message, lvl=level: window.statusBar().showMessage(
-                msg, lvl
-            )
-        )
-
-
-def set_button_icons(window: fxwidgets.FXMainWindow) -> None:
-    """Set icons for the status buttons.
-
-    Args:
-        window: The main window instance.
-    """
-
-    style = window.style()
-    colors = fxstyle.get_colors()
-    button_icons = {
-        window.ui.button_debug: get_icon(
-            "bug_report", color=colors["feedback"]["debug"]["foreground"]
-        ),
-        window.ui.button_success: get_icon(
-            "check_circle", color=colors["feedback"]["success"]["foreground"]
-        ),
-        window.ui.button_info: style.standardIcon(
-            QStyle.SP_MessageBoxInformation
-        ),
-        window.ui.button_warning: style.standardIcon(
-            QStyle.SP_MessageBoxWarning
-        ),
-        window.ui.button_error: get_icon(
-            "error", color=colors["feedback"]["error"]["foreground"]
-        ),
-        window.ui.button_critical: style.standardIcon(
-            QStyle.SP_MessageBoxCritical
-        ),
-    }
-    for button, icon in button_icons.items():
-        button.setIcon(icon)
-
-    # Set icons on QDialogButtonBox buttons (using set_icon for theme updates)
-    button_box = window.ui.buttonBox
-    ok_button = button_box.button(QDialogButtonBox.Ok)
-    cancel_button = button_box.button(QDialogButtonBox.Cancel)
-    if ok_button:
-        set_icon(ok_button, "check")
-    if cancel_button:
-        set_icon(cancel_button, "cancel")
-
-
-def set_tooltips(window: fxwidgets.FXMainWindow) -> None:
-    """Set tooltips for the buttons.
-
-    Args:
-        window: The main window instance.
-    """
-
-    fxutils.set_formatted_tooltip(
-        window.ui.button_success, "Success", "This is a success message."
-    )
-
-
-def show_context_menu(tree: QTreeWidget, position: QPoint) -> None:
-    """Show the context menu when right-clicking on an item.
-
-    Args:
-        tree: The tree widget to show the context menu in.
-        position: The position of the right-click.
-    """
-
-    # Retrieve all the items selected
-    selected_items = tree.selectedItems()
-    if not selected_items:
-        return
-
-    # Create the context menu
-    menu = QMenu()
-
-    # Title (use theme colors)
-    theme_colors = fxstyle.get_theme_colors()
-    title = f"Items ({len(selected_items)})"
-    label = QLabel(title)
-    label.setMargin(2)
-    label.setAlignment(Qt.AlignCenter)
-    label.setStyleSheet(
-        f"background-color: {theme_colors['surface_alt']}; "
-        f"color: {theme_colors['text']};"
-    )
-    label_action = QWidgetAction(menu)
-    label_action.setDefaultWidget(label)
-    menu.addAction(label_action)
-
-    # Actions
-    ac_show_in_explorer = menu.addAction("Show in Explorer")
-    set_icon(ac_show_in_explorer, "folder_open")
-
-    copy_submenu = menu.addMenu("Copy Path to Clipboard")
-    copy_submenu.setIcon(get_icon("content_copy"))
-
-    ac_copy_default = copy_submenu.addAction("Default")
-    set_icon(ac_copy_default, "content_copy")
-
-    ac_copy_houdini = copy_submenu.addAction("Houdini")
-    set_icon(ac_copy_houdini, "houdini", library="dcc")
-
-    # Show the context menu
-    menu.exec_(tree.viewport().mapToGlobal(position))
-
-
-def setup_tree_widget(window: fxwidgets.FXMainWindow) -> None:
-    """Setup the tree widget with a custom delegate and a context menu.
-
-    Args:
-        window: The main window instance.
-    """
-
-    # Delegate
-    color_delegate = fxwidgets.FXColorLabelDelegate(
-        get_colors(), window.ui.treeWidget
-    )
-    window.ui.treeWidget.setItemDelegateForColumn(0, color_delegate)
-
-    # Skip delegate drawing for items with "new"
-    def set_skip_delegate_role_new(item: QTreeWidgetItem):
-        if "new" in item.text(0).lower():
-            item.setData(
-                0, fxwidgets.FXColorLabelDelegate.SKIP_DELEGATE_ROLE, True
-            )
-        for i in range(item.childCount()):
-            set_skip_delegate_role_new(item.child(i))
-
-    # Skip delegate drawing for all child items
-    def set_skip_delegate_role_child(item: QTreeWidgetItem):
-        if item.parent() is not None:
-            item.setData(
-                0, fxwidgets.FXColorLabelDelegate.SKIP_DELEGATE_ROLE, True
-            )
-        for i in range(item.childCount()):
-            set_skip_delegate_role_child(item.child(i))
-
-    root = window.ui.treeWidget.invisibleRootItem()
-    for i in range(root.childCount()):
-        set_skip_delegate_role_child(root.child(i))
-
-    # Context menu
-    window.ui.treeWidget.setContextMenuPolicy(Qt.CustomContextMenu)
-    window.ui.treeWidget.customContextMenuRequested.connect(
-        lambda pos: show_context_menu(window.ui.treeWidget, pos)
-    )
-
-
-def setup_list_widget(window: fxwidgets.FXMainWindow) -> None:
-    """Setup the list widget with a custom delegate.
-
-    Args:
-        window: The main window instance.
-    """
-
-    color_delegate = fxwidgets.FXColorLabelDelegate(
-        get_colors(), window.ui.listWidget
-    )
-    window.ui.listWidget.setItemDelegate(color_delegate)
-
-
-def setup_table_widget(window: fxwidgets.FXMainWindow) -> None:
-    """Setup the table widget with a custom delegate.
-
-    Args:
-        window: The main window instance.
-    """
-
-    # Add columns
-    window.ui.tableWidget.setColumnCount(2)
-    window.ui.tableWidget.setHorizontalHeaderLabels(["Key", "Value"])
-
-    # Make columns stretch to fill available space
-    header = window.ui.tableWidget.horizontalHeader()
-    header.setSectionResizeMode(QHeaderView.Stretch)
-
-    # Add items
-    items = [
-        ("Blender", "2.93"),
-        ("Maya", "2022"),
-        ("Houdini", "19.0"),
-        ("Nuke", "13.0"),
-    ]
-    for i, (key, value) in enumerate(items):
-        window.ui.tableWidget.insertRow(i)
-        window.ui.tableWidget.setItem(i, 0, QTableWidgetItem(key))
-        window.ui.tableWidget.setItem(i, 1, QTableWidgetItem(value))
-
-    # Skip the delegate for the second column
-    for i in range(window.ui.tableWidget.rowCount()):
-        item = window.ui.tableWidget.item(i, 1)
-        item.setData(fxwidgets.FXColorLabelDelegate.SKIP_DELEGATE_ROLE, True)
-
-    color_delegate = fxwidgets.FXColorLabelDelegate(
-        get_colors(), window.ui.tableWidget, 4, 0, 0
-    )
-    window.ui.tableWidget.setItemDelegate(color_delegate)
-
-
-def setup_refresh_action(window: fxwidgets.FXMainWindow) -> None:
-    """Setup the refresh action in the toolbar."""
-
-    def refresh():
-        original_icon = window.refresh_action.icon()
-        window.statusBar().showMessage("Refreshing...", fxwidgets.INFO)
-        ok_icon = window.style().standardIcon(QStyle.SP_DialogOkButton)
-        window.refresh_action.setIcon(ok_icon)
-
-        # Restore original icon after delay
-        QTimer.singleShot(
-            RESTORE_ICON_DELAY_MS,
-            lambda: window.refresh_action.setIcon(original_icon),
-        )
-
-    window.refresh_action.triggered.connect(refresh)
-
-
-###### Main Function
-
-
-def main(show_delayed: bool = True):
-    """Main example function.
-
-    Args:
-        show_delayed: Whether to show the window after a delay.
+    filepath_layout = QVBoxLayout()
+    filepath_widget = fxwidgets.FXFilePathWidget(mode="directory")
+    filepath_layout.addWidget(filepath_widget)
+    filepath_section.set_content_layout(filepath_layout)
+    layout.addWidget(filepath_section)
+
+    layout.addStretch()
+    scroll_area.setWidget(scroll_content)
+
+    # Return a container with the scroll area
+    container = QWidget()
+    container_layout = QVBoxLayout(container)
+    container_layout.setContentsMargins(0, 0, 0, 0)
+    container_layout.addWidget(scroll_area)
+    return container
+
+
+def main():
+    """Main showcase application demonstrating fxgui capabilities.
+
+    This function creates a comprehensive example application with:
+    - Splash screen with loading progress
+    - Main window with tabbed interface
+    - Theme awareness demonstrations
+    - Custom delegate examples
+    - Various widget showcases
+
+    The application demonstrates best practices for:
+    - Making icons theme-aware with set_icon()
+    - Updating widget colors on theme change
+    - Creating theme-aware delegate backgrounds
     """
 
     # Initialize the application
@@ -1372,29 +925,109 @@ def main(show_delayed: bool = True):
     _ = QUiLoader()  # PySide6 bug workaround
     application = fxwidgets.FXApplication()
 
-    # Note: FXApplication already sets the style to Fusion with FXProxyStyle
-    # Don't override it here or QSS borders won't work on Windows
-
-    # Initialize main window
-    window = fxwidgets.FXMainWindow(
-        project="fxgui",
-        version="0.1.0",
-        company="\u00a9 Valentin Beaumont",
-        ui_file=str(_ui_file),
-    )
-    window.set_banner_text("Example")
-
     # Show splash screen
-    splashscreen = show_splash_screen()
+    splashscreen = fxwidgets.FXSplashScreen(
+        image_path=str(_pixmap),
+        title="fxgui Showcase",
+        information=(
+            "A comprehensive Qt widget library for DCC applications. "
+            "This showcase demonstrates theme-aware widgets, custom delegates, "
+            "and various UI components designed for VFX and animation pipelines."
+        ),
+        show_progress_bar=True,
+        project="fxgui",
+        version="1.0.0",
+        company="\u00a9 Valentin Beaumont",
+        corner_radius=12,
+        border_width=2,
+        border_color="#4a4949",
+    )
+    splashscreen.set_overlay_opacity(0.85)
+    splashscreen.show()
 
-    # Simulate loading process
-    simulate_loading(splashscreen, application)
+    # Simulate loading
+    loading_steps = [
+        "Loading theme system...",
+        "Initializing widgets...",
+        "Setting up delegates...",
+        "Preparing UI components...",
+        "Almost ready...",
+    ]
+
+    for i, step in enumerate(loading_steps):
+        splashscreen.message_label.setText(step)
+        for j in range(20):
+            progress = (i * 20) + j + 1
+            splashscreen.progress_bar.setValue(progress)
+            application.processEvents()
+            QTimer.singleShot(10, lambda: None)
+            application.processEvents()
+
+    # Create main window
+    window = fxwidgets.FXMainWindow(
+        title="fxgui Showcase",
+        project="fxgui",
+        version="1.0.0",
+        company="\u00a9 Valentin Beaumont",
+    )
+    window.set_banner_text("Showcase")
+    window.set_banner_icon("widgets")
+
+    # Create tabbed interface with margins
+    central_widget = QWidget()
+    central_layout = QVBoxLayout(central_widget)
+    central_layout.setContentsMargins(8, 8, 8, 8)
+
+    tabs = QTabWidget()
+    tabs.addTab(_create_theme_awareness_tab(), "Theme Awareness")
+    tabs.addTab(_create_delegates_tab(), "Delegates")
+    tabs.addTab(_create_widgets_tab(), "Widgets")
+
+    central_layout.addWidget(tabs)
+    window.setCentralWidget(central_widget)
+
+    # Add dockable log widget at the bottom
+    log_dock = QDockWidget("Output Log", window)
+    log_dock.setObjectName("OutputLogDock")
+    log_container = QWidget()
+    log_container_layout = QVBoxLayout(log_container)
+    log_container_layout.setContentsMargins(10, 10, 10, 10)
+    log_widget = fxwidgets.FXOutputLogWidget(capture_output=True)
+    log_container_layout.addWidget(log_widget)
+    log_dock.setWidget(log_container)
+    window.addDockWidget(Qt.BottomDockWidgetArea, log_dock)
+
+    # Log some initial messages to demonstrate the widget
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.info("fxgui Showcase application started")
+    logger.debug("Theme system initialized")
+    logger.warning("This is a sample warning message")
 
     # Finish splash screen and show window
-    finish_splash_screen(splashscreen, window, show_delayed)
+    splashscreen.finish(window)
+    window.resize(800, 900)
+    window.show()
+    # Center after show() so frame geometry is accurate
+    window.center_on_screen()
 
-    # Configure window
-    configure_window(window)
+    # Show welcome message in status bar
+    _message = "Welcome to fxgui! Toggle theme with the toolbar menu in <b>Window</b> > <b>Theme</b>."
+    window.statusBar().showMessage(
+        _message,
+        fxwidgets.INFO,
+    )
+
+    # Show welcome notification banner
+    welcome_banner = fxwidgets.FXNotificationBanner(
+        parent=window.centralWidget(),
+        message=_message,
+        severity_type=fxwidgets.INFO,
+        timeout=8000,
+    )
+    welcome_banner.closed.connect(welcome_banner.deleteLater)
+    welcome_banner.show()
 
     # Start application event loop
     application.exec_()

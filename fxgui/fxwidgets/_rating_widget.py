@@ -126,12 +126,9 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
     def _update_stars(self) -> None:
         """Update star icons based on current rating."""
         # Get current theme colors (dynamic for theme switching)
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
-        empty_color = theme_colors["text_disabled"]
-        filled_color = accent_colors["primary"]
-        hover_color = accent_colors["secondary"]
+        empty_color = self.theme.text_disabled
+        filled_color = self.theme.accent_primary
+        hover_color = self.theme.accent_secondary
 
         display_rating = (
             self._hover_rating

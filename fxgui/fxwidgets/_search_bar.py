@@ -138,20 +138,17 @@ class FXSearchBar(fxstyle.FXThemeAware, QWidget):
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
         self._search_container.setStyleSheet(
             f"""
             QWidget {{
-                background-color: {theme_colors['surface_sunken']};
-                border: 1px solid {theme_colors['border']};
+                background-color: {self.theme.surface_sunken};
+                border: 1px solid {self.theme.border};
                 border-radius: 4px;
             }}
             QWidget:focus-within {{
-                border-color: {accent_colors['primary']};
+                border-color: {self.theme.accent_primary};
             }}
         """
         )

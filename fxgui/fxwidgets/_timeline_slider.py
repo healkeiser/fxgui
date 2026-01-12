@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._tooltip import FXTooltip
 
 
 class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
@@ -92,7 +93,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._start_spinbox.setRange(-99999, 99999)
         self._start_spinbox.setValue(self._start_frame)
         self._start_spinbox.setFixedWidth(55)
-        self._start_spinbox.setToolTip("Start frame")
+        self._start_spinbox_tooltip = FXTooltip(
+            parent=self._start_spinbox,
+            title="Start Frame",
+            description="First frame of the timeline range",
+        )
         self._start_spinbox.valueChanged.connect(self._on_start_changed)
         main_layout.addWidget(self._start_spinbox)
 
@@ -106,8 +111,13 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             fxicons.set_icon(self._goto_start_btn, "skip_previous")
             self._goto_start_btn.setFixedSize(24, 24)
             self._goto_start_btn.setFlat(True)
-            self._goto_start_btn.setToolTip("Go to start")
             self._goto_start_btn.clicked.connect(self.go_to_start)
+            self._goto_start_btn_tooltip = FXTooltip(
+                parent=self._goto_start_btn,
+                title="Go to Start",
+                description="Jump to the first frame",
+                shortcut="Home",
+            )
             controls_layout.addWidget(self._goto_start_btn)
 
             # Previous frame
@@ -115,16 +125,26 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             fxicons.set_icon(self._prev_btn, "chevron_left")
             self._prev_btn.setFixedSize(24, 24)
             self._prev_btn.setFlat(True)
-            self._prev_btn.setToolTip("Previous frame")
             self._prev_btn.clicked.connect(self.previous_frame)
+            self._prev_btn_tooltip = FXTooltip(
+                parent=self._prev_btn,
+                title="Previous Frame",
+                description="Go back one frame",
+                shortcut="Left",
+            )
             controls_layout.addWidget(self._prev_btn)
 
             # Play/Pause
             self._play_btn = QPushButton()
             fxicons.set_icon(self._play_btn, "play_arrow")
             self._play_btn.setFixedSize(28, 28)
-            self._play_btn.setToolTip("Play")
             self._play_btn.clicked.connect(self.toggle_playback)
+            self._play_btn_tooltip = FXTooltip(
+                parent=self._play_btn,
+                title="Play",
+                description="Start playback",
+                shortcut="Space",
+            )
             controls_layout.addWidget(self._play_btn)
 
             # Next frame
@@ -132,8 +152,13 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             fxicons.set_icon(self._next_btn, "chevron_right")
             self._next_btn.setFixedSize(24, 24)
             self._next_btn.setFlat(True)
-            self._next_btn.setToolTip("Next frame")
             self._next_btn.clicked.connect(self.next_frame)
+            self._next_btn_tooltip = FXTooltip(
+                parent=self._next_btn,
+                title="Next Frame",
+                description="Go forward one frame",
+                shortcut="Right",
+            )
             controls_layout.addWidget(self._next_btn)
 
             # Go to end
@@ -141,8 +166,13 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             fxicons.set_icon(self._goto_end_btn, "skip_next")
             self._goto_end_btn.setFixedSize(24, 24)
             self._goto_end_btn.setFlat(True)
-            self._goto_end_btn.setToolTip("Go to end")
             self._goto_end_btn.clicked.connect(self.go_to_end)
+            self._goto_end_btn_tooltip = FXTooltip(
+                parent=self._goto_end_btn,
+                title="Go to End",
+                description="Jump to the last frame",
+                shortcut="End",
+            )
             controls_layout.addWidget(self._goto_end_btn)
 
             main_layout.addLayout(controls_layout)
@@ -169,7 +199,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._end_spinbox.setRange(-99999, 99999)
         self._end_spinbox.setValue(self._end_frame)
         self._end_spinbox.setFixedWidth(55)
-        self._end_spinbox.setToolTip("End frame")
+        self._end_spinbox_tooltip = FXTooltip(
+            parent=self._end_spinbox,
+            title="End Frame",
+            description="Last frame of the timeline range",
+        )
         self._end_spinbox.valueChanged.connect(self._on_end_changed)
         main_layout.addWidget(self._end_spinbox)
 
@@ -179,21 +213,22 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._fps_spinbox.setValue(self._fps)
         self._fps_spinbox.setSuffix(" fps")
         self._fps_spinbox.setFixedWidth(65)
-        self._fps_spinbox.setToolTip("Frames per second")
+        self._fps_spinbox_tooltip = FXTooltip(
+            parent=self._fps_spinbox,
+            title="FPS",
+            description="Frames per second for playback",
+        )
         self._fps_spinbox.valueChanged.connect(self._on_fps_changed)
         main_layout.addWidget(self._fps_spinbox)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setMinimumHeight(30)
 
-    def _apply_theme_styles(self) -> None:
-        """Apply theme-specific styles."""
-        theme_colors = fxstyle.get_theme_colors()
-        accent_colors = fxstyle.get_accent_colors()
-
-        self._track_color = QColor(theme_colors["surface_alt"])
-        self._playhead_color = QColor(accent_colors["primary"])
-        self._text_color = QColor(theme_colors["text"])
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Handle theme changes."""
+        self._track_color = QColor(self.theme.surface_alt)
+        self._playhead_color = QColor(self.theme.accent_primary)
+        self._text_color = QColor(self.theme.text)
 
         # Trigger repaint of track widget
         if hasattr(self, "_track_widget"):

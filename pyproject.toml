@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fxgui"
+dynamic = ["version"]
+description = "Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+authors = [
+    { name = "Valentin Beaumont", email = "valentin.onze@gmail.com" }
+]
+maintainers = [
+    { name = "Valentin Beaumont", email = "valentin.onze@gmail.com" }
+]
+keywords = ["Qt", "PySide2", "PySide6", "PyQt5", "PyQt6", "VFX", "DCC", "UI"]
+classifiers = [
+    # How mature is this project? Common values are
+    # 3 - Alpha
+    # 4 - Beta
+    # 5 - Production/Stable
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+
+    # Indicate who your project is intended for
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: User Interfaces",
+
+    # Specify the Python versions you support here
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "QtPy>=2.4.2",
+    "PyYAML>=6.0",
+    "Pygments>=2.0",
+]
+
+[project.optional-dependencies]
+mkdocs = [
+    "mkdocs-material",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
+    "mkdocs-section-index",
+    "mkdocs-git-revision-date-localized-plugin",
+    "mkdocs-git-authors-plugin",
+    "mkdocs-git-committers-plugin-2",
+    "mkdocstrings[python]",
+    "mike",
+    "black",
+]
+zensical = [
+    "zensical>=0.0.15",
+    "mkdocstrings-python>=2.0.0",
+    "black",
+]
+
+[project.urls]
+Homepage = "https://github.com/healkeiser/fxgui"
+Documentation = "https://healkeiser.github.io/fxgui"
+GitHub = "https://github.com/healkeiser/fxgui"
+Changelog = "https://github.com/healkeiser/fxgui/blob/main/CHANGELOG.md"
+Source = "https://github.com/healkeiser/fxgui"
+Funding = "https://github.com/sponsors/healkeiser"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["fxgui*"]
+
+[tool.setuptools_scm]
+version_file = "fxgui/_version.py"
