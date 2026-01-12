@@ -8,21 +8,32 @@ dynamic = ["version"]
 description = "Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications."
 readme = "README.md"
 license = "MIT"
+license-files = ["LICEN[CS]E*"]
 authors = [
+    { name = "Valentin Beaumont", email = "valentin.onze@gmail.com" }
+]
+maintainers = [
     { name = "Valentin Beaumont", email = "valentin.onze@gmail.com" }
 ]
 keywords = ["Qt", "PySide2", "PySide6", "PyQt5", "PyQt6", "VFX", "DCC", "UI"]
 classifiers = [
+    # How mature is this project? Common values are
+    # 3 - Alpha
+    # 4 - Beta
+    # 5 - Production/Stable
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+
+    # Indicate who your project is intended for
     "Operating System :: OS Independent",
+    "Topic :: Software Development :: User Interfaces",
+
+    # Specify the Python versions you support here
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Topic :: Software Development :: User Interfaces",
 ]
 requires-python = ">=3.9"
 dependencies = [
@@ -51,6 +62,7 @@ zensical = [
 ]
 
 [project.urls]
+Homepage = "https://github.com/healkeiser/fxgui"
 Documentation = "https://healkeiser.github.io/fxgui"
 GitHub = "https://github.com/healkeiser/fxgui"
 Changelog = "https://github.com/healkeiser/fxgui/blob/main/CHANGELOG.md"
@@ -62,4 +74,4 @@ where = ["."]
 include = ["fxgui*"]
 
 [tool.setuptools_scm]
-write_to = "fxgui/_version.py"
+version_file = "fxgui/_version.py"
