@@ -8,7 +8,8 @@
       "Bash(tree:*)",
       "Bash(wc:*)",
       "Bash(DEVELOPER_MODE=1 python:*)",
-      "Bash(du:*)"
+      "Bash(du:*)",
+      "Bash(git fsck:*)"
     ]
   }
 }
