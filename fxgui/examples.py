@@ -583,7 +583,9 @@ fxstyle.theme_manager.theme_changed.connect(update_item_colors)
     fuzzy_delegate.show_status_dot = True
     fuzzy_delegate.show_status_label = True
     fuzzy_tree.tree_view.setItemDelegate(fuzzy_delegate)
-    fxwidgets.FXThumbnailDelegate.apply_transparent_selection(fuzzy_tree.tree_view)
+    fxwidgets.FXThumbnailDelegate.apply_transparent_selection(
+        fuzzy_tree.tree_view
+    )
 
     # Role for storing icon name for theme-aware updates
     FUZZY_ICON_NAME_ROLE = Qt.UserRole + 301

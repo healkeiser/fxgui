@@ -7,7 +7,7 @@
 import os
 import weakref
 from enum import IntEnum
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 # Third-party
 from qtpy.QtCore import (
@@ -31,12 +31,19 @@ from qtpy.QtGui import (
     QPolygonF,
 )
 from qtpy.QtWidgets import (
+    QAbstractItemView,
     QApplication,
     QFrame,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
+    QListWidget,
+    QListWidgetItem,
     QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -801,7 +808,9 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
 
         # Determine best position if AUTO
         if use_position == FXTooltipPosition.AUTO:
-            use_position = self._find_best_position(rect, tooltip_size, screen_rect)
+            use_position = self._find_best_position(
+                rect, tooltip_size, screen_rect
+            )
 
         # Calculate coordinates
         x, y, arrow_offset = self._calculate_coordinates(
@@ -1216,17 +1225,265 @@ class FXTooltipManager(QObject):
         return cls._instance
 
 
+class _ItemTooltipHandler(QObject):
+    """Event filter that handles tooltips for item-based widgets.
+
+    This class manages tooltip display for QTreeWidgetItem, QListWidgetItem,
+    and QTableWidgetItem by intercepting mouse events on the viewport.
+    """
+
+    def __init__(
+        self,
+        view: QAbstractItemView,
+        item: Union[QTreeWidgetItem, QListWidgetItem, QTableWidgetItem],
+        tooltip: FXTooltip,
+        show_delay: int = 500,
+    ):
+        super().__init__(view)
+        self._view = weakref.ref(view)
+        self._item = weakref.ref(item)
+        self._tooltip = tooltip
+        self._show_delay = show_delay
+        self._is_hovering = False
+
+        self._show_timer = QTimer(self)
+        self._show_timer.setSingleShot(True)
+        self._show_timer.timeout.connect(self._do_show)
+
+        self._pending_rect: Optional[QRect] = None
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Handle mouse events to show/hide tooltip for the item."""
+        view = self._view()
+        item = self._item()
+
+        if not view or not item:
+            return False
+
+        if event.type() == QEvent.MouseMove:
+            from qtpy.QtGui import QMouseEvent
+
+            if isinstance(event, QMouseEvent):
+                pos = event.pos()
+                hovered_item = self._get_item_at_pos(view, pos)
+
+                if hovered_item is item:
+                    # Mouse is over our item
+                    if not self._is_hovering:
+                        self._is_hovering = True
+                        # Get item rect and start show timer
+                        item_rect = self._get_item_rect(view, item)
+                        if item_rect:
+                            self._pending_rect = QRect(
+                                view.viewport().mapToGlobal(
+                                    item_rect.topLeft()
+                                ),
+                                item_rect.size(),
+                            )
+                            self._show_timer.start(self._show_delay)
+                else:
+                    # Mouse moved off our item
+                    if self._is_hovering:
+                        self._is_hovering = False
+                        self._show_timer.stop()
+                        if self._tooltip.isVisible():
+                            self._tooltip.hide_tooltip()
+
+        elif event.type() == QEvent.Leave:
+            # Mouse left the viewport
+            if self._is_hovering:
+                self._is_hovering = False
+                self._show_timer.stop()
+                if self._tooltip.isVisible():
+                    self._tooltip.hide_tooltip()
+
+        return False  # Don't consume events
+
+    def _do_show(self) -> None:
+        """Show the tooltip at the pending rect."""
+        if self._pending_rect and self._is_hovering:
+            self._tooltip.show_at_rect(self._pending_rect)
+
+    def _get_item_at_pos(
+        self,
+        view: QAbstractItemView,
+        pos: QPoint,
+    ) -> Optional[Union[QTreeWidgetItem, QListWidgetItem, QTableWidgetItem]]:
+        """Get the item at the given position."""
+        if isinstance(view, QTreeWidget):
+            return view.itemAt(pos)
+        elif isinstance(view, QListWidget):
+            return view.itemAt(pos)
+        elif isinstance(view, QTableWidget):
+            return view.itemAt(pos)
+        return None
+
+    def _get_item_rect(
+        self,
+        view: QAbstractItemView,
+        item: Union[QTreeWidgetItem, QListWidgetItem, QTableWidgetItem],
+    ) -> Optional[QRect]:
+        """Get the visual rect for the item."""
+        if isinstance(view, QTreeWidget) and isinstance(item, QTreeWidgetItem):
+            return view.visualItemRect(item)
+        elif isinstance(view, QListWidget) and isinstance(
+            item, QListWidgetItem
+        ):
+            return view.visualItemRect(item)
+        elif isinstance(view, QTableWidget) and isinstance(
+            item, QTableWidgetItem
+        ):
+            return view.visualItemRect(view.indexFromItem(item))
+        return None
+
+
+def set_tooltip(
+    target: Union[QWidget, QTreeWidgetItem, QListWidgetItem, QTableWidgetItem],
+    description: str = "",
+    title: Optional[str] = None,
+    icon: Optional[str] = None,
+    shortcut: Optional[str] = None,
+    position: FXTooltipPosition = FXTooltipPosition.AUTO,
+    show_delay: int = 500,
+    hide_delay: int = 200,
+) -> FXTooltip:
+    """Attach an FXTooltip to a widget or item with a simple API.
+
+    This is a convenience function similar to `fxicons.set_icon()` that creates
+    and attaches an FXTooltip to the given target. The tooltip is automatically
+    shown on hover and hidden when the mouse leaves.
+
+    Supports both QWidget subclasses and item-based widgets:
+    - QWidget (buttons, labels, etc.)
+    - QTreeWidgetItem
+    - QListWidgetItem
+    - QTableWidgetItem
+
+    Args:
+        target: The widget or item to attach the tooltip to.
+        description: Main tooltip content text.
+        title: Optional bold title text.
+        icon: Optional icon name (from fxicons).
+        shortcut: Optional keyboard shortcut to display.
+        position: Preferred position relative to target.
+        show_delay: Delay in ms before showing (default 500).
+        hide_delay: Delay in ms before hiding after mouse leaves (default 200).
+
+    Returns:
+        The created FXTooltip instance (kept internally to prevent GC).
+
+    Examples:
+        >>> # Simple tooltip on a button
+        >>> set_tooltip(button, "Click to save the file")
+        >>>
+        >>> # Rich tooltip with all options
+        >>> set_tooltip(
+        ...     button,
+        ...     description="Save the current document to disk.",
+        ...     title="Save",
+        ...     icon="save",
+        ...     shortcut="Ctrl+S",
+        ... )
+        >>>
+        >>> # Tooltip on a tree item
+        >>> item = QTreeWidgetItem(tree, ["Item 1"])
+        >>> set_tooltip(
+        ...     item,
+        ...     description="This is a tree item tooltip",
+        ...     title="Item Info",
+        ...     icon="info",
+        ... )
+    """
+    # Handle item-based widgets
+    if isinstance(target, (QTreeWidgetItem, QListWidgetItem, QTableWidgetItem)):
+        # Get the parent view
+        if isinstance(target, QTreeWidgetItem):
+            view = target.treeWidget()
+        elif isinstance(target, QListWidgetItem):
+            view = target.listWidget()
+        elif isinstance(target, QTableWidgetItem):
+            view = target.tableWidget()
+        else:
+            view = None
+
+        if not view:
+            raise ValueError(
+                f"Item {target} is not attached to a view widget. "
+                "Add the item to a tree/list/table before calling set_tooltip()."
+            )
+
+        # Create tooltip without parent (will be positioned manually)
+        tooltip = FXTooltip(
+            parent=None,
+            title=title,
+            description=description,
+            icon=icon,
+            shortcut=shortcut,
+            position=position,
+            show_delay=show_delay,
+            hide_delay=hide_delay,
+            persistent=True,  # No hover detection on tooltip itself
+        )
+
+        # Create handler that manages tooltip for this item
+        handler = _ItemTooltipHandler(view, target, tooltip, show_delay)
+        view.viewport().installEventFilter(handler)
+        view.viewport().setMouseTracking(True)
+
+        # Store references to prevent garbage collection
+        if not hasattr(view, "_fx_item_tooltip_handlers"):
+            view._fx_item_tooltip_handlers = []
+        view._fx_item_tooltip_handlers.append(handler)
+
+        if not hasattr(view, "_fx_tooltips"):
+            view._fx_tooltips = []
+        view._fx_tooltips.append(tooltip)
+
+        return tooltip
+
+    # Handle regular QWidget
+    elif isinstance(target, QWidget):
+        tooltip = FXTooltip(
+            parent=target,
+            title=title,
+            description=description,
+            icon=icon,
+            shortcut=shortcut,
+            position=position,
+            show_delay=show_delay,
+            hide_delay=hide_delay,
+        )
+
+        # Store tooltip reference on the widget to prevent garbage collection
+        if not hasattr(target, "_fx_tooltips"):
+            target._fx_tooltips = []
+        target._fx_tooltips.append(tooltip)
+
+        return tooltip
+
+    else:
+        raise TypeError(
+            f"set_tooltip() expects a QWidget or item type, got {type(target).__name__}"
+        )
+
+
 # Example usage
 def example() -> None:
     import sys
 
     from qtpy.QtWidgets import (
+        QGroupBox,
+        QHBoxLayout,
+        QLabel,
+        QListWidget,
+        QListWidgetItem,
+        QPushButton,
+        QTreeWidget,
+        QTreeWidgetItem,
         QVBoxLayout,
         QWidget,
-        QPushButton,
-        QGroupBox,
-        QLabel,
     )
+
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 
     app = FXApplication(sys.argv)
@@ -1236,49 +1493,112 @@ def example() -> None:
     # Main content widget
     content_widget = QWidget()
     layout = QVBoxLayout(content_widget)
-    layout.setSpacing(20)
+    layout.setSpacing(15)
 
     # Description
     desc = QLabel(
-        "Hover over buttons to see tooltips, or click for programmatic ones."
+        "Hover over widgets and items to see tooltips. "
+        "The set_tooltip() function works on both widgets and item views."
     )
     desc.setWordWrap(True)
     layout.addWidget(desc)
 
-    # Hover tooltips group
-    hover_group = QGroupBox("Hover Tooltips")
-    hover_layout = QVBoxLayout(hover_group)
+    ###### Widget tooltips group
+    widget_group = QGroupBox("Widget Tooltips (using set_tooltip)")
+    widget_layout = QVBoxLayout(widget_group)
 
-    # Button with simple tooltip
+    # Simple tooltip on button
     btn1 = QPushButton("Hover for Simple Tooltip")
-    # XXX: Variable assigned to prevent Python's garbage collection
-    tooltip1 = FXTooltip(
-        parent=btn1,
-        title="Save File",
-        description="Save the current document to disk.",
-        shortcut="Ctrl+S",
-        icon="save",
-    )
-    hover_layout.addWidget(btn1)
+    set_tooltip(btn1, "This is a simple tooltip description.")
+    widget_layout.addWidget(btn1)
 
-    # Button with rich tooltip
+    # Rich tooltip on button
     btn2 = QPushButton("Hover for Rich Tooltip")
-    # XXX: Variable assigned to prevent Python's garbage collection
-    tooltip2 = FXTooltip(
-        parent=btn2,
-        title="New Feature!",
-        description="We've added <b>batch export</b> functionality. "
-        "You can now export multiple items at once.",
-        icon="lightbulb",
-        action_text="Learn More →",
-        action_callback=lambda: print("Learn more clicked!"),
+    set_tooltip(
+        btn2,
+        description="Save the current document to disk.",
+        title="Save File",
+        icon="save",
+        shortcut="Ctrl+S",
     )
-    hover_layout.addWidget(btn2)
+    widget_layout.addWidget(btn2)
 
-    layout.addWidget(hover_group)
+    layout.addWidget(widget_group)
 
-    # Click tooltips group
-    click_group = QGroupBox("Click Tooltips")
+    ###### Item tooltips group
+    item_group = QGroupBox("Item Tooltips (using set_tooltip)")
+    item_layout = QHBoxLayout(item_group)
+
+    # Tree widget with item tooltips
+    tree = QTreeWidget()
+    tree.setHeaderLabel("Tree Items")
+    tree.setMinimumHeight(120)
+
+    tree_item1 = QTreeWidgetItem(tree, ["Project Files"])
+    set_tooltip(
+        tree_item1,
+        description="Contains all project source files and assets.",
+        title="Project Files",
+        icon="folder",
+    )
+
+    tree_item2 = QTreeWidgetItem(tree, ["Settings"])
+    set_tooltip(
+        tree_item2,
+        description="Application configuration and preferences.",
+        title="Settings",
+        icon="settings",
+        shortcut="Ctrl+,",
+    )
+
+    tree_item3 = QTreeWidgetItem(tree, ["Export"])
+    set_tooltip(
+        tree_item3,
+        description="Export your project to various formats.",
+        title="Export Options",
+        icon="upload",
+    )
+
+    tree.expandAll()
+    item_layout.addWidget(tree)
+
+    # List widget with item tooltips
+    list_widget = QListWidget()
+    list_widget.setMinimumHeight(120)
+
+    list_item1 = QListWidgetItem("Recent File 1")
+    list_widget.addItem(list_item1)
+    set_tooltip(
+        list_item1,
+        description="Last modified: 2 hours ago",
+        title="document.txt",
+        icon="description",
+    )
+
+    list_item2 = QListWidgetItem("Recent File 2")
+    list_widget.addItem(list_item2)
+    set_tooltip(
+        list_item2,
+        description="Last modified: Yesterday",
+        title="image.png",
+        icon="image",
+    )
+
+    list_item3 = QListWidgetItem("Recent File 3")
+    list_widget.addItem(list_item3)
+    set_tooltip(
+        list_item3,
+        description="Last modified: 3 days ago",
+        title="script.py",
+        icon="code",
+    )
+
+    item_layout.addWidget(list_widget)
+
+    layout.addWidget(item_group)
+
+    ###### Click tooltips group
+    click_group = QGroupBox("Click Tooltips (programmatic)")
     click_layout = QVBoxLayout(click_group)
 
     # Button with persistent tooltip
@@ -1324,7 +1644,7 @@ def example() -> None:
     layout.addStretch()
 
     window.setCentralWidget(content_widget)
-    window.resize(450, 400)
+    window.resize(500, 550)
     window.show()
     sys.exit(app.exec())
 

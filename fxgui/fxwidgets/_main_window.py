@@ -32,6 +32,7 @@ else:
     from qtpy.QtWidgets import QDesktopWidget
 
 from fxgui import fxicons, fxstyle, fxutils
+from fxgui.fxwidgets._tooltip import FXTooltipManager
 from fxgui.fxwidgets._constants import (
     CRITICAL,
     ERROR,
@@ -130,6 +131,10 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         # Styling - load_stylesheet() automatically uses the saved theme
         if self._set_stylesheet:
             self.setStyleSheet(fxstyle.load_stylesheet())
+
+        # Install the global FXTooltip manager for rich tooltips
+        # This replaces standard Qt tooltips with FXTooltip for all widgets
+        FXTooltipManager.install()
 
     # Private methods
     def _load_ui(self) -> None:

@@ -1164,24 +1164,6 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
 
 
 /* Item views inherit from QAbstractItemView above */
-
-/* QTreeView:branch:selected, QTreeView:branch:hover
-{
-    background: url(~icons/transparent.png);
-}
-
-QTreeView::branch:has-siblings:!adjoins-item {
-    border-image: url(~icons/transparent.png);
-}
-
-QTreeView::branch:has-siblings:adjoins-item {
-    border-image: url(~icons/transparent.png);
-}
-
-QTreeView::branch:!has-children:!has-siblings:adjoins-item {
-    border-image: url(~icons/transparent.png);
-} */
-
 QTreeView::branch {
     background: transparent;
 }
@@ -1222,6 +1204,10 @@ QTreeView::branch:open:has-children:has-siblings:hover  {
     image: url(~icons/branch_open_on.svg);
 }
 
+QListView,
+QTreeView {
+    show-decoration-selected: 0;
+}
 
 QListView::item,
 QTreeView::item {
