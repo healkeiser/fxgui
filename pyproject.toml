@@ -73,5 +73,30 @@ Funding = "https://github.com/sponsors/healkeiser"
 where = ["."]
 include = ["fxgui*"]
 
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.svg", "*.png", "*.qss", "*.ui"]
+
+[tool.setuptools.exclude-package-data]
+"*" = [
+    "*.js",
+    "*.mjs",
+    "*.ts",
+    "*.css",
+    "*.less",
+    "*.scss",
+    "*.woff",
+    "*.woff2",
+    "*.ttf",
+    "*.eot",
+    "*.otf",
+    "*.json",
+    "*.txt",
+    "*.md",
+    ".gitignore",
+    ".gitattributes",
+    ".editorconfig",
+    "Dockerfile",
+]
+
 [tool.setuptools_scm]
 version_file = "fxgui/_version.py"

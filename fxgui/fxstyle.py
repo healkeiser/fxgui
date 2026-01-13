@@ -1121,13 +1121,8 @@ def load_stylesheet(
     }}
     """
 
-    # Determine which icon folder to use based on theme surface luminance
-    # This allows custom themes to automatically get the right icon set
-    surface_color = theme_data.get("surface", "#302f2f")
-    surface_luminance = get_luminance(surface_color)
-    icon_folder = (
-        "stylesheet_dark" if surface_luminance < 0.5 else "stylesheet_light"
-    )
+    # Determine which icon folder to use based on theme brightness
+    icon_folder = "stylesheet_light" if is_light_theme() else "stylesheet_dark"
 
     # Text color for accent backgrounds: use theme value if defined,
     # otherwise compute based on each accent's luminance

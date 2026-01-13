@@ -56,7 +56,12 @@ from fxgui.fxwidgets._system_tray import FXSystemTray
 from fxgui.fxwidgets._tag_input import FXTagChip, FXTagInput
 from fxgui.fxwidgets._timeline_slider import FXTimelineSlider
 from fxgui.fxwidgets._toggle_switch import FXToggleSwitch
-from fxgui.fxwidgets._tooltip import FXTooltip, FXTooltipPosition
+from fxgui.fxwidgets._tooltip import (
+    FXTooltip,
+    FXTooltipManager,
+    FXTooltipPosition,
+    set_tooltip,
+)
 from fxgui.fxwidgets._tree_items import FXSortedTreeWidgetItem
 from fxgui.fxwidgets._validators import (
     FXCamelCaseValidator,
@@ -117,7 +122,9 @@ __all__ = [
     "FXTimelineSlider",
     "FXToggleSwitch",
     "FXTooltip",
+    "FXTooltipManager",
     "FXTooltipPosition",
+    "set_tooltip",
     "FXValidatedLineEdit",
     "FXWidget",
     "theme_manager",

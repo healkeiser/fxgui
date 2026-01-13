@@ -1,30 +1,37 @@
-recursive-include fxgui *
+# Only include Python source and package resources from fxgui package
+recursive-include fxgui *.py
+recursive-include fxgui *.yaml
+recursive-include fxgui *.svg
+recursive-include fxgui *.png
+recursive-include fxgui *.qss
+recursive-include fxgui *.ui
 
-# Root-level directories to exclude (safety)
-prune .vscode
+# Exclude root-level directories not needed in sdist
 prune .github
-prune .claude
-prune .cache
-prune .venv
 prune .scripts
-prune build
+prune .vscode
+prune .claude
 prune docs
 prune site
-prune *.egg-info
 
-# Bytecode and cache
+# Exclude root-level config files
+exclude .auto-changelog
+exclude CLAUDE.md
+exclude mkdocs.yml
+exclude requirements*.txt
+exclude *.code-workspace
+
+# Bytecode and cache - exclude everywhere
 global-exclude __pycache__/*
 global-exclude *.pyc
 global-exclude *.pyo
+global-exclude *.pyd
 
-# Version control
+# Version control - exclude everywhere
 global-exclude .git
-global-exclude .git/*
 global-exclude .gitignore
 global-exclude .gitattributes
 global-exclude .gitmodules
-prune **/.git
-prune **/.github
 
 # IDE and editor files
 global-exclude *.ai
@@ -34,24 +41,52 @@ global-exclude *.swp
 global-exclude *.swo
 global-exclude *~
 
-# JavaScript/Node (not needed for Python Qt library)
-global-exclude *.js
-global-exclude *.mjs
-global-exclude *.ts
-global-exclude *.d.ts
+# Prune icon submodule non-SVG directories
+prune fxgui/icons/fontawesome/js
+prune fxgui/icons/fontawesome/js-packages
+prune fxgui/icons/fontawesome/css
+prune fxgui/icons/fontawesome/less
+prune fxgui/icons/fontawesome/scss
+prune fxgui/icons/fontawesome/webfonts
+prune fxgui/icons/fontawesome/sprites
+prune fxgui/icons/fontawesome/metadata
+prune fxgui/icons/fontawesome/otfs
+prune fxgui/icons/fontawesome/.github
+
+prune fxgui/icons/material/.github
+
+prune fxgui/icons/simple/.github
+prune fxgui/icons/simple/.devcontainer
+prune fxgui/icons/simple/.husky
+prune fxgui/icons/simple/scripts
+prune fxgui/icons/simple/tests
+prune fxgui/icons/simple/data
+
+# Exclude documentation/config files from submodules
+global-exclude README.md
+global-exclude CHANGELOG.md
+global-exclude CONTRIBUTING.md
+global-exclude CODE_OF_CONDUCT.md
+global-exclude UPGRADING.md
+global-exclude LICENSE.txt
 global-exclude package.json
 global-exclude package-lock.json
 global-exclude composer.json
 global-exclude yarn.lock
-global-exclude *.npmignore
+global-exclude .editorconfig
+global-exclude .prettierrc*
+global-exclude .prettierignore
+global-exclude .markdownlint*
+global-exclude .eslintrc*
 global-exclude .npmrc
 global-exclude .nvmrc
-global-exclude .node-version
-prune **/node_modules
-prune **/js
-prune **/js-packages
+global-exclude Dockerfile
+global-exclude .dockerignore
 
-# Web assets (not needed)
+# Exclude all non-SVG assets
+global-exclude *.js
+global-exclude *.mjs
+global-exclude *.ts
 global-exclude *.css
 global-exclude *.less
 global-exclude *.scss
@@ -60,28 +95,5 @@ global-exclude *.woff2
 global-exclude *.ttf
 global-exclude *.eot
 global-exclude *.otf
-prune **/css
-prune **/webfonts
-prune **/less
-prune **/scss
-prune **/sprites
-prune **/metadata
-
-# Documentation in submodules
-global-exclude CHANGELOG.md
-global-exclude CONTRIBUTING.md
-global-exclude CODE_OF_CONDUCT.md
-global-exclude PULL_REQUEST_TEMPLATE.md
-prune **/.github
-prune **/ISSUE_TEMPLATE
-
-# Config/tooling files from submodules
-global-exclude .editorconfig
-global-exclude .prettierrc*
-global-exclude .prettierignore
-global-exclude .markdownlint*
-global-exclude .jsonschema.json
-global-exclude .dockerignore
-global-exclude Dockerfile
-prune **/.devcontainer
-prune **/.husky
+global-exclude *.json
+global-exclude *.txt
