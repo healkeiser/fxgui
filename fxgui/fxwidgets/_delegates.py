@@ -1083,6 +1083,40 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         thumbnail_x = option.rect.left() + x_offset
         painter.drawPixmap(thumbnail_x, thumbnail_y, bordered_thumbnail)
 
+        # Draw decoration icon overlay on bottom-right corner of thumbnail
+        decoration_icon = index.data(Qt.DecorationRole)
+        if decoration_icon is not None and not decoration_icon.isNull():
+            overlay_size = 15
+            overlay_margin = 6
+            overlay_x = (
+                thumbnail_x
+                + bordered_thumbnail.width()
+                - overlay_size
+                - overlay_margin
+            )
+            overlay_y = (
+                thumbnail_y
+                + bordered_thumbnail.height()
+                - overlay_size
+                - overlay_margin
+            )
+
+            # Draw a background circle for the icon
+            painter.setRenderHint(QPainter.Antialiasing)
+            bg_color = QColor(self.theme.surface)
+            bg_color.setAlpha(220)
+            painter.setBrush(QBrush(bg_color))
+            painter.setPen(QPen(QColor(self.theme.border_light), 1))
+            painter.drawEllipse(
+                overlay_x - 2, overlay_y - 2, overlay_size + 4, overlay_size + 4
+            )
+
+            # Draw the icon
+            icon_rect = QRect(overlay_x, overlay_y, overlay_size, overlay_size)
+            decoration_icon.paint(
+                painter, icon_rect, Qt.AlignCenter, QIcon.Normal, QIcon.On
+            )
+
         # Draw title and description
         thumbnail_width_with_padding = bordered_thumbnail.width() + x_offset * 2
         text_x = option.rect.left() + thumbnail_width_with_padding + 5
@@ -1287,7 +1321,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ) -> None:
-        """Draw text for non-column-0 items.
+        """Draw icon and text for non-column-0 items.
 
         Args:
             painter: The painter to use for drawing.
@@ -1295,7 +1329,22 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             index: The model index of the item.
         """
 
+        icon = index.data(Qt.DecorationRole)
         text = index.data(Qt.DisplayRole)
+
+        icon_size = 16
+        icon_margin = 6
+        text_x = option.rect.left() + icon_margin
+
+        # Draw icon if present
+        if icon is not None and not icon.isNull():
+            icon_x = option.rect.left() + icon_margin
+            icon_y = option.rect.top() + (option.rect.height() - icon_size) // 2
+            icon_rect = QRect(icon_x, icon_y, icon_size, icon_size)
+            icon.paint(painter, icon_rect, Qt.AlignCenter)
+            text_x = icon_x + icon_size + icon_margin
+
+        # Draw text
         if text:
             if option.state & QStyle.State_Selected:
                 text_color = option.palette.highlightedText().color()
@@ -1303,7 +1352,12 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 text_color = option.palette.text().color()
             painter.setPen(text_color)
             painter.setFont(option.font)
-            text_rect = option.rect.adjusted(6, 0, -6, 0)
+            text_rect = QRect(
+                text_x,
+                option.rect.top(),
+                option.rect.right() - text_x - icon_margin,
+                option.rect.height(),
+            )
             painter.drawText(
                 text_rect, Qt.AlignLeft | Qt.AlignVCenter, str(text)
             )
@@ -1604,17 +1658,39 @@ def example() -> None:
     )
 
     # Sample items with thumbnails - we'll set backgrounds via helper function
-    # Format: (name, asset_type, label_text, feedback_key, status_icon_name)
+    # Format: (name, asset_type, label_text, feedback_key, status_icon_name, overlay_icon_name)
     items_data = [
-        ("Asset 001", "Character", "Ready", "success", "check_circle"),
-        ("Asset 002", "Prop", "Review", "warning", "rate_review"),
-        ("Asset 003", "Environment", "WIP", "error", "construction"),
+        (
+            "Asset 001",
+            "Character",
+            "Ready",
+            "success",
+            "check_circle",
+            "person",
+        ),
+        ("Asset 002", "Prop", "Review", "warning", "rate_review", "category"),
+        (
+            "Asset 003",
+            "Environment",
+            "WIP",
+            "error",
+            "construction",
+            "landscape",
+        ),
     ]
 
-    # Custom role to store status label icon name for theme-aware updates
+    # Custom roles for theme-aware icon updates
     STATUS_LABEL_ICON_NAME_ROLE = Qt.UserRole + 102
+    OVERLAY_ICON_NAME_ROLE = Qt.UserRole + 103
 
-    for name, asset_type, label_text, feedback_key, status_icon in items_data:
+    for (
+        name,
+        asset_type,
+        label_text,
+        feedback_key,
+        status_icon,
+        overlay_icon,
+    ) in items_data:
         item = QTreeWidgetItem(tree2, [name, asset_type, label_text])
         item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True)
         item.setData(0, FXThumbnailDelegate.THUMBNAIL_PATH_ROLE, thumbnail_path)
@@ -1631,6 +1707,9 @@ def example() -> None:
             fxicons.get_icon(status_icon),
         )
         item.setData(0, STATUS_LABEL_ICON_NAME_ROLE, status_icon)
+        # Set overlay icon on thumbnail (via setIcon) and store name for theme updates
+        item.setIcon(0, fxicons.get_icon(overlay_icon))
+        item.setData(0, OVERLAY_ICON_NAME_ROLE, overlay_icon)
         # Store the feedback key for dynamic color updates
         item.setData(0, Qt.UserRole + 100, feedback_key)
 
@@ -1656,19 +1735,41 @@ def example() -> None:
     FXThumbnailDelegate.apply_transparent_selection(tree3)
 
     # Items with custom backgrounds - we'll set backgrounds via helper function
-    # Format: (name, item_type, status, feedback_key, dcc_icon_name)
-    # Using DCC library icons for the status label icons
+    # Format: (name, item_type, status, feedback_key, dcc_status_icon, dcc_overlay_icon)
+    # Using DCC library icons for both status labels and thumbnail overlays
     items_with_bg = [
-        ("Project Alpha", "Feature", "In Progress", "info", "houdini"),
-        ("Bug Fix #123", "Bug", "Testing", "warning", "maya"),
-        ("Documentation", "Task", "Done", "success", "nuke"),
-        ("API Refactor", "Enhancement", "Review", "error", "blender"),
+        (
+            "Project Alpha",
+            "Feature",
+            "In Progress",
+            "info",
+            "houdini",
+            "houdini",
+        ),
+        ("Bug Fix #123", "Bug", "Testing", "warning", "maya", "maya"),
+        ("Documentation", "Task", "Done", "success", "nuke", "nuke"),
+        (
+            "API Refactor",
+            "Enhancement",
+            "Review",
+            "error",
+            "blender",
+            "blender",
+        ),
     ]
 
-    # Custom role to store DCC icon name for theme-aware status label icon updates
+    # Custom roles for theme-aware icon updates
     DCC_ICON_NAME_ROLE = Qt.UserRole + 101
+    DCC_OVERLAY_ICON_NAME_ROLE = Qt.UserRole + 104
 
-    for name, item_type, status, feedback_key, dcc_icon in items_with_bg:
+    for (
+        name,
+        item_type,
+        status,
+        feedback_key,
+        dcc_status_icon,
+        dcc_overlay_icon,
+    ) in items_with_bg:
         item = QTreeWidgetItem(tree3, [name, item_type, status])
         # Enable thumbnail and set path
         item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True)
@@ -1684,9 +1785,12 @@ def example() -> None:
         item.setData(
             0,
             FXThumbnailDelegate.STATUS_LABEL_ICON_ROLE,
-            fxicons.get_icon(dcc_icon, library="dcc"),
+            fxicons.get_icon(dcc_status_icon, library="dcc"),
         )
-        item.setData(0, DCC_ICON_NAME_ROLE, dcc_icon)
+        item.setData(0, DCC_ICON_NAME_ROLE, dcc_status_icon)
+        # Set DCC overlay icon on thumbnail and store name for theme updates
+        item.setIcon(0, fxicons.get_icon(dcc_overlay_icon, library="dcc"))
+        item.setData(0, DCC_OVERLAY_ICON_NAME_ROLE, dcc_overlay_icon)
         # Store the feedback key for dynamic color updates
         item.setData(0, Qt.UserRole + 100, feedback_key)
 
@@ -1762,6 +1866,10 @@ def example() -> None:
                     FXThumbnailDelegate.STATUS_LABEL_ICON_ROLE,
                     fxicons.get_icon(status_icon_name),
                 )
+            # Update overlay icon with current theme color
+            overlay_icon_name = item.data(0, OVERLAY_ICON_NAME_ROLE)
+            if overlay_icon_name:
+                item.setIcon(0, fxicons.get_icon(overlay_icon_name))
             # Set background color from custom palette (cycles through colors)
             color_key = color_keys[i % len(color_keys)]
             bg_color = CUSTOM_COLORS[palette_key][color_key]
@@ -1790,6 +1898,12 @@ def example() -> None:
                     0,
                     FXThumbnailDelegate.STATUS_LABEL_ICON_ROLE,
                     fxicons.get_icon(dcc_icon_name, library="dcc"),
+                )
+            # Update DCC overlay icon (theme-aware icons from dcc library)
+            dcc_overlay_icon_name = item.data(0, DCC_OVERLAY_ICON_NAME_ROLE)
+            if dcc_overlay_icon_name:
+                item.setIcon(
+                    0, fxicons.get_icon(dcc_overlay_icon_name, library="dcc")
                 )
             # Set background color (darker variations of base surface)
             darkness = 105 + (i % 4) * 5  # 105, 110, 115, 120
