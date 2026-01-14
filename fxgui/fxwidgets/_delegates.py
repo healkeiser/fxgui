@@ -278,6 +278,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         - `Qt.UserRole + 6` (`str`): Status label text.
         - `Qt.UserRole + 7` (`bool`): Whether to show the status dot.
         - `Qt.UserRole + 8` (`bool`): Whether to show the status label.
+        - `Qt.UserRole + 9` (`QIcon`): Status label icon (displayed before text).
 
     Properties:
         show_thumbnail: Whether to show thumbnails globally.
@@ -329,6 +330,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     STATUS_LABEL_TEXT_ROLE = Qt.UserRole + 6
     STATUS_DOT_VISIBLE_ROLE = Qt.UserRole + 7
     STATUS_LABEL_VISIBLE_ROLE = Qt.UserRole + 8
+    STATUS_LABEL_ICON_ROLE = Qt.UserRole + 9  # QIcon for status label
 
     # Stylesheet constant is no longer used - apply_transparent_selection
     # now sets the stylesheet directly on the widget
@@ -621,6 +623,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         item_rect: QRect,
         label_color: QColor,
         label_text: str,
+        label_icon: QIcon = None,
     ) -> None:
         """Draw a status label next to the status dot.
 
@@ -629,6 +632,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             item_rect: The rectangle of the entire item.
             label_color: The background color of the status label.
             label_text: The text to display in the status label.
+            label_icon: Optional icon to display before the text.
         """
 
         if not label_color or not label_color.isValid() or not label_text:
@@ -642,6 +646,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         label_height = 14
         label_margin = 6
         label_padding = 4
+        icon_size = 12 if label_icon and not label_icon.isNull() else 0
+        icon_spacing = 2 if icon_size > 0 else 0
 
         # Set up font for label text
         label_font = QFont()
@@ -649,9 +655,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         label_font.setBold(True)
         label_metrics = QFontMetrics(label_font)
 
-        # Calculate label width based on text
+        # Calculate label width based on text and optional icon
         text_width = label_metrics.horizontalAdvance(label_text)
-        label_width = text_width + (label_padding * 2)
+        label_width = (
+            text_width + (label_padding * 2) + icon_size + icon_spacing
+        )
 
         # Calculate label position (left of the status dot)
         dot_x = item_rect.right() - dot_size - dot_margin
@@ -673,16 +681,25 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         painter.setBrush(QBrush(label_color))
         painter.drawRoundedRect(label_rect, 2, 2)
 
-        # Draw the label text
         # Calculate appropriate text color based on background
         text_color = Qt.white if label_color.lightness() < 128 else Qt.black
+
+        # Draw the icon if provided
+        content_x = label_x + label_padding
+        if icon_size > 0:
+            icon_y = label_y + (label_height - icon_size) // 2
+            icon_rect = QRect(content_x, icon_y, icon_size, icon_size)
+            label_icon.paint(
+                painter, icon_rect, Qt.AlignCenter, QIcon.Normal, QIcon.On
+            )
+            content_x += icon_size + icon_spacing
+
+        # Draw the label text
         painter.setPen(text_color)
         painter.setFont(label_font)
 
-        # Center the text in the label
-        text_rect = QRect(
-            label_x + label_padding, label_y, text_width, label_height
-        )
+        # Position text after icon (if any)
+        text_rect = QRect(content_x, label_y, text_width, label_height)
         painter.drawText(text_rect, Qt.AlignCenter, label_text)
 
     def _get_column_position(
@@ -975,6 +992,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         status_dot_color = index.data(self.STATUS_DOT_COLOR_ROLE)
         status_label_color = index.data(self.STATUS_LABEL_COLOR_ROLE)
         status_label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
+        status_label_icon = index.data(self.STATUS_LABEL_ICON_ROLE)
 
         item_show_dot = index.data(self.STATUS_DOT_VISIBLE_ROLE)
         item_show_label = index.data(self.STATUS_LABEL_VISIBLE_ROLE)
@@ -987,7 +1005,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         )
         if show_label:
             self._draw_status_label(
-                painter, option.rect, status_label_color, status_label_text
+                painter,
+                option.rect,
+                status_label_color,
+                status_label_text,
+                status_label_icon,
             )
 
         show_dot = (
@@ -1065,7 +1087,47 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         thumbnail_width_with_padding = bordered_thumbnail.width() + x_offset * 2
         text_x = option.rect.left() + thumbnail_width_with_padding + 5
         text_y = option.rect.top() + 8
-        text_width = option.rect.width() - thumbnail_width_with_padding - 10
+
+        # Calculate space needed for status indicators on the right
+        status_space = 0
+        if self._show_status_dot:
+            dot_size = 8
+            dot_margin = 4
+            status_space += dot_size + dot_margin * 2
+
+        if self._show_status_label:
+            status_label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
+            status_label_icon = index.data(self.STATUS_LABEL_ICON_ROLE)
+            if status_label_text:
+                label_font = QFont()
+                label_font.setPointSize(7)
+                label_font.setBold(True)
+                label_metrics = QFontMetrics(label_font)
+                label_text_width = label_metrics.horizontalAdvance(
+                    status_label_text
+                )
+                label_padding = 4
+                label_margin = 6
+                icon_size = (
+                    12
+                    if status_label_icon and not status_label_icon.isNull()
+                    else 0
+                )
+                icon_spacing = 2 if icon_size > 0 else 0
+                status_space += (
+                    label_text_width
+                    + (label_padding * 2)
+                    + icon_size
+                    + icon_spacing
+                    + label_margin
+                )
+
+        text_width = (
+            option.rect.width()
+            - thumbnail_width_with_padding
+            - 10
+            - status_space
+        )
 
         title = index.data(Qt.DisplayRole) or ""
         description = index.data(self.DESCRIPTION_ROLE) or ""
@@ -1091,10 +1153,13 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         painter.setPen(text_color)
 
-        # Draw title
+        # Draw title (elided if too long)
         painter.setFont(title_font)
         title_rect = QRect(text_x, text_y, text_width, title_height)
-        painter.drawText(title_rect, Qt.AlignLeft | Qt.AlignTop, title)
+        elided_title = title_metrics.elidedText(
+            title, Qt.ElideRight, text_width
+        )
+        painter.drawText(title_rect, Qt.AlignLeft | Qt.AlignTop, elided_title)
 
         # Draw description
         if description:
@@ -1470,9 +1535,6 @@ def example() -> None:
     window.setCentralWidget(widget)
     layout = QVBoxLayout(widget)
 
-    # Get feedback colors from theme
-    feedback = fxstyle.get_feedback_colors()
-
     ###### FXColorLabelDelegate
     layout.addWidget(QLabel("FXColorLabelDelegate:"))
     tree1 = QTreeWidget()
@@ -1480,38 +1542,38 @@ def example() -> None:
     tree1.setRootIsDecorated(False)
 
     # Define colors and icons for different statuses using feedback colors
-    colors_icons = {
-        "success": (
-            QColor(feedback["success"]["background"]),
-            QColor(feedback["success"]["foreground"]),
-            QColor(feedback["success"]["foreground"]),
-            fxicons.get_icon("check_circle"),
-            True,
-        ),
-        "warning": (
-            QColor(feedback["warning"]["background"]),
-            QColor(feedback["warning"]["foreground"]),
-            QColor(feedback["warning"]["foreground"]),
-            fxicons.get_icon("warning"),
-            True,
-        ),
-        "error": (
-            QColor(feedback["error"]["background"]),
-            QColor(feedback["error"]["foreground"]),
-            QColor(feedback["error"]["foreground"]),
-            fxicons.get_icon("error"),
-            True,
-        ),
-        "info": (
-            QColor(feedback["info"]["background"]),
-            QColor(feedback["info"]["foreground"]),
-            QColor(feedback["info"]["foreground"]),
-            fxicons.get_icon("info"),
-            True,
-        ),
+    # Store icon names for theme-aware updates instead of static icons
+    status_icon_names = {
+        "success": "check_circle",
+        "warning": "warning",
+        "error": "error",
+        "info": "info",
     }
+
+    def get_colors_icons():
+        """Build colors_icons dict with current theme colors."""
+        feedback = fxstyle.get_feedback_colors()
+        return {
+            status: (
+                QColor(feedback[status]["background"]),
+                QColor(feedback[status]["foreground"]),
+                QColor(feedback[status]["foreground"]),
+                fxicons.get_icon(icon_name),
+                True,
+            )
+            for status, icon_name in status_icon_names.items()
+        }
+
+    colors_icons = get_colors_icons()
     delegate1 = FXColorLabelDelegate(colors_icons)
     tree1.setItemDelegate(delegate1)
+
+    # Update colors_icons when theme changes for theme-aware icons
+    def update_color_label_delegate(_theme_name: str = None):
+        delegate1.colors_icons = get_colors_icons()
+        tree1.viewport().update()
+
+    fxstyle.theme_manager.theme_changed.connect(update_color_label_delegate)
 
     for status in ["Success", "Warning", "Error", "Info", "Unknown"]:
         QTreeWidgetItem(tree1, [status])
@@ -1542,13 +1604,17 @@ def example() -> None:
     )
 
     # Sample items with thumbnails - we'll set backgrounds via helper function
+    # Format: (name, asset_type, label_text, feedback_key, status_icon_name)
     items_data = [
-        ("Asset 001", "Character", "Ready", "success"),
-        ("Asset 002", "Prop", "Review", "warning"),
-        ("Asset 003", "Environment", "WIP", "error"),
+        ("Asset 001", "Character", "Ready", "success", "check_circle"),
+        ("Asset 002", "Prop", "Review", "warning", "rate_review"),
+        ("Asset 003", "Environment", "WIP", "error", "construction"),
     ]
 
-    for name, asset_type, label_text, feedback_key in items_data:
+    # Custom role to store status label icon name for theme-aware updates
+    STATUS_LABEL_ICON_NAME_ROLE = Qt.UserRole + 102
+
+    for name, asset_type, label_text, feedback_key, status_icon in items_data:
         item = QTreeWidgetItem(tree2, [name, asset_type, label_text])
         item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True)
         item.setData(0, FXThumbnailDelegate.THUMBNAIL_PATH_ROLE, thumbnail_path)
@@ -1558,10 +1624,20 @@ def example() -> None:
             f"A **{asset_type.lower()}** asset",
         )
         item.setData(0, FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, label_text)
+        # Set status label icon and store icon name for theme-aware updates
+        item.setData(
+            0,
+            FXThumbnailDelegate.STATUS_LABEL_ICON_ROLE,
+            fxicons.get_icon(status_icon),
+        )
+        item.setData(0, STATUS_LABEL_ICON_NAME_ROLE, status_icon)
         # Store the feedback key for dynamic color updates
         item.setData(0, Qt.UserRole + 100, feedback_key)
 
     tree2.setColumnWidth(0, 300)
+    # Set minimum column width to prevent status label overlap with text
+    # Thumbnail (72) + padding (10) + min text (50) + status elements (~80)
+    tree2.header().setMinimumSectionSize(200)
     layout.addWidget(tree2)
 
     ###### FXThumbnailDelegate - With Custom Backgrounds
@@ -1572,7 +1648,7 @@ def example() -> None:
     tree3.setRootIsDecorated(False)
 
     delegate3 = FXThumbnailDelegate()
-    delegate3.show_thumbnail = False  # No thumbnails, show icons instead
+    delegate3.show_thumbnail = True
     delegate3.show_status_dot = True
     delegate3.show_status_label = True
     tree3.setItemDelegate(delegate3)
@@ -1580,17 +1656,23 @@ def example() -> None:
     FXThumbnailDelegate.apply_transparent_selection(tree3)
 
     # Items with custom backgrounds - we'll set backgrounds via helper function
+    # Format: (name, item_type, status, feedback_key, dcc_icon_name)
+    # Using DCC library icons for the status label icons
     items_with_bg = [
-        ("Project Alpha", "Feature", "In Progress", "info", "folder"),
-        ("Bug Fix #123", "Bug", "Testing", "warning", "bug_report"),
-        ("Documentation", "Task", "Done", "success", "description"),
-        ("API Refactor", "Enhancement", "Review", "error", "code"),
+        ("Project Alpha", "Feature", "In Progress", "info", "houdini"),
+        ("Bug Fix #123", "Bug", "Testing", "warning", "maya"),
+        ("Documentation", "Task", "Done", "success", "nuke"),
+        ("API Refactor", "Enhancement", "Review", "error", "blender"),
     ]
 
-    for name, item_type, status, feedback_key, icon_name in items_with_bg:
+    # Custom role to store DCC icon name for theme-aware status label icon updates
+    DCC_ICON_NAME_ROLE = Qt.UserRole + 101
+
+    for name, item_type, status, feedback_key, dcc_icon in items_with_bg:
         item = QTreeWidgetItem(tree3, [name, item_type, status])
-        # Set icon for column 0
-        item.setIcon(0, fxicons.get_icon(icon_name))
+        # Enable thumbnail and set path
+        item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True)
+        item.setData(0, FXThumbnailDelegate.THUMBNAIL_PATH_ROLE, thumbnail_path)
         # Set description
         item.setData(
             0,
@@ -1598,13 +1680,20 @@ def example() -> None:
             f"A {item_type.lower()} item",
         )
         item.setData(0, FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, status)
+        # Set DCC icon for status label and store icon name for theme-aware updates
+        item.setData(
+            0,
+            FXThumbnailDelegate.STATUS_LABEL_ICON_ROLE,
+            fxicons.get_icon(dcc_icon, library="dcc"),
+        )
+        item.setData(0, DCC_ICON_NAME_ROLE, dcc_icon)
         # Store the feedback key for dynamic color updates
         item.setData(0, Qt.UserRole + 100, feedback_key)
-        # Disable thumbnails for this item
-        item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False)
 
     tree3.setColumnWidth(0, 250)
     tree3.setColumnWidth(1, 100)
+    # Set minimum column width to prevent status label overlap with text
+    tree3.header().setMinimumSectionSize(200)
     layout.addWidget(tree3)
 
     ###### Theme awareness for custom backgrounds
@@ -1665,6 +1754,14 @@ def example() -> None:
                     FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
                     QColor(feedback[feedback_key]["background"]),
                 )
+            # Update status label icon with current theme color
+            status_icon_name = item.data(0, STATUS_LABEL_ICON_NAME_ROLE)
+            if status_icon_name:
+                item.setData(
+                    0,
+                    FXThumbnailDelegate.STATUS_LABEL_ICON_ROLE,
+                    fxicons.get_icon(status_icon_name),
+                )
             # Set background color from custom palette (cycles through colors)
             color_key = color_keys[i % len(color_keys)]
             bg_color = CUSTOM_COLORS[palette_key][color_key]
@@ -1685,6 +1782,14 @@ def example() -> None:
                 )
                 item.setData(
                     0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, status_color
+                )
+            # Update DCC status label icon (theme-aware icons from dcc library)
+            dcc_icon_name = item.data(0, DCC_ICON_NAME_ROLE)
+            if dcc_icon_name:
+                item.setData(
+                    0,
+                    FXThumbnailDelegate.STATUS_LABEL_ICON_ROLE,
+                    fxicons.get_icon(dcc_icon_name, library="dcc"),
                 )
             # Set background color (darker variations of base surface)
             darkness = 105 + (i % 4) * 5  # 105, 110, 115, 120
