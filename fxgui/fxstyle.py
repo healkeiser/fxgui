@@ -374,6 +374,8 @@ __all__ = [
     "get_feedback_colors",
     "get_theme_colors",
     "get_icon_color",
+    "get_icon_on_accent_primary",
+    "get_icon_on_accent_secondary",
     # Theme functions
     "get_available_themes",
     "get_theme",
@@ -606,9 +608,11 @@ def get_theme_colors() -> dict:
     - ``slider_thumb``: Slider handle color
     - ``slider_thumb_hover``: Slider handle hover/pressed
 
-    **Icon**:
+    **Icon Colors**:
 
     - ``icon``: Tint color for monochrome icons
+    - ``icon_on_accent_primary``: Icon color on accent_primary backgrounds (optional)
+    - ``icon_on_accent_secondary``: Icon color on accent_secondary backgrounds (optional)
 
     Returns:
         Dictionary containing theme-specific colors.
@@ -653,6 +657,58 @@ def get_icon_color() -> str:
     """
     theme_colors = get_theme_colors()
     return theme_colors.get("icon", "#b4b4b4")
+
+
+def get_icon_on_accent_primary() -> str:
+    """Get the icon color for accent_primary backgrounds.
+
+    This color should be used for icons displayed on selected items or other
+    elements that use the accent_primary color as their background.
+
+    If not explicitly defined in the theme, falls back to text_on_accent_primary,
+    which is auto-computed based on the accent_primary color's luminance.
+
+    Returns:
+        The icon color as a hex string for use on accent_primary backgrounds.
+
+    Examples:
+        >>> color = fxstyle.get_icon_on_accent_primary()
+        >>> print(color)  # "#ffffff" for dark theme with blue accent
+    """
+    theme_colors = get_theme_colors()
+    # Fallback chain: icon_on_accent_primary -> text_on_accent_primary -> computed
+    if "icon_on_accent_primary" in theme_colors:
+        return theme_colors["icon_on_accent_primary"]
+    if "text_on_accent_primary" in theme_colors:
+        return theme_colors["text_on_accent_primary"]
+    accent = theme_colors.get("accent_primary", "#2196F3")
+    return get_contrast_text_color(accent)
+
+
+def get_icon_on_accent_secondary() -> str:
+    """Get the icon color for accent_secondary backgrounds.
+
+    This color should be used for icons displayed on hovered items or other
+    elements that use the accent_secondary color as their background.
+
+    If not explicitly defined in the theme, falls back to text_on_accent_secondary,
+    which is auto-computed based on the accent_secondary color's luminance.
+
+    Returns:
+        The icon color as a hex string for use on accent_secondary backgrounds.
+
+    Examples:
+        >>> color = fxstyle.get_icon_on_accent_secondary()
+        >>> print(color)  # "#ffffff" for dark theme with blue accent
+    """
+    theme_colors = get_theme_colors()
+    # Fallback chain: icon_on_accent_secondary -> text_on_accent_secondary -> computed
+    if "icon_on_accent_secondary" in theme_colors:
+        return theme_colors["icon_on_accent_secondary"]
+    if "text_on_accent_secondary" in theme_colors:
+        return theme_colors["text_on_accent_secondary"]
+    accent = theme_colors.get("accent_secondary", "#1976D2")
+    return get_contrast_text_color(accent)
 
 
 ###### Color Utility Functions
@@ -1133,6 +1189,15 @@ def load_stylesheet(
         "text_on_accent_secondary", get_contrast_text_color(accent_secondary)
     )
 
+    # Icon color for accent backgrounds: use theme value if defined,
+    # otherwise use the same value as text_on_accent (icons should match text)
+    icon_on_accent_primary = theme_data.get(
+        "icon_on_accent_primary", text_on_accent_primary
+    )
+    icon_on_accent_secondary = theme_data.get(
+        "icon_on_accent_secondary", text_on_accent_secondary
+    )
+
     # Build replacement map for all placeholders
     # Uses new semantic naming scheme
     replace = {
@@ -1141,6 +1206,8 @@ def load_stylesheet(
         "@accent_secondary": accent_secondary,
         "@text_on_accent_primary": text_on_accent_primary,
         "@text_on_accent_secondary": text_on_accent_secondary,
+        "@icon_on_accent_primary": icon_on_accent_primary,
+        "@icon_on_accent_secondary": icon_on_accent_secondary,
         # Icon path
         "~icons": str(_parent_directory / "icons" / icon_folder).replace(
             os.sep, "/"
