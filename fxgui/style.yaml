@@ -107,8 +107,10 @@ dcc:
 #   slider_thumb       - Slider handle color
 #   slider_thumb_hover - Slider handle hover/pressed
 #
-# Icon Color:
-#   icon              - Tint color for monochrome icons
+# Icon Colors:
+#   icon                     - Tint color for monochrome icons
+#   icon_on_accent_primary   - (Optional) Icon color on accent_primary backgrounds, auto-computed if omitted
+#   icon_on_accent_secondary - (Optional) Icon color on accent_secondary backgrounds, auto-computed if omitted
 
 themes:
   # ===========================================================================
@@ -153,8 +155,10 @@ themes:
     slider_thumb: "#bbbbbb"
     slider_thumb_hover: "#ffffff"
 
-    # Icon
+    # Icon colors
     icon: "#b4b4b4"
+    icon_on_accent_primary: "#ffffff"
+    icon_on_accent_secondary: "#ffffff"
 
     # Feedback colors (dark theme)
     feedback:
@@ -216,8 +220,10 @@ themes:
     slider_thumb: "#ffffff"
     slider_thumb_hover: "#616161"
 
-    # Icon
+    # Icon colors
     icon: "#424242"
+    icon_on_accent_primary: "#ffffff"
+    icon_on_accent_secondary: "#ffffff"
 
     # Feedback colors (light theme)
     feedback:
@@ -283,8 +289,10 @@ themes:
     slider_thumb: "#f8f8f2"
     slider_thumb_hover: "#ffffff"
 
-    # Override icon
+    # Override icon colors
     icon: "#f8f8f2"
+    icon_on_accent_primary: "#282a36"
+    icon_on_accent_secondary: "#282a36"
 
   # ===========================================================================
   # ONE DARK PRO THEME - Inherits from dark
@@ -332,8 +340,10 @@ themes:
     slider_thumb: "#abb2bf"
     slider_thumb_hover: "#d7dae0"
 
-    # Override icon
+    # Override icon colors
     icon: "#abb2bf"
+    icon_on_accent_primary: "#282c34"
+    icon_on_accent_secondary: "#282c34"
 
   # ===========================================================================
   # GITHUB DARK THEME - GitHub's official dark theme
@@ -381,8 +391,10 @@ themes:
     slider_thumb: "#8b949e"
     slider_thumb_hover: "#e6edf3"
 
-    # Override icon
+    # Override icon colors
     icon: "#8b949e"
+    icon_on_accent_primary: "#0d1117"
+    icon_on_accent_secondary: "#0d1117"
 
   # ===========================================================================
   # GITHUB LIGHT THEME - GitHub's official light theme
@@ -430,8 +442,10 @@ themes:
     slider_thumb: "#656d76"
     slider_thumb_hover: "#1f2328"
 
-    # Override icon
+    # Override icon colors
     icon: "#656d76"
+    icon_on_accent_primary: "#ffffff"
+    icon_on_accent_secondary: "#ffffff"
 
   # ===========================================================================
   # CATPPUCCIN MOCHA THEME - Soothing pastel dark theme
@@ -479,8 +493,10 @@ themes:
     slider_thumb: "#a6adc8"
     slider_thumb_hover: "#cdd6f4"
 
-    # Override icon
+    # Override icon colors
     icon: "#cdd6f4"
+    icon_on_accent_primary: "#1e1e2e"
+    icon_on_accent_secondary: "#1e1e2e"
 
   # ===========================================================================
   # CATPPUCCIN LATTE THEME - Soothing pastel light theme
@@ -528,8 +544,10 @@ themes:
     slider_thumb: "#6c6f85"
     slider_thumb_hover: "#4c4f69"
 
-    # Override icon
+    # Override icon colors
     icon: "#4c4f69"
+    icon_on_accent_primary: "#eff1f5"
+    icon_on_accent_secondary: "#eff1f5"
 
   # ===========================================================================
   # NORD THEME - Arctic, north-bluish color palette
@@ -577,8 +595,10 @@ themes:
     slider_thumb: "#d8dee9"
     slider_thumb_hover: "#eceff4"
 
-    # Override icon
+    # Override icon colors
     icon: "#d8dee9"
+    icon_on_accent_primary: "#2e3440"
+    icon_on_accent_secondary: "#2e3440"
 
   # ===========================================================================
   # MATERIAL DARK THEME - Google Material Design dark
@@ -626,8 +646,10 @@ themes:
     slider_thumb: "#b0bec5"
     slider_thumb_hover: "#eeffff"
 
-    # Override icon
+    # Override icon colors
     icon: "#b0bec5"
+    icon_on_accent_primary: "#212121"
+    icon_on_accent_secondary: "#212121"
 
   # ===========================================================================
   # SOLARIZED LIGHT THEME - Precision colors for readability
@@ -675,5 +697,7 @@ themes:
     slider_thumb: "#839496"
     slider_thumb_hover: "#657b83"
 
-    # Override icon
+    # Override icon colors
     icon: "#657b83"
+    icon_on_accent_primary: "#fdf6e3"
+    icon_on_accent_secondary: "#fdf6e3"

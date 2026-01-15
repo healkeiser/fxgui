@@ -1164,8 +1164,18 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
 
 
 /* Item views inherit from QAbstractItemView above */
+/* Use show-decoration-selected: 1 so the entire row gets consistent
+   highlighting. Branch uses @surface_sunken to match item background
+   (Qt ignores 'transparent' for branch selection/hover painting). */
 QTreeView::branch {
-    background: transparent;
+    background: @surface_sunken;
+}
+
+/* Override branch background to stay neutral during selection/hover
+   since the delegate handles item painting, not the branch area */
+QTreeView::branch:selected,
+QTreeView::branch:!selected:hover {
+    background: @surface_sunken;
 }
 
 QTreeView::branch:has-siblings:!adjoins-item {
@@ -1206,7 +1216,7 @@ QTreeView::branch:open:has-children:has-siblings:hover  {
 
 QListView,
 QTreeView {
-    show-decoration-selected: 0;
+    show-decoration-selected: 1;
 }
 
 QListView::item,

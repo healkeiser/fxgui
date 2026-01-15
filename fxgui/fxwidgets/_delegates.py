@@ -681,10 +681,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         painter.setBrush(QBrush(label_color))
         painter.drawRoundedRect(label_rect, 2, 2)
 
-        # Calculate appropriate text color based on background
+        # Calculate appropriate text color based on background luminance
         text_color = Qt.white if label_color.lightness() < 128 else Qt.black
 
-        # Draw the icon if provided
+        # Draw the icon if provided (keep original colors for brand/DCC icons)
         content_x = label_x + label_padding
         if icon_size > 0:
             icon_y = label_y + (label_height - icon_size) // 2
@@ -1236,18 +1236,25 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         icon_margin = 6
         text_x = option.rect.left() + icon_margin
 
+        # Determine icon and text colors based on selection state
+        # Note: Hover uses semi-transparent accent overlay, so icons stay normal
+        # Only selection uses full opaque accent background requiring contrast icons
+        if option.state & QStyle.State_Selected:
+            text_color = option.palette.highlightedText().color()
+            icon_color = QColor(fxstyle.get_icon_on_accent_primary())
+        else:
+            text_color = option.palette.text().color()
+            icon_color = QColor(fxstyle.get_icon_color())
+
         if icon is not None and not icon.isNull():
             icon_x = option.rect.left() + icon_margin
             icon_y = option.rect.top() + (option.rect.height() - icon_size) // 2
             icon_rect = QRect(icon_x, icon_y, icon_size, icon_size)
-            icon.paint(painter, icon_rect, Qt.AlignCenter)
+            # Colorize icon to match selection/hover state
+            pixmap = icon.pixmap(icon_size, icon_size)
+            colored_pixmap = fxicons.change_pixmap_color(pixmap, icon_color)
+            painter.drawPixmap(icon_rect, colored_pixmap)
             text_x = icon_x + icon_size + icon_margin
-
-        # Set text color
-        if option.state & QStyle.State_Selected:
-            text_color = option.palette.highlightedText().color()
-        else:
-            text_color = option.palette.text().color()
 
         title = index.data(Qt.DisplayRole) or ""
 

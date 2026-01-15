@@ -76,6 +76,8 @@ from qtpy.QtWidgets import (
     QLabel,
     QTreeWidget,
     QTreeWidgetItem,
+    QListWidget,
+    QListWidgetItem,
     QSpinBox,
     QTabWidget,
     QGroupBox,
@@ -258,6 +260,88 @@ def _create_delegates_tab() -> QWidget:
     )
     header.setWordWrap(True)
     layout.addWidget(header)
+
+    # Icon Color Test Section - Simple list and tree to test icon_on_accent colors
+    icon_test_group = QGroupBox("Icon Color on Selection/Hover Test")
+    icon_test_layout = QHBoxLayout(icon_test_group)
+
+    # Simple list widget
+    test_list = QListWidget()
+    test_list_delegate = fxwidgets.FXThumbnailDelegate()
+    test_list_delegate.show_thumbnail = False
+    test_list_delegate.show_status_dot = False
+    test_list_delegate.show_status_label = False
+    test_list.setItemDelegate(test_list_delegate)
+
+    list_items_data = [
+        ("Documents", "folder"),
+        ("Images", "image"),
+        ("Settings", "settings"),
+        ("Search", "search"),
+        ("Home", "home"),
+    ]
+    test_list_items = []
+    for name, icon_name in list_items_data:
+        item = QListWidgetItem(name)
+        item.setIcon(get_icon(icon_name))
+        item.setData(Qt.UserRole + 50, icon_name)  # Store icon name
+        test_list.addItem(item)
+        test_list_items.append(item)
+
+    icon_test_layout.addWidget(test_list)
+
+    # Simple tree widget
+    test_tree = QTreeWidget()
+    test_tree.setHeaderLabels(["Name", "Type"])
+    test_tree_delegate = fxwidgets.FXThumbnailDelegate()
+    test_tree_delegate.show_thumbnail = False
+    test_tree_delegate.show_status_dot = False
+    test_tree_delegate.show_status_label = False
+    test_tree.setItemDelegate(test_tree_delegate)
+
+    tree_items_data = [
+        ("Project Files", "folder", "Folder", [
+            ("main.py", "code", "Python"),
+            ("utils.py", "code", "Python"),
+            ("config.yaml", "settings", "YAML"),
+        ]),
+        ("Assets", "image", "Folder", [
+            ("logo.png", "image", "PNG"),
+            ("icon.svg", "image", "SVG"),
+        ]),
+    ]
+    test_tree_items = []
+    for parent_name, parent_icon, parent_type, children in tree_items_data:
+        parent_item = QTreeWidgetItem(test_tree, [parent_name, parent_type])
+        parent_item.setIcon(0, get_icon(parent_icon))
+        parent_item.setData(0, Qt.UserRole + 50, parent_icon)
+        test_tree_items.append(parent_item)
+        for child_name, child_icon, child_type in children:
+            child_item = QTreeWidgetItem(parent_item, [child_name, child_type])
+            child_item.setIcon(0, get_icon(child_icon))
+            child_item.setData(0, Qt.UserRole + 50, child_icon)
+            test_tree_items.append(child_item)
+
+    test_tree.expandAll()
+    icon_test_layout.addWidget(test_tree)
+
+    # Theme-aware icon update for test widgets
+    def update_icon_test_colors(_theme_name: str = None):
+        for item in test_list_items:
+            icon_name = item.data(Qt.UserRole + 50)
+            if icon_name:
+                item.setIcon(get_icon(icon_name))
+        for item in test_tree_items:
+            icon_name = item.data(0, Qt.UserRole + 50)
+            if icon_name:
+                item.setIcon(0, get_icon(icon_name))
+        test_list.viewport().update()
+        test_tree.viewport().update()
+
+    update_icon_test_colors()
+    fxstyle.theme_manager.theme_changed.connect(update_icon_test_colors)
+
+    layout.addWidget(icon_test_group)
 
     # Code example with syntax-highlighted code block
     code_group = QGroupBox("Theme-Aware Custom Colors Pattern")
