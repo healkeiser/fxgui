@@ -470,6 +470,8 @@ def _get_icon_internal(
     height: int,
     color: Optional[str],
     disabled_color: str,
+    selected_color: str,
+    active_color: str,
     library: str,
     style: Optional[str],
     extension: Optional[str],
@@ -493,6 +495,26 @@ def _get_icon_internal(
     painter.fillRect(disabled_pixmap.rect(), QColor(disabled_color))
     painter.end()
     icon.addPixmap(disabled_pixmap, QIcon.Disabled)
+
+    # Only add selected/active pixmaps if there's a color (monochrome icons)
+    if color:
+        # `QPixmap` for selected state - use icon_on_accent_primary color
+        if selected_color:
+            selected_pixmap = qpixmap.copy()
+            painter = QPainter(selected_pixmap)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+            painter.fillRect(selected_pixmap.rect(), QColor(selected_color))
+            painter.end()
+            icon.addPixmap(selected_pixmap, QIcon.Selected)
+
+        # `QPixmap` for active/hover state - use icon_on_accent_secondary color
+        if active_color:
+            active_pixmap = qpixmap.copy()
+            painter = QPainter(active_pixmap)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+            painter.fillRect(active_pixmap.rect(), QColor(active_color))
+            painter.end()
+            icon.addPixmap(active_pixmap, QIcon.Active)
 
     return icon
 
@@ -542,8 +564,10 @@ def get_icon(
     if color is None:
         color = defaults["color"]
 
-    # Get disabled icon color from theme
+    # Get disabled, selected, and active icon colors from theme
     disabled_color = _get_disabled_icon_color()
+    selected_color = _get_selected_icon_color()
+    active_color = _get_active_icon_color()
 
     return _get_icon_cached(
         icon_name,
@@ -551,6 +575,8 @@ def get_icon(
         height,
         color,
         disabled_color,
+        selected_color,
+        active_color,
         library,
         style,
         extension,
@@ -681,6 +707,34 @@ def _get_disabled_icon_color() -> str:
     # Use low alpha for the "faded out" disabled look
     color.setHslF(h, new_s, new_l, 0.35)
     return color.name(QColor.HexArgb)
+
+
+def _get_selected_icon_color() -> str:
+    """Get the icon color for selected state.
+
+    Returns the icon_on_accent_primary color from the theme, which is used
+    when items are selected in list/tree views.
+
+    Returns:
+        The selected icon color as a hex string.
+    """
+    from fxgui import fxstyle
+
+    return fxstyle.get_icon_on_accent_primary()
+
+
+def _get_active_icon_color() -> str:
+    """Get the icon color for active/hover state.
+
+    Returns the icon_on_accent_secondary color from the theme, which is used
+    when items are hovered in list/tree views.
+
+    Returns:
+        The active icon color as a hex string.
+    """
+    from fxgui import fxstyle
+
+    return fxstyle.get_icon_on_accent_secondary()
 
 
 def sync_colors_with_theme() -> None:
