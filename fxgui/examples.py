@@ -292,7 +292,7 @@ def _create_delegates_tab() -> QWidget:
 
     # Simple tree widget
     test_tree = QTreeWidget()
-    test_tree.setHeaderLabels(["Name"])
+    test_tree.setHeaderLabels(["Name", "Type"])
     test_tree_delegate = fxwidgets.FXThumbnailDelegate()
     test_tree_delegate.show_thumbnail = False
     test_tree_delegate.show_status_dot = False
@@ -300,24 +300,24 @@ def _create_delegates_tab() -> QWidget:
     test_tree.setItemDelegate(test_tree_delegate)
 
     tree_items_data = [
-        ("Project Files", "folder", [
-            ("main.py", "code"),
-            ("utils.py", "code"),
-            ("config.yaml", "settings"),
+        ("Project Files", "folder", "Folder", [
+            ("main.py", "code", "Python"),
+            ("utils.py", "code", "Python"),
+            ("config.yaml", "settings", "YAML"),
         ]),
-        ("Assets", "image", [
-            ("logo.png", "image"),
-            ("icon.svg", "image"),
+        ("Assets", "image", "Folder", [
+            ("logo.png", "image", "PNG"),
+            ("icon.svg", "image", "SVG"),
         ]),
     ]
     test_tree_items = []
-    for parent_name, parent_icon, children in tree_items_data:
-        parent_item = QTreeWidgetItem(test_tree, [parent_name])
+    for parent_name, parent_icon, parent_type, children in tree_items_data:
+        parent_item = QTreeWidgetItem(test_tree, [parent_name, parent_type])
         parent_item.setIcon(0, get_icon(parent_icon))
         parent_item.setData(0, Qt.UserRole + 50, parent_icon)
         test_tree_items.append(parent_item)
-        for child_name, child_icon in children:
-            child_item = QTreeWidgetItem(parent_item, [child_name])
+        for child_name, child_icon, child_type in children:
+            child_item = QTreeWidgetItem(parent_item, [child_name, child_type])
             child_item.setIcon(0, get_icon(child_icon))
             child_item.setData(0, Qt.UserRole + 50, child_icon)
             test_tree_items.append(child_item)
