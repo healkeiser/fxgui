@@ -116,7 +116,7 @@ from typing import Optional
 # Third-party
 import yaml
 from qtpy.QtCore import QObject, QTimer, Signal
-from qtpy.QtGui import QFontDatabase, QIcon
+from qtpy.QtGui import QColor, QFontDatabase, QIcon
 from qtpy.QtWidgets import (
     QProxyStyle,
     QStyle,
@@ -1036,7 +1036,22 @@ def _get_standard_icon_map() -> dict:
 
 
 class FXProxyStyle(QProxyStyle):
-    """A custom style class that extends QProxyStyle to provide custom icons."""
+    """A custom style class that extends QProxyStyle to provide custom icons.
+
+    This style provides theme-aware standard icons (file dialogs, message boxes,
+    etc.) using Material Design icons from the fxicons library.
+
+    Note:
+        Qt stylesheets bypass QProxyStyle's drawControl() method, which means
+        icon colorization for item views (lists, trees) and menus cannot be
+        handled here when stylesheets are applied. Use ``FXIconColorDelegate``
+        from fxwidgets for icon colorization in item views instead.
+
+    Examples:
+        >>> from fxgui import fxstyle
+        >>> # Apply to application
+        >>> fxstyle.set_style(app, "Fusion")
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

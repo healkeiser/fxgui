@@ -25,6 +25,7 @@ from fxgui.fxwidgets._constants import (
 )
 from fxgui.fxwidgets._delegates import (
     FXColorLabelDelegate,
+    FXItemDelegate,
     FXThumbnailDelegate,
 )
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
@@ -94,6 +95,7 @@ __all__ = [
     "FXFuzzySearchList",
     "FXFuzzySearchTree",
     "FXIconLineEdit",
+    "FXItemDelegate",
     "FXLettersUnderscoreValidator",
     "FXLoadingOverlay",
     "FXLoadingSpinner",

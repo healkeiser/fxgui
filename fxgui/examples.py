@@ -83,7 +83,7 @@ from qtpy.QtWidgets import (
     QGroupBox,
     QFrame,
 )
-from qtpy.QtCore import Qt, QTimer
+from qtpy.QtCore import Qt, QSize, QTimer
 from qtpy.QtGui import QColor
 
 # Internal
@@ -267,11 +267,8 @@ def _create_delegates_tab() -> QWidget:
 
     # Simple list widget
     test_list = QListWidget()
-    test_list_delegate = fxwidgets.FXThumbnailDelegate()
-    test_list_delegate.show_thumbnail = False
-    test_list_delegate.show_status_dot = False
-    test_list_delegate.show_status_label = False
-    test_list.setItemDelegate(test_list_delegate)
+    test_list.setIconSize(QSize(16, 16))
+    test_list.setItemDelegate(fxwidgets.FXItemDelegate(test_list))
 
     list_items_data = [
         ("Documents", "folder"),
@@ -293,22 +290,28 @@ def _create_delegates_tab() -> QWidget:
     # Simple tree widget
     test_tree = QTreeWidget()
     test_tree.setHeaderLabels(["Name", "Type"])
-    test_tree_delegate = fxwidgets.FXThumbnailDelegate()
-    test_tree_delegate.show_thumbnail = False
-    test_tree_delegate.show_status_dot = False
-    test_tree_delegate.show_status_label = False
-    test_tree.setItemDelegate(test_tree_delegate)
+    test_tree.setItemDelegate(fxwidgets.FXItemDelegate(test_tree))
 
     tree_items_data = [
-        ("Project Files", "folder", "Folder", [
-            ("main.py", "code", "Python"),
-            ("utils.py", "code", "Python"),
-            ("config.yaml", "settings", "YAML"),
-        ]),
-        ("Assets", "image", "Folder", [
-            ("logo.png", "image", "PNG"),
-            ("icon.svg", "image", "SVG"),
-        ]),
+        (
+            "Project Files",
+            "folder",
+            "Folder",
+            [
+                ("main.py", "code", "Python"),
+                ("utils.py", "code", "Python"),
+                ("config.yaml", "settings", "YAML"),
+            ],
+        ),
+        (
+            "Assets",
+            "image",
+            "Folder",
+            [
+                ("logo.png", "image", "PNG"),
+                ("icon.svg", "image", "SVG"),
+            ],
+        ),
     ]
     test_tree_items = []
     for parent_name, parent_icon, parent_type, children in tree_items_data:

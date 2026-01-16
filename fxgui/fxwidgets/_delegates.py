@@ -21,6 +21,7 @@ from qtpy.QtGui import (
 )
 from qtpy.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -29,6 +30,61 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+
+
+class FXItemDelegate(QStyledItemDelegate):
+    """Minimal delegate that enables QIcon mode switching on hover/selection.
+
+    Qt's default item view painting only uses QIcon.Selected for selected items.
+    This delegate adds QIcon.Active support for hover states, making icons
+    change color when items are hovered.
+
+    This is a drop-in replacement for QStyledItemDelegate with no layout changes.
+    Apply it to any QListView, QTreeView, or QTableView for icon color switching.
+
+    Examples:
+        >>> from fxgui import fxwidgets
+        >>> list_widget = QListWidget()
+        >>> list_widget.setItemDelegate(fxwidgets.FXItemDelegate())
+    """
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+    ) -> None:
+        # Check if we need to handle icon mode switching
+        icon = index.data(Qt.DecorationRole)
+        is_selected = bool(option.state & QStyle.State_Selected)
+        is_hovered = bool(option.state & QStyle.State_MouseOver)
+
+        if icon is not None and not icon.isNull() and (is_selected or is_hovered):
+            # Initialize option to get proper styling
+            opt = QStyleOptionViewItem(option)
+            self.initStyleOption(opt, index)
+
+            # Get the style
+            style = opt.widget.style() if opt.widget else QApplication.style()
+
+            # Draw everything normally first (background, text, etc.)
+            # but temporarily remove icon to prevent double-drawing
+            saved_icon = opt.icon
+            opt.icon = QIcon()
+            style.drawControl(QStyle.CE_ItemViewItem, opt, painter, opt.widget)
+            opt.icon = saved_icon
+
+            # Get the decoration rect using the style's calculation
+            icon_rect = style.subElementRect(
+                QStyle.SE_ItemViewItemDecoration, opt, opt.widget
+            )
+
+            # Draw icon with appropriate mode
+            mode = QIcon.Selected if is_selected else QIcon.Active
+            icon.paint(painter, icon_rect, Qt.AlignCenter, mode, QIcon.On)
+        else:
+            # Default painting for items without icons or in normal state
+            super().paint(painter, option, index)
 
 
 class FXColorLabelDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
@@ -1236,24 +1292,25 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         icon_margin = 6
         text_x = option.rect.left() + icon_margin
 
-        # Determine icon and text colors based on selection state
-        # Note: Hover uses semi-transparent accent overlay, so icons stay normal
-        # Only selection uses full opaque accent background requiring contrast icons
+        # Determine text color based on selection state
         if option.state & QStyle.State_Selected:
             text_color = option.palette.highlightedText().color()
-            icon_color = QColor(fxstyle.get_icon_on_accent_primary())
         else:
             text_color = option.palette.text().color()
-            icon_color = QColor(fxstyle.get_icon_color())
 
         if icon is not None and not icon.isNull():
             icon_x = option.rect.left() + icon_margin
             icon_y = option.rect.top() + (option.rect.height() - icon_size) // 2
             icon_rect = QRect(icon_x, icon_y, icon_size, icon_size)
-            # Colorize icon to match selection/hover state
-            pixmap = icon.pixmap(icon_size, icon_size)
-            colored_pixmap = fxicons.change_pixmap_color(pixmap, icon_color)
-            painter.drawPixmap(icon_rect, colored_pixmap)
+
+            # Use QIcon's built-in modes for automatic color switching
+            # Icons created with get_icon() have Selected/Active pixmaps
+            if option.state & QStyle.State_Selected:
+                icon.paint(painter, icon_rect, Qt.AlignCenter, QIcon.Selected, QIcon.On)
+            elif option.state & QStyle.State_MouseOver:
+                icon.paint(painter, icon_rect, Qt.AlignCenter, QIcon.Active, QIcon.On)
+            else:
+                icon.paint(painter, icon_rect)
             text_x = icon_x + icon_size + icon_margin
 
         title = index.data(Qt.DisplayRole) or ""
