@@ -9,17 +9,135 @@ from typing import List, Optional, Set
 from qtpy.QtCore import QEvent, Qt, QTimer, Signal
 from qtpy.QtGui import QDragEnterEvent, QDragLeaveEvent, QDropEvent
 from qtpy.QtWidgets import (
+    QAbstractItemView,
     QFileDialog,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
+    QMenu,
     QPushButton,
     QSizePolicy,
+    QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._delegates import FXItemDelegate
+
+
+class _FileDropTree(QTreeWidget):
+    """Internal tree widget that accepts drag & drop for additional files.
+
+    This tree displays the files that have been dropped and allows
+    adding more files via drag & drop.
+    """
+
+    files_dropped = Signal(list)
+
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        accept_mode: str = "files",
+        extensions: Optional[Set[str]] = None,
+        multiple: bool = True,
+    ):
+        super().__init__(parent)
+        self._accept_mode = accept_mode
+        self._extensions = extensions
+        self._multiple = multiple
+
+        self.setAcceptDrops(True)
+        self.setDragDropMode(QAbstractItemView.DropOnly)
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.setAlternatingRowColors(True)
+        self.setRootIsDecorated(False)
+
+        # Set up columns
+        self.setColumnCount(3)
+        self.setHeaderLabels(["Name", "Type", "Size"])
+
+        # Configure header
+        header = self.header()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+
+        # Use FXItemDelegate for icon hover/selection states
+        self.setItemDelegate(FXItemDelegate())
+
+    def set_accept_mode(self, mode: str) -> None:
+        """Set the accept mode."""
+        self._accept_mode = mode
+
+    def set_extensions(self, extensions: Optional[Set[str]]) -> None:
+        """Set accepted extensions."""
+        self._extensions = extensions
+
+    def set_multiple(self, multiple: bool) -> None:
+        """Set whether multiple files are accepted."""
+        self._multiple = multiple
+
+    def _is_valid_path(self, path: Path) -> bool:
+        """Check if a path is valid for this tree."""
+        if not path.exists():
+            return False
+
+        if self._accept_mode == "files":
+            if path.is_file():
+                if self._extensions is None:
+                    return True
+                return path.suffix.lower() in self._extensions
+        elif self._accept_mode == "folders":
+            return path.is_dir()
+        else:  # both
+            if path.is_dir():
+                return True
+            if path.is_file():
+                if self._extensions is None:
+                    return True
+                return path.suffix.lower() in self._extensions
+        return False
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        """Handle drag enter."""
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                if url.isLocalFile():
+                    path = Path(url.toLocalFile())
+                    if self._is_valid_path(path):
+                        event.acceptProposedAction()
+                        return
+        event.ignore()
+
+    def dragMoveEvent(self, event) -> None:
+        """Handle drag move."""
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        """Handle drop."""
+        if event.mimeData().hasUrls():
+            valid_paths = []
+            for url in event.mimeData().urls():
+                if url.isLocalFile():
+                    path = Path(url.toLocalFile())
+                    if self._is_valid_path(path):
+                        valid_paths.append(path)
+
+            if valid_paths:
+                if not self._multiple:
+                    valid_paths = valid_paths[:1]
+                self.files_dropped.emit(valid_paths)
+                event.acceptProposedAction()
+                return
+
+        event.ignore()
 
 
 class FXDropZone(fxstyle.FXThemeAware, QWidget):
@@ -31,6 +149,9 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
     - Customizable accepted extensions with display
     - Support for files, folders, or both
     - Visual states: default, hover, drag-active
+    - Built-in tree view that appears after files are dropped
+    - Tree view also accepts drag & drop for additional files
+    - Context menu for removing individual files
 
     Args:
         parent: Parent widget.
@@ -43,32 +164,38 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
         icon_name: Icon name to display (default: 'upload_file').
         show_formats: Whether to display accepted formats below title.
         show_buttons: Whether to show Browse/Clear buttons.
+        show_tree: Whether to show file tree after files are dropped.
 
     Signals:
         files_dropped: Emitted when files/folders are dropped or selected.
             Passes a list of Path objects.
         files_cleared: Emitted when files are cleared.
+        file_removed: Emitted when a single file is removed from the tree.
+            Passes the Path that was removed.
         drag_entered: Emitted when a valid drag enters the drop zone.
         drag_left: Emitted when a drag leaves the drop zone.
 
     Examples:
-        >>> # Accept image files only
+        >>> # Accept image files only with tree view
         >>> drop_zone = FXDropZone(
         ...     title="Drop Images Here",
         ...     description="or use the Browse Files... button below",
-        ...     extensions={'.png', '.jpg', '.exr'}
+        ...     extensions={'.png', '.jpg', '.exr'},
+        ...     show_tree=True
         ... )
         >>> drop_zone.files_dropped.connect(lambda paths: print(paths))
         >>>
-        >>> # Accept folders only
+        >>> # Accept folders only (no tree)
         >>> folder_zone = FXDropZone(
         ...     title="Drop Project Folder",
-        ...     accept_mode='folders'
+        ...     accept_mode='folders',
+        ...     show_tree=False
         ... )
     """
 
     files_dropped = Signal(list)
     files_cleared = Signal()
+    file_removed = Signal(object)  # Path object
     drag_entered = Signal()
     drag_left = Signal()
 
@@ -83,6 +210,7 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
         icon_name: str = "upload_file",
         show_formats: bool = True,
         show_buttons: bool = True,
+        show_tree: bool = True,
     ):
         super().__init__(parent)
 
@@ -94,8 +222,9 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
         self._icon_name = icon_name
         self._show_formats = show_formats
         self._show_buttons = show_buttons
+        self._show_tree = show_tree
         self._is_drag_active = False
-        self._has_files = False
+        self._selected_files: List[Path] = []
 
         self._init_ui()
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -106,11 +235,10 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(8)
 
-        # Drop area container
+        # Drop area container (placeholder)
         self._drop_area = QWidget()
         self._drop_area.setAcceptDrops(True)
         self._drop_area.setObjectName("FXDropZoneArea")
-        # Install event filter to handle drag/drop on the container
         self._drop_area.installEventFilter(self)
 
         drop_layout = QVBoxLayout(self._drop_area)
@@ -155,6 +283,29 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
 
         main_layout.addWidget(self._drop_area, 1)
 
+        # File tree (hidden initially)
+        if self._show_tree:
+            self._file_tree = _FileDropTree(
+                parent=self,
+                accept_mode=self._accept_mode,
+                extensions=self._extensions,
+                multiple=self._multiple,
+            )
+            self._file_tree.setObjectName("FXDropZoneTree")
+            self._file_tree.setVisible(False)
+            self._file_tree.files_dropped.connect(self._on_tree_files_dropped)
+            self._file_tree.setContextMenuPolicy(Qt.CustomContextMenu)
+            self._file_tree.customContextMenuRequested.connect(
+                self._show_context_menu
+            )
+            main_layout.addWidget(self._file_tree, 1)
+
+            # Count label (hidden initially)
+            self._count_label = QLabel()
+            self._count_label.setObjectName("FXDropZoneCount")
+            self._count_label.setVisible(False)
+            main_layout.addWidget(self._count_label)
+
         # Button container (outside the drop area)
         if self._show_buttons:
             button_container = QWidget()
@@ -186,6 +337,9 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
 
             main_layout.addWidget(button_container)
 
+        # Initialize icon (will be updated by theme change, but set initial state)
+        self._update_icon()
+
     def _on_theme_changed(self, _theme_name: str = None) -> None:
         """Handle theme changes."""
         self._update_styles()
@@ -198,6 +352,13 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
             self._apply_drag_active_style()
         else:
             self._apply_default_style()
+
+        # Style the count label (specific to this widget)
+        if self._show_tree:
+            self._count_label.setStyleSheet(
+                f"color: {self.theme.text_muted};"
+                f"font-size: 11px;"
+            )
 
     def _apply_default_style(self) -> None:
         """Apply default (non-drag) style."""
@@ -289,25 +450,122 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
             color: Optional color override for the icon.
         """
         if color:
-            # Use explicit color
             pixmap = fxicons.get_icon(self._icon_name, color=color).pixmap(
                 64, 64
             )
         else:
-            # Use theme icon color
             pixmap = fxicons.get_icon(self._icon_name).pixmap(64, 64)
         self._icon_label.setPixmap(pixmap)
 
     def _update_formats_label(self) -> None:
         """Update the formats label text."""
         if self._extensions:
-            # Format extensions nicely (e.g., ".png, .jpg, .exr")
             ext_list = sorted(self._extensions)
             ext_str = ", ".join(ext_list)
             self._formats_label.setText(f"Accepted formats: {ext_str}")
             self._formats_label.setVisible(self._show_formats)
         else:
             self._formats_label.setVisible(False)
+
+    def _update_visibility(self) -> None:
+        """Toggle visibility between placeholder and file tree."""
+        has_files = bool(self._selected_files)
+
+        if self._show_tree:
+            self._drop_area.setVisible(not has_files)
+            self._file_tree.setVisible(has_files)
+            self._count_label.setVisible(has_files)
+        else:
+            self._drop_area.setVisible(True)
+
+        if self._show_buttons:
+            self._clear_btn.setEnabled(has_files)
+
+    def _update_file_tree(self) -> None:
+        """Update the file tree with current selected files."""
+        if not self._show_tree:
+            return
+
+        self._file_tree.clear()
+
+        for path in self._selected_files:
+            item = QTreeWidgetItem()
+            item.setText(0, path.name)
+            item.setData(0, Qt.UserRole, path)
+
+            # Set type and icon
+            if path.is_dir():
+                item.setText(1, "Folder")
+                item.setIcon(0, fxicons.get_icon("folder"))
+            else:
+                item.setText(1, path.suffix.upper().lstrip(".") or "File")
+                item.setIcon(0, fxicons.get_icon("description"))
+
+            # Set size
+            if path.is_file():
+                size = path.stat().st_size
+                if size < 1024:
+                    size_str = f"{size} B"
+                elif size < 1024 * 1024:
+                    size_str = f"{size / 1024:.1f} KB"
+                elif size < 1024 * 1024 * 1024:
+                    size_str = f"{size / (1024 * 1024):.1f} MB"
+                else:
+                    size_str = f"{size / (1024 * 1024 * 1024):.1f} GB"
+                item.setText(2, size_str)
+            else:
+                item.setText(2, "-")
+
+            self._file_tree.addTopLevelItem(item)
+
+        # Update count label
+        count = len(self._selected_files)
+        if count == 1:
+            self._count_label.setText("1 file selected")
+        else:
+            self._count_label.setText(f"{count} files selected")
+
+        self._update_visibility()
+
+    def _show_context_menu(self, position) -> None:
+        """Show context menu for file removal."""
+        item = self._file_tree.itemAt(position)
+        if not item:
+            return
+
+        menu = QMenu(self)
+
+        # Remove action
+        remove_action = menu.addAction(fxicons.get_icon("delete"), "Remove")
+
+        # Remove all action if multiple files
+        if len(self._selected_files) > 1:
+            menu.addSeparator()
+            remove_all_action = menu.addAction(fxicons.get_icon("clear"), "Remove All")
+        else:
+            remove_all_action = None
+
+        action = menu.exec_(self._file_tree.mapToGlobal(position))
+
+        if action == remove_action:
+            path = item.data(0, Qt.UserRole)
+            self._remove_file(path)
+        elif action == remove_all_action:
+            self._on_clear_clicked()
+
+    def _remove_file(self, path: Path) -> None:
+        """Remove a single file from the selection.
+
+        Args:
+            path: The path to remove.
+        """
+        if path in self._selected_files:
+            self._selected_files.remove(path)
+            self._update_file_tree()
+            self.file_removed.emit(path)
+
+            if not self._selected_files:
+                self.files_cleared.emit()
 
     def _browse(self) -> None:
         """Open file/folder browser dialog."""
@@ -318,7 +576,6 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
             if path:
                 self._on_files_added([Path(path)])
         else:
-            # Build filter string from extensions
             if self._extensions:
                 ext_str = " ".join(f"*{ext}" for ext in self._extensions)
                 filter_str = f"Allowed Files ({ext_str});;All Files (*)"
@@ -345,18 +602,41 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
             paths: List of paths that were added.
             flash: Whether to flash success feedback.
         """
-        self._has_files = True
+        # Add new files (avoid duplicates)
+        new_files = [p for p in paths if p not in self._selected_files]
+        if not new_files:
+            return
+
+        if not self._multiple:
+            self._selected_files = new_files[:1]
+        else:
+            self._selected_files.extend(new_files)
+
         if self._show_buttons:
             self._clear_btn.setEnabled(True)
-        if flash:
+
+        if flash and not self._show_tree:
             self._flash_feedback("success")
-        self.files_dropped.emit(paths)
+
+        self._update_file_tree()
+        self.files_dropped.emit(new_files)
+
+    def _on_tree_files_dropped(self, paths: List[Path]) -> None:
+        """Handle files dropped on the tree widget."""
+        self._on_files_added(paths, flash=False)
 
     def _on_clear_clicked(self) -> None:
         """Handle clear button click."""
-        self._has_files = False
+        self._selected_files.clear()
+
+        if self._show_tree:
+            self._file_tree.clear()
+
+        self._update_visibility()
+
         if self._show_buttons:
             self._clear_btn.setEnabled(False)
+
         self.files_cleared.emit()
 
     def _is_valid_drop(self, paths: List[Path]) -> bool:
@@ -455,7 +735,6 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
                         paths.append(path)
 
             if paths:
-                # Filter based on accept mode and extensions
                 valid_paths = []
                 for path in paths:
                     if self._accept_mode == "files" and path.is_file():
@@ -483,7 +762,6 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
                     event.acceptProposedAction()
                     return
                 else:
-                    # Files were dropped but none were valid
                     self._flash_feedback("error")
 
         event.ignore()
@@ -521,12 +799,13 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
     def accept_mode(self, value: str) -> None:
         """Set the accept mode ('files', 'folders', or 'both')."""
         self._accept_mode = value
-        # Update browse button icon if it exists
         if self._show_buttons:
             self._browse_icon_name = (
                 "folder_open" if value == "folders" else "file_open"
             )
             fxicons.set_icon(self._browse_btn, self._browse_icon_name)
+        if self._show_tree:
+            self._file_tree.set_accept_mode(value)
 
     @property
     def extensions(self) -> Optional[Set[str]]:
@@ -538,6 +817,8 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
         """Set the accepted extensions."""
         self._extensions = value
         self._update_formats_label()
+        if self._show_tree:
+            self._file_tree.set_extensions(value)
 
     @property
     def multiple(self) -> bool:
@@ -548,11 +829,25 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
     def multiple(self, value: bool) -> None:
         """Set whether multiple selection is enabled."""
         self._multiple = value
+        if self._show_tree:
+            self._file_tree.set_multiple(value)
 
     @property
     def has_files(self) -> bool:
         """Return whether files have been added."""
-        return self._has_files
+        return bool(self._selected_files)
+
+    @property
+    def selected_files(self) -> List[Path]:
+        """Return the list of selected files."""
+        return self._selected_files.copy()
+
+    @property
+    def file_tree(self) -> Optional[QTreeWidget]:
+        """Return the file tree widget (if show_tree is True)."""
+        if self._show_tree:
+            return self._file_tree
+        return None
 
     def set_icon(self, icon_name: str) -> None:
         """Set the icon displayed in the drop zone.
@@ -563,19 +858,40 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
         self._icon_name = icon_name
         self._update_icon()
 
-    def set_has_files(self, has_files: bool) -> None:
-        """Update the has_files state (useful for external state management).
+    def set_files(self, paths: List[Path]) -> None:
+        """Set the selected files programmatically.
 
         Args:
-            has_files: Whether files are currently selected.
+            paths: List of paths to set as selected.
         """
-        self._has_files = has_files
-        if self._show_buttons:
-            self._clear_btn.setEnabled(has_files)
+        self._selected_files = list(paths)
+        self._update_file_tree()
+
+    def add_files(self, paths: List[Path]) -> None:
+        """Add files to the current selection programmatically.
+
+        Args:
+            paths: List of paths to add.
+        """
+        self._on_files_added(paths, flash=False)
 
     def clear(self) -> None:
         """Clear the drop zone state (programmatic clear)."""
         self._on_clear_clicked()
+
+    def show_placeholder(self) -> None:
+        """Show the drop placeholder (hide tree)."""
+        if self._show_tree:
+            self._drop_area.setVisible(True)
+            self._file_tree.setVisible(False)
+            self._count_label.setVisible(False)
+
+    def show_file_tree(self) -> None:
+        """Show the file tree (hide placeholder)."""
+        if self._show_tree and self._selected_files:
+            self._drop_area.setVisible(False)
+            self._file_tree.setVisible(True)
+            self._count_label.setVisible(True)
 
 
 def example() -> None:
@@ -592,32 +908,21 @@ def example() -> None:
     window.setCentralWidget(widget)
     layout = QVBoxLayout(widget)
 
-    # Audio files drop zone (like LS Publisher)
-    audio_group = QGroupBox("Files")
-    audio_layout = QVBoxLayout(audio_group)
-    audio_drop = FXDropZone(
-        title="Drag and Drop Audio Files Here",
-        description="or use the Browse Files... button below",
-        extensions={".mp3", ".wav"},
-        show_formats=True,
-    )
-    audio_layout.addWidget(audio_drop)
-    layout.addWidget(audio_group)
-
-    # Image files drop zone
-    image_group = QGroupBox("Image Files")
+    # Image files drop zone with tree view
+    image_group = QGroupBox("Image Files (with Tree View)")
     image_layout = QVBoxLayout(image_group)
     image_drop = FXDropZone(
-        title="Drop Images Here",
-        description="Supports PNG, JPG, EXR, and TIFF files",
+        title="Drag and Drop Image Files Here",
+        description="or use the Browse Files... button below",
         extensions={".png", ".jpg", ".jpeg", ".exr", ".tif", ".tiff"},
         show_formats=True,
+        show_tree=True,
     )
     image_layout.addWidget(image_drop)
     layout.addWidget(image_group)
 
-    # Folder drop zone
-    folder_group = QGroupBox("Project Folder")
+    # Folder drop zone (no tree)
+    folder_group = QGroupBox("Project Folder (Simple Mode)")
     folder_layout = QVBoxLayout(folder_group)
     folder_drop = FXDropZone(
         title="Drop Project Folder",
@@ -625,6 +930,7 @@ def example() -> None:
         accept_mode="folders",
         icon_name="folder",
         show_formats=False,
+        show_tree=False,
     )
     folder_layout.addWidget(folder_drop)
     layout.addWidget(folder_group)
@@ -642,14 +948,16 @@ def example() -> None:
     def on_files_cleared():
         status_label.setText("Files cleared")
 
-    audio_drop.files_dropped.connect(on_files_dropped)
-    audio_drop.files_cleared.connect(on_files_cleared)
+    def on_file_removed(path):
+        status_label.setText(f"Removed: {path.name}")
+
     image_drop.files_dropped.connect(on_files_dropped)
     image_drop.files_cleared.connect(on_files_cleared)
+    image_drop.file_removed.connect(on_file_removed)
     folder_drop.files_dropped.connect(on_files_dropped)
     folder_drop.files_cleared.connect(on_files_cleared)
 
-    window.resize(500, 600)
+    window.resize(600, 700)
     window.show()
     sys.exit(app.exec())
 
