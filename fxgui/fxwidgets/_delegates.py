@@ -59,7 +59,11 @@ class FXItemDelegate(QStyledItemDelegate):
         is_selected = bool(option.state & QStyle.State_Selected)
         is_hovered = bool(option.state & QStyle.State_MouseOver)
 
-        if icon is not None and not icon.isNull() and (is_selected or is_hovered):
+        if (
+            icon is not None
+            and not icon.isNull()
+            and (is_selected or is_hovered)
+        ):
             # Initialize option to get proper styling
             opt = QStyleOptionViewItem(option)
             self.initStyleOption(opt, index)
@@ -1105,25 +1109,35 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 thumbnail = QPixmap(70, 70)
                 thumbnail.fill(QColor(80, 80, 80))
 
-        # Fixed thumbnail size
-        thumbnail_size = 70
-        x_offset = 5
+        # Fixed thumbnail container size - 16:9 aspect ratio to match missing_image.png
+        # Row height is 50px, with 5px margin top/bottom = 40px for bordered thumbnail
+        # Bordered thumbnail adds 2px, so inner thumbnail is 38px height
+        thumbnail_height = 38
+        thumbnail_width = 68  # 38 * 16/9 ≈ 68
+        x_offset = 5  # Consistent margin on all sides
 
+        # Scale image to fit within container while keeping aspect ratio
         if not thumbnail.isNull():
             thumbnail = thumbnail.scaled(
-                thumbnail_size,
-                thumbnail_size,
+                thumbnail_width,
+                thumbnail_height,
                 Qt.KeepAspectRatio,
                 Qt.SmoothTransformation,
             )
 
-        # Create bordered thumbnail
-        bordered_thumbnail = QPixmap(thumbnail.size() + QSize(2, 2))
+        # Create fixed-size bordered thumbnail container
+        bordered_thumbnail = QPixmap(thumbnail_width + 2, thumbnail_height + 2)
         bordered_thumbnail.fill(Qt.transparent)
 
         painter_with_border = QPainter(bordered_thumbnail)
         painter_with_border.setRenderHint(QPainter.Antialiasing)
-        painter_with_border.drawPixmap(1, 1, thumbnail)
+
+        # Center the scaled image within the fixed-size container
+        img_x = 1 + (thumbnail_width - thumbnail.width()) // 2
+        img_y = 1 + (thumbnail_height - thumbnail.height()) // 2
+        painter_with_border.drawPixmap(img_x, img_y, thumbnail)
+
+        # Draw border around the full container
         painter_with_border.setPen(QPen(Qt.white, 1))
         painter_with_border.setBrush(Qt.NoBrush)
         painter_with_border.drawRoundedRect(
@@ -1306,9 +1320,13 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             # Use QIcon's built-in modes for automatic color switching
             # Icons created with get_icon() have Selected/Active pixmaps
             if option.state & QStyle.State_Selected:
-                icon.paint(painter, icon_rect, Qt.AlignCenter, QIcon.Selected, QIcon.On)
+                icon.paint(
+                    painter, icon_rect, Qt.AlignCenter, QIcon.Selected, QIcon.On
+                )
             elif option.state & QStyle.State_MouseOver:
-                icon.paint(painter, icon_rect, Qt.AlignCenter, QIcon.Active, QIcon.On)
+                icon.paint(
+                    painter, icon_rect, Qt.AlignCenter, QIcon.Active, QIcon.On
+                )
             else:
                 icon.paint(painter, icon_rect)
             text_x = icon_x + icon_size + icon_margin
@@ -1479,10 +1497,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             )
             if show_thumbnail:
                 # Add thumbnail width + padding to the original width
-                thumbnail_size = 70
-                x_offset = 5
+                # Thumbnail is 16:9 aspect ratio (68x38)
+                thumbnail_width = 68
+                x_offset = 5  # Consistent margin on all sides
                 thumbnail_width_with_padding = (
-                    thumbnail_size + 2 + (x_offset * 2)
+                    thumbnail_width + 2 + (x_offset * 2)
                 )
                 additional_spacing = 10
 
