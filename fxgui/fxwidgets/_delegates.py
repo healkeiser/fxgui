@@ -1125,12 +1125,20 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 Qt.SmoothTransformation,
             )
 
-        # Create fixed-size bordered thumbnail container
+        # Create fixed-size bordered thumbnail container with background
         bordered_thumbnail = QPixmap(thumbnail_width + 2, thumbnail_height + 2)
         bordered_thumbnail.fill(Qt.transparent)
 
         painter_with_border = QPainter(bordered_thumbnail)
         painter_with_border.setRenderHint(QPainter.Antialiasing)
+
+        # Fill background with surface_sunken for visual separation
+        bg_color = QColor(self.theme.surface_sunken)
+        painter_with_border.setBrush(QBrush(bg_color))
+        painter_with_border.setPen(Qt.NoPen)
+        painter_with_border.drawRoundedRect(
+            bordered_thumbnail.rect().marginsRemoved(QMargins(1, 1, 1, 1)), 2, 2
+        )
 
         # Center the scaled image within the fixed-size container
         img_x = 1 + (thumbnail_width - thumbnail.width()) // 2

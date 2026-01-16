@@ -9,7 +9,8 @@
       "Bash(wc:*)",
       "Bash(DEVELOPER_MODE=1 python:*)",
       "Bash(du:*)",
-      "Bash(git fsck:*)"
+      "Bash(git fsck:*)",
+      "Bash(DEVELOPER_MODE=1 timeout 5 python:*)"
     ]
   }
 }

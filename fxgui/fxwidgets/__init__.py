@@ -29,6 +29,7 @@ from fxgui.fxwidgets._delegates import (
     FXThumbnailDelegate,
 )
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
+from fxgui.fxwidgets._drop_zone import FXDropZone
 from fxgui.fxwidgets._file_path_widget import FXFilePathWidget
 from fxgui.fxwidgets._fuzzy_search_list import FXFuzzySearchList
 from fxgui.fxwidgets._fuzzy_search_tree import FXFuzzySearchTree
@@ -89,6 +90,7 @@ __all__ = [
     "FXCodeBlock",
     "FXCollapsibleWidget",
     "FXColorLabelDelegate",
+    "FXDropZone",
     "FXElidedLabel",
     "FXFilePathWidget",
     "FXFloatingDialog",
