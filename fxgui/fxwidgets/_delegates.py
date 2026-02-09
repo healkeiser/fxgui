@@ -1431,7 +1431,19 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             icon_x = option.rect.left() + icon_margin
             icon_y = option.rect.top() + (option.rect.height() - icon_size) // 2
             icon_rect = QRect(icon_x, icon_y, icon_size, icon_size)
-            icon.paint(painter, icon_rect, Qt.AlignCenter)
+
+            # Use QIcon's built-in modes for automatic color switching
+            # Icons created with get_icon() have Selected/Active pixmaps
+            if option.state & QStyle.State_Selected:
+                icon.paint(
+                    painter, icon_rect, Qt.AlignCenter, QIcon.Selected, QIcon.On
+                )
+            elif option.state & QStyle.State_MouseOver:
+                icon.paint(
+                    painter, icon_rect, Qt.AlignCenter, QIcon.Active, QIcon.On
+                )
+            else:
+                icon.paint(painter, icon_rect)
             text_x = icon_x + icon_size + icon_margin
 
         # Draw text
