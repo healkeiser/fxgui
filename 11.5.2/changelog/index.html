@@ -1,0 +1,6224 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+        <meta name="author" content="Valentin Beaumont">
+      
+      
+      
+        <link rel="prev" href="../technical/fxwidgets/_widget/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/fxgui_logo_background_light.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Changelog - fxgui</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="fxgui" class="md-header__button md-logo" aria-label="fxgui" data-md-component="logo">
+      
+  <img src="../images/fxgui_logo_light.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            fxgui
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/healkeiser/fxgui" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    healkeiser/fxgui
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../installation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../how-to/" class="md-tabs__link">
+          
+  
+  
+  How-to
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../technical/" class="md-tabs__link">
+          
+  
+  
+  Technical
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="fxgui" class="md-nav__button md-logo" aria-label="fxgui" data-md-component="logo">
+      
+  <img src="../images/fxgui_logo_light.svg" alt="logo">
+
+    </a>
+    fxgui
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/healkeiser/fxgui" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    healkeiser/fxgui
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-to
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-to
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/styling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Styling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/theming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/widgets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Widgets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/icons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Icons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Technical
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Technical
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../technical/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fxgui
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    fxgui
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/_version/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxconfig/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fxconfig
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxconstants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fxconstants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxcore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fxcore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxdcc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fxdcc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxicons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fxicons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxstyle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fxstyle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxutils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fxutils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4_1_10" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../technical/fxwidgets/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fxwidgets
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_1_10" id="__nav_4_1_10_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_4_1_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    fxwidgets
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_accordion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    accordion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_application/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    application
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_breadcrumb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    breadcrumb
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_code_block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    code_block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_collapsible/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    collapsible
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    constants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_delegates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    delegates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_dialogs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dialogs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_drop_zone/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    drop_zone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_file_path_widget/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    file_path_widget
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_fuzzy_search_list/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fuzzy_search_list
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_fuzzy_search_tree/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fuzzy_search_tree
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_inputs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    inputs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_labels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    labels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_loading_spinner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    loading_spinner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_log_widget/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    log_widget
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_main_window/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    main_window
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_notification_banner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    notification_banner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_progress_card/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    progress_card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_range_slider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    range_slider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_rating_widget/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    rating_widget
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_scroll_area/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    scroll_area
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_search_bar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    search_bar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_singleton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    singleton
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_splash_screen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    splash_screen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_status_bar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    status_bar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_system_tray/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    system_tray
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_tag_input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tag_input
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_timeline_slider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    timeline_slider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_toggle_switch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    toggle_switch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_tooltip/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tooltip
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_tree_items/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tree_items
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_validators/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    validators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxwidgets/_widget/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    widget
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unreleased
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1151-2026-02-09" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.5.1 - 2026-02-09
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.5.1 - 2026-02-09">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1150-2026-01-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.5.0 - 2026-01-16
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.5.0 - 2026-01-16">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1142-2026-01-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.4.2 - 2026-01-16
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.4.2 - 2026-01-16">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1141-2026-01-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.4.1 - 2026-01-16
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.4.1 - 2026-01-16">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1140-2026-01-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.4.0 - 2026-01-15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.4.0 - 2026-01-15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1130-2026-01-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.3.0 - 2026-01-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.3.0 - 2026-01-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1120-2026-01-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.2.0 - 2026-01-13
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.2.0 - 2026-01-13">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1113-2026-01-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.1.3 - 2026-01-12
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.1.3 - 2026-01-12">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1112-2026-01-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.1.2 - 2026-01-12
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.1.2 - 2026-01-12">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1111-2026-01-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.1.1 - 2026-01-12
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.1.1 - 2026-01-12">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1110-2026-01-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.1.0 - 2026-01-12
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.1.0 - 2026-01-12">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1100-2026-01-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.0.0 - 2026-01-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.0.0 - 2026-01-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v651-2025-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.5.1 - 2025-04-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.5.1 - 2025-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v650-2025-01-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.5.0 - 2025-01-06
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.5.0 - 2025-01-06">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v640-2024-12-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.4.0 - 2024-12-15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.4.0 - 2024-12-15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v635-2024-12-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.5 - 2024-12-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.5 - 2024-12-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v634-2024-12-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.4 - 2024-12-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.4 - 2024-12-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v633-2024-12-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.3 - 2024-12-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.3 - 2024-12-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v632-2024-12-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.2 - 2024-12-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.2 - 2024-12-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v631-2024-12-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.1 - 2024-12-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.1 - 2024-12-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v630-2024-12-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.0 - 2024-12-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.0 - 2024-12-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v627-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.7 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.7 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v626-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.6 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.6 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v625-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.5 - 2024-12-05
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v624-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.4 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.4 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v623-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.3 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.3 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v622-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.2 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.2 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v621-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.1 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.1 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_26" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v620-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.0 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.0 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_27" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v610-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.1.0 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.1.0 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_28" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v603-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.0.3 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.0.3 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v602-2024-12-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.0.2 - 2024-12-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.0.2 - 2024-12-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v601-2024-12-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.0.1 - 2024-12-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.0.1 - 2024-12-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v600-2024-12-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.0.0 - 2024-12-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.0.0 - 2024-12-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_32" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v501-2024-12-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v5.0.1 - 2024-12-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v5.0.1 - 2024-12-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v500-2024-12-03" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v5.0.0 - 2024-12-03
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v5.0.0 - 2024-12-03">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v460-2024-12-01" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.6.0 - 2024-12-01
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.6.0 - 2024-12-01">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v451-2024-11-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.5.1 - 2024-11-15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.5.1 - 2024-11-15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_36" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v450-2024-11-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.5.0 - 2024-11-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.5.0 - 2024-11-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_37" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v442-2024-11-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.4.2 - 2024-11-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.4.2 - 2024-11-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_38" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v441-2024-11-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.4.1 - 2024-11-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.4.1 - 2024-11-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_39" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v440-2024-11-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.4.0 - 2024-11-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.4.0 - 2024-11-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_40" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v430-2024-11-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.3.0 - 2024-11-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.3.0 - 2024-11-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v420-2024-11-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.2.0 - 2024-11-07
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.2.0 - 2024-11-07">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v410-2024-10-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.1.0 - 2024-10-31
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v404-2024-10-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.0.4 - 2024-10-31
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.0.4 - 2024-10-31">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v403-2024-10-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.0.3 - 2024-10-31
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.0.3 - 2024-10-31">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_44" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v402-2024-10-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.0.2 - 2024-10-30
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.0.2 - 2024-10-30">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_45" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v401-2024-10-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.0.1 - 2024-10-30
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.0.1 - 2024-10-30">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_46" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v400-2024-10-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.0.0 - 2024-10-30
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.0.0 - 2024-10-30">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_47" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v324-2024-10-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.2.4 - 2024-10-24
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.2.4 - 2024-10-24">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_48" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v323-2024-10-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.2.3 - 2024-10-24
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v322-2024-10-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.2.2 - 2024-10-24
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.2.2 - 2024-10-24">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_49" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v321-2024-09-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.2.1 - 2024-09-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.2.1 - 2024-09-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_50" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v320-2024-09-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.2.0 - 2024-09-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.2.0 - 2024-09-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v311-2024-09-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.1.1 - 2024-09-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.1.1 - 2024-09-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_52" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v310-2024-09-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.1.0 - 2024-09-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.1.0 - 2024-09-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v302-2024-08-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.0.2 - 2024-08-20
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.0.2 - 2024-08-20">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_54" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v300-2024-08-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.0.0 - 2024-08-20
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.0.0 - 2024-08-20">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unreleased
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1151-2026-02-09" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.5.1 - 2026-02-09
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.5.1 - 2026-02-09">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1150-2026-01-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.5.0 - 2026-01-16
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.5.0 - 2026-01-16">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1142-2026-01-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.4.2 - 2026-01-16
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.4.2 - 2026-01-16">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1141-2026-01-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.4.1 - 2026-01-16
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.4.1 - 2026-01-16">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1140-2026-01-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.4.0 - 2026-01-15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.4.0 - 2026-01-15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1130-2026-01-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.3.0 - 2026-01-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.3.0 - 2026-01-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1120-2026-01-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.2.0 - 2026-01-13
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.2.0 - 2026-01-13">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1113-2026-01-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.1.3 - 2026-01-12
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.1.3 - 2026-01-12">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1112-2026-01-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.1.2 - 2026-01-12
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.1.2 - 2026-01-12">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1111-2026-01-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.1.1 - 2026-01-12
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.1.1 - 2026-01-12">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1110-2026-01-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.1.0 - 2026-01-12
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.1.0 - 2026-01-12">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v1100-2026-01-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v11.0.0 - 2026-01-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v11.0.0 - 2026-01-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#merged_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#commits_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v651-2025-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.5.1 - 2025-04-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.5.1 - 2025-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v650-2025-01-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.5.0 - 2025-01-06
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.5.0 - 2025-01-06">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v640-2024-12-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.4.0 - 2024-12-15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.4.0 - 2024-12-15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v635-2024-12-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.5 - 2024-12-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.5 - 2024-12-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v634-2024-12-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.4 - 2024-12-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.4 - 2024-12-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v633-2024-12-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.3 - 2024-12-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.3 - 2024-12-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v632-2024-12-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.2 - 2024-12-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.2 - 2024-12-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v631-2024-12-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.1 - 2024-12-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.1 - 2024-12-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v630-2024-12-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.3.0 - 2024-12-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.3.0 - 2024-12-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v627-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.7 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.7 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v626-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.6 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.6 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v625-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.5 - 2024-12-05
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v624-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.4 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.4 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v623-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.3 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.3 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v622-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.2 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.2 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v621-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.1 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.1 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_26" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v620-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.2.0 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.2.0 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_27" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v610-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.1.0 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.1.0 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_28" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v603-2024-12-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.0.3 - 2024-12-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.0.3 - 2024-12-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v602-2024-12-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.0.2 - 2024-12-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.0.2 - 2024-12-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v601-2024-12-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.0.1 - 2024-12-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.0.1 - 2024-12-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v600-2024-12-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v6.0.0 - 2024-12-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v6.0.0 - 2024-12-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_32" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v501-2024-12-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v5.0.1 - 2024-12-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v5.0.1 - 2024-12-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v500-2024-12-03" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v5.0.0 - 2024-12-03
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v5.0.0 - 2024-12-03">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v460-2024-12-01" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.6.0 - 2024-12-01
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.6.0 - 2024-12-01">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v451-2024-11-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.5.1 - 2024-11-15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.5.1 - 2024-11-15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_36" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v450-2024-11-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.5.0 - 2024-11-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.5.0 - 2024-11-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_37" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v442-2024-11-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.4.2 - 2024-11-14
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.4.2 - 2024-11-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_38" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v441-2024-11-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.4.1 - 2024-11-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.4.1 - 2024-11-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_39" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v440-2024-11-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.4.0 - 2024-11-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.4.0 - 2024-11-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_40" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v430-2024-11-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.3.0 - 2024-11-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.3.0 - 2024-11-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v420-2024-11-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.2.0 - 2024-11-07
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.2.0 - 2024-11-07">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v410-2024-10-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.1.0 - 2024-10-31
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v404-2024-10-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.0.4 - 2024-10-31
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.0.4 - 2024-10-31">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v403-2024-10-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.0.3 - 2024-10-31
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.0.3 - 2024-10-31">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_44" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v402-2024-10-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.0.2 - 2024-10-30
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.0.2 - 2024-10-30">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_45" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v401-2024-10-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.0.1 - 2024-10-30
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.0.1 - 2024-10-30">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_46" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v400-2024-10-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v4.0.0 - 2024-10-30
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v4.0.0 - 2024-10-30">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_47" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v324-2024-10-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.2.4 - 2024-10-24
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.2.4 - 2024-10-24">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_48" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v323-2024-10-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.2.3 - 2024-10-24
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v322-2024-10-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.2.2 - 2024-10-24
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.2.2 - 2024-10-24">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_49" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v321-2024-09-05" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.2.1 - 2024-09-05
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.2.1 - 2024-09-05">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_50" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v320-2024-09-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.2.0 - 2024-09-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.2.0 - 2024-09-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v311-2024-09-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.1.1 - 2024-09-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.1.1 - 2024-09-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_52" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v310-2024-09-04" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.1.0 - 2024-09-04
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.1.0 - 2024-09-04">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v302-2024-08-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.0.2 - 2024-08-20
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.0.2 - 2024-08-20">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_54" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v300-2024-08-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        v3.0.0 - 2024-08-20
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="v3.0.0 - 2024-08-20">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commits_55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/healkeiser/fxgui/edit/main/docs/changelog.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
+<p>All notable changes to this project will be documented in this file.</p>
+<p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>
+and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<p>Generated by <a href="https://github.com/CookPete/auto-changelog"><code>auto-changelog</code></a>.</p>
+<h2 id="unreleased"><a href="https://github.com/healkeiser/fxgui/compare/v11.5.1...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="v1151-2026-02-09"><a href="https://github.com/healkeiser/fxgui/compare/v11.5.0...v11.5.1">v11.5.1</a> - 2026-02-09<a class="headerlink" href="#v1151-2026-02-09" title="Permanent link">&para;</a></h2>
+<h3 id="commits">Commits<a class="headerlink" href="#commits" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[FIX] All icons are reactive to selection state if using FThumbnailDelegate <a href="https://github.com/healkeiser/fxgui/commit/a39ae59c42ad77732c90f55caad1b49a31b54718"><code>a39ae59</code></a></li>
+</ul>
+<h2 id="v1150-2026-01-16"><a href="https://github.com/healkeiser/fxgui/compare/v11.4.2...v11.5.0">v11.5.0</a> - 2026-01-16<a class="headerlink" href="#v1150-2026-01-16" title="Permanent link">&para;</a></h2>
+<h3 id="merged">Merged<a class="headerlink" href="#merged" title="Permanent link">&para;</a></h3>
+<ul>
+<li>v11.5.0: Added <code>FXDropZone</code> widget <a href="https://github.com/healkeiser/fxgui/pull/9"><code>#9</code></a></li>
+</ul>
+<h3 id="commits_1">Commits<a class="headerlink" href="#commits_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[FEAT] Added surface_sunken background in thumbnails <a href="https://github.com/healkeiser/fxgui/commit/7c7d471e24b1c6ac3dbdd10037993b20033aa836"><code>7c7d471</code></a></li>
+<li>[FEAT] Added a tree for the FXDropZone widget <a href="https://github.com/healkeiser/fxgui/commit/63e920d316746ab9a876a2989513aeddc8bb7375"><code>63e920d</code></a></li>
+</ul>
+<h2 id="v1142-2026-01-16"><a href="https://github.com/healkeiser/fxgui/compare/v11.4.1...v11.4.2">v11.4.2</a> - 2026-01-16<a class="headerlink" href="#v1142-2026-01-16" title="Permanent link">&para;</a></h2>
+<h3 id="merged_1">Merged<a class="headerlink" href="#merged_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>v11.4.2: Fixed thumbnail sizing  <a href="https://github.com/healkeiser/fxgui/pull/8"><code>#8</code></a></li>
+</ul>
+<h3 id="commits_2">Commits<a class="headerlink" href="#commits_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[FIX[ Fixed thumnail sizing <a href="https://github.com/healkeiser/fxgui/commit/4da33b59be04560980e20c4745de8cc6e8b5fb6e"><code>4da33b5</code></a></li>
+</ul>
+<h2 id="v1141-2026-01-16"><a href="https://github.com/healkeiser/fxgui/compare/v11.4.0...v11.4.1">v11.4.1</a> - 2026-01-16<a class="headerlink" href="#v1141-2026-01-16" title="Permanent link">&para;</a></h2>
+<h3 id="merged_2">Merged<a class="headerlink" href="#merged_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>v11.4.1: Icons have a new state when hovered, changed the way they're detected <a href="https://github.com/healkeiser/fxgui/pull/7"><code>#7</code></a></li>
+</ul>
+<h3 id="commits_3">Commits<a class="headerlink" href="#commits_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[BUILD] Removed Slack notification feedback from CI workflow <a href="https://github.com/healkeiser/fxgui/commit/d09a9ccbe9e4a30949f6eb8ba4c3af168cf0b97f"><code>d09a9cc</code></a></li>
+<li>[FIX] Icons have a new state for hover and selection <a href="https://github.com/healkeiser/fxgui/commit/d32ddad3156f062457519294c4c9cbc7e7faebdc"><code>d32ddad</code></a></li>
+</ul>
+<h2 id="v1140-2026-01-15"><a href="https://github.com/healkeiser/fxgui/compare/v11.3.0...v11.4.0">v11.4.0</a> - 2026-01-15<a class="headerlink" href="#v1140-2026-01-15" title="Permanent link">&para;</a></h2>
+<h3 id="merged_3">Merged<a class="headerlink" href="#merged_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>v11.4.0: Icons are now reacting to the hover/selection color <a href="https://github.com/healkeiser/fxgui/pull/6"><code>#6</code></a></li>
+</ul>
+<h3 id="commits_4">Commits<a class="headerlink" href="#commits_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[FEAT] Icons reacting to state <a href="https://github.com/healkeiser/fxgui/commit/dca335a57c89f73d0ccbf35693a390b17017c38a"><code>dca335a</code></a></li>
+<li>[FIX] Fixed the hover/selection color on the QTreeView branch <a href="https://github.com/healkeiser/fxgui/commit/53a70ea57ae15697fd9708956f1cf18f53b1ffd1"><code>53a70ea</code></a></li>
+</ul>
+<h2 id="v1130-2026-01-14"><a href="https://github.com/healkeiser/fxgui/compare/v11.2.0...v11.3.0">v11.3.0</a> - 2026-01-14<a class="headerlink" href="#v1130-2026-01-14" title="Permanent link">&para;</a></h2>
+<h3 id="merged_4">Merged<a class="headerlink" href="#merged_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>v11.3.0: Added icon support for <code>FXThumbnailDelegate</code> <a href="https://github.com/healkeiser/fxgui/pull/5"><code>#5</code></a></li>
+</ul>
+<h3 id="commits_5">Commits<a class="headerlink" href="#commits_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[FEAT] Added icons support in the status label of the FXThumbnailDelegate <a href="https://github.com/healkeiser/fxgui/commit/d7495d56d25203cf277ef004057e84707f9760c8"><code>d7495d5</code></a></li>
+<li>[FEAT] Added icon support for items using the FXThumbnailDelegate <a href="https://github.com/healkeiser/fxgui/commit/aa278a459ebfd3e69ea8b815dc69ca6cd6eeb309"><code>aa278a4</code></a></li>
+</ul>
+<h2 id="v1120-2026-01-13"><a href="https://github.com/healkeiser/fxgui/compare/v11.1.3...v11.2.0">v11.2.0</a> - 2026-01-13<a class="headerlink" href="#v1120-2026-01-13" title="Permanent link">&para;</a></h2>
+<h3 id="merged_5">Merged<a class="headerlink" href="#merged_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>v11.2.0: Replaced tooltips by FXTooltip in FXMainWindow <a href="https://github.com/healkeiser/fxgui/pull/4"><code>#4</code></a></li>
+</ul>
+<h3 id="commits_6">Commits<a class="headerlink" href="#commits_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[BUILD] Trimmed the icon fork submodules <a href="https://github.com/healkeiser/fxgui/commit/f6e8ccd0645653c97b83ade5a3162a4ea2105156"><code>f6e8ccd</code></a></li>
+<li>[FEAT] Modified tootip so it can replace <code>setTooltip</code> <a href="https://github.com/healkeiser/fxgui/commit/e7f360d244c352d20e084eb1d0b5aa5b3f55c577"><code>e7f360d</code></a></li>
+<li>[CHORE] Consolidated theme lightness discovery within fxstyle <a href="https://github.com/healkeiser/fxgui/commit/5f585d47096bf0ecbf79515dba4437ba23acc334"><code>5f585d4</code></a></li>
+<li>[FEAT] Replaced default tooltips for FXMainWindow <a href="https://github.com/healkeiser/fxgui/commit/727baa1f892136662b44819028a11328f5f0f5b6"><code>727baa1</code></a></li>
+</ul>
+<h2 id="v1113-2026-01-12"><a href="https://github.com/healkeiser/fxgui/compare/v11.1.2...v11.1.3">v11.1.3</a> - 2026-01-12<a class="headerlink" href="#v1113-2026-01-12" title="Permanent link">&para;</a></h2>
+<h3 id="merged_6">Merged<a class="headerlink" href="#merged_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>v11.1.3: Notification banners are now fitting their content vertically <a href="https://github.com/healkeiser/fxgui/pull/3"><code>#3</code></a></li>
+</ul>
+<h3 id="commits_7">Commits<a class="headerlink" href="#commits_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[FEAT] Notifications expanding with their content vertically <a href="https://github.com/healkeiser/fxgui/commit/6389ea19aff0079c95cd803633f3e61e7ef108c1"><code>6389ea1</code></a></li>
+<li>[MISC] Tested line break in notification <a href="https://github.com/healkeiser/fxgui/commit/ecba0d829d07a9f2983d35372c0d671643ca002f"><code>ecba0d8</code></a></li>
+</ul>
+<h2 id="v1112-2026-01-12"><a href="https://github.com/healkeiser/fxgui/compare/v11.1.1...v11.1.2">v11.1.2</a> - 2026-01-12<a class="headerlink" href="#v1112-2026-01-12" title="Permanent link">&para;</a></h2>
+<h3 id="commits_8">Commits<a class="headerlink" href="#commits_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[FIX] Included files in distribution <a href="https://github.com/healkeiser/fxgui/commit/d5b29979533629855d5cacad671dd9dd5c79ea3e"><code>d5b2997</code></a></li>
+</ul>
+<h2 id="v1111-2026-01-12"><a href="https://github.com/healkeiser/fxgui/compare/v11.1.0...v11.1.1">v11.1.1</a> - 2026-01-12<a class="headerlink" href="#v1111-2026-01-12" title="Permanent link">&para;</a></h2>
+<h3 id="commits_9">Commits<a class="headerlink" href="#commits_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[BUILD] Added manual trigger of doc workflow <a href="https://github.com/healkeiser/fxgui/commit/9bff7346ee2f1859d09714a363109eb775a8430e"><code>9bff734</code></a></li>
+<li>[FIX] Mike versionning for documentation <a href="https://github.com/healkeiser/fxgui/commit/0d3e70bab8b305590880a1f25015633f7a0529a8"><code>0d3e70b</code></a></li>
+<li>[FIX] Mike versionning for documentation <a href="https://github.com/healkeiser/fxgui/commit/7ee388e67c6e056274cbb2d0018c94f61d5a43e0"><code>7ee388e</code></a></li>
+<li>[FIX] Fixed workflow redirection <a href="https://github.com/healkeiser/fxgui/commit/452c72c38a934f511d0bd4c771c37ae48d0d9004"><code>452c72c</code></a></li>
+<li>[FIX] Included files in distribution <a href="https://github.com/healkeiser/fxgui/commit/d163547f4f8c59c93c292c35ecff9d1d11fdda13"><code>d163547</code></a></li>
+</ul>
+<h2 id="v1110-2026-01-12"><a href="https://github.com/healkeiser/fxgui/compare/v11.0.0...v11.1.0">v11.1.0</a> - 2026-01-12<a class="headerlink" href="#v1110-2026-01-12" title="Permanent link">&para;</a></h2>
+<h3 id="merged_7">Merged<a class="headerlink" href="#merged_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>v11.1.0: Overall bug fixes &amp; improvements  <a href="https://github.com/healkeiser/fxgui/pull/2"><code>#2</code></a></li>
+</ul>
+<h3 id="commits_10">Commits<a class="headerlink" href="#commits_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[DOC] Trying zensical workflow <a href="https://github.com/healkeiser/fxgui/commit/bd86a5e068f4da92dbf16d62f7edb22fef9a73d5"><code>bd86a5e</code></a></li>
+<li>[DOC] Trying zensical workflow <a href="https://github.com/healkeiser/fxgui/commit/61192ef72ca063e5fa2b36af3b6115988dc7a35f"><code>61192ef</code></a></li>
+<li>[DOC] Updating zensical workflow <a href="https://github.com/healkeiser/fxgui/commit/aae8e1b363e174cd0a39d47e8ee205df403c463b"><code>aae8e1b</code></a></li>
+<li>[DOC] Automatic screenshots of the widgets <a href="https://github.com/healkeiser/fxgui/commit/01f1a15444152f08bbf49448a826b10082a91bed"><code>01f1a15</code></a></li>
+<li>[DOC] Updated documentation with screenshots <a href="https://github.com/healkeiser/fxgui/commit/27255688d1d6ce4fc1bd47ca1d7d8d5b8b81cf96"><code>2725568</code></a></li>
+<li>[DOC] U[dated documentation with screenshots <a href="https://github.com/healkeiser/fxgui/commit/b24f2e548b0f24042763432f27118a674be1f834"><code>b24f2e5</code></a></li>
+<li>[FEAT] Added custom background support to FXThumbnailDelegate <a href="https://github.com/healkeiser/fxgui/commit/980c1d15786e431693fbe5d3e57d529b3b593b13"><code>980c1d1</code></a></li>
+<li>[FEAT] Simplified theme-awareness API <a href="https://github.com/healkeiser/fxgui/commit/5b507f1a92973f9bc34c6e5de96837867cb60346"><code>5b507f1</code></a></li>
+<li>[FEAT] Added theme aware background in delegates examples <a href="https://github.com/healkeiser/fxgui/commit/334c4fb92fc163368ad6d05a4d4b800bcb3181b1"><code>334c4fb</code></a></li>
+<li>[FEAT] Added a new code block widget <a href="https://github.com/healkeiser/fxgui/commit/85d3b012e19501fe22d320225680067b85844d16"><code>85d3b01</code></a></li>
+<li>[FEAT] Added a new API system for theming <a href="https://github.com/healkeiser/fxgui/commit/8cbd171edbd44de982d9615a0a9a6a0fd4bc2ab7"><code>8cbd171</code></a></li>
+<li>[FEAT] Added more themes <a href="https://github.com/healkeiser/fxgui/commit/e3cae7e7ab6213002aa746a9c44e840f4994385b"><code>e3cae7e</code></a></li>
+<li>[FIX] TOML invalid values <a href="https://github.com/healkeiser/fxgui/commit/c81e1ac4c175d611cd52c31213d0a847dd214881"><code>c81e1ac</code></a></li>
+<li>[FIX] Fixed fallback thumbnail image path <a href="https://github.com/healkeiser/fxgui/commit/0f210ebab971c1909e75f66c7558b027074b8b98"><code>0f210eb</code></a></li>
+</ul>
+<h2 id="v1100-2026-01-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.5.1...v11.0.0">v11.0.0</a> - 2026-01-05<a class="headerlink" href="#v1100-2026-01-05" title="Permanent link">&para;</a></h2>
+<h3 id="merged_8">Merged<a class="headerlink" href="#merged_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>v11.0.0: Major widget expansion and theme system overhaul <a href="https://github.com/healkeiser/fxgui/pull/1"><code>#1</code></a></li>
+</ul>
+<h3 id="commits_11">Commits<a class="headerlink" href="#commits_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[MISC[ Overall improvment of the codebase and huge refactor <a href="https://github.com/healkeiser/fxgui/commit/751e16ea30622a172a5622cdf5b87939e88d7149"><code>751e16e</code></a></li>
+<li>[FIX[ Fixed tag retrieval in workflow <a href="https://github.com/healkeiser/fxgui/commit/c3f1f51672c0b95400f0f332f4f9140d1f1bf507"><code>c3f1f51</code></a></li>
+<li>[FIX] Fixed command for documentation deployment <a href="https://github.com/healkeiser/fxgui/commit/11ea699ef135ff882bcab181611c0378a86098d3"><code>11ea699</code></a></li>
+<li>[FIX] Fixed command for documentation deployment <a href="https://github.com/healkeiser/fxgui/commit/52d928df36ae6050f24d1f2fa2f3bab74072af8f"><code>52d928d</code></a></li>
+<li>[FIX] Fixed requirements.txt for documentation generation <a href="https://github.com/healkeiser/fxgui/commit/89b092ec979b08a35acca34a35aabfecbe595cee"><code>89b092e</code></a></li>
+<li>[BUILD] Removed useless print statement from IncrementVersion script <a href="https://github.com/healkeiser/fxgui/commit/c1cf0526ca5ef91eb50a9083bf31616084081938"><code>c1cf052</code></a></li>
+<li>[BUILD] Removed useless print statement from IncrementVersion script <a href="https://github.com/healkeiser/fxgui/commit/f9d14a6b235a526d68697f15b2d3afca4677e033"><code>f9d14a6</code></a></li>
+<li>[FEAT] Splashcreen with rounded corners <a href="https://github.com/healkeiser/fxgui/commit/6d2688635c8a878ac22417a191a5011c874c9fef"><code>6d26886</code></a></li>
+<li>[MISC] Overall codebase improvment refactor <a href="https://github.com/healkeiser/fxgui/commit/a670527731a3dc62b2d9a2f38822899951c91976"><code>a670527</code></a></li>
+<li>[STYLE] Black formatter <a href="https://github.com/healkeiser/fxgui/commit/fddac5e1e97338e8e2296073e122e584dd368b14"><code>fddac5e</code></a></li>
+<li>[DOC] Added black requirements, modified theme, added missing typings <a href="https://github.com/healkeiser/fxgui/commit/621ae649e0ca7947f70432f97bde6a5a967ec2c1"><code>621ae64</code></a></li>
+<li>[FEAT] Added a background behing the tabs for consistency when dragging the focused tab <a href="https://github.com/healkeiser/fxgui/commit/d417033373b71ee7a34e3908221f241e9b2d92c5"><code>d417033</code></a></li>
+<li>[CHORE] Update icon submodules to latest upstream versions <a href="https://github.com/healkeiser/fxgui/commit/992badbd0a6d6540b6bbc4275e8bd1c923f60d90"><code>992badb</code></a></li>
+<li>[FEATURE] Add dockable output log example, thumbnail delegate, and various UI polish <a href="https://github.com/healkeiser/fxgui/commit/babca6a90f15b5ea1560da71feb90341bdd3e6e3"><code>babca6a</code></a></li>
+<li>[FEATURE] Huge refactor of fxwidgets, allow for custom theme support, live-reloading of icons <a href="https://github.com/healkeiser/fxgui/commit/e8ca3ce2ed18ab9534f7cabc384157ec7655db13"><code>e8ca3ce</code></a></li>
+<li>[CHORE] Optimized <a href="https://github.com/healkeiser/fxgui/commit/e6322fe74730851d50cc5d20f1baabc7b0572f4c"><code>e6322fe</code></a></li>
+<li>[DOC] Updated documentation with the latest changes <a href="https://github.com/healkeiser/fxgui/commit/83bb151817cacab78f4e03e3ffe691734b2c1c42"><code>83bb151</code></a></li>
+<li>[DOC] Updated how-to section <a href="https://github.com/healkeiser/fxgui/commit/8e0054ba7db895635fa4e1b086b692bd3c6c52f8"><code>8e0054b</code></a></li>
+<li>[CHORE] Regenerate changelog after removing erroneous v9.0.1 tag <a href="https://github.com/healkeiser/fxgui/commit/4bae283f9aeece54436a30d6a83515500c3567d5"><code>4bae283</code></a></li>
+<li>[DOC] Migrated from MkDocs to Zensical <a href="https://github.com/healkeiser/fxgui/commit/20fdeaa2c0f0505920ee624813bccc1ffe370979"><code>20fdeaa</code></a></li>
+<li>[FEAT] Added VS Code task for serving documentation <a href="https://github.com/healkeiser/fxgui/commit/d285308f60050555acc96728fed02021bb4525f5"><code>d285308</code></a></li>
+<li>[FEAT] Add 14 new pre-styled widgets with developer mode examples <a href="https://github.com/healkeiser/fxgui/commit/898b796cd8f4063e245c19a3a2f411559a86f175"><code>898b796</code></a></li>
+<li>[FIX] Fixed all new widgets <a href="https://github.com/healkeiser/fxgui/commit/6ae38be405d9a0f2f2ecec832c6ff4a0efda5d8b"><code>6ae38be</code></a></li>
+<li>[STYLE] Black formatter <a href="https://github.com/healkeiser/fxgui/commit/453ed50951ebb2de54fe81574c0816fd4485c9cc"><code>453ed50</code></a></li>
+<li>[MISC] Now using YAML instead of JSONC for the styling <a href="https://github.com/healkeiser/fxgui/commit/397938a63406ccee77bf735dd5adc74d81c4db26"><code>397938a</code></a></li>
+<li>[FIX] Added QThread for heavy validations in file_path_widget <a href="https://github.com/healkeiser/fxgui/commit/6457744f262dbed5bae7c7163f2efa27c0c85a3e"><code>6457744</code></a></li>
+<li>[FEAT] Added FXTooltip widget <a href="https://github.com/healkeiser/fxgui/commit/9cb3e1120839a813036415723910a21a3f0e999b"><code>9cb3e11</code></a></li>
+<li>[FEAT] Matched shadows between tooltips and notifications <a href="https://github.com/healkeiser/fxgui/commit/b3cc135ee9c9517e20a25d547d2ae21eccf75142"><code>b3cc135</code></a></li>
+<li>[FIX] Overall fix of the new widgets <a href="https://github.com/healkeiser/fxgui/commit/28a92cb23955bd686ad4a78845df4737e8ecd5e9"><code>28a92cb</code></a></li>
+<li>[MISC] Added GitHub files <a href="https://github.com/healkeiser/fxgui/commit/70f4e1b05d9aa907ce048bcb1899846367913800"><code>70f4e1b</code></a></li>
+<li>[DOC] Updated documentation <a href="https://github.com/healkeiser/fxgui/commit/8506e1c6abe57b29cfc3a88aba8b6f1334f5777e"><code>8506e1c</code></a></li>
+<li>[DOC] Updated documentation <a href="https://github.com/healkeiser/fxgui/commit/9cae4565be5427a955b5ed5da0e987498d1ca310"><code>9cae456</code></a></li>
+<li>[DOC] Updated documentation and associated requirements <a href="https://github.com/healkeiser/fxgui/commit/0edb318c44a1504278e093f1839ea7531ea10764"><code>0edb318</code></a></li>
+<li>[FIX] Fixed typo in spinners causing errors in painter <a href="https://github.com/healkeiser/fxgui/commit/3de2d3d9ceb5fa0e4d161b7433e1032e2954af5f"><code>3de2d3d</code></a></li>
+<li>[PR] Resolved comment <a href="https://github.com/healkeiser/fxgui/commit/d4b18615db015665831ef8058dcb3a925a41cfa4"><code>d4b1861</code></a></li>
+</ul>
+<h2 id="v651-2025-04-22"><a href="https://github.com/healkeiser/fxgui/compare/v6.5.0...v6.5.1">v6.5.1</a> - 2025-04-22<a class="headerlink" href="#v651-2025-04-22" title="Permanent link">&para;</a></h2>
+<h3 id="commits_12">Commits<a class="headerlink" href="#commits_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Documentation <a href="https://github.com/healkeiser/fxgui/commit/6595f4ec4171bdacdc44a42e05807f78474250b0"><code>6595f4e</code></a></li>
+<li>[FIX] Fixed a typing error <a href="https://github.com/healkeiser/fxgui/commit/e9ddbd62c972b2a7270e2679142dd8d8856d6f3c"><code>e9ddbd6</code></a></li>
+</ul>
+<h2 id="v650-2025-01-06"><a href="https://github.com/healkeiser/fxgui/compare/v6.4.0...v6.5.0">v6.5.0</a> - 2025-01-06<a class="headerlink" href="#v650-2025-01-06" title="Permanent link">&para;</a></h2>
+<h3 id="commits_13">Commits<a class="headerlink" href="#commits_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Added widgets, added @Slot decorator on relevant methods <a href="https://github.com/healkeiser/fxgui/commit/d19eae3f84e46f13ab9e02d2ad0c63047bdab548"><code>d19eae3</code></a></li>
+<li>Documentation <a href="https://github.com/healkeiser/fxgui/commit/450fb9349ccd9db6e3a45d0677ffdbdc5e072279"><code>450fb93</code></a></li>
+</ul>
+<h2 id="v640-2024-12-15"><a href="https://github.com/healkeiser/fxgui/compare/v6.3.5...v6.4.0">v6.4.0</a> - 2024-12-15<a class="headerlink" href="#v640-2024-12-15" title="Permanent link">&para;</a></h2>
+<h3 id="commits_14">Commits<a class="headerlink" href="#commits_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Added <code>FXIconLineEdit</code>, <code>fxcore</code> and <code>FXSortFilterProxyModel</code> <a href="https://github.com/healkeiser/fxgui/commit/4e705062ebc4924eb5bf60d1b8fb77553b815355"><code>4e70506</code></a></li>
+</ul>
+<h2 id="v635-2024-12-14"><a href="https://github.com/healkeiser/fxgui/compare/v6.3.4...v6.3.5">v6.3.5</a> - 2024-12-14<a class="headerlink" href="#v635-2024-12-14" title="Permanent link">&para;</a></h2>
+<h3 id="commits_15">Commits<a class="headerlink" href="#commits_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed scripts to increment tag version <a href="https://github.com/healkeiser/fxgui/commit/e3473ac9fa7c6fb6836b9ef82b527c37f2199ab0"><code>e3473ac</code></a></li>
+</ul>
+<h2 id="v634-2024-12-14"><a href="https://github.com/healkeiser/fxgui/compare/v6.3.3...v6.3.4">v6.3.4</a> - 2024-12-14<a class="headerlink" href="#v634-2024-12-14" title="Permanent link">&para;</a></h2>
+<h3 id="commits_16">Commits<a class="headerlink" href="#commits_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Modified scripts <a href="https://github.com/healkeiser/fxgui/commit/0fe712182ee0a160422e222e240402611b998b2f"><code>0fe7121</code></a></li>
+</ul>
+<h2 id="v633-2024-12-14"><a href="https://github.com/healkeiser/fxgui/compare/v6.3.2...v6.3.3">v6.3.3</a> - 2024-12-14<a class="headerlink" href="#v633-2024-12-14" title="Permanent link">&para;</a></h2>
+<h3 id="commits_17">Commits<a class="headerlink" href="#commits_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Modified docstrings, added <code>tasks</code> and <code>scripts</code> for deployment <a href="https://github.com/healkeiser/fxgui/commit/760e209ab113a2bbc1ed4b6bd7ab0357cb03e26c"><code>760e209</code></a></li>
+</ul>
+<h2 id="v632-2024-12-11"><a href="https://github.com/healkeiser/fxgui/compare/v6.3.1...v6.3.2">v6.3.2</a> - 2024-12-11<a class="headerlink" href="#v632-2024-12-11" title="Permanent link">&para;</a></h2>
+<h3 id="commits_18">Commits<a class="headerlink" href="#commits_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Modified icons for branches <a href="https://github.com/healkeiser/fxgui/commit/81652caf2c67fbefa9362c8063faf88bdb82c753"><code>81652ca</code></a></li>
+</ul>
+<h2 id="v631-2024-12-11"><a href="https://github.com/healkeiser/fxgui/compare/v6.3.0...v6.3.1">v6.3.1</a> - 2024-12-11<a class="headerlink" href="#v631-2024-12-11" title="Permanent link">&para;</a></h2>
+<h3 id="commits_19">Commits<a class="headerlink" href="#commits_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed tabs in the UI file <a href="https://github.com/healkeiser/fxgui/commit/ef29aaef70d87b1bae0852cc56a317f6f2ad6f95"><code>ef29aae</code></a></li>
+</ul>
+<h2 id="v630-2024-12-11"><a href="https://github.com/healkeiser/fxgui/compare/v6.2.7...v6.3.0">v6.3.0</a> - 2024-12-11<a class="headerlink" href="#v630-2024-12-11" title="Permanent link">&para;</a></h2>
+<h3 id="commits_20">Commits<a class="headerlink" href="#commits_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Added simple icons library, QSS adjustments, <code>fxicons</code> automatic icon disabled colors <a href="https://github.com/healkeiser/fxgui/commit/10c8ef8cd8fd502f1c1871fd533ce2038482968d"><code>10c8ef8</code></a></li>
+<li>Added simple icons library, QSS adjustments, <code>fxicons</code> automatic icon disabled colors <a href="https://github.com/healkeiser/fxgui/commit/a539cfdedca00421ad042af94203b551307a7d27"><code>a539cfd</code></a></li>
+</ul>
+<h2 id="v627-2024-12-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.2.6...v6.2.7">v6.2.7</a> - 2024-12-05<a class="headerlink" href="#v627-2024-12-05" title="Permanent link">&para;</a></h2>
+<h3 id="commits_21">Commits<a class="headerlink" href="#commits_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed imports <a href="https://github.com/healkeiser/fxgui/commit/f2c6b7a91c17aac61de3a069d539c2a27acb7dcd"><code>f2c6b7a</code></a></li>
+</ul>
+<h2 id="v626-2024-12-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.2.5...v6.2.6">v6.2.6</a> - 2024-12-05<a class="headerlink" href="#v626-2024-12-05" title="Permanent link">&para;</a></h2>
+<h3 id="commits_22">Commits<a class="headerlink" href="#commits_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Removed wrong imports <a href="https://github.com/healkeiser/fxgui/commit/453cfeafb9a4eaf17c2d928f9fb91a8e64eb0474"><code>453cfea</code></a></li>
+</ul>
+<h2 id="v625-2024-12-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.2.4...v6.2.5">v6.2.5</a> - 2024-12-05<a class="headerlink" href="#v625-2024-12-05" title="Permanent link">&para;</a></h2>
+<h2 id="v624-2024-12-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.2.3...v6.2.4">v6.2.4</a> - 2024-12-05<a class="headerlink" href="#v624-2024-12-05" title="Permanent link">&para;</a></h2>
+<h3 id="commits_23">Commits<a class="headerlink" href="#commits_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Removed mnemonic indications in <code>FXMainWindow</code> <a href="https://github.com/healkeiser/fxgui/commit/4536d1a01e0ba195ed55d58432001fc1cc0886a4"><code>4536d1a</code></a></li>
+</ul>
+<h2 id="v623-2024-12-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.2.2...v6.2.3">v6.2.3</a> - 2024-12-05<a class="headerlink" href="#v623-2024-12-05" title="Permanent link">&para;</a></h2>
+<h3 id="commits_24">Commits<a class="headerlink" href="#commits_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Updated arrow icons <a href="https://github.com/healkeiser/fxgui/commit/546e7d42f0a7ca05a0d3d2bef5e735fe05f53ca3"><code>546e7d4</code></a></li>
+</ul>
+<h2 id="v622-2024-12-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.2.1...v6.2.2">v6.2.2</a> - 2024-12-05<a class="headerlink" href="#v622-2024-12-05" title="Permanent link">&para;</a></h2>
+<h3 id="commits_25">Commits<a class="headerlink" href="#commits_25" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Modified <code>style.qss</code>, removed Illustrator files from distribution package <a href="https://github.com/healkeiser/fxgui/commit/a31a0a2293efe78c19cfefe30387f406d31e0121"><code>a31a0a2</code></a></li>
+</ul>
+<h2 id="v621-2024-12-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.2.0...v6.2.1">v6.2.1</a> - 2024-12-05<a class="headerlink" href="#v621-2024-12-05" title="Permanent link">&para;</a></h2>
+<h3 id="commits_26">Commits<a class="headerlink" href="#commits_26" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed buttons not moving with <code>QTabBar</code> <a href="https://github.com/healkeiser/fxgui/commit/d1b8b725797363db96869fdef19faaa39d0c2bb6"><code>d1b8b72</code></a></li>
+</ul>
+<h2 id="v620-2024-12-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.1.0...v6.2.0">v6.2.0</a> - 2024-12-05<a class="headerlink" href="#v620-2024-12-05" title="Permanent link">&para;</a></h2>
+<h3 id="commits_27">Commits<a class="headerlink" href="#commits_27" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Hardcoded requirements version, deleted old stylesheet icons for SVGs, updated <code>style.qss</code> <a href="https://github.com/healkeiser/fxgui/commit/82c09ef6f7024cf60dd9650f09217c14bd4b14bc"><code>82c09ef</code></a></li>
+</ul>
+<h2 id="v610-2024-12-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.0.3...v6.1.0">v6.1.0</a> - 2024-12-05<a class="headerlink" href="#v610-2024-12-05" title="Permanent link">&para;</a></h2>
+<h3 id="commits_28">Commits<a class="headerlink" href="#commits_28" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Moved and renamed <code>convert_icon_to_pixmap</code> to <code>fxicons</code> <a href="https://github.com/healkeiser/fxgui/commit/bff0bc4f75f2dcbe3ca8dd7f193ce2f176b8db2c"><code>bff0bc4</code></a></li>
+</ul>
+<h2 id="v603-2024-12-05"><a href="https://github.com/healkeiser/fxgui/compare/v6.0.2...v6.0.3">v6.0.3</a> - 2024-12-05<a class="headerlink" href="#v603-2024-12-05" title="Permanent link">&para;</a></h2>
+<h3 id="commits_29">Commits<a class="headerlink" href="#commits_29" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Updated docstrings and examples in <code>fxicons</code>, updated documentation <a href="https://github.com/healkeiser/fxgui/commit/56e1c89820d9232a82b06aa74cb5de3913cfd7ae"><code>56e1c89</code></a></li>
+</ul>
+<h2 id="v602-2024-12-04"><a href="https://github.com/healkeiser/fxgui/compare/v6.0.1...v6.0.2">v6.0.2</a> - 2024-12-04<a class="headerlink" href="#v602-2024-12-04" title="Permanent link">&para;</a></h2>
+<h3 id="commits_30">Commits<a class="headerlink" href="#commits_30" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed examples, modified colours in <code>style.jsonc</code> <a href="https://github.com/healkeiser/fxgui/commit/112b5ac69be700290a31b72ca343f7ce492e16fd"><code>112b5ac</code></a></li>
+</ul>
+<h2 id="v601-2024-12-04"><a href="https://github.com/healkeiser/fxgui/compare/v6.0.0...v6.0.1">v6.0.1</a> - 2024-12-04<a class="headerlink" href="#v601-2024-12-04" title="Permanent link">&para;</a></h2>
+<h3 id="commits_31">Commits<a class="headerlink" href="#commits_31" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Cleaned <code>fxconstants</code>, updated documentation <a href="https://github.com/healkeiser/fxgui/commit/b607c10f39261f50e99685a7c20d71707d1cb6c1"><code>b607c10</code></a></li>
+</ul>
+<h2 id="v600-2024-12-04"><a href="https://github.com/healkeiser/fxgui/compare/v5.0.1...v6.0.0">v6.0.0</a> - 2024-12-04<a class="headerlink" href="#v600-2024-12-04" title="Permanent link">&para;</a></h2>
+<h3 id="commits_32">Commits<a class="headerlink" href="#commits_32" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Added more icon libraries, refactored <code>fxicons</code> <a href="https://github.com/healkeiser/fxgui/commit/a88a7e74ac957cd6926e77b3527b0b0484842f52"><code>a88a7e7</code></a></li>
+</ul>
+<h2 id="v501-2024-12-04"><a href="https://github.com/healkeiser/fxgui/compare/v5.0.0...v5.0.1">v5.0.1</a> - 2024-12-04<a class="headerlink" href="#v501-2024-12-04" title="Permanent link">&para;</a></h2>
+<h3 id="commits_33">Commits<a class="headerlink" href="#commits_33" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Removed useless submodule <a href="https://github.com/healkeiser/fxgui/commit/1b3f2e867f6a1dac2a3e1795d3cbdf2393bcfd4d"><code>1b3f2e8</code></a></li>
+</ul>
+<h2 id="v500-2024-12-03"><a href="https://github.com/healkeiser/fxgui/compare/v4.6.0...v5.0.0">v5.0.0</a> - 2024-12-03<a class="headerlink" href="#v500-2024-12-03" title="Permanent link">&para;</a></h2>
+<h3 id="commits_34">Commits<a class="headerlink" href="#commits_34" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Added icons submodules, improved <code>fxicons</code>, replace <code>QtAwesome</code> where possible <a href="https://github.com/healkeiser/fxgui/commit/2111bdf913ecab4d8811ac4a4a4e78a344aa3604"><code>2111bdf</code></a></li>
+<li>Added icons submodules, improved <code>fxicons</code>, replace <code>QtAwesome</code> where possible <a href="https://github.com/healkeiser/fxgui/commit/c3f9553b3314c83a6e5f60f590bdb143411913f5"><code>c3f9553</code></a></li>
+</ul>
+<h2 id="v460-2024-12-01"><a href="https://github.com/healkeiser/fxgui/compare/v4.5.1...v4.6.0">v4.6.0</a> - 2024-12-01<a class="headerlink" href="#v460-2024-12-01" title="Permanent link">&para;</a></h2>
+<h3 id="commits_35">Commits<a class="headerlink" href="#commits_35" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Documentation <a href="https://github.com/healkeiser/fxgui/commit/e411c2f12494643fc04d243f86b14e2dfe8d7a6f"><code>e411c2f</code></a></li>
+<li>Using <code>QCollator</code> for <code>FXSortedTreeWidgetItem</code> <a href="https://github.com/healkeiser/fxgui/commit/fe99304ec45721d2e99afd449bdb3a2f44d58944"><code>fe99304</code></a></li>
+<li>Changed all icons to use <code>mdi</code> and not <code>mdi6</code> <a href="https://github.com/healkeiser/fxgui/commit/c432a6b72c7b781b26bed947b54f80073e81cddb"><code>c432a6b</code></a></li>
+</ul>
+<h2 id="v451-2024-11-15"><a href="https://github.com/healkeiser/fxgui/compare/v4.5.0...v4.5.1">v4.5.1</a> - 2024-11-15<a class="headerlink" href="#v451-2024-11-15" title="Permanent link">&para;</a></h2>
+<h3 id="commits_36">Commits<a class="headerlink" href="#commits_36" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed imports for PySide6 compatibility layer <a href="https://github.com/healkeiser/fxgui/commit/7298c259c02e8535f85d6687043a4e33ba5c6431"><code>7298c25</code></a></li>
+</ul>
+<h2 id="v450-2024-11-14"><a href="https://github.com/healkeiser/fxgui/compare/v4.4.2...v4.5.0">v4.5.0</a> - 2024-11-14<a class="headerlink" href="#v450-2024-11-14" title="Permanent link">&para;</a></h2>
+<h3 id="commits_37">Commits<a class="headerlink" href="#commits_37" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Getting ready for PySide6 migration <a href="https://github.com/healkeiser/fxgui/commit/0bcc9950ffe39f2a63d5ba29087b9d2fcef38845"><code>0bcc995</code></a></li>
+</ul>
+<h2 id="v442-2024-11-14"><a href="https://github.com/healkeiser/fxgui/compare/v4.4.1...v4.4.2">v4.4.2</a> - 2024-11-14<a class="headerlink" href="#v442-2024-11-14" title="Permanent link">&para;</a></h2>
+<h3 id="commits_38">Commits<a class="headerlink" href="#commits_38" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Stretched table widget <a href="https://github.com/healkeiser/fxgui/commit/8b7b4509b290c94207a90b10f269cd37a898e6a0"><code>8b7b450</code></a></li>
+<li>Added a <code>set_stylesheet</code> argument on the <code>FXMainWindow</code> <a href="https://github.com/healkeiser/fxgui/commit/1c3bb2ff45e8b22c9eda587098441521dc060426"><code>1c3bb2f</code></a></li>
+</ul>
+<h2 id="v441-2024-11-11"><a href="https://github.com/healkeiser/fxgui/compare/v4.4.0...v4.4.1">v4.4.1</a> - 2024-11-11<a class="headerlink" href="#v441-2024-11-11" title="Permanent link">&para;</a></h2>
+<h3 id="commits_39">Commits<a class="headerlink" href="#commits_39" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed <code>examples</code> <a href="https://github.com/healkeiser/fxgui/commit/5a9d64fe0e441415c81433e09fd887aab3d3c046"><code>5a9d64f</code></a></li>
+</ul>
+<h2 id="v440-2024-11-11"><a href="https://github.com/healkeiser/fxgui/compare/v4.3.0...v4.4.0">v4.4.0</a> - 2024-11-11<a class="headerlink" href="#v440-2024-11-11" title="Permanent link">&para;</a></h2>
+<h3 id="commits_40">Commits<a class="headerlink" href="#commits_40" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Module docstring and documentation <a href="https://github.com/healkeiser/fxgui/commit/04ff46dc7559bbcc2b29205fccf920d233f8c186"><code>04ff46d</code></a></li>
+<li>Documentation <a href="https://github.com/healkeiser/fxgui/commit/3669bb825d1450ab8fca44ab8322215e6ba91ff0"><code>3669bb8</code></a></li>
+<li>Removed deprecation for <code>fxicons</code>, added DCC icons and registered them with <code>fxicons</code> library <a href="https://github.com/healkeiser/fxgui/commit/5bdf43d7672e6c90ea9ec02bdb19b636399d4a8a"><code>5bdf43d</code></a></li>
+</ul>
+<h2 id="v430-2024-11-11"><a href="https://github.com/healkeiser/fxgui/compare/v4.2.0...v4.3.0">v4.3.0</a> - 2024-11-11<a class="headerlink" href="#v430-2024-11-11" title="Permanent link">&para;</a></h2>
+<h3 id="commits_41">Commits<a class="headerlink" href="#commits_41" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CHANGEGLOG <a href="https://github.com/healkeiser/fxgui/commit/c35fe861cbb6ba41cb4185627fceee3a63e8f04a"><code>c35fe86</code></a></li>
+<li>Added <code>fxconstants</code> module, refactored <code>examples</code>, added <code>FXColorLabelDelegate</code> class, added DCC icons, modified QSS stylesheet <a href="https://github.com/healkeiser/fxgui/commit/8439fc8275c9da00b94576eccd9f40ae72da1bd7"><code>8439fc8</code></a></li>
+</ul>
+<h2 id="v420-2024-11-07"><a href="https://github.com/healkeiser/fxgui/compare/v4.1.0...v4.2.0">v4.2.0</a> - 2024-11-07<a class="headerlink" href="#v420-2024-11-07" title="Permanent link">&para;</a></h2>
+<h3 id="commits_42">Commits<a class="headerlink" href="#commits_42" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixing semantic package version <a href="https://github.com/healkeiser/fxgui/commit/e25f3136824291357e61d80ea4f88b557116cee7"><code>e25f313</code></a></li>
+<li>Fixed docstrings <a href="https://github.com/healkeiser/fxgui/commit/fc4c3926e1b789952dc3eaa63f139d5a2bd0b91b"><code>fc4c392</code></a></li>
+<li>Updated documentation copyright to reflect Open Source status <a href="https://github.com/healkeiser/fxgui/commit/aa9ae1ebfe85bc2c741954fe3c0cafc71c82f8ca"><code>aa9ae1e</code></a></li>
+<li>Updated version in Houdini package JSON <a href="https://github.com/healkeiser/fxgui/commit/85da2a13a6d2ba31759bc962513a8dc4459cb111"><code>85da2a1</code></a></li>
+<li>Refactored Houdini package <a href="https://github.com/healkeiser/fxgui/commit/0bbc40574be9286a0562497deebc86663d30639b"><code>0bbc405</code></a></li>
+<li>Added a <code>DEBUG</code> level to status bar messages, fixed truncated tab bars <a href="https://github.com/healkeiser/fxgui/commit/4b1e6954b4fc7ed54289f6a7f9fdb9a9e83b5778"><code>4b1e695</code></a></li>
+</ul>
+<h2 id="v410-2024-10-31"><a href="https://github.com/healkeiser/fxgui/compare/v4.0.4...v4.1.0">v4.1.0</a> - 2024-10-31<a class="headerlink" href="#v410-2024-10-31" title="Permanent link">&para;</a></h2>
+<h2 id="v404-2024-10-31"><a href="https://github.com/healkeiser/fxgui/compare/v4.0.3...v4.0.4">v4.0.4</a> - 2024-10-31<a class="headerlink" href="#v404-2024-10-31" title="Permanent link">&para;</a></h2>
+<h3 id="commits_43">Commits<a class="headerlink" href="#commits_43" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Deprecated <code>fxicons</code> module <a href="https://github.com/healkeiser/fxgui/commit/a566b4ffc2a97cc39db0b7e24b0d0d4c51a1665c"><code>a566b4f</code></a></li>
+</ul>
+<h2 id="v403-2024-10-31"><a href="https://github.com/healkeiser/fxgui/compare/v4.0.2...v4.0.3">v4.0.3</a> - 2024-10-31<a class="headerlink" href="#v403-2024-10-31" title="Permanent link">&para;</a></h2>
+<h3 id="commits_44">Commits<a class="headerlink" href="#commits_44" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Documentation screenshot <a href="https://github.com/healkeiser/fxgui/commit/416018855e089b9ca76405a7b80f82ee8a78ef2a"><code>4160188</code></a></li>
+<li>Added the <code>FXSortedTreeWidgetItem</code> class <a href="https://github.com/healkeiser/fxgui/commit/7c5a6b70bd7a72d4d6d4638164b1954123279ef3"><code>7c5a6b7</code></a></li>
+</ul>
+<h2 id="v402-2024-10-30"><a href="https://github.com/healkeiser/fxgui/compare/v4.0.1...v4.0.2">v4.0.2</a> - 2024-10-30<a class="headerlink" href="#v402-2024-10-30" title="Permanent link">&para;</a></h2>
+<h3 id="commits_45">Commits<a class="headerlink" href="#commits_45" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Changed default color, added arguments for <code>showMessage</code> <a href="https://github.com/healkeiser/fxgui/commit/63869b8b0977eaeed30ff7a3afb483628cacbb32"><code>63869b8</code></a></li>
+</ul>
+<h2 id="v401-2024-10-30"><a href="https://github.com/healkeiser/fxgui/compare/v4.0.0...v4.0.1">v4.0.1</a> - 2024-10-30<a class="headerlink" href="#v401-2024-10-30" title="Permanent link">&para;</a></h2>
+<h3 id="commits_46">Commits<a class="headerlink" href="#commits_46" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Removed useless icon files <a href="https://github.com/healkeiser/fxgui/commit/23d3eed495a9166d6882f934cdee8b6c79593def"><code>23d3eed</code></a></li>
+</ul>
+<h2 id="v400-2024-10-30"><a href="https://github.com/healkeiser/fxgui/compare/v3.2.4...v4.0.0">v4.0.0</a> - 2024-10-30<a class="headerlink" href="#v400-2024-10-30" title="Permanent link">&para;</a></h2>
+<h3 id="commits_47">Commits<a class="headerlink" href="#commits_47" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed logger mapping in <code>showMessage</code> <a href="https://github.com/healkeiser/fxgui/commit/3a2687544bd57e4afa1eaa9d54f1bac368ec10dd"><code>3a26875</code></a></li>
+<li>Deprecated fxicons in favor of qtawesome <a href="https://github.com/healkeiser/fxgui/commit/22bfa2c578c4a1b15083d0c720a3996775d053d2"><code>22bfa2c</code></a></li>
+</ul>
+<h2 id="v324-2024-10-24"><a href="https://github.com/healkeiser/fxgui/compare/v3.2.3...v3.2.4">v3.2.4</a> - 2024-10-24<a class="headerlink" href="#v324-2024-10-24" title="Permanent link">&para;</a></h2>
+<h3 id="commits_48">Commits<a class="headerlink" href="#commits_48" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Modified default font for Windows <a href="https://github.com/healkeiser/fxgui/commit/6a109547b71e0160a25fb698fc57c56df8daa0f5"><code>6a10954</code></a></li>
+<li>Refactored for Pylint <a href="https://github.com/healkeiser/fxgui/commit/8139ea312b1d19c5338b29d5fef98b64eee27d0e"><code>8139ea3</code></a></li>
+</ul>
+<h2 id="v323-2024-10-24"><a href="https://github.com/healkeiser/fxgui/compare/v3.2.2...v3.2.3">v3.2.3</a> - 2024-10-24<a class="headerlink" href="#v323-2024-10-24" title="Permanent link">&para;</a></h2>
+<h2 id="v322-2024-10-24"><a href="https://github.com/healkeiser/fxgui/compare/v3.2.1...v3.2.2">v3.2.2</a> - 2024-10-24<a class="headerlink" href="#v322-2024-10-24" title="Permanent link">&para;</a></h2>
+<h3 id="commits_49">Commits<a class="headerlink" href="#commits_49" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Updated changelog <a href="https://github.com/healkeiser/fxgui/commit/226323b1ee2be986b3abbff70d06fc224905aeb4"><code>226323b</code></a></li>
+<li>Fixed <code>FUNDING.yml</code> location <a href="https://github.com/healkeiser/fxgui/commit/e7fd9cfa1f4232c68a951a47f34e7987d8426b65"><code>e7fd9cf</code></a></li>
+<li>Fixed <code>FUNDING.yml</code> <a href="https://github.com/healkeiser/fxgui/commit/599c1726468edb4422d4fca3403fb184080d7666"><code>599c172</code></a></li>
+<li>Modified requirements for PySide <a href="https://github.com/healkeiser/fxgui/commit/afcee23954bc670a88b7500f4cdd6587d9ac4271"><code>afcee23</code></a></li>
+</ul>
+<h2 id="v321-2024-09-05"><a href="https://github.com/healkeiser/fxgui/compare/v3.2.0...v3.2.1">v3.2.1</a> - 2024-09-05<a class="headerlink" href="#v321-2024-09-05" title="Permanent link">&para;</a></h2>
+<h3 id="commits_50">Commits<a class="headerlink" href="#commits_50" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Updated changelog <a href="https://github.com/healkeiser/fxgui/commit/236a7eca1a157a8e75a8a40787902fda4655fdd8"><code>236a7ec</code></a></li>
+<li>Added links for PyPI page, setup funding <a href="https://github.com/healkeiser/fxgui/commit/92714e4cb5d9aa85de1d09e987aba91517d82c38"><code>92714e4</code></a></li>
+</ul>
+<h2 id="v320-2024-09-04"><a href="https://github.com/healkeiser/fxgui/compare/v3.1.1...v3.2.0">v3.2.0</a> - 2024-09-04<a class="headerlink" href="#v320-2024-09-04" title="Permanent link">&para;</a></h2>
+<h3 id="commits_51">Commits<a class="headerlink" href="#commits_51" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Updated changelog <a href="https://github.com/healkeiser/fxgui/commit/46ea58e44ebec2947459806019c93128982f5260"><code>46ea58e</code></a></li>
+<li>Added banner in FXWindow <a href="https://github.com/healkeiser/fxgui/commit/c0ddf03358a1a8c2244444765d58a9851c0c8c17"><code>c0ddf03</code></a></li>
+</ul>
+<h2 id="v311-2024-09-04"><a href="https://github.com/healkeiser/fxgui/compare/v3.1.0...v3.1.1">v3.1.1</a> - 2024-09-04<a class="headerlink" href="#v311-2024-09-04" title="Permanent link">&para;</a></h2>
+<h3 id="commits_52">Commits<a class="headerlink" href="#commits_52" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Updated changelog <a href="https://github.com/healkeiser/fxgui/commit/59286450e6431400b02dd3fc0fc2267d8043c60a"><code>5928645</code></a></li>
+<li>Updated Houdini package JSON <a href="https://github.com/healkeiser/fxgui/commit/62a6ec8fdeffab4744d68de20e6806820e74d306"><code>62a6ec8</code></a></li>
+</ul>
+<h2 id="v310-2024-09-04"><a href="https://github.com/healkeiser/fxgui/compare/v3.0.2...v3.1.0">v3.1.0</a> - 2024-09-04<a class="headerlink" href="#v310-2024-09-04" title="Permanent link">&para;</a></h2>
+<h3 id="commits_53">Commits<a class="headerlink" href="#commits_53" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Added auto-changelog <a href="https://github.com/healkeiser/fxgui/commit/5e4d9d940edebe2a80a6e36b945f10c52a4b3c76"><code>5e4d9d9</code></a></li>
+<li>Adding maintenance tags, unreleased changelog <a href="https://github.com/healkeiser/fxgui/commit/1c639afe5d5e8992c734069f089ba554411e8074"><code>1c639af</code></a></li>
+<li>Added <code>FXPasswordLineEdit</code>, fixed methods when subclassing FXWidgets <a href="https://github.com/healkeiser/fxgui/commit/3678324d0e30fc2e70913b3bbbc179f10b28cf09"><code>3678324</code></a></li>
+</ul>
+<h2 id="v302-2024-08-20"><a href="https://github.com/healkeiser/fxgui/compare/v3.0.0...v3.0.2">v3.0.2</a> - 2024-08-20<a class="headerlink" href="#v302-2024-08-20" title="Permanent link">&para;</a></h2>
+<h3 id="commits_54">Commits<a class="headerlink" href="#commits_54" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Added auto-changelog <a href="https://github.com/healkeiser/fxgui/commit/16c28f54ea60afcfbe95eabafe88328c9e3664ab"><code>16c28f5</code></a></li>
+</ul>
+<h2 id="v300-2024-08-20">v3.0.0 - 2024-08-20<a class="headerlink" href="#v300-2024-08-20" title="Permanent link">&para;</a></h2>
+<h3 id="commits_55">Commits<a class="headerlink" href="#commits_55" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Initial commit <a href="https://github.com/healkeiser/fxgui/commit/0f0c9f284ff9c2dc8622c39c0b883c3f5f5709d8"><code>0f0c9f2</code></a></li>
+<li>[INIT] Initial commit <a href="https://github.com/healkeiser/fxgui/commit/4a2d7faf6234a7a70b1b00d7a40639aad1989c40"><code>4a2d7fa</code></a></li>
+<li>[UPDATE] Requirements <a href="https://github.com/healkeiser/fxgui/commit/6ad76c384cd240be65960bedf4d9e117f0900cc0"><code>6ad76c3</code></a></li>
+<li>[UPDATE] Pip preparation <a href="https://github.com/healkeiser/fxgui/commit/bd7842f39fb77119549c45c60a1f5cb476cad3fa"><code>bd7842f</code></a></li>
+<li>[UPDATE] Imports <a href="https://github.com/healkeiser/fxgui/commit/9b0897a7c68215aaccaa46676447891d2e34ded2"><code>9b0897a</code></a></li>
+<li>[UPDATE] Pip setup <a href="https://github.com/healkeiser/fxgui/commit/fe2f2c29aa8e7c0c9ed26dba337a40c7eb42a917"><code>fe2f2c2</code></a></li>
+<li>[UPDATE] setup.py <a href="https://github.com/healkeiser/fxgui/commit/b677df8bb17676d853d53b661aa14f154849adc1"><code>b677df8</code></a></li>
+<li>[UPDATE] setup.py <a href="https://github.com/healkeiser/fxgui/commit/0fb5bbe6a61ca83e9f5cad2aa12d0ad5a04012fa"><code>0fb5bbe</code></a></li>
+<li>[UPDATE] Get DCC windows <a href="https://github.com/healkeiser/fxgui/commit/6b8680b443c231db61f23d4d080bef7ce6b67ae9"><code>6b8680b</code></a></li>
+<li>[UPDATE] Setup and shadows <a href="https://github.com/healkeiser/fxgui/commit/14839631e08087656cc4ab75eedd16463359854e"><code>1483963</code></a></li>
+<li>[UPDATE] Overall and docstrings <a href="https://github.com/healkeiser/fxgui/commit/9b7acfde3e54a4857578de1260430f407219436c"><code>9b7acfd</code></a></li>
+<li>[UPDATE] Create LICENSE <a href="https://github.com/healkeiser/fxgui/commit/377c59b9ae538140983c0a182e164bc0f9862ff1"><code>377c59b</code></a></li>
+<li>[UPDATE] Package with license <a href="https://github.com/healkeiser/fxgui/commit/3b58222fa53ccc4186b471d187adf870378626d1"><code>3b58222</code></a></li>
+<li>Module organization <a href="https://github.com/healkeiser/fxgui/commit/5282c49a78a75924c0ab5b57c96f5dd2fc3b4163"><code>5282c49</code></a></li>
+<li>Extension <a href="https://github.com/healkeiser/fxgui/commit/14ac830748eb6dfc059dd46da9fc376e73262ab6"><code>14ac830</code></a></li>
+<li>[UPDATE] Typings, optimization and example <a href="https://github.com/healkeiser/fxgui/commit/adfd9f39ba5cdd37630eda8fd8dc817d97cb06d2"><code>adfd9f3</code></a></li>
+<li>[UPDATE] Get parent DCC methods <a href="https://github.com/healkeiser/fxgui/commit/dd5f6f8efe5f3a2d42c185c5a816133bb55e349b"><code>dd5f6f8</code></a></li>
+<li>[UPDATE] Module refractor <a href="https://github.com/healkeiser/fxgui/commit/9660af449b2f928764e37fd5246b8a4d632e1d5d"><code>9660af4</code></a></li>
+<li>[UPDATE] Comments <a href="https://github.com/healkeiser/fxgui/commit/2977a3779a1d6be032e72b26e94761130ee8cef6"><code>2977a37</code></a></li>
+<li>[UPDATE] Removed focus state on QPushButton <a href="https://github.com/healkeiser/fxgui/commit/48be3fd716968b0762582203fd1950774cd37af2"><code>48be3fd</code></a></li>
+<li>[UPDATE] Typings <a href="https://github.com/healkeiser/fxgui/commit/dcd890fc9e168d091305c77ed62e543fd76d5f52"><code>dcd890f</code></a></li>
+<li>🧪 test(example): Commit message test <a href="https://github.com/healkeiser/fxgui/commit/612f21eb8e4d62e80d29c6a46df057d659ee52e0"><code>612f21e</code></a></li>
+<li>🌈 style(splashscreen): Reformat and length <a href="https://github.com/healkeiser/fxgui/commit/8ce2a6c9100c88ff08ef0b205729b63d9915366a"><code>8ce2a6c</code></a></li>
+<li>Requirements <a href="https://github.com/healkeiser/fxgui/commit/93a7b038a1edcf0ce4a7a112ccbdd37387f3a8c3"><code>93a7b03</code></a></li>
+<li>🐞 fix(package): Init for PIPy <a href="https://github.com/healkeiser/fxgui/commit/63bbc34f6ff1fabc2ff5c146ade0ec0e2f275d7a"><code>63bbc34</code></a></li>
+<li>🐞 fix(package): Wrong imports <a href="https://github.com/healkeiser/fxgui/commit/f5f35dfbd2b3f25f70b1f2f111cd02002f654c52"><code>f5f35df</code></a></li>
+<li>🐞 fix(package): Missing files PIPy <a href="https://github.com/healkeiser/fxgui/commit/a71976fd2a35c01949ceba4f551c4113fb3eb96c"><code>a71976f</code></a></li>
+<li>🎈 perf(package): Removed cache <a href="https://github.com/healkeiser/fxgui/commit/35da39094ddc5b09095d08a47fb1e8343ee6b113"><code>35da390</code></a></li>
+<li>🔧 build(Package): Version <a href="https://github.com/healkeiser/fxgui/commit/40d833fe6cc83d43ac27c6b65532f309918f0e43"><code>40d833f</code></a></li>
+<li>🐞 fix(dcc): Python3 long <a href="https://github.com/healkeiser/fxgui/commit/f3d501504873f4e4c4f2f6e0c1c8ffa9da808f39"><code>f3d5015</code></a></li>
+<li>🔧 build(package): Version up <a href="https://github.com/healkeiser/fxgui/commit/3d362107ffc525ca50f09b080acf72ecf4e6e01c"><code>3d36210</code></a></li>
+<li>✨ feat(window, example, package): Preparing for DCC <a href="https://github.com/healkeiser/fxgui/commit/c9eb054288eb601ecd0cd6a9a3f5638179da151d"><code>c9eb054</code></a></li>
+<li>🦄 refactor(dcc, example, window, package): Overall performance <a href="https://github.com/healkeiser/fxgui/commit/6ba87848eec1ae119aaafd25f46b708a6a87f115"><code>6ba8784</code></a></li>
+<li>🔧 build(setup): Version up <a href="https://github.com/healkeiser/fxgui/commit/97447a25bdd6f00e54720160b844018e7af914b4"><code>97447a2</code></a></li>
+<li>🐞 fix(splashscreen): Image handling <a href="https://github.com/healkeiser/fxgui/commit/c7121c1639267a912c3769e5bd77fd2e26f6f375"><code>c7121c1</code></a></li>
+<li>📃 docs(images): <a href="https://github.com/healkeiser/fxgui/commit/e9b54236b9e52c10af9e8ebb2fd87727c9de4845"><code>e9b5423</code></a></li>
+<li>📃 docs(package): <a href="https://github.com/healkeiser/fxgui/commit/f7ba32e71d8187221aad7e331517758c495aa565"><code>f7ba32e</code></a></li>
+<li>📃 docs: <a href="https://github.com/healkeiser/fxgui/commit/f262e01b46249bbcd380a83da16a7290eb1206cf"><code>f262e01</code></a></li>
+<li>📃 docs(package): Docstrings and doc <a href="https://github.com/healkeiser/fxgui/commit/83db9488a7746e2fc73cf3e487eb5250f265e38c"><code>83db948</code></a></li>
+<li>📃 docs(package): <a href="https://github.com/healkeiser/fxgui/commit/015f6455212f7922752e5d26e798f5c66f7da853"><code>015f645</code></a></li>
+<li>🐞 fix(package): Wrong favicon <a href="https://github.com/healkeiser/fxgui/commit/21bf196f5a36499494d6356f49465f1f221dad50"><code>21bf196</code></a></li>
+<li>✨ feat(splashscreen): Icon <a href="https://github.com/healkeiser/fxgui/commit/c0e36c4e7ea1347b26304800fc56fb29a3a5bb5d"><code>c0e36c4</code></a></li>
+<li>🐞 fix(example): Imports <a href="https://github.com/healkeiser/fxgui/commit/bb43f5168b1c94012926994897a5860336c4280e"><code>bb43f51</code></a></li>
+<li>📃 docs(package): <a href="https://github.com/healkeiser/fxgui/commit/55f272b79820cb103a98c110e0206ecb8398cec3"><code>55f272b</code></a></li>
+<li>🔧 build(package): <a href="https://github.com/healkeiser/fxgui/commit/5202d088c3829f63df16149ca86b9be8cbc96109"><code>5202d08</code></a></li>
+<li>✨ feat(package): Outsourced theme <a href="https://github.com/healkeiser/fxgui/commit/226f33011860f37fe21775d02a0e457e44beeefd"><code>226f330</code></a></li>
+<li>✨ feat(package): Theme handler <a href="https://github.com/healkeiser/fxgui/commit/3a104e32a7b797e6de98949424088421c5e12526"><code>3a104e3</code></a></li>
+<li>✨ feat(package): Added icons <a href="https://github.com/healkeiser/fxgui/commit/aef2dd8832c0b7977e43f68eadb60d9ddbcd3357"><code>aef2dd8</code></a></li>
+<li>✨ feat(package): Added icons <a href="https://github.com/healkeiser/fxgui/commit/e54bbb2cbfe932c8e064bba88d67a1f55e546474"><code>e54bbb2</code></a></li>
+<li>📃 docs(package): <a href="https://github.com/healkeiser/fxgui/commit/663312220e86546af7e9c0488c6ed81b85484eab"><code>6633122</code></a></li>
+<li>✨ feat(Package): Overall <a href="https://github.com/healkeiser/fxgui/commit/beef357a720d8cbc69487458b61abb38ce036098"><code>beef357</code></a></li>
+<li>🔧 build(package): PyPI <a href="https://github.com/healkeiser/fxgui/commit/9c25513a15eddad10bdc588a1ed4aaf59c4dca8f"><code>9c25513</code></a></li>
+<li>📃 docs(package): Adding to doc <a href="https://github.com/healkeiser/fxgui/commit/a98f5d86d549e93fbc507836791ddaf3c6c14b38"><code>a98f5d8</code></a></li>
+<li>🦄 refactor(package): <a href="https://github.com/healkeiser/fxgui/commit/f68454312fecbfb4b6f7994b992c488aa55e4628"><code>f684543</code></a></li>
+<li>✨ feat(floating_dialog): Floating Dialog <a href="https://github.com/healkeiser/fxgui/commit/bcef83404f2146da65754a10e3c3d106e29010d1"><code>bcef834</code></a></li>
+<li>Switched for QtPy <a href="https://github.com/healkeiser/fxgui/commit/ac1268554a8a4dfed839cdeb49a6899c3c2084df"><code>ac12685</code></a></li>
+<li>Refactored the package name <a href="https://github.com/healkeiser/fxgui/commit/daf372abe8fedc392257669d058c341971c1cd7b"><code>daf372a</code></a></li>
+<li>New icons <a href="https://github.com/healkeiser/fxgui/commit/6ebd43f911076399e9381bb9803ef899bc391a08"><code>6ebd43f</code></a></li>
+<li>New icons <a href="https://github.com/healkeiser/fxgui/commit/ad090bc7f5b4b434505df1b19de6de2fcec3c984"><code>ad090bc</code></a></li>
+<li>New icons <a href="https://github.com/healkeiser/fxgui/commit/9cb0892a6374c0e57ae0632c69403ddae246f63d"><code>9cb0892</code></a></li>
+<li>Further implementation of multiple themes <a href="https://github.com/healkeiser/fxgui/commit/4f10859ac00f791f16113bb121baf5cb35cffb35"><code>4f10859</code></a></li>
+<li>Overall update <a href="https://github.com/healkeiser/fxgui/commit/3dc06cf325ef354bc1726dea7a474fa5e0d09bba"><code>3dc06cf</code></a></li>
+<li>Refactored naming <a href="https://github.com/healkeiser/fxgui/commit/64b1350184227ceb41db5867c5513f4625d151c1"><code>64b1350</code></a></li>
+<li>New style <a href="https://github.com/healkeiser/fxgui/commit/6de33fb4d82e2ff57b469bdd36e3eb131ccbb275"><code>6de33fb</code></a></li>
+<li>Overall update <a href="https://github.com/healkeiser/fxgui/commit/783783c9b18f38544875680c6ac6a1780e37eed7"><code>783783c</code></a></li>
+<li>Overall update <a href="https://github.com/healkeiser/fxgui/commit/823a1c172b3aa5435d4f50fb1cd937c1b1f8f896"><code>823a1c1</code></a></li>
+<li>Create python-publish.yml <a href="https://github.com/healkeiser/fxgui/commit/5208c312016c3693222d483cfef453a948fcdfcc"><code>5208c31</code></a></li>
+<li>Refactored the classes, updated documentation <a href="https://github.com/healkeiser/fxgui/commit/2a2079758f6bf994f8d0e8ab5dfe73c16103a7a0"><code>2a20797</code></a></li>
+<li>Test with CI/CD <a href="https://github.com/healkeiser/fxgui/commit/dc12e060c203b5cb9cd982ac18a46881fad32f1c"><code>dc12e06</code></a></li>
+<li>New package release <a href="https://github.com/healkeiser/fxgui/commit/91dc0ac763e5d389d9af9d4dce4b707abbed041c"><code>91dc0ac</code></a></li>
+<li>Added new icons <a href="https://github.com/healkeiser/fxgui/commit/50b8aa6b1678b4ea7de268a941b6f99e4432c063"><code>50b8aa6</code></a></li>
+<li>Updated documentation <a href="https://github.com/healkeiser/fxgui/commit/e9ba4bfc397f8ae634e6b7849171b5321fdc5a59"><code>e9ba4bf</code></a></li>
+<li>Updated documentation, new icons <a href="https://github.com/healkeiser/fxgui/commit/26025099c6016711c3d8d4442e6c40720697f615"><code>2602509</code></a></li>
+<li>Updated documentation <a href="https://github.com/healkeiser/fxgui/commit/e92c88a705302be9fe0e2f3a163480cd31175d2e"><code>e92c88a</code></a></li>
+<li>Updated documentation <a href="https://github.com/healkeiser/fxgui/commit/32083b7fed8210f742ebdbf9554a64fef3a14119"><code>32083b7</code></a></li>
+<li>New favicon <a href="https://github.com/healkeiser/fxgui/commit/1742841aa512395c104a5f74b5ffc1393cae95f7"><code>1742841</code></a></li>
+<li>Updated documentation <a href="https://github.com/healkeiser/fxgui/commit/9578ffe3b082d87686a0840340fdaa4e03228e70"><code>9578ffe</code></a></li>
+<li>Fixed an issue with the setCentralWidget method <a href="https://github.com/healkeiser/fxgui/commit/d0a62a226f63819d5abbabe96d56ae870e729701"><code>d0a62a2</code></a></li>
+<li>Docstrings and documentation <a href="https://github.com/healkeiser/fxgui/commit/7d05e718780486e0c0a87f7337881051907b3ee2"><code>7d05e71</code></a></li>
+<li>Updated documentation <a href="https://github.com/healkeiser/fxgui/commit/886391f4ba955ce9fa2d68ccfcf9cb1059d2a5ef"><code>886391f</code></a></li>
+<li>Black refactor <a href="https://github.com/healkeiser/fxgui/commit/fe93dd37d147e27bfe55f4ebd2d9c9110005251c"><code>fe93dd3</code></a></li>
+<li>Fix widgets <a href="https://github.com/healkeiser/fxgui/commit/1a29deb35750bef344bb779e9a90da855ee20d58"><code>1a29deb</code></a></li>
+<li>Package update <a href="https://github.com/healkeiser/fxgui/commit/2f2d9502a0cd4528be370c3ce14de51cb4982d7d"><code>2f2d950</code></a></li>
+<li>Fixed typo on documentation <a href="https://github.com/healkeiser/fxgui/commit/4bc465bce9ee38c91abeecea982a70d7dc9c6d15"><code>4bc465b</code></a></li>
+<li>Updated documenation <a href="https://github.com/healkeiser/fxgui/commit/5c0ab9a1f593f7b005e0aadd6bd5cb3e2f7951eb"><code>5c0ab9a</code></a></li>
+<li>Added the FXWidget class <a href="https://github.com/healkeiser/fxgui/commit/5cb814ec66bf5f093b0f05e2d5453c5521b38a4f"><code>5cb814e</code></a></li>
+<li>Added the FXSystemTray class <a href="https://github.com/healkeiser/fxgui/commit/e891bc05fa6a3f8ff68c198560bdf0f69a2c7ccc"><code>e891bc0</code></a></li>
+<li>Singleton for FXApplication <a href="https://github.com/healkeiser/fxgui/commit/6e7df4e2e7aeb3f51b72e0d43dc167d8a49f9187"><code>6e7df4e</code></a></li>
+<li>Fixed the update applications not working without restarting the app <a href="https://github.com/healkeiser/fxgui/commit/e18423aea21c0f4b673bd5be2dfcaaafaf66d1a3"><code>e18423a</code></a></li>
+<li>Fixed color customization <a href="https://github.com/healkeiser/fxgui/commit/3f27e5bd7b0bd83fb9c4f6a2a8d9984ed42fb37f"><code>3f27e5b</code></a></li>
+<li>Fixed some QSS elements <a href="https://github.com/healkeiser/fxgui/commit/925838151d4bb99d22c31c4f3b46394f9f42b52b"><code>9258381</code></a></li>
+<li>Overall update, package requirements <a href="https://github.com/healkeiser/fxgui/commit/1af5e3f45520cc287241f89dc35da239796a9a1e"><code>1af5e3f</code></a></li>
+<li>Styling issues <a href="https://github.com/healkeiser/fxgui/commit/6658f30f0c984dfc17b2f4bd71881f3c8805c186"><code>6658f30</code></a></li>
+<li>Bump version <a href="https://github.com/healkeiser/fxgui/commit/9c90854f34adb9a0c4f7b9bea7859fecac4c7cee"><code>9c90854</code></a></li>
+<li>Removed hardcoded <code>QT_API</code> env var <a href="https://github.com/healkeiser/fxgui/commit/19879733513523882ba3b6162f850df93ea72186"><code>1987973</code></a></li>
+<li>CI/CD for PyPI <a href="https://github.com/healkeiser/fxgui/commit/1c3e8a84f0956cd43ababb1b50dd5ffbc3f34d41"><code>1c3e8a8</code></a></li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="January 10, 2026 16:31:07 UTC">January 10, 2026</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Created">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="January 10, 2026 16:31:07 UTC">January 10, 2026</span>
+  </span>
+
+    
+    
+      
+  
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Contributors">
+      
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4"/></svg>
+      
+    </span>
+    <nav>
+      
+        <a href="mailto:57375180+healkeiser@users.noreply.github.com">Valentin Beaumont</a>
+    </nav>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    
+      
+  <span class="md-icon" title="Contributors">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
+  </span>
+  <span>GitHub</span>
+
+    
+    <nav>
+      
+        <a href="https://github.com/healkeiser" class="md-author" title="@healkeiser">
+          
+          <img src="https://avatars.githubusercontent.com/u/57375180?v=4&size=72" alt="healkeiser">
+        </a>
+      
+      
+      
+    </nav>
+  </span>
+
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Valentin Beaumont | Licensed under the MIT License
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "navigation.path", "navigation.instant", "navigation.instant.prefetch", "search.suggest", "search.highlight", "toc.follow", "content.code.annotate", "content.code.copy", "content.tooltips", "content.tabs.link", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
