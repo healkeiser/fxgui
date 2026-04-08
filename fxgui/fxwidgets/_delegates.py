@@ -1341,6 +1341,40 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         title = index.data(Qt.DisplayRole) or ""
 
+        # Calculate space needed for status indicators on the right
+        status_space = 0
+        if self._show_status_dot:
+            dot_size = 8
+            dot_margin = 4
+            status_space += dot_size + dot_margin * 2
+
+        if self._show_status_label:
+            status_label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
+            status_label_icon = index.data(self.STATUS_LABEL_ICON_ROLE)
+            if status_label_text:
+                label_font = QFont()
+                label_font.setPointSize(7)
+                label_font.setBold(True)
+                label_metrics = QFontMetrics(label_font)
+                label_text_width = label_metrics.horizontalAdvance(
+                    status_label_text
+                )
+                label_padding = 4
+                label_margin = 6
+                icon_size_label = (
+                    12
+                    if status_label_icon and not status_label_icon.isNull()
+                    else 0
+                )
+                icon_spacing = 2 if icon_size_label > 0 else 0
+                status_space += (
+                    label_text_width
+                    + (label_padding * 2)
+                    + icon_size_label
+                    + icon_spacing
+                    + label_margin
+                )
+
         if description and description != "-":
             # Two-line layout
             title_font = QFont(option.font)
@@ -1356,6 +1390,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 option.rect.width()
                 - (text_x - option.rect.left())
                 - icon_margin
+                - status_space
             )
 
             # Draw title
@@ -1398,7 +1433,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 option.rect.top(),
                 option.rect.width()
                 - (text_x - option.rect.left())
-                - icon_margin,
+                - icon_margin
+                - status_space,
                 option.rect.height(),
             )
             painter.drawText(
