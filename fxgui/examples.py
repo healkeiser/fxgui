@@ -653,6 +653,178 @@ fxstyle.theme_manager.theme_changed.connect(update_item_colors)
     update_episodic_colors()
     fxstyle.theme_manager.theme_changed.connect(update_episodic_colors)
 
+    # Feature Showcase: Starred, Child Count, Thumbnail Tooltip
+    showcase_group = QGroupBox(
+        "Feature Showcase: Starred, Child Count & Tooltip Preview"
+    )
+    showcase_layout = QVBoxLayout(showcase_group)
+
+    showcase_tree = QTreeWidget()
+    showcase_tree.setHeaderLabels(["Name", "Type", "Status"])
+    showcase_tree.setRootIsDecorated(True)
+
+    showcase_delegate = fxwidgets.FXThumbnailDelegate()
+    showcase_delegate.show_thumbnail = True
+    showcase_delegate.show_status_dot = True
+    showcase_delegate.show_status_label = True
+    showcase_delegate.show_child_count = True
+    showcase_delegate.show_starred = True
+    showcase_tree.setItemDelegate(showcase_delegate)
+    fxwidgets.FXThumbnailDelegate.apply_transparent_selection(showcase_tree)
+
+    thumbnail_path_showcase = (
+        Path(__file__).parent / "images" / "missing_image.png"
+    )
+    SHOWCASE_ICON_ROLE = Qt.UserRole + 301
+
+    showcase_items = []
+
+    # Parent items with children
+    characters_item = QTreeWidgetItem(
+        showcase_tree, ["Characters", "Category", ""]
+    )
+    characters_item.setIcon(0, get_icon("group"))
+    characters_item.setData(0, SHOWCASE_ICON_ROLE, "group")
+    characters_item.setData(
+        0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False
+    )
+    characters_item.setData(
+        0,
+        fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE,
+        "All character assets",
+    )
+    characters_item.setData(
+        0, fxwidgets.FXThumbnailDelegate.STARRED_ROLE, True
+    )
+    showcase_items.append(characters_item)
+
+    char_data = [
+        ("Hero_Character", "Main protagonist", True),
+        ("Villain", "Antagonist", True),
+        ("NPC_Guard", "Background character", False),
+    ]
+    for name, desc, starred in char_data:
+        item = QTreeWidgetItem(characters_item, [name, "Character", "Final"])
+        item.setIcon(0, get_icon("person"))
+        item.setData(0, SHOWCASE_ICON_ROLE, "person")
+        item.setData(
+            0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True
+        )
+        item.setData(
+            0,
+            fxwidgets.FXThumbnailDelegate.THUMBNAIL_PATH_ROLE,
+            str(thumbnail_path_showcase),
+        )
+        item.setData(
+            0, fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE, desc
+        )
+        item.setData(
+            0,
+            fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
+            "Final",
+        )
+        if starred:
+            item.setData(
+                0, fxwidgets.FXThumbnailDelegate.STARRED_ROLE, True
+            )
+        item.setData(0, Qt.UserRole + 300, "character")
+        showcase_items.append(item)
+
+    vehicles_item = QTreeWidgetItem(
+        showcase_tree, ["Vehicles", "Category", ""]
+    )
+    vehicles_item.setIcon(0, get_icon("directions_car"))
+    vehicles_item.setData(0, SHOWCASE_ICON_ROLE, "directions_car")
+    vehicles_item.setData(
+        0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False
+    )
+    vehicles_item.setData(
+        0,
+        fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE,
+        "All vehicle assets",
+    )
+    showcase_items.append(vehicles_item)
+
+    vehicle_data = [
+        ("Sports_Car", "Hero vehicle", True),
+        ("Truck", "Background vehicle", False),
+    ]
+    for name, desc, starred in vehicle_data:
+        item = QTreeWidgetItem(vehicles_item, [name, "Vehicle", "WIP"])
+        item.setIcon(0, get_icon("directions_car"))
+        item.setData(0, SHOWCASE_ICON_ROLE, "directions_car")
+        item.setData(
+            0, fxwidgets.FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True
+        )
+        item.setData(
+            0,
+            fxwidgets.FXThumbnailDelegate.THUMBNAIL_PATH_ROLE,
+            str(thumbnail_path_showcase),
+        )
+        item.setData(
+            0, fxwidgets.FXThumbnailDelegate.DESCRIPTION_ROLE, desc
+        )
+        item.setData(
+            0,
+            fxwidgets.FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
+            "WIP",
+        )
+        if starred:
+            item.setData(
+                0, fxwidgets.FXThumbnailDelegate.STARRED_ROLE, True
+            )
+        item.setData(0, Qt.UserRole + 300, "vehicle")
+        showcase_items.append(item)
+
+    showcase_tree.setColumnWidth(0, 250)
+    showcase_tree.setColumnWidth(1, 100)
+    showcase_tree.expandAll()
+
+    # Theme-aware colors
+    showcase_colors = {
+        "dark": {"category": QColor("#2a1a3a"), "item": QColor("#1a2a3a")},
+        "light": {"category": QColor("#e8d8f0"), "item": QColor("#d8e8f0")},
+    }
+
+    def update_showcase_colors(_theme_name: str = None):
+        feedback = fxstyle.get_feedback_colors()
+        palette_key = "light" if fxstyle.is_light_theme() else "dark"
+
+        for item in showcase_items:
+            icon_name = item.data(0, SHOWCASE_ICON_ROLE)
+            if icon_name:
+                item.setIcon(0, get_icon(icon_name))
+
+            level = item.data(0, Qt.UserRole + 300)
+            if level:
+                bg = showcase_colors[palette_key]["item"]
+                status_color = QColor(feedback["success"]["foreground"])
+            else:
+                bg = showcase_colors[palette_key]["category"]
+                status_color = QColor(feedback["info"]["foreground"])
+
+            for col in range(3):
+                item.setBackground(col, bg)
+
+            item.setData(
+                0,
+                fxwidgets.FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE,
+                status_color,
+            )
+            item.setData(
+                0,
+                fxwidgets.FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE,
+                status_color,
+            )
+
+        showcase_tree.viewport().update()
+
+    update_showcase_colors()
+    fxstyle.theme_manager.theme_changed.connect(update_showcase_colors)
+
+    showcase_layout.addWidget(showcase_tree)
+    layout.addWidget(showcase_group)
+
     # Third tree: Fuzzy Search Tree with FXThumbnailDelegate
     fuzzy_group = QGroupBox("Fuzzy Search Tree with Thumbnails")
     fuzzy_layout = QVBoxLayout(fuzzy_group)

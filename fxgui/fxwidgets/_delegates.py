@@ -391,6 +391,9 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     STATUS_DOT_VISIBLE_ROLE = Qt.UserRole + 7
     STATUS_LABEL_VISIBLE_ROLE = Qt.UserRole + 8
     STATUS_LABEL_ICON_ROLE = Qt.UserRole + 9  # QIcon for status label
+    CHILD_COUNT_VISIBLE_ROLE = Qt.UserRole + 10  # bool
+    STARRED_ROLE = Qt.UserRole + 11  # bool
+    STARRED_COLOR_ROLE = Qt.UserRole + 12  # QColor (default: gold)
 
     # Stylesheet constant is no longer used - apply_transparent_selection
     # now sets the stylesheet directly on the widget
@@ -407,6 +410,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         self._show_thumbnail = True
         self._show_status_dot = True
         self._show_status_label = True
+        self._show_child_count = True
+        self._show_starred = True
 
     def _on_theme_changed(self, _theme_name: str = None) -> None:
         """Handle theme change by triggering a repaint of the parent view."""
@@ -448,6 +453,26 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     def show_status_label(self, value: bool) -> None:
         """Set whether the status label is shown."""
         self._show_status_label = value
+
+    @property
+    def show_child_count(self) -> bool:
+        """Whether child count badges are shown."""
+        return self._show_child_count
+
+    @show_child_count.setter
+    def show_child_count(self, value: bool) -> None:
+        """Set whether child count badges are shown."""
+        self._show_child_count = value
+
+    @property
+    def show_starred(self) -> bool:
+        """Whether starred indicators are shown."""
+        return self._show_starred
+
+    @show_starred.setter
+    def show_starred(self, value: bool) -> None:
+        """Set whether starred indicators are shown."""
+        self._show_starred = value
 
     # Stylesheet to disable default QTreeWidget selection (delegate handles it)
     TRANSPARENT_SELECTION_STYLE = """
@@ -611,27 +636,44 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             True if the event was handled.
         """
 
+        from qtpy.QtCore import QUrl
         from qtpy.QtWidgets import QToolTip
 
         if event.type() == QEvent.ToolTip:
-            # Get the entity data and description
             entity_data = index.data(Qt.UserRole)
             description = index.data(self.DESCRIPTION_ROLE)
+            thumbnail_path = index.data(self.THUMBNAIL_PATH_ROLE)
 
+            parts = []
+
+            # Thumbnail preview
+            if thumbnail_path:
+                from pathlib import Path
+
+                if Path(str(thumbnail_path)).exists():
+                    img_url = QUrl.fromLocalFile(
+                        str(thumbnail_path)
+                    ).toString()
+                    parts.append(
+                        f'<img src="{img_url}" width="200">'
+                    )
+
+            # Entity name and description
             if entity_data and description and description != "-":
-                # Convert Markdown to HTML for tooltip
                 html_description = self.markdown_to_html(description)
-
-                # Get entity name and type
                 entity_name = entity_data.get("name", "Unknown")
                 entity_type = entity_data.get("type", "Entity")
-
-                # Create a formatted tooltip
-                tooltip = (
+                parts.append(
                     f"<b>{entity_name}</b> ({entity_type})<hr>"
                     f"{html_description}"
                 )
+            elif entity_data:
+                entity_name = entity_data.get("name", "Unknown")
+                entity_type = entity_data.get("type", "Entity")
+                parts.append(f"<b>{entity_name}</b> ({entity_type})")
 
+            if parts:
+                tooltip = "<br>".join(parts)
                 QToolTip.showText(event.globalPos(), tooltip, view)
                 return True
 
@@ -1079,6 +1121,134 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         )
         if show_dot:
             self._draw_status_dot(painter, option.rect, status_dot_color)
+
+    def _draw_starred_indicator(
+        self,
+        painter: QPainter,
+        item_rect: QRect,
+        color: QColor,
+        has_thumbnail: bool = False,
+    ) -> None:
+        """Draw a star indicator.
+
+        For thumbnail items: bottom-left of the thumbnail, mirroring
+        the decoration icon overlay on the bottom-right.
+        For non-thumbnail items: small star to the right of the icon.
+
+        Args:
+            painter: The painter to use for drawing.
+            item_rect: The rectangle of the entire item.
+            color: The color of the star.
+            has_thumbnail: Whether the item shows a thumbnail.
+        """
+        from qtpy.QtGui import QPolygonF
+        from qtpy.QtCore import QPointF
+        import math
+
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        if has_thumbnail:
+            # Match decoration icon overlay dimensions exactly
+            overlay_size = 15
+            overlay_margin = 6
+
+            # Thumbnail position (same constants as _draw_thumbnail_content)
+            thumbnail_height = 38
+            x_offset = 5
+            thumbnail_x = item_rect.left() + x_offset
+            thumbnail_y = (
+                item_rect.top()
+                + (item_rect.height() - (thumbnail_height + 2)) // 2
+            )
+
+            # Bottom-left of thumbnail area
+            overlay_x = thumbnail_x + overlay_margin
+            overlay_y = (
+                thumbnail_y
+                + (thumbnail_height + 2)
+                - overlay_size
+                - overlay_margin
+            )
+        else:
+            # Tiny star on bottom-right corner of the icon
+            overlay_size = 7
+            icon_margin = 6
+            icon_size = 16
+            icon_y = item_rect.top() + (item_rect.height() - icon_size) // 2
+            overlay_x = item_rect.left() + icon_margin + icon_size - overlay_size + 1
+            overlay_y = icon_y + icon_size - overlay_size + 1
+
+        cx = overlay_x + overlay_size / 2
+        cy = overlay_y + overlay_size / 2
+
+        # Background circle
+        bg_color = QColor(self.theme.surface)
+        bg_color.setAlpha(220)
+        painter.setBrush(QBrush(bg_color))
+        painter.setPen(QPen(QColor(self.theme.border_light), 1))
+        circle_r = overlay_size / 2 + 2
+        painter.drawEllipse(QPointF(cx, cy), circle_r, circle_r)
+
+        # Draw 5-point star
+        outer_r = overlay_size / 2 - 1
+        inner_r = outer_r * 0.4
+        points = []
+        for i in range(10):
+            angle = math.radians(i * 36 - 90)
+            r = outer_r if i % 2 == 0 else inner_r
+            points.append(
+                QPointF(
+                    cx + r * math.cos(angle), cy + r * math.sin(angle)
+                )
+            )
+
+        polygon = QPolygonF(points)
+        painter.setPen(QPen(color.darker(130), 0.5))
+        painter.setBrush(QBrush(color))
+        painter.drawPolygon(polygon)
+
+    def _draw_child_count(
+        self,
+        painter: QPainter,
+        item_rect: QRect,
+        count: int,
+    ) -> None:
+        """Draw a child count badge at the bottom-right corner.
+
+        Args:
+            painter: The painter to use for drawing.
+            item_rect: The rectangle of the entire item.
+            count: The number of children.
+        """
+        text = str(count)
+        font = QFont()
+        font.setPointSize(7)
+        font.setBold(True)
+        metrics = QFontMetrics(font)
+
+        text_width = metrics.horizontalAdvance(text)
+        padding = 4
+        badge_width = max(text_width + padding * 2, 18)
+        badge_height = 14
+        margin = 4
+
+        badge_x = item_rect.right() - badge_width - margin
+        badge_y = item_rect.bottom() - badge_height - margin
+
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # Badge background — muted theme color
+        bg_color = QColor(self.theme.surface)
+        bg_color.setAlpha(200)
+        badge_rect = QRectF(badge_x, badge_y, badge_width, badge_height)
+        painter.setPen(QPen(QColor(self.theme.border_light), 1))
+        painter.setBrush(QBrush(bg_color))
+        painter.drawRoundedRect(badge_rect, 3, 3)
+
+        # Badge text
+        painter.setPen(QColor(self.theme.text_muted))
+        painter.setFont(font)
+        painter.drawText(badge_rect, Qt.AlignCenter, text)
 
     def _draw_thumbnail_content(
         self,
@@ -1702,6 +1872,27 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 self._draw_icon_and_text(painter, opt, index)
             # Draw status indicators for column 0
             self._draw_status_indicators(painter, opt, index)
+
+            # Draw starred indicator
+            if self._show_starred:
+                is_starred = index.data(self.STARRED_ROLE)
+                if is_starred:
+                    star_color = index.data(self.STARRED_COLOR_ROLE)
+                    if not star_color or not star_color.isValid():
+                        star_color = QColor("#FFD700")  # Gold
+                    self._draw_starred_indicator(
+                        painter, opt.rect, star_color, has_thumbnail
+                    )
+
+            # Draw child count badge
+            if self._show_child_count:
+                item_show_count = index.data(self.CHILD_COUNT_VISIBLE_ROLE)
+                if item_show_count is not False:
+                    child_count = index.model().rowCount(index)
+                    if child_count > 0:
+                        self._draw_child_count(
+                            painter, opt.rect, child_count
+                        )
         else:
             self._draw_text(painter, opt, index)
 
