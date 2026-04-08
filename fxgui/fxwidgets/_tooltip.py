@@ -1029,6 +1029,8 @@ class FXTooltipManager(QObject):
         # Track the widget we're showing tooltip for
         self._pending_widget: Optional[weakref.ref] = None
         self._pending_pos: Optional[QPoint] = None
+        self._pending_tooltip_text: Optional[str] = None
+        self._pending_item_rect: Optional[QRect] = None
         self._current_widget: Optional[weakref.ref] = None
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
@@ -1038,6 +1040,36 @@ class FXTooltipManager(QObject):
             widget = watched
             if not isinstance(widget, QWidget):
                 return False
+
+            # Handle item view viewports: extract tooltip from item data
+            parent_view = widget.parent()
+            if isinstance(parent_view, QAbstractItemView):
+                from qtpy.QtGui import QHelpEvent
+
+                if isinstance(event, QHelpEvent):
+                    index = parent_view.indexAt(event.pos())
+                    if index.isValid():
+                        tooltip_text = self._get_item_view_tooltip(
+                            parent_view, index
+                        )
+                        if tooltip_text:
+                            # Store item rect in global coordinates
+                            item_rect = parent_view.visualRect(index)
+                            global_tl = widget.mapToGlobal(
+                                item_rect.topLeft()
+                            )
+                            self._pending_item_rect = QRect(
+                                global_tl, item_rect.size()
+                            )
+                            self._pending_widget = weakref.ref(widget)
+                            self._pending_pos = event.globalPos()
+                            self._pending_tooltip_text = tooltip_text
+                            if self._tooltip and self._tooltip.isVisible():
+                                self._do_show_tooltip()
+                            else:
+                                self._show_timer.start(self._show_delay)
+                            return True
+                return True  # Block empty item tooltips
 
             # Get tooltip text
             tooltip_text = widget.toolTip()
@@ -1088,6 +1120,65 @@ class FXTooltipManager(QObject):
 
         return False  # Don't consume other events
 
+    def _get_item_view_tooltip(self, view, index):
+        """Build tooltip text for an item view index.
+
+        Checks for thumbnail path, entity data, description, and
+        item-level tooltip text.
+
+        Args:
+            view: The QAbstractItemView.
+            index: The QModelIndex.
+
+        Returns:
+            HTML tooltip string, or None.
+        """
+        from fxgui.fxwidgets._delegates import FXThumbnailDelegate
+
+        parts = []
+
+        # Thumbnail preview
+        thumbnail_path = index.data(FXThumbnailDelegate.THUMBNAIL_PATH_ROLE)
+        if thumbnail_path:
+            from pathlib import Path
+            from qtpy.QtCore import QUrl
+
+            if Path(str(thumbnail_path)).exists():
+                img_url = QUrl.fromLocalFile(
+                    str(thumbnail_path)
+                ).toString()
+                parts.append(f'<img src="{img_url}" width="200">')
+
+        # Entity name and description
+        entity_data = index.data(Qt.UserRole)
+        description = index.data(FXThumbnailDelegate.DESCRIPTION_ROLE)
+
+        # Name and type from entity data or display text
+        entity_name = None
+        entity_type = None
+        if isinstance(entity_data, dict):
+            entity_name = entity_data.get("name")
+            entity_type = entity_data.get("type")
+        if not entity_name:
+            entity_name = index.data(Qt.DisplayRole)
+
+        if entity_name:
+            header = f"<b>{entity_name}</b>"
+            if entity_type:
+                header += f" ({entity_type})"
+            if description and description != "-":
+                parts.append(f"{header}<br>{description}")
+            else:
+                parts.append(header)
+
+        # Fall back to item tooltip role
+        if not parts:
+            item_tooltip = index.data(Qt.ToolTipRole)
+            if item_tooltip:
+                parts.append(str(item_tooltip))
+
+        return "<br>".join(parts) if parts else None
+
     def _do_show_tooltip(self) -> None:
         """Show the pending tooltip."""
         if not self._pending_widget:
@@ -1097,17 +1188,25 @@ class FXTooltipManager(QObject):
         if not widget:
             return
 
-        tooltip_text = widget.toolTip()
+        # Use cached tooltip text from item view, or widget's tooltip
+        tooltip_text = getattr(self, "_pending_tooltip_text", None)
+        if not tooltip_text:
+            tooltip_text = widget.toolTip()
+        self._pending_tooltip_text = None
         if not tooltip_text:
             return
 
         # Hide any existing tooltip
         self._do_hide_tooltip()
 
-        # Create widget rect in global coordinates
-        widget_rect = widget.rect()
-        global_top_left = widget.mapToGlobal(widget_rect.topLeft())
-        global_rect = QRect(global_top_left, widget_rect.size())
+        # Use item rect if available (for item views), else widget rect
+        if self._pending_item_rect:
+            global_rect = self._pending_item_rect
+            self._pending_item_rect = None
+        else:
+            widget_rect = widget.rect()
+            global_top_left = widget.mapToGlobal(widget_rect.topLeft())
+            global_rect = QRect(global_top_left, widget_rect.size())
 
         # Create and show tooltip
         self._tooltip = FXTooltip(

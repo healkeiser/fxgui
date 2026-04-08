@@ -1779,6 +1779,18 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                         label_text_width + (label_padding * 2) + label_margin
                     )
 
+                # Add space for child count badge
+                child_count_width = 0
+                if self._show_child_count:
+                    child_count = index.model().rowCount(index)
+                    if child_count > 0:
+                        child_count_width = 26  # badge + margin
+
+                # Add space for starred indicator
+                starred_width = 0
+                if self._show_starred and index.data(self.STARRED_ROLE):
+                    starred_width = 22  # star + circle + margin
+
                 # Calculate total width needed
                 total_width = (
                     thumbnail_width_with_padding
@@ -1786,13 +1798,42 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                     + additional_spacing
                     + status_dot_width
                     + status_label_width
+                    + child_count_width
+                    + starred_width
                 )
 
                 return QSize(
                     max(original_size.width(), total_width), fixed_height
                 )
             else:
-                return QSize(original_size.width(), fixed_height)
+                # Non-thumbnail: calculate full width needed
+                icon_margin = 6
+                icon_size = 16
+                base_padding = icon_margin + icon_size + icon_margin + 10
+
+                # Indicators on the right
+                extra_width = 0
+                if self._show_child_count:
+                    child_count = index.model().rowCount(index)
+                    if child_count > 0:
+                        extra_width += 26
+                if self._show_starred and index.data(self.STARRED_ROLE):
+                    extra_width += 22
+                if self._show_status_dot:
+                    extra_width += 16
+                if self._show_status_label:
+                    label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
+                    if label_text:
+                        label_font = QFont()
+                        label_font.setPointSize(7)
+                        label_font.setBold(True)
+                        lm = QFontMetrics(label_font)
+                        extra_width += lm.horizontalAdvance(label_text) + 14
+
+                return QSize(
+                    original_size.width() + base_padding + extra_width,
+                    fixed_height,
+                )
         else:
             return QSize(original_size.width(), fixed_height)
 
