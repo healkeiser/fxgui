@@ -48,11 +48,12 @@ from typing import Any, Dict, List, Optional
 from qtpy.QtGui import (
     QIcon,
     QColor,
+    QImage,
     QPainter,
     QPixmap,
     QBitmap,
 )
-from qtpy.QtCore import Qt, QSize
+from qtpy.QtCore import Qt, QRectF, QSize
 
 # Internal
 from fxgui import fxconstants
@@ -389,6 +390,52 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     return colored_pixmap
 
 
+def _render_svg_to_pixmap(path: str, width: int, height: int) -> QPixmap:
+    """Rasterize an SVG to a QPixmap using ``QSvgRenderer``.
+
+    This deliberately bypasses ``QIcon(path).pixmap()`` / the ``qsvg``
+    imageformat plugin: that plugin fails to load inside some embedded DCC
+    interpreters (notably Cinema 4D), where it silently yields a blank pixmap.
+    ``QSvgRenderer`` lives in the ``QtSvg`` module rather than the imageformat
+    plugin chain, so it renders reliably in those hosts as well as standalone.
+
+    Aspect ratio is preserved and the result centered, mirroring ``QIcon``.
+
+    Args:
+        path: Path to the SVG file.
+        width: Target pixmap width.
+        height: Target pixmap height.
+
+    Returns:
+        QPixmap: The rasterized icon.
+    """
+    # Lazy import so environments without QtSvg only fail when an SVG is needed.
+    from qtpy.QtSvg import QSvgRenderer
+
+    renderer = QSvgRenderer(path)
+    image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
+    image.fill(Qt.transparent)
+
+    painter = QPainter(image)
+    painter.setRenderHint(QPainter.Antialiasing, True)
+    default_size = renderer.defaultSize()
+    if default_size.width() > 0 and default_size.height() > 0:
+        # Scale the SVG's intrinsic size into the target box, keeping aspect.
+        scaled = default_size.scaled(width, height, Qt.KeepAspectRatio)
+        target = QRectF(
+            (width - scaled.width()) / 2.0,
+            (height - scaled.height()) / 2.0,
+            scaled.width(),
+            scaled.height(),
+        )
+        renderer.render(painter, target)
+    else:
+        renderer.render(painter)
+    painter.end()
+
+    return QPixmap.fromImage(image)
+
+
 def _get_pixmap_internal(
     icon_name: str,
     width: int,
@@ -408,7 +455,10 @@ def _get_pixmap_internal(
         style=style,
         extension=extension,
     )
-    qpixmap = QIcon(path).pixmap(width, height)
+    if path.lower().endswith(".svg"):
+        qpixmap = _render_svg_to_pixmap(path, width, height)
+    else:
+        qpixmap = QIcon(path).pixmap(width, height)
     if color is not None:
         qpixmap = change_pixmap_color(qpixmap, color)
     return qpixmap
