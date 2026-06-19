@@ -153,6 +153,11 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Local Rez dev build (fxgui ships via PyPI + rez-pip in CI, not from source).
+# These let `rez-build -i` build fxgui from this working copy for DCC testing.
+/package.py
+/rezbuild.py
+
 # PyCharm
 #  JetBrains specific template is maintainted in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
