@@ -27,6 +27,9 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
     - Keyframe markers
     - Current frame indicator
     - Optional playback controls
+    - Track zoom: mouse wheel over the track zooms the visible frame window
+      around the cursor, middle-mouse drag pans it, `reset_view()` restores
+      the full range (view_changed reports the visible window).
 
     Args:
         parent: Parent widget.
@@ -41,6 +44,8 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         frame_changed: Emitted when the current frame changes.
         playback_started: Emitted when playback starts.
         playback_stopped: Emitted when playback stops.
+        view_changed: Emitted with (first, last) when the visible frame
+            window changes (zoom, pan, or reset).
 
     Examples:
         >>> timeline = FXTimelineSlider(start_frame=1, end_frame=100)
@@ -52,6 +57,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
     frame_changed = Signal(int)
     playback_started = Signal()
     playback_stopped = Signal()
+    view_changed = Signal(int, int)
+
+    # Smallest zoomable window, in frames.
+    MIN_VIEW_SPAN = 2
 
     def __init__(
         self,
@@ -72,6 +81,9 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._is_playing = False
         self._is_dragging = False
         self._fps = fps
+        # Visible frame window (None = follow the full range).
+        self._view_start: Optional[int] = None
+        self._view_end: Optional[int] = None
 
         # Playback timer
         self._playback_timer = QTimer(self)
@@ -249,6 +261,49 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         """Return the frame range as (start, end)."""
         return (self._start_frame, self._end_frame)
 
+    @property
+    def view_range(self) -> Tuple[int, int]:
+        """Return the visible frame window as (first, last).
+
+        Equals `frame_range` unless the track has been zoomed.
+        """
+        if self._view_start is None or self._view_end is None:
+            return (self._start_frame, self._end_frame)
+        return (self._view_start, self._view_end)
+
+    @property
+    def is_view_zoomed(self) -> bool:
+        """Whether the track shows a sub-window of the full range."""
+        return self.view_range != (self._start_frame, self._end_frame)
+
+    def set_view_range(self, first: int, last: int) -> None:
+        """Zoom the track to the [first, last] frame window.
+
+        The window is clamped inside the full range; a window covering the
+        full range (or more) resets the view.
+        """
+        first, last = int(round(first)), int(round(last))
+        span = max(self.MIN_VIEW_SPAN, last - first)
+        full_span = self._end_frame - self._start_frame
+        if span >= full_span:
+            self.reset_view()
+            return
+        first = max(self._start_frame, min(first, self._end_frame - span))
+        last = first + span
+        if (first, last) == (self._view_start, self._view_end):
+            return
+        self._view_start, self._view_end = first, last
+        self._track_widget.update()
+        self.view_changed.emit(first, last)
+
+    def reset_view(self) -> None:
+        """Restore the track to the full frame range."""
+        if self._view_start is None and self._view_end is None:
+            return
+        self._view_start = self._view_end = None
+        self._track_widget.update()
+        self.view_changed.emit(self._start_frame, self._end_frame)
+
     def set_frame(self, frame: int, emit: bool = True) -> None:
         """Set the current frame.
 
@@ -285,6 +340,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         if hasattr(self, "_spinbox"):
             self._spinbox.setRange(start, end)
         self._current_frame = max(start, min(self._current_frame, end))
+        # A new range invalidates any zoomed window.
+        if self._view_start is not None or self._view_end is not None:
+            self._view_start = self._view_end = None
+            self.view_changed.emit(start, end)
         self._track_widget.update()
 
     def set_fps(self, fps: int) -> None:
@@ -418,6 +477,10 @@ class _TimelineTrack(QWidget):
         self._timeline = timeline
         self.setMouseTracking(True)
         self.setCursor(Qt.PointingHandCursor)
+        # Middle-mouse pan state (fractional shift accumulator so slow
+        # drags still move the window one frame at a time).
+        self._pan_last_x: Optional[int] = None
+        self._pan_accum = 0.0
 
     def paintEvent(self, event) -> None:
         """Paint the timeline track."""
@@ -434,13 +497,15 @@ class _TimelineTrack(QWidget):
         painter.setPen(Qt.NoPen)
         painter.drawRoundedRect(0, track_y, width, track_height, 3, 3)
 
-        # Calculate frame-to-pixel conversion
-        frame_range = self._timeline._end_frame - self._timeline._start_frame
+        # Calculate frame-to-pixel conversion over the visible window
+        # (equals the full range unless the track is zoomed).
+        view_first, view_last = self._timeline.view_range
+        frame_range = view_last - view_first
         if frame_range <= 0:
             frame_range = 1
 
         def frame_to_x(frame: int) -> float:
-            ratio = (frame - self._timeline._start_frame) / frame_range
+            ratio = (frame - view_first) / frame_range
             return ratio * width
 
         # Draw frame tick marks
@@ -461,28 +526,21 @@ class _TimelineTrack(QWidget):
         else:
             tick_interval = max(1, frame_range // 20)
 
-        for frame in range(
-            self._timeline._start_frame, self._timeline._end_frame + 1
-        ):
-            if (frame - self._timeline._start_frame) % tick_interval == 0:
+        for frame in range(view_first, view_last + 1):
+            if (frame - view_first) % tick_interval == 0:
                 x = frame_to_x(frame)
                 # Major tick every 10 frames, minor otherwise
                 is_major = (
-                    (frame - self._timeline._start_frame) % (tick_interval * 5)
-                    == 0
-                    or frame == self._timeline._start_frame
-                    or frame == self._timeline._end_frame
+                    (frame - view_first) % (tick_interval * 5) == 0
+                    or frame == view_first
+                    or frame == view_last
                 )
                 tick_height = 6 if is_major else 3
                 painter.drawLine(int(x), track_y - tick_height, int(x), track_y)
 
-        # Draw keyframe markers
+        # Draw keyframe markers (visible window only)
         for keyframe in self._timeline._keyframes:
-            if (
-                self._timeline._start_frame
-                <= keyframe
-                <= self._timeline._end_frame
-            ):
+            if view_first <= keyframe <= view_last:
                 x = frame_to_x(keyframe)
                 painter.setBrush(self._timeline._keyframe_color)
                 painter.setPen(Qt.NoPen)
@@ -499,7 +557,10 @@ class _TimelineTrack(QWidget):
                 polygon = QPolygonF([QPointF(p[0], p[1]) for p in points])
                 painter.drawPolygon(polygon)
 
-        # Draw playhead
+        # Draw playhead (skip when scrolled out of the visible window)
+        if not (view_first <= self._timeline._current_frame <= view_last):
+            painter.end()
+            return
         playhead_x = frame_to_x(self._timeline._current_frame)
 
         # Playhead line
@@ -527,13 +588,20 @@ class _TimelineTrack(QWidget):
         painter.end()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse press for scrubbing."""
+        """Left = scrub; middle = start panning the zoomed window."""
         if event.button() == Qt.LeftButton:
             self._timeline._is_dragging = True
             self._update_frame_from_mouse(event.x())
+        elif event.button() == Qt.MiddleButton:
+            self._pan_last_x = event.x()
+            self._pan_accum = 0.0
+            self.setCursor(Qt.ClosedHandCursor)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse move for scrubbing."""
+        """Handle mouse move for scrubbing or panning."""
+        if self._pan_last_x is not None:
+            self._pan_view(event.x())
+            return
         if self._timeline._is_dragging:
             self._update_frame_from_mouse(event.x())
 
@@ -541,16 +609,56 @@ class _TimelineTrack(QWidget):
         """Handle mouse release."""
         if event.button() == Qt.LeftButton:
             self._timeline._is_dragging = False
+        elif event.button() == Qt.MiddleButton:
+            self._pan_last_x = None
+            self.setCursor(Qt.PointingHandCursor)
+
+    def wheelEvent(self, event) -> None:
+        """Zoom the visible frame window around the cursor."""
+        delta = event.angleDelta().y()
+        if delta == 0:
+            event.ignore()
+            return
+        width = max(1, self.width())
+        # QWheelEvent position: Qt6 position(), Qt5 pos().
+        x = (
+            event.position().x()
+            if hasattr(event, "position")
+            else event.pos().x()
+        )
+        first, last = self._timeline.view_range
+        span = last - first
+        factor = 0.8 if delta > 0 else 1.25
+        new_span = span * factor
+        ratio = max(0.0, min(1.0, x / width))
+        anchor = first + ratio * span
+        new_first = anchor - ratio * new_span
+        self._timeline.set_view_range(
+            round(new_first), round(new_first + new_span)
+        )
+        event.accept()
+
+    def _pan_view(self, x: int) -> None:
+        """Translate the zoomed window by the cursor delta (in frames)."""
+        width = max(1, self.width())
+        first, last = self._timeline.view_range
+        span = last - first
+        self._pan_accum += (self._pan_last_x - x) * span / width
+        self._pan_last_x = x
+        shift = int(round(self._pan_accum))
+        if shift:
+            self._pan_accum -= shift
+            self._timeline.set_view_range(first + shift, last + shift)
 
     def _update_frame_from_mouse(self, x: int) -> None:
-        """Update frame based on mouse position."""
+        """Update frame based on mouse position (view-window mapping)."""
         width = self.width()
         if width <= 0:
             return
 
         ratio = max(0.0, min(1.0, x / width))
-        frame_range = self._timeline._end_frame - self._timeline._start_frame
-        frame = int(self._timeline._start_frame + ratio * frame_range)
+        view_first, view_last = self._timeline.view_range
+        frame = int(round(view_first + ratio * (view_last - view_first)))
         self._timeline.set_frame(frame)
 
 

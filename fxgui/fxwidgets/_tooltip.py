@@ -223,6 +223,11 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
             # Install event filter for hover detection (non-persistent)
             # or move tracking (persistent)
             self._anchor.installEventFilter(self)
+            # Mark the anchor as owning an explicit tooltip so the global
+            # FXTooltipManager stays silent on it. Without this, a widget
+            # carrying both an FXTooltip and setToolTip() text (e.g. the
+            # timeline play button) shows two tooltips on one hover.
+            self._anchor.setProperty("fx_has_explicit_tooltip", True)
 
         # Track mouse for hide delay
         self.setMouseTracking(True)
@@ -751,6 +756,7 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
         # Remove old event filter
         if self._anchor:
             self._anchor.removeEventFilter(self)
+            self._anchor.setProperty("fx_has_explicit_tooltip", None)
             try:
                 self._anchor.destroyed.disconnect(self._on_anchor_destroyed)
             except (RuntimeError, TypeError):
@@ -762,6 +768,7 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
         if widget and not self._persistent:
             widget.installEventFilter(self)
             widget.destroyed.connect(self._on_anchor_destroyed)
+            widget.setProperty("fx_has_explicit_tooltip", True)
 
     def show_at_rect(
         self,
@@ -1041,6 +1048,12 @@ class FXTooltipManager(QObject):
             if not isinstance(widget, QWidget):
                 return False
 
+            # The widget owns an explicit FXTooltip (anchored on it): stay
+            # silent and block the standard tooltip too, otherwise a widget
+            # with both shows two tooltips on one hover.
+            if widget.property("fx_has_explicit_tooltip"):
+                return True
+
             # Handle item view viewports: extract tooltip from item data
             parent_view = widget.parent()
             if isinstance(parent_view, QAbstractItemView):
@@ -1208,10 +1221,21 @@ class FXTooltipManager(QObject):
             global_top_left = widget.mapToGlobal(widget_rect.topLeft())
             global_rect = QRect(global_top_left, widget_rect.size())
 
+        # Optional rich fields carried as dynamic properties (see
+        # set_rich_tooltip): lets a plain setToolTip() render the full
+        # FXTooltip layout (bold title + shortcut badge) without the widget
+        # owning a persistent FXTooltip instance.
+        title = widget.property("fx_tooltip_title") or None
+        shortcut = widget.property("fx_tooltip_shortcut") or None
+        icon = widget.property("fx_tooltip_icon") or None
+
         # Create and show tooltip
         self._tooltip = FXTooltip(
             parent=None,
+            title=title,
             description=tooltip_text,
+            icon=icon,
+            shortcut=shortcut,
             show_delay=0,
             hide_delay=self._hide_delay,
             persistent=True,
@@ -1469,7 +1493,11 @@ def set_tooltip(
         hide_delay: Delay in ms before hiding after mouse leaves (default 200).
 
     Returns:
-        The created FXTooltip instance (kept internally to prevent GC).
+        For widgets with the global FXTooltipManager installed: None -- the
+        rich fields are stored as dynamic properties (``fx_tooltip_title`` /
+        ``fx_tooltip_shortcut`` / ``fx_tooltip_icon``) and the manager builds
+        the tooltip lazily on hover. Otherwise (items, or no manager): the
+        created FXTooltip instance (kept internally to prevent GC).
 
     Examples:
         >>> # Simple tooltip on a button
@@ -1542,6 +1570,23 @@ def set_tooltip(
 
     # Handle regular QWidget
     elif isinstance(target, QWidget):
+        # With the global FXTooltipManager installed (FXMainWindow installs
+        # it), no per-widget FXTooltip instance is needed: store the rich
+        # fields as dynamic properties and let the manager build the tooltip
+        # lazily on hover with the full layout (bold title, shortcut badge,
+        # optional icon). This keeps zero persistent theme-aware objects
+        # alive per widget.
+        if FXTooltipManager.is_installed():
+            target.setToolTip(description)
+            if title is not None:
+                target.setProperty("fx_tooltip_title", title)
+            if shortcut is not None:
+                target.setProperty("fx_tooltip_shortcut", shortcut)
+            if icon is not None:
+                target.setProperty("fx_tooltip_icon", icon)
+            return None
+
+        # No manager (app without FXMainWindow): legacy per-widget tooltip.
         tooltip = FXTooltip(
             parent=target,
             title=title,
