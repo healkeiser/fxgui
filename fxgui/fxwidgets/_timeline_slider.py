@@ -1,11 +1,12 @@
 """Timeline/scrubber widget for DCC applications."""
 
 # Built-in
+from bisect import bisect_left, bisect_right
 from typing import List, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import Qt, Signal, QTimer
-from qtpy.QtGui import QColor, QMouseEvent, QPainter, QPen
+from qtpy.QtCore import QPointF, Qt, Signal, QTimer
+from qtpy.QtGui import QColor, QMouseEvent, QPainter, QPen, QPolygonF
 from qtpy.QtWidgets import (
     QHBoxLayout,
     QPushButton,
@@ -182,31 +183,39 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
 
         # View-window spinboxes (flank the track, inside start/end): they
         # display the visible frame window and, when edited, zoom the track
-        # to the typed range -- a keyboard alternative to wheel zoom.
-        self._view_start_spinbox = QSpinBox()
-        self._view_start_spinbox.setRange(-99999, 99999)
-        self._view_start_spinbox.setValue(self._start_frame)
-        self._view_start_spinbox.setFixedWidth(55)
-        self._view_start_spinbox.setKeyboardTracking(False)
-        self._view_start_spinbox_tooltip = FXTooltip(
-            parent=self._view_start_spinbox,
-            title="View Start",
-            description="First visible frame; edit to zoom the track",
-        )
-        self._view_start_spinbox.valueChanged.connect(self._on_view_spin_changed)
+        # to the typed range -- a keyboard alternative to wheel zoom. Only
+        # the stacked layout has room for them; the single row stays dense.
+        self._view_start_spinbox = None
+        self._view_end_spinbox = None
+        if controls_position == "below":
+            self._view_start_spinbox = QSpinBox()
+            self._view_start_spinbox.setRange(-99999, 99999)
+            self._view_start_spinbox.setValue(self._start_frame)
+            self._view_start_spinbox.setFixedWidth(55)
+            self._view_start_spinbox.setKeyboardTracking(False)
+            self._view_start_spinbox_tooltip = FXTooltip(
+                parent=self._view_start_spinbox,
+                title="View Start",
+                description="First visible frame; edit to zoom the track",
+            )
+            self._view_start_spinbox.valueChanged.connect(
+                self._on_view_spin_changed
+            )
 
-        self._view_end_spinbox = QSpinBox()
-        self._view_end_spinbox.setRange(-99999, 99999)
-        self._view_end_spinbox.setValue(self._end_frame)
-        self._view_end_spinbox.setFixedWidth(55)
-        self._view_end_spinbox.setKeyboardTracking(False)
-        self._view_end_spinbox_tooltip = FXTooltip(
-            parent=self._view_end_spinbox,
-            title="View End",
-            description="Last visible frame; edit to zoom the track",
-        )
-        self._view_end_spinbox.valueChanged.connect(self._on_view_spin_changed)
-        self.view_changed.connect(self._sync_view_spinboxes)
+            self._view_end_spinbox = QSpinBox()
+            self._view_end_spinbox.setRange(-99999, 99999)
+            self._view_end_spinbox.setValue(self._end_frame)
+            self._view_end_spinbox.setFixedWidth(55)
+            self._view_end_spinbox.setKeyboardTracking(False)
+            self._view_end_spinbox_tooltip = FXTooltip(
+                parent=self._view_end_spinbox,
+                title="View End",
+                description="Last visible frame; edit to zoom the track",
+            )
+            self._view_end_spinbox.valueChanged.connect(
+                self._on_view_spin_changed
+            )
+            self.view_changed.connect(self._sync_view_spinboxes)
 
         # Playback controls
         if show_controls:
@@ -486,11 +495,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                     controls_layout.addWidget(self._mark_in_btn)
                     controls_layout.addWidget(self._mark_out_btn)
                 main_layout.addLayout(controls_layout)
-            # The view-window spinboxes only ship in the stacked layout:
-            # the single row is already dense and wheel zoom covers it.
-            for spinbox in (self._view_start_spinbox, self._view_end_spinbox):
-                spinbox.setParent(self)
-                spinbox.hide()
             main_layout.addWidget(self._track_widget, 1)
             if show_spinbox:
                 main_layout.addWidget(self._spinbox)
@@ -625,6 +629,8 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
 
     def _sync_view_spinboxes(self, first: int, last: int) -> None:
         """Reflect the visible window into the view spinboxes (no re-emit)."""
+        if self._view_start_spinbox is None:
+            return   # single-row layout has no view spinboxes
         for spinbox, value in (
             (self._view_start_spinbox, first),
             (self._view_end_spinbox, last),
@@ -668,6 +674,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             "frames": frames,
             "color": QColor(color) if color is not None else None,
             "style": style,
+            # Precomputed once here: the paint path must not re-sort or
+            # re-scan the whole set per repaint.
+            "runs": _coalesce_runs(frames) if style == "strip" else None,
+            "sorted": sorted(frames) if style == "line" else None,
         }
         self._track_widget.update()
 
@@ -999,21 +1009,23 @@ class _TimelineTrack(QWidget):
         else:
             tick_interval = max(1, frame_range // 20)
 
-        for frame in range(view_first, view_last + 1):
-            if (frame - view_first) % tick_interval == 0:
-                x = int(frame_to_x(frame))
-                # Major tick every 10 frames, minor otherwise
-                is_major = (
-                    (frame - view_first) % (tick_interval * 5) == 0
-                    or frame == view_first
-                    or frame == view_last
-                )
-                tick_extent = 5 if is_major else 2
-                painter.setPen(major_pen if is_major else minor_pen)
-                painter.drawLine(
-                    x, track_y - tick_extent,
-                    x, track_y + track_height + tick_extent,
-                )
+        tick_frames = list(range(view_first, view_last + 1, tick_interval))
+        if tick_frames and tick_frames[-1] != view_last:
+            tick_frames.append(view_last)   # always mark the window edge
+        for frame in tick_frames:
+            x = int(frame_to_x(frame))
+            # Major tick every 10 frames, minor otherwise
+            is_major = (
+                (frame - view_first) % (tick_interval * 5) == 0
+                or frame == view_first
+                or frame == view_last
+            )
+            tick_extent = 5 if is_major else 2
+            painter.setPen(major_pen if is_major else minor_pen)
+            painter.drawLine(
+                x, track_y - tick_extent,
+                x, track_y + track_height + tick_extent,
+            )
 
         # Named regions: translucent fill + edge lines (graph linear-region
         # look). Bracket-edged regions get bold [ ] edges so a zero-width
@@ -1055,6 +1067,9 @@ class _TimelineTrack(QWidget):
                     painter.drawLine(x1, 0, x1, height)
 
         # Named marker layers. None colors follow the theme accent.
+        # Geometry (runs / sorted frames) is precomputed in
+        # set_marker_frames: paintEvent runs per playback frame and per
+        # hover move, so only the visible slice is touched here.
         for layer in self._timeline._marker_layers.values():
             layer_color = (
                 layer["color"]
@@ -1063,15 +1078,18 @@ class _TimelineTrack(QWidget):
             )
             if layer["style"] == "line":
                 painter.setPen(QPen(layer_color, 1, Qt.DashLine))
-                for frame in layer["frames"]:
-                    if view_first <= frame <= view_last:
-                        x = int(frame_to_x(frame))
-                        painter.drawLine(x, 0, x, height)
+                ordered = layer["sorted"]
+                lo = bisect_left(ordered, view_first)
+                hi = bisect_right(ordered, view_last)
+                for frame in ordered[lo:hi]:
+                    x = int(frame_to_x(frame))
+                    painter.drawLine(x, 0, x, height)
             else:  # strip: translucent top band + 1px solid top line
                 fill = QColor(layer_color)
                 fill.setAlpha(self._timeline.STRIP_FILL_ALPHA)
                 strip_h = self._timeline.STRIP_HEIGHT
-                for run_start, run_end in _coalesce_runs(layer["frames"]):
+                line_pen = QPen(layer_color, 1)
+                for run_start, run_end in layer["runs"]:
                     if run_end < view_first or run_start > view_last:
                         continue
                     x0 = int(frame_to_x(max(run_start, view_first)))
@@ -1080,7 +1098,7 @@ class _TimelineTrack(QWidget):
                     painter.setPen(Qt.NoPen)
                     painter.setBrush(fill)
                     painter.drawRect(x0, 0, run_w, strip_h)
-                    painter.setPen(QPen(layer["color"], 1))
+                    painter.setPen(line_pen)
                     painter.drawLine(x0, 0, x0 + run_w, 0)
 
         # Draw keyframe markers (visible window only)
@@ -1096,9 +1114,6 @@ class _TimelineTrack(QWidget):
                     (x, track_y + track_height + 2),
                     (x - 4, track_y + track_height // 2),
                 ]
-                from qtpy.QtGui import QPolygonF
-                from qtpy.QtCore import QPointF
-
                 polygon = QPolygonF([QPointF(p[0], p[1]) for p in points])
                 painter.drawPolygon(polygon)
 
@@ -1118,9 +1133,6 @@ class _TimelineTrack(QWidget):
 
             painter.setBrush(playhead_color)
             painter.setPen(Qt.NoPen)
-            from qtpy.QtGui import QPolygonF
-            from qtpy.QtCore import QPointF
-
             painter.drawRoundedRect(playhead_x - 3, 0, 7, 4, 2, 2)
             handle = QPolygonF(
                 [
