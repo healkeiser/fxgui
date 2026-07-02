@@ -1212,6 +1212,8 @@ def _create_timeline_tab() -> QWidget:
         end_frame=1240,
         current_frame=1050,
         show_loop_controls=True,
+        show_keyframe_controls=True,
+        controls_position="below",
     )
     full.set_marker_frames(
         "cached",

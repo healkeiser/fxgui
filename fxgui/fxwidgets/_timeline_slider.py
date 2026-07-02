@@ -11,6 +11,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QSpinBox,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -72,6 +73,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         show_loop_controls: Whether to show the mark-in/mark-out buttons.
         show_keyframe_controls: Whether to show the previous/next-keyframe
             navigation buttons.
+        controls_position: "left" (classic single row) or "below"
+            (Nuke-style: full-width track on top, centered transport row
+            below with I/O flanking the cluster, fps far left, consumer
+            extras -- added via add_control_widget() -- far right).
 
     Signals:
         frame_changed: Emitted when the current frame changes.
@@ -121,8 +126,13 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         show_spinbox: bool = True,
         show_loop_controls: bool = False,
         show_keyframe_controls: bool = False,
+        controls_position: str = "left",
     ):
         super().__init__(parent)
+        if controls_position not in ("left", "below"):
+            raise ValueError(
+                f"Unknown controls_position: {controls_position!r}"
+            )
 
         self._start_frame = start_frame
         self._end_frame = end_frame
@@ -151,10 +161,8 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._text_color = None
         self._label_bg_color = None
 
-        # Main layout
-        main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(8)
+        # Widgets are created first (per the show_* flags), then arranged
+        # according to controls_position at the end of __init__.
 
         # Start frame spinbox (editable)
         self._start_spinbox = QSpinBox()
@@ -167,13 +175,9 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             description="First frame of the timeline range",
         )
         self._start_spinbox.valueChanged.connect(self._on_start_changed)
-        main_layout.addWidget(self._start_spinbox)
 
         # Playback controls
         if show_controls:
-            controls_layout = QHBoxLayout()
-            controls_layout.setSpacing(2)
-
             # Go to start
             self._goto_start_btn = QPushButton()
             fxicons.set_icon(self._goto_start_btn, "skip_previous")
@@ -186,7 +190,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 description="Jump to the first frame",
                 shortcut="Home",
             )
-            controls_layout.addWidget(self._goto_start_btn)
 
             # Previous frame
             self._prev_btn = QPushButton()
@@ -200,7 +203,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 description="Go back one frame",
                 shortcut="Left",
             )
-            controls_layout.addWidget(self._prev_btn)
 
             # Play/Pause
             self._play_btn = QPushButton()
@@ -213,7 +215,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 description="Start playback",
                 shortcut="Space",
             )
-            controls_layout.addWidget(self._play_btn)
 
             # Next frame
             self._next_btn = QPushButton()
@@ -227,7 +228,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 description="Go forward one frame",
                 shortcut="Right",
             )
-            controls_layout.addWidget(self._next_btn)
 
             # Go to end
             self._goto_end_btn = QPushButton()
@@ -241,7 +241,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 description="Jump to the last frame",
                 shortcut="End",
             )
-            controls_layout.addWidget(self._goto_end_btn)
 
             # Keyframe navigation (opt-in): jump to the nearest keyframe
             # before/after the current frame.
@@ -256,7 +255,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                     title="Previous Keyframe",
                     description="Jump to the nearest keyframe before",
                 )
-                controls_layout.addWidget(self._prev_key_btn)
 
                 self._next_key_btn = QPushButton()
                 fxicons.set_icon(self._next_key_btn, "keyboard_double_arrow_right")
@@ -268,7 +266,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                     title="Next Keyframe",
                     description="Jump to the nearest keyframe after",
                 )
-                controls_layout.addWidget(self._next_key_btn)
 
             # Mark in / mark out (opt-in). The widget only requests: the
             # consumer decides what marking means (typically it ends up
@@ -287,7 +284,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                     description="Set the loop in point at the current frame",
                     shortcut="I",
                 )
-                controls_layout.addWidget(self._mark_in_btn)
 
                 self._mark_out_btn = QPushButton()
                 fxicons.set_icon(self._mark_out_btn, "last_page")
@@ -302,9 +298,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                     description="Set the loop out point at the current frame",
                     shortcut="O",
                 )
-                controls_layout.addWidget(self._mark_out_btn)
 
-            main_layout.addLayout(controls_layout)
 
         # Timeline track (custom painted)
         self._track_widget = _TimelineTrack(self)
@@ -312,7 +306,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._track_widget.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Fixed
         )
-        main_layout.addWidget(self._track_widget, 1)
 
         # Frame spinbox
         if show_spinbox:
@@ -321,7 +314,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             self._spinbox.setValue(self._current_frame)
             self._spinbox.setFixedWidth(60)
             self._spinbox.valueChanged.connect(self._on_spinbox_changed)
-            main_layout.addWidget(self._spinbox)
 
         # End frame spinbox (editable)
         self._end_spinbox = QSpinBox()
@@ -334,7 +326,6 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             description="Last frame of the timeline range",
         )
         self._end_spinbox.valueChanged.connect(self._on_end_changed)
-        main_layout.addWidget(self._end_spinbox)
 
         # FPS spinbox (editable)
         self._fps_spinbox = QSpinBox()
@@ -348,10 +339,95 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             description="Frames per second for playback",
         )
         self._fps_spinbox.valueChanged.connect(self._on_fps_changed)
-        main_layout.addWidget(self._fps_spinbox)
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.setMinimumHeight(30)
+        # ── Arrangement ──────────────────────────────────────────────────
+        # Consumers can append their own widgets to the right side of the
+        # controls area via add_control_widget().
+        self._extra_controls_layout = QHBoxLayout()
+        self._extra_controls_layout.setSpacing(8)
+
+        if controls_position == "below":
+            # Nuke-style: full-width track on top, centered transport row
+            # below with I/O flanking the cluster and keyframe-nav inside;
+            # fps far left, consumer extras far right.
+            root = QVBoxLayout(self)
+            root.setContentsMargins(0, 0, 0, 0)
+            root.setSpacing(4)
+
+            track_row = QHBoxLayout()
+            track_row.setSpacing(8)
+            track_row.addWidget(self._start_spinbox)
+            track_row.addWidget(self._track_widget, 1)
+            track_row.addWidget(self._end_spinbox)
+            root.addLayout(track_row)
+
+            controls_row = QHBoxLayout()
+            controls_row.setSpacing(2)
+            controls_row.addWidget(self._fps_spinbox)
+            controls_row.addStretch(1)
+            if show_controls:
+                if show_keyframe_controls:
+                    controls_row.addWidget(self._prev_key_btn)
+                if show_loop_controls:
+                    controls_row.addWidget(self._mark_in_btn)
+                controls_row.addWidget(self._goto_start_btn)
+                controls_row.addWidget(self._prev_btn)
+                if show_spinbox:
+                    controls_row.addWidget(self._spinbox)
+                controls_row.addWidget(self._play_btn)
+                controls_row.addWidget(self._next_btn)
+                if show_keyframe_controls:
+                    controls_row.addWidget(self._next_key_btn)
+                controls_row.addWidget(self._goto_end_btn)
+                if show_loop_controls:
+                    controls_row.addWidget(self._mark_out_btn)
+            elif show_spinbox:
+                controls_row.addWidget(self._spinbox)
+            controls_row.addStretch(1)
+            controls_row.addLayout(self._extra_controls_layout)
+            root.addLayout(controls_row)
+
+            self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            self.setMinimumHeight(60)
+        else:
+            # Classic single row.
+            main_layout = QHBoxLayout(self)
+            main_layout.setContentsMargins(0, 0, 0, 0)
+            main_layout.setSpacing(8)
+            main_layout.addWidget(self._start_spinbox)
+            if show_controls:
+                controls_layout = QHBoxLayout()
+                controls_layout.setSpacing(2)
+                controls_layout.addWidget(self._goto_start_btn)
+                controls_layout.addWidget(self._prev_btn)
+                controls_layout.addWidget(self._play_btn)
+                controls_layout.addWidget(self._next_btn)
+                controls_layout.addWidget(self._goto_end_btn)
+                if show_keyframe_controls:
+                    controls_layout.addWidget(self._prev_key_btn)
+                    controls_layout.addWidget(self._next_key_btn)
+                if show_loop_controls:
+                    controls_layout.addWidget(self._mark_in_btn)
+                    controls_layout.addWidget(self._mark_out_btn)
+                main_layout.addLayout(controls_layout)
+            main_layout.addWidget(self._track_widget, 1)
+            if show_spinbox:
+                main_layout.addWidget(self._spinbox)
+            main_layout.addWidget(self._end_spinbox)
+            main_layout.addWidget(self._fps_spinbox)
+            main_layout.addLayout(self._extra_controls_layout)
+
+            self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            self.setMinimumHeight(30)
+
+    def add_control_widget(self, widget: QWidget) -> None:
+        """Append a consumer widget to the controls area.
+
+        In the "below" (Nuke-style) layout the widget lands on the right
+        side of the transport row; in the classic single-row layout it is
+        appended at the far right.
+        """
+        self._extra_controls_layout.addWidget(widget)
 
     def _on_theme_changed(self, _theme_name: str = None) -> None:
         """Handle theme changes."""
