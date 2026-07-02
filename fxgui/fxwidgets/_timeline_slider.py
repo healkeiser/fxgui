@@ -19,6 +19,24 @@ from fxgui import fxicons, fxstyle
 from fxgui.fxwidgets._tooltip import FXTooltip
 
 
+def _coalesce_runs(frames) -> List[Tuple[int, int]]:
+    """Coalesce a set of frame numbers into contiguous (start, end) runs so
+    strip-style markers paint a few rects instead of one per frame."""
+    if not frames:
+        return []
+    ordered = sorted(frames)
+    runs = []
+    start = prev = ordered[0]
+    for frame in ordered[1:]:
+        if frame == prev + 1:
+            prev = frame
+            continue
+        runs.append((start, prev))
+        start = prev = frame
+    runs.append((start, prev))
+    return runs
+
+
 class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
     """A timeline/scrubber widget perfect for DCC applications.
 
@@ -30,6 +48,13 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
     - Track zoom: mouse wheel over the track zooms the visible frame window
       around the cursor, middle-mouse drag pans it, `reset_view()` restores
       the full range (view_changed reports the visible window).
+    - Named marker layers: per-frame markers rendered as vertical lines or
+      a top strip (e.g. cached frames), and named regions (e.g. a loop
+      range), all mapped through the zoomed window. The widget assigns no
+      meaning to a layer: the consumer picks names, colors and styles.
+    - Optional in/out controls (`show_loop_controls`): bracket buttons that
+      request marking the current frame as loop in/out point; the consumer
+      decides what marking does and typically calls `set_loop_region`.
 
     Args:
         parent: Parent widget.
@@ -39,6 +64,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         fps: Frames per second for playback (default 24).
         show_controls: Whether to show playback controls.
         show_spinbox: Whether to show the frame spinbox.
+        show_loop_controls: Whether to show the mark-in/mark-out buttons.
 
     Signals:
         frame_changed: Emitted when the current frame changes.
@@ -46,21 +72,35 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         playback_stopped: Emitted when playback stops.
         view_changed: Emitted with (first, last) when the visible frame
             window changes (zoom, pan, or reset).
+        in_point_requested: Mark-in button pressed; carries the current
+            frame. The widget draws nothing by itself.
+        out_point_requested: Mark-out button pressed; carries the current
+            frame.
 
     Examples:
         >>> timeline = FXTimelineSlider(start_frame=1, end_frame=100)
         >>> timeline.frame_changed.connect(lambda f: print(f"Frame: {f}"))
         >>> timeline.add_keyframe(10)
         >>> timeline.add_keyframe(50)
+        >>> timeline.set_marker_frames("cached", {2, 3, 4}, "#22c55e", "strip")
+        >>> timeline.set_marker_frames("errors", {40, 41}, "#ef4444")
+        >>> timeline.set_loop_region(20, 60)
     """
 
     frame_changed = Signal(int)
     playback_started = Signal()
     playback_stopped = Signal()
     view_changed = Signal(int, int)
+    in_point_requested = Signal(int)
+    out_point_requested = Signal(int)
 
     # Smallest zoomable window, in frames.
     MIN_VIEW_SPAN = 2
+    # Marker rendering: fill alphas match a 1px solid line + translucent
+    # fill look (region fill / strip fill).
+    REGION_FILL_ALPHA = 50
+    STRIP_FILL_ALPHA = 80
+    STRIP_HEIGHT = 4
 
     def __init__(
         self,
@@ -71,6 +111,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         fps: int = 24,
         show_controls: bool = True,
         show_spinbox: bool = True,
+        show_loop_controls: bool = False,
     ):
         super().__init__(parent)
 
@@ -84,6 +125,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         # Visible frame window (None = follow the full range).
         self._view_start: Optional[int] = None
         self._view_end: Optional[int] = None
+        # Named marker layers / regions painted on the track.
+        # name -> {"frames": set, "color": QColor, "style": "line"|"strip"}
+        self._marker_layers: dict = {}
+        # name -> {"start": int, "end": int, "color": QColor}
+        self._regions: dict = {}
 
         # Playback timer
         self._playback_timer = QTimer(self)
@@ -186,6 +232,40 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 shortcut="End",
             )
             controls_layout.addWidget(self._goto_end_btn)
+
+            # Mark in / mark out (opt-in). The widget only requests: the
+            # consumer decides what marking means (typically it ends up
+            # calling set_loop_region).
+            if show_loop_controls:
+                self._mark_in_btn = QPushButton()
+                fxicons.set_icon(self._mark_in_btn, "first_page")
+                self._mark_in_btn.setFixedSize(24, 24)
+                self._mark_in_btn.setFlat(True)
+                self._mark_in_btn.clicked.connect(
+                    lambda: self.in_point_requested.emit(self._current_frame)
+                )
+                self._mark_in_btn_tooltip = FXTooltip(
+                    parent=self._mark_in_btn,
+                    title="Mark In",
+                    description="Set the loop in point at the current frame",
+                    shortcut="I",
+                )
+                controls_layout.addWidget(self._mark_in_btn)
+
+                self._mark_out_btn = QPushButton()
+                fxicons.set_icon(self._mark_out_btn, "last_page")
+                self._mark_out_btn.setFixedSize(24, 24)
+                self._mark_out_btn.setFlat(True)
+                self._mark_out_btn.clicked.connect(
+                    lambda: self.out_point_requested.emit(self._current_frame)
+                )
+                self._mark_out_btn_tooltip = FXTooltip(
+                    parent=self._mark_out_btn,
+                    title="Mark Out",
+                    description="Set the loop out point at the current frame",
+                    shortcut="O",
+                )
+                controls_layout.addWidget(self._mark_out_btn)
 
             main_layout.addLayout(controls_layout)
 
@@ -303,6 +383,87 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._view_start = self._view_end = None
         self._track_widget.update()
         self.view_changed.emit(self._start_frame, self._end_frame)
+
+    def set_marker_frames(
+        self,
+        name: str,
+        frames,
+        color: str = "#ef4444",
+        style: str = "line",
+    ) -> None:
+        """Set (or replace) a named marker layer painted on the track.
+
+        The widget assigns no meaning to a layer: the consumer picks the
+        name, color and style (a render-farm app may mark cached frames, a
+        review app approved ones).
+
+        Args:
+            name: Layer identifier; setting the same name replaces it.
+            frames: Iterable of frame numbers. Empty removes the layer.
+            color: Marker color (any QColor-compatible value).
+            style: "line" for 1px vertical lines at each frame, or "strip"
+                for a translucent band along the top edge with a 1px solid
+                top line over contiguous frame runs.
+        """
+        if style not in ("line", "strip"):
+            raise ValueError(f"Unknown marker style: {style!r}")
+        frames = set(frames or ())
+        if not frames:
+            self.remove_markers(name)
+            return
+        self._marker_layers[name] = {
+            "frames": frames,
+            "color": QColor(color),
+            "style": style,
+        }
+        self._track_widget.update()
+
+    def remove_markers(self, name: str) -> None:
+        """Remove a named marker layer (no-op if absent)."""
+        if self._marker_layers.pop(name, None) is not None:
+            self._track_widget.update()
+
+    def set_region(
+        self, name: str, start: int, end: int, color: str = "#5278e0"
+    ) -> None:
+        """Set (or replace) a named frame region painted on the track.
+
+        Rendered as a translucent fill across the track with 1px solid
+        edge lines, like a graph's linear region.
+
+        Args:
+            name: Region identifier; setting the same name replaces it.
+            start: First frame of the region.
+            end: Last frame of the region.
+            color: Region color (edges solid, fill translucent).
+        """
+        self._regions[name] = {
+            "start": int(min(start, end)),
+            "end": int(max(start, end)),
+            "color": QColor(color),
+        }
+        self._track_widget.update()
+
+    def clear_region(self, name: str) -> None:
+        """Remove a named region (no-op if absent)."""
+        if self._regions.pop(name, None) is not None:
+            self._track_widget.update()
+
+    def set_loop_region(
+        self,
+        start: Optional[int],
+        end: Optional[int],
+        color: str = "#5278e0",
+    ) -> None:
+        """Show the loop in/out range on the track (None, None clears).
+
+        Sugar over `set_region("loop", ...)` for the common loop-range
+        pairing with the in/out controls.
+        """
+        if start is None or end is None:
+            self.clear_region("loop")
+            return
+        self.set_region("loop", start, end, color)
 
     def set_frame(self, frame: int, emit: bool = True) -> None:
         """Set the current frame.
@@ -538,6 +699,49 @@ class _TimelineTrack(QWidget):
                 tick_height = 6 if is_major else 3
                 painter.drawLine(int(x), track_y - tick_height, int(x), track_y)
 
+        # Named regions: translucent fill + 1px solid edge lines (graph
+        # linear-region look). Under markers and playhead.
+        for region in self._timeline._regions.values():
+            r_start, r_end = region["start"], region["end"]
+            if r_end < view_first or r_start > view_last:
+                continue
+            x0 = frame_to_x(max(r_start, view_first))
+            x1 = frame_to_x(min(r_end, view_last))
+            fill = QColor(region["color"])
+            fill.setAlpha(self._timeline.REGION_FILL_ALPHA)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(fill)
+            painter.drawRect(int(x0), 0, max(1, int(x1 - x0)), height)
+            painter.setPen(QPen(region["color"], 1))
+            if r_start >= view_first:
+                painter.drawLine(int(x0), 0, int(x0), height)
+            if r_end <= view_last:
+                painter.drawLine(int(x1), 0, int(x1), height)
+
+        # Named marker layers.
+        for layer in self._timeline._marker_layers.values():
+            if layer["style"] == "line":
+                painter.setPen(QPen(layer["color"], 1, Qt.DashLine))
+                for frame in layer["frames"]:
+                    if view_first <= frame <= view_last:
+                        x = int(frame_to_x(frame))
+                        painter.drawLine(x, 0, x, height)
+            else:  # strip: translucent top band + 1px solid top line
+                fill = QColor(layer["color"])
+                fill.setAlpha(self._timeline.STRIP_FILL_ALPHA)
+                strip_h = self._timeline.STRIP_HEIGHT
+                for run_start, run_end in _coalesce_runs(layer["frames"]):
+                    if run_end < view_first or run_start > view_last:
+                        continue
+                    x0 = int(frame_to_x(max(run_start, view_first)))
+                    x1 = int(frame_to_x(min(run_end, view_last)))
+                    run_w = max(2, x1 - x0)
+                    painter.setPen(Qt.NoPen)
+                    painter.setBrush(fill)
+                    painter.drawRect(x0, 0, run_w, strip_h)
+                    painter.setPen(QPen(layer["color"], 1))
+                    painter.drawLine(x0, 0, x0 + run_w, 0)
+
         # Draw keyframe markers (visible window only)
         for keyframe in self._timeline._keyframes:
             if view_first <= keyframe <= view_last:
@@ -679,38 +883,81 @@ def example() -> None:
     widget = QWidget()
     window.setCentralWidget(widget)
     layout = QVBoxLayout(widget)
+    layout.setSpacing(12)
 
+    # ── Basic timeline: keyframes only ──────────────────────────────────
+    layout.addWidget(QLabel("Basic (keyframes):"))
     timeline = FXTimelineSlider(start_frame=1, end_frame=120, current_frame=1)
-    timeline.add_keyframe(1)
-    timeline.add_keyframe(30)
-    timeline.add_keyframe(60)
-    timeline.add_keyframe(90)
-    timeline.add_keyframe(120)
+    for key in (1, 30, 60, 90, 120):
+        timeline.add_keyframe(key)
+    layout.addWidget(timeline)
 
     frame_label = QLabel("Frame: 1")
-
-    def on_frame_changed(frame):
-        frame_label.setText(f"Frame: {frame}")
-
-    timeline.frame_changed.connect(on_frame_changed)
-
-    # Playback controls
-    controls_layout = QHBoxLayout()
-    prev_btn = QPushButton("Prev Key")
-    fxicons.set_icon(prev_btn, "skip_previous")
-    next_btn = QPushButton("Next Key")
-    fxicons.set_icon(next_btn, "skip_next")
-    # prev_btn.clicked.connect(timeline.go_to_previous_keyframe)
-    # next_btn.clicked.connect(timeline.go_to_next_keyframe)
-    controls_layout.addWidget(prev_btn)
-    controls_layout.addWidget(next_btn)
-
-    layout.addWidget(timeline)
+    timeline.frame_changed.connect(
+        lambda frame: frame_label.setText(f"Frame: {frame}")
+    )
     layout.addWidget(frame_label)
+
+    # ── Full-featured timeline ──────────────────────────────────────────
+    # Marker layers + regions + in/out controls + track zoom. Hover the
+    # track and use the mouse wheel to zoom around the cursor, drag with
+    # the middle mouse button to pan, everything stays aligned.
+    layout.addWidget(
+        QLabel(
+            "Full (markers, regions, in/out, zoom -- wheel zooms the "
+            "track, MMB pans):"
+        )
+    )
+    full = FXTimelineSlider(
+        start_frame=1001,
+        end_frame=1240,
+        current_frame=1050,
+        show_loop_controls=True,
+    )
+    # A "cached frames" strip (translucent band + solid top line).
+    full.set_marker_frames(
+        "cached",
+        set(range(1020, 1081)) | set(range(1150, 1201)),
+        color="#22c55e",
+        style="strip",
+    )
+    # An "error frames" layer (dashed vertical lines).
+    full.set_marker_frames(
+        "errors", {1035, 1036, 1132, 1197}, color="#ef4444", style="line"
+    )
+    # The in/out buttons only request; the demo commits the loop region.
+    loop = {"in": None, "out": None}
+
+    def _mark(which, frame):
+        loop[which] = frame
+        if loop["in"] is not None and loop["out"] is not None:
+            full.set_loop_region(loop["in"], loop["out"])
+
+    full.in_point_requested.connect(lambda f: _mark("in", f))
+    full.out_point_requested.connect(lambda f: _mark("out", f))
+    full.set_loop_region(1040, 1120)   # preset so the region is visible
+    layout.addWidget(full)
+
+    view_label = QLabel("View: 1001-1240")
+    full.view_changed.connect(
+        lambda first, last: view_label.setText(f"View: {first}-{last}")
+    )
+    layout.addWidget(view_label)
+
+    reset_btn = QPushButton("Reset view")
+    fxicons.set_icon(reset_btn, "fit_screen")
+    reset_btn.clicked.connect(full.reset_view)
+    clear_btn = QPushButton("Clear loop")
+    fxicons.set_icon(clear_btn, "close")
+    clear_btn.clicked.connect(lambda: full.set_loop_region(None, None))
+    controls_layout = QHBoxLayout()
+    controls_layout.addWidget(reset_btn)
+    controls_layout.addWidget(clear_btn)
+    controls_layout.addStretch()
     layout.addLayout(controls_layout)
     layout.addStretch()
 
-    window.resize(600, 150)
+    window.resize(760, 300)
     window.show()
     sys.exit(app.exec())
 
