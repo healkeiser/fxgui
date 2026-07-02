@@ -176,12 +176,40 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         )
         self._start_spinbox.valueChanged.connect(self._on_start_changed)
 
+        # View-window spinboxes (flank the track, inside start/end): they
+        # display the visible frame window and, when edited, zoom the track
+        # to the typed range -- a keyboard alternative to wheel zoom.
+        self._view_start_spinbox = QSpinBox()
+        self._view_start_spinbox.setRange(-99999, 99999)
+        self._view_start_spinbox.setValue(self._start_frame)
+        self._view_start_spinbox.setFixedWidth(55)
+        self._view_start_spinbox.setKeyboardTracking(False)
+        self._view_start_spinbox_tooltip = FXTooltip(
+            parent=self._view_start_spinbox,
+            title="View Start",
+            description="First visible frame; edit to zoom the track",
+        )
+        self._view_start_spinbox.valueChanged.connect(self._on_view_spin_changed)
+
+        self._view_end_spinbox = QSpinBox()
+        self._view_end_spinbox.setRange(-99999, 99999)
+        self._view_end_spinbox.setValue(self._end_frame)
+        self._view_end_spinbox.setFixedWidth(55)
+        self._view_end_spinbox.setKeyboardTracking(False)
+        self._view_end_spinbox_tooltip = FXTooltip(
+            parent=self._view_end_spinbox,
+            title="View End",
+            description="Last visible frame; edit to zoom the track",
+        )
+        self._view_end_spinbox.valueChanged.connect(self._on_view_spin_changed)
+        self.view_changed.connect(self._sync_view_spinboxes)
+
         # Playback controls
         if show_controls:
             # Go to start
             self._goto_start_btn = QPushButton()
             fxicons.set_icon(self._goto_start_btn, "skip_previous")
-            self._goto_start_btn.setFixedSize(24, 24)
+            self._goto_start_btn.setFixedSize(28, 28)
             self._goto_start_btn.setFlat(True)
             self._goto_start_btn.clicked.connect(self.go_to_start)
             self._goto_start_btn_tooltip = FXTooltip(
@@ -194,7 +222,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             # Previous frame
             self._prev_btn = QPushButton()
             fxicons.set_icon(self._prev_btn, "chevron_left")
-            self._prev_btn.setFixedSize(24, 24)
+            self._prev_btn.setFixedSize(28, 28)
             self._prev_btn.setFlat(True)
             self._prev_btn.clicked.connect(self.previous_frame)
             self._prev_btn_tooltip = FXTooltip(
@@ -219,7 +247,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             # Next frame
             self._next_btn = QPushButton()
             fxicons.set_icon(self._next_btn, "chevron_right")
-            self._next_btn.setFixedSize(24, 24)
+            self._next_btn.setFixedSize(28, 28)
             self._next_btn.setFlat(True)
             self._next_btn.clicked.connect(self.next_frame)
             self._next_btn_tooltip = FXTooltip(
@@ -232,7 +260,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             # Go to end
             self._goto_end_btn = QPushButton()
             fxicons.set_icon(self._goto_end_btn, "skip_next")
-            self._goto_end_btn.setFixedSize(24, 24)
+            self._goto_end_btn.setFixedSize(28, 28)
             self._goto_end_btn.setFlat(True)
             self._goto_end_btn.clicked.connect(self.go_to_end)
             self._goto_end_btn_tooltip = FXTooltip(
@@ -247,7 +275,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             if show_keyframe_controls:
                 self._prev_key_btn = QPushButton()
                 fxicons.set_icon(self._prev_key_btn, "keyboard_double_arrow_left")
-                self._prev_key_btn.setFixedSize(24, 24)
+                self._prev_key_btn.setFixedSize(28, 28)
                 self._prev_key_btn.setFlat(True)
                 self._prev_key_btn.clicked.connect(self.go_to_previous_keyframe)
                 self._prev_key_btn_tooltip = FXTooltip(
@@ -258,7 +286,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
 
                 self._next_key_btn = QPushButton()
                 fxicons.set_icon(self._next_key_btn, "keyboard_double_arrow_right")
-                self._next_key_btn.setFixedSize(24, 24)
+                self._next_key_btn.setFixedSize(28, 28)
                 self._next_key_btn.setFlat(True)
                 self._next_key_btn.clicked.connect(self.go_to_next_keyframe)
                 self._next_key_btn_tooltip = FXTooltip(
@@ -276,7 +304,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 # end chevrons (first_page/last_page were near-identical).
                 self._mark_in_btn = QPushButton()
                 fxicons.set_icon(self._mark_in_btn, "login")
-                self._mark_in_btn.setFixedSize(24, 24)
+                self._mark_in_btn.setFixedSize(28, 28)
                 self._mark_in_btn.setFlat(True)
                 self._mark_in_btn.clicked.connect(
                     lambda: self.in_point_requested.emit(self._current_frame)
@@ -290,7 +318,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
 
                 self._mark_out_btn = QPushButton()
                 fxicons.set_icon(self._mark_out_btn, "logout")
-                self._mark_out_btn.setFixedSize(24, 24)
+                self._mark_out_btn.setFixedSize(28, 28)
                 self._mark_out_btn.setFlat(True)
                 self._mark_out_btn.clicked.connect(
                     lambda: self.out_point_requested.emit(self._current_frame)
@@ -360,7 +388,9 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             track_row = QHBoxLayout()
             track_row.setSpacing(8)
             track_row.addWidget(self._start_spinbox)
+            track_row.addWidget(self._view_start_spinbox)
             track_row.addWidget(self._track_widget, 1)
+            track_row.addWidget(self._view_end_spinbox)
             track_row.addWidget(self._end_spinbox)
             root.addLayout(track_row)
 
@@ -369,25 +399,16 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             controls_row.addWidget(self._fps_spinbox)
             controls_row.addStretch(1)
             if show_controls:
-                # Uniform button sizes in the centered row: the mixed
-                # 24/28px sizing of the single-row layout reads uneven here.
-                for btn in (
-                    self._goto_start_btn,
-                    self._prev_btn,
-                    self._next_btn,
-                    self._goto_end_btn,
-                    getattr(self, "_prev_key_btn", None),
-                    getattr(self, "_next_key_btn", None),
-                    getattr(self, "_mark_in_btn", None),
-                    getattr(self, "_mark_out_btn", None),
-                ):
-                    if btn is not None:
-                        btn.setFixedSize(28, 28)
-                if show_keyframe_controls:
-                    controls_row.addWidget(self._prev_key_btn)
+                # Mirror-symmetric around the frame spinbox: each button
+                # pairs with its counterpart at the same distance from the
+                # center (in/out outermost, then goto start/end, keyframe
+                # nav, prev/next innermost). Play is the odd one out and
+                # sits Nuke-style right of the field.
                 if show_loop_controls:
                     controls_row.addWidget(self._mark_in_btn)
                 controls_row.addWidget(self._goto_start_btn)
+                if show_keyframe_controls:
+                    controls_row.addWidget(self._prev_key_btn)
                 controls_row.addWidget(self._prev_btn)
                 if show_spinbox:
                     controls_row.addWidget(self._spinbox)
@@ -427,6 +448,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                     controls_layout.addWidget(self._mark_in_btn)
                     controls_layout.addWidget(self._mark_out_btn)
                 main_layout.addLayout(controls_layout)
+            # The view-window spinboxes only ship in the stacked layout:
+            # the single row is already dense and wheel zoom covers it.
+            for spinbox in (self._view_start_spinbox, self._view_end_spinbox):
+                spinbox.setParent(self)
+                spinbox.hide()
             main_layout.addWidget(self._track_widget, 1)
             if show_spinbox:
                 main_layout.addWidget(self._spinbox)
@@ -516,6 +542,25 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._view_start = self._view_end = None
         self._track_widget.update()
         self.view_changed.emit(self._start_frame, self._end_frame)
+
+    def _on_view_spin_changed(self, _value: int) -> None:
+        """View spinbox edited: zoom the track to the typed window."""
+        self.set_view_range(
+            self._view_start_spinbox.value(), self._view_end_spinbox.value()
+        )
+        # set_view_range clamps (and skips the signal when nothing changed):
+        # always reflect the effective window back into the spinboxes.
+        self._sync_view_spinboxes(*self.view_range)
+
+    def _sync_view_spinboxes(self, first: int, last: int) -> None:
+        """Reflect the visible window into the view spinboxes (no re-emit)."""
+        for spinbox, value in (
+            (self._view_start_spinbox, first),
+            (self._view_end_spinbox, last),
+        ):
+            spinbox.blockSignals(True)
+            spinbox.setValue(value)
+            spinbox.blockSignals(False)
 
     def set_marker_frames(
         self,
@@ -654,6 +699,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         if self._view_start is not None or self._view_end is not None:
             self._view_start = self._view_end = None
             self.view_changed.emit(start, end)
+        self._sync_view_spinboxes(*self.view_range)
         self._track_widget.update()
 
     def set_fps(self, fps: int) -> None:
@@ -796,6 +842,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
 class _TimelineTrack(QWidget):
     """Internal widget for drawing the timeline track."""
 
+    # Horizontal inset for the frame<->x mapping: marks at the first/last
+    # frame (ticks, keyframe diamonds, the playhead handle) would otherwise
+    # be cut in half at the widget edges.
+    EDGE_PAD = 6
+
     def __init__(self, timeline: FXTimelineSlider):
         super().__init__(timeline)
         self._timeline = timeline
@@ -824,15 +875,18 @@ class _TimelineTrack(QWidget):
         painter.drawRoundedRect(0, track_y, width, track_height, 3, 3)
 
         # Calculate frame-to-pixel conversion over the visible window
-        # (equals the full range unless the track is zoomed).
+        # (equals the full range unless the track is zoomed). The mapping is
+        # inset by EDGE_PAD so first/last-frame marks aren't clipped.
         view_first, view_last = self._timeline.view_range
         frame_range = view_last - view_first
         if frame_range <= 0:
             frame_range = 1
+        pad = self.EDGE_PAD
+        usable = max(1, width - 2 * pad)
 
         def frame_to_x(frame: int) -> float:
             ratio = (frame - view_first) / frame_range
-            return ratio * width
+            return pad + ratio * usable
 
         # Draw frame tick marks crossing the track (both sides). Major
         # ticks are longer and more visible than minor ones.
@@ -1050,10 +1104,9 @@ class _TimelineTrack(QWidget):
 
     def _set_hover_from_x(self, x: int) -> None:
         """Track the hovered frame for the crosshair-style indicator."""
-        width = self.width()
-        if width <= 0:
+        if self.width() <= 0:
             return
-        ratio = max(0.0, min(1.0, x / width))
+        ratio = self._x_to_ratio(x)
         view_first, view_last = self._timeline.view_range
         frame = int(round(view_first + ratio * (view_last - view_first)))
         if frame != self._hover_frame:
@@ -1068,13 +1121,18 @@ class _TimelineTrack(QWidget):
             self._pan_last_x = None
             self.setCursor(Qt.PointingHandCursor)
 
+    def _x_to_ratio(self, x: float) -> float:
+        """Map a widget x to the 0..1 track ratio (EDGE_PAD-inset, like
+        the paint mapping -- keeps clicks and marks aligned)."""
+        usable = max(1, self.width() - 2 * self.EDGE_PAD)
+        return max(0.0, min(1.0, (x - self.EDGE_PAD) / usable))
+
     def wheelEvent(self, event) -> None:
         """Zoom the visible frame window around the cursor."""
         delta = event.angleDelta().y()
         if delta == 0:
             event.ignore()
             return
-        width = max(1, self.width())
         # QWheelEvent position: Qt6 position(), Qt5 pos().
         x = (
             event.position().x()
@@ -1085,7 +1143,7 @@ class _TimelineTrack(QWidget):
         span = last - first
         factor = 0.8 if delta > 0 else 1.25
         new_span = span * factor
-        ratio = max(0.0, min(1.0, x / width))
+        ratio = self._x_to_ratio(x)
         anchor = first + ratio * span
         new_first = anchor - ratio * new_span
         self._timeline.set_view_range(
@@ -1095,10 +1153,10 @@ class _TimelineTrack(QWidget):
 
     def _pan_view(self, x: int) -> None:
         """Translate the zoomed window by the cursor delta (in frames)."""
-        width = max(1, self.width())
+        usable = max(1, self.width() - 2 * self.EDGE_PAD)
         first, last = self._timeline.view_range
         span = last - first
-        self._pan_accum += (self._pan_last_x - x) * span / width
+        self._pan_accum += (self._pan_last_x - x) * span / usable
         self._pan_last_x = x
         shift = int(round(self._pan_accum))
         if shift:
@@ -1107,11 +1165,9 @@ class _TimelineTrack(QWidget):
 
     def _update_frame_from_mouse(self, x: int) -> None:
         """Update frame based on mouse position (view-window mapping)."""
-        width = self.width()
-        if width <= 0:
+        if self.width() <= 0:
             return
-
-        ratio = max(0.0, min(1.0, x / width))
+        ratio = self._x_to_ratio(x)
         view_first, view_last = self._timeline.view_range
         frame = int(round(view_first + ratio * (view_last - view_first)))
         self._timeline.set_frame(frame)
