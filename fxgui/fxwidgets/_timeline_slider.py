@@ -5,7 +5,7 @@ from bisect import bisect_left, bisect_right
 from typing import List, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QPointF, Qt, Signal, QTimer
+from qtpy.QtCore import QEvent, QPointF, Qt, Signal, QTimer
 from qtpy.QtGui import QColor, QMouseEvent, QPainter, QPen, QPolygonF
 from qtpy.QtWidgets import (
     QHBoxLayout,
@@ -513,14 +513,8 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         appended at the far right.
         """
         self._extra_controls_layout.addWidget(widget)
-        # Balance now AND on the next event-loop pass: a widget added while
-        # the timeline is already visible stays hidden until the layout
-        # shows it (next pass), and layouts skip hidden widgets in
-        # sizeHint -- measuring only now would read 0 for it. `self` as the
-        # timer context cancels the callback if the widget is destroyed
-        # first (a bare bound method would fire on a dead C++ object).
-        self._balance_controls_row()
-        QTimer.singleShot(0, self, self._balance_controls_row)
+        # No explicit re-balance: addWidget invalidates the layout, which
+        # posts a LayoutRequest -- handled in event() below.
 
     def _balance_controls_row(self) -> None:
         """Keep the stacked transport cluster truly centered.
@@ -539,13 +533,23 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         left_w = self._fps_spinbox.sizeHint().width()
         right_w = container_layout.sizeHint().width()
         delta = right_w - left_w
-        self._left_balance.setFixedWidth(max(0, delta))
-        self._right_balance.setFixedWidth(max(0, -delta))
+        left_pad, right_pad = max(0, delta), max(0, -delta)
+        # Only write on change: setFixedWidth invalidates the layout and
+        # would re-post LayoutRequest forever otherwise.
+        if self._left_balance.minimumWidth() != left_pad:
+            self._left_balance.setFixedWidth(left_pad)
+        if self._right_balance.minimumWidth() != right_pad:
+            self._right_balance.setFixedWidth(right_pad)
 
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        # Size hints are only reliable once polished: re-balance on show.
-        self._balance_controls_row()
+    def event(self, event) -> bool:
+        handled = super().event(event)
+        if event.type() == QEvent.LayoutRequest:
+            # Balance AFTER the base class activated the layout (activation
+            # shows freshly added children; hidden widgets measure 0). Any
+            # pad change re-posts a LayoutRequest, which converges on the
+            # no-op write guard in _balance_controls_row.
+            self._balance_controls_row()
+        return handled
 
     def _on_theme_changed(self, _theme_name: str = None) -> None:
         """Handle theme changes."""
