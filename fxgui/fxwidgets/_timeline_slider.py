@@ -104,10 +104,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
     # Smallest zoomable window, in frames.
     MIN_VIEW_SPAN = 2
     # Marker rendering: fill alphas match a 1px solid line + translucent
-    # fill look (region fill / strip fill).
+    # fill look (region fill / strip fill). Everything on the track is
+    # 1px; emphasis comes from length/brightness, not thickness.
     REGION_FILL_ALPHA = 50
     STRIP_FILL_ALPHA = 80
-    STRIP_HEIGHT = 4
+    STRIP_HEIGHT = 3
 
     def __init__(
         self,
@@ -799,7 +800,7 @@ class _TimelineTrack(QWidget):
             painter.drawRect(x0, 0, max(1, x1 - x0), height)
             if region.get("brackets"):
                 stub = 5
-                painter.setPen(QPen(region_color, 2))
+                painter.setPen(QPen(region_color, 1))
                 if r_start >= view_first:
                     painter.drawLine(x0, 1, x0, height - 1)
                     painter.drawLine(x0, 1, x0 + stub, 1)
@@ -872,7 +873,7 @@ class _TimelineTrack(QWidget):
 
             glow = QColor(playhead_color)
             glow.setAlpha(70)
-            painter.setPen(QPen(glow, 5))
+            painter.setPen(QPen(glow, 3))
             painter.drawLine(playhead_x, 0, playhead_x, height)
             painter.setPen(QPen(playhead_color, 1))
             painter.drawLine(playhead_x, 0, playhead_x, height)
@@ -882,12 +883,12 @@ class _TimelineTrack(QWidget):
             from qtpy.QtGui import QPolygonF
             from qtpy.QtCore import QPointF
 
-            painter.drawRoundedRect(playhead_x - 4, 0, 9, 5, 2, 2)
+            painter.drawRoundedRect(playhead_x - 3, 0, 7, 4, 2, 2)
             handle = QPolygonF(
                 [
-                    QPointF(playhead_x - 4, 4),
-                    QPointF(playhead_x + 5, 4),
-                    QPointF(playhead_x + 0.5, 10),
+                    QPointF(playhead_x - 3, 3),
+                    QPointF(playhead_x + 4, 3),
+                    QPointF(playhead_x + 0.5, 9),
                 ]
             )
             painter.drawPolygon(handle)
