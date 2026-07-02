@@ -55,6 +55,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
     - Optional in/out controls (`show_loop_controls`): bracket buttons that
       request marking the current frame as loop in/out point; the consumer
       decides what marking does and typically calls `set_loop_region`.
+    - Optional keyframe navigation (`show_keyframe_controls`): buttons
+      jumping to the nearest keyframe before/after the current frame
+      (`go_to_previous_keyframe` / `go_to_next_keyframe`).
+    - Hover indicator: a crosshair-style line with the hovered frame
+      number, cleared when the cursor leaves the track.
 
     Args:
         parent: Parent widget.
@@ -65,6 +70,8 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         show_controls: Whether to show playback controls.
         show_spinbox: Whether to show the frame spinbox.
         show_loop_controls: Whether to show the mark-in/mark-out buttons.
+        show_keyframe_controls: Whether to show the previous/next-keyframe
+            navigation buttons.
 
     Signals:
         frame_changed: Emitted when the current frame changes.
@@ -112,6 +119,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         show_controls: bool = True,
         show_spinbox: bool = True,
         show_loop_controls: bool = False,
+        show_keyframe_controls: bool = False,
     ):
         super().__init__(parent)
 
@@ -232,6 +240,33 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 shortcut="End",
             )
             controls_layout.addWidget(self._goto_end_btn)
+
+            # Keyframe navigation (opt-in): jump to the nearest keyframe
+            # before/after the current frame.
+            if show_keyframe_controls:
+                self._prev_key_btn = QPushButton()
+                fxicons.set_icon(self._prev_key_btn, "keyboard_double_arrow_left")
+                self._prev_key_btn.setFixedSize(24, 24)
+                self._prev_key_btn.setFlat(True)
+                self._prev_key_btn.clicked.connect(self.go_to_previous_keyframe)
+                self._prev_key_btn_tooltip = FXTooltip(
+                    parent=self._prev_key_btn,
+                    title="Previous Keyframe",
+                    description="Jump to the nearest keyframe before",
+                )
+                controls_layout.addWidget(self._prev_key_btn)
+
+                self._next_key_btn = QPushButton()
+                fxicons.set_icon(self._next_key_btn, "keyboard_double_arrow_right")
+                self._next_key_btn.setFixedSize(24, 24)
+                self._next_key_btn.setFlat(True)
+                self._next_key_btn.clicked.connect(self.go_to_next_keyframe)
+                self._next_key_btn_tooltip = FXTooltip(
+                    parent=self._next_key_btn,
+                    title="Next Keyframe",
+                    description="Jump to the nearest keyframe after",
+                )
+                controls_layout.addWidget(self._next_key_btn)
 
             # Mark in / mark out (opt-in). The widget only requests: the
             # consumer decides what marking means (typically it ends up
@@ -577,6 +612,20 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._keyframes.clear()
         self._track_widget.update()
 
+    def go_to_previous_keyframe(self) -> None:
+        """Jump to the nearest keyframe before the current frame (no-op if
+        there is none)."""
+        previous = [k for k in self._keyframes if k < self._current_frame]
+        if previous:
+            self.set_frame(max(previous))
+
+    def go_to_next_keyframe(self) -> None:
+        """Jump to the nearest keyframe after the current frame (no-op if
+        there is none)."""
+        following = [k for k in self._keyframes if k > self._current_frame]
+        if following:
+            self.set_frame(min(following))
+
     def go_to_start(self) -> None:
         """Go to the start frame."""
         self.set_frame(self._start_frame)
@@ -642,6 +691,8 @@ class _TimelineTrack(QWidget):
         # drags still move the window one frame at a time).
         self._pan_last_x: Optional[int] = None
         self._pan_accum = 0.0
+        # Hovered frame (crosshair-style indicator), None when outside.
+        self._hover_frame: Optional[int] = None
 
     def paintEvent(self, event) -> None:
         """Paint the timeline track."""
@@ -669,12 +720,14 @@ class _TimelineTrack(QWidget):
             ratio = (frame - view_first) / frame_range
             return ratio * width
 
-        # Draw frame tick marks
-        tick_color = QColor(self._timeline._text_color)
-        tick_color.setAlpha(80)
-        tick_pen = QPen(tick_color)
-        tick_pen.setWidth(1)
-        painter.setPen(tick_pen)
+        # Draw frame tick marks crossing the track (both sides). Major
+        # ticks are longer and more visible than minor ones.
+        minor_color = QColor(self._timeline._text_color)
+        minor_color.setAlpha(60)
+        major_color = QColor(self._timeline._text_color)
+        major_color.setAlpha(170)
+        minor_pen = QPen(minor_color, 1)
+        major_pen = QPen(major_color, 1)
 
         # Determine tick spacing based on frame range and width
         pixels_per_frame = width / max(1, frame_range)
@@ -689,15 +742,19 @@ class _TimelineTrack(QWidget):
 
         for frame in range(view_first, view_last + 1):
             if (frame - view_first) % tick_interval == 0:
-                x = frame_to_x(frame)
+                x = int(frame_to_x(frame))
                 # Major tick every 10 frames, minor otherwise
                 is_major = (
                     (frame - view_first) % (tick_interval * 5) == 0
                     or frame == view_first
                     or frame == view_last
                 )
-                tick_height = 6 if is_major else 3
-                painter.drawLine(int(x), track_y - tick_height, int(x), track_y)
+                tick_extent = 5 if is_major else 2
+                painter.setPen(major_pen if is_major else minor_pen)
+                painter.drawLine(
+                    x, track_y - tick_extent,
+                    x, track_y + track_height + tick_extent,
+                )
 
         # Named regions: translucent fill + 1px solid edge lines (graph
         # linear-region look). Under markers and playhead.
@@ -762,32 +819,60 @@ class _TimelineTrack(QWidget):
                 painter.drawPolygon(polygon)
 
         # Draw playhead (skip when scrolled out of the visible window)
-        if not (view_first <= self._timeline._current_frame <= view_last):
-            painter.end()
-            return
-        playhead_x = frame_to_x(self._timeline._current_frame)
+        if view_first <= self._timeline._current_frame <= view_last:
+            playhead_x = frame_to_x(self._timeline._current_frame)
 
-        # Playhead line
-        pen = QPen(self._timeline._playhead_color)
-        pen.setWidth(2)
-        painter.setPen(pen)
-        painter.drawLine(int(playhead_x), 0, int(playhead_x), height)
+            # Playhead line
+            pen = QPen(self._timeline._playhead_color)
+            pen.setWidth(2)
+            painter.setPen(pen)
+            painter.drawLine(int(playhead_x), 0, int(playhead_x), height)
 
-        # Playhead handle (triangle at top)
-        painter.setBrush(self._timeline._playhead_color)
-        painter.setPen(Qt.NoPen)
-        handle_size = 8
-        from qtpy.QtGui import QPolygonF
-        from qtpy.QtCore import QPointF
+            # Playhead handle (triangle at top)
+            painter.setBrush(self._timeline._playhead_color)
+            painter.setPen(Qt.NoPen)
+            handle_size = 8
+            from qtpy.QtGui import QPolygonF
+            from qtpy.QtCore import QPointF
 
-        handle = QPolygonF(
-            [
-                QPointF(playhead_x - handle_size // 2, 0),
-                QPointF(playhead_x + handle_size // 2, 0),
-                QPointF(playhead_x, handle_size),
-            ]
-        )
-        painter.drawPolygon(handle)
+            handle = QPolygonF(
+                [
+                    QPointF(playhead_x - handle_size // 2, 0),
+                    QPointF(playhead_x + handle_size // 2, 0),
+                    QPointF(playhead_x, handle_size),
+                ]
+            )
+            painter.drawPolygon(handle)
+
+        # Hover indicator: a muted vertical line at the hovered frame with
+        # its number in a small label, like a graph crosshair.
+        if (
+            self._hover_frame is not None
+            and view_first <= self._hover_frame <= view_last
+        ):
+            hover_x = int(frame_to_x(self._hover_frame))
+            hover_color = QColor(self._timeline._text_color)
+            hover_color.setAlpha(110)
+            painter.setPen(QPen(hover_color, 1))
+            painter.drawLine(hover_x, 0, hover_x, height)
+
+            font = painter.font()
+            font.setPixelSize(9)
+            painter.setFont(font)
+            text = str(self._hover_frame)
+            metrics = painter.fontMetrics()
+            text_w = metrics.horizontalAdvance(text)
+            # Beside the line, flipped near the right edge, dark backdrop.
+            label_x = hover_x + 5
+            if label_x + text_w + 6 > width:
+                label_x = hover_x - text_w - 9
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(0, 0, 0, 160))
+            painter.drawRoundedRect(
+                label_x - 2, 1, text_w + 6, metrics.height() + 1, 3, 3
+            )
+            painter.setPen(QColor(self._timeline._text_color))
+            painter.drawText(label_x + 1, metrics.ascent() + 2, text)
 
         painter.end()
 
@@ -802,12 +887,32 @@ class _TimelineTrack(QWidget):
             self.setCursor(Qt.ClosedHandCursor)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse move for scrubbing or panning."""
+        """Handle mouse move for scrubbing, panning, and hover tracking."""
         if self._pan_last_x is not None:
             self._pan_view(event.x())
             return
+        self._set_hover_from_x(event.x())
         if self._timeline._is_dragging:
             self._update_frame_from_mouse(event.x())
+
+    def leaveEvent(self, event) -> None:
+        """Clear the hover indicator when the cursor leaves the track."""
+        if self._hover_frame is not None:
+            self._hover_frame = None
+            self.update()
+        super().leaveEvent(event)
+
+    def _set_hover_from_x(self, x: int) -> None:
+        """Track the hovered frame for the crosshair-style indicator."""
+        width = self.width()
+        if width <= 0:
+            return
+        ratio = max(0.0, min(1.0, x / width))
+        view_first, view_last = self._timeline.view_range
+        frame = int(round(view_first + ratio * (view_last - view_first)))
+        if frame != self._hover_frame:
+            self._hover_frame = frame
+            self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Handle mouse release."""

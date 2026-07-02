@@ -1176,10 +1176,11 @@ def _create_timeline_tab() -> QWidget:
     layout.setSpacing(12)
 
     # ── Basic: keyframes only ────────────────────────────────────────────
-    basic_group = QGroupBox("Basic (keyframes)")
+    basic_group = QGroupBox("Basic (keyframes + keyframe navigation)")
     basic_layout = QVBoxLayout(basic_group)
     timeline = fxwidgets.FXTimelineSlider(
-        start_frame=1, end_frame=120, current_frame=1
+        start_frame=1, end_frame=120, current_frame=1,
+        show_keyframe_controls=True,
     )
     for key in (1, 30, 60, 90, 120):
         timeline.add_keyframe(key)
