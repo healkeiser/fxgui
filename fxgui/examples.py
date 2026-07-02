@@ -1164,6 +1164,98 @@ def _create_widgets_tab() -> QWidget:
     return container
 
 
+def _create_timeline_tab() -> QWidget:
+    """Create the Timeline demonstration tab.
+
+    Shows FXTimelineSlider from basic to full-featured: keyframes, named
+    marker layers (strip + line styles), a loop region, in/out controls,
+    and track zoom (wheel around the cursor, middle-mouse pan, reset).
+    """
+    tab = QWidget()
+    layout = QVBoxLayout(tab)
+    layout.setSpacing(12)
+
+    # ── Basic: keyframes only ────────────────────────────────────────────
+    basic_group = QGroupBox("Basic (keyframes)")
+    basic_layout = QVBoxLayout(basic_group)
+    timeline = fxwidgets.FXTimelineSlider(
+        start_frame=1, end_frame=120, current_frame=1
+    )
+    for key in (1, 30, 60, 90, 120):
+        timeline.add_keyframe(key)
+    basic_layout.addWidget(timeline)
+
+    frame_label = QLabel("Frame: 1")
+    timeline.frame_changed.connect(
+        lambda frame: frame_label.setText(f"Frame: {frame}")
+    )
+    basic_layout.addWidget(frame_label)
+    layout.addWidget(basic_group)
+
+    # ── Full-featured ────────────────────────────────────────────────────
+    full_group = QGroupBox(
+        "Full (marker layers, loop region, in/out, track zoom)"
+    )
+    full_layout = QVBoxLayout(full_group)
+    hint = QLabel(
+        "Wheel over the track zooms around the cursor, middle-mouse drag "
+        "pans, everything stays aligned. The green strip is a 'cached' "
+        "marker layer, the red dashes an 'errors' layer, the blue range a "
+        "loop region driven by the [ ] in/out buttons."
+    )
+    hint.setWordWrap(True)
+    full_layout.addWidget(hint)
+
+    full = fxwidgets.FXTimelineSlider(
+        start_frame=1001,
+        end_frame=1240,
+        current_frame=1050,
+        show_loop_controls=True,
+    )
+    full.set_marker_frames(
+        "cached",
+        set(range(1020, 1081)) | set(range(1150, 1201)),
+        color="#22c55e",
+        style="strip",
+    )
+    full.set_marker_frames(
+        "errors", {1035, 1036, 1132, 1197}, color="#ef4444", style="line"
+    )
+    # The in/out buttons only request; the demo commits the loop region.
+    loop = {"in": None, "out": None}
+
+    def _mark(which, frame):
+        loop[which] = frame
+        if loop["in"] is not None and loop["out"] is not None:
+            full.set_loop_region(loop["in"], loop["out"])
+
+    full.in_point_requested.connect(lambda frame: _mark("in", frame))
+    full.out_point_requested.connect(lambda frame: _mark("out", frame))
+    full.set_loop_region(1040, 1120)   # preset so the region is visible
+    full_layout.addWidget(full)
+
+    view_label = QLabel("View: 1001-1240")
+    full.view_changed.connect(
+        lambda first, last: view_label.setText(f"View: {first}-{last}")
+    )
+    full_layout.addWidget(view_label)
+
+    buttons_layout = QHBoxLayout()
+    reset_btn = QPushButton("Reset view")
+    set_icon(reset_btn, "fit_screen")
+    reset_btn.clicked.connect(full.reset_view)
+    clear_btn = QPushButton("Clear loop")
+    set_icon(clear_btn, "close")
+    clear_btn.clicked.connect(lambda: full.set_loop_region(None, None))
+    buttons_layout.addWidget(reset_btn)
+    buttons_layout.addWidget(clear_btn)
+    buttons_layout.addStretch()
+    full_layout.addLayout(buttons_layout)
+    layout.addWidget(full_group)
+    layout.addStretch()
+    return tab
+
+
 def main():
     """Main showcase application demonstrating fxgui capabilities.
 
@@ -1243,6 +1335,7 @@ def main():
     tabs.addTab(_create_theme_awareness_tab(), "Theme Awareness")
     tabs.addTab(_create_delegates_tab(), "Delegates")
     tabs.addTab(_create_widgets_tab(), "Widgets")
+    tabs.addTab(_create_timeline_tab(), "Timeline")
 
     central_layout.addWidget(tabs)
     window.setCentralWidget(central_widget)
