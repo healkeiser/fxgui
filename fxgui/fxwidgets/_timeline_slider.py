@@ -148,6 +148,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._playhead_color = None
         self._keyframe_color = QColor("#ff9800")
         self._text_color = None
+        self._label_bg_color = None
 
         # Main layout
         main_layout = QHBoxLayout(self)
@@ -356,6 +357,9 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._track_color = QColor(self.theme.surface_alt)
         self._playhead_color = QColor(self.theme.accent_primary)
         self._text_color = QColor(self.theme.text)
+        # Backdrop for the hover-frame label (never hardcode black/white:
+        # it must stay readable on both dark and light themes).
+        self._label_bg_color = QColor(self.theme.surface_sunken)
 
         # Trigger repaint of track widget
         if hasattr(self, "_track_widget"):
@@ -423,7 +427,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self,
         name: str,
         frames,
-        color: str = "#ef4444",
+        color: Optional[str] = None,
         style: str = "line",
     ) -> None:
         """Set (or replace) a named marker layer painted on the track.
@@ -435,7 +439,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         Args:
             name: Layer identifier; setting the same name replaces it.
             frames: Iterable of frame numbers. Empty removes the layer.
-            color: Marker color (any QColor-compatible value).
+            color: Marker color (any QColor-compatible value). None follows
+                the theme accent, resolved at paint time so theme switches
+                recolor it. For semantic colors, pick from
+                `fxstyle.get_feedback_colors()` (theme-aware) rather than
+                hardcoding hex values.
             style: "line" for 1px vertical lines at each frame, or "strip"
                 for a translucent band along the top edge with a 1px solid
                 top line over contiguous frame runs.
@@ -448,7 +456,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             return
         self._marker_layers[name] = {
             "frames": frames,
-            "color": QColor(color),
+            "color": QColor(color) if color is not None else None,
             "style": style,
         }
         self._track_widget.update()
@@ -459,7 +467,12 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             self._track_widget.update()
 
     def set_region(
-        self, name: str, start: int, end: int, color: str = "#5278e0"
+        self,
+        name: str,
+        start: int,
+        end: int,
+        color: Optional[str] = None,
+        bracket_edges: bool = False,
     ) -> None:
         """Set (or replace) a named frame region painted on the track.
 
@@ -470,12 +483,19 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             name: Region identifier; setting the same name replaces it.
             start: First frame of the region.
             end: Last frame of the region.
-            color: Region color (edges solid, fill translucent).
+            color: Region color (edges solid, fill translucent). None
+                follows the theme accent, resolved at paint time so theme
+                switches recolor it.
+            bracket_edges: Render the edges as bold [ ] brackets instead of
+                plain lines -- a zero-width region then still reads as a
+                clear I-beam marker (used by set_loop_region so a lone
+                in/out point is visible).
         """
         self._regions[name] = {
             "start": int(min(start, end)),
             "end": int(max(start, end)),
-            "color": QColor(color),
+            "color": QColor(color) if color is not None else None,
+            "brackets": bool(bracket_edges),
         }
         self._track_widget.update()
 
@@ -488,7 +508,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self,
         start: Optional[int],
         end: Optional[int],
-        color: str = "#5278e0",
+        color: Optional[str] = None,
     ) -> None:
         """Show the loop in/out range on the track (None, None clears).
 
@@ -498,7 +518,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         if start is None or end is None:
             self.clear_region("loop")
             return
-        self.set_region("loop", start, end, color)
+        self.set_region("loop", start, end, color, bracket_edges=True)
 
     def set_frame(self, frame: int, emit: bool = True) -> None:
         """Set the current frame.
@@ -756,35 +776,60 @@ class _TimelineTrack(QWidget):
                     x, track_y + track_height + tick_extent,
                 )
 
-        # Named regions: translucent fill + 1px solid edge lines (graph
-        # linear-region look). Under markers and playhead.
+        # Named regions: translucent fill + edge lines (graph linear-region
+        # look). Bracket-edged regions get bold [ ] edges so a zero-width
+        # region (a lone in/out point) still reads clearly.
         for region in self._timeline._regions.values():
             r_start, r_end = region["start"], region["end"]
             if r_end < view_first or r_start > view_last:
                 continue
-            x0 = frame_to_x(max(r_start, view_first))
-            x1 = frame_to_x(min(r_end, view_last))
-            fill = QColor(region["color"])
+            x0 = int(frame_to_x(max(r_start, view_first)))
+            x1 = int(frame_to_x(min(r_end, view_last)))
+            # None follows the theme accent (resolved per paint so theme
+            # switches recolor without re-setting the region).
+            region_color = (
+                region["color"]
+                if region["color"] is not None
+                else self._timeline._playhead_color
+            )
+            fill = QColor(region_color)
             fill.setAlpha(self._timeline.REGION_FILL_ALPHA)
             painter.setPen(Qt.NoPen)
             painter.setBrush(fill)
-            painter.drawRect(int(x0), 0, max(1, int(x1 - x0)), height)
-            painter.setPen(QPen(region["color"], 1))
-            if r_start >= view_first:
-                painter.drawLine(int(x0), 0, int(x0), height)
-            if r_end <= view_last:
-                painter.drawLine(int(x1), 0, int(x1), height)
+            painter.drawRect(x0, 0, max(1, x1 - x0), height)
+            if region.get("brackets"):
+                stub = 5
+                painter.setPen(QPen(region_color, 2))
+                if r_start >= view_first:
+                    painter.drawLine(x0, 1, x0, height - 1)
+                    painter.drawLine(x0, 1, x0 + stub, 1)
+                    painter.drawLine(x0, height - 1, x0 + stub, height - 1)
+                if r_end <= view_last:
+                    painter.drawLine(x1, 1, x1, height - 1)
+                    painter.drawLine(x1 - stub, 1, x1, 1)
+                    painter.drawLine(x1 - stub, height - 1, x1, height - 1)
+            else:
+                painter.setPen(QPen(region_color, 1))
+                if r_start >= view_first:
+                    painter.drawLine(x0, 0, x0, height)
+                if r_end <= view_last:
+                    painter.drawLine(x1, 0, x1, height)
 
-        # Named marker layers.
+        # Named marker layers. None colors follow the theme accent.
         for layer in self._timeline._marker_layers.values():
+            layer_color = (
+                layer["color"]
+                if layer["color"] is not None
+                else self._timeline._playhead_color
+            )
             if layer["style"] == "line":
-                painter.setPen(QPen(layer["color"], 1, Qt.DashLine))
+                painter.setPen(QPen(layer_color, 1, Qt.DashLine))
                 for frame in layer["frames"]:
                     if view_first <= frame <= view_last:
                         x = int(frame_to_x(frame))
                         painter.drawLine(x, 0, x, height)
             else:  # strip: translucent top band + 1px solid top line
-                fill = QColor(layer["color"])
+                fill = QColor(layer_color)
                 fill.setAlpha(self._timeline.STRIP_FILL_ALPHA)
                 strip_h = self._timeline.STRIP_HEIGHT
                 for run_start, run_end in _coalesce_runs(layer["frames"]):
@@ -818,28 +863,31 @@ class _TimelineTrack(QWidget):
                 polygon = QPolygonF([QPointF(p[0], p[1]) for p in points])
                 painter.drawPolygon(polygon)
 
-        # Draw playhead (skip when scrolled out of the visible window)
+        # Draw playhead (skip when scrolled out of the visible window):
+        # a crisp 1px core over a soft glow, topped by a tag-style handle
+        # (rounded cap tapering to a point) instead of a fat plain line.
         if view_first <= self._timeline._current_frame <= view_last:
-            playhead_x = frame_to_x(self._timeline._current_frame)
+            playhead_x = int(frame_to_x(self._timeline._current_frame))
+            playhead_color = QColor(self._timeline._playhead_color)
 
-            # Playhead line
-            pen = QPen(self._timeline._playhead_color)
-            pen.setWidth(2)
-            painter.setPen(pen)
-            painter.drawLine(int(playhead_x), 0, int(playhead_x), height)
+            glow = QColor(playhead_color)
+            glow.setAlpha(70)
+            painter.setPen(QPen(glow, 5))
+            painter.drawLine(playhead_x, 0, playhead_x, height)
+            painter.setPen(QPen(playhead_color, 1))
+            painter.drawLine(playhead_x, 0, playhead_x, height)
 
-            # Playhead handle (triangle at top)
-            painter.setBrush(self._timeline._playhead_color)
+            painter.setBrush(playhead_color)
             painter.setPen(Qt.NoPen)
-            handle_size = 8
             from qtpy.QtGui import QPolygonF
             from qtpy.QtCore import QPointF
 
+            painter.drawRoundedRect(playhead_x - 4, 0, 9, 5, 2, 2)
             handle = QPolygonF(
                 [
-                    QPointF(playhead_x - handle_size // 2, 0),
-                    QPointF(playhead_x + handle_size // 2, 0),
-                    QPointF(playhead_x, handle_size),
+                    QPointF(playhead_x - 4, 4),
+                    QPointF(playhead_x + 5, 4),
+                    QPointF(playhead_x + 0.5, 10),
                 ]
             )
             painter.drawPolygon(handle)
@@ -862,12 +910,16 @@ class _TimelineTrack(QWidget):
             text = str(self._hover_frame)
             metrics = painter.fontMetrics()
             text_w = metrics.horizontalAdvance(text)
-            # Beside the line, flipped near the right edge, dark backdrop.
+            # Beside the line, flipped near the right edge. The backdrop is
+            # the theme's sunken surface (a hardcoded black would be
+            # unreadable on light themes).
             label_x = hover_x + 5
             if label_x + text_w + 6 > width:
                 label_x = hover_x - text_w - 9
+            backdrop = QColor(self._timeline._label_bg_color)
+            backdrop.setAlpha(220)
             painter.setPen(Qt.NoPen)
-            painter.setBrush(QColor(0, 0, 0, 160))
+            painter.setBrush(backdrop)
             painter.drawRoundedRect(
                 label_x - 2, 1, text_w + 6, metrics.height() + 1, 3, 3
             )
