@@ -271,8 +271,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             # consumer decides what marking means (typically it ends up
             # calling set_loop_region).
             if show_loop_controls:
+                # login/logout: arrow-into-bracket glyphs read as entering/
+                # leaving the range and stay distinct from the go-to-start/
+                # end chevrons (first_page/last_page were near-identical).
                 self._mark_in_btn = QPushButton()
-                fxicons.set_icon(self._mark_in_btn, "first_page")
+                fxicons.set_icon(self._mark_in_btn, "login")
                 self._mark_in_btn.setFixedSize(24, 24)
                 self._mark_in_btn.setFlat(True)
                 self._mark_in_btn.clicked.connect(
@@ -286,7 +289,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 )
 
                 self._mark_out_btn = QPushButton()
-                fxicons.set_icon(self._mark_out_btn, "last_page")
+                fxicons.set_icon(self._mark_out_btn, "logout")
                 self._mark_out_btn.setFixedSize(24, 24)
                 self._mark_out_btn.setFlat(True)
                 self._mark_out_btn.clicked.connect(
@@ -366,6 +369,20 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             controls_row.addWidget(self._fps_spinbox)
             controls_row.addStretch(1)
             if show_controls:
+                # Uniform button sizes in the centered row: the mixed
+                # 24/28px sizing of the single-row layout reads uneven here.
+                for btn in (
+                    self._goto_start_btn,
+                    self._prev_btn,
+                    self._next_btn,
+                    self._goto_end_btn,
+                    getattr(self, "_prev_key_btn", None),
+                    getattr(self, "_next_key_btn", None),
+                    getattr(self, "_mark_in_btn", None),
+                    getattr(self, "_mark_out_btn", None),
+                ):
+                    if btn is not None:
+                        btn.setFixedSize(28, 28)
                 if show_keyframe_controls:
                     controls_row.addWidget(self._prev_key_btn)
                 if show_loop_controls:
