@@ -105,6 +105,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
     view_changed = Signal(int, int)
     in_point_requested = Signal(int)
     out_point_requested = Signal(int)
+    loop_toggled = Signal(bool)
 
     # Smallest zoomable window, in frames.
     MIN_VIEW_SPAN = 2
@@ -141,6 +142,9 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._is_playing = False
         self._is_dragging = False
         self._fps = fps
+        # Loop playback: at the end of the range, wrap to the start (True,
+        # the historical behavior) or stop.
+        self._loop_playback = True
         # Visible frame window (None = follow the full range).
         self._view_start: Optional[int] = None
         self._view_end: Optional[int] = None
@@ -270,6 +274,21 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 shortcut="End",
             )
 
+            # Loop toggle: wrap to the start at the end of the range (on)
+            # or stop there (off).
+            self._loop_btn = QPushButton()
+            fxicons.set_icon(self._loop_btn, "repeat")
+            self._loop_btn.setFixedSize(28, 28)
+            self._loop_btn.setFlat(True)
+            self._loop_btn.setCheckable(True)
+            self._loop_btn.setChecked(self._loop_playback)
+            self._loop_btn.toggled.connect(self._on_loop_btn_toggled)
+            self._loop_btn_tooltip = FXTooltip(
+                parent=self._loop_btn,
+                title="Loop Playback",
+                description="Restart from the first frame at the end",
+            )
+
             # Keyframe navigation (opt-in): jump to the nearest keyframe
             # before/after the current frame.
             if show_keyframe_controls:
@@ -397,13 +416,22 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             controls_row = QHBoxLayout()
             controls_row.setSpacing(2)
             controls_row.addWidget(self._fps_spinbox)
+            # Balance pads: the stretches split the LEFTOVER space equally,
+            # so with unequal side content (fps left vs consumer extras
+            # right) the cluster drifts off-center. The pads grow the
+            # narrow side to match the wide one (see _balance_controls_row).
+            self._left_balance = QWidget()
+            self._right_balance = QWidget()
+            controls_row.addWidget(self._left_balance)
             controls_row.addStretch(1)
             if show_controls:
                 # Mirror-symmetric around the frame spinbox: each button
                 # pairs with its counterpart at the same distance from the
                 # center (in/out outermost, then goto start/end, keyframe
                 # nav, prev/next innermost). Play is the odd one out and
-                # sits Nuke-style right of the field.
+                # sits Nuke-style right of the field; the loop toggle is
+                # its left-side counterpart.
+                controls_row.addWidget(self._loop_btn)
                 if show_loop_controls:
                     controls_row.addWidget(self._mark_in_btn)
                 controls_row.addWidget(self._goto_start_btn)
@@ -422,13 +450,22 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             elif show_spinbox:
                 controls_row.addWidget(self._spinbox)
             controls_row.addStretch(1)
-            controls_row.addLayout(self._extra_controls_layout)
+            controls_row.addWidget(self._right_balance)
+            self._extra_controls_container = QWidget()
+            extras_wrap = QHBoxLayout(self._extra_controls_container)
+            extras_wrap.setContentsMargins(0, 0, 0, 0)
+            extras_wrap.setSpacing(0)
+            extras_wrap.addLayout(self._extra_controls_layout)
+            controls_row.addWidget(self._extra_controls_container)
             root.addLayout(controls_row)
 
             self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             self.setMinimumHeight(60)
         else:
             # Classic single row.
+            self._left_balance = None
+            self._right_balance = None
+            self._extra_controls_container = None
             main_layout = QHBoxLayout(self)
             main_layout.setContentsMargins(0, 0, 0, 0)
             main_layout.setSpacing(8)
@@ -441,6 +478,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 controls_layout.addWidget(self._play_btn)
                 controls_layout.addWidget(self._next_btn)
                 controls_layout.addWidget(self._goto_end_btn)
+                controls_layout.addWidget(self._loop_btn)
                 if show_keyframe_controls:
                     controls_layout.addWidget(self._prev_key_btn)
                     controls_layout.addWidget(self._next_key_btn)
@@ -471,6 +509,39 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         appended at the far right.
         """
         self._extra_controls_layout.addWidget(widget)
+        # Balance now AND on the next event-loop pass: a widget added while
+        # the timeline is already visible stays hidden until the layout
+        # shows it (next pass), and layouts skip hidden widgets in
+        # sizeHint -- measuring only now would read 0 for it. `self` as the
+        # timer context cancels the callback if the widget is destroyed
+        # first (a bare bound method would fire on a dead C++ object).
+        self._balance_controls_row()
+        QTimer.singleShot(0, self, self._balance_controls_row)
+
+    def _balance_controls_row(self) -> None:
+        """Keep the stacked transport cluster truly centered.
+
+        The stretches split the LEFTOVER space equally, so unequal side
+        content (fps left vs consumer extras right) drifts the cluster
+        off-center. Grow the narrow side's pad to match the wide side.
+        """
+        if self._left_balance is None or self._right_balance is None:
+            return
+        # Adding to the extras SUB-layout does not invalidate the container's
+        # cached hint synchronously: activate it before measuring, or the
+        # pads keep the stale empty-container widths.
+        container_layout = self._extra_controls_container.layout()
+        container_layout.activate()
+        left_w = self._fps_spinbox.sizeHint().width()
+        right_w = container_layout.sizeHint().width()
+        delta = right_w - left_w
+        self._left_balance.setFixedWidth(max(0, delta))
+        self._right_balance.setFixedWidth(max(0, -delta))
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        # Size hints are only reliable once polished: re-balance on show.
+        self._balance_controls_row()
 
     def _on_theme_changed(self, _theme_name: str = None) -> None:
         """Handle theme changes."""
@@ -802,6 +873,23 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         """Go to the previous frame."""
         self.set_frame(self._current_frame - 1)
 
+    @property
+    def loop_playback(self) -> bool:
+        """Whether playback wraps to the start at the end of the range."""
+        return self._loop_playback
+
+    def set_loop_playback(self, enabled: bool) -> None:
+        """Set loop playback (reflected on the toggle button, no re-emit)."""
+        self._loop_playback = bool(enabled)
+        if hasattr(self, "_loop_btn"):
+            self._loop_btn.blockSignals(True)
+            self._loop_btn.setChecked(self._loop_playback)
+            self._loop_btn.blockSignals(False)
+
+    def _on_loop_btn_toggled(self, checked: bool) -> None:
+        self._loop_playback = bool(checked)
+        self.loop_toggled.emit(self._loop_playback)
+
     def toggle_playback(self) -> None:
         """Toggle playback state."""
         if self._is_playing:
@@ -831,6 +919,9 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         """Handle playback timer tick."""
         next_frame = self._current_frame + 1
         if next_frame > self._end_frame:
+            if not self._loop_playback:
+                self.stop()
+                return
             next_frame = self._start_frame  # Loop back to start
         self.set_frame(next_frame)
 
