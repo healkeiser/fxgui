@@ -514,6 +514,16 @@ def get_pixmap(
     )
 
 
+def _colored_copy(qpixmap: QPixmap, color: str) -> QPixmap:
+    """Return a copy of ``qpixmap`` recolored to ``color`` (alpha preserved)."""
+    pixmap = qpixmap.copy()
+    painter = QPainter(pixmap)
+    painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+    painter.fillRect(pixmap.rect(), QColor(color))
+    painter.end()
+    return pixmap
+
+
 def _get_icon_internal(
     icon_name: str,
     width: int,
@@ -529,6 +539,12 @@ def _get_icon_internal(
     """Internal function to get a QIcon with resolved parameters.
 
     This is the cached version that takes fully resolved parameters.
+
+    The Selected and Active pixmaps are colored for *accent* backgrounds
+    (selected/hovered item rows, highlighted menu items). They are only added
+    when ``active_color``/``selected_color`` are set; pass ``active_color=""``
+    to build a button-safe icon, since Qt renders a focused button's icon in
+    Active mode over a non-accent surface (see `set_icon`).
     """
     # Get the `QPixmap` of the icon
     qpixmap = _get_pixmap_cached(
@@ -539,32 +555,18 @@ def _get_icon_internal(
     icon = QIcon(qpixmap)
 
     # `QPixmap` for disabled state - use derived muted color
-    disabled_pixmap = qpixmap.copy()
-    painter = QPainter(disabled_pixmap)
-    painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-    painter.fillRect(disabled_pixmap.rect(), QColor(disabled_color))
-    painter.end()
-    icon.addPixmap(disabled_pixmap, QIcon.Disabled)
+    icon.addPixmap(_colored_copy(qpixmap, disabled_color), QIcon.Disabled)
 
     # Only add selected/active pixmaps if there's a color (monochrome icons)
     if color:
-        # `QPixmap` for selected state - use icon_on_accent_primary color
+        # Selected state (selected item rows) - icon_on_accent_primary color
         if selected_color:
-            selected_pixmap = qpixmap.copy()
-            painter = QPainter(selected_pixmap)
-            painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-            painter.fillRect(selected_pixmap.rect(), QColor(selected_color))
-            painter.end()
-            icon.addPixmap(selected_pixmap, QIcon.Selected)
+            icon.addPixmap(_colored_copy(qpixmap, selected_color), QIcon.Selected)
 
-        # `QPixmap` for active/hover state - use icon_on_accent_secondary color
+        # Active state (hovered rows, highlighted menu items) -
+        # icon_on_accent_secondary color. Omitted for button widgets.
         if active_color:
-            active_pixmap = qpixmap.copy()
-            painter = QPainter(active_pixmap)
-            painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-            painter.fillRect(active_pixmap.rect(), QColor(active_color))
-            painter.end()
-            icon.addPixmap(active_pixmap, QIcon.Active)
+            icon.addPixmap(_colored_copy(qpixmap, active_color), QIcon.Active)
 
     return icon
 
@@ -581,6 +583,7 @@ def get_icon(
     library: Optional[str] = None,
     style: Optional[str] = None,
     extension: Optional[str] = None,
+    include_active: bool = True,
 ) -> QIcon:
     """Get a QIcon of the specified icon.
 
@@ -592,6 +595,11 @@ def get_icon(
         library: The library of the icon. Defaults to `None`.
         style: The style of the icon. Defaults to `None`.
         extension: The extension of the icon. Defaults to `None`.
+        include_active: Whether to bake the `QIcon.Active` (hover/highlight)
+            pixmap, colored for accent backgrounds. Set to `False` for button
+            widgets, whose icons Qt renders in Active mode on focus over a
+            non-accent surface. `set_icon` handles this automatically.
+            Defaults to `True`.
 
     Returns:
         QIcon: The QIcon of the icon.
@@ -617,7 +625,7 @@ def get_icon(
     # Get disabled, selected, and active icon colors from theme
     disabled_color = _get_disabled_icon_color()
     selected_color = _get_selected_icon_color()
-    active_color = _get_active_icon_color()
+    active_color = _get_active_icon_color() if include_active else ""
 
     return _get_icon_cached(
         icon_name,
@@ -776,8 +784,8 @@ def _get_selected_icon_color() -> str:
 def _get_active_icon_color() -> str:
     """Get the icon color for active/hover state.
 
-    Returns the icon_on_accent_secondary color from the theme, which is used
-    when items are hovered in list/tree views.
+    Returns the icon_on_accent_secondary color from the theme, used when items
+    are hovered in list/tree views or menu items are highlighted.
 
     Returns:
         The active icon color as a hex string.
@@ -849,7 +857,7 @@ def set_icon(
         >>> # Icon keeps explicit color across theme changes
         >>> fxicons.set_icon(indicator, "check", theme_color=False, color="#00ff00")
     """
-    icon = get_icon(icon_name, **kwargs)
+    icon = _icon_for_widget(widget, icon_name, kwargs)
 
     if hasattr(widget, "setIcon"):
         widget.setIcon(icon)
@@ -888,7 +896,7 @@ def refresh_all_icons() -> None:
                 if theme_color is not False:
                     kwargs.pop("color", None)
 
-                icon = get_icon(icon_name, **kwargs)
+                icon = _icon_for_widget(widget, icon_name, kwargs)
 
                 if hasattr(widget, "setIcon"):
                     widget.setIcon(icon)
@@ -901,3 +909,17 @@ def refresh_all_icons() -> None:
         except RuntimeError:
             # Widget was deleted between validity check and access
             pass
+
+
+def _icon_for_widget(widget: Any, icon_name: str, kwargs: Dict) -> QIcon:
+    """Build the icon for a widget, omitting the Active recolor for buttons.
+
+    Qt renders a focused QPushButton / hovered QToolButton icon in Active mode.
+    Buttons have no accent background, so the accent-colored Active pixmap would
+    clash; build those icons without it. Menus (QAction), item-view rows, and
+    everything else keep Active for their accent-background highlight.
+    """
+    from qtpy.QtWidgets import QAbstractButton
+
+    include_active = not isinstance(widget, QAbstractButton)
+    return get_icon(icon_name, include_active=include_active, **kwargs)

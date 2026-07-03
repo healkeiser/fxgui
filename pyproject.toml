@@ -60,6 +60,12 @@ zensical = [
     "mkdocstrings-python>=2.0.0",
     "black",
 ]
+test = [
+    "pytest>=7.0",
+    "pytest-qt>=4.2",
+    # A Qt binding is needed to run the tests; PySide6 is the default target.
+    "PySide6",
+]
 
 [project.urls]
 Homepage = "https://github.com/healkeiser/fxgui"
@@ -100,3 +106,7 @@ include = ["fxgui*"]
 
 [tool.setuptools_scm]
 version_file = "fxgui/_version.py"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Headless platform is set in tests/conftest.py before Qt is imported.
