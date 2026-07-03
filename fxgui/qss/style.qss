@@ -1300,6 +1300,9 @@ QSlider::sub-page:vertical {
     border-radius: 3px;
 }
 
+/* Plain QToolButtons (toolbars, icon buttons) stay flat: transparent
+   until hovered. Split buttons (MenuButtonPopup) instead read like
+   QPushButtons — see the popupMode="1" overrides below. */
 QToolButton {
     background-color: transparent;
     border: 1px transparent @border_light;
@@ -1308,14 +1311,25 @@ QToolButton {
     padding: 3px;
 }
 
-QToolButton[popupMode="1"] { /* only for MenuButtonPopup */
- padding-right: 20px; /* make way for the popup button */
- border: 1px transparent @border_light;
- border-radius: 5px;
+QToolButton[popupMode="1"] { /* MenuButtonPopup: QPushButton look */
+    color: @text;
+    background-color: @surface;
+    border: 1px solid @border_light;
+    border-radius: 4px;
+    margin: 0px;
+    padding: 5px 6px;
+    padding-right: 18px; /* room for the menu-button section */
+    outline: none;
+}
+
+QToolButton[popupMode="1"]:disabled {
+    background-color: @surface;
+    border: 1px solid @border;
+    color: @border_strong;
 }
 
 QToolButton[popupMode="2"] { /* only for InstantPopup */
- padding-right: 10px; /* make way for the popup button */
+ padding-right: 12px; /* make way for the indicator */
  border: 1px transparent @border_light;
 }
 
@@ -1323,6 +1337,12 @@ QToolButton:hover,
 QToolButton::menu-button:hover {
     background-color: transparent;
     border: 1px solid @accent_primary;
+}
+
+QToolButton[popupMode="1"]:hover {
+    border: 1px solid @accent_primary;
+    background-color: @state_hover;
+    color: @text;
 }
 
 QToolButton:checked,
@@ -1335,26 +1355,36 @@ QToolButton:pressed,
 /* the subcontrol below is used only in the InstantPopup or DelayedPopup mode */
 QToolButton::menu-indicator {
     image: url(~icons/down_arrow.svg);
-    top: -7px; left: -2px; /* shift it a bit */
+    width: 8px;
+    height: 8px;
+    subcontrol-origin: padding;
+    subcontrol-position: right center;
+    right: 2px;
 }
 
 /* the subcontrols below are used only in the MenuButtonPopup mode */
 QToolButton::menu-button {
-    border: 1px transparent @border_light;
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
-    /* 16px width + 4px for border = 20px allocated above */
-    width: 16px;
+    border: none;
+    border-left: 1px solid @border_light;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    width: 12px;
     outline: none;
+}
+
+QToolButton::menu-button:hover {
+    border: none;
+    border-left: 1px solid @accent_primary;
 }
 
 QToolButton::menu-arrow {
     image: url(~icons/down_arrow.svg);
+    width: 8px;
+    height: 8px;
 }
 
 QToolButton::menu-arrow:open {
     top: 1px; left: 1px; /* shift it a bit */
-    border: 1px solid @border;
 }
 
 
