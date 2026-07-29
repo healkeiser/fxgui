@@ -5,7 +5,7 @@ from typing import Optional
 
 # Third-party
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtGui import QMouseEvent
+from qtpy.QtGui import QColor, QKeyEvent, QMouseEvent, QPainter, QPen
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 # Internal
@@ -85,6 +85,9 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
         # Mouse tracking
         self.setMouseTracking(True)
         self.setCursor(Qt.PointingHandCursor)
+
+        # Keyboard: arrow keys adjust, digits set, Delete/Backspace clears
+        self.setFocusPolicy(Qt.StrongFocus)
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
@@ -173,6 +176,58 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
                 return star_index + 1
         else:
             return star_index + 1
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """Adjust the rating from the keyboard.
+
+        Left/Down decrease, Right/Up increase (by 0.5 when half stars are
+        allowed), digit keys set the rating directly, Home/End jump to the
+        extremes, and Delete/Backspace clear it.
+        """
+        step = 0.5 if self._allow_half else 1
+        key = event.key()
+
+        if key in (Qt.Key_Right, Qt.Key_Up):
+            self.set_rating(self._rating + step)
+        elif key in (Qt.Key_Left, Qt.Key_Down):
+            self.set_rating(self._rating - step)
+        elif key == Qt.Key_Home:
+            self.set_rating(0)
+        elif key == Qt.Key_End:
+            self.set_rating(self._max_rating)
+        elif key in (Qt.Key_Delete, Qt.Key_Backspace):
+            self.clear_rating()
+        elif Qt.Key_0 <= key <= Qt.Key_9:
+            self.set_rating(key - Qt.Key_0)
+        else:
+            super().keyPressEvent(event)
+            return
+        event.accept()
+
+    def focusInEvent(self, event) -> None:
+        """Repaint to show the focus indicator."""
+        super().focusInEvent(event)
+        self.update()
+
+    def focusOutEvent(self, event) -> None:
+        """Repaint to hide the focus indicator."""
+        super().focusOutEvent(event)
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        """Paint a focus indicator under the star labels when focused."""
+        super().paintEvent(event)
+        if self.hasFocus():
+            painter = QPainter(self)
+            painter.setRenderHint(QPainter.Antialiasing)
+            pen = QPen(QColor(self.theme.accent_primary))
+            pen.setWidth(1)
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRoundedRect(
+                self.rect().adjusted(0, 0, -1, -1), 3, 3
+            )
+            painter.end()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handle mouse move for hover preview."""

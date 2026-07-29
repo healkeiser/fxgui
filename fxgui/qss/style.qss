@@ -30,7 +30,9 @@ QWidget
     selection-color: @text_on_accent_primary;
     background-clip: border;
     border-image: none;
-    outline: 0;
+    /* Keyboard focus must stay visible: a global zero-outline reset here
+       used to remove the focus indicator from every widget. */
+    outline: 1px solid @accent_primary;
     font-size: 12px;
 }
 

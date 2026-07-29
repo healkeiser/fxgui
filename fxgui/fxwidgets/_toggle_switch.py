@@ -65,6 +65,9 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
         self.setCheckable(True)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setCursor(Qt.PointingHandCursor)
+        # Keyboard: focusable via Tab and mouse; QAbstractButton then
+        # handles Space to toggle.
+        self.setFocusPolicy(Qt.StrongFocus)
 
         # Connect signals
         self.toggled.connect(self._on_toggled)
@@ -101,19 +104,38 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
         self._animation.setEndValue(1.0 if checked else 0.0)
         self._animation.start()
 
+    def focusInEvent(self, event) -> None:
+        """Repaint to show the focus indicator."""
+        super().focusInEvent(event)
+        self.update()
+
+    def focusOutEvent(self, event) -> None:
+        """Repaint to hide the focus indicator."""
+        super().focusOutEvent(event)
+        self.update()
+
+    def enterEvent(self, event) -> None:
+        """Repaint to show the hover state."""
+        super().enterEvent(event)
+        self.update()
+
+    def leaveEvent(self, event) -> None:
+        """Repaint to hide the hover state."""
+        super().leaveEvent(event)
+        self.update()
+
     def paintEvent(self, event) -> None:
         """Paint the toggle switch."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Get current theme colors (dynamic for theme switching)
-        on_color = QColor(self._custom_on_color or self.theme.accent_primary)
-        off_color = QColor(
-            self._custom_off_color or self.theme.surface_sunken
-        )
+        # Get current theme colors once (dynamic for theme switching)
+        theme = self.theme
+        on_color = QColor(self._custom_on_color or theme.accent_primary)
+        off_color = QColor(self._custom_off_color or theme.surface_sunken)
         thumb_color = QColor(self._custom_thumb_color or "#ffffff")
-        border_color = QColor(self.theme.border)
-        disabled_color = QColor(self.theme.text_disabled)
+        border_color = QColor(theme.border)
+        disabled_color = QColor(theme.text_disabled)
 
         # Calculate dimensions
         width = self.width()
@@ -136,6 +158,15 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
                 off_color, on_color, self._position
             )
             current_border_color = border_color
+            # Focus indicator: keyboard users need to see where focus is.
+            # The ring must contrast with the track at any position (an
+            # accent ring would vanish on the accent-colored "on" track).
+            if self.hasFocus():
+                current_border_color = QColor(
+                    "#ffffff" if track_color.lightness() < 128 else "#000000"
+                )
+            elif self.underMouse():
+                current_border_color = QColor(theme.accent_secondary)
 
         # Draw track (rounded rectangle with border)
         track_path = QPainterPath()

@@ -12,11 +12,26 @@ class FXApplication(QApplication):
 
     On initialization, the application loads the previously saved theme
     from persistent storage. If no theme was saved, defaults to "dark".
+
+    Note:
+        Qt allows a single QApplication per process. When one already exists
+        and is not an FXApplication (e.g. inside Houdini, Maya, or Nuke),
+        calling ``FXApplication()`` returns the host's application instance
+        untouched instead of raising ``RuntimeError``. fxgui styling is NOT
+        applied to the host application in that case; style individual
+        widgets with ``fxstyle.load_stylesheet()`` instead.
     """
 
     _instance = None  # Private class attribute to hold the singleton instance
 
     def __new__(cls, *args, **kwargs):
+        existing = QApplication.instance()
+        if existing is not None and not isinstance(existing, cls):
+            # A foreign QApplication is already running (DCC host or another
+            # framework). Returning a non-`cls` instance from __new__ skips
+            # __init__, so the host application is left untouched.
+            return existing
+
         if cls._instance is None:
 
             # Create the instance if it doesn't exist

@@ -40,9 +40,11 @@ from qtpy.QtCore import QSettings
 ###### Public API
 
 __all__ = [
+    "get_application_name",
     "get_config_dir",
     "get_settings",
     "get_value",
+    "set_application_name",
     "set_value",
     "SETTINGS_FILE",
 ]
@@ -50,7 +52,8 @@ __all__ = [
 
 ###### Constants
 
-_APP_NAME = "fxgui"
+_DEFAULT_APP_NAME = "fxgui"
+_APP_NAME = _DEFAULT_APP_NAME
 
 
 def _get_config_dir() -> Path:
@@ -89,6 +92,53 @@ def _ensure_config_dir() -> None:
 
 
 ###### Public Functions
+
+
+def set_application_name(name: str) -> None:
+    """Scope fxgui settings (including the persisted theme) to an application.
+
+    By default every tool built on fxgui shares one settings file, so e.g.
+    changing the theme in one tool changes it for all of them. Calling this
+    early in your application's startup isolates its settings in its own
+    file:
+
+    - Windows: ``%APPDATA%/<name>/settings.ini``
+    - Unix/macOS: ``~/.<name>/settings.ini``
+
+    Args:
+        name: The application name to scope settings under. Must be a
+            non-empty, filesystem-safe string.
+
+    Raises:
+        ValueError: If the name is empty or contains path separators.
+
+    Examples:
+        >>> from fxgui import fxconfig
+        >>> fxconfig.set_application_name("my_studio_tool")
+    """
+    global _APP_NAME, CONFIG_DIR, SETTINGS_FILE, _settings_instance
+
+    if not name or not name.strip():
+        raise ValueError("Application name must be a non-empty string.")
+    if any(sep in name for sep in ("/", "\\", "..")):
+        raise ValueError(
+            f"Application name '{name}' must not contain path separators."
+        )
+
+    _APP_NAME = name.strip()
+    CONFIG_DIR = _get_config_dir()
+    SETTINGS_FILE = CONFIG_DIR / "settings.ini"
+    _settings_instance = None  # Recreated lazily against the new file
+
+
+def get_application_name() -> str:
+    """Return the application name settings are currently scoped under.
+
+    Returns:
+        The current application name ("fxgui" unless changed via
+        `set_application_name()`).
+    """
+    return _APP_NAME
 
 
 def get_config_dir() -> Path:

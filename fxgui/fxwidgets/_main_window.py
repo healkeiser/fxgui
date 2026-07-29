@@ -63,6 +63,11 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             Defaults to `None`.
         set_stylesheet (bool, optional): Whether to set the default stylesheet.
             Defaults to `True`.
+        rich_tooltips (bool, optional): Whether to install the global
+            FXTooltipManager (replaces Qt tooltips application-wide).
+            `None` (default) installs it only when running under
+            FXApplication, so embedding in a DCC host does not hijack the
+            host's tooltips. Defaults to `None`.
     """
 
     # Class-level severity constants for convenience
@@ -85,6 +90,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         company: Optional[str] = None,
         ui_file: Optional[str] = None,
         set_stylesheet: bool = True,
+        rich_tooltips: Optional[bool] = None,
     ):
         super().__init__(parent)
 
@@ -132,9 +138,21 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         if self._set_stylesheet:
             self.setStyleSheet(fxstyle.load_stylesheet())
 
-        # Install the global FXTooltip manager for rich tooltips
-        # This replaces standard Qt tooltips with FXTooltip for all widgets
-        FXTooltipManager.install()
+        # Install the global FXTooltip manager for rich tooltips. This
+        # replaces standard Qt tooltips with FXTooltip application-wide, so
+        # by default (`rich_tooltips=None`) it only happens when fxgui owns
+        # the application. Inside a DCC host (Houdini/Maya/Nuke) a global
+        # event filter would hijack the host's own tooltips; pass
+        # `rich_tooltips=True` to opt in there, or `False` to disable it
+        # entirely.
+        if rich_tooltips is None:
+            from fxgui.fxwidgets._application import FXApplication
+
+            rich_tooltips = isinstance(
+                QApplication.instance(), FXApplication
+            )
+        if rich_tooltips:
+            FXTooltipManager.install()
 
     # Private methods
     def _load_ui(self) -> None:
@@ -1017,7 +1035,10 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         Args:
             event (QCloseEvent): The close event.
         """
-        self.setParent(None)
+        # Note: this used to call `self.setParent(None)`, which detached the
+        # window from parent-managed lifetime and could crash the bindings
+        # (double delete / premature GC). Use `Qt.WA_DeleteOnClose` on the
+        # window if you need close-to-delete semantics.
         super().closeEvent(event)
 
 

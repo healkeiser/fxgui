@@ -390,6 +390,23 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     return colored_pixmap
 
 
+def _screen_dpr() -> float:
+    """Return the primary screen's device pixel ratio (1.0 when headless).
+
+    Icons rasterized at logical size look blurry on scaled displays (125% to
+    200% is the norm on 4K monitors); rendering at physical resolution and
+    tagging the pixmap with the ratio keeps them crisp.
+    """
+    from qtpy.QtGui import QGuiApplication
+
+    app = QGuiApplication.instance()
+    if app is not None:
+        screen = app.primaryScreen()
+        if screen is not None:
+            return float(screen.devicePixelRatio())
+    return 1.0
+
+
 def _render_svg_to_pixmap(path: str, width: int, height: int) -> QPixmap:
     """Rasterize an SVG to a QPixmap using ``QSvgRenderer``.
 
@@ -444,10 +461,13 @@ def _get_pixmap_internal(
     library: str,
     style: Optional[str],
     extension: Optional[str],
+    dpr: float = 1.0,
 ) -> QPixmap:
     """Internal function to get a QPixmap with resolved parameters.
 
     This is the cached version that takes fully resolved parameters.
+    ``width``/``height`` are logical sizes; the pixmap is rendered at
+    ``dpr`` times that and tagged with the ratio for crisp high-DPI display.
     """
     path = get_icon_path(
         icon_name,
@@ -455,10 +475,14 @@ def _get_pixmap_internal(
         style=style,
         extension=extension,
     )
+    physical_width = max(1, int(round(width * dpr)))
+    physical_height = max(1, int(round(height * dpr)))
     if path.lower().endswith(".svg"):
-        qpixmap = _render_svg_to_pixmap(path, width, height)
+        qpixmap = _render_svg_to_pixmap(path, physical_width, physical_height)
     else:
-        qpixmap = QIcon(path).pixmap(width, height)
+        qpixmap = QIcon(path).pixmap(physical_width, physical_height)
+    if dpr != 1.0:
+        qpixmap.setDevicePixelRatio(dpr)
     if color is not None:
         qpixmap = change_pixmap_color(qpixmap, color)
     return qpixmap
@@ -510,7 +534,8 @@ def get_pixmap(
         color = defaults["color"]
 
     return _get_pixmap_cached(
-        icon_name, width, height, color, library, style, extension
+        icon_name, width, height, color, library, style, extension,
+        _screen_dpr(),
     )
 
 
@@ -535,6 +560,7 @@ def _get_icon_internal(
     library: str,
     style: Optional[str],
     extension: Optional[str],
+    dpr: float = 1.0,
 ) -> QIcon:
     """Internal function to get a QIcon with resolved parameters.
 
@@ -548,7 +574,7 @@ def _get_icon_internal(
     """
     # Get the `QPixmap` of the icon
     qpixmap = _get_pixmap_cached(
-        icon_name, width, height, color, library, style, extension
+        icon_name, width, height, color, library, style, extension, dpr
     )
 
     # Create a `QIcon` and add the normal state pixmap
@@ -638,6 +664,7 @@ def get_icon(
         library,
         style,
         extension,
+        _screen_dpr(),
     )
 
 
@@ -879,7 +906,8 @@ def refresh_all_icons() -> None:
     be called manually if needed.
     """
     from qtpy.QtWidgets import QWidget
-    from qtpy.shiboken import isValid as is_valid
+
+    from fxgui._compat import is_valid
 
     for widget in list(_icon_widgets):
         # Skip widgets whose C++ object has been deleted

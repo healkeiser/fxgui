@@ -126,7 +126,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxconfig, fxicons
+from fxgui import _compat, fxconfig, fxicons
 
 
 ###### Theme Management
@@ -152,6 +152,14 @@ class FXThemeColors:
         """
         for key, value in colors_dict.items():
             setattr(self, key, value)
+
+    def __getattr__(self, name: str):
+        # Only called for missing attributes; give a helpful error instead of
+        # a bare AttributeError deep inside a paintEvent.
+        available = ", ".join(sorted(self.__dict__)) or "none"
+        raise AttributeError(
+            f"Unknown theme color role '{name}'. Available roles: {available}"
+        )
 
     def __repr__(self) -> str:
         attrs = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())
@@ -253,15 +261,29 @@ class FXThemeAware:
             ...     painter = QPainter(self)
             ...     painter.fillRect(self.rect(), QColor(self.theme.surface))
             ...     painter.setPen(QColor(self.theme.text))
+
+        Note:
+            The returned object is a shared, cached snapshot of the current
+            theme; treat it as read-only. It is rebuilt whenever the theme
+            changes.
         """
-        return FXThemeColors(get_theme_colors())
+        return _get_theme_namespace()
 
     def __handle_theme_change(self, _theme_name: str = None) -> None:
         """Internal handler for theme changes."""
-        # Check if the C++ object is still valid (prevents RuntimeError)
-        from qtpy.shiboken import isValid as is_valid
-
-        if not is_valid(self):
+        # Check if the C++ object is still valid (prevents RuntimeError).
+        # Uses fxgui._compat so this works under PyQt bindings too, where
+        # qtpy.shiboken does not exist.
+        if not _compat.is_valid(self):
+            # Drop the connection so the manager stops notifying a widget
+            # whose C++ side is gone; otherwise connections accumulate for
+            # every widget ever created.
+            try:
+                theme_manager.theme_changed.disconnect(
+                    self.__handle_theme_change
+                )
+            except (RuntimeError, TypeError):
+                pass
             return
 
         # Process theme_style class attribute if defined
@@ -283,9 +305,17 @@ class FXThemeAware:
         stylesheet = self.theme_style
         colors = get_theme_colors()
 
-        # Replace @tokens with actual colors
-        for key, value in colors.items():
-            stylesheet = stylesheet.replace(f"@{key}", value)
+        # Replace @tokens with actual colors. Only string values are tokens:
+        # themes may contain nested sections (e.g. the per-theme "feedback"
+        # block). Longest keys first so @border does not corrupt
+        # @border_light into "<hex>_light".
+        flat_colors = {
+            key: value
+            for key, value in colors.items()
+            if isinstance(value, str)
+        }
+        for key in sorted(flat_colors, key=len, reverse=True):
+            stylesheet = stylesheet.replace(f"@{key}", flat_colors[key])
 
         if hasattr(self, "setStyleSheet"):
             self.setStyleSheet(stylesheet)
@@ -411,6 +441,25 @@ _colors = None
 _color_file = None  # Tracks which color file is currently loaded
 _theme = None  # Will be loaded from settings on first access
 _standard_icon_map = None  # Lazy-loaded icon map cache
+_theme_namespace = None  # Cached FXThemeColors for the current theme
+
+
+def _invalidate_theme_namespace() -> None:
+    """Drop the cached FXThemeColors snapshot (theme or colors changed)."""
+    global _theme_namespace
+    _theme_namespace = None
+
+
+def _get_theme_namespace() -> "FXThemeColors":
+    """Return a cached FXThemeColors for the current theme.
+
+    Widgets read `self.theme` in paintEvent hot paths; rebuilding the
+    namespace object on every access would allocate per frame.
+    """
+    global _theme_namespace
+    if _theme_namespace is None:
+        _theme_namespace = FXThemeColors(get_theme_colors())
+    return _theme_namespace
 
 
 ###### Private Helper Functions
@@ -470,6 +519,7 @@ def set_color_file(color_file: str) -> None:
     _colors = None  # Clear cache to force reload
     _color_file = str(color_file)
     _standard_icon_map = None  # Clear icon cache as colors may have changed
+    _invalidate_theme_namespace()
 
 
 def get_colors() -> dict:
@@ -882,6 +932,7 @@ def apply_theme(
 
     # Update global theme state first (so get_theme_colors returns correct theme)
     _theme = theme
+    _invalidate_theme_namespace()
 
     # Save the theme to persistent storage
     save_theme(theme)
@@ -947,7 +998,9 @@ def _get_standard_icon_map() -> dict:
     if _standard_icon_map is not None:
         return _standard_icon_map
 
-    colors_dict = get_colors()
+    # Theme-aware feedback colors with fallbacks; the top-level "feedback"
+    # YAML block is deprecated and may be absent from custom color files.
+    feedback_colors = get_feedback_colors()
 
     # fmt: off
     _standard_icon_map = {
@@ -1013,10 +1066,10 @@ def _get_standard_icon_map() -> dict:
         QStyle.SP_MediaStop: fxicons.get_icon("stop"),
         QStyle.SP_MediaVolume: fxicons.get_icon("volume_up"),
         QStyle.SP_MediaVolumeMuted: fxicons.get_icon("volume_off"),
-        QStyle.SP_MessageBoxCritical: fxicons.get_icon("error", color=colors_dict["feedback"]["error"]["foreground"]),
-        QStyle.SP_MessageBoxInformation: fxicons.get_icon("info", color=colors_dict["feedback"]["info"]["foreground"]),
-        QStyle.SP_MessageBoxQuestion: fxicons.get_icon("help", color=colors_dict["feedback"]["success"]["foreground"]),
-        QStyle.SP_MessageBoxWarning: fxicons.get_icon("warning", color=colors_dict["feedback"]["warning"]["foreground"]),
+        QStyle.SP_MessageBoxCritical: fxicons.get_icon("error", color=feedback_colors["error"]["foreground"]),
+        QStyle.SP_MessageBoxInformation: fxicons.get_icon("info", color=feedback_colors["info"]["foreground"]),
+        QStyle.SP_MessageBoxQuestion: fxicons.get_icon("help", color=feedback_colors["success"]["foreground"]),
+        QStyle.SP_MessageBoxWarning: fxicons.get_icon("warning", color=feedback_colors["warning"]["foreground"]),
         QStyle.SP_RestoreDefaultsButton: fxicons.get_icon("restore"),
         QStyle.SP_TitleBarCloseButton: fxicons.get_icon("close"),
         QStyle.SP_TitleBarContextHelpButton: fxicons.get_icon("help"),
@@ -1131,8 +1184,10 @@ def replace_colors(
         for key, value in colors_dict.items()
         if not isinstance(value, dict)
     }
-    for placeholder, color in placeholders.items():
-        stylesheet = stylesheet.replace(placeholder, color)
+    # Longest placeholders first so e.g. @border does not corrupt
+    # @border_light.
+    for placeholder in sorted(placeholders, key=len, reverse=True):
+        stylesheet = stylesheet.replace(placeholder, placeholders[placeholder])
     return stylesheet
 
 
@@ -1155,7 +1210,9 @@ def load_stylesheet(
     global _theme
 
     if not os.path.exists(style_file):
-        return "None"
+        # An empty string is a valid "no-op" stylesheet; the previous
+        # behavior returned the literal string "None".
+        return ""
 
     # If no theme specified, use the saved theme
     if theme is None:
@@ -1163,6 +1220,7 @@ def load_stylesheet(
 
     # Update the global theme state to keep it in sync
     _theme = theme
+    _invalidate_theme_namespace()
 
     # Sync icon colors with the theme (important for startup with saved theme)
     fxicons.sync_colors_with_theme()
@@ -1262,12 +1320,8 @@ def load_stylesheet(
     for key in sorted(replace.keys(), key=len, reverse=True):
         stylesheet = stylesheet.replace(key, replace[key])
 
-    stylesheet = (
-        font_stylesheet + stylesheet + extra
-        if extra
-        else font_stylesheet + stylesheet
-    )
-
-    stylesheet = stylesheet + extra if extra else stylesheet
+    stylesheet = font_stylesheet + stylesheet
+    if extra:
+        stylesheet += extra
 
     return stylesheet

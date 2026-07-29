@@ -69,9 +69,6 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         [LinkedIn post](https://www.linkedin.com/posts/mrminimaleffort_td-python-qt-activity-7270383661680603136-nvzb?utm_source=share&utm_medium=member_desktop)
     """
 
-    # Reusable SequenceMatcher instance for better performance
-    _matcher = SequenceMatcher()
-
     def __init__(
         self,
         ratio: float = 0.5,
@@ -90,6 +87,11 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         self._ratio = ratio
         self._color_match = color_match
         self._show_all = False
+        # Per-instance matcher (a class-level one is shared mutable state
+        # across every proxy). SequenceMatcher caches analysis of seq2, so
+        # the filter text lives in seq2 and each row's text goes in seq1;
+        # quick_ratio() is symmetric, so the value is unchanged.
+        self._matcher = SequenceMatcher()
         self.sort(0, Qt.AscendingOrder)
 
     @Slot(str)
@@ -101,6 +103,7 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         """
 
         self._filter_text = text.lower()
+        self._matcher.set_seq2(self._filter_text)
         self.invalidate()
 
     @Slot(float)
@@ -163,7 +166,7 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
             return True
 
         # Fall back to fuzzy matching for typos and partial matches
-        self._matcher.set_seqs(self._filter_text, text)
+        self._matcher.set_seq1(text)
         return self._matcher.quick_ratio() >= self._ratio
 
     def lessThan(self, left: QModelIndex, right: QModelIndex) -> bool:
@@ -183,10 +186,10 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         left_text = left.data().lower() if left.data() else ""
         right_text = right.data().lower() if right.data() else ""
 
-        # Reuse class-level matcher for better performance
-        self._matcher.set_seqs(self._filter_text, left_text)
+        # Filter text stays cached in seq2; only seq1 changes per row
+        self._matcher.set_seq1(left_text)
         left_ratio = self._matcher.quick_ratio()
-        self._matcher.set_seqs(self._filter_text, right_text)
+        self._matcher.set_seq1(right_text)
         right_ratio = self._matcher.quick_ratio()
 
         return left_ratio > right_ratio
@@ -215,14 +218,36 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
                 self.sourceModel().data(source_index, Qt.DisplayRole) or ""
             ).lower()
 
-            # Reuse class-level matcher for better performance
-            self._matcher.set_seqs(self._filter_text, text)
+            self._matcher.set_seq1(text)
             ratio = self._matcher.quick_ratio()
 
-            # Use the raw ratio (0-1) for color gradient
-            # 0.0 = red (poor match), 1.0 = green (perfect match)
-            red = int((1.0 - ratio) * 255)
-            green = int(ratio * 255)
-            return QBrush(QColor(red, green, 0))
+            # Poor matches fade toward the theme's disabled text color,
+            # strong matches toward the accent. A red/green gradient is
+            # invisible to red-green colorblind users and reads as
+            # "error/success" rather than match quality.
+            return QBrush(self._match_color(ratio))
 
         return super().data(index, role)
+
+    @staticmethod
+    def _match_color(ratio: float) -> QColor:
+        """Interpolate between theme disabled-text and accent colors.
+
+        Args:
+            ratio: Match quality between 0.0 (poor) and 1.0 (perfect).
+
+        Returns:
+            The interpolated color.
+        """
+        # Imported here to avoid a circular import at module load
+        from fxgui import fxstyle
+
+        colors = fxstyle.get_theme_colors()
+        poor = QColor(colors.get("text_disabled", "#777777"))
+        good = QColor(colors.get("accent_primary", "#2196F3"))
+        ratio = max(0.0, min(1.0, ratio))
+        return QColor(
+            int(poor.red() + (good.red() - poor.red()) * ratio),
+            int(poor.green() + (good.green() - poor.green()) * ratio),
+            int(poor.blue() + (good.blue() - poor.blue()) * ratio),
+        )

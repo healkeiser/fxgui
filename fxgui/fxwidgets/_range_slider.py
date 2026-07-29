@@ -7,10 +7,12 @@ from typing import Optional
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import (
     QColor,
+    QKeyEvent,
     QLinearGradient,
     QMouseEvent,
     QPainter,
     QPainterPath,
+    QPen,
 )
 from qtpy.QtWidgets import QSizePolicy, QWidget
 
@@ -73,6 +75,9 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
         # UI state
         self._pressed_handle = self.HANDLE_NONE
         self._hover_handle = self.HANDLE_NONE
+        # Handle addressed by keyboard input (arrow keys); Tab toggles it
+        # while the widget has focus.
+        self._active_handle = self.HANDLE_LOW
         self._handle_radius = 8
         self._track_height = 4
 
@@ -81,6 +86,8 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
         self.setMinimumHeight(70)
         self.setMouseTracking(True)
         self.setCursor(Qt.PointingHandCursor)
+        # Keyboard: arrows adjust the active handle, Space switches handle
+        self.setFocusPolicy(Qt.StrongFocus)
 
     def sizeHint(self):
         """Return the preferred size."""
@@ -274,7 +281,14 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
                 current_handle_color = handle_color.darker(105)
 
             painter.setBrush(current_handle_color)
-            painter.setPen(handle_border_color)
+            # Focus indicator: the keyboard-active handle gets a thicker
+            # accent border while the widget has focus.
+            is_active = (
+                self.hasFocus() and self._active_handle == handle_type
+            )
+            pen = QPen(handle_border_color)
+            pen.setWidth(3 if is_active else 1)
+            painter.setPen(pen)
             painter.drawEllipse(
                 int(x_pos - self._handle_radius),
                 int(track_y - self._handle_radius),
@@ -332,10 +346,69 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
 
         painter.end()
 
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """Adjust the active handle from the keyboard.
+
+        Left/Down and Right/Up move the active handle by 1, PageUp/PageDown
+        by 10% of the range, Home/End jump it to the extremes, and Space
+        switches between the low and high handle.
+        """
+        key = event.key()
+        big_step = max(1, (self._maximum - self._minimum) // 10)
+
+        def _adjust(delta: int) -> None:
+            if self._active_handle == self.HANDLE_HIGH:
+                self.high = self._high + delta
+            else:
+                self.low = self._low + delta
+
+        if key in (Qt.Key_Right, Qt.Key_Up):
+            _adjust(1)
+        elif key in (Qt.Key_Left, Qt.Key_Down):
+            _adjust(-1)
+        elif key == Qt.Key_PageUp:
+            _adjust(big_step)
+        elif key == Qt.Key_PageDown:
+            _adjust(-big_step)
+        elif key == Qt.Key_Home:
+            if self._active_handle == self.HANDLE_HIGH:
+                self.high = self._low
+            else:
+                self.low = self._minimum
+        elif key == Qt.Key_End:
+            if self._active_handle == self.HANDLE_HIGH:
+                self.high = self._maximum
+            else:
+                self.low = self._high
+        elif key == Qt.Key_Space:
+            self._active_handle = (
+                self.HANDLE_HIGH
+                if self._active_handle == self.HANDLE_LOW
+                else self.HANDLE_LOW
+            )
+            self.update()
+        else:
+            super().keyPressEvent(event)
+            return
+        event.accept()
+
+    def focusInEvent(self, event) -> None:
+        """Repaint to show the focus indicator."""
+        super().focusInEvent(event)
+        self.update()
+
+    def focusOutEvent(self, event) -> None:
+        """Repaint to hide the focus indicator."""
+        super().focusOutEvent(event)
+        self.update()
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press."""
         if event.button() == Qt.LeftButton:
             self._pressed_handle = self._handle_at_position(event.x())
+            if self._pressed_handle != self.HANDLE_NONE:
+                # Keyboard input follows the last handle grabbed
+                self._active_handle = self._pressed_handle
             self.update()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
