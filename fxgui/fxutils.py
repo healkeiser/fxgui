@@ -12,6 +12,7 @@ Functions:
     set_formatted_tooltip: Set a styled tooltip with title.
     get_formatted_time: Get current time as formatted string.
     deprecated: Decorator to mark functions as deprecated.
+    repolish: Force re-evaluation of stylesheet rules for a widget.
 
 Examples:
     Loading a UI file:
@@ -63,6 +64,7 @@ __all__ = [
     "set_formatted_tooltip",
     "get_formatted_time",
     "deprecated",
+    "repolish",
 ]
 
 
@@ -322,3 +324,24 @@ def deprecated(func: Callable) -> Callable:
         return func(*args, **kwargs)
 
     return wrapper
+
+
+def repolish(widget: QWidget) -> None:
+    """Force re-evaluation of the stylesheet rules for a widget.
+
+    Call after changing a Qt dynamic property that a stylesheet
+    attribute selector depends on, e.g.
+    ``MyBanner[level="error"] { ... }``.
+
+    Args:
+        widget: The widget to unpolish/polish and repaint.
+
+    Examples:
+        >>> banner.setProperty("level", "error")
+        >>> fxutils.repolish(banner)
+    """
+
+    style = widget.style()
+    style.unpolish(widget)
+    style.polish(widget)
+    widget.update()
