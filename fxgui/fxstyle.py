@@ -111,6 +111,7 @@ __email__ = "valentin.onze@gmail.com"
 import hashlib
 import os
 import sys
+import weakref
 from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, Optional
@@ -421,6 +422,7 @@ __all__ = [
     "replace_colors",
     "build_stylesheet",
     "register_widget_style",
+    "register_themed_root",
     # Utility functions
     "get_luminance",
     "get_contrast_text_color",
@@ -447,6 +449,12 @@ _theme = None  # Will be loaded from settings on first access
 _standard_icon_map = None  # Lazy-loaded icon map cache
 _theme_namespace = None  # Cached FXThemeColors for the current theme
 _widget_fragments: "OrderedDict[str, str]" = OrderedDict()
+_themed_roots: "weakref.WeakSet" = weakref.WeakSet()
+
+# GATE from the spike (tests/test_style_cascade.py): False when Qt's
+# cascade reliably repaints custom-painted descendants after an ancestor
+# restyle; True enables an explicit update() walk as fallback.
+_FORCE_UPDATE_WALK = False
 
 
 def _invalidate_theme_namespace() -> None:
@@ -1338,11 +1346,40 @@ def register_widget_style(qss: str) -> None:
     _reapply_to_roots()
 
 
-def _reapply_to_roots() -> None:
-    """Re-apply the current theme sheet to all registered roots.
+def register_themed_root(root) -> None:
+    """Register a widget (or QApplication) as a themed root.
 
-    Stub: real body lands with the root registry.
+    The current theme stylesheet is applied to it immediately and
+    re-applied on every subsequent :func:`apply_theme` call. Qt cascades
+    the sheet to all descendants, so children need no registration.
+
+    Standalone apps: ``FXApplication`` registers itself; nothing to do.
+    DCC-embedded windows: ``FXMainWindow`` registers itself when the
+    running QApplication is foreign, so the host app is never restyled.
+
+    Roots are held weakly; destroyed widgets drop out automatically.
+
+    Args:
+        root: Any object with ``setStyleSheet`` (QWidget or QApplication).
     """
+    _ensure_theme_loaded()
+    fxicons.sync_colors_with_theme()
+    _themed_roots.add(root)
+    root.setStyleSheet(build_stylesheet())
+
+
+def _reapply_to_roots() -> None:
+    """Re-apply the current theme sheet to all live registered roots."""
+    if not _themed_roots:
+        return
+    sheet = build_stylesheet()
+    for root in list(_themed_roots):
+        if not _compat.is_valid(root):
+            continue
+        root.setStyleSheet(sheet)
+        if _FORCE_UPDATE_WALK and hasattr(root, "findChildren"):
+            for child in root.findChildren(QWidget):
+                child.update()
 
 
 def load_stylesheet(

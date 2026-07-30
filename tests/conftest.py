@@ -36,3 +36,5 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     fxstyle._theme = None
     fxstyle._theme_namespace = None
     fxstyle._standard_icon_map = None
+    fxstyle._widget_fragments.clear()
+    fxstyle._themed_roots = type(fxstyle._themed_roots)()
