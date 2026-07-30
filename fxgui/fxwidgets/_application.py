@@ -51,8 +51,26 @@ class FXApplication(QApplication):
             # applied now and re-applied automatically on apply_theme().
             fxstyle.register_themed_root(self)
 
+            # The registry owns the stylesheet now, but subclasses may
+            # override `_on_theme_changed`, so the hook still has to fire.
+            fxstyle.theme_changed.connect(self._on_theme_changed)
+
             # Mark the instance as initialized
             self.__initialized = True
+
+    def _on_theme_changed(self, theme_name: str) -> None:
+        """Hook invoked after a theme change, for subclasses to extend.
+
+        Args:
+            theme_name: The name of the theme that was just applied.
+
+        Note:
+            The application stylesheet is applied by the themed-root
+            registry before this runs, so the base implementation does
+            nothing. Override it to react to theme changes; anything you
+            set here wins over the registry's sheet. New code can connect
+            to ``fxstyle.theme_changed`` instead of subclassing.
+        """
 
     @classmethod
     def instance(cls, *args, **kwargs):

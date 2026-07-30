@@ -44,3 +44,20 @@ def test_fxapplication_is_themed_root(qtbot):
         assert app.styleSheet() != light_sheet
     finally:
         app.setStyleSheet("")  # clean up for other tests
+
+
+def test_fxapplication_keeps_on_theme_changed_override_point(qapp):
+    """`_on_theme_changed` predates the themed-root registry and stays as
+    a subclass override point: subclasses that call ``super()`` must not
+    hit AttributeError.
+
+    Note:
+        Only the method's existence and super()-safety are covered here.
+        FXApplication cannot be instantiated under the test suite's
+        foreign QApplication, so the ``__init__`` connection itself is not
+        exercised; that `theme_changed` connections fire on apply_theme is
+        covered by tests/test_fxstyle_colors_api.py.
+    """
+    assert callable(FXApplication._on_theme_changed)
+    # A subclass override calling super() must be a safe no-op.
+    assert FXApplication._on_theme_changed(qapp, "dark") is None
