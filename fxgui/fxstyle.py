@@ -202,6 +202,10 @@ class FXThemeManager(QObject):
 # Global singleton instance
 theme_manager = FXThemeManager()
 
+# Canonical module-level alias: connect side-effect widgets to
+# fxstyle.theme_changed without going through the manager object.
+theme_changed = theme_manager.theme_changed
+
 
 class FXThemeAware:
     """Mixin that makes widgets automatically respond to theme changes.
@@ -398,10 +402,12 @@ __all__ = [
     "FXThemeColors",
     # Singleton
     "theme_manager",
+    "theme_changed",
     # Constants
     "STYLE_FILE",
     "DEFAULT_COLOR_FILE",
     # Color configuration
+    "colors",
     "get_colors",
     "set_color_file",
     "get_accent_colors",
@@ -991,6 +997,24 @@ def get_theme() -> str:
     """
     _ensure_theme_loaded()
     return _theme
+
+
+def colors() -> "FXThemeColors":
+    """Get the current theme colors as a namespace (canonical read API).
+
+    Cheap enough for ``paintEvent`` hot paths: the namespace is cached
+    per theme and rebuilt only on theme switches. Treat it as read-only.
+
+    Returns:
+        FXThemeColors with one attribute per color role.
+
+    Examples:
+        >>> def paintEvent(self, event):
+        ...     painter = QPainter(self)
+        ...     painter.fillRect(self.rect(), QColor(fxstyle.colors().surface))
+    """
+    _ensure_theme_loaded()
+    return _get_theme_namespace()
 
 
 def apply_theme(*args, widget: Optional[QWidget] = None, theme: Optional[str] = None) -> str:
