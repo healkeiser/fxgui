@@ -111,6 +111,7 @@ __email__ = "valentin.onze@gmail.com"
 import hashlib
 import os
 import sys
+import warnings
 import weakref
 from collections import OrderedDict
 from pathlib import Path
@@ -992,57 +993,77 @@ def get_theme() -> str:
     return _theme
 
 
-def apply_theme(
-    widget: QWidget,
-    theme: str,
-) -> str:
-    """Apply a theme to the widget with full style updates.
+def apply_theme(*args, widget: Optional[QWidget] = None, theme: Optional[str] = None) -> str:
+    """Apply a theme everywhere.
 
-    This function handles all necessary state updates including:
-    - Switching the stylesheet
-    - Updating icon colors
-    - Invalidating icon caches
+    Canonical form::
+
+        fxstyle.apply_theme("dracula")
+
+    Updates the persistent theme state, rebuilds the theme stylesheet,
+    re-applies it to every registered root (see
+    :func:`register_themed_root`), refreshes icon colors, and emits
+    ``theme_changed``.
+
+    .. deprecated::
+        The old form ``apply_theme(widget, theme)`` still works: it
+        registers ``widget`` as a themed root and proceeds. Prefer
+        ``apply_theme(theme)``.
 
     Args:
-        widget: The QWidget subclass to apply the theme to.
-        theme: The theme name to apply (e.g., "dark", "light", or custom).
+        theme: The theme name to apply (e.g., "dark", "light").
+        widget: Deprecated. A widget to register as a themed root.
 
     Returns:
         The theme that was applied.
 
-    Examples:
-        Apply a specific theme:
-
-        >>> fxstyle.apply_theme(window, "dark")
-        >>> fxstyle.apply_theme(window, "light")
-        >>> fxstyle.apply_theme(window, "dracula")
+    Raises:
+        ValueError: If the theme does not exist.
+        TypeError: If no theme name was provided.
     """
     global _theme
 
-    # Validate theme exists
+    # Untangle the two calling conventions.
+    if args:
+        if isinstance(args[0], str):
+            if len(args) > 1 or theme is not None:
+                raise TypeError("apply_theme() takes a single theme name")
+            theme = args[0]
+        else:
+            if widget is not None:
+                raise TypeError("apply_theme() got widget twice")
+            widget = args[0]
+            if len(args) == 2:
+                if theme is not None:
+                    raise TypeError("apply_theme() got theme twice")
+                theme = args[1]
+            elif len(args) > 2:
+                raise TypeError("apply_theme() takes at most 2 arguments")
+    if theme is None:
+        raise TypeError("apply_theme() missing required 'theme'")
+
     available_themes = get_available_themes()
     if theme not in available_themes:
         raise ValueError(
             f"Theme '{theme}' not found. Available themes: {available_themes}"
         )
 
-    # Update global theme state first (so get_theme_colors returns correct theme)
+    if widget is not None:
+        warnings.warn(
+            "apply_theme(widget, theme) is deprecated; call "
+            "apply_theme(theme) once. For DCC-embedded windows, use "
+            "register_themed_root(widget) at construction instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        _themed_roots.add(widget)
+
     _theme = theme
     _invalidate_theme_namespace()
-
-    # Save the theme to persistent storage
     save_theme(theme)
-
-    # Sync icon colors with the new theme (clears cache automatically)
     fxicons.sync_colors_with_theme()
-
-    # Invalidate the standard icon map
     invalidate_standard_icon_map()
-
-    # Apply the new stylesheet
-    widget.setStyleSheet(load_stylesheet(theme=theme))
-
-    # Notify theme manager so FXThemeAware widgets update
+    _reapply_to_roots()
     theme_manager.notify_theme_changed(theme)
 
     return theme
