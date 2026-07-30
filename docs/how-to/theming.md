@@ -150,10 +150,10 @@ Used by DCC-specific widgets and branding elements:
 
 ```python
 from pathlib import Path
-from fxgui import fxconstants
+from fxgui import fxstyle
 
 # The default style.yaml location
-default_file = fxconstants.STYLES_FILE
+default_file = fxstyle.DEFAULT_COLOR_FILE
 print(f"Default file: {default_file}")
 
 # Copy it to your preferred location
@@ -223,18 +223,24 @@ from fxgui import fxstyle, fxwidgets
 fxstyle.set_color_file("/path/to/my_theme.yaml")
 
 # Check available themes (includes your custom ones)
-print(fxstyle.get_available_themes())  # ['dark', 'light', 'monokai']
+print(fxstyle.get_available_themes())
+# ['dark', 'light', 'dracula', 'one_dark_pro', 'github_dark', 'github_light',
+#  'catppuccin_mocha', 'catppuccin_latte', 'nord', 'material_dark',
+#  'solarized_light', 'monokai']
 
 # Create your application
 app = fxwidgets.FXApplication()
 window = fxwidgets.FXMainWindow(title="Custom Theme Demo")
 window.show()
 
-# Apply your custom theme
-fxstyle.apply_theme(window, "monokai")
+# Apply your custom theme, everywhere
+fxstyle.apply_theme("monokai")
 
 app.exec_()
 ```
+
+!!! note
+    `FXMainWindow` registers itself as a themed root at construction (see "Registering Themed Roots" further down), so `apply_theme()` updates it, and any other registered root, without you having to touch the window directly.
 
 ## Switching Themes at Runtime
 
@@ -246,26 +252,148 @@ from fxgui import fxstyle
 # Toggle between themes
 current = fxstyle.get_theme()
 if current == "dark":
-    fxstyle.apply_theme(window, "monokai")
+    fxstyle.apply_theme("monokai")
 else:
-    fxstyle.apply_theme(window, "dark")
+    fxstyle.apply_theme("dark")
 ```
+
+`apply_theme(name)` is the canonical form. It updates the persisted theme, rebuilds the stylesheet, re-applies it to every registered root, refreshes icon colors, and emits `theme_changed`.
+
+!!! warning "Deprecated"
+    The old two-argument form, `apply_theme(widget, theme)`, still works: it registers `widget` as a themed root, then proceeds, but it now emits a `DeprecationWarning`. Call `apply_theme(theme)` on its own and register widgets separately with `register_themed_root()` (see below).
 
 !!! tip
     Theme selection is automatically persisted via `fxconfig`. When the user restarts the application, their last selected theme is restored.
 
 !!! note
-    Built-in themes include: `dark`, `light`, `dracula`, and `one_dark_pro`.
+    Built-in themes: `dark`, `light`, `dracula`, `one_dark_pro`, `github_dark`, `github_light`, `catppuccin_mocha`, `catppuccin_latte`, `nord`, `material_dark`, and `solarized_light`.
+
+## Reading Theme Colors
+
+For custom drawing or one-off styling, read colors directly instead of hardcoding hex values.
+
+```python
+from fxgui import fxstyle
+
+colors = fxstyle.colors()
+print(colors.surface)        # Current theme's main background
+print(colors.accent_primary) # Current theme's primary accent
+```
+
+`fxstyle.colors()` returns the current theme as an attribute-access namespace. It's cached per theme and only rebuilt on theme switches, so it's cheap enough to call inside `paintEvent`. `fxstyle.get_theme_colors()` (a plain dict) still works, and is what `colors()` is built from; prefer `colors()` in new code.
+
+## Registering Themed Roots
+
+`fxstyle.register_themed_root(root)` registers a widget, or the `QApplication` itself, to receive the theme stylesheet. The current theme is applied immediately, and the same root receives every later `apply_theme()` update. Qt cascades the stylesheet to descendants, so you register the top-level widget once, not each child.
+
+```python
+from qtpy.QtWidgets import QApplication
+from fxgui import fxstyle
+
+application = QApplication([])
+fxstyle.register_themed_root(application)
+```
+
+`fxwidgets.FXApplication` and `fxwidgets.FXMainWindow(set_stylesheet=True)` (the default) already call this on themselves, so most applications never need to call it directly.
+
+!!! note
+    Every `apply_theme()` call re-applies the stylesheet to *all* live registered roots, not just the one that triggered the switch. If you have several open `FXMainWindow` instances, they all update together.
+
+!!! warning "DCC-embedded windows"
+    Inside a DCC host (Houdini, Maya, Nuke), register the embedded window itself, never the host's `QApplication`. `FXMainWindow` does this automatically at construction, so the host application's own styling is never touched.
+
+## Reacting to Theme Changes
+
+`fxstyle.theme_changed` is a module-level signal (the same instance as `fxstyle.theme_manager.theme_changed`), emitted after a theme switch with the new theme's name.
+
+```python
+from fxgui import fxstyle
+
+
+def _on_theme_changed(theme_name: str):
+    print(f"Theme switched to {theme_name}")
+    # e.g. invalidate a cached pixmap, or re-run syntax highlighting
+
+
+fxstyle.theme_changed.connect(_on_theme_changed)
+```
+
+Connect to it for side effects a theme switch should trigger beyond appearance (a cached pixmap to invalidate, a highlighter to re-run). For styling itself, prefer `theme_style`, `register_widget_style()`, or reading `fxstyle.colors()`, rather than restyling by hand from a `theme_changed` slot.
+
+## Registering Your Own Widget Styles
+
+`fxstyle.register_widget_style(qss)` registers a QSS fragment, written once at module import time, using your widget's class name as the selector. The fragment can use `@tokens` (`@surface`, `@border`, and so on) exactly like the built-in stylesheet.
+
+```python
+from fxgui import fxstyle
+
+fxstyle.register_widget_style("""
+    MyWidget {
+        background: @surface;
+        border: 1px solid @border;
+        border-radius: 4px;
+    }
+""")
+```
+
+Registered fragments are appended after the base stylesheet and re-resolved on every theme switch. If themed roots already exist when you register, the rebuilt sheet is re-applied to them immediately, so it's safe to register from a module imported after the application has started.
+
+`fxstyle.build_stylesheet(theme=None)` builds the full sheet (base QSS plus all registered fragments, with `@tokens` resolved), and is what `register_themed_root()` / `apply_theme()` use internally. `fxstyle.load_stylesheet()` remains available for manual or DCC styling, but it does **not** include registered fragments, use `build_stylesheet()` instead if you need your widget's registered styles in a stylesheet you're applying by hand.
+
+## Repolishing After a Property Change
+
+If your QSS uses a Qt dynamic property in an attribute selector, for example `MyBanner[level="error"] { ... }`, Qt won't re-evaluate that selector just because you called `setProperty()`. Call `fxutils.repolish()` afterward:
+
+```python
+from fxgui import fxutils
+
+banner.setProperty("level", "error")
+fxutils.repolish(banner)
+```
+
+## The Custom Widget Contract
+
+For a new custom widget, you don't need `FXThemeAware` to be theme-aware. The building blocks above cover almost every case:
+
+- Put your rules in QSS with `@tokens`, using your class name as the selector, via `register_widget_style()`.
+- Or read `fxstyle.colors()` inside `paintEvent()` for custom-painted widgets.
+- Only connect to `fxstyle.theme_changed` if a theme switch has side effects beyond appearance.
+
+```python
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QWidget
+from qtpy.QtGui import QPainter, QColor
+from fxgui import fxstyle
+
+fxstyle.register_widget_style("""
+    MyStatusChip {
+        border: 1px solid @border;
+        border-radius: 10px;
+    }
+""")
+
+
+class MyStatusChip(QWidget):
+    """A theme-aware widget with no FXThemeAware dependency."""
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), QColor(fxstyle.colors().surface))
+        painter.setPen(QColor(fxstyle.colors().text))
+        painter.drawText(self.rect(), Qt.AlignCenter, "Ready")
+```
+
+This is the recommended approach for new custom widgets going forward. It doesn't replace `FXThemeAware`: the mixin documented below is still fully supported, and every built-in fxgui widget still uses it. Reach for the mixin when you want its `theme_style` / `self.theme` / `_on_theme_changed()` conveniences bundled together; reach for the contract above when a plain QSS fragment or a `paintEvent` read is all your widget needs.
 
 ---
 
 ## Making Custom Widgets Theme-Aware
 
-When you create your own widgets, you'll want them to automatically update when the user switches themes. fxgui provides `FXThemeAware`, a mixin that handles this for you.
+fxgui also provides `FXThemeAware`, a mixin that makes a widget automatically update when the user switches themes. It predates the contract above, remains fully supported, and is what every built-in fxgui widget uses today.
 
-### Basic Usage (Recommended)
+### Basic Usage
 
-There are three ways to make your widgets theme-aware, from simplest to most flexible:
+There are three ways to make your widgets theme-aware with the mixin, from simplest to most flexible:
 
 #### Option 1: Declarative QSS with `theme_style` (Simplest)
 
@@ -521,7 +649,7 @@ if __name__ == "__main__":
     card.show()
 
     # Theme changes automatically update the card
-    fxstyle.apply_theme(card, "dark")
+    fxstyle.apply_theme("dark")
 
     app.exec_()
 ```
