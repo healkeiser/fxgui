@@ -9,6 +9,7 @@ from qtpy.QtCore import (
     QEasingCurve,
     QPropertyAnimation,
     QRect,
+    QRectF,
     Qt,
 )
 from qtpy.QtGui import QColor, QPainter, QPainterPath
@@ -171,7 +172,11 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
         # Draw track (rounded rectangle with border)
         track_path = QPainterPath()
         track_rect = QRect(0, 0, width, height)
-        track_path.addRoundedRect(track_rect, corner_radius, corner_radius)
+        # QPainterPath.addRoundedRect only has QRectF overloads; PySide
+        # converts a QRect implicitly, PyQt raises TypeError.
+        track_path.addRoundedRect(
+            QRectF(track_rect), corner_radius, corner_radius
+        )
         painter.fillPath(track_path, track_color)
 
         # Draw track border

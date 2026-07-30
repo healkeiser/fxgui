@@ -61,3 +61,35 @@ def test_fxapplication_keeps_on_theme_changed_override_point(qapp):
     assert callable(FXApplication._on_theme_changed)
     # A subclass override calling super() must be a safe no-op.
     assert FXApplication._on_theme_changed(qapp, "dark") is None
+
+
+def test_fxapplication_constructs_with_no_arguments():
+    """`FXApplication()` with no argv must work on every binding.
+
+    PyQt's QApplication requires argv where PySide defaults it, so the
+    documented no-argument construction raised TypeError under PyQt5/PyQt6.
+    This runs in a subprocess because the in-process QApplication is owned
+    by pytest-qt, which makes __init__ short-circuit and hides the bug.
+    """
+    import subprocess
+    import sys
+
+    code = (
+        "import os;"
+        "os.environ['QT_QPA_PLATFORM']='offscreen';"
+        "from fxgui.fxwidgets import FXApplication;"
+        "app=FXApplication();"
+        "assert app.styleSheet(), 'themed root not styled';"
+        "print('ok')"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, (
+        f"FXApplication() failed:\nstdout={result.stdout}\n"
+        f"stderr={result.stderr}"
+    )
+    assert "ok" in result.stdout

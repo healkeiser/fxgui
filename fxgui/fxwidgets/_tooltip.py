@@ -15,6 +15,7 @@ from qtpy.QtCore import (
     QEvent,
     QObject,
     QPoint,
+    QPointF,
     QPropertyAnimation,
     QRect,
     Qt,
@@ -614,33 +615,33 @@ class FXTooltip(fxstyle.FXThemeAware, QFrame):
             # Arrow pointing up (tooltip below anchor)
             ax = self._arrow_offset
             ay = content_rect.top()
-            arrow_polygon.append(QPoint(ax, ay - arrow_size))
-            arrow_polygon.append(QPoint(ax - arrow_size, ay))
-            arrow_polygon.append(QPoint(ax + arrow_size, ay))
+            arrow_polygon.append(QPointF(ax, ay - arrow_size))
+            arrow_polygon.append(QPointF(ax - arrow_size, ay))
+            arrow_polygon.append(QPointF(ax + arrow_size, ay))
 
         elif self._arrow_position == FXTooltipPosition.BOTTOM:
             # Arrow pointing down (tooltip above anchor)
             ax = self._arrow_offset
             ay = content_rect.bottom()
-            arrow_polygon.append(QPoint(ax, ay + arrow_size))
-            arrow_polygon.append(QPoint(ax - arrow_size, ay))
-            arrow_polygon.append(QPoint(ax + arrow_size, ay))
+            arrow_polygon.append(QPointF(ax, ay + arrow_size))
+            arrow_polygon.append(QPointF(ax - arrow_size, ay))
+            arrow_polygon.append(QPointF(ax + arrow_size, ay))
 
         elif self._arrow_position == FXTooltipPosition.LEFT:
             # Arrow pointing left (tooltip right of anchor)
             ax = content_rect.left()
             ay = self._arrow_offset
-            arrow_polygon.append(QPoint(ax - arrow_size, ay))
-            arrow_polygon.append(QPoint(ax, ay - arrow_size))
-            arrow_polygon.append(QPoint(ax, ay + arrow_size))
+            arrow_polygon.append(QPointF(ax - arrow_size, ay))
+            arrow_polygon.append(QPointF(ax, ay - arrow_size))
+            arrow_polygon.append(QPointF(ax, ay + arrow_size))
 
         elif self._arrow_position == FXTooltipPosition.RIGHT:
             # Arrow pointing right (tooltip left of anchor)
             ax = content_rect.right()
             ay = self._arrow_offset
-            arrow_polygon.append(QPoint(ax + arrow_size, ay))
-            arrow_polygon.append(QPoint(ax, ay - arrow_size))
-            arrow_polygon.append(QPoint(ax, ay + arrow_size))
+            arrow_polygon.append(QPointF(ax + arrow_size, ay))
+            arrow_polygon.append(QPointF(ax, ay - arrow_size))
+            arrow_polygon.append(QPointF(ax, ay + arrow_size))
 
         # Fill arrow with background color
         if hasattr(self, "_bg_color"):
