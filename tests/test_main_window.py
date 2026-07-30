@@ -41,3 +41,22 @@ def test_close_keeps_parent(qtbot):
     window.close()
 
     assert window.parent() is parent
+
+
+def test_main_window_live_updates_on_theme_switch(qtbot):
+    """set_stylesheet=True windows are themed roots: every window
+    follows apply_theme, not just the one that triggered it."""
+    from fxgui import fxstyle
+    from fxgui.fxwidgets import FXMainWindow
+
+    window_a = FXMainWindow()
+    window_b = FXMainWindow()
+    qtbot.addWidget(window_a)
+    qtbot.addWidget(window_b)
+
+    fxstyle.apply_theme("light")
+    sheet_a, sheet_b = window_a.styleSheet(), window_b.styleSheet()
+    fxstyle.apply_theme("dark")
+
+    assert window_a.styleSheet() != sheet_a
+    assert window_b.styleSheet() != sheet_b

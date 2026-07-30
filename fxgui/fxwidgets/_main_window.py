@@ -134,9 +134,11 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self._check_documentation()
         self._add_shadows()
 
-        # Styling - load_stylesheet() automatically uses the saved theme
+        # Styling: register as a themed root. The saved theme's sheet is
+        # applied now and re-applied on every apply_theme(), whether the
+        # app is an FXApplication (standalone) or foreign (DCC host).
         if self._set_stylesheet:
-            self.setStyleSheet(fxstyle.load_stylesheet())
+            fxstyle.register_themed_root(self)
 
         # Install the global FXTooltip manager for rich tooltips. This
         # replaces standard Qt tooltips with FXTooltip application-wide, so
@@ -725,7 +727,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         # Use centralized theme application
         # This automatically syncs icon colors and refreshes all registered icons
         # and triggers the FXThemeAware mixin to call _apply_theme_styles
-        fxstyle.apply_theme(self, theme=theme)
+        fxstyle.apply_theme(theme)
 
     def _toggle_theme(self) -> None:
         """Toggles the theme of the window between available themes.
