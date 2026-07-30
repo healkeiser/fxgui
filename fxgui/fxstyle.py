@@ -180,6 +180,11 @@ class FXThemeManager(QObject):
 
     theme_changed = Signal(str)
     _instance = None
+    # Class-level default so the re-init guard resolves through the class.
+    # Probing an *instance* attribute before super().__init__() raises
+    # RuntimeError under PyQt (sip), which made `import fxgui` fail outright
+    # on PyQt5/PyQt6.
+    _initialized = False
 
     def __new__(cls):
         if cls._instance is None:
@@ -187,7 +192,7 @@ class FXThemeManager(QObject):
         return cls._instance
 
     def __init__(self):
-        if hasattr(self, "_initialized") and self._initialized:
+        if self._initialized:
             return
         super().__init__()
         self._initialized = True

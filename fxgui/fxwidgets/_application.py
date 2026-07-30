@@ -43,6 +43,10 @@ class FXApplication(QApplication):
 
     def __init__(self, *args, **kwargs):
         if not self.__initialized:
+            if not args and "argv" not in kwargs:
+                # PyQt's QApplication requires argv; PySide defaults it.
+                # An empty list matches PySide's no-argument behavior.
+                args = ([],)
             super().__init__(*args, **kwargs)
 
             fxstyle.set_style(self, "Fusion")

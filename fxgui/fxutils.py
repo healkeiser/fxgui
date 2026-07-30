@@ -50,7 +50,6 @@ from qtpy.QtWidgets import (
     QLineEdit,
     QTreeWidget,
 )
-from qtpy.QtUiTools import QUiLoader
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtCore import QFile
 
@@ -81,6 +80,12 @@ def load_ui(parent: QWidget, ui_file: str) -> QWidget:
     Raises:
         FileNotFoundError: If the specified UI file doesn't exist.
 
+    Note:
+        `QUiLoader` lives in `QtUiTools`, which the PyQt bindings do not
+        ship. The import is therefore deferred to call time (a module-level
+        one made `import fxgui` fail outright under PyQt5/PyQt6) and falls
+        back to `qtpy.uic.loadUi`, which qtpy provides for every binding.
+
     Examples:
         To load a UI file located in the same directory as the Python script
         >>> from pathlib import Path
@@ -88,13 +93,24 @@ def load_ui(parent: QWidget, ui_file: str) -> QWidget:
         >>> loaded_ui = load_ui(self, ui_path)
     """
 
-    if os.path.isfile(ui_file):
-        ui_file = QFile(ui_file)
-        loaded_ui = QUiLoader().load(ui_file, parent)
-        ui_file.close()
-        return loaded_ui
-    else:
+    if not os.path.isfile(ui_file):
         raise FileNotFoundError(f"UI file not found: {ui_file}")
+
+    try:
+        from qtpy.QtUiTools import QUiLoader
+    except ImportError:
+        # PyQt: load without a base instance so a *new* widget comes back,
+        # then parent it, matching the QUiLoader behavior below.
+        from qtpy.uic import loadUi
+
+        loaded_ui = loadUi(ui_file)
+        loaded_ui.setParent(parent)
+        return loaded_ui
+
+    handle = QFile(ui_file)
+    loaded_ui = QUiLoader().load(handle, parent)
+    handle.close()
+    return loaded_ui
 
 
 def create_action(

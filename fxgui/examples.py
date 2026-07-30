@@ -1276,9 +1276,12 @@ def main():
     """
 
     # Initialize the application
-    from qtpy.QtUiTools import QUiLoader
+    try:
+        from qtpy.QtUiTools import QUiLoader
 
-    _ = QUiLoader()  # PySide6 bug workaround
+        _ = QUiLoader()  # PySide6 bug workaround
+    except ImportError:
+        pass  # PyQt bindings ship no QtUiTools, and need no workaround
     application = fxwidgets.FXApplication()
 
     # Show splash screen
