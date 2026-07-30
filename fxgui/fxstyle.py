@@ -63,7 +63,7 @@ Functions:
     load_stylesheet: Load and customize QSS stylesheets.
     get_colors: Get the cached color configuration.
     set_color_file: Set a custom color configuration file.
-    apply_theme: Apply a theme to a widget (stylesheet + icons).
+    apply_theme: Apply a theme to all registered roots (stylesheet + icons).
     get_available_themes: Get list of available theme names.
     get_theme: Get the current theme name.
     get_theme_colors: Get the color palette for the current theme.
@@ -84,9 +84,14 @@ Examples:
     >>> stylesheet = fxstyle.load_stylesheet(theme="dracula")
     >>> widget.setStyleSheet(stylesheet)
 
+    New code should prefer `apply_theme` / `register_themed_root` instead.
+
     Applying a theme to a window:
 
-    >>> fxstyle.apply_theme(window, "one_dark_pro")
+    >>> fxstyle.apply_theme("one_dark_pro")
+
+    For DCC-embedded windows, call `fxstyle.register_themed_root(window)`
+    once at construction; `FXMainWindow` does this automatically.
 
     Getting colors for custom widgets:
 
@@ -108,8 +113,12 @@ __email__ = "valentin.onze@gmail.com"
 ###### Imports
 
 # Built-in
+import hashlib
 import os
 import sys
+import warnings
+import weakref
+from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -197,6 +206,10 @@ class FXThemeManager(QObject):
 
 # Global singleton instance
 theme_manager = FXThemeManager()
+
+# Canonical module-level alias: connect side-effect widgets to
+# fxstyle.theme_changed without going through the manager object.
+theme_changed = theme_manager.theme_changed
 
 
 class FXThemeAware:
@@ -394,10 +407,12 @@ __all__ = [
     "FXThemeColors",
     # Singleton
     "theme_manager",
+    "theme_changed",
     # Constants
     "STYLE_FILE",
     "DEFAULT_COLOR_FILE",
     # Color configuration
+    "colors",
     "get_colors",
     "set_color_file",
     "get_accent_colors",
@@ -417,6 +432,9 @@ __all__ = [
     # Stylesheet functions
     "load_stylesheet",
     "replace_colors",
+    "build_stylesheet",
+    "register_widget_style",
+    "register_themed_root",
     # Utility functions
     "get_luminance",
     "get_contrast_text_color",
@@ -442,6 +460,13 @@ _color_file = None  # Tracks which color file is currently loaded
 _theme = None  # Will be loaded from settings on first access
 _standard_icon_map = None  # Lazy-loaded icon map cache
 _theme_namespace = None  # Cached FXThemeColors for the current theme
+_widget_fragments: "OrderedDict[str, str]" = OrderedDict()
+_themed_roots: "weakref.WeakSet" = weakref.WeakSet()
+
+# GATE from the spike (tests/test_style_cascade.py): False when Qt's
+# cascade reliably repaints custom-painted descendants after an ancestor
+# restyle; True enables an explicit update() walk as fallback.
+_FORCE_UPDATE_WALK = False
 
 
 def _invalidate_theme_namespace() -> None:
@@ -979,57 +1004,95 @@ def get_theme() -> str:
     return _theme
 
 
-def apply_theme(
-    widget: QWidget,
-    theme: str,
-) -> str:
-    """Apply a theme to the widget with full style updates.
+def colors() -> "FXThemeColors":
+    """Get the current theme colors as a namespace (canonical read API).
 
-    This function handles all necessary state updates including:
-    - Switching the stylesheet
-    - Updating icon colors
-    - Invalidating icon caches
+    Cheap enough for ``paintEvent`` hot paths: the namespace is cached
+    per theme and rebuilt only on theme switches. Treat it as read-only.
+
+    Returns:
+        FXThemeColors with one attribute per color role.
+
+    Examples:
+        >>> def paintEvent(self, event):
+        ...     painter = QPainter(self)
+        ...     painter.fillRect(self.rect(), QColor(fxstyle.colors().surface))
+    """
+    _ensure_theme_loaded()
+    return _get_theme_namespace()
+
+
+def apply_theme(*args, widget: Optional[QWidget] = None, theme: Optional[str] = None) -> str:
+    """Apply a theme everywhere.
+
+    Canonical form::
+
+        fxstyle.apply_theme("dracula")
+
+    Updates the persistent theme state, rebuilds the theme stylesheet,
+    re-applies it to every registered root (see
+    :func:`register_themed_root`), refreshes icon colors, and emits
+    ``theme_changed``.
+
+    .. deprecated::
+        The old form ``apply_theme(widget, theme)`` still works: it
+        registers ``widget`` as a themed root and proceeds. Prefer
+        ``apply_theme(theme)``.
 
     Args:
-        widget: The QWidget subclass to apply the theme to.
-        theme: The theme name to apply (e.g., "dark", "light", or custom).
+        theme: The theme name to apply (e.g., "dark", "light").
+        widget: Deprecated. A widget to register as a themed root.
 
     Returns:
         The theme that was applied.
 
-    Examples:
-        Apply a specific theme:
-
-        >>> fxstyle.apply_theme(window, "dark")
-        >>> fxstyle.apply_theme(window, "light")
-        >>> fxstyle.apply_theme(window, "dracula")
+    Raises:
+        ValueError: If the theme does not exist.
+        TypeError: If no theme name was provided.
     """
     global _theme
 
-    # Validate theme exists
+    # Untangle the two calling conventions.
+    if args:
+        if isinstance(args[0], str):
+            if len(args) > 1 or theme is not None:
+                raise TypeError("apply_theme() takes a single theme name")
+            theme = args[0]
+        else:
+            if widget is not None:
+                raise TypeError("apply_theme() got widget twice")
+            widget = args[0]
+            if len(args) == 2:
+                if theme is not None:
+                    raise TypeError("apply_theme() got theme twice")
+                theme = args[1]
+            elif len(args) > 2:
+                raise TypeError("apply_theme() takes at most 2 arguments")
+    if theme is None:
+        raise TypeError("apply_theme() missing required 'theme'")
+
     available_themes = get_available_themes()
     if theme not in available_themes:
         raise ValueError(
             f"Theme '{theme}' not found. Available themes: {available_themes}"
         )
 
-    # Update global theme state first (so get_theme_colors returns correct theme)
+    if widget is not None:
+        warnings.warn(
+            "apply_theme(widget, theme) is deprecated; call "
+            "apply_theme(theme) once. For DCC-embedded windows, use "
+            "register_themed_root(widget) at construction instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        _themed_roots.add(widget)
+
     _theme = theme
     _invalidate_theme_namespace()
-
-    # Save the theme to persistent storage
     save_theme(theme)
-
-    # Sync icon colors with the new theme (clears cache automatically)
     fxicons.sync_colors_with_theme()
-
-    # Invalidate the standard icon map
     invalidate_standard_icon_map()
-
-    # Apply the new stylesheet
-    widget.setStyleSheet(load_stylesheet(theme=theme))
-
-    # Notify theme manager so FXThemeAware widgets update
+    _reapply_to_roots()
     theme_manager.notify_theme_changed(theme)
 
     return theme
@@ -1274,12 +1337,113 @@ def replace_colors(
     return stylesheet
 
 
+def _font_stylesheet() -> str:
+    """Return the platform font-family stylesheet block."""
+    if sys.platform == "win32":
+        default_font = "Segoe UI"
+    else:
+        default_font = QFontDatabase.systemFont(
+            QFontDatabase.GeneralFont
+        ).family()
+    return f'* {{\n    font-family: "{default_font}";\n}}\n'
+
+
+def build_stylesheet(theme: Optional[str] = None) -> str:
+    """Build the complete theme stylesheet.
+
+    Concatenates the platform font block, the base ``style.qss``, and all
+    fragments registered via :func:`register_widget_style`, then resolves
+    every ``@token`` in a single pass. Pure: no global state is modified.
+
+    Args:
+        theme: Theme name. Defaults to the current theme.
+
+    Returns:
+        The ready-to-apply stylesheet string.
+    """
+    if theme is None:
+        theme = get_theme()
+    parts = [_font_stylesheet()]
+    if os.path.exists(STYLE_FILE):
+        with open(STYLE_FILE, "r", encoding="utf-8") as in_file:
+            parts.append(in_file.read())
+    parts.extend(_widget_fragments.values())
+    return _resolve_tokens("\n".join(parts), theme)
+
+
+def register_widget_style(qss: str) -> None:
+    """Register a widget's QSS fragment with the theme stylesheet.
+
+    Call once at module import time. The fragment may use ``@tokens``
+    (e.g. ``@surface``, ``@border``); use your widget's class name as
+    selector to scope the rules. Identical fragments are registered once.
+
+    If themed roots already exist, the rebuilt sheet is re-applied to
+    them immediately, so late registration is safe.
+
+    Args:
+        qss: Stylesheet fragment with optional ``@token`` placeholders.
+
+    Examples:
+        >>> fxstyle.register_widget_style('''
+        ...     MyWidget { background: @surface; border: 1px solid @border; }
+        ... ''')
+    """
+    key = hashlib.sha1(qss.encode("utf-8")).hexdigest()
+    if key in _widget_fragments:
+        return
+    _widget_fragments[key] = qss
+    _reapply_to_roots()
+
+
+def register_themed_root(root: QObject) -> None:
+    """Register a widget (or QApplication) as a themed root.
+
+    The current theme stylesheet is applied to it immediately and
+    re-applied on every subsequent :func:`apply_theme` call. Qt cascades
+    the sheet to all descendants, so children need no registration.
+
+    Standalone apps: ``FXApplication`` registers itself; nothing to do.
+    DCC-embedded windows: ``FXMainWindow`` registers itself when the
+    running QApplication is foreign, so the host app is never restyled.
+
+    Roots are held weakly; destroyed widgets drop out automatically.
+
+    Args:
+        root: Any object with ``setStyleSheet`` (QWidget or QApplication).
+    """
+    _ensure_theme_loaded()
+    fxicons.sync_colors_with_theme()
+    _themed_roots.add(root)
+    root.setStyleSheet(build_stylesheet())
+
+
+def _reapply_to_roots() -> None:
+    """Re-apply the current theme sheet to all live registered roots."""
+    if not _themed_roots:
+        return
+    sheet = build_stylesheet()
+    for root in list(_themed_roots):
+        if not _compat.is_valid(root):
+            continue
+        root.setStyleSheet(sheet)
+        if _FORCE_UPDATE_WALK and hasattr(root, "findChildren"):
+            for child in root.findChildren(QWidget):
+                child.update()
+
+
 def load_stylesheet(
     style_file: str = STYLE_FILE,
     extra: Optional[str] = None,
     theme: str = None,
 ) -> str:
     """Load the stylesheet and replace placeholders with actual values.
+
+    Note:
+        Kept for backward compatibility and manual DCC styling. New code
+        should rely on :func:`register_themed_root` /
+        :func:`apply_theme`, which use :func:`build_stylesheet`
+        (including registered widget fragments; this function does not).
 
     Args:
         style_file: The path to the QSS file. Defaults to `STYLE_FILE`.
@@ -1293,117 +1457,22 @@ def load_stylesheet(
     global _theme
 
     if not os.path.exists(style_file):
-        # An empty string is a valid "no-op" stylesheet; the previous
-        # behavior returned the literal string "None".
+        # An empty string is a valid "no-op" stylesheet.
         return ""
 
-    # If no theme specified, use the saved theme
     if theme is None:
         theme = load_saved_theme()
 
-    # Update the global theme state to keep it in sync
+    # Keep the historical side effects: global theme state stays in sync
+    # and icon colors follow (important for startup with a saved theme).
     _theme = theme
     _invalidate_theme_namespace()
-
-    # Sync icon colors with the theme (important for startup with saved theme)
     fxicons.sync_colors_with_theme()
 
-    # Load colors from JSON
-    colors_dict = get_colors()
-
-    # Get theme-specific colors from JSON
-    theme_data = colors_dict["themes"].get(theme, colors_dict["themes"]["dark"])
-
-    # Get accent colors from the theme
-    accent_primary = theme_data.get("accent_primary", "#2196F3")
-    accent_secondary = theme_data.get("accent_secondary", "#1976D2")
-
-    with open(style_file, "r") as in_file:
+    with open(style_file, "r", encoding="utf-8") as in_file:
         stylesheet = in_file.read()
 
-    # Ensure font compatibility on multiple platforms
-    if sys.platform == "win32":
-        default_font = "Segoe UI"
-    else:
-        default_font = QFontDatabase.systemFont(
-            QFontDatabase.GeneralFont
-        ).family()
-    font_stylesheet = f"""* {{
-        font-family: "{default_font}";
-    }}
-    """
-
-    # Determine which icon folder to use based on theme brightness
-    icon_folder = "stylesheet_light" if is_light_theme() else "stylesheet_dark"
-
-    # Text color for accent backgrounds: use theme value if defined,
-    # otherwise compute based on each accent's luminance
-    text_on_accent_primary = theme_data.get(
-        "text_on_accent_primary", get_contrast_text_color(accent_primary)
-    )
-    text_on_accent_secondary = theme_data.get(
-        "text_on_accent_secondary", get_contrast_text_color(accent_secondary)
-    )
-
-    # Icon color for accent backgrounds: use theme value if defined,
-    # otherwise use the same value as text_on_accent (icons should match text)
-    icon_on_accent_primary = theme_data.get(
-        "icon_on_accent_primary", text_on_accent_primary
-    )
-    icon_on_accent_secondary = theme_data.get(
-        "icon_on_accent_secondary", text_on_accent_secondary
-    )
-
-    # Build replacement map for all placeholders
-    # Uses new semantic naming scheme
-    replace = {
-        # Accent colors
-        "@accent_primary": accent_primary,
-        "@accent_secondary": accent_secondary,
-        "@text_on_accent_primary": text_on_accent_primary,
-        "@text_on_accent_secondary": text_on_accent_secondary,
-        "@icon_on_accent_primary": icon_on_accent_primary,
-        "@icon_on_accent_secondary": icon_on_accent_secondary,
-        # Icon path
-        "~icons": str(_parent_directory / "icons" / icon_folder).replace(
-            os.sep, "/"
-        ),
-        # Surface colors
-        "@surface": theme_data.get("surface", "#302f2f"),
-        "@surface_alt": theme_data.get("surface_alt", "#2d2c2c"),
-        "@surface_sunken": theme_data.get("surface_sunken", "#201f1f"),
-        "@tooltip": theme_data.get("tooltip", "#202020"),
-        # Border colors
-        "@border": theme_data.get("border", "#3a3939"),
-        "@border_light": theme_data.get("border_light", "#4a4949"),
-        "@border_strong": theme_data.get("border_strong", "#444444"),
-        # Text colors
-        "@text": theme_data.get("text", "#bbbbbb"),
-        "@text_muted": theme_data.get("text_muted", "#b1b1b1"),
-        "@text_disabled": theme_data.get("text_disabled", "#777777"),
-        # Interactive states
-        "@state_hover": theme_data.get("state_hover", "#403f3f"),
-        "@state_pressed": theme_data.get("state_pressed", "#4a4949"),
-        # Scrollbar colors
-        "@scrollbar_track": theme_data.get("scrollbar_track", "#2a2929"),
-        "@scrollbar_thumb": theme_data.get("scrollbar_thumb", "#605f5f"),
-        "@scrollbar_thumb_hover": theme_data.get(
-            "scrollbar_thumb_hover", "#727272"
-        ),
-        # Layout colors
-        "@grid": theme_data.get("grid", "#4a4949"),
-        "@separator": theme_data.get("separator", "#787876"),
-        # Slider colors
-        "@slider_thumb": theme_data.get("slider_thumb", "#bbbbbb"),
-        "@slider_thumb_hover": theme_data.get("slider_thumb_hover", "#ffffff"),
-    }
-
-    # Sort by key length descending to avoid partial replacements
-    # (e.g., @border before @border_light)
-    for key in sorted(replace.keys(), key=len, reverse=True):
-        stylesheet = stylesheet.replace(key, replace[key])
-
-    stylesheet = font_stylesheet + stylesheet
+    stylesheet = _font_stylesheet() + _resolve_tokens(stylesheet, theme)
     if extra:
         stylesheet += extra
 

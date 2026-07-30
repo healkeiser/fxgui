@@ -26,3 +26,38 @@ def test_fxapplication_returns_host_application(qapp):
 
 def test_fxapplication_instance_classmethod(qapp):
     assert FXApplication.instance() is QApplication.instance()
+
+
+def test_fxapplication_is_themed_root(qtbot):
+    """FXApplication's stylesheet follows apply_theme(name) with no
+    per-app signal connection."""
+    from qtpy.QtWidgets import QApplication
+
+    from fxgui import fxstyle
+
+    app = QApplication.instance()
+    fxstyle._themed_roots.add(app)  # simulate FXApplication registration
+    try:
+        fxstyle.apply_theme("light")
+        light_sheet = app.styleSheet()
+        fxstyle.apply_theme("dark")
+        assert app.styleSheet() != light_sheet
+    finally:
+        app.setStyleSheet("")  # clean up for other tests
+
+
+def test_fxapplication_keeps_on_theme_changed_override_point(qapp):
+    """`_on_theme_changed` predates the themed-root registry and stays as
+    a subclass override point: subclasses that call ``super()`` must not
+    hit AttributeError.
+
+    Note:
+        Only the method's existence and super()-safety are covered here.
+        FXApplication cannot be instantiated under the test suite's
+        foreign QApplication, so the ``__init__`` connection itself is not
+        exercised; that `theme_changed` connections fire on apply_theme is
+        covered by tests/test_fxstyle_colors_api.py.
+    """
+    assert callable(FXApplication._on_theme_changed)
+    # A subclass override calling super() must be a safe no-op.
+    assert FXApplication._on_theme_changed(qapp, "dark") is None

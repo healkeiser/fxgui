@@ -86,3 +86,32 @@ def test_dark_theme_text_hierarchy_screenshot(qtbot):
     panel.show()
     qtbot.waitExposed(panel)
     _save(_grab(panel), "dark_text_hierarchy.png")
+
+
+def test_theme_switch_restyles_children_through_cascade(qtbot):
+    """Pull model end-to-end: a plain QLineEdit under a themed root
+    renders differently in dark vs light with no per-widget theming
+    code at all."""
+    from qtpy.QtWidgets import QLineEdit, QVBoxLayout, QWidget
+
+    from fxgui import fxstyle
+
+    root = QWidget()
+    layout = QVBoxLayout(root)
+    line = QLineEdit()
+    line.setMinimumSize(120, 28)
+    layout.addWidget(line)
+    qtbot.addWidget(root)
+    fxstyle.register_themed_root(root)
+    root.show()
+    qtbot.waitExposed(root)
+
+    center = line.rect().center()
+    fxstyle.apply_theme("dark")
+    qtbot.wait(20)
+    dark_pixel = line.grab().toImage().pixelColor(center)
+    fxstyle.apply_theme("light")
+    qtbot.wait(20)
+    light_pixel = line.grab().toImage().pixelColor(center)
+
+    assert dark_pixel != light_pixel
