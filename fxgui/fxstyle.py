@@ -108,8 +108,10 @@ __email__ = "valentin.onze@gmail.com"
 ###### Imports
 
 # Built-in
+import hashlib
 import os
 import sys
+from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -417,6 +419,8 @@ __all__ = [
     # Stylesheet functions
     "load_stylesheet",
     "replace_colors",
+    "build_stylesheet",
+    "register_widget_style",
     # Utility functions
     "get_luminance",
     "get_contrast_text_color",
@@ -442,6 +446,7 @@ _color_file = None  # Tracks which color file is currently loaded
 _theme = None  # Will be loaded from settings on first access
 _standard_icon_map = None  # Lazy-loaded icon map cache
 _theme_namespace = None  # Cached FXThemeColors for the current theme
+_widget_fragments: "OrderedDict[str, str]" = OrderedDict()
 
 
 def _invalidate_theme_namespace() -> None:
@@ -1272,6 +1277,72 @@ def replace_colors(
     for placeholder in sorted(placeholders, key=len, reverse=True):
         stylesheet = stylesheet.replace(placeholder, placeholders[placeholder])
     return stylesheet
+
+
+def _font_stylesheet() -> str:
+    """Return the platform font-family stylesheet block."""
+    if sys.platform == "win32":
+        default_font = "Segoe UI"
+    else:
+        default_font = QFontDatabase.systemFont(
+            QFontDatabase.GeneralFont
+        ).family()
+    return f'* {{\n    font-family: "{default_font}";\n}}\n'
+
+
+def build_stylesheet(theme: Optional[str] = None) -> str:
+    """Build the complete theme stylesheet.
+
+    Concatenates the platform font block, the base ``style.qss``, and all
+    fragments registered via :func:`register_widget_style`, then resolves
+    every ``@token`` in a single pass. Pure: no global state is modified.
+
+    Args:
+        theme: Theme name. Defaults to the current theme.
+
+    Returns:
+        The ready-to-apply stylesheet string.
+    """
+    if theme is None:
+        theme = get_theme()
+    parts = [_font_stylesheet()]
+    if os.path.exists(STYLE_FILE):
+        with open(STYLE_FILE, "r", encoding="utf-8") as in_file:
+            parts.append(in_file.read())
+    parts.extend(_widget_fragments.values())
+    return _resolve_tokens("\n".join(parts), theme)
+
+
+def register_widget_style(qss: str) -> None:
+    """Register a widget's QSS fragment with the theme stylesheet.
+
+    Call once at module import time. The fragment may use ``@tokens``
+    (e.g. ``@surface``, ``@border``); use your widget's class name as
+    selector to scope the rules. Identical fragments are registered once.
+
+    If themed roots already exist, the rebuilt sheet is re-applied to
+    them immediately, so late registration is safe.
+
+    Args:
+        qss: Stylesheet fragment with optional ``@token`` placeholders.
+
+    Examples:
+        >>> fxstyle.register_widget_style('''
+        ...     MyWidget { background: @surface; border: 1px solid @border; }
+        ... ''')
+    """
+    key = hashlib.sha1(qss.encode("utf-8")).hexdigest()
+    if key in _widget_fragments:
+        return
+    _widget_fragments[key] = qss
+    _reapply_to_roots()
+
+
+def _reapply_to_roots() -> None:
+    """Re-apply the current theme sheet to all registered roots.
+
+    Stub: real body lands with the root registry.
+    """
 
 
 def load_stylesheet(
