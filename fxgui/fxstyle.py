@@ -63,7 +63,7 @@ Functions:
     load_stylesheet: Load and customize QSS stylesheets.
     get_colors: Get the cached color configuration.
     set_color_file: Set a custom color configuration file.
-    apply_theme: Apply a theme to a widget (stylesheet + icons).
+    apply_theme: Apply a theme to all registered roots (stylesheet + icons).
     get_available_themes: Get list of available theme names.
     get_theme: Get the current theme name.
     get_theme_colors: Get the color palette for the current theme.
@@ -84,9 +84,14 @@ Examples:
     >>> stylesheet = fxstyle.load_stylesheet(theme="dracula")
     >>> widget.setStyleSheet(stylesheet)
 
+    New code should prefer `apply_theme` / `register_themed_root` instead.
+
     Applying a theme to a window:
 
-    >>> fxstyle.apply_theme(window, "one_dark_pro")
+    >>> fxstyle.apply_theme("one_dark_pro")
+
+    For DCC-embedded windows, call `fxstyle.register_themed_root(window)`
+    once at construction; `FXMainWindow` does this automatically.
 
     Getting colors for custom widgets:
 
@@ -1391,7 +1396,7 @@ def register_widget_style(qss: str) -> None:
     _reapply_to_roots()
 
 
-def register_themed_root(root) -> None:
+def register_themed_root(root: QObject) -> None:
     """Register a widget (or QApplication) as a themed root.
 
     The current theme stylesheet is applied to it immediately and

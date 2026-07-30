@@ -1,7 +1,5 @@
 """Tests for the canonical color-read API."""
 
-from qtpy.QtWidgets import QWidget
-
 from fxgui import fxstyle
 
 

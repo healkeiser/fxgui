@@ -37,8 +37,10 @@ def test_fxapplication_is_themed_root(qtbot):
 
     app = QApplication.instance()
     fxstyle._themed_roots.add(app)  # simulate FXApplication registration
-    fxstyle.apply_theme("light")
-    light_sheet = app.styleSheet()
-    fxstyle.apply_theme("dark")
-    assert app.styleSheet() != light_sheet
-    app.setStyleSheet("")  # clean up for other tests
+    try:
+        fxstyle.apply_theme("light")
+        light_sheet = app.styleSheet()
+        fxstyle.apply_theme("dark")
+        assert app.styleSheet() != light_sheet
+    finally:
+        app.setStyleSheet("")  # clean up for other tests

@@ -724,9 +724,8 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             This method is intended for internal use only.
             Use `set_theme()` for external theme selection.
         """
-        # Use centralized theme application
-        # This automatically syncs icon colors and refreshes all registered icons
-        # and triggers the FXThemeAware mixin to call _apply_theme_styles
+        # Centralized theme application: updates every registered themed
+        # root (this window included) and notifies theme_changed listeners.
         fxstyle.apply_theme(theme)
 
     def _toggle_theme(self) -> None:
