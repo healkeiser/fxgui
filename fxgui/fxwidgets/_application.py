@@ -47,19 +47,12 @@ class FXApplication(QApplication):
 
             fxstyle.set_style(self, "Fusion")
 
-            # Load stylesheet with saved theme from persistent storage
-            # load_stylesheet() automatically uses the saved theme
-            self.setStyleSheet(fxstyle.load_stylesheet())
-
-            # Connect to theme changes to update application stylesheet
-            fxstyle.theme_manager.theme_changed.connect(self._on_theme_changed)
+            # Register as themed root: the saved theme's stylesheet is
+            # applied now and re-applied automatically on apply_theme().
+            fxstyle.register_themed_root(self)
 
             # Mark the instance as initialized
             self.__initialized = True
-
-    def _on_theme_changed(self, theme_name: str) -> None:
-        """Update application stylesheet when theme changes."""
-        self.setStyleSheet(fxstyle.load_stylesheet())
 
     @classmethod
     def instance(cls, *args, **kwargs):

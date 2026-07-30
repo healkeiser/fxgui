@@ -26,3 +26,19 @@ def test_fxapplication_returns_host_application(qapp):
 
 def test_fxapplication_instance_classmethod(qapp):
     assert FXApplication.instance() is QApplication.instance()
+
+
+def test_fxapplication_is_themed_root(qtbot):
+    """FXApplication's stylesheet follows apply_theme(name) with no
+    per-app signal connection."""
+    from qtpy.QtWidgets import QApplication
+
+    from fxgui import fxstyle
+
+    app = QApplication.instance()
+    fxstyle._themed_roots.add(app)  # simulate FXApplication registration
+    fxstyle.apply_theme("light")
+    light_sheet = app.styleSheet()
+    fxstyle.apply_theme("dark")
+    assert app.styleSheet() != light_sheet
+    app.setStyleSheet("")  # clean up for other tests
