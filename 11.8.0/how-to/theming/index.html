@@ -783,6 +783,72 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#reading-theme-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading Theme Colors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-themed-roots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registering Themed Roots
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reacting-to-theme-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reacting to Theme Changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-your-own-widget-styles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registering Your Own Widget Styles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repolishing-after-a-property-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repolishing After a Property Change
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-custom-widget-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Custom Widget Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#making-custom-widgets-theme-aware" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -795,15 +861,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#basic-usage-recommended" class="md-nav__link">
+  <a href="#basic-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Usage (Recommended)
+        Basic Usage
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Basic Usage (Recommended)">
+    <nav class="md-nav" aria-label="Basic Usage">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2671,6 +2737,72 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#reading-theme-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading Theme Colors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-themed-roots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registering Themed Roots
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reacting-to-theme-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reacting to Theme Changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-your-own-widget-styles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registering Your Own Widget Styles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repolishing-after-a-property-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repolishing After a Property Change
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-custom-widget-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Custom Widget Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#making-custom-widgets-theme-aware" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2683,15 +2815,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#basic-usage-recommended" class="md-nav__link">
+  <a href="#basic-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Usage (Recommended)
+        Basic Usage
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Basic Usage (Recommended)">
+    <nav class="md-nav" aria-label="Basic Usage">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3234,10 +3366,10 @@
 <li><strong>Copy the default file</strong> as a starting point:</li>
 </ol>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxconstants</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># The default style.yaml location</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">default_file</span> <span class="o">=</span> <span class="n">fxconstants</span><span class="o">.</span><span class="n">STYLES_FILE</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">default_file</span> <span class="o">=</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">DEFAULT_COLOR_FILE</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Default file: </span><span class="si">{</span><span class="n">default_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Copy it to your preferred location</span>
@@ -3304,18 +3436,25 @@ Any colors you specify after the inheritance line will override the inherited va
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">set_color_file</span><span class="p">(</span><span class="s2">&quot;/path/to/my_theme.yaml&quot;</span><span class="p">)</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Check available themes (includes your custom ones)</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">get_available_themes</span><span class="p">())</span>  <span class="c1"># [&#39;dark&#39;, &#39;light&#39;, &#39;monokai&#39;]</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1"># Create your application</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">app</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXApplication</span><span class="p">()</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="n">window</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXMainWindow</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Custom Theme Demo&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="n">window</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="c1"># Apply your custom theme</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="s2">&quot;monokai&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">get_available_themes</span><span class="p">())</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># [&#39;dark&#39;, &#39;light&#39;, &#39;dracula&#39;, &#39;one_dark_pro&#39;, &#39;github_dark&#39;, &#39;github_light&#39;,</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1">#  &#39;catppuccin_mocha&#39;, &#39;catppuccin_latte&#39;, &#39;nord&#39;, &#39;material_dark&#39;,</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1">#  &#39;solarized_light&#39;, &#39;monokai&#39;]</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="c1"># Create your application</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="n">app</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXApplication</span><span class="p">()</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="n">window</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXMainWindow</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Custom Theme Demo&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="n">window</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="n">app</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="c1"># Apply your custom theme, everywhere</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="s2">&quot;monokai&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="n">app</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>FXMainWindow</code> registers itself as a themed root at construction (see "Registering Themed Roots" further down), so <code>apply_theme()</code> updates it, and any other registered root, without you having to touch the window directly.</p>
+</div>
 <h2 id="switching-themes-at-runtime">Switching Themes at Runtime<a class="headerlink" href="#switching-themes-at-runtime" title="Permanent link">&para;</a></h2>
 <p>You can switch between any themes defined in your YAML file:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
@@ -3323,110 +3462,205 @@ Any colors you specify after the inheritance line will override the inherited va
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Toggle between themes</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">current</span> <span class="o">=</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">get_theme</span><span class="p">()</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="k">if</span> <span class="n">current</span> <span class="o">==</span> <span class="s2">&quot;dark&quot;</span><span class="p">:</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="s2">&quot;monokai&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="s2">&quot;monokai&quot;</span><span class="p">)</span>
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="s2">&quot;dark&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="s2">&quot;dark&quot;</span><span class="p">)</span>
 </code></pre></div>
+<p><code>apply_theme(name)</code> is the canonical form. It updates the persisted theme, rebuilds the stylesheet, re-applies it to every registered root, refreshes icon colors, and emits <code>theme_changed</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Deprecated</p>
+<p>The old two-argument form, <code>apply_theme(widget, theme)</code>, still works: it registers <code>widget</code> as a themed root, then proceeds, but it now emits a <code>DeprecationWarning</code>. Call <code>apply_theme(theme)</code> on its own and register widgets separately with <code>register_themed_root()</code> (see below).</p>
+</div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Theme selection is automatically persisted via <code>fxconfig</code>. When the user restarts the application, their last selected theme is restored.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Built-in themes include: <code>dark</code>, <code>light</code>, <code>dracula</code>, and <code>one_dark_pro</code>.</p>
+<p>Built-in themes: <code>dark</code>, <code>light</code>, <code>dracula</code>, <code>one_dark_pro</code>, <code>github_dark</code>, <code>github_light</code>, <code>catppuccin_mocha</code>, <code>catppuccin_latte</code>, <code>nord</code>, <code>material_dark</code>, and <code>solarized_light</code>.</p>
 </div>
+<h2 id="reading-theme-colors">Reading Theme Colors<a class="headerlink" href="#reading-theme-colors" title="Permanent link">&para;</a></h2>
+<p>For custom drawing or one-off styling, read colors directly instead of hardcoding hex values.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">colors</span> <span class="o">=</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="nb">print</span><span class="p">(</span><span class="n">colors</span><span class="o">.</span><span class="n">surface</span><span class="p">)</span>        <span class="c1"># Current theme&#39;s main background</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">colors</span><span class="o">.</span><span class="n">accent_primary</span><span class="p">)</span> <span class="c1"># Current theme&#39;s primary accent</span>
+</code></pre></div>
+<p><code>fxstyle.colors()</code> returns the current theme as an attribute-access namespace. It's cached per theme and only rebuilt on theme switches, so it's cheap enough to call inside <code>paintEvent</code>. <code>fxstyle.get_theme_colors()</code> (a plain dict) still works, and is what <code>colors()</code> is built from; prefer <code>colors()</code> in new code.</p>
+<h2 id="registering-themed-roots">Registering Themed Roots<a class="headerlink" href="#registering-themed-roots" title="Permanent link">&para;</a></h2>
+<p><code>fxstyle.register_themed_root(root)</code> registers a widget, or the <code>QApplication</code> itself, to receive the theme stylesheet. The current theme is applied immediately, and the same root receives every later <code>apply_theme()</code> update. Qt cascades the stylesheet to descendants, so you register the top-level widget once, not each child.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QApplication</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">application</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">([])</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">register_themed_root</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+</code></pre></div>
+<p><code>fxwidgets.FXApplication</code> and <code>fxwidgets.FXMainWindow(set_stylesheet=True)</code> (the default) already call this on themselves, so most applications never need to call it directly.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Every <code>apply_theme()</code> call re-applies the stylesheet to <em>all</em> live registered roots, not just the one that triggered the switch. If you have several open <code>FXMainWindow</code> instances, they all update together.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">DCC-embedded windows</p>
+<p>Inside a DCC host (Houdini, Maya, Nuke), register the embedded window itself, never the host's <code>QApplication</code>. <code>FXMainWindow</code> does this automatically at construction, so the host application's own styling is never touched.</p>
+</div>
+<h2 id="reacting-to-theme-changes">Reacting to Theme Changes<a class="headerlink" href="#reacting-to-theme-changes" title="Permanent link">&para;</a></h2>
+<p><code>fxstyle.theme_changed</code> is a module-level signal (the same instance as <code>fxstyle.theme_manager.theme_changed</code>), emitted after a theme switch with the new theme's name.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">_on_theme_changed</span><span class="p">(</span><span class="n">theme_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Theme switched to </span><span class="si">{</span><span class="n">theme_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="c1"># e.g. invalidate a cached pixmap, or re-run syntax highlighting</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">theme_changed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">_on_theme_changed</span><span class="p">)</span>
+</code></pre></div>
+<p>Connect to it for side effects a theme switch should trigger beyond appearance (a cached pixmap to invalidate, a highlighter to re-run). For styling itself, prefer <code>theme_style</code>, <code>register_widget_style()</code>, or reading <code>fxstyle.colors()</code>, rather than restyling by hand from a <code>theme_changed</code> slot.</p>
+<h2 id="registering-your-own-widget-styles">Registering Your Own Widget Styles<a class="headerlink" href="#registering-your-own-widget-styles" title="Permanent link">&para;</a></h2>
+<p><code>fxstyle.register_widget_style(qss)</code> registers a QSS fragment, written once at module import time, using your widget's class name as the selector. The fragment can use <code>@tokens</code> (<code>@surface</code>, <code>@border</code>, and so on) exactly like the built-in stylesheet.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">register_widget_style</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="s2">    MyWidget {</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="s2">        background: @surface;</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="s2">        border: 1px solid @border;</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="s2">        border-radius: 4px;</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="s2">    }</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Registered fragments are appended after the base stylesheet and re-resolved on every theme switch. If themed roots already exist when you register, the rebuilt sheet is re-applied to them immediately, so it's safe to register from a module imported after the application has started.</p>
+<p><code>fxstyle.build_stylesheet(theme=None)</code> builds the full sheet (base QSS plus all registered fragments, with <code>@tokens</code> resolved), and is what <code>register_themed_root()</code> / <code>apply_theme()</code> use internally. <code>fxstyle.load_stylesheet()</code> remains available for manual or DCC styling, but it does <strong>not</strong> include registered fragments, use <code>build_stylesheet()</code> instead if you need your widget's registered styles in a stylesheet you're applying by hand.</p>
+<h2 id="repolishing-after-a-property-change">Repolishing After a Property Change<a class="headerlink" href="#repolishing-after-a-property-change" title="Permanent link">&para;</a></h2>
+<p>If your QSS uses a Qt dynamic property in an attribute selector, for example <code>MyBanner[level="error"] { ... }</code>, Qt won't re-evaluate that selector just because you called <code>setProperty()</code>. Call <code>fxutils.repolish()</code> afterward:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxutils</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">banner</span><span class="o">.</span><span class="n">setProperty</span><span class="p">(</span><span class="s2">&quot;level&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">fxutils</span><span class="o">.</span><span class="n">repolish</span><span class="p">(</span><span class="n">banner</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="the-custom-widget-contract">The Custom Widget Contract<a class="headerlink" href="#the-custom-widget-contract" title="Permanent link">&para;</a></h2>
+<p>For a new custom widget, you don't need <code>FXThemeAware</code> to be theme-aware. The building blocks above cover almost every case:</p>
+<ul>
+<li>Put your rules in QSS with <code>@tokens</code>, using your class name as the selector, via <code>register_widget_style()</code>.</li>
+<li>Or read <code>fxstyle.colors()</code> inside <code>paintEvent()</code> for custom-painted widgets.</li>
+<li>Only connect to <code>fxstyle.theme_changed</code> if a theme switch has side effects beyond appearance.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPainter</span><span class="p">,</span> <span class="n">QColor</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">register_widget_style</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="s2">    MyStatusChip {</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="s2">        border: 1px solid @border;</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="s2">        border-radius: 10px;</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="s2">    }</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyStatusChip</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A theme-aware widget with no FXThemeAware dependency.&quot;&quot;&quot;</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>        <span class="n">painter</span> <span class="o">=</span> <span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">fillRect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">QColor</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span><span class="o">.</span><span class="n">surface</span><span class="p">))</span>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">drawText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">,</span> <span class="s2">&quot;Ready&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>This is the recommended approach for new custom widgets going forward. It doesn't replace <code>FXThemeAware</code>: the mixin documented below is still fully supported, and every built-in fxgui widget still uses it. Reach for the mixin when you want its <code>theme_style</code> / <code>self.theme</code> / <code>_on_theme_changed()</code> conveniences bundled together; reach for the contract above when a plain QSS fragment or a <code>paintEvent</code> read is all your widget needs.</p>
 <hr />
 <h2 id="making-custom-widgets-theme-aware">Making Custom Widgets Theme-Aware<a class="headerlink" href="#making-custom-widgets-theme-aware" title="Permanent link">&para;</a></h2>
-<p>When you create your own widgets, you'll want them to automatically update when the user switches themes. fxgui provides <code>FXThemeAware</code>, a mixin that handles this for you.</p>
-<h3 id="basic-usage-recommended">Basic Usage (Recommended)<a class="headerlink" href="#basic-usage-recommended" title="Permanent link">&para;</a></h3>
-<p>There are three ways to make your widgets theme-aware, from simplest to most flexible:</p>
+<p>fxgui also provides <code>FXThemeAware</code>, a mixin that makes a widget automatically update when the user switches themes. It predates the contract above, remains fully supported, and is what every built-in fxgui widget uses today.</p>
+<h3 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h3>
+<p>There are three ways to make your widgets theme-aware with the mixin, from simplest to most flexible:</p>
 <h4 id="option-1-declarative-qss-with-theme_style-simplest">Option 1: Declarative QSS with <code>theme_style</code> (Simplest)<a class="headerlink" href="#option-1-declarative-qss-with-theme_style-simplest" title="Permanent link">&para;</a></h4>
 <p>Declare a <code>theme_style</code> class attribute with QSS containing <code>@color</code> tokens:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QVBoxLayout</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyCustomWidget</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A simple theme-aware widget using declarative styling.&quot;&quot;&quot;</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="c1"># Declare your styles with @token placeholders - they auto-update!</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="n">theme_style</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="s2">        MyCustomWidget {</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="s2">            background-color: @surface;</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="s2">            border: 1px solid @border;</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="s2">            border-radius: 4px;</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="s2">        }</span>
-<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="s2">        MyCustomWidget QLabel {</span>
-<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="s2">            color: @text;</span>
-<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="s2">        }</span>
-<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="s2">    &quot;&quot;&quot;</span>
-<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>
-<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
-<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>
-<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Hello, World!&quot;</span><span class="p">)</span>
-<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QVBoxLayout</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyCustomWidget</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A simple theme-aware widget using declarative styling.&quot;&quot;&quot;</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>    <span class="c1"># Declare your styles with @token placeholders - they auto-update!</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>    <span class="n">theme_style</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="s2">        MyCustomWidget {</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="s2">            background-color: @surface;</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="s2">            border: 1px solid @border;</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="s2">            border-radius: 4px;</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="s2">        }</span>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="s2">        MyCustomWidget QLabel {</span>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="s2">            color: @text;</span>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="s2">        }</span>
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="s2">    &quot;&quot;&quot;</span>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Hello, World!&quot;</span><span class="p">)</span>
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
 </code></pre></div>
 <p>That's it! The <code>@surface</code>, <code>@border</code>, and <code>@text</code> tokens are automatically replaced with the current theme colors, and the stylesheet is reapplied whenever the theme changes.</p>
 <h4 id="option-2-using-selftheme-in-paintevent-for-custom-painting">Option 2: Using <code>self.theme</code> in <code>paintEvent()</code> (For Custom Painting)<a class="headerlink" href="#option-2-using-selftheme-in-paintevent-for-custom-painting" title="Permanent link">&para;</a></h4>
 <p>For widgets that use custom painting, access colors via the <code>self.theme</code> property:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPainter</span><span class="p">,</span> <span class="n">QColor</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyPaintedWidget</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A custom-painted theme-aware widget.&quot;&quot;&quot;</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>        <span class="n">painter</span> <span class="o">=</span> <span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>        <span class="c1"># Access colors via self.theme - always returns current theme colors</span>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">fillRect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">QColor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">surface</span><span class="p">))</span>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_primary</span><span class="p">))</span>
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">drawRect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">()</span><span class="o">.</span><span class="n">adjusted</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>
-<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>        <span class="c1"># Draw text with theme color</span>
-<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
-<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">drawText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="s2">&quot;Hello!&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPainter</span><span class="p">,</span> <span class="n">QColor</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyPaintedWidget</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A custom-painted theme-aware widget.&quot;&quot;&quot;</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>        <span class="n">painter</span> <span class="o">=</span> <span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>        <span class="c1"># Access colors via self.theme - always returns current theme colors</span>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">fillRect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">QColor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">surface</span><span class="p">))</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_primary</span><span class="p">))</span>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">drawRect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">()</span><span class="o">.</span><span class="n">adjusted</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>        <span class="c1"># Draw text with theme color</span>
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">drawText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="s2">&quot;Hello!&quot;</span><span class="p">)</span>
 </code></pre></div>
 <p>The <code>FXThemeAware</code> mixin automatically calls <code>update()</code> on theme change, triggering a repaint with the new colors.</p>
 <h4 id="option-3-override-_on_theme_changed-for-complex-logic">Option 3: Override <code>_on_theme_changed()</code> (For Complex Logic)<a class="headerlink" href="#option-3-override-_on_theme_changed-for-complex-logic" title="Permanent link">&para;</a></h4>
 <p>For widgets that need custom logic when the theme changes:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QVBoxLayout</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyCustomWidget</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A theme-aware widget with custom update logic.&quot;&quot;&quot;</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Hello, World!&quot;</span><span class="p">)</span>
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">status_indicator</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_indicator</span><span class="p">)</span>
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_on_theme_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Called automatically when theme changes.&quot;&quot;&quot;</span>
-<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>        <span class="c1"># Access colors via self.theme property</span>
-<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="s2">            MyCustomWidget </span><span class="se">{{</span>
-<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="s2">                background-color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">surface</span><span class="si">}</span><span class="s2">;</span>
-<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="s2">                border: 1px solid </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">border</span><span class="si">}</span><span class="s2">;</span>
-<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a><span class="s2">                border-radius: 4px;</span>
-<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a><span class="s2">            </span><span class="se">}}</span>
-<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a><span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
-<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>
-<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">;&quot;</span><span class="p">)</span>
-<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>
-<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>        <span class="c1"># Custom logic - update a non-theme-aware child</span>
-<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">status_indicator</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span>
-<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>            <span class="sa">f</span><span class="s2">&quot;background: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_primary</span><span class="si">}</span><span class="s2">;&quot;</span>
-<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>        <span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QVBoxLayout</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyCustomWidget</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A theme-aware widget with custom update logic.&quot;&quot;&quot;</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Hello, World!&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">status_indicator</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_indicator</span><span class="p">)</span>
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_on_theme_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Called automatically when theme changes.&quot;&quot;&quot;</span>
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a>        <span class="c1"># Access colors via self.theme property</span>
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a><span class="s2">            MyCustomWidget </span><span class="se">{{</span>
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a><span class="s2">                background-color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">surface</span><span class="si">}</span><span class="s2">;</span>
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="s2">                border: 1px solid </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">border</span><span class="si">}</span><span class="s2">;</span>
+<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a><span class="s2">                border-radius: 4px;</span>
+<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a><span class="s2">            </span><span class="se">}}</span>
+<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a>
+<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">;&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a>
+<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a>        <span class="c1"># Custom logic - update a non-theme-aware child</span>
+<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">status_indicator</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span>
+<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a>            <span class="sa">f</span><span class="s2">&quot;background: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_primary</span><span class="si">}</span><span class="s2">;&quot;</span>
+<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a>        <span class="p">)</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -3461,133 +3695,133 @@ Any colors you specify after the inheritance line will override the inherited va
 </table>
 <h3 id="using-accent-colors">Using Accent Colors<a class="headerlink" href="#using-accent-colors" title="Permanent link">&para;</a></h3>
 <p>For interactive elements like buttons or links, use accent colors:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyButton</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">theme_style</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="s2">        QPushButton {</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="s2">            background-color: @accent_primary;</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="s2">            color: white;</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="s2">            border: none;</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="s2">            padding: 8px 16px;</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="s2">            border-radius: 4px;</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="s2">        }</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="s2">        QPushButton:hover {</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="s2">            background-color: @accent_secondary;</span>
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="s2">        }</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="s2">    &quot;&quot;&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyButton</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>    <span class="n">theme_style</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="s2">        QPushButton {</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="s2">            background-color: @accent_primary;</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="s2">            color: white;</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="s2">            border: none;</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="s2">            padding: 8px 16px;</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="s2">            border-radius: 4px;</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="s2">        }</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="s2">        QPushButton:hover {</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="s2">            background-color: @accent_secondary;</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="s2">        }</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="s2">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>Or programmatically:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">_on_theme_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">button</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="s2">        QPushButton </span><span class="se">{{</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="s2">            background-color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_primary</span><span class="si">}</span><span class="s2">;</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="s2">            color: white;</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="s2">            border: none;</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="s2">            padding: 8px 16px;</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="s2">            border-radius: 4px;</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="s2">        </span><span class="se">}}</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="s2">        QPushButton:hover </span><span class="se">{{</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="s2">            background-color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_secondary</span><span class="si">}</span><span class="s2">;</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="s2">        </span><span class="se">}}</span>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">_on_theme_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">button</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="s2">        QPushButton </span><span class="se">{{</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="s2">            background-color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_primary</span><span class="si">}</span><span class="s2">;</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="s2">            color: white;</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="s2">            border: none;</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="s2">            padding: 8px 16px;</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="s2">            border-radius: 4px;</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="s2">        </span><span class="se">}}</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="s2">        QPushButton:hover </span><span class="se">{{</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="s2">            background-color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_secondary</span><span class="si">}</span><span class="s2">;</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="s2">        </span><span class="se">}}</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="available-color-tokens">Available Color Tokens<a class="headerlink" href="#available-color-tokens" title="Permanent link">&para;</a></h3>
 <p>These tokens can be used in <code>theme_style</code> (with <code>@</code> prefix) or accessed via <code>self.theme</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Via self.theme property (recommended)</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">surface</span>          <span class="c1"># Main window/dialog background</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">surface_alt</span>      <span class="c1"># Alternate/secondary panels</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">surface_sunken</span>   <span class="c1"># Input fields, code blocks</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">tooltip</span>          <span class="c1"># Tooltip background</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">border</span>           <span class="c1"># Primary borders</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">border_light</span>     <span class="c1"># Subtle separators, dividers</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">border_strong</span>    <span class="c1"># Emphasized borders, focus rings</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text</span>             <span class="c1"># Primary text</span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text_muted</span>       <span class="c1"># Secondary/hint text</span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text_disabled</span>    <span class="c1"># Disabled elements</span>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">state_hover</span>      <span class="c1"># Hover state background</span>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">state_pressed</span>    <span class="c1"># Pressed/checked background</span>
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_primary</span>   <span class="c1"># Primary accent (buttons, links)</span>
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_secondary</span> <span class="c1"># Secondary accent (hover states)</span>
-<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>
-<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">scrollbar_track</span>        <span class="c1"># Scrollbar track</span>
-<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">scrollbar_thumb</span>        <span class="c1"># Scrollbar handle</span>
-<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">scrollbar_thumb_hover</span>  <span class="c1"># Scrollbar handle on hover</span>
-<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">slider_thumb</span>           <span class="c1"># Slider handle</span>
-<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">slider_thumb_hover</span>     <span class="c1"># Slider handle on hover</span>
-<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">grid</span>                   <span class="c1"># Table/tree gridlines</span>
-<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">separator</span>              <span class="c1"># Menu/toolbar separators</span>
-<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">icon</span>                   <span class="c1"># Icon tint color</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Via self.theme property (recommended)</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">surface</span>          <span class="c1"># Main window/dialog background</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">surface_alt</span>      <span class="c1"># Alternate/secondary panels</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">surface_sunken</span>   <span class="c1"># Input fields, code blocks</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">tooltip</span>          <span class="c1"># Tooltip background</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">border</span>           <span class="c1"># Primary borders</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">border_light</span>     <span class="c1"># Subtle separators, dividers</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">border_strong</span>    <span class="c1"># Emphasized borders, focus rings</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text</span>             <span class="c1"># Primary text</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text_muted</span>       <span class="c1"># Secondary/hint text</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text_disabled</span>    <span class="c1"># Disabled elements</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">state_hover</span>      <span class="c1"># Hover state background</span>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">state_pressed</span>    <span class="c1"># Pressed/checked background</span>
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a>
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_primary</span>   <span class="c1"># Primary accent (buttons, links)</span>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_secondary</span> <span class="c1"># Secondary accent (hover states)</span>
+<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a>
+<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">scrollbar_track</span>        <span class="c1"># Scrollbar track</span>
+<a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">scrollbar_thumb</span>        <span class="c1"># Scrollbar handle</span>
+<a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">scrollbar_thumb_hover</span>  <span class="c1"># Scrollbar handle on hover</span>
+<a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">slider_thumb</span>           <span class="c1"># Slider handle</span>
+<a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">slider_thumb_hover</span>     <span class="c1"># Slider handle on hover</span>
+<a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">grid</span>                   <span class="c1"># Table/tree gridlines</span>
+<a id="__codelineno-16-27" name="__codelineno-16-27" href="#__codelineno-16-27"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">separator</span>              <span class="c1"># Menu/toolbar separators</span>
+<a id="__codelineno-16-28" name="__codelineno-16-28" href="#__codelineno-16-28"></a><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">icon</span>                   <span class="c1"># Icon tint color</span>
 </code></pre></div>
 <p>In <code>theme_style</code>, use these as <code>@surface</code>, <code>@text</code>, <code>@accent_primary</code>, etc.</p>
 <h3 id="complete-example">Complete Example<a class="headerlink" href="#complete-example" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QPushButton</span><span class="p">,</span> <span class="n">QVBoxLayout</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span><span class="p">,</span> <span class="n">fxwidgets</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">FXInfoCard</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A themed info card with title and action button.&quot;&quot;&quot;</span>
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>    <span class="c1"># Declarative styling with @tokens</span>
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>    <span class="n">theme_style</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="s2">        FXInfoCard {</span>
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="s2">            background-color: @surface;</span>
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="s2">            border: 1px solid @border;</span>
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="s2">            border-radius: 8px;</span>
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="s2">        }</span>
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="s2">    &quot;&quot;&quot;</span>
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Info&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
-<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>
-<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
-<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>
-<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title_label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
-<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">action_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Learn More&quot;</span><span class="p">)</span>
-<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>
-<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title_label</span><span class="p">)</span>
-<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
-<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">action_btn</span><span class="p">)</span>
-<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a>
-<a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_on_theme_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-11-31" name="__codelineno-11-31" href="#__codelineno-11-31"></a>        <span class="c1"># For child widgets that need programmatic styling</span>
-<a id="__codelineno-11-32" name="__codelineno-11-32" href="#__codelineno-11-32"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title_label</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<a id="__codelineno-11-33" name="__codelineno-11-33" href="#__codelineno-11-33"></a><span class="s2">            QLabel </span><span class="se">{{</span>
-<a id="__codelineno-11-34" name="__codelineno-11-34" href="#__codelineno-11-34"></a><span class="s2">                color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">;</span>
-<a id="__codelineno-11-35" name="__codelineno-11-35" href="#__codelineno-11-35"></a><span class="s2">                font-size: 16px;</span>
-<a id="__codelineno-11-36" name="__codelineno-11-36" href="#__codelineno-11-36"></a><span class="s2">                font-weight: bold;</span>
-<a id="__codelineno-11-37" name="__codelineno-11-37" href="#__codelineno-11-37"></a><span class="s2">            </span><span class="se">}}</span>
-<a id="__codelineno-11-38" name="__codelineno-11-38" href="#__codelineno-11-38"></a><span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
-<a id="__codelineno-11-39" name="__codelineno-11-39" href="#__codelineno-11-39"></a>
-<a id="__codelineno-11-40" name="__codelineno-11-40" href="#__codelineno-11-40"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">action_btn</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<a id="__codelineno-11-41" name="__codelineno-11-41" href="#__codelineno-11-41"></a><span class="s2">            QPushButton </span><span class="se">{{</span>
-<a id="__codelineno-11-42" name="__codelineno-11-42" href="#__codelineno-11-42"></a><span class="s2">                background-color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_primary</span><span class="si">}</span><span class="s2">;</span>
-<a id="__codelineno-11-43" name="__codelineno-11-43" href="#__codelineno-11-43"></a><span class="s2">                color: white;</span>
-<a id="__codelineno-11-44" name="__codelineno-11-44" href="#__codelineno-11-44"></a><span class="s2">                border: none;</span>
-<a id="__codelineno-11-45" name="__codelineno-11-45" href="#__codelineno-11-45"></a><span class="s2">                padding: 8px 16px;</span>
-<a id="__codelineno-11-46" name="__codelineno-11-46" href="#__codelineno-11-46"></a><span class="s2">                border-radius: 4px;</span>
-<a id="__codelineno-11-47" name="__codelineno-11-47" href="#__codelineno-11-47"></a><span class="s2">            </span><span class="se">}}</span>
-<a id="__codelineno-11-48" name="__codelineno-11-48" href="#__codelineno-11-48"></a><span class="s2">            QPushButton:hover </span><span class="se">{{</span>
-<a id="__codelineno-11-49" name="__codelineno-11-49" href="#__codelineno-11-49"></a><span class="s2">                background-color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_secondary</span><span class="si">}</span><span class="s2">;</span>
-<a id="__codelineno-11-50" name="__codelineno-11-50" href="#__codelineno-11-50"></a><span class="s2">            </span><span class="se">}}</span>
-<a id="__codelineno-11-51" name="__codelineno-11-51" href="#__codelineno-11-51"></a><span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
-<a id="__codelineno-11-52" name="__codelineno-11-52" href="#__codelineno-11-52"></a>
-<a id="__codelineno-11-53" name="__codelineno-11-53" href="#__codelineno-11-53"></a>
-<a id="__codelineno-11-54" name="__codelineno-11-54" href="#__codelineno-11-54"></a><span class="c1"># Usage</span>
-<a id="__codelineno-11-55" name="__codelineno-11-55" href="#__codelineno-11-55"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-<a id="__codelineno-11-56" name="__codelineno-11-56" href="#__codelineno-11-56"></a>    <span class="n">app</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXApplication</span><span class="p">()</span>
-<a id="__codelineno-11-57" name="__codelineno-11-57" href="#__codelineno-11-57"></a>
-<a id="__codelineno-11-58" name="__codelineno-11-58" href="#__codelineno-11-58"></a>    <span class="n">card</span> <span class="o">=</span> <span class="n">FXInfoCard</span><span class="p">(</span><span class="s2">&quot;Welcome to fxgui&quot;</span><span class="p">)</span>
-<a id="__codelineno-11-59" name="__codelineno-11-59" href="#__codelineno-11-59"></a>    <span class="n">card</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
-<a id="__codelineno-11-60" name="__codelineno-11-60" href="#__codelineno-11-60"></a>    <span class="n">card</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<a id="__codelineno-11-61" name="__codelineno-11-61" href="#__codelineno-11-61"></a>
-<a id="__codelineno-11-62" name="__codelineno-11-62" href="#__codelineno-11-62"></a>    <span class="c1"># Theme changes automatically update the card</span>
-<a id="__codelineno-11-63" name="__codelineno-11-63" href="#__codelineno-11-63"></a>    <span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="n">card</span><span class="p">,</span> <span class="s2">&quot;dark&quot;</span><span class="p">)</span>
-<a id="__codelineno-11-64" name="__codelineno-11-64" href="#__codelineno-11-64"></a>
-<a id="__codelineno-11-65" name="__codelineno-11-65" href="#__codelineno-11-65"></a>    <span class="n">app</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QPushButton</span><span class="p">,</span> <span class="n">QVBoxLayout</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span><span class="p">,</span> <span class="n">fxwidgets</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">FXInfoCard</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A themed info card with title and action button.&quot;&quot;&quot;</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>    <span class="c1"># Declarative styling with @tokens</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>    <span class="n">theme_style</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="s2">        FXInfoCard {</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="s2">            background-color: @surface;</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="s2">            border: 1px solid @border;</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="s2">            border-radius: 8px;</span>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="s2">        }</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="s2">    &quot;&quot;&quot;</span>
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Info&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>
+<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+<a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>
+<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title_label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+<a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">action_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Learn More&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a>
+<a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title_label</span><span class="p">)</span>
+<a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+<a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">action_btn</span><span class="p">)</span>
+<a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a>
+<a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_on_theme_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-17-31" name="__codelineno-17-31" href="#__codelineno-17-31"></a>        <span class="c1"># For child widgets that need programmatic styling</span>
+<a id="__codelineno-17-32" name="__codelineno-17-32" href="#__codelineno-17-32"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title_label</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a><span class="s2">            QLabel </span><span class="se">{{</span>
+<a id="__codelineno-17-34" name="__codelineno-17-34" href="#__codelineno-17-34"></a><span class="s2">                color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">;</span>
+<a id="__codelineno-17-35" name="__codelineno-17-35" href="#__codelineno-17-35"></a><span class="s2">                font-size: 16px;</span>
+<a id="__codelineno-17-36" name="__codelineno-17-36" href="#__codelineno-17-36"></a><span class="s2">                font-weight: bold;</span>
+<a id="__codelineno-17-37" name="__codelineno-17-37" href="#__codelineno-17-37"></a><span class="s2">            </span><span class="se">}}</span>
+<a id="__codelineno-17-38" name="__codelineno-17-38" href="#__codelineno-17-38"></a><span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-39" name="__codelineno-17-39" href="#__codelineno-17-39"></a>
+<a id="__codelineno-17-40" name="__codelineno-17-40" href="#__codelineno-17-40"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">action_btn</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-17-41" name="__codelineno-17-41" href="#__codelineno-17-41"></a><span class="s2">            QPushButton </span><span class="se">{{</span>
+<a id="__codelineno-17-42" name="__codelineno-17-42" href="#__codelineno-17-42"></a><span class="s2">                background-color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_primary</span><span class="si">}</span><span class="s2">;</span>
+<a id="__codelineno-17-43" name="__codelineno-17-43" href="#__codelineno-17-43"></a><span class="s2">                color: white;</span>
+<a id="__codelineno-17-44" name="__codelineno-17-44" href="#__codelineno-17-44"></a><span class="s2">                border: none;</span>
+<a id="__codelineno-17-45" name="__codelineno-17-45" href="#__codelineno-17-45"></a><span class="s2">                padding: 8px 16px;</span>
+<a id="__codelineno-17-46" name="__codelineno-17-46" href="#__codelineno-17-46"></a><span class="s2">                border-radius: 4px;</span>
+<a id="__codelineno-17-47" name="__codelineno-17-47" href="#__codelineno-17-47"></a><span class="s2">            </span><span class="se">}}</span>
+<a id="__codelineno-17-48" name="__codelineno-17-48" href="#__codelineno-17-48"></a><span class="s2">            QPushButton:hover </span><span class="se">{{</span>
+<a id="__codelineno-17-49" name="__codelineno-17-49" href="#__codelineno-17-49"></a><span class="s2">                background-color: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">theme</span><span class="o">.</span><span class="n">accent_secondary</span><span class="si">}</span><span class="s2">;</span>
+<a id="__codelineno-17-50" name="__codelineno-17-50" href="#__codelineno-17-50"></a><span class="s2">            </span><span class="se">}}</span>
+<a id="__codelineno-17-51" name="__codelineno-17-51" href="#__codelineno-17-51"></a><span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-52" name="__codelineno-17-52" href="#__codelineno-17-52"></a>
+<a id="__codelineno-17-53" name="__codelineno-17-53" href="#__codelineno-17-53"></a>
+<a id="__codelineno-17-54" name="__codelineno-17-54" href="#__codelineno-17-54"></a><span class="c1"># Usage</span>
+<a id="__codelineno-17-55" name="__codelineno-17-55" href="#__codelineno-17-55"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-17-56" name="__codelineno-17-56" href="#__codelineno-17-56"></a>    <span class="n">app</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXApplication</span><span class="p">()</span>
+<a id="__codelineno-17-57" name="__codelineno-17-57" href="#__codelineno-17-57"></a>
+<a id="__codelineno-17-58" name="__codelineno-17-58" href="#__codelineno-17-58"></a>    <span class="n">card</span> <span class="o">=</span> <span class="n">FXInfoCard</span><span class="p">(</span><span class="s2">&quot;Welcome to fxgui&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-59" name="__codelineno-17-59" href="#__codelineno-17-59"></a>    <span class="n">card</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+<a id="__codelineno-17-60" name="__codelineno-17-60" href="#__codelineno-17-60"></a>    <span class="n">card</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<a id="__codelineno-17-61" name="__codelineno-17-61" href="#__codelineno-17-61"></a>
+<a id="__codelineno-17-62" name="__codelineno-17-62" href="#__codelineno-17-62"></a>    <span class="c1"># Theme changes automatically update the card</span>
+<a id="__codelineno-17-63" name="__codelineno-17-63" href="#__codelineno-17-63"></a>    <span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="s2">&quot;dark&quot;</span><span class="p">)</span>
+<a id="__codelineno-17-64" name="__codelineno-17-64" href="#__codelineno-17-64"></a>
+<a id="__codelineno-17-65" name="__codelineno-17-65" href="#__codelineno-17-65"></a>    <span class="n">app</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
 </code></pre></div>
 <hr />
 <h2 id="legacy-api-deprecated">Legacy API (Deprecated)<a class="headerlink" href="#legacy-api-deprecated" title="Permanent link">&para;</a></h2>
@@ -3596,34 +3830,34 @@ Any colors you specify after the inheritance line will override the inherited va
 <p>The following API still works but is deprecated. Please migrate to the new API described above.</p>
 </div>
 <p>The old way of creating theme-aware widgets used <code>_apply_theme_styles()</code> and <code>fxstyle.get_theme_colors()</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QVBoxLayout</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyCustomWidget</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Legacy theme-aware widget (deprecated).&quot;&quot;&quot;</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Hello, World!&quot;</span><span class="p">)</span>
-<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
-<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>
-<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_theme_styles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Deprecated: Use _on_theme_changed() or theme_style instead.&quot;&quot;&quot;</span>
-<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>        <span class="n">colors</span> <span class="o">=</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">get_theme_colors</span><span class="p">()</span>
-<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>
-<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a><span class="s2">            QWidget </span><span class="se">{{</span>
-<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="s2">                background-color: </span><span class="si">{</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;surface&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">;</span>
-<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a><span class="s2">                border: 1px solid </span><span class="si">{</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;border&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">;</span>
-<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a><span class="s2">                border-radius: 4px;</span>
-<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a><span class="s2">            </span><span class="se">}}</span>
-<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a><span class="s2">            QLabel </span><span class="se">{{</span>
-<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a><span class="s2">                color: </span><span class="si">{</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">;</span>
-<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a><span class="s2">            </span><span class="se">}}</span>
-<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a><span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QVBoxLayout</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyCustomWidget</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">FXThemeAware</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">):</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Legacy theme-aware widget (deprecated).&quot;&quot;&quot;</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Hello, World!&quot;</span><span class="p">)</span>
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a>        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a>
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_theme_styles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Deprecated: Use _on_theme_changed() or theme_style instead.&quot;&quot;&quot;</span>
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a>        <span class="n">colors</span> <span class="o">=</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">get_theme_colors</span><span class="p">()</span>
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a>
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="s2">            QWidget </span><span class="se">{{</span>
+<a id="__codelineno-18-21" name="__codelineno-18-21" href="#__codelineno-18-21"></a><span class="s2">                background-color: </span><span class="si">{</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;surface&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">;</span>
+<a id="__codelineno-18-22" name="__codelineno-18-22" href="#__codelineno-18-22"></a><span class="s2">                border: 1px solid </span><span class="si">{</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;border&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">;</span>
+<a id="__codelineno-18-23" name="__codelineno-18-23" href="#__codelineno-18-23"></a><span class="s2">                border-radius: 4px;</span>
+<a id="__codelineno-18-24" name="__codelineno-18-24" href="#__codelineno-18-24"></a><span class="s2">            </span><span class="se">}}</span>
+<a id="__codelineno-18-25" name="__codelineno-18-25" href="#__codelineno-18-25"></a><span class="s2">            QLabel </span><span class="se">{{</span>
+<a id="__codelineno-18-26" name="__codelineno-18-26" href="#__codelineno-18-26"></a><span class="s2">                color: </span><span class="si">{</span><span class="n">colors</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">;</span>
+<a id="__codelineno-18-27" name="__codelineno-18-27" href="#__codelineno-18-27"></a><span class="s2">            </span><span class="se">}}</span>
+<a id="__codelineno-18-28" name="__codelineno-18-28" href="#__codelineno-18-28"></a><span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="migration-guide">Migration Guide<a class="headerlink" href="#migration-guide" title="Permanent link">&para;</a></h3>
 <table>
@@ -3677,7 +3911,7 @@ Any colors you specify after the inheritance line will override the inherited va
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="January 10, 2026 16:31:07 UTC">January 10, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 30, 2026 14:29:38 UTC">July 30, 2026</span>
   </span>
 
     
