@@ -1434,6 +1434,12 @@ def load_stylesheet(
 ) -> str:
     """Load the stylesheet and replace placeholders with actual values.
 
+    Note:
+        Kept for backward compatibility and manual DCC styling. New code
+        should rely on :func:`register_themed_root` /
+        :func:`apply_theme`, which use :func:`build_stylesheet`
+        (including registered widget fragments; this function does not).
+
     Args:
         style_file: The path to the QSS file. Defaults to `STYLE_FILE`.
         extra: Extra stylesheet content to append. Defaults to None.
@@ -1446,117 +1452,22 @@ def load_stylesheet(
     global _theme
 
     if not os.path.exists(style_file):
-        # An empty string is a valid "no-op" stylesheet; the previous
-        # behavior returned the literal string "None".
+        # An empty string is a valid "no-op" stylesheet.
         return ""
 
-    # If no theme specified, use the saved theme
     if theme is None:
         theme = load_saved_theme()
 
-    # Update the global theme state to keep it in sync
+    # Keep the historical side effects: global theme state stays in sync
+    # and icon colors follow (important for startup with a saved theme).
     _theme = theme
     _invalidate_theme_namespace()
-
-    # Sync icon colors with the theme (important for startup with saved theme)
     fxicons.sync_colors_with_theme()
 
-    # Load colors from JSON
-    colors_dict = get_colors()
-
-    # Get theme-specific colors from JSON
-    theme_data = colors_dict["themes"].get(theme, colors_dict["themes"]["dark"])
-
-    # Get accent colors from the theme
-    accent_primary = theme_data.get("accent_primary", "#2196F3")
-    accent_secondary = theme_data.get("accent_secondary", "#1976D2")
-
-    with open(style_file, "r") as in_file:
+    with open(style_file, "r", encoding="utf-8") as in_file:
         stylesheet = in_file.read()
 
-    # Ensure font compatibility on multiple platforms
-    if sys.platform == "win32":
-        default_font = "Segoe UI"
-    else:
-        default_font = QFontDatabase.systemFont(
-            QFontDatabase.GeneralFont
-        ).family()
-    font_stylesheet = f"""* {{
-        font-family: "{default_font}";
-    }}
-    """
-
-    # Determine which icon folder to use based on theme brightness
-    icon_folder = "stylesheet_light" if is_light_theme() else "stylesheet_dark"
-
-    # Text color for accent backgrounds: use theme value if defined,
-    # otherwise compute based on each accent's luminance
-    text_on_accent_primary = theme_data.get(
-        "text_on_accent_primary", get_contrast_text_color(accent_primary)
-    )
-    text_on_accent_secondary = theme_data.get(
-        "text_on_accent_secondary", get_contrast_text_color(accent_secondary)
-    )
-
-    # Icon color for accent backgrounds: use theme value if defined,
-    # otherwise use the same value as text_on_accent (icons should match text)
-    icon_on_accent_primary = theme_data.get(
-        "icon_on_accent_primary", text_on_accent_primary
-    )
-    icon_on_accent_secondary = theme_data.get(
-        "icon_on_accent_secondary", text_on_accent_secondary
-    )
-
-    # Build replacement map for all placeholders
-    # Uses new semantic naming scheme
-    replace = {
-        # Accent colors
-        "@accent_primary": accent_primary,
-        "@accent_secondary": accent_secondary,
-        "@text_on_accent_primary": text_on_accent_primary,
-        "@text_on_accent_secondary": text_on_accent_secondary,
-        "@icon_on_accent_primary": icon_on_accent_primary,
-        "@icon_on_accent_secondary": icon_on_accent_secondary,
-        # Icon path
-        "~icons": str(_parent_directory / "icons" / icon_folder).replace(
-            os.sep, "/"
-        ),
-        # Surface colors
-        "@surface": theme_data.get("surface", "#302f2f"),
-        "@surface_alt": theme_data.get("surface_alt", "#2d2c2c"),
-        "@surface_sunken": theme_data.get("surface_sunken", "#201f1f"),
-        "@tooltip": theme_data.get("tooltip", "#202020"),
-        # Border colors
-        "@border": theme_data.get("border", "#3a3939"),
-        "@border_light": theme_data.get("border_light", "#4a4949"),
-        "@border_strong": theme_data.get("border_strong", "#444444"),
-        # Text colors
-        "@text": theme_data.get("text", "#bbbbbb"),
-        "@text_muted": theme_data.get("text_muted", "#b1b1b1"),
-        "@text_disabled": theme_data.get("text_disabled", "#777777"),
-        # Interactive states
-        "@state_hover": theme_data.get("state_hover", "#403f3f"),
-        "@state_pressed": theme_data.get("state_pressed", "#4a4949"),
-        # Scrollbar colors
-        "@scrollbar_track": theme_data.get("scrollbar_track", "#2a2929"),
-        "@scrollbar_thumb": theme_data.get("scrollbar_thumb", "#605f5f"),
-        "@scrollbar_thumb_hover": theme_data.get(
-            "scrollbar_thumb_hover", "#727272"
-        ),
-        # Layout colors
-        "@grid": theme_data.get("grid", "#4a4949"),
-        "@separator": theme_data.get("separator", "#787876"),
-        # Slider colors
-        "@slider_thumb": theme_data.get("slider_thumb", "#bbbbbb"),
-        "@slider_thumb_hover": theme_data.get("slider_thumb_hover", "#ffffff"),
-    }
-
-    # Sort by key length descending to avoid partial replacements
-    # (e.g., @border before @border_light)
-    for key in sorted(replace.keys(), key=len, reverse=True):
-        stylesheet = stylesheet.replace(key, replace[key])
-
-    stylesheet = font_stylesheet + stylesheet
+    stylesheet = _font_stylesheet() + _resolve_tokens(stylesheet, theme)
     if extra:
         stylesheet += extra
 
