@@ -111,7 +111,7 @@ __email__ = "valentin.onze@gmail.com"
 import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 # Third-party
 import yaml
@@ -808,6 +808,89 @@ def get_contrast_text_color(background_hex: str) -> str:
     luminance = get_luminance(background_hex)
     # Use white text on dark backgrounds, black on light
     return "#FFFFFF" if luminance < 0.5 else "#000000"
+
+
+def _token_map(theme_name: str) -> Dict[str, str]:
+    """Build the ``@token`` -> value map for a theme.
+
+    Single source of truth for stylesheet token resolution. Includes:
+    flat theme color roles, flattened feedback colors
+    (``@feedback_<level>_<part>``), computed on-accent colors, and the
+    ``~icons`` folder path.
+
+    Args:
+        theme_name: Theme to resolve. Unknown names fall back to "dark"
+            key-by-key (the dark theme acts as the defaults baseline).
+
+    Returns:
+        Mapping of placeholder (including the ``@``/``~`` prefix) to value.
+    """
+    colors_dict = get_colors()
+    themes = colors_dict.get("themes", {})
+    base = themes.get("dark", {})
+    theme_data = {**base, **themes.get(theme_name, {})}
+
+    tokens: Dict[str, str] = {
+        f"@{key}": value
+        for key, value in theme_data.items()
+        if isinstance(value, str)
+    }
+
+    # Feedback colors flatten to @feedback_<level>_<part>. Theme-level
+    # block wins over the deprecated top-level one.
+    feedback = theme_data.get("feedback") or colors_dict.get("feedback") or {}
+    for level, pair in feedback.items():
+        if isinstance(pair, dict):
+            for part, value in pair.items():
+                tokens[f"@feedback_{level}_{part}"] = value
+
+    # On-accent colors: theme value if defined, computed otherwise.
+    accent_primary = theme_data.get("accent_primary", "#2196F3")
+    accent_secondary = theme_data.get("accent_secondary", "#1976D2")
+    tokens.setdefault("@accent_primary", accent_primary)
+    tokens.setdefault("@accent_secondary", accent_secondary)
+    text_on_primary = theme_data.get(
+        "text_on_accent_primary", get_contrast_text_color(accent_primary)
+    )
+    text_on_secondary = theme_data.get(
+        "text_on_accent_secondary", get_contrast_text_color(accent_secondary)
+    )
+    tokens["@text_on_accent_primary"] = text_on_primary
+    tokens["@text_on_accent_secondary"] = text_on_secondary
+    tokens["@icon_on_accent_primary"] = theme_data.get(
+        "icon_on_accent_primary", text_on_primary
+    )
+    tokens["@icon_on_accent_secondary"] = theme_data.get(
+        "icon_on_accent_secondary", text_on_secondary
+    )
+
+    # Icon folder path used by url(~icons/...) in QSS, chosen by the
+    # target theme's surface lightness (not the globally current theme).
+    surface = QColor(theme_data.get("surface", "#000000"))
+    icon_folder = (
+        "stylesheet_light" if surface.lightness() > 128 else "stylesheet_dark"
+    )
+    tokens["~icons"] = str(_parent_directory / "icons" / icon_folder).replace(
+        os.sep, "/"
+    )
+    return tokens
+
+
+def _resolve_tokens(qss: str, theme_name: str) -> str:
+    """Replace all ``@token``/``~icons`` placeholders in a stylesheet.
+
+    Args:
+        qss: Stylesheet text containing placeholders.
+        theme_name: Theme whose values to substitute.
+
+    Returns:
+        The stylesheet with placeholders replaced, longest keys first so
+        ``@border`` cannot corrupt ``@border_light``.
+    """
+    tokens = _token_map(theme_name)
+    for key in sorted(tokens, key=len, reverse=True):
+        qss = qss.replace(key, tokens[key])
+    return qss
 
 
 def is_light_theme() -> bool:
