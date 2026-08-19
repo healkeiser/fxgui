@@ -142,5 +142,22 @@ Reach for [`FXTooltip`](../technical/fxwidgets/index.md) instead when a native t
 - persistent or programmatic show/hide
 - arrow-anchored placement relative to a specific widget
 
-!!! note
-    `FXMainWindow` installs `FXTooltipManager` by default under `FXApplication`, which renders every `setToolTip()` string through an `FXTooltip` instead of the native popup. Pass `rich_tooltips=False` to see the native tooltips as Qt draws them.
+### Opting in to FXTooltipManager
+
+`FXTooltipManager` installs an application-wide event filter that replaces *every* tooltip with an `FXTooltip`. It is opt-in:
+
+``` python
+window = fxwidgets.FXMainWindow(rich_tooltips=True)
+```
+
+!!! warning "Changed in 12.0.0"
+    Constructing an `FXMainWindow` under an `FXApplication` used to install the manager automatically. It no longer does, so tooltips are Qt's own unless you pass `rich_tooltips=True`. If your application relied on the manager without asking for it, you lose the following until you opt in:
+
+    - **Tooltips that survive the pointer.** The manager's tooltips are persistent and hide on a delay, so a user can move onto one to finish reading. Native tooltips vanish on the first mouse move.
+    - **Automatic item-view tooltips.** With the manager, hovering a row in any item view builds a tooltip from `FXThumbnailDelegate` roles: a 200px thumbnail preview, `name (type)`, and the description. Native tooltips show `Qt.ToolTipRole` only, and nothing sets it for you.
+    - **Configurable delays.** `FXTooltipManager.install(show_delay=..., hide_delay=...)` controls appearance timing application-wide. Native tooltips use the platform style's delay, which the application cannot override per widget.
+    - **The arrow and anchored placement.** Manager tooltips are positioned against the widget or item rectangle with an arrow pointing at it. Native tooltips appear at the cursor.
+    - **Icons and images inside a tooltip**, fade animations, and the drop shadow.
+    - **`set_tooltip()` return value.** With the manager it returns `None` and stores rich fields as dynamic properties; without it, it falls back to creating a per-widget `FXTooltip` and returns that instance. The tooltip still renders; only the return value and the delay source change.
+
+    Nothing was removed: `FXTooltip`, `FXTooltipManager` and `set_tooltip` behave exactly as before once `rich_tooltips=True`.
