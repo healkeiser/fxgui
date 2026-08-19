@@ -16,8 +16,16 @@ Qt renders a tooltip through `QTextDocument`, which supports a small subset
 of HTML: `b`, `span style` (color, background, font), `br` and tables. It has
 no flexbox, no `gap`, and it ignores `border-radius` on inline spans, which is
 why the keycap is a background-tinted span inside a table cell rather than a
-rounded pill. `max-width` is ignored too, so the width cap below is a table
-`width` attribute, the only width Qt's rich text honours.
+rounded pill. The keycap sits in a right-aligned cell of a full-width table
+because that is the only way Qt's rich text will push part of a line to the
+right edge.
+
+There is deliberately no width cap here. Qt ignores `max-width`, and the one
+width it does honour, a table `width` attribute, it applies as a fixed width
+rather than a maximum, which puts a short tooltip in an oversized box. It is
+not needed either: the tooltip popup word-wraps itself, measured at 192px for
+a short body, 224px for a full sentence, and saturating at 440px however long
+the body gets, so a tooltip never stretches across a monitor on its own.
 
 Colors are read from the active theme on every call rather than baked in, so
 these tooltips follow a theme switch and a studio's custom theme without any
@@ -35,11 +43,6 @@ from qtpy.QtWidgets import QWidget
 # Internal
 from fxgui import fxstyle
 
-
-# Widest a tooltip gets. Long enough for a sentence, short enough that the
-# eye does not have to track back across the screen. Qt applies this as a
-# fixed width, so every tooltip shares one column width.
-TIP_WIDTH = 260
 
 # One step down from the 12px body text set by the global stylesheet.
 KEYCAP_FONT_SIZE = 11
@@ -138,11 +141,7 @@ def tip(title: str, body: str = "", shortcut: str = "") -> str:
     blocks = f"<div>{rows[0]}</div>"
     for row in rows[1:]:
         blocks += f'<div style="margin-top:3px;">{row}</div>'
-
-    return (
-        f'<table width="{TIP_WIDTH}" cellspacing="0" cellpadding="0">'
-        f"<tr><td>{blocks}</td></tr></table>"
-    )
+    return blocks
 
 
 def apply_tip(
@@ -192,10 +191,7 @@ def example() -> None:
     from fxgui.fxwidgets._main_window import FXMainWindow
 
     app = FXApplication(sys.argv)
-
-    # rich_tooltips=False keeps FXTooltipManager out of the way so the
-    # native tooltips this module builds are the ones on screen.
-    window = FXMainWindow(rich_tooltips=False)
+    window = FXMainWindow()
     window.setWindowTitle("Native rich tooltips")
     window.toolbar.hide()
 

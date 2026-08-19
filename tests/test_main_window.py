@@ -7,7 +7,7 @@ Regressions:
 """
 
 # Third-party
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QApplication, QWidget
 
 # Internal
 from fxgui.fxwidgets import FXMainWindow
@@ -19,6 +19,33 @@ def test_no_tooltip_hijack_under_plain_qapplication(qtbot):
     (DCC host) situation: the tooltip manager must NOT auto-install."""
     assert not FXTooltipManager.is_installed()
     window = FXMainWindow(title="probe")
+    qtbot.addWidget(window)
+    assert not FXTooltipManager.is_installed()
+
+
+def test_no_tooltip_hijack_under_fxapplication():
+    """The manager used to auto-install whenever fxgui owned the application,
+    which made native tooltips unreachable in the commonest fxgui app.
+
+    Only one QApplication may exist per process and pytest-qt owns it, so the
+    FXApplication branch cannot be entered from a test. Assert instead that
+    the branch is gone: nothing in the constructor may decide to install the
+    manager by inspecting the application class.
+    """
+    import inspect
+
+    from fxgui.fxwidgets import _main_window
+
+    source = inspect.getsource(_main_window.FXMainWindow.__init__)
+
+    assert "FXTooltipManager.install()" in source
+    # The old branch imported FXApplication to sniff the running app.
+    assert "import FXApplication" not in source
+    assert "rich_tooltips is None" not in source
+
+
+def test_rich_tooltips_false_is_still_off(qtbot):
+    window = FXMainWindow(title="probe", rich_tooltips=False)
     qtbot.addWidget(window)
     assert not FXTooltipManager.is_installed()
 
