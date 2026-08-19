@@ -258,7 +258,7 @@ def _indicator_hits(image, rect: QRect):
 
 @pytest.mark.parametrize(
     "pill, dot",
-    [(True, True), (True, False), (False, True)],
+    [(True, True), (False, True)],
 )
 @pytest.mark.parametrize("width", [420, 300, 220, 180])
 def test_indicator_placement_matches_the_pre_fix_geometry(
@@ -272,9 +272,11 @@ def test_indicator_placement_matches_the_pre_fix_geometry(
     column width. The rects compared against here are the pre-fix ones,
     written out in literals.
 
-    The dot's vertical placement is the one deliberate departure, see
-    `test_the_dot_is_centered_against_the_pill`, so only its x and its size
-    are held to cb76d019 here.
+    Two deliberate departures are excluded rather than asserted. The dot's
+    vertical placement is one, so only its x and its size are held to
+    cb76d019 here; see `test_the_dot_is_centered_against_the_pill`. A pill
+    with no dot beside it is the other, which is why every case here shows
+    the dot; see `test_the_pill_takes_the_dots_place_when_the_dot_is_hidden`.
     """
 
     tree, delegate, index = _tree_with_item(
@@ -354,20 +356,76 @@ def test_a_dot_sits_at_the_same_height_with_or_without_a_pill(qtbot):
     assert first == second
 
 
-def test_the_pill_holds_its_slot_when_the_dot_is_hidden(qtbot):
-    """The pill is placed against the dot's slot, occupied or not, so hiding
-    the dot must not slide the pill right."""
+def test_the_pill_takes_the_dots_place_when_the_dot_is_hidden(qtbot):
+    """A row drawing no dot leaves no room for one.
+
+    Reported by an artist: a row showing the pill and no dot had an empty gap
+    the width of the dot and its spacing between the pill and the row's right
+    edge. The pill used to be placed against the dot's slot whether or not
+    anything filled it, so hiding the dot left the slot standing empty. It now
+    sits at `_INDICATOR_RIGHT_MARGIN`, the dot's own place.
+    """
 
     with_dot, delegate, index = _tree_with_item(qtbot)
     without_dot, other_delegate, other_index = _tree_with_item(
         qtbot, dot=False
     )
 
-    first = _indicator_rects(delegate, _option_for(with_dot, index), index)[0]
-    second = _indicator_rects(
-        other_delegate, _option_for(without_dot, other_index), other_index
-    )[0]
-    assert first == second
+    with_dot_option = _option_for(with_dot, index)
+    without_dot_option = _option_for(without_dot, other_index)
+    paired, paired_dot = _indicator_rects(delegate, with_dot_option, index)
+    alone, alone_dot = _indicator_rects(
+        other_delegate, without_dot_option, other_index
+    )
+
+    assert alone_dot is None, "this is the row that draws no dot"
+    assert alone.width() == paired.width(), "the same pill, only moved"
+    # The dot's own place, read off the row that has one rather than restated
+    # as a literal: both rows are the same width, so the same right edge is
+    # what taking that place means
+    assert with_dot_option.rect == without_dot_option.rect
+    assert alone.right() == paired_dot.right()
+    assert alone.left() - paired.left() == (
+        delegate._DOT_SIZE + delegate._INDICATOR_SPACING
+    ), "moved right by exactly the empty slot it used to leave"
+
+
+def test_no_gap_of_row_colour_stands_right_of_a_lone_pill(qtbot):
+    """The artist's complaint in pixels: scan right of the pill and find the
+    row's edge, not a dot's width of empty background.
+
+    Read off a render rather than from the geometry, since the geometry is
+    what was wrong: every pixel from the pill's right edge to the margin has
+    to be pill, and the only thing past the margin is the row itself.
+    """
+
+    tree, delegate, index = _tree_with_item(qtbot, dot=False)
+    image = tree.viewport().grab().toImage()
+    _save(image, "delegate_lone_pill_no_gap.png")
+
+    row = tree.visualRect(index)
+    pill_rect, dot_rect = _indicator_rects(
+        delegate, _option_for(tree, index), index
+    )
+    assert dot_rect is None, "this row draws no dot"
+
+    middle = pill_rect.center().y()
+    # The pill's own last column is pill-coloured, so nothing sits between it
+    # and where it ends
+    assert _is_near(image.pixelColor(pill_rect.right() - 1, middle), PILL_COLOR)
+    # And the strip between the pill and the row's edge is the margin alone,
+    # carrying no indicator of any kind
+    gap = QRect(
+        pill_rect.right() + 1,
+        row.top(),
+        row.right() - pill_rect.right(),
+        row.height(),
+    )
+    assert gap.width() <= delegate._INDICATOR_RIGHT_MARGIN + 1, (
+        f"{gap.width()}px stands right of the pill, more than the "
+        f"{delegate._INDICATOR_RIGHT_MARGIN}px margin"
+    )
+    assert not _indicator_hits(image, gap)
 
 
 ###### What each row reserves
@@ -404,6 +462,52 @@ def test_reserved_footprint_matches_what_the_item_shows(
     pill_rect, dot_rect = _indicator_rects(delegate, option, index)
     leftmost = (pill_rect or dot_rect).left()
     assert option.rect.left() + option.rect.width() - footprint == leftmost
+
+
+@pytest.mark.parametrize("pill, dot", [(True, False), (False, True)])
+def test_one_indicator_reserves_only_its_own_width(qtbot, pill, dot):
+    """Each of the two rows that shows one indicator reserves that one and
+    nothing else: no room for the sibling it does not draw, and none for the
+    spacing between two things when there is only one."""
+
+    tree, delegate, index = _tree_with_item(qtbot, pill=pill, dot=dot)
+    label_width, dot_width, footprint = delegate._indicator_metrics(index)
+    shown = label_width or dot_width
+
+    assert footprint == delegate._INDICATOR_RIGHT_MARGIN + shown + 1
+
+
+def test_both_indicators_reserve_both_and_the_spacing_between_them(qtbot):
+    """The one row that draws two things is the only one that pays for the
+    gap between them."""
+
+    tree, delegate, index = _tree_with_item(qtbot)
+    label_width, dot_width, footprint = delegate._indicator_metrics(index)
+
+    assert (label_width, dot_width) != (0, 0)
+    assert footprint == (
+        delegate._INDICATOR_RIGHT_MARGIN
+        + dot_width
+        + delegate._INDICATOR_SPACING
+        + label_width
+        + 1
+    )
+
+
+def test_the_pill_reserves_the_same_room_whether_the_dot_shows_or_not(qtbot):
+    """The difference between the two rows is exactly the dot and its spacing,
+    which is the arithmetic the empty gap came from being spent twice."""
+
+    with_dot, delegate, index = _tree_with_item(qtbot)
+    without_dot, other_delegate, other_index = _tree_with_item(
+        qtbot, dot=False
+    )
+
+    paired = delegate._indicator_metrics(index)[2]
+    alone = other_delegate._indicator_metrics(other_index)[2]
+    assert paired - alone == (
+        delegate._DOT_SIZE + delegate._INDICATOR_SPACING
+    )
 
 
 def test_wider_pill_text_reserves_more_room(qtbot):

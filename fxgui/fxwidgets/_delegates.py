@@ -426,9 +426,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
     # The status label pill and the status dot share one band at the row's
     # top, anchored to its right edge: the dot sits _INDICATOR_RIGHT_MARGIN in
-    # from the edge and the pill sits _INDICATOR_SPACING left of the dot,
-    # whether or not the dot is shown. The pill fills the band's height and
-    # the dot is centered in it, so the two line up
+    # from the edge and the pill sits _INDICATOR_SPACING left of the dot. A
+    # row showing only the pill puts it at the margin instead, since there is
+    # no dot to leave room for. The pill fills the band's height and the dot
+    # is centered in it, so the two line up
     _INDICATOR_BAND_TOP = 4
     _INDICATOR_BAND_HEIGHT = 14
     _INDICATOR_RIGHT_MARGIN = 4
@@ -988,30 +989,57 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         )
         dot_width = self._DOT_SIZE if show_dot else 0
 
-        # The pill is placed relative to the dot's slot whether or not the dot
-        # is drawn, so a pill on its own reaches just as far in
+        # Measured from the same insets the paint path places the indicators
+        # at, so what is reserved is exactly what is drawn. `+ 1` turns an
+        # inset (a distance in from the inclusive right edge) into a width
+        label_inset, dot_inset = self._indicator_insets(label_width, dot_width)
         footprint = 0
         if label_width:
-            footprint = (
-                self._INDICATOR_RIGHT_MARGIN
-                + self._DOT_SIZE
-                + self._INDICATOR_SPACING
-                + label_width
-                + 1
-            )
+            footprint = label_inset + 1
         elif dot_width:
-            footprint = self._INDICATOR_RIGHT_MARGIN + self._DOT_SIZE + 1
+            footprint = dot_inset + 1
 
         return label_width, dot_width, footprint
+
+    def _indicator_insets(
+        self, label_width: int, dot_width: int
+    ) -> Tuple[int, int]:
+        """Return how far in from the row's right edge each indicator starts.
+
+        The one place the indicator band's arithmetic lives: the paint path
+        turns these into x coordinates and `_indicator_metrics` turns the
+        leftmost of them into the width it reserves, so the two can never
+        disagree about where an indicator is.
+
+        The dot sits `_INDICATOR_RIGHT_MARGIN` in from the edge. The pill
+        sits `_INDICATOR_SPACING` left of the dot when there is a dot, and
+        takes the dot's own place at the margin when there is not: a row
+        showing only a pill has no dot to leave room for, and leaving it
+        anyway is a gap of empty pixels between the pill and the edge.
+
+        Args:
+            label_width: The pill width, or 0 when it is not shown.
+            dot_width: The dot width, or 0 when it is not shown.
+
+        Returns:
+            Tuple of (label_inset, dot_inset), in pixels. Either is
+            meaningless when the matching width is 0.
+        """
+
+        dot_inset = self._INDICATOR_RIGHT_MARGIN + self._DOT_SIZE
+        if dot_width:
+            label_inset = dot_inset + self._INDICATOR_SPACING + label_width
+        else:
+            label_inset = self._INDICATOR_RIGHT_MARGIN + label_width
+        return label_inset, dot_inset
 
     def _indicator_left(
         self, item_rect: QRect, label_width: int, dot_width: int
     ) -> Tuple[int, int]:
         """Return the left edges of the pill and the dot.
 
-        Both are anchored to the row's right edge: the dot sits
-        `_INDICATOR_RIGHT_MARGIN` in from it, and the pill sits
-        `_INDICATOR_SPACING` left of the dot's slot, occupied or not.
+        Both are anchored to the row's right edge, at the insets
+        `_indicator_insets` gives them.
 
         Args:
             item_rect: The rectangle of the entire item.
@@ -1023,11 +1051,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             width is 0.
         """
 
-        dot_x = (
-            item_rect.right() - self._DOT_SIZE - self._INDICATOR_RIGHT_MARGIN
+        label_inset, dot_inset = self._indicator_insets(label_width, dot_width)
+        return (
+            item_rect.right() - label_inset,
+            item_rect.right() - dot_inset,
         )
-        label_x = dot_x - label_width - self._INDICATOR_SPACING
-        return label_x, dot_x
 
     def _content_left(
         self,
