@@ -21,8 +21,8 @@ import os
 
 # Third-party
 import pytest
-from qtpy.QtCore import QRect
-from qtpy.QtGui import QColor
+from qtpy.QtCore import QRect, Qt
+from qtpy.QtGui import QColor, QFont, QFontMetrics
 from qtpy.QtWidgets import (
     QStyleOptionViewItem,
     QTreeWidget,
@@ -52,6 +52,12 @@ def _tree_with_item(
     dot: bool = True,
     decoration: bool = False,
     width: int = 420,
+    title: str = "Asset 001",
+    description: str = "A character asset, shading",
+    children: int = 0,
+    starred: bool = False,
+    pill_color=PILL_COLOR,
+    dot_color=DOT_COLOR,
     **flags,
 ):
     """Build a one-row tree using the delegate.
@@ -63,6 +69,12 @@ def _tree_with_item(
         dot: Whether the item carries a status dot color.
         decoration: Whether the item carries a decoration icon.
         width: The width of column 0.
+        title: The item's display text.
+        description: The item's description, or None for a one-line row.
+        children: How many child rows to add, which draws the count badge.
+        starred: Whether the item is starred.
+        pill_color: What to store in the status label color role.
+        dot_color: What to store in the status dot color role.
         **flags: Delegate-global overrides, keyed by property name.
 
     Returns:
@@ -83,16 +95,21 @@ def _tree_with_item(
         setattr(delegate, name, value)
     tree.setItemDelegate(delegate)
 
-    item = QTreeWidgetItem(tree, ["Asset 001"])
+    item = QTreeWidgetItem(tree, [title])
     item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, thumbnail)
-    item.setData(
-        0, FXThumbnailDelegate.DESCRIPTION_ROLE, "A character asset, shading"
-    )
+    if description:
+        item.setData(0, FXThumbnailDelegate.DESCRIPTION_ROLE, description)
     if pill:
-        item.setData(0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, PILL_COLOR)
+        item.setData(
+            0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, pill_color
+        )
         item.setData(0, FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, "Ready")
     if dot:
-        item.setData(0, FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE, DOT_COLOR)
+        item.setData(0, FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE, dot_color)
+    if starred:
+        item.setData(0, FXThumbnailDelegate.STARRED_ROLE, True)
+    for number in range(children):
+        QTreeWidgetItem(item, [f"Child {number}"])
     if decoration:
         # A pixmap-backed icon, so the test does not need the icons submodule
         from qtpy.QtGui import QIcon, QPixmap
@@ -369,6 +386,176 @@ def _is_near(color: QColor, reference: QColor, tolerance: int = 40) -> bool:
         and abs(color.green() - reference.green()) < tolerance
         and abs(color.blue() - reference.blue()) < tolerance
     )
+
+
+LONG_TITLE = "Asset 001 hero character with a very long name indeed"
+
+
+def _available_text_width(tree, delegate, index, has_thumbnail: bool) -> int:
+    """The width the paint path gives the title, for the current column."""
+
+    option = _option_for(tree, index)
+    text_x = (
+        delegate._indicator_region_left(option, index, has_thumbnail)
+        + delegate._indicator_metrics(index)[2]
+    )
+    right_margin = (
+        delegate._TEXT_RIGHT_MARGIN if has_thumbnail else delegate._ICON_MARGIN
+    )
+    return delegate._content_right_limit(option, index, right_margin) - text_x
+
+
+@pytest.mark.parametrize("thumbnail", [True, False])
+def test_size_hint_grows_with_the_title_width(qtbot, thumbnail):
+    """The hint has to carry the text, not just the furniture around it."""
+
+    long_tree, delegate, long_index = _tree_with_item(
+        qtbot, thumbnail=thumbnail, title=LONG_TITLE, description=None
+    )
+    short_tree, short_delegate, short_index = _tree_with_item(
+        qtbot, thumbnail=thumbnail, title="Short", description=None
+    )
+
+    option = _option_for(long_tree, long_index)
+    title_font = (
+        delegate._title_font(option)
+        if thumbnail
+        else QFont(option.font)  # One-line rows paint the title unbolded
+    )
+    metrics = QFontMetrics(title_font)
+    text_delta = metrics.horizontalAdvance(
+        LONG_TITLE
+    ) - metrics.horizontalAdvance("Short")
+
+    hint_delta = (
+        delegate.sizeHint(option, long_index).width()
+        - short_delegate.sizeHint(
+            _option_for(short_tree, short_index), short_index
+        ).width()
+    )
+    assert hint_delta == text_delta
+
+
+@pytest.mark.parametrize(
+    "thumbnail, description, children, starred",
+    [
+        (True, None, 0, False),
+        (True, "A character asset, shading in progress, pass two", 0, False),
+        (True, None, 12, True),
+        (False, None, 0, False),
+        (False, "Two lines, because a description is set", 0, False),
+        (False, None, 12, True),
+    ],
+)
+def test_resize_to_contents_leaves_the_title_un_elided(
+    qtbot, thumbnail, description, children, starred
+):
+    """Regression: an artist sized the thumbnail column to contents and the
+    title still came out elided. `sizeHint` summed its parts while the paint
+    path measured from `QRect.right()`, which is one pixel inside the rect,
+    so the row was always a pixel short of the title it had just asked for.
+    """
+
+    tree, delegate, index = _tree_with_item(
+        qtbot,
+        thumbnail=thumbnail,
+        title=LONG_TITLE,
+        description=description,
+        children=children,
+        starred=starred,
+    )
+    tree.resizeColumnToContents(0)
+
+    available = _available_text_width(tree, delegate, index, thumbnail)
+    option = _option_for(tree, index)
+    title_font = (
+        delegate._title_font(option)
+        if (thumbnail or description)
+        else QFont(option.font)
+    )
+    metrics = QFontMetrics(title_font)
+
+    assert available >= metrics.horizontalAdvance(LONG_TITLE)
+    assert (
+        metrics.elidedText(LONG_TITLE, Qt.ElideRight, available) == LONG_TITLE
+    )
+
+    if description:
+        # The description stacks under the title and shares its width
+        plain = delegate.markdown_to_plain_text(description)
+        description_metrics = QFontMetrics(delegate._description_font(option))
+        assert (
+            description_metrics.elidedText(plain, Qt.ElideRight, available)
+            == plain
+        )
+
+
+def test_size_hint_covers_the_indicator_region_and_the_badge(qtbot):
+    """Widening the pill or adding a badge must widen the hint by as much,
+    or the text loses the room instead."""
+
+    tree, delegate, index = _tree_with_item(
+        qtbot, title=LONG_TITLE, description=None
+    )
+    option = _option_for(tree, index)
+    base = delegate.sizeHint(option, index).width()
+    base_region = delegate._indicator_metrics(index)[2]
+
+    tree.topLevelItem(0).setData(
+        0,
+        FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
+        "Waiting for approval, second pass",
+    )
+    grown = delegate.sizeHint(option, index).width()
+    assert grown - base == delegate._indicator_metrics(index)[2] - base_region
+
+    badge_tree, badge_delegate, badge_index = _tree_with_item(
+        qtbot, title=LONG_TITLE, description=None, children=3
+    )
+    badge_option = _option_for(badge_tree, badge_index)
+    assert badge_delegate.sizeHint(
+        badge_option, badge_index
+    ).width() - base == badge_delegate._child_count_width(badge_index)
+
+
+@pytest.mark.parametrize("role_value", ["#00ff00", DOT_COLOR])
+def test_color_roles_accept_a_string(qtbot, role_value):
+    """A hex string in a color role is the obvious thing for a consumer to
+    store, so it renders rather than raising."""
+
+    tree, delegate, index = _tree_with_item(
+        qtbot, pill=False, dot_color=role_value
+    )
+    assert delegate._indicator_metrics(index)[1] == delegate._DOT_SIZE
+
+    image = tree.grab().toImage()
+    _save(image, "delegate_string_color.png")
+    row = tree.visualRect(index)
+    found = any(
+        _is_near(image.pixelColor(x, y), DOT_COLOR)
+        for y in range(row.top(), row.bottom() + 1)
+        for x in range(row.left(), row.right() + 1)
+    )
+    assert found, "the dot was not painted"
+
+
+@pytest.mark.parametrize(
+    "role_value", ["not a color", "", 42, object(), QRect()]
+)
+def test_unusable_color_roles_hide_without_raising(qtbot, role_value):
+    """Anything a QColor cannot be made of hides its indicator. It used to
+    raise mid-paint, and after the layout rework it would have raised in
+    sizeHint too."""
+
+    tree, delegate, index = _tree_with_item(
+        qtbot, pill_color=role_value, dot_color=role_value
+    )
+    label_width, dot_width, region_width = delegate._indicator_metrics(index)
+
+    assert (label_width, dot_width, region_width) == (0, 0, 0)
+    # Neither painting nor sizing may raise on the way through
+    assert not tree.grab().toImage().isNull()
+    assert delegate.sizeHint(_option_for(tree, index), index).height() == 50
 
 
 def test_narrow_column_drops_indicators_instead_of_drawing_on_the_image(qtbot):

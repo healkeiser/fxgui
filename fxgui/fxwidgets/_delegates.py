@@ -720,6 +720,128 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         return super().helpEvent(event, view, option, index)
 
+    @staticmethod
+    def _as_color(value) -> QColor:
+        """Coerce a color role value to a QColor.
+
+        The color roles are documented as QColor, but strings are the obvious
+        thing to store instead, so they are parsed here. Anything else yields
+        an invalid QColor, which hides the element rather than raising in the
+        middle of a paint or a size hint.
+
+        Args:
+            value: Whatever the model returned for a color role.
+
+        Returns:
+            The color, or an invalid QColor when there is none to be had.
+
+        Examples:
+            >>> FXThumbnailDelegate._as_color("#ff0000").isValid()
+            True
+            >>> FXThumbnailDelegate._as_color("not a color").isValid()
+            False
+            >>> FXThumbnailDelegate._as_color(None).isValid()
+            False
+        """
+
+        if isinstance(value, QColor):
+            return value
+        if isinstance(value, str):
+            return QColor(value)
+        return QColor()
+
+    def _title_font(self, option: QStyleOptionViewItem) -> QFont:
+        """Return the font the title is painted with.
+
+        Args:
+            option: The style options for the item.
+
+        Returns:
+            The bold variant of the item's font.
+        """
+
+        font = QFont(option.font)
+        font.setBold(True)
+        return font
+
+    def _description_font(self, option: QStyleOptionViewItem) -> QFont:
+        """Return the font the description is painted with.
+
+        Args:
+            option: The style options for the item.
+
+        Returns:
+            The item's font, one point smaller and never below 8.
+        """
+
+        font = QFont(option.font)
+        font.setPointSize(max(8, option.font.pointSize() - 1))
+        return font
+
+    def _content_text_width(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+        title_font: QFont,
+    ) -> int:
+        """Return the width the title and description want.
+
+        The two stack, so the wider of them is what the row needs. The
+        description is measured as plain text, which is what gets painted.
+
+        Args:
+            option: The style options for the item.
+            index: The model index of the item.
+            title_font: The font the caller paints the title with.
+
+        Returns:
+            The natural text width, in pixels.
+        """
+
+        title = index.data(Qt.DisplayRole) or ""
+        width = QFontMetrics(title_font).horizontalAdvance(str(title))
+
+        description = index.data(self.DESCRIPTION_ROLE) or ""
+        if description and description != "-":
+            description = self.markdown_to_plain_text(description)
+            width = max(
+                width,
+                QFontMetrics(
+                    self._description_font(option)
+                ).horizontalAdvance(description),
+            )
+
+        return width
+
+    def _content_right_limit(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+        right_margin: int,
+    ) -> int:
+        """Return the x the text must stop at.
+
+        Measured from the rect's exclusive right edge, not `QRect.right()`,
+        which is one pixel inside it. Mixing the two is what made `sizeHint`
+        reserve a pixel less than the paint path needed and elide a title
+        that had just been sized to fit.
+
+        Args:
+            option: The style options for the item.
+            index: The model index of the item.
+            right_margin: The margin to keep past the text.
+
+        Returns:
+            The x coordinate the text ends at.
+        """
+
+        return (
+            option.rect.left()
+            + option.rect.width()
+            - right_margin
+            - self._child_count_width(index)
+        )
+
     def _status_label_width(
         self, label_text: str, label_icon: Optional[QIcon] = None
     ) -> int:
@@ -762,7 +884,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         reserved space always matches what is drawn: the delegate's global
         `show_*` property must be True and the per-item role must not be
         False, and the item must carry a usable color (and text, for the
-        pill).
+        pill). A color role holding something unusable hides its indicator
+        instead of raising, see `_as_color`.
 
         Args:
             index: The model index of the item.
@@ -774,10 +897,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             text, and is 0 when neither indicator is shown.
         """
 
-        label_color = index.data(self.STATUS_LABEL_COLOR_ROLE)
+        label_color = self._as_color(index.data(self.STATUS_LABEL_COLOR_ROLE))
         label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
         label_icon = index.data(self.STATUS_LABEL_ICON_ROLE)
-        dot_color = index.data(self.STATUS_DOT_COLOR_ROLE)
+        dot_color = self._as_color(index.data(self.STATUS_DOT_COLOR_ROLE))
 
         item_show_label = index.data(self.STATUS_LABEL_VISIBLE_ROLE)
         item_show_dot = index.data(self.STATUS_DOT_VISIBLE_ROLE)
@@ -785,7 +908,6 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         show_label = bool(
             self._show_status_label
             and item_show_label is not False
-            and label_color
             and label_text
             and label_color.isValid()
         )
@@ -798,7 +920,6 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         show_dot = bool(
             self._show_status_dot
             and item_show_dot is not False
-            and dot_color
             and dot_color.isValid()
         )
         dot_width = self._DOT_SIZE if show_dot else 0
@@ -909,10 +1030,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             painter: The painter to use for drawing.
             item_rect: The rectangle of the entire item.
             dot_x: The left edge of the dot.
-            status_color: The color of the status dot.
+            status_color: The color of the status dot, as a QColor or a string.
         """
 
-        if not status_color or not status_color.isValid():
+        status_color = self._as_color(status_color)
+        if not status_color.isValid():
             return
 
         # Never let the dot spill out of the row
@@ -955,12 +1077,14 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             item_rect: The rectangle of the entire item.
             label_x: The left edge of the pill.
             label_width: The pill width, in pixels.
-            label_color: The background color of the status label.
+            label_color: The background color of the status label, as a
+                QColor or a string.
             label_text: The text to display in the status label.
             label_icon: Optional icon to display before the text.
         """
 
-        if not label_color or not label_color.isValid() or not label_text:
+        label_color = self._as_color(label_color)
+        if not label_color.isValid() or not label_text:
             return
 
         # Never let the pill spill out of the row
@@ -1587,10 +1711,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         # Keep the text clear of the child count badge on the right
         text_width = max(
             0,
-            option.rect.right()
-            - text_x
-            - self._TEXT_RIGHT_MARGIN
-            - self._child_count_width(index),
+            self._content_right_limit(option, index, self._TEXT_RIGHT_MARGIN)
+            - text_x,
         )
 
         title = index.data(Qt.DisplayRole) or ""
@@ -1600,10 +1722,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             description = self.markdown_to_plain_text(description)
 
         # Set up fonts
-        title_font = QFont(option.font)
-        title_font.setBold(True)
-        description_font = QFont(option.font)
-        description_font.setPointSize(max(8, option.font.pointSize() - 1))
+        title_font = self._title_font(option)
+        description_font = self._description_font(option)
 
         title_metrics = QFontMetrics(title_font)
         description_metrics = QFontMetrics(description_font)
@@ -1700,22 +1820,16 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         # Keep the text clear of the child count badge on the right
         content_width = max(
-            0,
-            option.rect.right()
-            - text_x
-            - icon_margin
-            - self._child_count_width(index),
+            0, self._content_right_limit(option, index, icon_margin) - text_x
         )
 
         if description and description != "-":
             # Two-line layout
-            title_font = QFont(option.font)
-            title_font.setBold(True)
+            title_font = self._title_font(option)
             title_metrics = QFontMetrics(title_font)
             title_height = title_metrics.height()
 
-            description_font = QFont(option.font)
-            description_font.setPointSize(max(8, option.font.pointSize() - 1))
+            description_font = self._description_font(option)
             description_metrics = QFontMetrics(description_font)
 
             # Draw title
@@ -1868,92 +1982,55 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         else:
             fixed_height = 30
 
-        # Only add thumbnail width for the first column
-        if is_col0:
-            show_thumbnail = self._show_thumbnail and (
-                item_show_thumbnail is None or item_show_thumbnail
-            )
-            if show_thumbnail:
-                # Add thumbnail width + padding to the original width
-                # Thumbnail is 16:9 aspect ratio (68x38)
-                thumbnail_width_with_padding = self._THUMBNAIL_SPAN
-                additional_spacing = (
-                    self._CONTENT_SPACING + self._TEXT_RIGHT_MARGIN
-                )
-
-                # Calculate width needed for text content
-                title = index.data(Qt.DisplayRole) or ""
-                description = index.data(self.DESCRIPTION_ROLE) or ""
-
-                # Set up fonts
-                title_font = QFont(option.font)
-                title_font.setBold(True)
-                title_metrics = QFontMetrics(title_font)
-                title_width = (
-                    title_metrics.horizontalAdvance(title) if title else 0
-                )
-
-                description_width = 0
-                if description:
-                    description_font = QFont(option.font)
-                    description_font.setPointSize(
-                        max(8, option.font.pointSize() - 1)
-                    )
-                    description_metrics = QFontMetrics(description_font)
-                    description_width = description_metrics.horizontalAdvance(
-                        description
-                    )
-
-                # Use the wider of title or description
-                text_width = max(title_width, description_width)
-
-                # Add the region reserved between thumbnail and text for the
-                # status indicators (0 when the item shows neither)
-                _, _, indicator_width = self._indicator_metrics(index)
-
-                # Add space for child count badge
-                child_count_width = self._child_count_width(index)
-
-                # Add space for starred indicator
-                starred_width = 0
-                if self._show_starred and index.data(self.STARRED_ROLE):
-                    starred_width = 22  # star + circle + margin
-
-                # Calculate total width needed
-                total_width = (
-                    thumbnail_width_with_padding
-                    + text_width
-                    + additional_spacing
-                    + indicator_width
-                    + child_count_width
-                    + starred_width
-                )
-
-                return QSize(
-                    max(original_size.width(), total_width), fixed_height
-                )
-            else:
-                # Non-thumbnail: calculate full width needed
-                base_padding = (
-                    self._ICON_MARGIN
-                    + self._ICON_SIZE
-                    + self._ICON_MARGIN
-                    + self._TEXT_RIGHT_MARGIN
-                )
-
-                # Indicators, plus the region reserved before the text
-                extra_width = self._child_count_width(index)
-                if self._show_starred and index.data(self.STARRED_ROLE):
-                    extra_width += 22
-                _, _, indicator_width = self._indicator_metrics(index)
-                extra_width += indicator_width
-
-                return QSize(
-                    original_size.width() + base_padding + extra_width,
-                    fixed_height,
-                )
-        else:
+        # Only column 0 lays out a thumbnail, indicators and a description
+        if not is_col0:
             return QSize(original_size.width(), fixed_height)
+
+        show_thumbnail = self._show_thumbnail and (
+            item_show_thumbnail is None or item_show_thumbnail
+        )
+
+        # Everything left of the text, from the same helper the paint path
+        # uses: the thumbnail and its gutter, or the decoration icon
+        content_offset = (
+            self._indicator_region_left(option, index, show_thumbnail)
+            - option.rect.left()
+        )
+
+        # The region reserved for the status indicators (0 when the item
+        # shows neither)
+        _, _, indicator_width = self._indicator_metrics(index)
+
+        # The text itself, measured with the fonts it is painted with. A
+        # thumbnail row always bolds its title; a thumbnail-less row only
+        # does when it splits into two lines for a description
+        if show_thumbnail or has_description:
+            title_font = self._title_font(option)
+        else:
+            title_font = QFont(option.font)
+        text_width = self._content_text_width(option, index, title_font)
+
+        # The margin the paint path keeps past the text, and the badge it
+        # keeps clear of
+        right_margin = (
+            self._TEXT_RIGHT_MARGIN if show_thumbnail else self._ICON_MARGIN
+        )
+        child_count_width = self._child_count_width(index)
+
+        starred_width = 0
+        if self._show_starred and index.data(self.STARRED_ROLE):
+            starred_width = 22  # star + circle + margin
+
+        total_width = (
+            content_offset
+            + indicator_width
+            + text_width
+            + right_margin
+            + child_count_width
+            + starred_width
+        )
+
+        return QSize(max(original_size.width(), total_width), fixed_height)
 
     def paint(
         self,
@@ -2037,8 +2114,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             if self._show_starred:
                 is_starred = index.data(self.STARRED_ROLE)
                 if is_starred:
-                    star_color = index.data(self.STARRED_COLOR_ROLE)
-                    if not star_color or not star_color.isValid():
+                    star_color = self._as_color(
+                        index.data(self.STARRED_COLOR_ROLE)
+                    )
+                    if not star_color.isValid():
                         star_color = QColor("#FFD700")  # Gold
                     self._draw_starred_indicator(
                         painter, opt.rect, star_color, has_thumbnail
