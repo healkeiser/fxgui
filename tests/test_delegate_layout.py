@@ -171,6 +171,10 @@ def _prefix_indicator_rects(row_rect: QRect, label_width: int, dot: bool):
     6px to the left of the dot's slot whether or not the dot is shown, 14px
     tall from the same top.
 
+    The dot's y here is cb76d019's, which the delegate no longer matches: the
+    dot is centered in the pill's band now. Callers compare against the dot's
+    x and size only.
+
     Args:
         row_rect: The rectangle of the entire row.
         label_width: The pill width, or 0 when it is not shown.
@@ -214,7 +218,13 @@ def _indicator_rects(delegate, option, index):
 
     dot_rect = None
     if dot_width:
-        dot_rect = QRect(dot_x, band_top, dot_width, dot_width)
+        dot_rect = QRect(
+            dot_x,
+            band_top
+            + (delegate._INDICATOR_BAND_HEIGHT - delegate._DOT_SIZE) // 2,
+            dot_width,
+            dot_width,
+        )
 
     return pill_rect, dot_rect
 
@@ -251,13 +261,20 @@ def _indicator_hits(image, rect: QRect):
     [(True, True), (True, False), (False, True)],
 )
 @pytest.mark.parametrize("width", [420, 300, 220, 180])
-def test_indicator_rects_match_the_pre_fix_geometry(qtbot, pill, dot, width):
-    """The anchoring is cb76d019's, to the pixel.
+def test_indicator_placement_matches_the_pre_fix_geometry(
+    qtbot, pill, dot, width
+):
+    """The horizontal anchoring is cb76d019's, to the pixel.
 
     An intermediate round read the owner's screenshot as a request to move the
     indicators into a gutter between the thumbnail and the text. It was not:
     the screenshot showed this same right-anchored layout at its minimum
-    column width. These rects are the pre-fix ones, written out in literals.
+    column width. The rects compared against here are the pre-fix ones,
+    written out in literals.
+
+    The dot's vertical placement is the one deliberate departure, see
+    `test_the_dot_is_centered_against_the_pill`, so only its x and its size
+    are held to cb76d019 here.
     """
 
     tree, delegate, index = _tree_with_item(
@@ -266,9 +283,18 @@ def test_indicator_rects_match_the_pre_fix_geometry(qtbot, pill, dot, width):
     option = _option_for(tree, index)
     label_width, _, _ = delegate._indicator_metrics(index)
 
-    assert _indicator_rects(delegate, option, index) == (
-        _prefix_indicator_rects(option.rect, label_width, dot)
+    pill_rect, dot_rect = _indicator_rects(delegate, option, index)
+    prefix_pill, prefix_dot = _prefix_indicator_rects(
+        option.rect, label_width, dot
     )
+
+    assert pill_rect == prefix_pill
+    if dot:
+        assert dot_rect.left() == prefix_dot.left()
+        assert dot_rect.width() == prefix_dot.width()
+        assert dot_rect.height() == prefix_dot.height()
+    else:
+        assert dot_rect is prefix_dot is None
 
 
 def test_the_pill_sits_left_of_the_dot_at_the_rows_right_edge(qtbot):
@@ -281,7 +307,7 @@ def test_the_pill_sits_left_of_the_dot_at_the_rows_right_edge(qtbot):
     assert pill_rect.right() < dot_rect.left()
     # An 8px dot, 4px in from the row's right edge
     assert dot_rect.left() == option.rect.right() - 8 - 4
-    assert pill_rect.top() == dot_rect.top() == option.rect.top() + 4
+    assert pill_rect.top() == option.rect.top() + 4
     # The text stops short of the pill, so nothing runs under it
     assert (
         delegate._content_right_limit(
@@ -289,6 +315,43 @@ def test_the_pill_sits_left_of_the_dot_at_the_rows_right_edge(qtbot):
         )
         <= pill_rect.left()
     )
+
+
+def test_the_dot_is_centered_against_the_pill(qtbot):
+    """The dot lines up with the middle of the pill rather than with its top.
+
+    This is the one axis on which the pre-fix geometry is deliberately not
+    restored: cb76d019 put an 8px dot and a 14px pill at the same y, leaving
+    their centers 3px apart.
+    """
+
+    tree, delegate, index = _tree_with_item(qtbot)
+    option = _option_for(tree, index)
+    pill_rect, dot_rect = _indicator_rects(delegate, option, index)
+
+    assert dot_rect.center().y() == pill_rect.center().y()
+    # And it is no longer where cb76d019 put it
+    _, prefix_dot = _prefix_indicator_rects(
+        option.rect, delegate._indicator_metrics(index)[0], True
+    )
+    assert dot_rect.top() != prefix_dot.top()
+
+
+def test_a_dot_sits_at_the_same_height_with_or_without_a_pill(qtbot):
+    """The band is fixed geometry, so hiding the pill must not move the dot
+    up or down. A column of rows, some with pills and some without, has to
+    read as one straight line of dots."""
+
+    with_pill, delegate, index = _tree_with_item(qtbot)
+    without_pill, other_delegate, other_index = _tree_with_item(
+        qtbot, pill=False
+    )
+
+    first = _indicator_rects(delegate, _option_for(with_pill, index), index)[1]
+    second = _indicator_rects(
+        other_delegate, _option_for(without_pill, other_index), other_index
+    )[1]
+    assert first == second
 
 
 def test_the_pill_holds_its_slot_when_the_dot_is_hidden(qtbot):

@@ -424,10 +424,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     _ICON_MARGIN = 6
     _TEXT_RIGHT_MARGIN = 10
 
-    # The status label pill and the status dot share one horizontal band at
-    # the row's top, anchored to its right edge: the dot sits
-    # _INDICATOR_RIGHT_MARGIN in from the edge and the pill sits
-    # _INDICATOR_SPACING left of the dot, whether or not the dot is shown
+    # The status label pill and the status dot share one band at the row's
+    # top, anchored to its right edge: the dot sits _INDICATOR_RIGHT_MARGIN in
+    # from the edge and the pill sits _INDICATOR_SPACING left of the dot,
+    # whether or not the dot is shown. The pill fills the band's height and
+    # the dot is centered in it, so the two line up
     _INDICATOR_BAND_TOP = 4
     _INDICATOR_BAND_HEIGHT = 14
     _INDICATOR_RIGHT_MARGIN = 4
@@ -1166,6 +1167,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     ) -> None:
         """Draw a status indicator dot at the given left edge.
 
+        The dot is centered vertically in the indicator band, so it lines up
+        with the middle of the status label pill. The band is fixed geometry,
+        so a dot sits at the same height whether or not its row shows a pill.
+
         Args:
             painter: The painter to use for drawing.
             item_rect: The rectangle of the entire item.
@@ -1183,7 +1188,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         if dot_x < left_limit:
             return
 
-        dot_y = item_rect.top() + self._INDICATOR_BAND_TOP
+        dot_y = (
+            item_rect.top()
+            + self._INDICATOR_BAND_TOP
+            + (self._INDICATOR_BAND_HEIGHT - self._DOT_SIZE) // 2
+        )
         dot_rect = QRect(dot_x, dot_y, self._DOT_SIZE, self._DOT_SIZE)
 
         # Draw the status dot with antialiasing
