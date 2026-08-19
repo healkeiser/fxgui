@@ -1592,6 +1592,159 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         painter.fillPath(path, QBrush(fill_color))
         painter.restore()
 
+    @staticmethod
+    def _is_focus_row(
+        option: QStyleOptionViewItem, index: QModelIndex
+    ) -> bool:
+        """Whether this cell belongs to the row the keyboard is on.
+
+        `State_HasFocus` is only set on the view's current cell, never on the
+        rest of that row, so a ring drawn from it alone would stop at the
+        first column boundary. The row is read from the view instead, which
+        also gives the answer for the columns that carry no focus state of
+        their own.
+
+        Args:
+            option: Style options for the cell being painted.
+            index: The model index of the cell being painted.
+
+        Returns:
+            True when the view holds keyboard focus and the cell sits in its
+            current row.
+        """
+
+        view = option.widget
+        if view is None or not hasattr(view, "currentIndex"):
+            return bool(option.state & QStyle.State_HasFocus)
+
+        if not view.hasFocus():
+            return False
+
+        current = view.currentIndex()
+        # Row numbers repeat under different parents, so the parent has to
+        # match as well
+        return (
+            current.isValid()
+            and current.row() == index.row()
+            and current.parent() == index.parent()
+        )
+
+    def _create_focus_path(
+        self,
+        rect_f: QRectF,
+        radius: float,
+        is_first_column: bool,
+        is_last_column: bool,
+    ) -> QPainterPath:
+        """Create the stroke path for a row's focus ring.
+
+        The ring belongs to the row, but a delegate is handed one cell at a
+        time, so each cell contributes its own segment: the top and bottom
+        edges always, and the outer vertical edge only where the row actually
+        ends. Stroking a closed rectangle per cell would instead draw a line
+        down every column boundary.
+
+        Args:
+            rect_f: The cell rectangle to stroke, already inset for the pen.
+            radius: The corner radius, matching the selection fill.
+            is_first_column: Whether this cell is in the first column.
+            is_last_column: Whether this cell is in the last column.
+
+        Returns:
+            A path covering this cell's share of the row's outline.
+        """
+
+        if is_first_column and is_last_column:
+            path = QPainterPath()
+            path.addRoundedRect(rect_f, radius, radius)
+            return path
+
+        if is_first_column or is_last_column:
+            # The closed per-column paths already round the outer corners in
+            # the right places; the segment to drop is the one they close
+            # with, which is the inner vertical edge
+            path = self._create_rounded_path(
+                rect_f, radius, is_first_column, is_last_column
+            )
+            elements = [path.elementAt(i) for i in range(path.elementCount())]
+            open_path = QPainterPath()
+            for element in elements[:-1]:
+                if element.isMoveTo():
+                    open_path.moveTo(element.x, element.y)
+                elif element.isLineTo():
+                    open_path.lineTo(element.x, element.y)
+                else:
+                    open_path.lineTo(element.x, element.y)
+            return open_path
+
+        # Middle column: the two horizontal edges and nothing else
+        path = QPainterPath()
+        path.moveTo(rect_f.topLeft())
+        path.lineTo(rect_f.topRight())
+        path.moveTo(rect_f.bottomLeft())
+        path.lineTo(rect_f.bottomRight())
+        return path
+
+    def _draw_focus_indicator(
+        self,
+        painter: QPainter,
+        rect: QRect,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+        column_position: Optional[Tuple[bool, bool]] = None,
+    ) -> None:
+        """Outline the row the keyboard is on.
+
+        The stylesheet cannot reach this: a `::item:focus` rule matches
+        nothing, and `apply_transparent_selection` hands the row's whole
+        appearance to the delegate anyway. Without this the current row is
+        invisible, so keyboard navigation has nothing to follow.
+
+        The ring is stroked inside the cell rect, so it costs no space and the
+        row keeps the height `sizeHint` reported. On a selected row the fill
+        is already `accent_primary`, so the ring switches to the token that
+        exists to be read against it.
+
+        Args:
+            painter: The painter to use.
+            rect: The rectangle to outline.
+            option: Style options containing state.
+            index: Model index, for the row check and corner rounding.
+            column_position: Optional pre-computed (is_first, is_last) tuple.
+        """
+
+        if not self._is_focus_row(option, index):
+            return
+
+        if option.state & QStyle.State_Selected:
+            ring_color = QColor(self.theme.text_on_accent_primary)
+        else:
+            ring_color = QColor(self.theme.accent_primary)
+
+        if column_position is None:
+            is_first_column, is_last_column = self._get_column_position(
+                option, index
+            )
+        else:
+            is_first_column, is_last_column = column_position
+
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # A 1px pen straddles the coordinate it is given, so the rect is
+        # pulled in by half a pixel to land the stroke inside the row
+        inset = QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5)
+        path = self._create_focus_path(
+            inset, 4, is_first_column, is_last_column
+        )
+
+        pen = QPen(ring_color)
+        pen.setWidth(1)
+        painter.setPen(pen)
+        painter.setBrush(Qt.NoBrush)
+        painter.drawPath(path)
+        painter.restore()
+
     def _draw_status_indicators(
         self,
         painter: QPainter,
@@ -2305,6 +2458,12 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         else:
             self._draw_text(painter, opt, index)
 
+        painter.restore()
+
+        # The focus ring goes on last so no content can paint over it
+        painter.save()
+        painter.setClipRect(opt.rect)
+        self._draw_focus_indicator(painter, rect, opt, index, column_position)
         painter.restore()
 
 

@@ -30,9 +30,14 @@ QWidget
     selection-color: @text_on_accent_primary;
     background-clip: border;
     border-image: none;
-    /* Keyboard focus must stay visible: a global zero-outline reset here
-       used to remove the focus indicator from every widget. */
-    outline: 1px solid @accent_primary;
+    /* This is Qt's focus rectangle, and it is the wrong tool for the job: it
+       lands as a hard box around a widget's label, ignoring whatever shape
+       the widget actually has. Measured on the dark theme, it drew on exactly
+       two classes, a tab and a checkable group box, and on a tab it boxed the
+       text inside the tab's own rounded lip. Both now carry a focus indicator
+       drawn in their own language instead, so the rectangle is off. See
+       KEYBOARD FOCUS at the end of the file. */
+    outline: none;
     font-size: 12px;
 }
 
@@ -54,6 +59,10 @@ QCheckBox
     outline: none;
     color: @text;
     margin-bottom: 2px;
+    /* Reserved for the focus ring, which only recolours it. Declaring the
+       border in both states is what stops the label shifting on focus. */
+    border: 1px solid transparent;
+    border-radius: 4px;
 }
 
 QCheckBox:disabled
@@ -155,6 +164,10 @@ QRadioButton
     outline: none;
     color: @text;
     margin-bottom: 2px;
+    /* Reserved for the focus ring, which only recolours it. Declaring the
+       border in both states is what stops the label shifting on focus. */
+    border: 1px solid transparent;
+    border-radius: 4px;
 }
 
 QRadioButton:disabled
@@ -384,12 +397,10 @@ QMenuBar:focus
     border: none;
 }
 
-QTabWidget:focus, QCheckBox:focus,
-QRadioButton:focus,
-QSlider:focus
-{
-    border: none;
-}
+/* A `border: none` reset on focus used to cover QTabWidget, QCheckBox,
+   QRadioButton and QSlider. It would now strip the ring off a checkbox and a
+   radio button, and the other two never had a border for it to remove, so it
+   is gone. See KEYBOARD FOCUS at the end of the file. */
 
 QLineEdit
 {
@@ -1570,4 +1581,116 @@ QSplitter::handle:horizontal:hover {
 
 QSplitter {
     border: 0px;
+}
+
+
+/* ==========================================================================
+   KEYBOARD FOCUS
+   ==========================================================================
+   Focus is shown by changing something the widget already has, never by
+   drawing a box around it. Qt's own focus rectangle is off (see `outline` on
+   QWidget above) precisely because it ignores a widget's shape: on a tab it
+   boxed the label inside the tab's own rounded lip.
+
+   So each class speaks with the shape it already owns. A widget with a border
+   recolours that border, which moves nothing because the border box does not
+   change. A tab lights the one edge whose corners are already rounded, the
+   side facing away from the pane, so the accent traces the tab's silhouette
+   instead of fencing its text. A slider's handle changes colour rather than
+   growing a ring.
+
+   Rules live at the end of the file so they win over the base rules they
+   recolour without needing extra specificity.
+
+   One class is out of reach from here: an item view's current row. A
+   `::item:focus` rule matches no pixels, so FXThumbnailDelegate draws that
+   one, following the same rounded row shape it already paints its
+   backgrounds with.
+   ========================================================================== */
+
+QLineEdit:focus,
+QTextEdit:focus,
+QTextBrowser:focus,
+QPlainTextEdit:focus,
+QComboBox:focus,
+QAbstractSpinBox:focus,
+QPushButton:focus,
+QGroupBox:focus,
+QAbstractItemView:focus,
+QTreeView:focus,
+QTreeWidget:focus,
+QListView:focus,
+QListWidget:focus,
+QTableView:focus,
+QTableWidget:focus
+{
+    border-color: @accent_primary;
+}
+
+/* A plain QToolButton reserves a 1px border it does not paint, so the ring
+   has to name a style as well as a colour. The width is unchanged, so the
+   icon does not move. */
+QToolButton:focus,
+QToolButton[popupMode="1"]:focus,
+QToolButton[popupMode="2"]:focus
+{
+    border: 1px solid @accent_primary;
+}
+
+/* The handle changes colour; nothing is drawn around it. Note the selector
+   order: `QSlider:focus::handle` matches whether or not the slider has focus,
+   so it would recolour every handle permanently.
+
+   The accent cannot carry this one on its own: the filled half of the groove
+   is already an accent gradient, so an accent handle sitting on it reads as a
+   paler blob on a blue bar and loses the contrast the unfocused handle has.
+   The handle wears the token defined to be read against the accent instead,
+   which is exactly the situation it is in, and which is guaranteed to clear
+   3:1 against that track on every theme.
+
+   `slider_thumb_hover` was the other candidate and is the wrong one twice
+   over: it is a barely perceptible lift in some themes (1.07:1 in dracula)
+   and it is the hover colour, so a focused handle would have been
+   indistinguishable from a hovered one. The border carries the accent so the
+   two states stay apart, and it is the one theme where the fill cannot
+   change, light, whose handle is already white. */
+QSlider::handle:horizontal:focus,
+QSlider::handle:vertical:focus
+{
+    background: @text_on_accent_primary;
+    border-color: @accent_primary;
+}
+
+/* A tab has a shape already, so the accent goes on the edge whose corners are
+   rounded, the side facing away from the pane. The pane-facing edge is
+   deliberately merged into the pane by the rules above, and lighting it would
+   cut the selected tab away from its own content. Every orientation already
+   carries 1px there, so nothing moves. */
+QTabBar::tab:top:focus
+{
+    border-top-color: @accent_primary;
+}
+
+QTabBar::tab:bottom:focus
+{
+    border-bottom-color: @accent_primary;
+}
+
+QTabBar::tab:left:focus
+{
+    border-left-color: @accent_primary;
+}
+
+QTabBar::tab:right:focus
+{
+    border-right-color: @accent_primary;
+}
+
+/* A checkbox and a radio button have no border of their own to recolour, so
+   both states declare one and only the colour differs. The indicator's own
+   focus artwork stays as it is; this ring is what carries the label. */
+QCheckBox:focus,
+QRadioButton:focus
+{
+    border-color: @accent_primary;
 }
