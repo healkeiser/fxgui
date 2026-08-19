@@ -8,13 +8,19 @@ caret and an arrow icon, so a person navigating by keyboard could not see
 where they were. `QPushButton:focus` recoloured the border to the same token
 the unfocused rule already used.
 
-Two properties are pinned here, and the second matters as much as the first:
+Three properties are pinned here, and the third is a design constraint rather
+than an accessibility one:
 
 - the indicator is visible, measured as pixels of the theme's accent gained
-  when focus arrives, and
+  when focus arrives,
 - the indicator costs nothing, measured as the widget's geometry and size
   hint being identical focused and unfocused. A ring that widens a border
-  reflows the layout under the person's cursor.
+  reflows the layout under the person's cursor, and
+- the indicator is not Qt's focus rectangle. That rectangle was the one thing
+  the theme did draw, on a tab and on a checkable group box, and it drew a
+  hard box around the label that ignored the widget's own shape. Each class
+  now changes something it already has, so a box around a label is a failure
+  even though it would be perfectly visible.
 
 The item view row is separate. A stylesheet cannot reach it (a
 `::item:focus` rule matches no pixels) so FXThumbnailDelegate draws it, and
@@ -544,7 +550,165 @@ def test_ring_paints_on_every_shipped_theme(qtbot, qapp):
             assert [
                 x for x in span if _near(after, x, row.top(), accent)
             ], f"{theme_name}: the focused row draws no ring"
+
+            # The tab is the class the owner objected to, so its designed
+            # edge is checked on every theme too, and checked for staying an
+            # edge rather than becoming a box again
+            bar, tab_window = _focused_tab_bar(qtbot)
+            rows = _accent_rows(bar.grab().toImage(), accent)
+            assert rows, f"{theme_name}: the focused tab draws no edge"
+            tab = bar.tabRect(bar.currentIndex())
+            assert all(
+                y < tab.top() + 2 for y in rows
+            ), f"{theme_name}: accent off the tab's outer edge: {sorted(rows)}"
+
+            # Restyling the application walks every live top level, so this
+            # theme's windows go before the next stylesheet is installed
+            for window in (tab_window, tree._fxgui_test_window):
+                window.close()
+            QApplication.processEvents()
     finally:
         qapp.setStyleSheet(previous)
         fxstyle._theme = None
         fxstyle._invalidate_theme_namespace()
+
+
+###### The indicator is designed, not Qt's focus rectangle
+
+
+def _accent_rows(image, accent: QColor) -> dict:
+    """Map each image row to the accent pixels it holds."""
+
+    target = accent.rgb() & 0x00FFFFFF
+    rows = {}
+    for y in range(image.height()):
+        hits = [
+            x
+            for x in range(image.width())
+            if (image.pixel(x, y) & 0x00FFFFFF) == target
+        ]
+        if hits:
+            rows[y] = hits
+    return rows
+
+
+def _focused_tab_bar(qtbot):
+    """A focused tab bar, and the window that owns it.
+
+    The window is handed back rather than stashed on the widget: a test that
+    restyles the application while a half-collected window is still alive
+    crashes Qt, so the caller has to be able to close it.
+    """
+
+    widget = _tabs()
+    window, sink = _hosted(qtbot, widget)
+    bar = widget.tabBar()
+    _focus(bar)
+    return bar, window
+
+
+def test_focused_tab_is_not_boxed(qtbot, themed):
+    """The owner's objection, pinned.
+
+    Qt's focus rectangle used to draw a hard box around the tab's label,
+    inside the tab's own rounded lip. Measured on the dark theme, its accent
+    pixels spanned rows 7 to 18 of a 26px tab, which is the tab's interior.
+
+    The replacement lights the tab's outer edge only, so every accent pixel
+    has to sit in the top edge band and none may appear in the interior. A
+    rectangle around the label fails this, whoever draws it.
+    """
+
+    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
+    bar, window = _focused_tab_bar(qtbot)
+    image = bar.grab().toImage()
+    _save(image, "focus_tab_designed.png")
+
+    rows = _accent_rows(image, accent)
+    assert rows, "the focused tab draws no accent at all"
+
+    tab = bar.tabRect(bar.currentIndex())
+    edge_band = range(tab.top(), tab.top() + 2)
+    interior = range(tab.top() + 3, tab.bottom() - 1)
+
+    assert all(y in edge_band for y in rows), (
+        f"accent outside the tab's outer edge: rows {sorted(rows)}, "
+        f"edge band {list(edge_band)}"
+    )
+    assert not [y for y in rows if y in interior], (
+        "accent inside the tab, which is the boxed-label look this "
+        "replaced"
+    )
+
+
+def test_focused_tab_edge_spans_the_tab(qtbot, themed):
+    """The accent traces the tab's own lip, so it runs the tab's width rather
+    than hugging its text. The rounded corners are what keep it short of the
+    very ends."""
+
+    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
+    bar, window = _focused_tab_bar(qtbot)
+    rows = _accent_rows(bar.grab().toImage(), accent)
+
+    tab = bar.tabRect(bar.currentIndex())
+    hits = sorted(x for row in rows.values() for x in row)
+    span = hits[-1] - hits[0] + 1
+    assert span >= tab.width() * 0.85, (
+        f"the edge covers {span} of the tab's {tab.width()}px, so it is "
+        f"hugging the label rather than tracing the tab"
+    )
+
+
+def test_qt_focus_rectangle_is_off_for_the_group_box(qtbot, themed):
+    """The other class Qt boxed. Its own border carries focus now, so the
+    accent belongs on the group box's outline, not floating by its title."""
+
+    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
+    widget = _group()
+    window, _ = _hosted(qtbot, widget)
+    before = _count(widget.grab().toImage(), accent)
+    _focus(widget)
+    image = widget.grab().toImage()
+    assert _count(image, accent) > before
+
+    rows = _accent_rows(image, accent)
+    # The border runs the full width; a box around the title would not
+    widest = max(len(hits) for hits in rows.values())
+    assert widest >= widget.width() * 0.8, (
+        f"widest accent run is {widest} of {widget.width()}px, which is not "
+        f"the group box's own border"
+    )
+
+
+def test_focused_slider_handle_changes_its_own_colour(qtbot, themed):
+    """Nothing is drawn around the handle: the handle's own fill changes.
+
+    The accent cannot do this alone, because the filled half of the groove is
+    already an accent gradient and an accent handle loses the contrast the
+    unfocused handle has against it. The handle wears the token defined to be
+    read against the accent, which is the situation it is in, and the accent
+    goes on its existing 1px border so focus stays distinct from hover.
+    """
+
+    theme = fxstyle.get_theme_colors()
+    fill = QColor(fxstyle._get_theme_namespace().text_on_accent_primary)
+    accent = QColor(theme["accent_primary"])
+
+    widget = QSlider(Qt.Horizontal)
+    widget.setValue(30)
+    window, _ = _hosted(qtbot, widget)
+
+    before = widget.grab().toImage()
+    hint = widget.sizeHint()
+    _focus(widget)
+    after = widget.grab().toImage()
+    _save(after, "focus_slider_designed.png")
+
+    assert _count(after, fill) > _count(before, fill), (
+        "the handle's own fill did not change"
+    )
+    assert _count(after, accent) > _count(before, accent), (
+        "the handle's border did not take the accent"
+    )
+    # A ring around the handle would have grown it
+    assert widget.sizeHint() == hint

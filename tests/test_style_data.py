@@ -46,15 +46,28 @@ def test_dcc_colors_redshift_typo_fixed_with_alias():
     assert dcc.get("redshit") == dcc["redshift"]
 
 
-def test_qss_qwidget_block_keeps_focus_outline():
-    """Regression: the global QWidget rule contained `outline: 0`, killing
-    the keyboard focus indicator for every widget in the application."""
+def test_qss_qwidget_block_disables_qt_focus_rectangle():
+    """Qt's focus rectangle is deliberately off, and must stay off.
+
+    This assertion was inverted on purpose. It used to require
+    `outline: 1px solid` here, because an earlier `outline: 0` had killed the
+    focus indicator for every widget and the outline was the only indicator
+    left. Measured since: the outline drew on exactly two classes, a tab and a
+    checkable group box, and what it drew was a hard rectangle around the
+    label that ignored the widget's own shape. On a tab it fenced the text
+    inside the tab's rounded lip.
+
+    Both classes now carry an indicator drawn in their own language, and
+    "focus stays visible" is pinned where it belongs, on rendered pixels in
+    tests/test_focus_visibility.py, rather than on the presence of one
+    property here.
+    """
     text = fxstyle.STYLE_FILE.read_text(encoding="utf-8")
-    match = re.search(r"\nQWidget\s*\{(.*?)\}", text, re.S)
+    match = re.search(r"\nQWidget\s*\n?\{(.*?)\}", text, re.S)
     assert match is not None
     qwidget_block = match.group(1)
-    assert "outline: 0" not in qwidget_block
-    assert "outline: 1px solid" in qwidget_block
+    assert "outline: none" in qwidget_block
+    assert "outline: 1px" not in qwidget_block
 
 
 ###### Keyboard focus ring
