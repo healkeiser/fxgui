@@ -6,13 +6,12 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QEvent, QMargins, QModelIndex, QRect, QRectF, QSize, Qt
+from qtpy.QtCore import QMargins, QModelIndex, QRect, QRectF, QSize, Qt
 from qtpy.QtGui import (
     QBrush,
     QColor,
     QFont,
     QFontMetrics,
-    QHelpEvent,
     QIcon,
     QPainter,
     QPainterPath,
@@ -20,7 +19,6 @@ from qtpy.QtGui import (
     QPixmap,
 )
 from qtpy.QtWidgets import (
-    QAbstractItemView,
     QApplication,
     QStyle,
     QStyledItemDelegate,
@@ -321,9 +319,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     """Custom item delegate for showing thumbnails in tree/list views.
 
     This delegate displays items with thumbnails, titles, descriptions,
-    and status indicators. It supports Markdown formatting in descriptions
-    and tooltips. Additionally, it supports custom background colors via
-    Qt.BackgroundRole with rounded corners and borders for visual hierarchy.
+    and status indicators. Descriptions may be written in Markdown, which is
+    rendered as plain text. Additionally, it supports custom background colors
+    via Qt.BackgroundRole with rounded corners and borders for visual
+    hierarchy.
 
     Note:
         Store data in items using the following roles:
@@ -728,28 +727,6 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         return floor
 
     @staticmethod
-    def markdown_to_html(text: str) -> str:
-        """Convert Markdown text to HTML.
-
-        Args:
-            text: Markdown-formatted text.
-
-        Returns:
-            HTML-formatted text.
-        """
-
-        if not text or text == "-":
-            return text
-
-        try:
-            import markdown
-
-            return markdown.markdown(text, extensions=["extra", "nl2br"])
-        except ImportError:
-            # Fallback if markdown is not installed
-            return text
-
-    @staticmethod
     def markdown_to_plain_text(text: str) -> str:
         """Convert Markdown text to plain text by removing formatting.
 
@@ -798,68 +775,6 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         except ImportError:
             # Fallback if markdown is not installed
             return text
-
-    def helpEvent(
-        self,
-        event: QHelpEvent,
-        view: QAbstractItemView,
-        option: QStyleOptionViewItem,
-        index: QModelIndex,
-    ) -> bool:
-        """Provide Markdown-formatted tooltips.
-
-        Args:
-            event (QHelpEvent): The help event.
-            view (QAbstractItemView): The view widget.
-            option (QStyleOptionViewItem): Style options.
-            index (QModelIndex): The model index.
-
-        Returns:
-            True if the event was handled.
-        """
-
-        from qtpy.QtCore import QUrl
-        from qtpy.QtWidgets import QToolTip
-
-        if event.type() == QEvent.ToolTip:
-            entity_data = index.data(Qt.UserRole)
-            description = index.data(self.DESCRIPTION_ROLE)
-            thumbnail_path = index.data(self.THUMBNAIL_PATH_ROLE)
-
-            parts = []
-
-            # Thumbnail preview
-            if thumbnail_path:
-                from pathlib import Path
-
-                if Path(str(thumbnail_path)).exists():
-                    img_url = QUrl.fromLocalFile(
-                        str(thumbnail_path)
-                    ).toString()
-                    parts.append(
-                        f'<img src="{img_url}" width="200">'
-                    )
-
-            # Entity name and description
-            if entity_data and description and description != "-":
-                html_description = self.markdown_to_html(description)
-                entity_name = entity_data.get("name", "Unknown")
-                entity_type = entity_data.get("type", "Entity")
-                parts.append(
-                    f"<b>{entity_name}</b> ({entity_type})<hr>"
-                    f"{html_description}"
-                )
-            elif entity_data:
-                entity_name = entity_data.get("name", "Unknown")
-                entity_type = entity_data.get("type", "Entity")
-                parts.append(f"<b>{entity_name}</b> ({entity_type})")
-
-            if parts:
-                tooltip = "<br>".join(parts)
-                QToolTip.showText(event.globalPos(), tooltip, view)
-                return True
-
-        return super().helpEvent(event, view, option, index)
 
     @staticmethod
     def _as_color(value) -> QColor:
