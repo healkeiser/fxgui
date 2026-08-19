@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
-from fxgui.fxwidgets._tooltip import FXTooltip
+from fxgui.fxwidgets._tips import apply_tip
 
 
 def _coalesce_runs(frames) -> List[Tuple[int, int]]:
@@ -174,10 +174,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._start_spinbox.setRange(-99999, 99999)
         self._start_spinbox.setValue(self._start_frame)
         self._start_spinbox.setFixedWidth(55)
-        self._start_spinbox_tooltip = FXTooltip(
-            parent=self._start_spinbox,
-            title="Start Frame",
-            description="First frame of the timeline range",
+        apply_tip(
+            self._start_spinbox,
+            "Start Frame",
+            "First frame of the timeline range",
         )
         self._start_spinbox.valueChanged.connect(self._on_start_changed)
 
@@ -193,10 +193,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             self._view_start_spinbox.setValue(self._start_frame)
             self._view_start_spinbox.setFixedWidth(55)
             self._view_start_spinbox.setKeyboardTracking(False)
-            self._view_start_spinbox_tooltip = FXTooltip(
-                parent=self._view_start_spinbox,
-                title="View Start",
-                description="First visible frame; edit to zoom the track",
+            apply_tip(
+                self._view_start_spinbox,
+                "View Start",
+                "First visible frame; edit to zoom the track",
             )
             self._view_start_spinbox.valueChanged.connect(
                 self._on_view_spin_changed
@@ -207,10 +207,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             self._view_end_spinbox.setValue(self._end_frame)
             self._view_end_spinbox.setFixedWidth(55)
             self._view_end_spinbox.setKeyboardTracking(False)
-            self._view_end_spinbox_tooltip = FXTooltip(
-                parent=self._view_end_spinbox,
-                title="View End",
-                description="Last visible frame; edit to zoom the track",
+            apply_tip(
+                self._view_end_spinbox,
+                "View End",
+                "Last visible frame; edit to zoom the track",
             )
             self._view_end_spinbox.valueChanged.connect(
                 self._on_view_spin_changed
@@ -225,11 +225,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             self._goto_start_btn.setFixedSize(28, 28)
             self._goto_start_btn.setFlat(True)
             self._goto_start_btn.clicked.connect(self.go_to_start)
-            self._goto_start_btn_tooltip = FXTooltip(
-                parent=self._goto_start_btn,
-                title="Go to Start",
-                description="Jump to the first frame",
-                shortcut="Home",
+            apply_tip(
+                self._goto_start_btn,
+                "Go to Start",
+                "Jump to the first frame",
+                "Home",
             )
 
             # Previous frame
@@ -238,11 +238,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             self._prev_btn.setFixedSize(28, 28)
             self._prev_btn.setFlat(True)
             self._prev_btn.clicked.connect(self.previous_frame)
-            self._prev_btn_tooltip = FXTooltip(
-                parent=self._prev_btn,
-                title="Previous Frame",
-                description="Go back one frame",
-                shortcut="Left",
+            apply_tip(
+                self._prev_btn,
+                "Previous Frame",
+                "Go back one frame",
+                "Left",
             )
 
             # Play/Pause
@@ -250,11 +250,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             fxicons.set_icon(self._play_btn, "play_arrow")
             self._play_btn.setFixedSize(28, 28)
             self._play_btn.clicked.connect(self.toggle_playback)
-            self._play_btn_tooltip = FXTooltip(
-                parent=self._play_btn,
-                title="Play",
-                description="Start playback",
-                shortcut="Space",
+            apply_tip(
+                self._play_btn,
+                "Play",
+                "Start playback",
+                "Space",
             )
 
             # Next frame
@@ -263,11 +263,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             self._next_btn.setFixedSize(28, 28)
             self._next_btn.setFlat(True)
             self._next_btn.clicked.connect(self.next_frame)
-            self._next_btn_tooltip = FXTooltip(
-                parent=self._next_btn,
-                title="Next Frame",
-                description="Go forward one frame",
-                shortcut="Right",
+            apply_tip(
+                self._next_btn,
+                "Next Frame",
+                "Go forward one frame",
+                "Right",
             )
 
             # Go to end
@@ -276,11 +276,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             self._goto_end_btn.setFixedSize(28, 28)
             self._goto_end_btn.setFlat(True)
             self._goto_end_btn.clicked.connect(self.go_to_end)
-            self._goto_end_btn_tooltip = FXTooltip(
-                parent=self._goto_end_btn,
-                title="Go to End",
-                description="Jump to the last frame",
-                shortcut="End",
+            apply_tip(
+                self._goto_end_btn,
+                "Go to End",
+                "Jump to the last frame",
+                "End",
             )
 
             # Loop toggle: wrap to the start at the end of the range (on)
@@ -292,10 +292,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             self._loop_btn.setCheckable(True)
             self._loop_btn.setChecked(self._loop_playback)
             self._loop_btn.toggled.connect(self._on_loop_btn_toggled)
-            self._loop_btn_tooltip = FXTooltip(
-                parent=self._loop_btn,
-                title="Loop Playback",
-                description="Restart from the first frame at the end",
+            apply_tip(
+                self._loop_btn,
+                "Loop Playback",
+                "Restart from the first frame at the end",
             )
 
             # Keyframe navigation (opt-in): jump to the nearest keyframe
@@ -306,10 +306,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 self._prev_key_btn.setFixedSize(28, 28)
                 self._prev_key_btn.setFlat(True)
                 self._prev_key_btn.clicked.connect(self.go_to_previous_keyframe)
-                self._prev_key_btn_tooltip = FXTooltip(
-                    parent=self._prev_key_btn,
-                    title="Previous Keyframe",
-                    description="Jump to the nearest keyframe before",
+                apply_tip(
+                    self._prev_key_btn,
+                    "Previous Keyframe",
+                    "Jump to the nearest keyframe before",
                 )
 
                 self._next_key_btn = QPushButton()
@@ -317,10 +317,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 self._next_key_btn.setFixedSize(28, 28)
                 self._next_key_btn.setFlat(True)
                 self._next_key_btn.clicked.connect(self.go_to_next_keyframe)
-                self._next_key_btn_tooltip = FXTooltip(
-                    parent=self._next_key_btn,
-                    title="Next Keyframe",
-                    description="Jump to the nearest keyframe after",
+                apply_tip(
+                    self._next_key_btn,
+                    "Next Keyframe",
+                    "Jump to the nearest keyframe after",
                 )
 
             # Mark in / mark out (opt-in). The widget only requests: the
@@ -337,11 +337,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 self._mark_in_btn.clicked.connect(
                     lambda: self.in_point_requested.emit(self._current_frame)
                 )
-                self._mark_in_btn_tooltip = FXTooltip(
-                    parent=self._mark_in_btn,
-                    title="Mark In",
-                    description="Set the loop in point at the current frame",
-                    shortcut="I",
+                apply_tip(
+                    self._mark_in_btn,
+                    "Mark In",
+                    "Set the loop in point at the current frame",
+                    "I",
                 )
 
                 self._mark_out_btn = QPushButton()
@@ -351,11 +351,11 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 self._mark_out_btn.clicked.connect(
                     lambda: self.out_point_requested.emit(self._current_frame)
                 )
-                self._mark_out_btn_tooltip = FXTooltip(
-                    parent=self._mark_out_btn,
-                    title="Mark Out",
-                    description="Set the loop out point at the current frame",
-                    shortcut="O",
+                apply_tip(
+                    self._mark_out_btn,
+                    "Mark Out",
+                    "Set the loop out point at the current frame",
+                    "O",
                 )
 
 
@@ -379,10 +379,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._end_spinbox.setRange(-99999, 99999)
         self._end_spinbox.setValue(self._end_frame)
         self._end_spinbox.setFixedWidth(55)
-        self._end_spinbox_tooltip = FXTooltip(
-            parent=self._end_spinbox,
-            title="End Frame",
-            description="Last frame of the timeline range",
+        apply_tip(
+            self._end_spinbox,
+            "End Frame",
+            "Last frame of the timeline range",
         )
         self._end_spinbox.valueChanged.connect(self._on_end_changed)
 
@@ -392,10 +392,10 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._fps_spinbox.setValue(self._fps)
         self._fps_spinbox.setSuffix(" fps")
         self._fps_spinbox.setFixedWidth(65)
-        self._fps_spinbox_tooltip = FXTooltip(
-            parent=self._fps_spinbox,
-            title="FPS",
-            description="Frames per second for playback",
+        apply_tip(
+            self._fps_spinbox,
+            "FPS",
+            "Frames per second for playback",
         )
         self._fps_spinbox.valueChanged.connect(self._on_fps_changed)
 
@@ -917,7 +917,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._playback_timer.start(1000 // self._fps)
         if hasattr(self, "_play_btn"):
             fxicons.set_icon(self._play_btn, "pause")
-            self._play_btn.setToolTip("Pause")
+            apply_tip(self._play_btn, "Pause", "Pause playback", "Space")
         self.playback_started.emit()
 
     def stop(self) -> None:
@@ -926,7 +926,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._playback_timer.stop()
         if hasattr(self, "_play_btn"):
             fxicons.set_icon(self._play_btn, "play_arrow")
-            self._play_btn.setToolTip("Play")
+            apply_tip(self._play_btn, "Play", "Start playback", "Space")
         self.playback_stopped.emit()
 
     def _on_playback_tick(self) -> None:

@@ -26,7 +26,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 from fxgui.fxcore import FXSortFilterProxyModel
 from fxgui.fxwidgets._search_bar import FXSearchBar
-from fxgui.fxwidgets._tooltip import FXTooltip
+from fxgui.fxwidgets._tips import apply_tip
 
 
 class FXFuzzySearchTree(fxstyle.FXThemeAware, QWidget):
@@ -120,20 +120,21 @@ class FXFuzzySearchTree(fxstyle.FXThemeAware, QWidget):
         self._ratio_icon.setFixedSize(20, 20)
         self._ratio_icon.setFlat(True)
         self._ratio_icon.setStyleSheet("background: transparent; border: none;")
-        self._ratio_icon_tooltip = FXTooltip(
-            parent=self._ratio_icon,
-            title="Sensitivity",
-            description="Adjust fuzzy matching sensitivity",
+        apply_tip(
+            self._ratio_icon,
+            "Sensitivity",
+            "Adjust fuzzy matching sensitivity",
         )
         slider_layout.addWidget(self._ratio_icon)
 
         self._ratio_slider = QSlider(Qt.Horizontal)
         self._ratio_slider.setRange(0, 100)
         self._ratio_slider.setValue(int(ratio * 100))
-        self._ratio_slider_tooltip = FXTooltip(
-            parent=self._ratio_slider,
-            title="Match Threshold",
-            description="Lower = more results (looser match), Higher = fewer results (stricter match)",
+        apply_tip(
+            self._ratio_slider,
+            "Match Threshold",
+            "Lower = more results (looser match), Higher = fewer "
+            "results (stricter match)",
         )
         slider_layout.addWidget(self._ratio_slider, 1)
 

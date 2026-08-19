@@ -64,10 +64,15 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         set_stylesheet (bool, optional): Whether to set the default stylesheet.
             Defaults to `True`.
         rich_tooltips (bool, optional): Whether to install the global
-            FXTooltipManager (replaces Qt tooltips application-wide).
-            `None` (default) installs it only when running under
-            FXApplication, so embedding in a DCC host does not hijack the
-            host's tooltips. Defaults to `None`.
+            FXTooltipManager, which replaces Qt tooltips application-wide
+            with FXTooltip. `None` (default) and `False` both leave it
+            uninstalled, so tooltips are Qt's own, styled by the `QToolTip`
+            rule and formatted by `fxwidgets.apply_tip`. Pass `True` to opt
+            in to the manager's behaviour: tooltips that stay up while
+            hovered, an arrow anchored to the widget, configurable delays,
+            icons and images inside a tooltip, and automatic tooltips built
+            from FXThumbnailDelegate roles in item views.
+            Defaults to `None`.
     """
 
     # Class-level severity constants for convenience
@@ -140,19 +145,13 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         if self._set_stylesheet:
             fxstyle.register_themed_root(self)
 
-        # Install the global FXTooltip manager for rich tooltips. This
-        # replaces standard Qt tooltips with FXTooltip application-wide, so
-        # by default (`rich_tooltips=None`) it only happens when fxgui owns
-        # the application. Inside a DCC host (Houdini/Maya/Nuke) a global
-        # event filter would hijack the host's own tooltips; pass
-        # `rich_tooltips=True` to opt in there, or `False` to disable it
-        # entirely.
-        if rich_tooltips is None:
-            from fxgui.fxwidgets._application import FXApplication
-
-            rich_tooltips = isinstance(
-                QApplication.instance(), FXApplication
-            )
+        # Tooltips are Qt's own unless the caller asks for the manager.
+        # FXTooltipManager installs an application-wide event filter that
+        # replaces every tooltip with an FXTooltip, which also hijacks the
+        # host's tooltips inside a DCC and overrides whatever a consumer set
+        # on its own widgets, so it is opt-in rather than a side effect of
+        # constructing a window. `fxwidgets.apply_tip` gives the rich layout
+        # on the native surface without the filter.
         if rich_tooltips:
             FXTooltipManager.install()
 

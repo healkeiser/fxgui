@@ -70,6 +70,12 @@ class FXTooltipPosition(IntEnum):
 class FXTooltip(fxstyle.FXThemeAware, QFrame):
     """A rich, theme-aware tooltip with advanced features.
 
+    The everyday path for tooltips is `fxwidgets.apply_tip`, which formats a
+    small HTML string and hands it to Qt's own `setToolTip`. This class is for
+    what a native tooltip cannot do: hosting live widgets (icons, images,
+    action buttons), staying up while the pointer is over the tooltip itself,
+    persistent and programmatic show/hide, and arrow-anchored placement.
+
     This widget provides an enhanced tooltip experience with:
     - Rich content: title, description, icon, images, shortcuts
     - Smart positioning with arrow pointing to anchor

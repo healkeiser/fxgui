@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
-from fxgui.fxwidgets._tooltip import FXTooltip
+from fxgui.fxwidgets._tips import apply_tip
 
 
 class _PathValidator(QObject):
@@ -137,10 +137,10 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
 
         self._browse_btn.setFixedSize(32, 32)
         self._browse_btn.clicked.connect(self._browse)
-        self._browse_btn_tooltip = FXTooltip(
-            parent=self._browse_btn,
-            title="Browse",
-            description="Open file browser to select a path",
+        apply_tip(
+            self._browse_btn,
+            "Browse",
+            "Open file browser to select a path",
         )
         layout.addWidget(self._browse_btn)
 

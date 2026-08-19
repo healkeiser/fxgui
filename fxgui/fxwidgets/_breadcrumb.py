@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
-from fxgui.fxwidgets._tooltip import FXTooltip
+from fxgui.fxwidgets._tips import apply_tip
 
 
 class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
@@ -94,10 +94,10 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
             self._back_button.setFixedSize(28, 28)
             fxicons.set_icon(self._back_button, "arrow_back")
             self._back_button.clicked.connect(self.go_back)
-            self._back_button_tooltip = FXTooltip(
-                parent=self._back_button,
-                title="Back",
-                description="Navigate to previous location",
+            apply_tip(
+                self._back_button,
+                "Back",
+                "Navigate to previous location",
             )
 
             self._forward_button = QPushButton()
@@ -105,10 +105,10 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
             self._forward_button.setFixedSize(28, 28)
             fxicons.set_icon(self._forward_button, "arrow_forward")
             self._forward_button.clicked.connect(self.go_forward)
-            self._forward_button_tooltip = FXTooltip(
-                parent=self._forward_button,
-                title="Forward",
-                description="Navigate to next location",
+            apply_tip(
+                self._forward_button,
+                "Forward",
+                "Navigate to next location",
             )
 
             main_layout.addWidget(self._back_button)

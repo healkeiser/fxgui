@@ -57,6 +57,7 @@ from fxgui.fxwidgets._status_bar import FXStatusBar
 from fxgui.fxwidgets._system_tray import FXSystemTray
 from fxgui.fxwidgets._tag_input import FXTagChip, FXTagInput
 from fxgui.fxwidgets._timeline_slider import FXTimelineSlider
+from fxgui.fxwidgets._tips import apply_tip, keycap, tip
 from fxgui.fxwidgets._toggle_switch import FXToggleSwitch
 from fxgui.fxwidgets._tooltip import (
     FXTooltip,
@@ -124,6 +125,9 @@ __all__ = [
     "FXThemeColors",
     "FXThumbnailDelegate",
     "FXTimelineSlider",
+    "apply_tip",
+    "keycap",
+    "tip",
     "FXToggleSwitch",
     "FXTooltip",
     "FXTooltipManager",

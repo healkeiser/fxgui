@@ -274,6 +274,18 @@ def set_formatted_tooltip(
         >>> set_formatted_tooltip(
         ...     self, "Tooltip", "This is a <b>formatted</b> tooltip."
         ... )
+
+    Note:
+        Superseded by `fxwidgets.apply_tip`, which is theme-aware, escapes
+        the caller's strings, renders a keyboard shortcut as a keycap and
+        also sets a status tip. Prefer it for new code.
+
+        This function is kept as-is rather than reimplemented over
+        `apply_tip` because the two have incompatible contracts: `tooltip`
+        here is documented as accepting markup (see the example above), which
+        `apply_tip` escapes on purpose so a path or a name cannot corrupt the
+        layout. Rewriting it would turn a caller's `<b>` into literal text
+        and drop `setToolTipDuration`.
     """
 
     tooltip = f"<b>{title}</b><hr>{tooltip}"
