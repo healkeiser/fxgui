@@ -109,8 +109,38 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXThumbnailDelegate` | Delegate for thumbnail rendering in views |
 | `FXTimelineSlider` | Timeline slider for media/animation |
 | `FXToggleSwitch` | iOS-style toggle switch |
-| `FXTooltip` | Custom styled tooltips |
+| `FXTooltip` | Widget-hosting tooltip, for what native tooltips cannot do |
 | `FXWidget` | Base widget with optional UI file loading |
 
 !!! tip
     All widgets automatically inherit the current theme and update when the theme changes.
+
+## Tooltips
+
+`apply_tip` is the everyday path. It formats a small HTML string and hands it to Qt's own `setToolTip`, plus a markup-free status tip for the window's status bar:
+
+``` python
+# Internal
+from fxgui.fxwidgets import apply_tip
+
+apply_tip(
+    save_button,
+    "Save",
+    "Write the current scene to disk, overwriting the last version",
+    "Ctrl+S",
+)
+```
+
+The title renders in the theme's primary text, the body dimmed, and the shortcut sits right-aligned as a keycap. Colors are read from the active theme on every call, so tooltips follow a theme switch and a studio's custom theme with no extra wiring. Every string is HTML-escaped, so a path holding `&` or `<` reaches the user as text.
+
+Two lower-level helpers are exported alongside it: `tip()` returns the HTML if you need to set it yourself, and `keycap()` renders one shortcut as a key (through `QKeySequence`, so a Mac shows the platform glyphs rather than the literal "Ctrl").
+
+Reach for [`FXTooltip`](../technical/fxwidgets/index.md) instead when a native tooltip cannot do the job:
+
+- hosting live widgets (icons, images, action buttons)
+- staying up while the pointer is over the tooltip itself
+- persistent or programmatic show/hide
+- arrow-anchored placement relative to a specific widget
+
+!!! note
+    `FXMainWindow` installs `FXTooltipManager` by default under `FXApplication`, which renders every `setToolTip()` string through an `FXTooltip` instead of the native popup. Pass `rich_tooltips=False` to see the native tooltips as Qt draws them.
