@@ -6,13 +6,12 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QEvent, QMargins, QModelIndex, QRect, QRectF, QSize, Qt
+from qtpy.QtCore import QMargins, QModelIndex, QRect, QRectF, QSize, Qt
 from qtpy.QtGui import (
     QBrush,
     QColor,
     QFont,
     QFontMetrics,
-    QHelpEvent,
     QIcon,
     QPainter,
     QPainterPath,
@@ -20,7 +19,6 @@ from qtpy.QtGui import (
     QPixmap,
 )
 from qtpy.QtWidgets import (
-    QAbstractItemView,
     QApplication,
     QStyle,
     QStyledItemDelegate,
@@ -321,9 +319,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     """Custom item delegate for showing thumbnails in tree/list views.
 
     This delegate displays items with thumbnails, titles, descriptions,
-    and status indicators. It supports Markdown formatting in descriptions
-    and tooltips. Additionally, it supports custom background colors via
-    Qt.BackgroundRole with rounded corners and borders for visual hierarchy.
+    and status indicators. Descriptions may be written in Markdown, which is
+    rendered as plain text. Additionally, it supports custom background colors
+    via Qt.BackgroundRole with rounded corners and borders for visual
+    hierarchy.
 
     Note:
         Store data in items using the following roles:
@@ -352,16 +351,20 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         - Setting per-item role to False hides that element for that item.
 
     Note:
-        Column 0 is laid out left to right: thumbnail (or decoration icon),
-        then the reserved indicator region, then the title and description.
-        The indicator region holds the status label pill followed by the
-        status dot, and its width comes from what the item actually shows:
-        room for both, for the one that is shown, or no room at all when
-        neither is, in which case the text starts right after the thumbnail.
-        Nothing is ever painted over the thumbnail except the decoration icon
-        overlay (bottom-right) and the starred indicator (bottom-left), which
-        are deliberate overlays. The child count badge sits at the row's
-        bottom-right corner, and the text reserves room for it.
+        Column 0 is laid out from both edges. The thumbnail (or the decoration
+        icon) sits at the left, the title and description follow it, and the
+        status label pill and the status dot are anchored to the row's right
+        edge, the pill left of the dot. The text stops short of both of them
+        and of the child count badge in the bottom-right corner, so it never
+        runs underneath any of the three.
+
+    Note:
+        Because the indicators are right-anchored, they walk left as the
+        column narrows, and past a point they would reach the thumbnail.
+        `apply_minimum_thumbnail_width(view)` stops the column there: it
+        keeps column 0 at or above the thumbnail's full span plus whatever
+        indicator space the rows actually show. `sizeHint` reports the same
+        floor, so a view that sizes to contents already has the room.
 
     Note:
         When using custom backgrounds (Qt.BackgroundRole), call
@@ -421,10 +424,14 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     _ICON_MARGIN = 6
     _TEXT_RIGHT_MARGIN = 10
 
-    # The status label pill and the status dot share one horizontal band,
-    # laid out between the thumbnail (or icon) and the text
+    # The status label pill and the status dot share one band at the row's
+    # top, anchored to its right edge: the dot sits _INDICATOR_RIGHT_MARGIN in
+    # from the edge and the pill sits _INDICATOR_SPACING left of the dot,
+    # whether or not the dot is shown. The pill fills the band's height and
+    # the dot is centered in it, so the two line up
     _INDICATOR_BAND_TOP = 4
     _INDICATOR_BAND_HEIGHT = 14
+    _INDICATOR_RIGHT_MARGIN = 4
     _INDICATOR_SPACING = 6
     _DOT_SIZE = 8
     _LABEL_PADDING = 4
@@ -586,27 +593,139 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             current_style + FXThumbnailDelegate.TRANSPARENT_SELECTION_STYLE
         )
 
-    @staticmethod
-    def markdown_to_html(text: str) -> str:
-        """Convert Markdown text to HTML.
+    @classmethod
+    def apply_minimum_thumbnail_width(
+        cls, view: QWidget, column: int = 0
+    ) -> None:
+        """Keep one column from shrinking below what its content needs.
+
+        The status label pill and the status dot are anchored to the row's
+        right edge, so they walk left as the column narrows and would end up
+        on the thumbnail. This installs a floor on the given column: the
+        thumbnail's full span plus the space the rows' indicators occupy plus
+        the gap between the two. Dragging the section narrower than that snaps
+        it back to the floor.
+
+        A view opts in: the delegate cannot install this itself, since it is
+        handed a rect and never sees the header. `sizeHint` already reports
+        the same floor, which covers `resizeColumnToContents` and
+        `ResizeToContents`, but a size hint does not stop a person dragging a
+        section by hand. `QHeaderView.setMinimumSectionSize` cannot serve
+        either: it applies to every section, so the wide floor column 0 needs
+        would also be forced on the narrow columns beside it.
+
+        The floor is measured from the model each time a resize would breach
+        it, walking the rows that are laid out (expanded branches only), so it
+        follows the widest pill the view currently shows.
 
         Args:
-            text: Markdown-formatted text.
+            view: The tree view whose header should be constrained.
+            column: The column to constrain. Defaults to 0.
 
-        Returns:
-            HTML-formatted text.
+        Examples:
+            >>> from fxgui import fxwidgets
+            >>> from qtpy.QtWidgets import QTreeWidget
+            >>> tree = QTreeWidget()
+            >>> tree.setItemDelegate(fxwidgets.FXThumbnailDelegate())
+            >>> fxwidgets.FXThumbnailDelegate.apply_minimum_thumbnail_width(
+            ...     tree
+            ... )
         """
 
-        if not text or text == "-":
-            return text
+        header = view.header() if hasattr(view, "header") else None
+        if header is None:
+            return
 
-        try:
-            import markdown
+        # A resize of our own re-enters sectionResized, so the enforcement
+        # has to be able to tell its own resize from the user's
+        guard = {"busy": False}
 
-            return markdown.markdown(text, extensions=["extra", "nl2br"])
-        except ImportError:
-            # Fallback if markdown is not installed
-            return text
+        def _enforce(index: int, _old_size: int, new_size: int) -> None:
+            if index != column or guard["busy"]:
+                return
+            floor = cls._measure_minimum_width(view, column)
+            if new_size >= floor:
+                return
+            guard["busy"] = True
+            try:
+                header.resizeSection(column, floor)
+            finally:
+                guard["busy"] = False
+
+        # The connection is the only reference to the closure, and the binding
+        # a signal keeps is not something to rely on across Qt bindings. The
+        # handlers are kept per column so a second call replaces its own
+        # rather than stacking a duplicate on the signal
+        installed = getattr(view, "_fxgui_minimum_section_guards", None)
+        if installed is None:
+            installed = {}
+            view._fxgui_minimum_section_guards = installed
+        previous = installed.get(column)
+        if previous is not None:
+            header.sectionResized.disconnect(previous)
+
+        header.sectionResized.connect(_enforce)
+        installed[column] = _enforce
+
+        floor = cls._measure_minimum_width(view, column)
+        if floor and header.sectionSize(column) < floor:
+            header.resizeSection(column, floor)
+
+    @classmethod
+    def _measure_minimum_width(cls, view: QWidget, column: int) -> int:
+        """Return the widest content floor among the view's laid-out rows.
+
+        Every row has its own floor, since a row showing both indicators
+        needs more room than one showing neither. The column has to satisfy
+        all of them, so the widest wins.
+
+        Args:
+            view: The view holding the model and the delegate.
+            column: The column to measure.
+
+        Returns:
+            The floor in pixels, or 0 when the view has no model or does not
+            use this delegate for that column.
+        """
+
+        model = view.model()
+        if model is None:
+            return 0
+
+        delegate = None
+        if hasattr(view, "itemDelegateForColumn"):
+            delegate = view.itemDelegateForColumn(column)
+        if not isinstance(delegate, FXThumbnailDelegate) and hasattr(
+            view, "itemDelegate"
+        ):
+            delegate = view.itemDelegate()
+        if not isinstance(delegate, FXThumbnailDelegate):
+            return 0
+
+        # A null rect starts at x 0, so the row floors come out as offsets
+        option = QStyleOptionViewItem()
+        can_expand = hasattr(view, "isExpanded")
+
+        floor = 0
+        parents = [QModelIndex()]
+        while parents:
+            parent = parents.pop()
+            for row in range(model.rowCount(parent)):
+                index = model.index(row, column, parent)
+                floor = max(
+                    floor,
+                    delegate._row_minimum_width(
+                        option, index, delegate._has_thumbnail(index)
+                    ),
+                )
+                if (
+                    model.hasChildren(index)
+                    and can_expand
+                    and view.isExpanded(index)
+                ):
+                    parents.append(index)
+
+        return floor
 
     @staticmethod
     def markdown_to_plain_text(text: str) -> str:
@@ -657,68 +776,6 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         except ImportError:
             # Fallback if markdown is not installed
             return text
-
-    def helpEvent(
-        self,
-        event: QHelpEvent,
-        view: QAbstractItemView,
-        option: QStyleOptionViewItem,
-        index: QModelIndex,
-    ) -> bool:
-        """Provide Markdown-formatted tooltips.
-
-        Args:
-            event (QHelpEvent): The help event.
-            view (QAbstractItemView): The view widget.
-            option (QStyleOptionViewItem): Style options.
-            index (QModelIndex): The model index.
-
-        Returns:
-            True if the event was handled.
-        """
-
-        from qtpy.QtCore import QUrl
-        from qtpy.QtWidgets import QToolTip
-
-        if event.type() == QEvent.ToolTip:
-            entity_data = index.data(Qt.UserRole)
-            description = index.data(self.DESCRIPTION_ROLE)
-            thumbnail_path = index.data(self.THUMBNAIL_PATH_ROLE)
-
-            parts = []
-
-            # Thumbnail preview
-            if thumbnail_path:
-                from pathlib import Path
-
-                if Path(str(thumbnail_path)).exists():
-                    img_url = QUrl.fromLocalFile(
-                        str(thumbnail_path)
-                    ).toString()
-                    parts.append(
-                        f'<img src="{img_url}" width="200">'
-                    )
-
-            # Entity name and description
-            if entity_data and description and description != "-":
-                html_description = self.markdown_to_html(description)
-                entity_name = entity_data.get("name", "Unknown")
-                entity_type = entity_data.get("type", "Entity")
-                parts.append(
-                    f"<b>{entity_name}</b> ({entity_type})<hr>"
-                    f"{html_description}"
-                )
-            elif entity_data:
-                entity_name = entity_data.get("name", "Unknown")
-                entity_type = entity_data.get("type", "Entity")
-                parts.append(f"<b>{entity_name}</b> ({entity_type})")
-
-            if parts:
-                tooltip = "<br>".join(parts)
-                QToolTip.showText(event.globalPos(), tooltip, view)
-                return True
-
-        return super().helpEvent(event, view, option, index)
 
     @staticmethod
     def _as_color(value) -> QColor:
@@ -821,10 +878,16 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     ) -> int:
         """Return the x the text must stop at.
 
+        The right edge of the row belongs to the status indicators, the child
+        count badge and the margin, so the text stops before all three. The
+        indicators sit at the top of the row and the badge at the bottom, so
+        subtracting both is more room than either line strictly needs, but it
+        keeps one text width for the title and the description that stacks
+        under it.
+
         Measured from the rect's exclusive right edge, not `QRect.right()`,
         which is one pixel inside it. Mixing the two is what made `sizeHint`
-        reserve a pixel less than the paint path needed and elide a title
-        that had just been sized to fit.
+        reserve a pixel less than the paint path needed.
 
         Args:
             option: The style options for the item.
@@ -840,6 +903,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             + option.rect.width()
             - right_margin
             - self._child_count_width(index)
+            - self._indicator_metrics(index)[2]
         )
 
     def _status_label_width(
@@ -891,10 +955,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             index: The model index of the item.
 
         Returns:
-            Tuple of (label_width, dot_width, region_width), in pixels. A
-            width of 0 means the element is not shown. `region_width` covers
-            both indicators, the gap between them and the gap before the
-            text, and is 0 when neither indicator is shown.
+            Tuple of (label_width, dot_width, footprint), in pixels. A width
+            of 0 means the element is not shown. `footprint` is how far in
+            from the row's right edge the leftmost indicator reaches, and is 0
+            when neither indicator is shown.
         """
 
         label_color = self._as_color(index.data(self.STATUS_LABEL_COLOR_ROLE))
@@ -924,26 +988,58 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         )
         dot_width = self._DOT_SIZE if show_dot else 0
 
-        region_width = label_width + dot_width
-        if label_width and dot_width:
-            region_width += self._INDICATOR_SPACING
-        if region_width:
-            region_width += self._INDICATOR_SPACING
+        # The pill is placed relative to the dot's slot whether or not the dot
+        # is drawn, so a pill on its own reaches just as far in
+        footprint = 0
+        if label_width:
+            footprint = (
+                self._INDICATOR_RIGHT_MARGIN
+                + self._DOT_SIZE
+                + self._INDICATOR_SPACING
+                + label_width
+                + 1
+            )
+        elif dot_width:
+            footprint = self._INDICATOR_RIGHT_MARGIN + self._DOT_SIZE + 1
 
-        return label_width, dot_width, region_width
+        return label_width, dot_width, footprint
 
-    def _indicator_region_left(
+    def _indicator_left(
+        self, item_rect: QRect, label_width: int, dot_width: int
+    ) -> Tuple[int, int]:
+        """Return the left edges of the pill and the dot.
+
+        Both are anchored to the row's right edge: the dot sits
+        `_INDICATOR_RIGHT_MARGIN` in from it, and the pill sits
+        `_INDICATOR_SPACING` left of the dot's slot, occupied or not.
+
+        Args:
+            item_rect: The rectangle of the entire item.
+            label_width: The pill width, or 0 when it is not shown.
+            dot_width: The dot width, or 0 when it is not shown.
+
+        Returns:
+            Tuple of (label_x, dot_x). Either is meaningless when the matching
+            width is 0.
+        """
+
+        dot_x = (
+            item_rect.right() - self._DOT_SIZE - self._INDICATOR_RIGHT_MARGIN
+        )
+        label_x = dot_x - label_width - self._INDICATOR_SPACING
+        return label_x, dot_x
+
+    def _content_left(
         self,
         option: QStyleOptionViewItem,
         index: QModelIndex,
         has_thumbnail: bool,
     ) -> int:
-        """Return the left edge of the reserved indicator region.
+        """Return the first x that is clear of the thumbnail or the icon.
 
-        The region starts right after the thumbnail, or right after the
-        decoration icon on thumbnail-less rows, so indicators never sit on
-        top of either. It is also where the text starts when no indicator is
-        shown, which keeps indicator-less rows laid out as they always were.
+        This is the boundary the right-anchored indicators must not cross: the
+        thumbnail's span including its margins, or the decoration icon and the
+        gap after it on thumbnail-less rows.
 
         Args:
             option: The style options for the item.
@@ -951,21 +1047,68 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             has_thumbnail: Whether the row paints a thumbnail.
 
         Returns:
-            The x coordinate the region starts at.
+            The x coordinate the content area starts at.
         """
 
         if has_thumbnail:
-            return (
-                option.rect.left()
-                + self._THUMBNAIL_SPAN
-                + self._CONTENT_SPACING
-            )
+            return option.rect.left() + self._THUMBNAIL_SPAN
 
         left = option.rect.left() + self._ICON_MARGIN
         icon = index.data(Qt.DecorationRole)
         if icon is not None and not icon.isNull():
             left += self._ICON_SIZE + self._ICON_MARGIN
         return left
+
+    def _text_left(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+        has_thumbnail: bool,
+    ) -> int:
+        """Return the x the title and description start at.
+
+        Args:
+            option: The style options for the item.
+            index: The model index of the item.
+            has_thumbnail: Whether the row paints a thumbnail.
+
+        Returns:
+            The x coordinate the text starts at.
+        """
+
+        left = self._content_left(option, index, has_thumbnail)
+        return left + self._CONTENT_SPACING if has_thumbnail else left
+
+    def _row_minimum_width(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+        has_thumbnail: bool,
+    ) -> int:
+        """Return the narrowest column 0 this row can be laid out in.
+
+        Below this the right-anchored indicators reach the thumbnail. It is
+        the thumbnail's full span (or the icon's), the gap after it, and the
+        space the row's own indicators take, so a row showing neither asks
+        only for its thumbnail.
+
+        Args:
+            option: The style options for the item.
+            index: The model index of the item.
+            has_thumbnail: Whether the row paints a thumbnail.
+
+        Returns:
+            The floor width, in pixels.
+        """
+
+        content_left = (
+            self._content_left(option, index, has_thumbnail)
+            - option.rect.left()
+        )
+        footprint = self._indicator_metrics(index)[2]
+        if not footprint:
+            return content_left
+        return content_left + self._CONTENT_SPACING + footprint
 
     def _child_count_badge_width(self, count: int) -> int:
         """Return the width of the child count badge.
@@ -1019,17 +1162,22 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         painter: QPainter,
         item_rect: QRect,
         dot_x: int,
+        left_limit: int,
         status_color: QColor,
     ) -> None:
         """Draw a status indicator dot at the given left edge.
 
         The dot is centered vertically in the indicator band, so it lines up
-        with the status label pill whether or not the pill is present.
+        with the middle of the status label pill. The band is fixed geometry,
+        so a dot sits at the same height whether or not its row shows a pill.
 
         Args:
             painter: The painter to use for drawing.
             item_rect: The rectangle of the entire item.
             dot_x: The left edge of the dot.
+            left_limit: The x the dot may not start before. On a column too
+                narrow for it the dot is skipped rather than drawn over the
+                thumbnail.
             status_color: The color of the status dot, as a QColor or a string.
         """
 
@@ -1037,8 +1185,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         if not status_color.isValid():
             return
 
-        # Never let the dot spill out of the row
-        if dot_x + self._DOT_SIZE > item_rect.right():
+        if dot_x < left_limit:
             return
 
         dot_y = (
@@ -1062,6 +1209,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         item_rect: QRect,
         label_x: int,
         label_width: int,
+        left_limit: int,
         label_color: QColor,
         label_text: str,
         label_icon: QIcon = None,
@@ -1077,6 +1225,9 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             item_rect: The rectangle of the entire item.
             label_x: The left edge of the pill.
             label_width: The pill width, in pixels.
+            left_limit: The x the pill may not start before. On a column too
+                narrow for it the pill is skipped rather than drawn over the
+                thumbnail.
             label_color: The background color of the status label, as a
                 QColor or a string.
             label_text: The text to display in the status label.
@@ -1087,8 +1238,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         if not label_color.isValid() or not label_text:
             return
 
-        # Never let the pill spill out of the row
-        if label_x + label_width > item_rect.right():
+        if label_x < left_limit:
             return
 
         label_y = item_rect.top() + self._INDICATOR_BAND_TOP
@@ -1423,9 +1573,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     ) -> None:
         """Draw the status label pill and the status dot side by side.
 
-        Both are painted in the region reserved between the thumbnail (or the
-        decoration icon, on thumbnail-less rows) and the text: the pill
-        first, the dot to its right. The thumbnail keeps its full space.
+        Both are anchored to the row's right edge, the pill left of the dot.
+        As the column narrows they walk left towards the thumbnail, and
+        `apply_minimum_thumbnail_width` is what stops the column before they
+        reach it. On a column narrower than that floor an indicator is skipped
+        rather than painted over the image.
 
         Args:
             painter: The painter to use for drawing.
@@ -1435,25 +1587,29 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         """
 
         label_width, dot_width, _ = self._indicator_metrics(index)
-        indicator_x = self._indicator_region_left(option, index, has_thumbnail)
+        label_x, dot_x = self._indicator_left(
+            option.rect, label_width, dot_width
+        )
+        left_limit = self._content_left(option, index, has_thumbnail)
 
         if label_width:
             self._draw_status_label(
                 painter,
                 option.rect,
-                indicator_x,
+                label_x,
                 label_width,
+                left_limit,
                 index.data(self.STATUS_LABEL_COLOR_ROLE),
                 index.data(self.STATUS_LABEL_TEXT_ROLE),
                 index.data(self.STATUS_LABEL_ICON_ROLE),
             )
-            indicator_x += label_width + self._INDICATOR_SPACING
 
         if dot_width:
             self._draw_status_dot(
                 painter,
                 option.rect,
-                indicator_x,
+                dot_x,
+                left_limit,
                 index.data(self.STATUS_DOT_COLOR_ROLE),
             )
 
@@ -1700,15 +1856,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 painter, icon_rect, Qt.AlignCenter, QIcon.Normal, QIcon.On
             )
 
-        # Draw title and description, after the region reserved for the
-        # status indicators
-        _, _, indicator_width = self._indicator_metrics(index)
-        text_x = (
-            self._indicator_region_left(option, index, True) + indicator_width
-        )
+        # Draw title and description, after the thumbnail and its gutter
+        text_x = self._text_left(option, index, True)
         text_y = option.rect.top() + 8
 
-        # Keep the text clear of the child count badge on the right
+        # Keep the text clear of the indicators and the child count badge
         text_width = max(
             0,
             self._content_right_limit(option, index, self._TEXT_RIGHT_MARGIN)
@@ -1737,13 +1889,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         painter.setPen(text_color)
 
-        # Draw title (elided if too long)
+        # Draw title, clipped to its rect rather than elided: a narrowing
+        # column reveals less of it instead of collapsing to an ellipsis
         painter.setFont(title_font)
         title_rect = QRect(text_x, text_y, text_width, title_height)
-        elided_title = title_metrics.elidedText(
-            title, Qt.ElideRight, text_width
-        )
-        painter.drawText(title_rect, Qt.AlignLeft | Qt.AlignTop, elided_title)
+        painter.drawText(title_rect, Qt.AlignLeft | Qt.AlignTop, str(title))
 
         # Draw description
         if description:
@@ -1758,11 +1908,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 text_width,
                 description_metrics.height(),
             )
-            elided_description = description_metrics.elidedText(
-                description, Qt.ElideRight, text_width
-            )
             painter.drawText(
-                description_rect, Qt.AlignLeft | Qt.AlignTop, elided_description
+                description_rect, Qt.AlignLeft | Qt.AlignTop, str(description)
             )
 
     def _draw_icon_and_text(
@@ -1811,14 +1958,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         title = index.data(Qt.DisplayRole) or ""
 
-        # The text follows the icon and the region reserved for the status
-        # indicators
-        _, _, indicator_width = self._indicator_metrics(index)
-        text_x = (
-            self._indicator_region_left(option, index, False) + indicator_width
-        )
+        # The text follows the icon
+        text_x = self._text_left(option, index, False)
 
-        # Keep the text clear of the child count badge on the right
+        # Keep the text clear of the indicators and the child count badge
         content_width = max(
             0, self._content_right_limit(option, index, icon_margin) - text_x
         )
@@ -1838,11 +1981,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             )
             painter.setPen(text_color)
             painter.setFont(title_font)
-            elided_title = title_metrics.elidedText(
-                title, Qt.ElideRight, content_width
-            )
             painter.drawText(
-                title_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_title
+                title_rect, Qt.AlignLeft | Qt.AlignVCenter, str(title)
             )
 
             # Draw description
@@ -1857,11 +1997,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             desc_color.setAlpha(180)
             painter.setPen(desc_color)
             painter.setFont(description_font)
-            elided_desc = description_metrics.elidedText(
-                description_plain, Qt.ElideRight, content_width
-            )
             painter.drawText(
-                description_rect, Qt.AlignLeft | Qt.AlignTop, elided_desc
+                description_rect, Qt.AlignLeft | Qt.AlignTop, description_plain
             )
         else:
             # Single-line layout
@@ -1992,14 +2129,14 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         # Everything left of the text, from the same helper the paint path
         # uses: the thumbnail and its gutter, or the decoration icon
-        content_offset = (
-            self._indicator_region_left(option, index, show_thumbnail)
+        text_offset = (
+            self._text_left(option, index, show_thumbnail)
             - option.rect.left()
         )
 
-        # The region reserved for the status indicators (0 when the item
-        # shows neither)
-        _, _, indicator_width = self._indicator_metrics(index)
+        # What the right-anchored indicators take out of the row (0 when the
+        # item shows neither)
+        _, _, footprint = self._indicator_metrics(index)
 
         # The text itself, measured with the fonts it is painted with. A
         # thumbnail row always bolds its title; a thumbnail-less row only
@@ -2022,15 +2159,21 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             starred_width = 22  # star + circle + margin
 
         total_width = (
-            content_offset
-            + indicator_width
+            text_offset
             + text_width
             + right_margin
             + child_count_width
+            + footprint
             + starred_width
         )
 
-        return QSize(max(original_size.width(), total_width), fixed_height)
+        # Never report a width the row cannot be laid out in, so anything
+        # sizing to contents lands at or above the floor
+        floor = self._row_minimum_width(option, index, show_thumbnail)
+
+        return QSize(
+            max(original_size.width(), total_width, floor), fixed_height
+        )
 
     def paint(
         self,
@@ -2106,8 +2249,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 self._draw_thumbnail_content(painter, opt, index)
             else:
                 self._draw_icon_and_text(painter, opt, index)
-            # Draw status indicators for column 0, in the region reserved
-            # between the thumbnail (or icon) and the text
+            # Draw status indicators for column 0, anchored to its right edge
             self._draw_status_indicators(painter, opt, index, has_thumbnail)
 
             # Draw starred indicator
@@ -2283,9 +2425,8 @@ def example() -> None:
         item.setData(0, Qt.UserRole + 100, feedback_key)
 
     tree2.setColumnWidth(0, 300)
-    # Keep the column wide enough for everything column 0 lays out:
-    # thumbnail (80) + status pill and dot (~80) + room for the text
-    tree2.header().setMinimumSectionSize(200)
+    # Column 0 cannot be dragged narrower than its thumbnail and indicators
+    FXThumbnailDelegate.apply_minimum_thumbnail_width(tree2)
     layout.addWidget(tree2)
 
     ###### FXThumbnailDelegate - With Custom Backgrounds
@@ -2365,8 +2506,8 @@ def example() -> None:
 
     tree3.setColumnWidth(0, 250)
     tree3.setColumnWidth(1, 100)
-    # Keep the column wide enough for the thumbnail, the indicators and text
-    tree3.header().setMinimumSectionSize(200)
+    # Column 0 cannot be dragged narrower than its thumbnail and indicators
+    FXThumbnailDelegate.apply_minimum_thumbnail_width(tree3)
     layout.addWidget(tree3)
 
     ###### Theme awareness for custom backgrounds
