@@ -211,3 +211,31 @@ def test_apply_tip_works_on_view_items(qtbot):
 
     assert "<b>Shot 0010</b>" in item.toolTip()
     assert item.statusTip() == "Shot 0010 - Ready to render"
+
+
+# ' Migrated widgets
+
+
+def test_migrated_widgets_use_native_tooltips(qtbot):
+    """The library's own call sites went native; a missing tooltip here means
+    the migration dropped one."""
+    from fxgui.fxwidgets import (
+        FXBreadcrumb,
+        FXFilePathWidget,
+        FXFuzzySearchList,
+    )
+
+    breadcrumb = FXBreadcrumb(show_navigation=True)
+    qtbot.addWidget(breadcrumb)
+    assert "<b>Back</b>" in breadcrumb._back_button.toolTip()
+    assert "<b>Forward</b>" in breadcrumb._forward_button.toolTip()
+    assert breadcrumb._back_button.statusTip().startswith("Back - ")
+
+    path_widget = FXFilePathWidget()
+    qtbot.addWidget(path_widget)
+    assert "<b>Browse</b>" in path_widget._browse_btn.toolTip()
+
+    search_list = FXFuzzySearchList(show_ratio_slider=True)
+    qtbot.addWidget(search_list)
+    assert "<b>Sensitivity</b>" in search_list._ratio_icon.toolTip()
+    assert "<b>Match Threshold</b>" in search_list._ratio_slider.toolTip()
