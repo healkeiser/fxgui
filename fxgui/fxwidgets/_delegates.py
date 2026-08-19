@@ -352,6 +352,18 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         - Setting per-item role to False hides that element for that item.
 
     Note:
+        Column 0 is laid out left to right: thumbnail (or decoration icon),
+        then the reserved indicator region, then the title and description.
+        The indicator region holds the status label pill followed by the
+        status dot, and its width comes from what the item actually shows:
+        room for both, for the one that is shown, or no room at all when
+        neither is, in which case the text starts right after the thumbnail.
+        Nothing is ever painted over the thumbnail except the decoration icon
+        overlay (bottom-right) and the starred indicator (bottom-left), which
+        are deliberate overlays. The child count badge sits at the row's
+        bottom-right corner, and the text reserves room for it.
+
+    Note:
         When using custom backgrounds (Qt.BackgroundRole), call
         `FXThumbnailDelegate.apply_transparent_selection(view)` to disable the
         native Qt selection/hover highlighting, allowing the delegate's custom
@@ -394,6 +406,35 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     CHILD_COUNT_VISIBLE_ROLE = Qt.UserRole + 10  # bool
     STARRED_ROLE = Qt.UserRole + 11  # bool
     STARRED_COLOR_ROLE = Qt.UserRole + 12  # QColor (default: gold)
+
+    # Layout geometry, shared by the paint and sizeHint paths so that the
+    # space reserved for an element and the space it paints in cannot drift
+    _THUMBNAIL_WIDTH = 68  # 16:9 against _THUMBNAIL_HEIGHT
+    _THUMBNAIL_HEIGHT = 38
+    _THUMBNAIL_MARGIN = 5  # Margin around the bordered thumbnail
+    _THUMBNAIL_BORDER = 2  # The bordered container adds 1px on each side
+    _THUMBNAIL_SPAN = (
+        _THUMBNAIL_WIDTH + _THUMBNAIL_BORDER + _THUMBNAIL_MARGIN * 2
+    )
+    _CONTENT_SPACING = 5  # Gap between the thumbnail and what follows it
+    _ICON_SIZE = 16
+    _ICON_MARGIN = 6
+    _TEXT_RIGHT_MARGIN = 10
+
+    # The status label pill and the status dot share one horizontal band,
+    # laid out between the thumbnail (or icon) and the text
+    _INDICATOR_BAND_TOP = 4
+    _INDICATOR_BAND_HEIGHT = 14
+    _INDICATOR_SPACING = 6
+    _DOT_SIZE = 8
+    _LABEL_PADDING = 4
+    _LABEL_ICON_SIZE = 12
+    _LABEL_ICON_SPACING = 2
+
+    # Child count badge, painted at the row's bottom-right corner
+    _CHILD_COUNT_HEIGHT = 14
+    _CHILD_COUNT_MARGIN = 4
+    _CHILD_COUNT_MIN_WIDTH = 18
 
     # Stylesheet constant is no longer used - apply_transparent_selection
     # now sets the stylesheet directly on the widget
@@ -679,37 +720,333 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         return super().helpEvent(event, view, option, index)
 
+    @staticmethod
+    def _as_color(value) -> QColor:
+        """Coerce a color role value to a QColor.
+
+        The color roles are documented as QColor, but strings are the obvious
+        thing to store instead, so they are parsed here. Anything else yields
+        an invalid QColor, which hides the element rather than raising in the
+        middle of a paint or a size hint.
+
+        Args:
+            value: Whatever the model returned for a color role.
+
+        Returns:
+            The color, or an invalid QColor when there is none to be had.
+
+        Examples:
+            >>> FXThumbnailDelegate._as_color("#ff0000").isValid()
+            True
+            >>> FXThumbnailDelegate._as_color("not a color").isValid()
+            False
+            >>> FXThumbnailDelegate._as_color(None).isValid()
+            False
+        """
+
+        if isinstance(value, QColor):
+            return value
+        if isinstance(value, str):
+            return QColor(value)
+        return QColor()
+
+    def _title_font(self, option: QStyleOptionViewItem) -> QFont:
+        """Return the font the title is painted with.
+
+        Args:
+            option: The style options for the item.
+
+        Returns:
+            The bold variant of the item's font.
+        """
+
+        font = QFont(option.font)
+        font.setBold(True)
+        return font
+
+    def _description_font(self, option: QStyleOptionViewItem) -> QFont:
+        """Return the font the description is painted with.
+
+        Args:
+            option: The style options for the item.
+
+        Returns:
+            The item's font, one point smaller and never below 8.
+        """
+
+        font = QFont(option.font)
+        font.setPointSize(max(8, option.font.pointSize() - 1))
+        return font
+
+    def _content_text_width(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+        title_font: QFont,
+    ) -> int:
+        """Return the width the title and description want.
+
+        The two stack, so the wider of them is what the row needs. The
+        description is measured as plain text, which is what gets painted.
+
+        Args:
+            option: The style options for the item.
+            index: The model index of the item.
+            title_font: The font the caller paints the title with.
+
+        Returns:
+            The natural text width, in pixels.
+        """
+
+        title = index.data(Qt.DisplayRole) or ""
+        width = QFontMetrics(title_font).horizontalAdvance(str(title))
+
+        description = index.data(self.DESCRIPTION_ROLE) or ""
+        if description and description != "-":
+            description = self.markdown_to_plain_text(description)
+            width = max(
+                width,
+                QFontMetrics(
+                    self._description_font(option)
+                ).horizontalAdvance(description),
+            )
+
+        return width
+
+    def _content_right_limit(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+        right_margin: int,
+    ) -> int:
+        """Return the x the text must stop at.
+
+        Measured from the rect's exclusive right edge, not `QRect.right()`,
+        which is one pixel inside it. Mixing the two is what made `sizeHint`
+        reserve a pixel less than the paint path needed and elide a title
+        that had just been sized to fit.
+
+        Args:
+            option: The style options for the item.
+            index: The model index of the item.
+            right_margin: The margin to keep past the text.
+
+        Returns:
+            The x coordinate the text ends at.
+        """
+
+        return (
+            option.rect.left()
+            + option.rect.width()
+            - right_margin
+            - self._child_count_width(index)
+        )
+
+    def _status_label_width(
+        self, label_text: str, label_icon: Optional[QIcon] = None
+    ) -> int:
+        """Return the width of the status label pill.
+
+        The pill grows with its text, plus horizontal padding and, when an
+        icon is set, the icon and the gap that follows it.
+
+        Args:
+            label_text: The text displayed in the pill.
+            label_icon: Optional icon displayed before the text.
+
+        Returns:
+            The pill width, in pixels.
+        """
+
+        label_font = QFont()
+        label_font.setPointSize(7)
+        label_font.setBold(True)
+        label_metrics = QFontMetrics(label_font)
+
+        icon_size = (
+            self._LABEL_ICON_SIZE
+            if label_icon and not label_icon.isNull()
+            else 0
+        )
+        icon_spacing = self._LABEL_ICON_SPACING if icon_size > 0 else 0
+
+        return (
+            label_metrics.horizontalAdvance(label_text)
+            + self._LABEL_PADDING * 2
+            + icon_size
+            + icon_spacing
+        )
+
+    def _indicator_metrics(self, index: QModelIndex) -> Tuple[int, int, int]:
+        """Measure the indicator region for an item.
+
+        An indicator is measured only if it is actually painted, so the
+        reserved space always matches what is drawn: the delegate's global
+        `show_*` property must be True and the per-item role must not be
+        False, and the item must carry a usable color (and text, for the
+        pill). A color role holding something unusable hides its indicator
+        instead of raising, see `_as_color`.
+
+        Args:
+            index: The model index of the item.
+
+        Returns:
+            Tuple of (label_width, dot_width, region_width), in pixels. A
+            width of 0 means the element is not shown. `region_width` covers
+            both indicators, the gap between them and the gap before the
+            text, and is 0 when neither indicator is shown.
+        """
+
+        label_color = self._as_color(index.data(self.STATUS_LABEL_COLOR_ROLE))
+        label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
+        label_icon = index.data(self.STATUS_LABEL_ICON_ROLE)
+        dot_color = self._as_color(index.data(self.STATUS_DOT_COLOR_ROLE))
+
+        item_show_label = index.data(self.STATUS_LABEL_VISIBLE_ROLE)
+        item_show_dot = index.data(self.STATUS_DOT_VISIBLE_ROLE)
+
+        show_label = bool(
+            self._show_status_label
+            and item_show_label is not False
+            and label_text
+            and label_color.isValid()
+        )
+        label_width = (
+            self._status_label_width(label_text, label_icon)
+            if show_label
+            else 0
+        )
+
+        show_dot = bool(
+            self._show_status_dot
+            and item_show_dot is not False
+            and dot_color.isValid()
+        )
+        dot_width = self._DOT_SIZE if show_dot else 0
+
+        region_width = label_width + dot_width
+        if label_width and dot_width:
+            region_width += self._INDICATOR_SPACING
+        if region_width:
+            region_width += self._INDICATOR_SPACING
+
+        return label_width, dot_width, region_width
+
+    def _indicator_region_left(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+        has_thumbnail: bool,
+    ) -> int:
+        """Return the left edge of the reserved indicator region.
+
+        The region starts right after the thumbnail, or right after the
+        decoration icon on thumbnail-less rows, so indicators never sit on
+        top of either. It is also where the text starts when no indicator is
+        shown, which keeps indicator-less rows laid out as they always were.
+
+        Args:
+            option: The style options for the item.
+            index: The model index of the item.
+            has_thumbnail: Whether the row paints a thumbnail.
+
+        Returns:
+            The x coordinate the region starts at.
+        """
+
+        if has_thumbnail:
+            return (
+                option.rect.left()
+                + self._THUMBNAIL_SPAN
+                + self._CONTENT_SPACING
+            )
+
+        left = option.rect.left() + self._ICON_MARGIN
+        icon = index.data(Qt.DecorationRole)
+        if icon is not None and not icon.isNull():
+            left += self._ICON_SIZE + self._ICON_MARGIN
+        return left
+
+    def _child_count_badge_width(self, count: int) -> int:
+        """Return the width of the child count badge.
+
+        Args:
+            count: The number of children.
+
+        Returns:
+            The badge width, in pixels.
+        """
+
+        font = QFont()
+        font.setPointSize(7)
+        font.setBold(True)
+        text_width = QFontMetrics(font).horizontalAdvance(str(count))
+        return max(
+            text_width + self._LABEL_PADDING * 2, self._CHILD_COUNT_MIN_WIDTH
+        )
+
+    def _child_count_width(self, index: QModelIndex) -> int:
+        """Return the horizontal space the child count badge occupies.
+
+        The badge is painted at the row's bottom-right corner, so the text
+        keeps this much room free on its right to avoid running under it.
+
+        Args:
+            index: The model index of the item.
+
+        Returns:
+            The badge width plus its margins, or 0 when no badge is painted.
+        """
+
+        if not self._show_child_count:
+            return 0
+        if index.data(self.CHILD_COUNT_VISIBLE_ROLE) is False:
+            return 0
+
+        model = index.model()
+        if model is None:
+            return 0
+        count = model.rowCount(index)
+        if count <= 0:
+            return 0
+
+        return (
+            self._child_count_badge_width(count) + self._CHILD_COUNT_MARGIN * 2
+        )
+
     def _draw_status_dot(
         self,
         painter: QPainter,
         item_rect: QRect,
+        dot_x: int,
         status_color: QColor,
     ) -> None:
-        """Draw a status indicator dot on the top-right corner.
+        """Draw a status indicator dot at the given left edge.
+
+        The dot is centered vertically in the indicator band, so it lines up
+        with the status label pill whether or not the pill is present.
 
         Args:
             painter: The painter to use for drawing.
             item_rect: The rectangle of the entire item.
-            status_color: The color of the status dot.
+            dot_x: The left edge of the dot.
+            status_color: The color of the status dot, as a QColor or a string.
         """
 
-        if not status_color or not status_color.isValid():
+        status_color = self._as_color(status_color)
+        if not status_color.isValid():
             return
 
-        # Status dot properties
-        dot_size = 8
-        dot_margin = 4
-
-        # Calculate dot position (top-right corner of item)
-        dot_x = item_rect.right() - dot_size - dot_margin
-        dot_y = item_rect.top() + dot_margin
-
-        # Don't draw if dot would go past left boundary
-        if dot_x < item_rect.left() + dot_margin:
+        # Never let the dot spill out of the row
+        if dot_x + self._DOT_SIZE > item_rect.right():
             return
 
-        # Create dot rectangle
-        dot_rect = QRect(dot_x, dot_y, dot_size, dot_size)
+        dot_y = (
+            item_rect.top()
+            + self._INDICATOR_BAND_TOP
+            + (self._INDICATOR_BAND_HEIGHT - self._DOT_SIZE) // 2
+        )
+        dot_rect = QRect(dot_x, dot_y, self._DOT_SIZE, self._DOT_SIZE)
 
         # Draw the status dot with antialiasing
         painter.setRenderHint(QPainter.Antialiasing)
@@ -723,57 +1060,47 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         self,
         painter: QPainter,
         item_rect: QRect,
+        label_x: int,
+        label_width: int,
         label_color: QColor,
         label_text: str,
         label_icon: QIcon = None,
     ) -> None:
-        """Draw a status label next to the status dot.
+        """Draw the status label pill at the given left edge.
+
+        The pill fills the indicator band: it starts at `label_x`, spans
+        `label_width` as measured by `_status_label_width` and is offset from
+        the row's top by `_INDICATOR_BAND_TOP`.
 
         Args:
             painter: The painter to use for drawing.
             item_rect: The rectangle of the entire item.
-            label_color: The background color of the status label.
+            label_x: The left edge of the pill.
+            label_width: The pill width, in pixels.
+            label_color: The background color of the status label, as a
+                QColor or a string.
             label_text: The text to display in the status label.
             label_icon: Optional icon to display before the text.
         """
 
-        if not label_color or not label_color.isValid() or not label_text:
+        label_color = self._as_color(label_color)
+        if not label_color.isValid() or not label_text:
             return
 
-        # Status dot properties (for positioning reference)
-        dot_size = 8
-        dot_margin = 4
+        # Never let the pill spill out of the row
+        if label_x + label_width > item_rect.right():
+            return
 
-        # Label properties
-        label_height = 14
-        label_margin = 6
-        label_padding = 4
-        icon_size = 12 if label_icon and not label_icon.isNull() else 0
-        icon_spacing = 2 if icon_size > 0 else 0
+        label_y = item_rect.top() + self._INDICATOR_BAND_TOP
+        label_rect = QRect(
+            label_x, label_y, label_width, self._INDICATOR_BAND_HEIGHT
+        )
 
         # Set up font for label text
         label_font = QFont()
         label_font.setPointSize(7)
         label_font.setBold(True)
         label_metrics = QFontMetrics(label_font)
-
-        # Calculate label width based on text and optional icon
-        text_width = label_metrics.horizontalAdvance(label_text)
-        label_width = (
-            text_width + (label_padding * 2) + icon_size + icon_spacing
-        )
-
-        # Calculate label position (left of the status dot)
-        dot_x = item_rect.right() - dot_size - dot_margin
-        label_x = dot_x - label_width - label_margin
-        label_y = item_rect.top() + dot_margin
-
-        # Don't draw if label would go past left boundary
-        if label_x < item_rect.left() + 4:
-            return
-
-        # Create label rectangle
-        label_rect = QRect(label_x, label_y, label_width, label_height)
 
         # Draw the label background with rounded corners
         painter.setRenderHint(QPainter.Antialiasing)
@@ -787,21 +1114,31 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         text_color = Qt.white if label_color.lightness() < 128 else Qt.black
 
         # Draw the icon if provided (keep original colors for brand/DCC icons)
-        content_x = label_x + label_padding
+        content_x = label_x + self._LABEL_PADDING
+        icon_size = (
+            self._LABEL_ICON_SIZE
+            if label_icon and not label_icon.isNull()
+            else 0
+        )
         if icon_size > 0:
-            icon_y = label_y + (label_height - icon_size) // 2
+            icon_y = label_y + (self._INDICATOR_BAND_HEIGHT - icon_size) // 2
             icon_rect = QRect(content_x, icon_y, icon_size, icon_size)
             label_icon.paint(
                 painter, icon_rect, Qt.AlignCenter, QIcon.Normal, QIcon.On
             )
-            content_x += icon_size + icon_spacing
+            content_x += icon_size + self._LABEL_ICON_SPACING
 
         # Draw the label text
         painter.setPen(text_color)
         painter.setFont(label_font)
 
         # Position text after icon (if any)
-        text_rect = QRect(content_x, label_y, text_width, label_height)
+        text_rect = QRect(
+            content_x,
+            label_y,
+            label_metrics.horizontalAdvance(label_text),
+            self._INDICATOR_BAND_HEIGHT,
+        )
         painter.drawText(text_rect, Qt.AlignCenter, label_text)
 
     def _get_column_position(
@@ -1082,45 +1419,43 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         painter: QPainter,
         option: QStyleOptionViewItem,
         index: QModelIndex,
+        has_thumbnail: bool,
     ) -> None:
-        """Draw status dot and label indicators.
+        """Draw the status label pill and the status dot side by side.
+
+        Both are painted in the region reserved between the thumbnail (or the
+        decoration icon, on thumbnail-less rows) and the text: the pill
+        first, the dot to its right. The thumbnail keeps its full space.
 
         Args:
             painter: The painter to use for drawing.
             option: The style options for the item.
             index: The model index of the item.
+            has_thumbnail: Whether the row paints a thumbnail.
         """
 
-        status_dot_color = index.data(self.STATUS_DOT_COLOR_ROLE)
-        status_label_color = index.data(self.STATUS_LABEL_COLOR_ROLE)
-        status_label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
-        status_label_icon = index.data(self.STATUS_LABEL_ICON_ROLE)
+        label_width, dot_width, _ = self._indicator_metrics(index)
+        indicator_x = self._indicator_region_left(option, index, has_thumbnail)
 
-        item_show_dot = index.data(self.STATUS_DOT_VISIBLE_ROLE)
-        item_show_label = index.data(self.STATUS_LABEL_VISIBLE_ROLE)
-
-        show_label = (
-            self._show_status_label
-            and item_show_label is not False
-            and status_label_color
-            and status_label_text
-        )
-        if show_label:
+        if label_width:
             self._draw_status_label(
                 painter,
                 option.rect,
-                status_label_color,
-                status_label_text,
-                status_label_icon,
+                indicator_x,
+                label_width,
+                index.data(self.STATUS_LABEL_COLOR_ROLE),
+                index.data(self.STATUS_LABEL_TEXT_ROLE),
+                index.data(self.STATUS_LABEL_ICON_ROLE),
             )
+            indicator_x += label_width + self._INDICATOR_SPACING
 
-        show_dot = (
-            self._show_status_dot
-            and item_show_dot is not False
-            and status_dot_color
-        )
-        if show_dot:
-            self._draw_status_dot(painter, option.rect, status_dot_color)
+        if dot_width:
+            self._draw_status_dot(
+                painter,
+                option.rect,
+                indicator_x,
+                index.data(self.STATUS_DOT_COLOR_ROLE),
+            )
 
     def _draw_starred_indicator(
         self,
@@ -1153,29 +1488,29 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             overlay_margin = 6
 
             # Thumbnail position (same constants as _draw_thumbnail_content)
-            thumbnail_height = 38
-            x_offset = 5
-            thumbnail_x = item_rect.left() + x_offset
+            bordered_height = self._THUMBNAIL_HEIGHT + self._THUMBNAIL_BORDER
+            thumbnail_x = item_rect.left() + self._THUMBNAIL_MARGIN
             thumbnail_y = (
-                item_rect.top()
-                + (item_rect.height() - (thumbnail_height + 2)) // 2
+                item_rect.top() + (item_rect.height() - bordered_height) // 2
             )
 
             # Bottom-left of thumbnail area
             overlay_x = thumbnail_x + overlay_margin
             overlay_y = (
-                thumbnail_y
-                + (thumbnail_height + 2)
-                - overlay_size
-                - overlay_margin
+                thumbnail_y + bordered_height - overlay_size - overlay_margin
             )
         else:
             # Tiny star on bottom-right corner of the icon
             overlay_size = 7
-            icon_margin = 6
-            icon_size = 16
+            icon_size = self._ICON_SIZE
             icon_y = item_rect.top() + (item_rect.height() - icon_size) // 2
-            overlay_x = item_rect.left() + icon_margin + icon_size - overlay_size + 1
+            overlay_x = (
+                item_rect.left()
+                + self._ICON_MARGIN
+                + icon_size
+                - overlay_size
+                + 1
+            )
             overlay_y = icon_y + icon_size - overlay_size + 1
 
         cx = overlay_x + overlay_size / 2
@@ -1224,13 +1559,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         font = QFont()
         font.setPointSize(7)
         font.setBold(True)
-        metrics = QFontMetrics(font)
 
-        text_width = metrics.horizontalAdvance(text)
-        padding = 4
-        badge_width = max(text_width + padding * 2, 18)
-        badge_height = 14
-        margin = 4
+        badge_width = self._child_count_badge_width(count)
+        badge_height = self._CHILD_COUNT_HEIGHT
+        margin = self._CHILD_COUNT_MARGIN
 
         badge_x = item_rect.right() - badge_width - margin
         badge_y = item_rect.bottom() - badge_height - margin
@@ -1282,9 +1614,9 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         # Fixed thumbnail container size - 16:9 aspect ratio to match missing_image.png
         # Row height is 50px, with 5px margin top/bottom = 40px for bordered thumbnail
         # Bordered thumbnail adds 2px, so inner thumbnail is 38px height
-        thumbnail_height = 38
-        thumbnail_width = 68  # 38 * 16/9 ≈ 68
-        x_offset = 5  # Consistent margin on all sides
+        thumbnail_height = self._THUMBNAIL_HEIGHT
+        thumbnail_width = self._THUMBNAIL_WIDTH
+        x_offset = self._THUMBNAIL_MARGIN  # Consistent margin on all sides
 
         # Scale image to fit within container while keeping aspect ratio
         if not thumbnail.isNull():
@@ -1296,7 +1628,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             )
 
         # Create fixed-size bordered thumbnail container with background
-        bordered_thumbnail = QPixmap(thumbnail_width + 2, thumbnail_height + 2)
+        bordered_thumbnail = QPixmap(
+            thumbnail_width + self._THUMBNAIL_BORDER,
+            thumbnail_height + self._THUMBNAIL_BORDER,
+        )
         bordered_thumbnail.fill(Qt.transparent)
 
         painter_with_border = QPainter(bordered_thumbnail)
@@ -1365,50 +1700,19 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 painter, icon_rect, Qt.AlignCenter, QIcon.Normal, QIcon.On
             )
 
-        # Draw title and description
-        thumbnail_width_with_padding = bordered_thumbnail.width() + x_offset * 2
-        text_x = option.rect.left() + thumbnail_width_with_padding + 5
+        # Draw title and description, after the region reserved for the
+        # status indicators
+        _, _, indicator_width = self._indicator_metrics(index)
+        text_x = (
+            self._indicator_region_left(option, index, True) + indicator_width
+        )
         text_y = option.rect.top() + 8
 
-        # Calculate space needed for status indicators on the right
-        status_space = 0
-        if self._show_status_dot:
-            dot_size = 8
-            dot_margin = 4
-            status_space += dot_size + dot_margin * 2
-
-        if self._show_status_label:
-            status_label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
-            status_label_icon = index.data(self.STATUS_LABEL_ICON_ROLE)
-            if status_label_text:
-                label_font = QFont()
-                label_font.setPointSize(7)
-                label_font.setBold(True)
-                label_metrics = QFontMetrics(label_font)
-                label_text_width = label_metrics.horizontalAdvance(
-                    status_label_text
-                )
-                label_padding = 4
-                label_margin = 6
-                icon_size = (
-                    12
-                    if status_label_icon and not status_label_icon.isNull()
-                    else 0
-                )
-                icon_spacing = 2 if icon_size > 0 else 0
-                status_space += (
-                    label_text_width
-                    + (label_padding * 2)
-                    + icon_size
-                    + icon_spacing
-                    + label_margin
-                )
-
-        text_width = (
-            option.rect.width()
-            - thumbnail_width_with_padding
-            - 10
-            - status_space
+        # Keep the text clear of the child count badge on the right
+        text_width = max(
+            0,
+            self._content_right_limit(option, index, self._TEXT_RIGHT_MARGIN)
+            - text_x,
         )
 
         title = index.data(Qt.DisplayRole) or ""
@@ -1418,10 +1722,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             description = self.markdown_to_plain_text(description)
 
         # Set up fonts
-        title_font = QFont(option.font)
-        title_font.setBold(True)
-        description_font = QFont(option.font)
-        description_font.setPointSize(max(8, option.font.pointSize() - 1))
+        title_font = self._title_font(option)
+        description_font = self._description_font(option)
 
         title_metrics = QFontMetrics(title_font)
         description_metrics = QFontMetrics(description_font)
@@ -1480,9 +1782,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         icon = index.data(Qt.DecorationRole)
         description = index.data(self.DESCRIPTION_ROLE) or ""
 
-        icon_size = 16
-        icon_margin = 6
-        text_x = option.rect.left() + icon_margin
+        icon_size = self._ICON_SIZE
+        icon_margin = self._ICON_MARGIN
 
         # Determine text color based on selection state
         if option.state & QStyle.State_Selected:
@@ -1507,61 +1808,29 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 )
             else:
                 icon.paint(painter, icon_rect)
-            text_x = icon_x + icon_size + icon_margin
 
         title = index.data(Qt.DisplayRole) or ""
 
-        # Calculate space needed for status indicators on the right
-        status_space = 0
-        if self._show_status_dot:
-            dot_size = 8
-            dot_margin = 4
-            status_space += dot_size + dot_margin * 2
+        # The text follows the icon and the region reserved for the status
+        # indicators
+        _, _, indicator_width = self._indicator_metrics(index)
+        text_x = (
+            self._indicator_region_left(option, index, False) + indicator_width
+        )
 
-        if self._show_status_label:
-            status_label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
-            status_label_icon = index.data(self.STATUS_LABEL_ICON_ROLE)
-            if status_label_text:
-                label_font = QFont()
-                label_font.setPointSize(7)
-                label_font.setBold(True)
-                label_metrics = QFontMetrics(label_font)
-                label_text_width = label_metrics.horizontalAdvance(
-                    status_label_text
-                )
-                label_padding = 4
-                label_margin = 6
-                icon_size_label = (
-                    12
-                    if status_label_icon and not status_label_icon.isNull()
-                    else 0
-                )
-                icon_spacing = 2 if icon_size_label > 0 else 0
-                status_space += (
-                    label_text_width
-                    + (label_padding * 2)
-                    + icon_size_label
-                    + icon_spacing
-                    + label_margin
-                )
+        # Keep the text clear of the child count badge on the right
+        content_width = max(
+            0, self._content_right_limit(option, index, icon_margin) - text_x
+        )
 
         if description and description != "-":
             # Two-line layout
-            title_font = QFont(option.font)
-            title_font.setBold(True)
+            title_font = self._title_font(option)
             title_metrics = QFontMetrics(title_font)
             title_height = title_metrics.height()
 
-            description_font = QFont(option.font)
-            description_font.setPointSize(max(8, option.font.pointSize() - 1))
+            description_font = self._description_font(option)
             description_metrics = QFontMetrics(description_font)
-
-            content_width = (
-                option.rect.width()
-                - (text_x - option.rect.left())
-                - icon_margin
-                - status_space
-            )
 
             # Draw title
             title_rect = QRect(
@@ -1601,10 +1870,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             text_rect = QRect(
                 text_x,
                 option.rect.top(),
-                option.rect.width()
-                - (text_x - option.rect.left())
-                - icon_margin
-                - status_space,
+                content_width,
                 option.rect.height(),
             )
             painter.drawText(
@@ -1716,126 +1982,55 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         else:
             fixed_height = 30
 
-        # Only add thumbnail width for the first column
-        if is_col0:
-            show_thumbnail = self._show_thumbnail and (
-                item_show_thumbnail is None or item_show_thumbnail
-            )
-            if show_thumbnail:
-                # Add thumbnail width + padding to the original width
-                # Thumbnail is 16:9 aspect ratio (68x38)
-                thumbnail_width = 68
-                x_offset = 5  # Consistent margin on all sides
-                thumbnail_width_with_padding = (
-                    thumbnail_width + 2 + (x_offset * 2)
-                )
-                additional_spacing = 10
-
-                # Calculate width needed for text content
-                title = index.data(Qt.DisplayRole) or ""
-                description = index.data(self.DESCRIPTION_ROLE) or ""
-
-                # Set up fonts
-                title_font = QFont(option.font)
-                title_font.setBold(True)
-                title_metrics = QFontMetrics(title_font)
-                title_width = (
-                    title_metrics.horizontalAdvance(title) if title else 0
-                )
-
-                description_width = 0
-                if description:
-                    description_font = QFont(option.font)
-                    description_font.setPointSize(
-                        max(8, option.font.pointSize() - 1)
-                    )
-                    description_metrics = QFontMetrics(description_font)
-                    description_width = description_metrics.horizontalAdvance(
-                        description
-                    )
-
-                # Use the wider of title or description
-                text_width = max(title_width, description_width)
-
-                # Add space for status dot
-                dot_size = 8
-                dot_margin = 4
-                status_dot_width = dot_size + dot_margin
-
-                # Add space for status label if present
-                status_label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
-                status_label_width = 0
-                if status_label_text:
-                    label_font = QFont()
-                    label_font.setPointSize(7)
-                    label_font.setBold(True)
-                    label_metrics = QFontMetrics(label_font)
-                    label_text_width = label_metrics.horizontalAdvance(
-                        status_label_text
-                    )
-                    label_padding = 4
-                    label_margin = 2
-                    status_label_width = (
-                        label_text_width + (label_padding * 2) + label_margin
-                    )
-
-                # Add space for child count badge
-                child_count_width = 0
-                if self._show_child_count:
-                    child_count = index.model().rowCount(index)
-                    if child_count > 0:
-                        child_count_width = 26  # badge + margin
-
-                # Add space for starred indicator
-                starred_width = 0
-                if self._show_starred and index.data(self.STARRED_ROLE):
-                    starred_width = 22  # star + circle + margin
-
-                # Calculate total width needed
-                total_width = (
-                    thumbnail_width_with_padding
-                    + text_width
-                    + additional_spacing
-                    + status_dot_width
-                    + status_label_width
-                    + child_count_width
-                    + starred_width
-                )
-
-                return QSize(
-                    max(original_size.width(), total_width), fixed_height
-                )
-            else:
-                # Non-thumbnail: calculate full width needed
-                icon_margin = 6
-                icon_size = 16
-                base_padding = icon_margin + icon_size + icon_margin + 10
-
-                # Indicators on the right
-                extra_width = 0
-                if self._show_child_count:
-                    child_count = index.model().rowCount(index)
-                    if child_count > 0:
-                        extra_width += 26
-                if self._show_starred and index.data(self.STARRED_ROLE):
-                    extra_width += 22
-                if self._show_status_dot:
-                    extra_width += 16
-                if self._show_status_label:
-                    label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
-                    if label_text:
-                        label_font = QFont()
-                        label_font.setPointSize(7)
-                        label_font.setBold(True)
-                        lm = QFontMetrics(label_font)
-                        extra_width += lm.horizontalAdvance(label_text) + 14
-
-                return QSize(
-                    original_size.width() + base_padding + extra_width,
-                    fixed_height,
-                )
-        else:
+        # Only column 0 lays out a thumbnail, indicators and a description
+        if not is_col0:
             return QSize(original_size.width(), fixed_height)
+
+        show_thumbnail = self._show_thumbnail and (
+            item_show_thumbnail is None or item_show_thumbnail
+        )
+
+        # Everything left of the text, from the same helper the paint path
+        # uses: the thumbnail and its gutter, or the decoration icon
+        content_offset = (
+            self._indicator_region_left(option, index, show_thumbnail)
+            - option.rect.left()
+        )
+
+        # The region reserved for the status indicators (0 when the item
+        # shows neither)
+        _, _, indicator_width = self._indicator_metrics(index)
+
+        # The text itself, measured with the fonts it is painted with. A
+        # thumbnail row always bolds its title; a thumbnail-less row only
+        # does when it splits into two lines for a description
+        if show_thumbnail or has_description:
+            title_font = self._title_font(option)
+        else:
+            title_font = QFont(option.font)
+        text_width = self._content_text_width(option, index, title_font)
+
+        # The margin the paint path keeps past the text, and the badge it
+        # keeps clear of
+        right_margin = (
+            self._TEXT_RIGHT_MARGIN if show_thumbnail else self._ICON_MARGIN
+        )
+        child_count_width = self._child_count_width(index)
+
+        starred_width = 0
+        if self._show_starred and index.data(self.STARRED_ROLE):
+            starred_width = 22  # star + circle + margin
+
+        total_width = (
+            content_offset
+            + indicator_width
+            + text_width
+            + right_margin
+            + child_count_width
+            + starred_width
+        )
+
+        return QSize(max(original_size.width(), total_width), fixed_height)
 
     def paint(
         self,
@@ -1911,15 +2106,18 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 self._draw_thumbnail_content(painter, opt, index)
             else:
                 self._draw_icon_and_text(painter, opt, index)
-            # Draw status indicators for column 0
-            self._draw_status_indicators(painter, opt, index)
+            # Draw status indicators for column 0, in the region reserved
+            # between the thumbnail (or icon) and the text
+            self._draw_status_indicators(painter, opt, index, has_thumbnail)
 
             # Draw starred indicator
             if self._show_starred:
                 is_starred = index.data(self.STARRED_ROLE)
                 if is_starred:
-                    star_color = index.data(self.STARRED_COLOR_ROLE)
-                    if not star_color or not star_color.isValid():
+                    star_color = self._as_color(
+                        index.data(self.STARRED_COLOR_ROLE)
+                    )
+                    if not star_color.isValid():
                         star_color = QColor("#FFD700")  # Gold
                     self._draw_starred_indicator(
                         painter, opt.rect, star_color, has_thumbnail
@@ -2085,8 +2283,8 @@ def example() -> None:
         item.setData(0, Qt.UserRole + 100, feedback_key)
 
     tree2.setColumnWidth(0, 300)
-    # Set minimum column width to prevent status label overlap with text
-    # Thumbnail (72) + padding (10) + min text (50) + status elements (~80)
+    # Keep the column wide enough for everything column 0 lays out:
+    # thumbnail (80) + status pill and dot (~80) + room for the text
     tree2.header().setMinimumSectionSize(200)
     layout.addWidget(tree2)
 
@@ -2167,7 +2365,7 @@ def example() -> None:
 
     tree3.setColumnWidth(0, 250)
     tree3.setColumnWidth(1, 100)
-    # Set minimum column width to prevent status label overlap with text
+    # Keep the column wide enough for the thumbnail, the indicators and text
     tree3.header().setMinimumSectionSize(200)
     layout.addWidget(tree3)
 
