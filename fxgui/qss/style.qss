@@ -54,6 +54,10 @@ QCheckBox
     outline: none;
     color: @text;
     margin-bottom: 2px;
+    /* Reserved for the focus ring, which only recolours it. Declaring the
+       border in both states is what stops the label shifting on focus. */
+    border: 1px solid transparent;
+    border-radius: 4px;
 }
 
 QCheckBox:disabled
@@ -155,6 +159,10 @@ QRadioButton
     outline: none;
     color: @text;
     margin-bottom: 2px;
+    /* Reserved for the focus ring, which only recolours it. Declaring the
+       border in both states is what stops the label shifting on focus. */
+    border: 1px solid transparent;
+    border-radius: 4px;
 }
 
 QRadioButton:disabled
@@ -384,12 +392,10 @@ QMenuBar:focus
     border: none;
 }
 
-QTabWidget:focus, QCheckBox:focus,
-QRadioButton:focus,
-QSlider:focus
-{
-    border: none;
-}
+/* A `border: none` reset on focus used to cover QTabWidget, QCheckBox,
+   QRadioButton and QSlider. It would now strip the ring off a checkbox and a
+   radio button, and the other two never had a border for it to remove, so it
+   is gone. See KEYBOARD FOCUS at the end of the file. */
 
 QLineEdit
 {
@@ -1570,4 +1576,69 @@ QSplitter::handle:horizontal:hover {
 
 QSplitter {
     border: 0px;
+}
+
+
+/* ==========================================================================
+   KEYBOARD FOCUS
+   ==========================================================================
+   Every widget below already carries a 1px border in its unfocused state, so
+   focus only recolours that border. The border box is identical focused and
+   unfocused, which is what keeps a row of inputs from shifting sideways the
+   moment focus lands on one of them.
+
+   Rules live at the end of the file so they win over the base rules they
+   recolour without needing extra specificity.
+
+   Two widget classes are out of reach from here and are handled elsewhere:
+   an item view's current row, which the stylesheet cannot address (a
+   `::item:focus` rule matches nothing) and FXThumbnailDelegate draws
+   instead, and QTabBar's tab, which takes its ring from the `outline`
+   property on QWidget above.
+   ========================================================================== */
+
+QLineEdit:focus,
+QTextEdit:focus,
+QTextBrowser:focus,
+QPlainTextEdit:focus,
+QComboBox:focus,
+QAbstractSpinBox:focus,
+QPushButton:focus,
+QGroupBox:focus,
+QAbstractItemView:focus,
+QTreeView:focus,
+QTreeWidget:focus,
+QListView:focus,
+QListWidget:focus,
+QTableView:focus,
+QTableWidget:focus
+{
+    border-color: @accent_primary;
+}
+
+/* A plain QToolButton reserves a 1px border it does not paint, so the ring
+   has to name a style as well as a colour. The width is unchanged, so the
+   icon does not move. */
+QToolButton:focus,
+QToolButton[popupMode="1"]:focus,
+QToolButton[popupMode="2"]:focus
+{
+    border: 1px solid @accent_primary;
+}
+
+/* The handle carries the ring rather than the groove: it is where the value
+   lives, and it is what the arrow keys move. */
+QSlider::handle:horizontal:focus,
+QSlider::handle:vertical:focus
+{
+    border-color: @accent_primary;
+}
+
+/* A checkbox and a radio button have no border of their own to recolour, so
+   both states declare one and only the colour differs. The indicator's own
+   focus artwork stays as it is; this ring is what carries the label. */
+QCheckBox:focus,
+QRadioButton:focus
+{
+    border-color: @accent_primary;
 }
