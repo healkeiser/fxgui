@@ -54,6 +54,27 @@ Each theme in ``style.yaml`` defines these semantic color roles:
 **Icon**:
     - ``icon``: Monochrome icon tint color
 
+Theme Font Reference
+--------------------
+The color file may also name typefaces by role, in a ``fonts:`` mapping
+that a theme can override role by role:
+
+    - ``title``: Reached from QSS through the ``fxTitle`` property; see
+      :func:`mark_as_title`
+    - ``body``: Every widget, through the ``*`` selector
+    - ``mono``: Code, logs, anything whose columns must line up
+
+Each role is a family stack. A missing section, a missing role or an
+empty value all mean the platform default UI font, so a color file
+written before roles existed renders unchanged. Families the running Qt
+does not have are dropped and the platform default appended, so a role
+always resolves to something real.
+
+Because :func:`set_color_file` replaces this file wholesale, a consumer
+declaring ``fonts:`` in its own copy has full typographic control with no
+further API. Font files those names refer to are registered with
+:func:`register_fonts`.
+
 Classes:
     FXProxyStyle: Custom style providing Material Design icons for Qt standard icons.
     FXThemeManager: Singleton that emits signals when theme changes.
@@ -69,6 +90,10 @@ Functions:
     get_theme_colors: Get the color palette for the current theme.
     get_accent_colors: Get primary/secondary accent colors.
     get_icon_color: Get the icon tint color for current theme.
+    register_fonts: Register font files so a color file may name them.
+    get_fonts: Get the resolved font stack for every role.
+    get_font_family: Get the resolved font stack for one role.
+    mark_as_title: Draw a widget's text in the title font role.
     is_light_theme: Check if the current theme is light or dark.
     save_theme: Save the current theme to persistent storage.
     load_saved_theme: Load the previously saved theme.
@@ -76,6 +101,7 @@ Functions:
 Constants:
     STYLE_FILE: Path to the default QSS stylesheet.
     DEFAULT_COLOR_FILE: Path to the default color configuration.
+    TITLE_PROPERTY: Dynamic property name selecting the title font role.
 
 Examples:
     Loading a stylesheet with a theme:
@@ -135,7 +161,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import _compat, fxconfig, fxicons
+from fxgui import _compat, fxconfig, fxicons, fxutils
 
 
 ###### Theme Management
@@ -416,6 +442,7 @@ __all__ = [
     # Constants
     "STYLE_FILE",
     "DEFAULT_COLOR_FILE",
+    "TITLE_PROPERTY",
     # Color configuration
     "colors",
     "get_colors",
@@ -426,6 +453,11 @@ __all__ = [
     "get_icon_color",
     "get_icon_on_accent_primary",
     "get_icon_on_accent_secondary",
+    # Font configuration
+    "register_fonts",
+    "get_fonts",
+    "get_font_family",
+    "mark_as_title",
     # Theme functions
     "get_available_themes",
     "get_theme",
@@ -456,6 +488,26 @@ DEFAULT_COLOR_FILE = _parent_directory / "style.yaml"
 # Theme persistence keys
 _SETTINGS_THEME_KEY = "theme/current"
 _DEFAULT_THEME = "dark"
+
+# Dynamic property routing a widget to the title font role. Set it
+# through mark_as_title() rather than by hand.
+TITLE_PROPERTY = "fxTitle"
+
+# CSS generic keywords rather than family names: emitted unquoted, never
+# looked up in the font database, and terminal, so nothing is appended
+# after one.
+_GENERIC_FONT_FAMILIES = frozenset(
+    {"cursive", "fantasy", "monospace", "sans-serif", "serif"}
+)
+
+# Font roles used when the color file declares no `fonts:` section, no
+# value for a role, or an empty one. An empty list means the platform
+# default UI font, which is what every role used before roles existed.
+_DEFAULT_FONTS = {
+    "title": [],
+    "body": [],
+    "mono": ["Consolas", "Courier New", "monospace"],
+}
 
 
 ###### Globals
@@ -791,6 +843,196 @@ def get_icon_on_accent_secondary() -> str:
     return get_contrast_text_color(accent)
 
 
+###### Font Configuration
+
+
+def _platform_default_font() -> str:
+    """Return the platform's default UI font family."""
+    if sys.platform == "win32":
+        return "Segoe UI"
+    return QFontDatabase.systemFont(QFontDatabase.GeneralFont).family()
+
+
+def register_fonts(paths) -> Dict[str, list]:
+    """Register font files with Qt so a color file may name them.
+
+    Hands each file to ``QFontDatabase.addApplicationFont`` and reports
+    the outcome per file instead of swallowing it: a face that fails to
+    load is not an error Qt raises, it is a family that silently is not
+    there, and the stylesheet naming it then renders as an arbitrary
+    substitution. Themed roots are restyled afterwards, so registering
+    late is safe and call order does not matter.
+
+    Args:
+        paths: A font file path, or an iterable of them. Anything
+            ``QFontDatabase`` accepts (``.ttf``, ``.otf``).
+
+    Returns:
+        Mapping of each path, as given, to the family names Qt
+        registered from it. **An empty list means that file did not
+        load.** Those family names are the ones to put in the color
+        file's ``fonts:`` section; a file's family is not always
+        predictable from its filename.
+
+    Examples:
+        >>> loaded = fxstyle.register_fonts(brand_dir.glob("*.ttf"))
+        >>> missing = [path for path, families in loaded.items()
+        ...            if not families]
+
+    Note:
+        Qt needs a live QApplication before it will accept an
+        application font. Called earlier than that, every file reports
+        as failed.
+    """
+    if isinstance(paths, (str, Path)):
+        paths = [paths]
+
+    results: Dict[str, list] = {}
+    for path in paths:
+        key = str(path)
+        font_id = QFontDatabase.addApplicationFont(key)
+        if font_id == -1:
+            results[key] = []
+        else:
+            results[key] = QFontDatabase.applicationFontFamilies(font_id)
+
+    if any(results.values()):
+        _reapply_to_roots()
+    return results
+
+
+def _font_config(theme_name: str) -> dict:
+    """Return the raw font role definitions for a theme.
+
+    Precedence, lowest first: the built-in defaults, the color file's
+    top-level ``fonts:`` block, then a ``fonts:`` block inside the
+    theme. Merging is per role, so a file or theme naming only ``title``
+    keeps the other roles.
+
+    Args:
+        theme_name: Theme to resolve.
+
+    Returns:
+        Mapping of role name to its configured family list or string.
+    """
+    colors_dict = get_colors()
+    themes = colors_dict.get("themes", {})
+    theme_data = {**themes.get("dark", {}), **themes.get(theme_name, {})}
+
+    fonts = dict(_DEFAULT_FONTS)
+    for source in (colors_dict.get("fonts"), theme_data.get("fonts")):
+        if isinstance(source, dict):
+            fonts.update(source)
+    return fonts
+
+
+def _resolve_font_stack(entries) -> str:
+    """Turn one role's configured families into a QSS ``font-family``.
+
+    An empty value yields the platform default alone, which is what the
+    single hardcoded font block emitted before roles existed.
+
+    Families the running Qt does not have are dropped rather than named.
+    Naming an absent family is not a loud failure: Qt answers by
+    substituting whichever family sorts first, so the stylesheet and
+    :func:`get_fonts` would both claim a face that is not being drawn.
+    The platform default is appended so a role can never resolve to
+    nothing, unless the stack already ends in a CSS generic, which is
+    terminal on its own.
+
+    Args:
+        entries: A family name, an iterable of them in preference order,
+            or an empty value.
+
+    Returns:
+        A comma-separated QSS value, quoted except for CSS generics.
+    """
+    if not entries:
+        entries = []
+    elif isinstance(entries, str):
+        entries = [entries]
+
+    available = set(QFontDatabase.families())
+
+    stack = []
+    for entry in entries:
+        name = str(entry).strip()
+        if name.lower() in _GENERIC_FONT_FAMILIES:
+            stack.append(name.lower())
+        elif name in available:
+            stack.append(f'"{name}"')
+
+    if not stack or stack[-1] not in _GENERIC_FONT_FAMILIES:
+        stack.append(f'"{_platform_default_font()}"')
+    return ", ".join(stack)
+
+
+def get_fonts(theme: Optional[str] = None) -> Dict[str, str]:
+    """Get the resolved font stack for every role in a theme.
+
+    Args:
+        theme: Theme name. Defaults to the current theme.
+
+    Returns:
+        Mapping of role name ("title", "body", "mono") to a QSS
+        ``font-family`` value, with unavailable families already
+        removed, so this reports what will actually be drawn.
+
+    Examples:
+        >>> fxstyle.get_fonts()["body"]
+        '"Segoe UI"'
+    """
+    if theme is None:
+        theme = get_theme()
+    return {
+        role: _resolve_font_stack(entries)
+        for role, entries in _font_config(theme).items()
+    }
+
+
+def get_font_family(role: str = "body", theme: Optional[str] = None) -> str:
+    """Get the resolved font stack for a single role.
+
+    Args:
+        role: One of "title", "body", or "mono". Unknown roles fall back
+            to "body". Defaults to "body".
+        theme: Theme name. Defaults to the current theme.
+
+    Returns:
+        A QSS ``font-family`` value.
+
+    Examples:
+        >>> fxstyle.get_font_family("mono")
+        '"Consolas", "Courier New", monospace'
+    """
+    fonts = get_fonts(theme)
+    return fonts.get(role) or fonts["body"]
+
+
+def mark_as_title(widget: QWidget, is_title: bool = True) -> None:
+    """Draw a widget's text in the theme's title font role.
+
+    Sets the dynamic property the theme stylesheet keys the title role
+    on, then repolishes so the change lands on an already-shown widget.
+    Only the family changes: size and weight keep coming from whatever
+    rule or ``setFont`` call already governed the widget.
+
+    With a color file that leaves ``title`` empty, or names the same
+    family for both roles, this is a no-op visually.
+
+    Args:
+        widget: The widget whose text is a title.
+        is_title: False removes the mark and returns the widget to the
+            body role. Defaults to True.
+
+    Examples:
+        >>> heading = QLabel("Render Settings")
+        >>> fxstyle.mark_as_title(heading)
+    """
+    widget.setProperty(TITLE_PROPERTY, bool(is_title))
+    fxutils.repolish(widget)
+
+
 ###### Color Utility Functions
 
 
@@ -893,6 +1135,11 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     tokens["@icon_on_accent_secondary"] = theme_data.get(
         "icon_on_accent_secondary", text_on_secondary
     )
+
+    # Font roles flatten to @font_<role>, resolved against the families
+    # Qt actually has so the sheet never names one it cannot honour.
+    for role, entries in _font_config(theme_name).items():
+        tokens[f"@font_{role}"] = _resolve_font_stack(entries)
 
     # Icon folder path used by url(~icons/...) in QSS, chosen by the
     # target theme's surface lightness (not the globally current theme).
@@ -1343,14 +1590,22 @@ def replace_colors(
 
 
 def _font_stylesheet() -> str:
-    """Return the platform font-family stylesheet block."""
-    if sys.platform == "win32":
-        default_font = "Segoe UI"
-    else:
-        default_font = QFontDatabase.systemFont(
-            QFontDatabase.GeneralFont
-        ).family()
-    return f'* {{\n    font-family: "{default_font}";\n}}\n'
+    """Return the font block mapping the font roles onto selectors.
+
+    Emits ``@font_*`` tokens rather than resolved values; the caller runs
+    it through :func:`_resolve_tokens` with the rest of the sheet.
+
+    The title rule is an attribute selector, which outranks both a
+    widget's own stylesheet and an explicit ``setFont``, so a marked
+    title takes the title family and keeps its size and weight. With a
+    color file that leaves the roles empty, both rules resolve to the
+    same platform font and the sheet behaves as it did with one block.
+    """
+    return (
+        "* {\n    font-family: @font_body;\n}\n"
+        f'[{TITLE_PROPERTY}="true"] {{\n'
+        "    font-family: @font_title;\n}\n"
+    )
 
 
 def build_stylesheet(theme: Optional[str] = None) -> str:
@@ -1477,7 +1732,9 @@ def load_stylesheet(
     with open(style_file, "r", encoding="utf-8") as in_file:
         stylesheet = in_file.read()
 
-    stylesheet = _font_stylesheet() + _resolve_tokens(stylesheet, theme)
+    # The font block carries @font_* tokens, so it has to go through the
+    # resolver with the rest of the sheet rather than be prepended after.
+    stylesheet = _resolve_tokens(_font_stylesheet() + stylesheet, theme)
     if extra:
         stylesheet += extra
 

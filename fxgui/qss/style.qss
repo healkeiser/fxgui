@@ -637,7 +637,7 @@ QTextBrowser {
 }
 
 QTextEdit#fxOutputLogArea {
-    font-family: "Consolas", "Courier New", monospace;
+    font-family: @font_mono;
     font-size: 9pt;
 }
 
