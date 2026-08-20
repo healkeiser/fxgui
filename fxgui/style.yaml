@@ -63,6 +63,47 @@ dcc:
 
 
 # =============================================================================
+# FONTS
+# =============================================================================
+# Typefaces by role, the way the sections above name colors by role. Each
+# role is a family stack resolved into a stylesheet token: the first family
+# the running Qt actually has wins, and the platform default UI font is
+# appended, so a role can never resolve to nothing.
+#
+#   title - Reached from QSS through the `fxTitle` property, which
+#           `fxstyle.mark_as_title(widget)` sets. Left empty here, so it
+#           resolves to the same font as body and marking a widget as a
+#           title changes nothing until a family is named.
+#   body  - Every widget, through the `*` selector.
+#   mono  - Code, logs, anything whose columns must line up.
+#
+# An empty value means the platform default: Segoe UI on Windows, the
+# system UI font elsewhere. A missing role, or this whole section being
+# absent, means the same, so a color file written before roles existed
+# renders unchanged.
+#
+# To use your own typefaces, copy this file, name the families here, and
+# point fxgui at it:
+#
+#   fxstyle.register_fonts(["/path/to/YourFace-Regular.ttf"])
+#   fxstyle.set_color_file("path/to/your_theme.yaml")
+#
+# `register_fonts` returns the family names Qt registered from each file,
+# which are the names to write below; it reports an empty list for a file
+# that failed to load. Naming a family that is not installed and not
+# registered is the one thing to avoid, and fxgui guards it by dropping
+# such a family rather than emitting it.
+#
+# A theme may override this block with its own `fonts:` section, merged
+# role by role, exactly as it may override `feedback:`.
+
+fonts:
+  title: []
+  body: []
+  mono: ["Consolas", "Courier New", "monospace"]
+
+
+# =============================================================================
 # THEME DEFINITIONS
 # =============================================================================
 # Themes use YAML anchors for inheritance. The dark theme serves as the base,
