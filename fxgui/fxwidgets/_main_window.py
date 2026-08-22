@@ -259,15 +259,28 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         pushed back out on its next show. Bounded by the screen, since a
         layout may ask for more room than the display has and a window
         taller than the desktop is worse than a scrollbar.
+
+        The screen is asked for the way the rest of this module asks,
+        behind the Qt major-version guard: `QWidget.screen()` arrived in
+        Qt 5.14, so on a host running PySide2 against anything older --
+        Maya 2020 and its generation -- it raises `AttributeError` from
+        inside a `showEvent`, which is a hard failure at window-show
+        time. Both arms name the screen the WINDOW is on rather than the
+        primary one, or a first show on a two-monitor desktop is bounded
+        by the wrong display.
         """
         super().showEvent(event)
         if not self._fit_to_contents or self._fitted:
             return
         self._fitted = True
         wanted = self.sizeHint()
-        screen = self.screen()
-        if screen is not None:
-            wanted = wanted.boundedTo(screen.availableGeometry().size())
+        if QT_VERSION_MAJOR >= 6:
+            screen: QScreen = self.screen()
+            available = screen.availableGeometry() if screen else None
+        else:
+            available = QDesktopWidget().availableGeometry(self)
+        if available is not None:
+            wanted = wanted.boundedTo(available.size())
         self.resize(self.size().expandedTo(wanted))
 
     def _create_actions(self) -> None:
