@@ -13,6 +13,7 @@ Functions:
     get_formatted_time: Get current time as formatted string.
     deprecated: Decorator to mark functions as deprecated.
     repolish: Force re-evaluation of stylesheet rules for a widget.
+    round_window_corners: Ask Windows 11 for a flyout's rounded corners.
 
 Examples:
     Loading a UI file:
@@ -36,7 +37,9 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 # Built-in
+import ctypes
 import os
+import sys
 from datetime import datetime
 from functools import wraps
 from typing import Callable, Optional, Union
@@ -64,7 +67,19 @@ __all__ = [
     "get_formatted_time",
     "deprecated",
     "repolish",
+    "round_window_corners",
 ]
+
+# `DWMWA_WINDOW_CORNER_PREFERENCE` from `dwmapi.h`: which rounding the
+# compositor gives a window's corners. Windows 11 and up. An older build
+# does not ignore the attribute, it answers with a failure code, which is
+# the same answer `round_window_corners` hands back.
+_DWMWA_WINDOW_CORNER_PREFERENCE = 33
+
+# `DWMWCP_ROUND`: the full radius the OS gives its own flyouts and
+# context menus, rather than `DWMWCP_ROUNDSMALL`'s tighter one, which is
+# drawn for controls inside a window rather than for a window.
+_DWMWCP_ROUND = 2
 
 
 def load_ui(parent: QWidget, ui_file: str) -> QWidget:
@@ -373,3 +388,79 @@ def repolish(widget: QWidget) -> None:
     style.unpolish(widget)
     style.polish(widget)
     widget.update()
+
+
+def round_window_corners(widget: QWidget) -> bool:
+    """Give `widget`'s own window the corners and shadow of a flyout.
+
+    A tray flyout or a context menu on Windows 11 is a rounded rectangle
+    with the compositor's own shadow under it, and the platform draws
+    both for any window that asks. Asking is one
+    `DwmSetWindowAttribute` call, which is the whole reason this exists
+    rather than a paint event: rounding a window by hand needs a
+    translucent frameless widget and a paint event that agrees with it,
+    the shadow under that needs a transparent margin on every edge, and
+    a window seated by its own edges then has to subtract those margins
+    from every position it computes. The compositor's answer changes no
+    geometry at all -- the window keeps the rectangle it was given, and
+    the OS clips and shades it.
+
+    Nothing here raises. Off Windows 11 -- an older build, another
+    platform, the offscreen platform a test runs under -- the answer is
+    `False` and the window keeps its square corners, because a square
+    panel is still a panel and an application that refuses to open
+    because a compositor declined is not.
+
+    This is the one place in fxgui that reaches for `ctypes`. It is
+    stdlib, it is loaded lazily by the platform guard below on every
+    system that is not Windows, and there is no Qt API for the request.
+
+    Args:
+        widget: The window to round. Must already BE a window: this
+            reads its native handle, and asking a widget for one creates
+            it, so a child widget would be made native for nothing.
+
+    Returns:
+        bool: Whether the compositor took the request. `False` is an
+        ordinary answer rather than a failure -- it is what every
+        platform without Windows 11's window rounding says.
+
+    Examples:
+        >>> panel.show()  # doctest: +SKIP
+        >>> fxutils.round_window_corners(panel)  # doctest: +SKIP
+        True
+    """
+
+    if not sys.platform.startswith("win"):
+        return False
+    handle = int(widget.winId())
+    if handle == 0:
+        return False
+    try:
+        from ctypes import wintypes
+
+        dwmapi = ctypes.WinDLL("dwmapi")
+        # Declared rather than left to ctypes' own guesses: the third
+        # argument is a pointer to the value and the fourth its size in
+        # bytes, and getting either wrong is a call the compositor reads
+        # past the end of.
+        dwmapi.DwmSetWindowAttribute.argtypes = [
+            wintypes.HWND,
+            wintypes.DWORD,
+            ctypes.c_void_p,
+            wintypes.DWORD,
+        ]
+        # The raw result rather than `ctypes.HRESULT`, which raises on a
+        # failure code. A build with no window rounding is not an error
+        # here, it is the other answer.
+        dwmapi.DwmSetWindowAttribute.restype = ctypes.c_long
+        preference = ctypes.c_int(_DWMWCP_ROUND)
+        result = dwmapi.DwmSetWindowAttribute(
+            wintypes.HWND(handle),
+            wintypes.DWORD(_DWMWA_WINDOW_CORNER_PREFERENCE),
+            ctypes.byref(preference),
+            wintypes.DWORD(ctypes.sizeof(preference)),
+        )
+    except (AttributeError, ImportError, OSError, ValueError):
+        return False
+    return bool(result == 0)
