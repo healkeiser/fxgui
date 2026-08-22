@@ -187,6 +187,59 @@ def test_an_interrupted_opening_is_reversed_from_where_it_got_to(
     )
 
 
+def test_a_collapse_after_a_finished_expansion_does_not_grow_first(
+    qtbot, qapp
+):
+    """The shape the interrupted-movement tests cannot reach.
+
+    They interrupt mid-flight, where `maximumHeight` genuinely IS the
+    height on screen, so a start value read from it is right for the
+    wrong reason. Once an expansion FINISHES, the maximum is released to
+    the cap -- so reading it there starts the collapse from the cap.
+    Measured on a 90px body under the default 300px cap: the first frame
+    jumped to 300, a 210px upward lurch, out of the same commit that
+    fixed the mid-flight jump.
+    """
+    section = _section(animation_duration=400)
+    host = _nested_host(qtbot, section)
+    section.expand(animate=False)
+    _settled()
+    on_screen = section.content_area.height()
+    assert on_screen < section.max_content_height, (
+        "the body must be SHORTER than its cap, or the bug hides"
+    )
+    frames = []
+    section.resized.connect(frames.append)
+
+    section.collapse(animate=True)
+
+    assert _first_animation(section).startValue() <= on_screen, (
+        "a collapse starts from the height on screen, not from the cap"
+    )
+    qtbot.waitUntil(lambda: bool(frames), timeout=2000)
+    assert max(frames) <= on_screen, f"it grew before falling: {frames}"
+
+
+def test_an_uncapped_section_never_reports_qwidgetsize_max(qtbot, qapp):
+    """With `max_content_height=0` the released maximum is
+    QWIDGETSIZE_MAX, so a collapse read from it ran 16,777,215 -> 0: the
+    whole visible range in the first frame, and that number handed to
+    the very consumer `resized` exists for."""
+    section = _section(animation_duration=400, max_content_height=0)
+    host = _nested_host(qtbot, section)
+    section.expand(animate=False)
+    _settled()
+    on_screen = section.content_area.height()
+    frames = []
+    section.resized.connect(frames.append)
+
+    section.collapse(animate=True)
+    qtbot.waitUntil(lambda: bool(frames), timeout=2000)
+
+    assert FXCollapsibleWidget.NO_CAP not in frames
+    assert max(frames) <= on_screen, f"reported off-screen heights: {frames}"
+
+
 def test_an_interrupted_closing_is_reversed_from_where_it_got_to(
     qtbot, qapp
 ):

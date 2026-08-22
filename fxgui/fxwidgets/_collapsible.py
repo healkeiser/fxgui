@@ -290,11 +290,28 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         The current height is read BEFORE the running animation is
         stopped, since stopping is what loses it.
 
+        And it is read from the widget's HEIGHT rather than from its
+        `maximumHeight`, which is the property the animation drives.
+        Those two agree only mid-flight: once an expansion finishes,
+        `_on_animation_finished` releases the maximum to the cap, so
+        reading it there starts the collapse from the cap instead of
+        from the height on screen. Measured, a 90px body under the
+        default 300px cap: the first frame of the collapse jumped to 300
+        -- a 210px upward lurch -- and with `max_content_height=0` the
+        maximum is QWIDGETSIZE_MAX, so the collapse ran from 16,777,215
+        and reported that number to `resized`.
+
+        Clamped by the maximum as well, which costs nothing and keeps
+        the answer honest if a cap is lowered before the next layout
+        pass has resized the widget to it.
+
         Args:
             target_height: Where the content area should end up.
             animate: Whether to get there over time, or at once.
         """
-        reached = self._content_area.maximumHeight()
+        reached = min(
+            self._content_area.maximumHeight(), self._content_area.height()
+        )
         self._animation.stop()
 
         if not animate:
