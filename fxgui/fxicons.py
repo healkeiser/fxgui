@@ -42,7 +42,7 @@ from functools import lru_cache
 from pathlib import Path
 import re
 import weakref
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 # Third-party
 from qtpy.QtGui import (
@@ -610,6 +610,7 @@ def get_icon(
     style: Optional[str] = None,
     extension: Optional[str] = None,
     include_active: bool = True,
+    fallback: Optional[Union[str, QIcon]] = None,
 ) -> QIcon:
     """Get a QIcon of the specified icon.
 
@@ -626,6 +627,20 @@ def get_icon(
             widgets, whose icons Qt renders in Active mode on focus over a
             non-accent surface. `set_icon` handles this automatically.
             Defaults to `True`.
+        fallback: What to answer with when `icon_name` is in no library
+            this asked. A name is resolved in the DEFAULT library rather
+            than in `library`, which is the point: a curated set is
+            asked for a brand or a kind it may simply not carry, and the
+            general-purpose set is where the stand-in lives. A `QIcon`
+            is returned as it is, so `QIcon()` asks for a blank rather
+            than a picture of something else. Defaults to `None`, which
+            raises as before.
+
+    Raises:
+        FileNotFoundError: If `icon_name` is in no such library and no
+            `fallback` was given -- or if the fallback name is not in
+            the default library either, which is a mistake worth
+            hearing about rather than a second silent stand-in.
 
     Returns:
         QIcon: The QIcon of the icon.
@@ -633,10 +648,42 @@ def get_icon(
     Examples:
         >>> get_icon("add", color="red")
         >>> get_icon("lemon", library="fontawesome")
+
+        Mapping open-ended studio data onto a curated set, where a name
+        that is not in it is ordinary rather than exceptional:
+
+        >>> get_icon("houdini", library="dcc", fallback="apps")
+        >>> get_icon(whatever_the_tracker_said, fallback=QIcon())
     """
 
     if library is None:
         library = _default_library
+
+    if fallback is not None:
+        try:
+            return get_icon(
+                icon_name,
+                width,
+                height,
+                color,
+                library,
+                style,
+                extension,
+                include_active,
+            )
+        except FileNotFoundError:
+            if isinstance(fallback, QIcon):
+                return fallback
+            return get_icon(
+                fallback,
+                width,
+                height,
+                color,
+                None,
+                None,
+                None,
+                include_active,
+            )
 
     defaults = _libraries_info[library]["defaults"]
 

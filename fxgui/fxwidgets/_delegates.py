@@ -339,6 +339,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         - `Qt.UserRole + 8` (`bool`): Whether to show the status label.
         - `Qt.UserRole + 9` (`QIcon`): Status label icon (displayed before text).
 
+        This delegate claims `Qt.UserRole + 1` through `Qt.UserRole + 12`.
+        A view that stamps roles of its own on the same items must derive
+        them from `FIRST_FREE_ROLE` rather than guess a margin past that
+        range.
+
     Properties:
         show_thumbnail: Whether to show thumbnails globally.
         show_status_dot: Whether to show the status dot indicator globally.
@@ -409,6 +414,20 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     CHILD_COUNT_VISIBLE_ROLE = Qt.UserRole + 10  # bool
     STARRED_ROLE = Qt.UserRole + 11  # bool
     STARRED_COLOR_ROLE = Qt.UserRole + 12  # QColor (default: gold)
+
+    # The first item-data role this delegate does NOT claim. Derive your
+    # own roles from it rather than guessing a margin past the roles
+    # above: two studio repositories have now each picked a safe-looking
+    # offset by hand, and one of them picked +10 first and collided with
+    # `CHILD_COUNT_VISIBLE_ROLE`, which showed up as a child count
+    # appearing on rows that had no children.
+    #
+    #   MY_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE
+    #   MY_OTHER_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 1
+    #
+    # Roles added to this delegate go BELOW this line and move it up, so
+    # a consumer that derived from it is moved along with it.
+    FIRST_FREE_ROLE = Qt.UserRole + 13
 
     # Layout geometry, shared by the paint and sizeHint paths so that the
     # space reserved for an element and the space it paints in cannot drift
@@ -2577,9 +2596,11 @@ def example() -> None:
         ),
     ]
 
-    # Custom roles for theme-aware icon updates
-    STATUS_LABEL_ICON_NAME_ROLE = Qt.UserRole + 102
-    OVERLAY_ICON_NAME_ROLE = Qt.UserRole + 103
+    # Custom roles for theme-aware icon updates, derived from the
+    # delegate's own ceiling rather than guessed past it.
+    FEEDBACK_KEY_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE
+    STATUS_LABEL_ICON_NAME_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 1
+    OVERLAY_ICON_NAME_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 2
 
     for (
         name,
@@ -2609,7 +2630,7 @@ def example() -> None:
         item.setIcon(0, fxicons.get_icon(overlay_icon))
         item.setData(0, OVERLAY_ICON_NAME_ROLE, overlay_icon)
         # Store the feedback key for dynamic color updates
-        item.setData(0, Qt.UserRole + 100, feedback_key)
+        item.setData(0, FEEDBACK_KEY_ROLE, feedback_key)
 
     tree2.setColumnWidth(0, 300)
     # Column 0 cannot be dragged narrower than its thumbnail and indicators
@@ -2656,8 +2677,8 @@ def example() -> None:
     ]
 
     # Custom roles for theme-aware icon updates
-    DCC_ICON_NAME_ROLE = Qt.UserRole + 101
-    DCC_OVERLAY_ICON_NAME_ROLE = Qt.UserRole + 104
+    DCC_ICON_NAME_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 3
+    DCC_OVERLAY_ICON_NAME_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 4
 
     for (
         name,
@@ -2689,7 +2710,7 @@ def example() -> None:
         item.setIcon(0, fxicons.get_icon(dcc_overlay_icon, library="dcc"))
         item.setData(0, DCC_OVERLAY_ICON_NAME_ROLE, dcc_overlay_icon)
         # Store the feedback key for dynamic color updates
-        item.setData(0, Qt.UserRole + 100, feedback_key)
+        item.setData(0, FEEDBACK_KEY_ROLE, feedback_key)
 
     tree3.setColumnWidth(0, 250)
     tree3.setColumnWidth(1, 100)
@@ -2742,7 +2763,7 @@ def example() -> None:
         # Update tree2 items (with thumbnails) - uses custom colors
         for i in range(tree2.topLevelItemCount()):
             item = tree2.topLevelItem(i)
-            feedback_key = item.data(0, Qt.UserRole + 100)
+            feedback_key = item.data(0, FEEDBACK_KEY_ROLE)
             if feedback_key and feedback_key in feedback:
                 # Set status colors from feedback
                 item.setData(
@@ -2778,7 +2799,7 @@ def example() -> None:
         base_surface = QColor(theme.surface_sunken)
         for i in range(tree3.topLevelItemCount()):
             item = tree3.topLevelItem(i)
-            feedback_key = item.data(0, Qt.UserRole + 100)
+            feedback_key = item.data(0, FEEDBACK_KEY_ROLE)
             if feedback_key and feedback_key in feedback:
                 # Set status colors from feedback
                 status_color = QColor(feedback[feedback_key]["foreground"])
