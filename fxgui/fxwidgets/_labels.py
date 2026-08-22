@@ -1,6 +1,7 @@
 """Custom label widgets."""
 
 # Built-in
+import warnings
 from typing import Optional
 
 # Third-party
@@ -24,6 +25,15 @@ class FXElidedLabel(QLabel):
             email-shaped identities at one domain, where two long values
             cut from the right come out looking identical.
 
+            Governs the SINGLE-LINE case only. With `wordWrap()` on, the
+            text is cut at the last line that fits and an ellipsis is
+            appended there, whatever the mode -- because
+            `QFontMetrics.elidedText` elides one line, and there is no
+            one obvious meaning for "elide the middle" of a wrapped
+            block (which line loses its middle?). Enabling word wrap on
+            a label whose mode is not `ElideRight` warns, rather than
+            quietly doing something else than it was asked.
+
     Examples:
         >>> from qtpy.QtCore import Qt
         >>> from fxgui import fxwidgets
@@ -41,6 +51,7 @@ class FXElidedLabel(QLabel):
         super().__init__(text, parent)
         self._full_text = text
         self._mode = mode
+        self._warned_about_mode = False
 
     def minimumSizeHint(self) -> QSize:
         """No width at all, and the height one line of this font needs.
@@ -72,7 +83,40 @@ class FXElidedLabel(QLabel):
     @mode.setter
     def mode(self, mode: Qt.TextElideMode) -> None:
         self._mode = mode
+        self._warn_if_mode_is_moot()
         self._elide_text()
+
+    def setWordWrap(self, wrap: bool) -> None:
+        """Wrap the text, and say so if that makes `mode` moot.
+
+        Args:
+            wrap: Whether the label wraps rather than eliding on one
+                line.
+        """
+        super().setWordWrap(wrap)
+        self._warn_if_mode_is_moot()
+
+    def _warn_if_mode_is_moot(self) -> None:
+        """Warn once per label when word wrap has overruled `mode`.
+
+        The combination is not an error -- the label still elides, from
+        the right, at the last line that fits. It is worth a word because
+        the alternative is a caller who asked for `ElideMiddle` getting
+        `ElideRight` with nothing anywhere saying so.
+        """
+        if self._warned_about_mode:
+            return
+        if not self.wordWrap() or self._mode == Qt.ElideRight:
+            return
+        self._warned_about_mode = True
+        warnings.warn(
+            "FXElidedLabel: `mode` governs single-line elision only, and "
+            "wordWrap() is on, so this label truncates from the right at "
+            "the last line that fits. Turn word wrap off to elide at "
+            f"{self._mode!r}.",
+            RuntimeWarning,
+            stacklevel=3,
+        )
 
     def setText(self, text: str) -> None:
         """Set the text and store the full text for elision."""
@@ -94,7 +138,8 @@ class FXElidedLabel(QLabel):
         available_width = self.width() - 2  # Small margin
 
         if self.wordWrap():
-            # For word-wrapped labels, limit by line count
+            # For word-wrapped labels, limit by line count. `_mode` does
+            # not reach here: see the class docstring's `mode` entry.
             available_height = (
                 self.maximumHeight()
                 if self.maximumHeight() < 16777215
