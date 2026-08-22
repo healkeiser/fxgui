@@ -1484,6 +1484,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.get_default_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_default_theme
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fxgui.fxstyle.get_feedback_colors" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1945,6 +1956,34 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;color_file
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.set_default_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_default_theme
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" set_default_theme">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.set_default_theme(theme)" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;theme
       
     </span>
   </a>
@@ -3612,6 +3651,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.get_default_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_default_theme
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fxgui.fxstyle.get_feedback_colors" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4085,6 +4135,34 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.set_default_theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;set_default_theme
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label=" set_default_theme">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fxgui.fxstyle.set_default_theme(theme)" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-parameter"></code>&nbsp;theme
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fxgui.fxstyle.set_style" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4484,6 +4562,22 @@ further API. Font files those names refer to are registered with
               <td>
                 <div class="doc-md-description">
                   <p>Load the previously saved theme.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;set_default_theme&lt;/span&gt; (&lt;code&gt;fxgui.fxstyle.set_default_theme&lt;/code&gt;)" href="#fxgui.fxstyle.set_default_theme">set_default_theme</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Set the theme to fall back to when none is saved.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-function&quot;&gt;&lt;/code&gt;            &lt;span class=&quot;doc doc-object-name doc-function-name&quot;&gt;get_default_theme&lt;/span&gt; (&lt;code&gt;fxgui.fxstyle.get_default_theme&lt;/code&gt;)" href="#fxgui.fxstyle.get_default_theme">get_default_theme</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Get the theme to fall back to when none is saved.</p>
                 </div>
               </td>
             </tr>
@@ -5875,6 +5969,49 @@ Colors are loaded once from the YAML file and cached for subsequent calls.</p>
 <div class="doc doc-object doc-function">
 
 
+<h4 id="fxgui.fxstyle.get_default_theme" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_default_theme</span>
+
+
+<a href="#fxgui.fxstyle.get_default_theme" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_default_theme</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Get the theme an application falls back to when none is saved.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The name set by <code>set_default_theme</code>, or "dark".</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h4 id="fxgui.fxstyle.get_feedback_colors" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">get_feedback_colors</span>
 
@@ -6605,7 +6742,8 @@ any custom theme.</p>
     <div class="doc doc-contents ">
 
         <p>Load the saved theme from persistent storage.</p>
-<p>If no theme has been saved, returns the default theme ("dark").</p>
+<p>If no theme has been saved, returns the default theme -- "dark", or
+whatever <code>set_default_theme</code> was given.</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -6623,7 +6761,17 @@ any custom theme.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The saved theme name, or "dark" if none is saved.</p>
+                <p>The saved theme name, or the default if none is saved or the</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>saved one is not offered by the current color file.</p>
               </div>
             </td>
           </tr>
@@ -7332,6 +7480,71 @@ color source. The next call to <code>get_colors()</code> will load from this fil
 <div class="doc doc-object doc-function">
 
 
+<h4 id="fxgui.fxstyle.set_default_theme" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">set_default_theme</span>
+
+
+<a href="#fxgui.fxstyle.set_default_theme" class="headerlink" title="Permanent link">&para;</a></h4>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_default_theme</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;theme&lt;/code&gt; (&lt;code&gt;fxgui.fxstyle.set_default_theme(theme)&lt;/code&gt;)" href="#fxgui.fxstyle.set_default_theme(theme)">theme</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Set the theme an application falls back to when none is saved.</p>
+<p>"dark" unless this is called. For an application that ships a theme
+of its own in a custom color file: without this, its own first run
+is indistinguishable from a person having chosen "dark", so it
+cannot both honour a saved choice and default to its own brand.</p>
+<p>Not validated here, because the color file that has to offer the
+theme may be set afterwards; <code>load_saved_theme</code> falls back to "dark"
+if the file turns out not to offer it.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+<h5 id="fxgui.fxstyle.set_default_theme(theme)" class="doc doc-heading doc-heading-parameter">                  <code>theme</code>
+<a href="#fxgui.fxstyle.set_default_theme(theme)" class="headerlink" title="Permanent link">&para;</a></h5>            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The theme name to fall back to.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">fxstyle</span><span class="o">.</span><span class="n">set_color_file</span><span class="p">(</span><span class="s2">"studio_colors.yaml"</span><span class="p">)</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">fxstyle</span><span class="o">.</span><span class="n">set_default_theme</span><span class="p">(</span><span class="s2">"studio"</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">&gt;&gt;&gt; </span><span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">load_saved_theme</span><span class="p">())</span>
+</code></pre></div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h4 id="fxgui.fxstyle.set_style" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">set_style</span>
 
@@ -7455,7 +7668,7 @@ in the <code>style</code> argument.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 20, 2026 09:08:29 UTC">August 20, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 22, 2026 10:00:52 UTC">August 22, 2026</span>
   </span>
 
     
@@ -7465,7 +7678,7 @@ in the <code>style</code> argument.</p>
     <span class="md-icon" title="Created">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 20, 2026 09:08:29 UTC">August 20, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 22, 2026 10:00:52 UTC">August 22, 2026</span>
   </span>
 
     
