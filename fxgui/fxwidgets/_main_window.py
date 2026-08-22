@@ -49,7 +49,12 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
 
     Args:
         parent (QWidget, optional): Parent widget. Defaults to `hou.qt.mainWindow()`.
-        icon (str, optional): Path to the window icon image. Defaults to `None`.
+        icon (str or QIcon, optional): The window's icon: a path to an
+            image, or a `QIcon` for an application whose mark comes out
+            of an icon set rather than off disk. With neither, an icon
+            already set on the running `QApplication` is left in place
+            and fxgui's own logo is used only if there is none.
+            Defaults to `None`.
         title (str, optional): Title of the window. Defaults to `None`.
         size (Tuple[int, int], optional): Window size as width and height.
             Defaults to `None`.
@@ -73,6 +78,20 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             icons and images inside a tooltip, and automatic tooltips built
             from FXThumbnailDelegate roles in item views.
             Defaults to `None`.
+        toolbar (bool, optional): Whether to build the window's toolbar.
+            `False` skips it entirely and leaves `self.toolbar` as
+            `None`, for an application with no trigger for any of its
+            four buttons. Not built rather than built and hidden: a
+            hidden toolbar comes back through the menu bar's own
+            right-click "Toolbars" entry. Defaults to `True`.
+        fit_to_contents (bool, optional): Whether to grow to the
+            layout's own `sizeHint` on first show, grow-only and
+            bounded by the screen. The size set in the constructor is
+            chosen before a subclass has put anything inside the
+            window, so a window with more in it than that opens
+            clamped. Off by default, since changing the opening size of
+            every existing window is not something to do silently.
+            Defaults to `False`.
     """
 
     # Class-level severity constants for convenience
@@ -86,7 +105,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        icon: Optional[str] = None,
+        icon: Optional[Union[str, QIcon]] = None,
         title: Optional[str] = None,
         size: Optional[Tuple[int, int]] = None,
         documentation: Optional[str] = None,
@@ -96,6 +115,8 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         ui_file: Optional[str] = None,
         set_stylesheet: bool = True,
         rich_tooltips: Optional[bool] = None,
+        toolbar: bool = True,
+        fit_to_contents: bool = False,
     ):
         super().__init__(parent)
 
@@ -107,8 +128,11 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         )
         self._set_stylesheet: bool = set_stylesheet
 
+        self._fit_to_contents: bool = fit_to_contents
+        self._fitted: bool = False
+
         # Public attributes
-        self.window_icon: Optional[str] = icon
+        self.window_icon: Optional[Union[str, QIcon]] = icon
         self.window_title: Optional[str] = title
         self.window_size: Optional[Tuple[int, int]] = size
         self.documentation: Optional[str] = documentation
@@ -134,7 +158,16 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self._set_window_icon()
         self._set_window_size()
         self._create_menu_bar()
-        self._create_toolbars()
+        if toolbar:
+            self._create_toolbars()
+        else:
+            # Not built rather than built and hidden. A hidden toolbar is
+            # still in the layout's own bookkeeping, so the menu bar's
+            # right-click "Toolbars" entry offers it back (measured); and
+            # an application with nothing to browse and nothing to
+            # refresh has no trigger for any of the four buttons, so a
+            # control that does nothing reads as broken.
+            self.toolbar = None
         self._create_status_bar()
         self._check_documentation()
         self._add_shadows()
@@ -169,17 +202,30 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             self.setCentralWidget(self.ui)
 
     def _set_window_icon(self) -> None:
-        """Sets the window icon from the specified icon path.
+        """Sets the window icon from the icon this window was given.
+
+        A `QIcon` is used as it is, which is what an application whose
+        mark comes out of an icon set rather than off disk has one in. A
+        string is a path, as before.
+
+        With neither, an icon already set on the running application is
+        left alone: that is the mark every other window in the process
+        wears, and stamping fxgui's own logo over it turned an
+        application icon into a per-window accident.
 
         Warning:
             This method is intended for internal use only.
         """
-        icon_path = (
-            self.window_icon
-            if self.window_icon and os.path.isfile(self.window_icon)
-            else self._default_icon_path
-        )
-        self.setWindowIcon(QIcon(icon_path))
+        if isinstance(self.window_icon, QIcon):
+            self.setWindowIcon(self.window_icon)
+            return
+        if self.window_icon and os.path.isfile(self.window_icon):
+            self.setWindowIcon(QIcon(self.window_icon))
+            return
+        application = QApplication.instance()
+        if application is not None and not application.windowIcon().isNull():
+            return
+        self.setWindowIcon(QIcon(self._default_icon_path))
 
     def _set_window_size(self) -> None:
         """Set the window size from the specified size.
@@ -192,6 +238,37 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             self.resize(QSize(*self.window_size))
         else:
             self.resize(default_size)
+
+    def showEvent(self, event) -> None:
+        """Grow to the layout's own size, if this window asked to.
+
+        The size set in the constructor is a constant chosen before the
+        subclass had put anything inside the window, so it knows nothing
+        about its own contents. Measured on a window with a log panel in
+        it: opened 500x674 against a `sizeHint` of 506x931, which pinned
+        every widget to its minimum and left the panel four lines tall. A
+        window that opens smaller than it asks for is showing a clamped
+        version of itself.
+
+        Opt-in through `fit_to_contents`, and off by default on purpose:
+        changing the opening size of every window built on this class is
+        not something to do silently.
+
+        Grow-only, so a caller that asked for a larger window keeps it,
+        and once only, so a window an artist has dragged smaller is not
+        pushed back out on its next show. Bounded by the screen, since a
+        layout may ask for more room than the display has and a window
+        taller than the desktop is worse than a scrollbar.
+        """
+        super().showEvent(event)
+        if not self._fit_to_contents or self._fitted:
+            return
+        self._fitted = True
+        wanted = self.sizeHint()
+        screen = self.screen()
+        if screen is not None:
+            wanted = wanted.boundedTo(screen.availableGeometry().size())
+        self.resize(self.size().expandedTo(wanted))
 
     def _create_actions(self) -> None:
         """Create the actions for the window.
@@ -671,7 +748,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
 
         if menu_bar:
             fxutils.add_shadows(self, self.menu_bar)
-        if toolbar:
+        if toolbar and self.toolbar is not None:
             fxutils.add_shadows(self, self.toolbar)
         if status_bar:
             fxutils.add_shadows(self, self.statusBar())

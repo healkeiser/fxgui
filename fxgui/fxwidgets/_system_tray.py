@@ -23,7 +23,11 @@ class FXSystemTray(QObject):
 
     Args:
         parent (QWidget, optional): The parent widget. Defaults to None.
-        icon (str, optional): The icon path. Defaults to None.
+        icon (str or QIcon, optional): The tray icon: a path to an image,
+            or a `QIcon` for an application whose mark comes out of an
+            icon set rather than off disk -- `fxicons.get_icon` returns
+            one, and a path was the only shape this took. Defaults to
+            None, which is fxgui's own logo.
 
     Attributes:
         tray_icon (QSystemTrayIcon): The system tray icon.
@@ -61,7 +65,15 @@ class FXSystemTray(QObject):
                 Path(__file__).parent.parent / "images" / "fxgui_logo_light.svg"
             ).as_posix()
         )
-        self.tray_icon = QSystemTrayIcon(QIcon(self.icon), parent)
+        # A `QIcon` is passed through rather than round-tripped. Measured:
+        # `QIcon(QIcon)` is Qt's own copy constructor, so the previous
+        # expression already accepted one -- the signature above is
+        # widening a documented promise to match behaviour that was
+        # always there, not repairing a break.
+        self.tray_icon = QSystemTrayIcon(
+            self.icon if isinstance(self.icon, QIcon) else QIcon(self.icon),
+            parent,
+        )
 
         # Methods
         self._create_actions()
