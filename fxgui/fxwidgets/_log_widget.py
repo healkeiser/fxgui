@@ -259,6 +259,7 @@ class FXOutputLogWidget(QWidget):
         self.close_search_button.show()
         # Limit spacer width when search is visible
         self.log_spacer.setMaximumWidth(50)
+        self._sync_spacer()
         self.search_input.setFocus()
         self.search_input.selectAll()
         # Update count on show
@@ -274,10 +275,28 @@ class FXOutputLogWidget(QWidget):
         self.close_search_button.hide()
         # Remove spacer width limit when search is hidden
         self.log_spacer.setMaximumWidth(16777215)  # Qt's QWIDGETSIZE_MAX
+        self._sync_spacer()
         # Clear any existing search highlighting
         cursor = self.output_area.textCursor()
         cursor.clearSelection()
         self.output_area.setTextCursor(cursor)
+
+    def _sync_spacer(self) -> None:
+        """Give the spacer room only while it has a button to push.
+
+        The spacer exists to hold the Clear button against the right
+        edge. A consumer that hides that button -- a live log view has
+        nothing to clear -- leaves the spacer pushing nothing, and the
+        50px cap applied while the search bar is open then reads as dead
+        space between the bar's close button and the widget's own right
+        edge.
+
+        `isHidden` rather than `isVisible`: a child of a window that has
+        not been shown yet is not visible and not hidden, and this runs
+        while the search bar is opened for the first time on exactly such
+        a widget.
+        """
+        self.log_spacer.setVisible(not self.clear_button.isHidden())
 
     def _update_search_count(self) -> None:
         """Count total occurrences and update the count label."""
