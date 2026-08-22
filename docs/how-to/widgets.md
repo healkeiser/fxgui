@@ -42,9 +42,11 @@ class MyWidget(QWidget):
 
 class MyWindow(fxwidgets.FXMainWindow):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        # `toolbar=False` rather than hiding it afterwards: a hidden
+        # toolbar is still in the layout's own bookkeeping, so the menu
+        # bar's right-click "Toolbars" entry offers it straight back.
+        super().__init__(parent, toolbar=False)
 
-        self.toolbar.hide()
         self.setCentralWidget(MyWidget(parent=self))
         self.adjustSize()
 
