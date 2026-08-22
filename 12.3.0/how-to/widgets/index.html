@@ -662,6 +662,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#breadcrumbs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breadcrumbs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#your-own-item-data-roles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your Own Item-Data Roles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tooltips" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2279,6 +2301,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#breadcrumbs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breadcrumbs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#your-own-item-data-roles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your Own Item-Data Roles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tooltips" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2419,18 +2463,20 @@
 <a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>
 <a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyWindow</span><span class="p">(</span><span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXMainWindow</span><span class="p">):</span>
 <a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
-<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>
-<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">toolbar</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
-<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setCentralWidget</span><span class="p">(</span><span class="n">MyWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">))</span>
-<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">adjustSize</span><span class="p">()</span>
-<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>
-<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>
-<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a><span class="n">application</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXApplication</span><span class="p">()</span>
-<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a><span class="n">window</span> <span class="o">=</span> <span class="n">MyWindow</span><span class="p">()</span>
-<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a><span class="n">window</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">"Subclassed FXMainWindow"</span><span class="p">)</span>
-<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="n">window</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a><span class="n">application</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>        <span class="c1"># `toolbar=False` rather than hiding it afterwards: a hidden</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>        <span class="c1"># toolbar is still in the layout's own bookkeeping, so the menu</span>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>        <span class="c1"># bar's right-click "Toolbars" entry offers it straight back.</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">toolbar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>
+<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">setCentralWidget</span><span class="p">(</span><span class="n">MyWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">))</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">adjustSize</span><span class="p">()</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a><span class="n">application</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXApplication</span><span class="p">()</span>
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="n">window</span> <span class="o">=</span> <span class="n">MyWindow</span><span class="p">()</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a><span class="n">window</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">"Subclassed FXMainWindow"</span><span class="p">)</span>
+<a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="n">window</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a><span class="n">application</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
 </code></pre></div>
 <h2 id="running-widget-examples">Running Widget Examples<a class="headerlink" href="#running-widget-examples" title="Permanent link">&para;</a></h2>
 <p>Every widget in the <code>fxwidgets</code> module includes a standalone example that demonstrates its usage. Set the <code>DEVELOPER_MODE</code> environment variable to <code>1</code> to enable examples:</p>
@@ -2581,17 +2627,76 @@
 <p class="admonition-title">Tip</p>
 <p>All widgets automatically inherit the current theme and update when the theme changes.</p>
 </div>
+<h2 id="breadcrumbs">Breadcrumbs<a class="headerlink" href="#breadcrumbs" title="Permanent link">&para;</a></h2>
+<p><code>FXBreadcrumb</code> segments are buttons, and from 12.4.0 they look like it.</p>
+<div class="admonition warning">
+<p class="admonition-title">Changed in 12.4.0: visible in every existing consumer</p>
+<p>Three changes to how a breadcrumb <em>looks</em>, which ride this release
+into any application already using one. None needs code changes; all
+three are worth seeing before you upgrade a UI you care about.</p>
+<ul>
+<li><strong>The strip behind the segments is always filled</strong>, in the theme's
+  <code>state_hover</code>, and brightens to <code>border_light</code> while the pointer is
+  over the widget. It previously drew flat text straight on the
+  window's background. This is the largest of the three: a
+  breadcrumb now reads as a filled pill at rest, which is what says
+  a double-click opens a path field there.</li>
+<li><strong>A segment that leads somewhere tints on hover</strong>, in
+  <code>accent_primary</code> at alpha 80.</li>
+<li><strong>The last segment is inert</strong>: no tint and no pointing-hand
+  cursor, where every segment previously got the cursor. It is the
+  place the path already is and is connected to nothing, so both
+  marks promised a click that did nothing.</li>
+</ul>
+<p>All four colours are class attributes -- <code>STRIP_RESTING_TOKEN</code>,
+<code>STRIP_HOVERED_TOKEN</code>, <code>SEGMENT_HOVER_TOKEN</code>, <code>SEGMENT_HOVER_ALPHA</code>
+-- so a subclass names its own tokens without reimplementing any of
+the drawing:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">HouseCrumb</span><span class="p">(</span><span class="n">FXBreadcrumb</span><span class="p">):</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">STRIP_RESTING_TOKEN</span> <span class="o">=</span> <span class="s2">"surface_alt"</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">SEGMENT_HOVER_TOKEN</span> <span class="o">=</span> <span class="s2">"accent_secondary"</span>
+</code></pre></div>
+<p>Do not point <code>STRIP_RESTING_TOKEN</code> at <code>surface</code>: in every theme
+shipped here that is the window's own colour to the byte, so the
+strip becomes invisible.</p>
+</div>
+<p>Two behaviour fixes ride along, and neither is optional: the editor a
+double-click opens now closes on a press that lands outside it (focus
+loss alone missed a press on a heading, a tree header or the window
+background, which move no focus at all), and <code>exit_edit_mode()</code> is
+public, because a window-level <code>Escape</code> shortcut is delivered before the
+focused widget sees the key.</p>
+<h2 id="your-own-item-data-roles">Your Own Item-Data Roles<a class="headerlink" href="#your-own-item-data-roles" title="Permanent link">&para;</a></h2>
+<p><code>FXThumbnailDelegate</code> reads its own item-data roles off the items it
+paints, and it claims <code>Qt.UserRole + 1</code> through <code>Qt.UserRole + 12</code>. A
+view that stamps roles of its own on the same items must derive them from
+the delegate's published ceiling rather than guess a margin past that
+range:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">FXThumbnailDelegate</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">ROW_KIND_ROLE</span> <span class="o">=</span> <span class="n">FXThumbnailDelegate</span><span class="o">.</span><span class="n">FIRST_FREE_ROLE</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">ROW_COLOR_ROLE</span> <span class="o">=</span> <span class="n">FXThumbnailDelegate</span><span class="o">.</span><span class="n">FIRST_FREE_ROLE</span> <span class="o">+</span> <span class="mi">1</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Guessing here has already cost real time. A studio view picked
+<code>Qt.UserRole + 10</code> as its own and met <code>CHILD_COUNT_VISIBLE_ROLE</code>,
+which showed up as a child count on rows that had no children --
+a bug with no obvious connection to the role that caused it.</p>
+</div>
+<p>Roles added to the delegate move <code>FIRST_FREE_ROLE</code> up, and anything
+derived from it moves with them.</p>
 <h2 id="tooltips">Tooltips<a class="headerlink" href="#tooltips" title="Permanent link">&para;</a></h2>
 <p><code>apply_tip</code> is the everyday path. It formats a small HTML string and hands it to Qt's own <code>setToolTip</code>, plus a markup-free status tip for the window's status bar:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Internal</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_tip</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">apply_tip</span><span class="p">(</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">save_button</span><span class="p">,</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="s2">"Save"</span><span class="p">,</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="s2">"Write the current scene to disk, overwriting the last version"</span><span class="p">,</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="s2">"Ctrl+S"</span><span class="p">,</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Internal</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_tip</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">apply_tip</span><span class="p">(</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">save_button</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="s2">"Save"</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="s2">"Write the current scene to disk, overwriting the last version"</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="s2">"Ctrl+S"</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">)</span>
 </code></pre></div>
 <p>The title renders in the theme's primary text, the body dimmed, and the shortcut sits right-aligned as a keycap. Colors are read from the active theme on every call, so tooltips follow a theme switch and a studio's custom theme with no extra wiring. Every string is HTML-escaped, so a path holding <code>&amp;</code> or <code>&lt;</code> reaches the user as text.</p>
 <p>Two lower-level helpers are exported alongside it: <code>tip()</code> returns the HTML if you need to set it yourself, and <code>keycap()</code> renders one shortcut as a key (through <code>QKeySequence</code>, so a Mac shows the platform glyphs rather than the literal "Ctrl").</p>
@@ -2604,7 +2709,7 @@
 </ul>
 <h3 id="opting-in-to-fxtooltipmanager">Opting in to FXTooltipManager<a class="headerlink" href="#opting-in-to-fxtooltipmanager" title="Permanent link">&para;</a></h3>
 <p><code>FXTooltipManager</code> installs an application-wide event filter that replaces <em>every</em> tooltip with an <code>FXTooltip</code>. It is opt-in:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">window</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXMainWindow</span><span class="p">(</span><span class="n">rich_tooltips</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">window</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXMainWindow</span><span class="p">(</span><span class="n">rich_tooltips</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Changed in 12.0.0</p>
@@ -2641,7 +2746,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 19, 2026 13:29:30 UTC">August 19, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 22, 2026 14:51:02 UTC">August 22, 2026</span>
   </span>
 
     
