@@ -4,7 +4,8 @@
 import os
 import logging
 import re
-from typing import Optional
+from collections import deque
+from typing import Deque, Optional
 
 # Third-party
 from qtpy.QtCore import Qt, QTimer, Signal
@@ -120,8 +121,10 @@ class FXOutputLogWidget(QWidget):
         self._logger_check_timer = None
 
         # Throttling mechanism to prevent UI freezing during
-        # high-frequency logging
-        self._pending_log = None
+        # high-frequency logging. A queue rather than one slot: what is
+        # throttled is how often the pane repaints, never how many
+        # records reach it.
+        self._pending_logs: Deque[str] = deque()
         self._throttle_timer = QTimer(self)
         self._throttle_timer.setSingleShot(True)
         self._throttle_timer.timeout.connect(self._flush_pending_log)
@@ -448,11 +451,16 @@ class FXOutputLogWidget(QWidget):
         This ensures the UI stays responsive by limiting update frequency
         to ~60 FPS while still showing all messages.
 
+        Every record queued is a record displayed. The throttle decides
+        WHEN the pane catches up, not WHETHER a record survives: anything
+        handed over while the timer is running waits its turn in the
+        queue and lands on the next flush.
+
         Args:
             text: Text to queue for display.
         """
-        # Store the message
-        self._pending_log = text
+        # Queue the message
+        self._pending_logs.append(text)
 
         # Start timer if not already running
         if not self._throttle_timer.isActive():
@@ -460,26 +468,33 @@ class FXOutputLogWidget(QWidget):
             self._flush_pending_log()
 
     def _flush_pending_log(self) -> None:
-        """Flush the pending log message to the display."""
-        if self._pending_log is not None:
-            text = self._pending_log
-            self._pending_log = None
+        """Write every queued log message to the display.
 
+        The whole queue drains in one pass, and the auto-scroll runs once
+        at the end of it rather than once per entry: moving the scrollbar
+        to its maximum is what forces the document to lay out, so doing
+        it per record is what the throttle was there to avoid in the
+        first place.
+        """
+        if not self._pending_logs:
+            return
+
+        cursor = self.output_area.textCursor()
+        while self._pending_logs:
             # Display the message
-            self._insert_text_with_ansi(text)
+            self._insert_text_with_ansi(self._pending_logs.popleft())
 
             # Add extra line break after each log entry
-            cursor = self.output_area.textCursor()
             cursor.movePosition(QTextCursor.End)
             self.output_area.setTextCursor(cursor)
             self.output_area.insertPlainText("\n")
 
-            # Auto-scroll to bottom
-            scrollbar = self.output_area.verticalScrollBar()
-            scrollbar.setValue(scrollbar.maximum())
+        # Auto-scroll to bottom
+        scrollbar = self.output_area.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
 
-            # Schedule next update if needed
-            self._throttle_timer.start(self._throttle_interval)
+        # Schedule next update if needed
+        self._throttle_timer.start(self._throttle_interval)
 
     def append_log(self, text: str) -> None:
         """Append text to the log output with ANSI color conversion.
@@ -586,11 +601,10 @@ class FXOutputLogWidget(QWidget):
 
     def restore_output_streams(self) -> None:
         """Remove logging handler from all loggers where it was added."""
-        # Flush any pending message
+        # Flush anything still queued
         if hasattr(self, "_throttle_timer"):
             self._throttle_timer.stop()
-            if self._pending_log is not None:
-                self._flush_pending_log()
+            self._flush_pending_log()
 
         # Stop the logger check timer if it exists
         if hasattr(self, "_logger_check_timer") and self._logger_check_timer:
