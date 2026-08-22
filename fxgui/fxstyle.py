@@ -97,6 +97,8 @@ Functions:
     is_light_theme: Check if the current theme is light or dark.
     save_theme: Save the current theme to persistent storage.
     load_saved_theme: Load the previously saved theme.
+    set_default_theme: Set the theme to fall back to when none is saved.
+    get_default_theme: Get the theme to fall back to when none is saved.
 
 Constants:
     STYLE_FILE: Path to the default QSS stylesheet.
@@ -471,6 +473,8 @@ __all__ = [
     "replace_colors",
     "build_stylesheet",
     "register_widget_style",
+    "set_default_theme",
+    "get_default_theme",
     "register_themed_root",
     # Utility functions
     "get_luminance",
@@ -515,6 +519,7 @@ _DEFAULT_FONTS = {
 _colors = None
 _color_file = None  # Tracks which color file is currently loaded
 _theme = None  # Will be loaded from settings on first access
+_default_theme = _DEFAULT_THEME  # What load_saved_theme() falls back to
 _standard_icon_map = None  # Lazy-loaded icon map cache
 _theme_namespace = None  # Cached FXThemeColors for the current theme
 _widget_fragments: "OrderedDict[str, str]" = OrderedDict()
@@ -1208,19 +1213,55 @@ def save_theme(theme: str) -> None:
     fxconfig.set_value(_SETTINGS_THEME_KEY, theme)
 
 
+def set_default_theme(theme: str) -> None:
+    """Set the theme an application falls back to when none is saved.
+
+    "dark" unless this is called. For an application that ships a theme
+    of its own in a custom color file: without this, its own first run
+    is indistinguishable from a person having chosen "dark", so it
+    cannot both honour a saved choice and default to its own brand.
+
+    Not validated here, because the color file that has to offer the
+    theme may be set afterwards; `load_saved_theme` falls back to "dark"
+    if the file turns out not to offer it.
+
+    Args:
+        theme: The theme name to fall back to.
+
+    Examples:
+        >>> fxstyle.set_color_file("studio_colors.yaml")
+        >>> fxstyle.set_default_theme("studio")
+        >>> fxstyle.apply_theme(fxstyle.load_saved_theme())
+    """
+    global _default_theme
+    _default_theme = theme
+
+
+def get_default_theme() -> str:
+    """Get the theme an application falls back to when none is saved.
+
+    Returns:
+        The name set by `set_default_theme`, or "dark".
+    """
+    return _default_theme
+
+
 def load_saved_theme() -> str:
     """Load the saved theme from persistent storage.
 
-    If no theme has been saved, returns the default theme ("dark").
+    If no theme has been saved, returns the default theme -- "dark", or
+    whatever `set_default_theme` was given.
 
     Returns:
-        The saved theme name, or "dark" if none is saved.
+        The saved theme name, or the default if none is saved or the
+        saved one is not offered by the current color file.
 
     Examples:
         >>> theme = fxstyle.load_saved_theme()
         >>> print(theme)  # "dracula" if previously saved
     """
-    saved_theme = fxconfig.get_value(_SETTINGS_THEME_KEY, _DEFAULT_THEME)
+    default = get_default_theme()
+    saved_theme = fxconfig.get_value(_SETTINGS_THEME_KEY, default)
 
     # Validate the saved theme exists
     # We need to load colors first to get available themes
@@ -1229,6 +1270,10 @@ def load_saved_theme() -> str:
 
     if saved_theme in available_themes:
         return saved_theme
+    # The configured default gets the same check: a name no color file
+    # offers would reach apply_theme() and raise there instead.
+    if default in available_themes:
+        return default
     return _DEFAULT_THEME
 
 
