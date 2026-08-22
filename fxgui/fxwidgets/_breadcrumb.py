@@ -195,6 +195,10 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
     def _fill_strip(self, lit: bool) -> None:
         """Draw the strip as the field a double-click opens there.
 
+        Always drawn, in one of two fills. There is no unfilled state:
+        `__init__` paints the resting one, so a breadcrumb shows a filled
+        pill from the moment it exists and a hover only brightens it.
+
         What a double-click opens is a line edit as wide as this whole
         widget, so what says where to double-click is that whole width
         filled: a surface, since it stands for a field about to appear
@@ -219,7 +223,12 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
         )
 
     def enterEvent(self, event) -> None:
-        """Light the strip: the pointer is somewhere over the path.
+        """Brighten the strip: the pointer is somewhere over the path.
+
+        Brighten rather than fill. The strip carries
+        `STRIP_RESTING_TOKEN` at all times, from construction onward, so
+        what a hover changes is which of two fills it wears -- it is
+        never bare.
 
         Answered here rather than by a `:hover` rule in the style,
         because such a rule can only ever light the widget the pointer
@@ -233,7 +242,8 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
         self._fill_strip(True)
 
     def leaveEvent(self, event) -> None:
-        """Drop the strip's fill: the pointer has left for good."""
+        """Return the strip to its resting fill: the pointer has left
+        for good. The fill is not removed, only dimmed."""
         super().leaveEvent(event)
         self._fill_strip(False)
 

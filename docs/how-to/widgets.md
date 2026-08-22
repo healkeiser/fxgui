@@ -115,6 +115,50 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 !!! tip
     All widgets automatically inherit the current theme and update when the theme changes.
 
+## Breadcrumbs
+
+`FXBreadcrumb` segments are buttons, and from 12.4.0 they look like it.
+
+!!! warning "Changed in 12.4.0: visible in every existing consumer"
+    Three changes to how a breadcrumb *looks*, which ride this release
+    into any application already using one. None needs code changes; all
+    three are worth seeing before you upgrade a UI you care about.
+
+    - **The strip behind the segments is always filled**, in the theme's
+      `state_hover`, and brightens to `border_light` while the pointer is
+      over the widget. It previously drew flat text straight on the
+      window's background. This is the largest of the three: a
+      breadcrumb now reads as a filled pill at rest, which is what says
+      a double-click opens a path field there.
+    - **A segment that leads somewhere tints on hover**, in
+      `accent_primary` at alpha 80.
+    - **The last segment is inert**: no tint and no pointing-hand
+      cursor, where every segment previously got the cursor. It is the
+      place the path already is and is connected to nothing, so both
+      marks promised a click that did nothing.
+
+    All four colours are class attributes -- `STRIP_RESTING_TOKEN`,
+    `STRIP_HOVERED_TOKEN`, `SEGMENT_HOVER_TOKEN`, `SEGMENT_HOVER_ALPHA`
+    -- so a subclass names its own tokens without reimplementing any of
+    the drawing:
+
+    ``` python
+    class HouseCrumb(FXBreadcrumb):
+        STRIP_RESTING_TOKEN = "surface_alt"
+        SEGMENT_HOVER_TOKEN = "accent_secondary"
+    ```
+
+    Do not point `STRIP_RESTING_TOKEN` at `surface`: in every theme
+    shipped here that is the window's own colour to the byte, so the
+    strip becomes invisible.
+
+Two behaviour fixes ride along, and neither is optional: the editor a
+double-click opens now closes on a press that lands outside it (focus
+loss alone missed a press on a heading, a tree header or the window
+background, which move no focus at all), and `exit_edit_mode()` is
+public, because a window-level `Escape` shortcut is delivered before the
+focused widget sees the key.
+
 ## Your Own Item-Data Roles
 
 `FXThumbnailDelegate` reads its own item-data roles off the items it
