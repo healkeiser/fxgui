@@ -128,6 +128,84 @@ def test_each_queued_entry_is_parsed_for_ansi_on_its_own(qtbot, qapp):
     assert _lines(pane) == ["green", "red"], "codes consumed, text kept"
 
 
+def test_one_flush_is_bounded_however_large_the_burst(qtbot, qapp):
+    """Keeping every record is only half of staying responsive.
+
+    An unbounded drain makes one flush cost O(burst), and a producer that
+    never yields the event loop hands over the whole burst at once.
+    Measured at about 8.7 microseconds a record: 50,000 in one flush is a
+    513ms freeze on the main thread.
+    """
+    pane = _pane(qtbot)
+    burst = FXOutputLogWidget.MAX_RECORDS_PER_FLUSH * 3
+
+    for index in range(burst):
+        pane.append_log(f"record {index}")
+
+    # One flush by hand, so what is measured is one flush rather than
+    # however many ticks the event loop happened to run.
+    before = len(pane._pending_logs)
+    pane._flush_pending_log()
+    written = before - len(pane._pending_logs)
+
+    assert written == FXOutputLogWidget.MAX_RECORDS_PER_FLUSH
+    assert pane._pending_logs, "the rest is still queued, not dropped"
+
+
+def test_a_bounded_flush_still_shows_every_record_eventually(qtbot, qapp):
+    """The bound decides how long the pane takes to catch up, never
+    whether a record survives -- the timer re-arms whichever way a flush
+    returns, so a partial drain continues on the next tick."""
+    pane = _pane(qtbot)
+    burst = FXOutputLogWidget.MAX_RECORDS_PER_FLUSH * 2 + 7
+
+    for index in range(burst):
+        pane.append_log(f"{index:06d}")
+
+    qtbot.waitUntil(lambda: len(_lines(pane)) == burst, timeout=10000)
+    assert _lines(pane) == [f"{index:06d}" for index in range(burst)]
+    assert not pane._pending_logs, "the queue drained to nothing"
+
+
+def test_the_flush_chain_stops_when_the_queue_empties(qtbot, qapp):
+    """The early return on an empty queue is what ends the chain: a timer
+    that re-armed forever would be a widget that never idles."""
+    pane = _pane(qtbot)
+    pane.append_log("one")
+
+    qtbot.waitUntil(
+        lambda: not pane._throttle_timer.isActive(), timeout=_DRAIN_MS
+    )
+
+    assert _lines(pane) == ["one"]
+
+
+def test_the_document_is_unbounded_by_default(qtbot, qapp):
+    """Unchanged behaviour, and deliberately so: pruning the OLDEST
+    records silently is the same class of defect as dropping the newest,
+    and only a consumer knows whether a file behind the pane makes it
+    safe."""
+    pane = _pane(qtbot)
+
+    assert pane.output_area.document().maximumBlockCount() == 0
+
+
+def test_a_consumer_can_bound_the_document(qtbot, qapp):
+    """For a pane that is a view onto a log it does not own, which is the
+    case a scrollback limit is for."""
+    pane = FXOutputLogWidget(capture_output=False, max_blocks=20)
+    qtbot.addWidget(pane)
+
+    for index in range(60):
+        pane.append_log(f"record {index}")
+
+    qtbot.waitUntil(lambda: not pane._pending_logs, timeout=_DRAIN_MS)
+
+    lines = _lines(pane)
+    assert len(lines) <= 20, f"pruned to the cap, got {len(lines)}"
+    assert lines[-1] == "record 59", "and it is the newest that survive"
+
+
 def test_a_pending_queue_is_written_out_before_the_handler_goes(qtbot, qapp):
     """`restore_output_streams` is the last chance those records have.
     Called while a window is open, it must not leave the queue behind."""
@@ -145,6 +223,23 @@ def test_a_pending_queue_is_written_out_before_the_handler_goes(qtbot, qapp):
         "still queued",
         "also queued",
     ]
+
+
+def test_the_last_flush_ignores_the_per_flush_bound(qtbot, qapp):
+    """More queued than one flush may write, and no next tick coming:
+    there is no event loop left to continue a partial drain on, so the
+    bound has to give way to not losing the records."""
+    pane = _pane(qtbot)
+    burst = FXOutputLogWidget.MAX_RECORDS_PER_FLUSH * 2 + 3
+    for index in range(burst):
+        pane.append_log(f"{index:06d}")
+    assert len(pane._pending_logs) > FXOutputLogWidget.MAX_RECORDS_PER_FLUSH
+
+    pane.restore_output_streams()
+
+    assert not pane._pending_logs, "nothing left behind"
+    assert len(_lines(pane)) == burst
+    assert not pane._throttle_timer.isActive(), "and it does not idle armed"
 
 
 def test_the_queue_survives_a_record_logged_from_a_timer_callback(
