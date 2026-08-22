@@ -4,7 +4,7 @@
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QFontMetrics
 from qtpy.QtWidgets import QLabel, QWidget
 
@@ -14,11 +14,65 @@ class FXElidedLabel(QLabel):
 
     This label automatically truncates text and adds an ellipsis when the
     text is too long to fit within the available space.
+
+    Args:
+        text: The label's text. Defaults to `""`.
+        parent: Parent widget. Defaults to `None`.
+        mode: Where the text is cut when it does not fit. Defaults to
+            `Qt.ElideRight`. `Qt.ElideMiddle` is what tells apart
+            strings that share a tail -- paths under a common root, or
+            email-shaped identities at one domain, where two long values
+            cut from the right come out looking identical.
+
+    Examples:
+        >>> from qtpy.QtCore import Qt
+        >>> from fxgui import fxwidgets
+        >>> label = fxwidgets.FXElidedLabel(
+        ...     "a very long identity", mode=Qt.ElideMiddle
+        ... )
     """
 
-    def __init__(self, text: str = "", parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        text: str = "",
+        parent: Optional[QWidget] = None,
+        mode: Qt.TextElideMode = Qt.ElideRight,
+    ):
         super().__init__(text, parent)
         self._full_text = text
+        self._mode = mode
+
+    def minimumSizeHint(self) -> QSize:
+        """No width at all, and the height one line of this font needs.
+
+        `QLabel`'s own minimum width IS the width of its whole text --
+        measured, 696px for a 58-character string -- and a minimum is
+        not a preference: a label that will not go below its own text
+        width does not elide when the room runs out, it takes the room
+        from whatever shares its row and, failing that, from the window.
+        Measured: a 47-character string in a row with a button, in a
+        window told to be 200px wide, forced the window to 680px and
+        pushed the button from x=90 to x=570.
+
+        Which makes an eliding label with `QLabel`'s minimum a widget
+        that cannot do the one thing it exists for. This yields the
+        width instead, which is what eliding means, and keeps the height
+        so a row is still a row.
+
+        Returns:
+            QSize: Zero width, at `QLabel`'s own minimum height.
+        """
+        return QSize(0, super().minimumSizeHint().height())
+
+    @property
+    def mode(self) -> Qt.TextElideMode:
+        """Where the text is cut when it does not fit."""
+        return self._mode
+
+    @mode.setter
+    def mode(self, mode: Qt.TextElideMode) -> None:
+        self._mode = mode
+        self._elide_text()
 
     def setText(self, text: str) -> None:
         """Set the text and store the full text for elision."""
@@ -77,7 +131,7 @@ class FXElidedLabel(QLabel):
         else:
             # Single line elision
             elided = metrics.elidedText(
-                self._full_text, Qt.ElideRight, available_width
+                self._full_text, self._mode, available_width
             )
             super().setText(elided)
 
