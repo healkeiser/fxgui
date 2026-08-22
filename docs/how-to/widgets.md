@@ -115,6 +115,30 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 !!! tip
     All widgets automatically inherit the current theme and update when the theme changes.
 
+## Your Own Item-Data Roles
+
+`FXThumbnailDelegate` reads its own item-data roles off the items it
+paints, and it claims `Qt.UserRole + 1` through `Qt.UserRole + 12`. A
+view that stamps roles of its own on the same items must derive them from
+the delegate's published ceiling rather than guess a margin past that
+range:
+
+``` python
+from fxgui.fxwidgets import FXThumbnailDelegate
+
+ROW_KIND_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE
+ROW_COLOR_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 1
+```
+
+!!! warning
+    Guessing here has already cost real time. A studio view picked
+    `Qt.UserRole + 10` as its own and met `CHILD_COUNT_VISIBLE_ROLE`,
+    which showed up as a child count on rows that had no children --
+    a bug with no obvious connection to the role that caused it.
+
+Roles added to the delegate move `FIRST_FREE_ROLE` up, and anything
+derived from it moves with them.
+
 ## Tooltips
 
 `apply_tip` is the everyday path. It formats a small HTML string and hands it to Qt's own `setToolTip`, plus a markup-free status tip for the window's status bar:

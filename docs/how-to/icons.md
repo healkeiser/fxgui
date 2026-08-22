@@ -78,6 +78,38 @@ fxicons.set_icon_defaults(color="red", width=32, height=32)
 icon = fxicons.get_icon("home", color="blue")
 ```
 
+### A Name the Library Does Not Carry
+
+`get_icon` raises `FileNotFoundError` for a name no library has. When the
+name comes from your own data rather than from your own code, that is an
+ordinary answer rather than an exceptional one, so name a `fallback`
+instead of wrapping the call:
+
+```python
+from fxgui import fxicons
+
+# A DCC the "dcc" library carries a brand mark for gets it; anything
+# else gets the general-purpose icon rather than no icon at all.
+icon = fxicons.get_icon(whatever_the_tracker_said, library="dcc", fallback="apps")
+```
+
+A fallback **name** is looked up in the *default* library, not in the one
+you asked for. That is deliberate: the library that just failed to carry
+the name is the least likely place for the stand-in, and the
+general-purpose set is where it lives. Size and colour carry over, so a
+row that falls back does not change shape.
+
+Pass a `QIcon` instead of a name to be answered with it as it is, and
+`QIcon()` to ask for a blank rather than a picture of something else:
+
+```python
+icon = fxicons.get_icon(name, library="dcc", fallback=QIcon())
+```
+
+A fallback that is not in the default library either still raises, since
+a second silent stand-in would hide a mistake in your code rather than
+in your data.
+
 ### Superpose Icons
 
 You can superpose as many icons as you want, from background to foreground:
