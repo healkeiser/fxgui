@@ -3,7 +3,7 @@
 # Built-in
 import logging
 import os
-from typing import Optional
+from typing import Callable, Mapping, Optional
 from weakref import WeakKeyDictionary
 
 # Third-party
@@ -53,7 +53,12 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         severity_type: Severity level (CRITICAL, ERROR, WARNING, SUCCESS, INFO, DEBUG).
             If None, a custom notification is shown using title and icon.
         timeout: Auto-dismiss timeout in milliseconds (0 = no auto-dismiss).
-        action_text: Text for the optional action button.
+        action_text: Text for a single action button. Sugar for a one-entry
+            `actions` whose callback emits `action_clicked`.
+        actions: Buttons to put on the banner, as `{label: callback}`, left to
+            right. The first one is styled as the primary. A banner with
+            actions never auto-dismisses, and clicking one runs its callback
+            then dismisses the banner.
         closable: Whether to show a close button.
         width: Fixed width of the notification card (default 320).
         logger: A logger object to log the message when shown. The severity
@@ -65,7 +70,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
     Signals:
         closed: Emitted when the banner is closed.
-        action_clicked: Emitted when the action button is clicked.
+        action_clicked: Emitted when the `action_text` button is clicked.
 
     Examples:
         >>> # Simple notification - auto-positions and stacks
@@ -82,6 +87,15 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         ...     message="New version available!",
         ...     title="Update",
         ...     icon="system_update",
+        ... )
+        >>> banner.show()
+        >>>
+        >>> # Interactive notification - waits for the artist to answer
+        >>> banner = FXNotificationBanner(
+        ...     parent=window,
+        ...     message="Publish failed on 3 shots.",
+        ...     severity_type=ERROR,
+        ...     actions={"Retry": retry_publish, "Open log": open_log},
         ... )
         >>> banner.show()
     """
@@ -120,6 +134,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         severity_type: Optional[int] = None,
         timeout: int = 5000,
         action_text: Optional[str] = None,
+        actions: Optional[Mapping[str, Callable[[], None]]] = None,
         closable: bool = True,
         width: int = 320,
         logger: Optional[logging.Logger] = None,
@@ -194,12 +209,10 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         )
         main_layout.addWidget(self._message_label)
 
-        # Action button (optional)
-        if action_text:
-            self._action_button = QPushButton(action_text)
-            self._action_button.setCursor(Qt.PointingHandCursor)
-            self._action_button.clicked.connect(self.action_clicked.emit)
-            main_layout.addWidget(self._action_button)
+        # Action buttons (optional) - the row is only built if one is added,
+        # so a plain banner keeps its own bottom margin
+        self._actions_layout: Optional[QHBoxLayout] = None
+        self._action_buttons: list[QPushButton] = []
 
         # Setup slide animation (from right)
         self._slide_animation = QPropertyAnimation(self, b"pos", self)
@@ -228,6 +241,11 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
         # Apply initial styling
         self._on_theme_changed()
+
+        if action_text:
+            self.add_action(action_text, self.action_clicked.emit)
+        for label, callback in (actions or {}).items():
+            self.add_action(label, callback)
 
         # Ensure widget sizes to fit content
         self.adjustSize()
@@ -376,24 +394,45 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
             """
             )
 
-        # Action button styling
-        if hasattr(self, "_action_button"):
-            self._action_button.setStyleSheet(
-                f"""
-                QPushButton {{
-                    background: {self.theme.accent_primary};
-                    color: #ffffff;
-                    border: none;
-                    border-radius: 4px;
-                    padding: 6px 16px;
-                    font-weight: bold;
-                    font-size: 12px;
-                }}
-                QPushButton:hover {{
-                    background: {self.theme.accent_secondary};
-                }}
-            """
-            )
+        # Action button styling - the first one leads, the rest step back so
+        # a two-button banner does not read as two equal choices
+        for index, button in enumerate(getattr(self, "_action_buttons", [])):
+            self._style_action_button(button, primary=index == 0)
+
+    def _style_action_button(self, button: QPushButton, primary: bool) -> None:
+        """Style one action button.
+
+        Args:
+            button: The button to style.
+            primary: Whether this is the banner's leading action.
+        """
+        if primary:
+            background = self.theme.accent_primary
+            hover = self.theme.accent_secondary
+            color = "#ffffff"
+            border = "none"
+        else:
+            background = "transparent"
+            hover = self.theme.surface_alt
+            color = self.theme.text_muted
+            border = f"1px solid {self.theme.border}"
+
+        button.setStyleSheet(
+            f"""
+            QPushButton {{
+                background: {background};
+                color: {color};
+                border: {border};
+                border-radius: 4px;
+                padding: 6px 16px;
+                font-weight: bold;
+                font-size: 12px;
+            }}
+            QPushButton:hover {{
+                background: {hover};
+            }}
+        """
+        )
 
     def show(self) -> None:
         """Show the notification with slide-in animation from the right.
@@ -507,6 +546,65 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
             if notification._target_pos != target:
                 notification._animate_to(target)
             y_offset += notification.height() + notification._spacing
+
+    def add_action(
+        self,
+        text: str,
+        callback: Optional[Callable[[], None]] = None,
+    ) -> QPushButton:
+        """Add an action button to the banner.
+
+        A banner you are meant to answer must not disappear while you reach
+        for it, so the first action cancels auto-dismiss: the banner then
+        stays until an action or the close button is used. Clicking an action
+        runs `callback`, then dismisses the banner.
+
+        Args:
+            text: The button label.
+            callback: Called when the button is clicked, before the dismiss.
+
+        Returns:
+            QPushButton: The button, for callers who want to restyle it or
+                wire extra signals.
+
+        Examples:
+            >>> banner.add_action("Retry", retry_publish)
+        """
+        if self._actions_layout is None:
+            self._actions_layout = QHBoxLayout()
+            self._actions_layout.setSpacing(8)
+            self._actions_layout.addStretch()
+            self.layout().addLayout(self._actions_layout)
+
+        button = QPushButton(text, self)
+        button.setCursor(Qt.PointingHandCursor)
+        button.clicked.connect(lambda: self._run_action(callback))
+        self._actions_layout.addWidget(button)
+        self._action_buttons.append(button)
+        self._style_action_button(
+            button, primary=len(self._action_buttons) == 1
+        )
+
+        # No timing out a banner that is waiting on an answer
+        self._timeout = 0
+        self._dismiss_timer.stop()
+
+        # The banner just grew, so the ones stacked under it have moved
+        self.adjustSize()
+        if self.isVisible() and self.parent():
+            self._reposition_notifications(self.parent())
+
+        return button
+
+    def _run_action(self, callback: Optional[Callable[[], None]]) -> None:
+        """Run an action's callback, then close the banner.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+        if callback is not None:
+            callback()
+        self.dismiss()
 
     def set_message(self, message: str) -> None:
         """Set the notification message.
@@ -661,6 +759,20 @@ def example() -> None:
         lambda: show_notification(DEBUG, "Debug: variable_x = 42")
     )
     buttons_layout.addWidget(debug_btn)
+
+    interactive_btn = QPushButton("Interactive")
+    interactive_btn.clicked.connect(
+        lambda: FXNotificationBanner(
+            parent=window.centralWidget(),
+            message="Publish failed on 3 shots.",
+            severity_type=ERROR,
+            actions={
+                "Retry": lambda: print("Retry"),
+                "Open log": lambda: print("Open log"),
+            },
+        ).show()
+    )
+    buttons_layout.addWidget(interactive_btn)
 
     long_btn = QPushButton("Long Rich Text")
     long_btn.clicked.connect(
