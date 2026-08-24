@@ -206,8 +206,10 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         self._slide_animation.setEasingCurve(QEasingCurve.OutCubic)
         self._slide_animation.setDuration(250)
 
-        # Track if we're sliding in (to update position after animation)
-        self._is_sliding_in = False
+        # Where the last slide was told to land, and whether we're leaving
+        self._target_pos = QPoint()
+        self._dismissing = False
+        self._slide_handler = None
 
         # Setup drop shadow effect
         self._shadow_effect = QGraphicsDropShadowEffect(self)
@@ -240,27 +242,48 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
             self._update_position()
         return super().eventFilter(obj, event)
 
+    def _resting_x(self) -> int:
+        """The x the banner sits at once it has finished sliding in."""
+        parent = self.parent()
+        parent_width = parent.width() if parent else 0
+        return parent_width - self._notification_width - self._margin
+
+    def _animate_to(self, target: QPoint, on_finished=None) -> None:
+        """Slide to `target`, replacing whatever the banner was doing.
+
+        The animation object is shared between slide-in, slide-out and
+        restacking, so any pending `finished` handler is dropped first: a
+        handler left connected fires at the end of the *next* slide, which is
+        how a dismissing banner ends up stopping mid-way then vanishing.
+
+        Args:
+            target: Position to slide to, in parent coordinates.
+            on_finished: Called once, when this slide reaches `target`.
+        """
+        animation = self._slide_animation
+        animation.stop()
+        if self._slide_handler is not None:
+            animation.finished.disconnect(self._slide_handler)
+            self._slide_handler = None
+
+        self._target_pos = target
+        if on_finished is not None:
+            animation.finished.connect(on_finished)
+            self._slide_handler = on_finished
+        animation.setStartValue(self.pos())
+        animation.setEndValue(target)
+        animation.start()
+
     def _update_position(self) -> None:
         """Update position when parent is resized."""
-        parent = self.parent()
-        if not parent or not self.isVisible():
+        if not self.parent() or not self.isVisible() or self._dismissing:
             return
 
-        # If currently animating a slide-in, update the animation end value
+        self._target_pos = QPoint(self._resting_x(), self._target_pos.y())
         if self._slide_animation.state() == QPropertyAnimation.Running:
-            if self._is_sliding_in:
-                parent_width = parent.width()
-                end_x = parent_width - self._notification_width - self._margin
-                current_end = self._slide_animation.endValue()
-                self._slide_animation.setEndValue(
-                    QPoint(end_x, current_end.y())
-                )
-            return
-
-        parent_width = parent.width()
-        end_x = parent_width - self._notification_width - self._margin
-        current_pos = self.pos()
-        self.move(end_x, current_pos.y())
+            self._slide_animation.setEndValue(self._target_pos)
+        else:
+            self.move(self._target_pos)
 
     def _get_severity_colors(self, severity: Optional[int]) -> dict:
         """Get colors based on severity level."""
@@ -404,76 +427,47 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
             # Find the bottom-most notification to stack below it
             y_offset = self._margin
             for notification in active_list:
-                if notification is not self and notification.isVisible():
+                # A dismissing banner is on its way out and keeps no slot
+                if (
+                    notification is not self
+                    and notification.isVisible()
+                    and not notification._dismissing
+                ):
                     notification_bottom = (
-                        notification.y() + notification.height()
+                        notification._target_pos.y() + notification.height()
                     )
                     y_offset = max(
                         y_offset, notification_bottom + self._spacing
                     )
 
-            parent_width = parent.width()
-            # Start position: off-screen to the right
-            start_x = parent_width
-            # End position: visible on the right with margin
-            end_x = parent_width - self._notification_width - self._margin
-
-            self.move(start_x, y_offset)
-
-            # Mark as sliding in and connect to finished signal
-            self._is_sliding_in = True
-            self._slide_animation.stop()
-            self._slide_animation.setStartValue(QPoint(start_x, y_offset))
-            self._slide_animation.setEndValue(QPoint(end_x, y_offset))
-            self._slide_animation.finished.connect(self._on_slide_in_finished)
-            self._slide_animation.start()
+            self._dismissing = False
+            self.move(parent.width(), y_offset)  # Off-screen, to the right
+            self._animate_to(QPoint(self._resting_x(), y_offset))
 
         # Start auto-dismiss timer
         if self._timeout > 0:
             self._dismiss_timer.start(self._timeout)
 
-    def _on_slide_in_finished(self) -> None:
-        """Handle slide-in completion to ensure correct final position."""
-        try:
-            self._slide_animation.finished.disconnect(
-                self._on_slide_in_finished
-            )
-        except RuntimeError:
-            pass  # Already disconnected
-
-        self._is_sliding_in = False
-
-        # Ensure final position is correct (handles any resize during animation)
-        self._update_position()
-
     def dismiss(self) -> None:
         """Dismiss the notification with slide-out animation to the right."""
+        if self._dismissing:
+            return
+
         self._dismiss_timer.stop()
+        self._dismissing = True
 
         # Slide out to the right
         parent = self.parent()
         if parent:
-            parent_width = parent.width()
-            current_pos = self.pos()
-            end_x = parent_width
-
-            self._slide_animation.stop()
-            self._slide_animation.setStartValue(current_pos)
-            self._slide_animation.setEndValue(QPoint(end_x, current_pos.y()))
-            self._slide_animation.finished.connect(self._on_slide_out_finished)
-            self._slide_animation.start()
+            self._animate_to(
+                QPoint(parent.width(), self._target_pos.y()),
+                self._on_slide_out_finished,
+            )
         else:
             self._on_slide_out_finished()
 
     def _on_slide_out_finished(self) -> None:
         """Handle slide-out completion and reposition remaining notifications."""
-        try:
-            self._slide_animation.finished.disconnect(
-                self._on_slide_out_finished
-            )
-        except RuntimeError:
-            pass  # Already disconnected
-
         # Remove from tracking
         parent = self.parent()
         if parent and parent in FXNotificationBanner._active_notifications:
@@ -499,27 +493,19 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
             return
 
         active_list = cls._active_notifications[parent]
-        visible_notifications = [n for n in active_list if n.isVisible()]
+        staying = [
+            n for n in active_list if n.isVisible() and not n._dismissing
+        ]
 
-        # Sort by current y position to maintain order
-        visible_notifications.sort(key=lambda n: n.y())
+        # Sort by where each banner is headed, not by its transient position
+        staying.sort(key=lambda n: n._target_pos.y())
 
-        # Recalculate positions
-        y_offset = (
-            visible_notifications[0]._margin if visible_notifications else 16
-        )
+        y_offset = staying[0]._margin if staying else 16
 
-        for notification in visible_notifications:
-            current_pos = notification.pos()
-            if current_pos.y() != y_offset:
-                # Animate to new position
-                notification._slide_animation.stop()
-                notification._slide_animation.setStartValue(current_pos)
-                notification._slide_animation.setEndValue(
-                    QPoint(current_pos.x(), y_offset)
-                )
-                notification._slide_animation.start()
-
+        for notification in staying:
+            target = QPoint(notification._resting_x(), y_offset)
+            if notification._target_pos != target:
+                notification._animate_to(target)
             y_offset += notification.height() + notification._spacing
 
     def set_message(self, message: str) -> None:
