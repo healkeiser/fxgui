@@ -353,33 +353,37 @@ def test_delegate_outlines_the_current_row(qtbot, themed):
     )
 
 
-def test_delegate_ring_reads_on_a_selected_row(qtbot, themed):
-    """A selected row is already filled with accent_primary, so an accent ring
-    on top of it would be invisible. The ring switches to the token that
-    exists to be read against that fill."""
+def test_no_ring_is_drawn_on_a_selected_row(qtbot, themed):
+    """A selected row is not outlined at all any more.
+
+    It used to ring in `text_on_accent_primary` so that keyboard focus
+    stayed distinguishable from selection on top of the accent fill.
+    That token exists to carry *text* on the accent, so on a light
+    accent it is dark, and the ring read as a 1px black border round the
+    row -- reported from a real window, where the giveaway was that the
+    row looked better the moment it lost focus.
+
+    The accent fill already marks the row, so the ring is dropped there.
+    What it costs is real and deliberate: in a view where the current
+    row and the selected row can differ, only the selection now shows.
+    It still draws on an unselected current row, which
+    `test_delegate_ring_shows_the_current_row_without_selection` covers.
+    """
 
     theme = fxstyle.get_theme_colors()
     on_accent = QColor(theme["text_on_accent_primary"])
     tree, index = _delegate_tree(qtbot, selected=True)
 
-    before = tree.viewport().grab().toImage()
     _focus(tree)
     after = tree.viewport().grab().toImage()
     _save(after, "focus_delegate_row_selected.png")
 
     row = tree.visualRect(index)
-    edge = [
-        x
-        for x in range(row.left() + 8, row.right() - 8)
-        if _near(after, x, row.top(), on_accent)
-    ]
-    assert edge, "no ring on the selected row's top edge"
-    # And it was not there before focus arrived
     assert not [
         x
         for x in range(row.left() + 8, row.right() - 8)
-        if _near(before, x, row.top(), on_accent)
-    ]
+        if _near(after, x, row.top(), on_accent)
+    ], "the selected row is still outlined"
 
 
 def test_delegate_ring_spans_the_whole_row(qtbot, themed):

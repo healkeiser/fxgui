@@ -1146,3 +1146,81 @@ def test_unusable_color_roles_hide_without_raising(qtbot, role_value):
     # Neither painting nor sizing may raise on the way through
     assert not tree.viewport().grab().toImage().isNull()
     assert delegate.sizeHint(_option_for(tree, index), index).height() == 50
+
+
+def _focus_ring_pixels(qtbot, *, selected):
+    """What `_draw_focus_indicator` puts on a blank canvas.
+
+    `option.widget` is left `None` on purpose. `_is_focus_row` reads the
+    view's own `hasFocus()` when it has one, and under
+    `QT_QPA_PLATFORM=offscreen` a shown widget never becomes active --
+    so a test that handed it a real tree painted no ring at all and
+    passed whatever the colour logic did. Measured: with the fix
+    reverted, that version still passed. With no widget the helper falls
+    back to the option's own `State_HasFocus`, which is the branch this
+    is about.
+    """
+    from qtpy.QtCore import QModelIndex
+    from qtpy.QtGui import QColor, QPainter, QPixmap
+    from qtpy.QtWidgets import QStyle, QStyleOptionViewItem, QTreeWidget
+
+    from fxgui.fxwidgets import FXThumbnailDelegate
+
+    tree = QTreeWidget()
+    qtbot.addWidget(tree)
+    delegate = FXThumbnailDelegate(tree)
+
+    option = QStyleOptionViewItem()
+    option.rect = QRect(0, 0, 120, 30)
+    option.state = QStyle.State_Enabled | QStyle.State_HasFocus
+    if selected:
+        option.state |= QStyle.State_Selected
+    option.widget = None
+
+    canvas = QPixmap(120, 30)
+    canvas.fill(QColor("#ff00ff"))
+    painter = QPainter(canvas)
+    try:
+        delegate._draw_focus_indicator(
+            painter, option.rect, option, QModelIndex(), (True, True)
+        )
+    finally:
+        painter.end()
+    image = canvas.toImage()
+    return {
+        image.pixelColor(x, y).name()
+        for x in range(120)
+        for y in range(30)
+    }
+
+
+def test_a_selected_row_is_not_outlined_by_the_focus_ring(qtbot):
+    """The ring must not draw a dark line inside a selected row.
+
+    `text_on_accent_primary` exists to carry *text* on the accent, so on
+    a light accent it is dark -- and stroking a ring in it outlined the
+    current row in near-black. Measured on a real focused tree before
+    the fix: `#282c34` one pixel inside a `#61afef` fill, top and
+    bottom, and gone the moment the window lost focus, which is how it
+    was reported.
+
+    A selected row needs no ring: the accent fill already marks it.
+    """
+    from fxgui import fxstyle
+
+    painted = _focus_ring_pixels(qtbot, selected=True)
+    dark = QColor(fxstyle.get_theme_colors()["text_on_accent_primary"]).name()
+    assert dark not in painted
+    # Nothing at all was drawn, which is the whole of the fix.
+    assert painted == {"#ff00ff"}
+
+
+def test_an_unselected_current_row_still_gets_its_ring(qtbot):
+    """The other half, so the fix above is a narrowing and not a
+    removal: a keyboard moved without selecting is what the ring was
+    added to show, and there it is drawn in the accent."""
+    from fxgui import fxstyle
+
+    painted = _focus_ring_pixels(qtbot, selected=False)
+    accent = QColor(fxstyle.get_theme_colors()["accent_primary"]).name()
+    assert accent in painted

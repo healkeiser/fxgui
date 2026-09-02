@@ -1758,10 +1758,21 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         if not self._is_focus_row(option, index):
             return
 
+        # A selected row needs no ring: the accent fill already marks it
+        # unmistakably, and outlining it in `text_on_accent_primary` --
+        # a dark colour, because the accent it is meant to carry text on
+        # is light -- drew a 1px black line inside the row. Measured on
+        # the current row of a focused tree: `#282c34` against a
+        # `#61afef` fill, and gone the moment the window lost focus,
+        # which is how it was reported.
+        #
+        # The ring still earns its place on an unselected current row --
+        # a keyboard moved without selecting, which is the case it was
+        # added for -- and there it is drawn in the accent.
         if option.state & QStyle.State_Selected:
-            ring_color = QColor(self.theme.text_on_accent_primary)
-        else:
-            ring_color = QColor(self.theme.accent_primary)
+            return
+
+        ring_color = QColor(self.theme.accent_primary)
 
         if column_position is None:
             is_first_column, is_last_column = self._get_column_position(
