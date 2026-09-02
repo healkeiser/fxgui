@@ -2112,6 +2112,83 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 description_rect, Qt.AlignLeft | Qt.AlignTop, str(description)
             )
 
+    def _check_rect(self, option: QStyleOptionViewItem) -> Optional[QRect]:
+        """Where a tickable row's check box goes; None for a row without one.
+
+        Asked of the style, with the very question `QStyledItemDelegate`'s
+        own `editorEvent` asks before it decides whether a click landed on
+        the box. That is what makes the box this delegate paints the box a
+        click toggles: this delegate does not override `editorEvent`, so
+        the base class handles the click, and the two agree on the rect
+        because they read it from the same place.
+
+        Args:
+            option: The style option, already run through
+                `initStyleOption` so `features` and `rect` are filled in.
+
+        Returns:
+            The check indicator's rect, or None when the item carries no
+            `Qt.CheckStateRole`.
+        """
+
+        if not (option.features & QStyleOptionViewItem.HasCheckIndicator):
+            return None
+        widget = option.widget
+        style = widget.style() if widget is not None else QApplication.style()
+        return style.subElementRect(
+            QStyle.SE_ItemViewItemCheckIndicator, option, widget
+        )
+
+    def _check_width(
+        self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> int:
+        """How much of column 0 a tickable row's check box takes, or 0.
+
+        For `sizeHint`, which is handed the view's raw option rather than
+        an initialised one, so the features are filled in here first.
+        """
+
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        rect = self._check_rect(opt)
+        return 0 if rect is None else rect.width() + 1
+
+    def _draw_check_indicator(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        rect: QRect,
+    ) -> None:
+        """Paint a tickable row's check box the way the style paints one.
+
+        The same call `QCommonStyle` makes for `CE_ItemViewItem`, with the
+        same state mapping, so a themed `QTreeView::indicator` stylesheet
+        rule reaches it. Before this the delegate painted no box at all,
+        and a tickable tree drawn through it showed its ticks nowhere --
+        while the base class's `editorEvent` went on toggling an invisible
+        one.
+
+        Args:
+            painter: The painter to use.
+            option: The style option, already initialised for the item.
+            rect: Where the box goes, from `_check_rect`.
+        """
+
+        check = QStyleOptionViewItem(option)
+        check.rect = rect
+        check.state = check.state & ~QStyle.State_HasFocus
+        if option.checkState == Qt.Checked:
+            check.state |= QStyle.State_On
+        elif option.checkState == Qt.PartiallyChecked:
+            check.state |= QStyle.State_NoChange
+        else:
+            check.state |= QStyle.State_Off
+        widget = option.widget
+        style = widget.style() if widget is not None else QApplication.style()
+        style.drawPrimitive(
+            QStyle.PE_IndicatorItemViewItemCheck, check, painter, widget
+        )
+
     def _draw_icon_and_text(
         self,
         painter: QPainter,
@@ -2359,7 +2436,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             starred_width = 22  # star + circle + margin
 
         total_width = (
-            text_offset
+            self._check_width(option, index)
+            + text_offset
             + text_width
             + right_margin
             + child_count_width
@@ -2445,6 +2523,14 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         painter.setClipRect(opt.rect)
 
         if is_col0:
+            # A tickable row's box first, and the rest of the row laid
+            # out to the right of it. Everything below reads its left
+            # edge off `opt.rect`, so narrowing the rect is what moves
+            # the icon, the thumbnail and the text over.
+            check_rect = self._check_rect(opt)
+            if check_rect is not None:
+                self._draw_check_indicator(painter, opt, check_rect)
+                opt.rect.setLeft(check_rect.right() + 1)
             if has_thumbnail:
                 self._draw_thumbnail_content(painter, opt, index)
             else:
