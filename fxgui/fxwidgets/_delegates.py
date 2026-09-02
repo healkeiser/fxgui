@@ -1617,6 +1617,21 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         )
 
         painter.fillPath(path, QBrush(fill_color))
+        # And stroke it, so the row's own 1px border does not stay
+        # visible around the fill. `_draw_background_and_border` draws
+        # that border along this same path in `bg_color.lighter(160)`,
+        # and a fill alone covers only the path's interior -- measured
+        # on a 30px row, the selection reached y+1..y+28 and left the
+        # card's border showing top and bottom. Most visible where the
+        # row carries a check box, which is what it reads as a border
+        # on: the box appeared to be outlined by the unselected colour.
+        # Width 2, not 1: a pen straddles the path, so a 1px stroke
+        # puts only half a pixel outside it and the border shows
+        # through as a blend -- measured, the row's top and bottom came
+        # back `#4a7398` against a `#61afef` fill. Two covers the
+        # border's pixel outright.
+        painter.setPen(QPen(fill_color, 2))
+        painter.drawPath(path)
         painter.restore()
 
     @staticmethod
