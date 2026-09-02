@@ -6,7 +6,15 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QMargins, QModelIndex, QRect, QRectF, QSize, Qt
+from qtpy.QtCore import (
+    QMargins,
+    QModelIndex,
+    QPointF,
+    QRect,
+    QRectF,
+    QSize,
+    Qt,
+)
 from qtpy.QtGui import (
     QBrush,
     QColor,
@@ -2159,14 +2167,26 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         option: QStyleOptionViewItem,
         rect: QRect,
     ) -> None:
-        """Paint a tickable row's check box the way the style paints one.
+        """Paint a tickable row's check box in the delegate's own palette.
 
-        The same call `QCommonStyle` makes for `CE_ItemViewItem`, with the
-        same state mapping, so a themed `QTreeView::indicator` stylesheet
-        rule reaches it. Before this the delegate painted no box at all,
-        and a tickable tree drawn through it showed its ticks nowhere --
-        while the base class's `editorEvent` went on toggling an invisible
-        one.
+        Drawn here rather than through the style's own
+        `PE_IndicatorItemViewItemCheck`, which was the first version of
+        this and looked wrong for two reasons. It fills a solid box in
+        the palette's Base colour, so on a row this delegate has already
+        painted a selection over, the box reads as a dark bar cut into
+        the highlight. And on Windows the native check glyph is drawn in
+        the OS accent colour, so a tick came out in whatever the artist
+        set their system accent to -- orange on a machine that had never
+        chosen it in this application -- rather than in the theme's own.
+        A flat box in the delegate's tokens answers both: it sits on the
+        selection instead of cutting a hole in it, and its colour is the
+        theme's rather than the desktop's.
+
+        The whole appearance is the delegate's, which is the same bargain
+        the rest of column 0 already strikes: a themed
+        `QTreeView::indicator` stylesheet rule no longer reaches it, and
+        in exchange the box matches the card, the border and the
+        selection this delegate draws around it.
 
         Args:
             painter: The painter to use.
@@ -2174,20 +2194,70 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             rect: Where the box goes, from `_check_rect`.
         """
 
-        check = QStyleOptionViewItem(option)
-        check.rect = rect
-        check.state = check.state & ~QStyle.State_HasFocus
-        if option.checkState == Qt.Checked:
-            check.state |= QStyle.State_On
-        elif option.checkState == Qt.PartiallyChecked:
-            check.state |= QStyle.State_NoChange
+        checked = option.checkState == Qt.Checked
+        partial = option.checkState == Qt.PartiallyChecked
+        selected = bool(option.state & QStyle.State_Selected)
+
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        box = QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5)
+        radius = 3.0
+        if checked or partial:
+            fill = (
+                QColor(self.theme.text_on_accent_primary)
+                if selected
+                else QColor(self.theme.accent_primary)
+            )
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(fill))
+            painter.drawRoundedRect(box, radius, radius)
+            mark = (
+                QColor(self.theme.accent_primary)
+                if selected
+                else QColor(self.theme.text_on_accent_primary)
+            )
+            pen = QPen(mark)
+            pen.setWidthF(1.6)
+            pen.setCapStyle(Qt.RoundCap)
+            pen.setJoinStyle(Qt.RoundJoin)
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            if partial:
+                mid_y = box.center().y()
+                painter.drawLine(
+                    QPointF(box.left() + box.width() * 0.28, mid_y),
+                    QPointF(box.right() - box.width() * 0.28, mid_y),
+                )
+            else:
+                # A tick as three points, in fractions of the box so it
+                # scales with whatever size the style hands back.
+                painter.drawPolyline(
+                    [
+                        QPointF(
+                            box.left() + box.width() * 0.26,
+                            box.top() + box.height() * 0.52,
+                        ),
+                        QPointF(
+                            box.left() + box.width() * 0.44,
+                            box.top() + box.height() * 0.70,
+                        ),
+                        QPointF(
+                            box.left() + box.width() * 0.76,
+                            box.top() + box.height() * 0.32,
+                        ),
+                    ]
+                )
         else:
-            check.state |= QStyle.State_Off
-        widget = option.widget
-        style = widget.style() if widget is not None else QApplication.style()
-        style.drawPrimitive(
-            QStyle.PE_IndicatorItemViewItemCheck, check, painter, widget
-        )
+            edge = (
+                QColor(self.theme.text_on_accent_primary)
+                if selected
+                else QColor(self.theme.border_light)
+            )
+            painter.setPen(QPen(edge, 1.2))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRoundedRect(box, radius, radius)
+        painter.restore()
 
     def _draw_icon_and_text(
         self,
