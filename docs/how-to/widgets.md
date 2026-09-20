@@ -164,7 +164,7 @@ focused widget sees the key.
 ## Your Own Item-Data Roles
 
 `FXThumbnailDelegate` reads its own item-data roles off the items it
-paints, and it claims `Qt.UserRole + 1` through `Qt.UserRole + 12`. A
+paints, and it claims `Qt.UserRole + 1` through `Qt.UserRole + 14`. A
 view that stamps roles of its own on the same items must derive them from
 the delegate's published ceiling rather than guess a margin past that
 range:

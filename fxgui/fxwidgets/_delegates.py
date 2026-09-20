@@ -349,8 +349,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         - `Qt.UserRole + 7` (`bool`): Whether to show the status dot.
         - `Qt.UserRole + 8` (`bool`): Whether to show the status label.
         - `Qt.UserRole + 9` (`QIcon`): Status label icon (displayed before text).
+        - `Qt.UserRole + 13` (`str`): The picker's current value.
+        - `Qt.UserRole + 14` (`Sequence[str]`): The picker's choices.
 
-        This delegate claims `Qt.UserRole + 1` through `Qt.UserRole + 12`.
+        This delegate claims `Qt.UserRole + 1` through `Qt.UserRole + 14`.
         A view that stamps roles of its own on the same items must derive
         them from `FIRST_FREE_ROLE` rather than guess a margin past that
         range.
