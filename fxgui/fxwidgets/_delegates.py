@@ -7,6 +7,7 @@ from typing import Dict, Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import (
+    QEvent,
     QMargins,
     QModelIndex,
     QPointF,
@@ -14,6 +15,7 @@ from qtpy.QtCore import (
     QRectF,
     QSize,
     Qt,
+    Signal,
 )
 from qtpy.QtGui import (
     QBrush,
@@ -28,6 +30,7 @@ from qtpy.QtGui import (
 )
 from qtpy.QtWidgets import (
     QApplication,
+    QMenu,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -438,6 +441,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     # Roles added to this delegate go BELOW this line and move it up, so
     # a consumer that derived from it is moved along with it.
     FIRST_FREE_ROLE = Qt.UserRole + 15
+
+    #: A viewer chose a value from a row's picker. The delegate writes
+    #: nothing: what a choice means belongs to whoever put the choices
+    #: there.
+    picked = Signal(QModelIndex, str)
 
     # Layout geometry, shared by the paint and sizeHint paths so that the
     # space reserved for an element and the space it paints in cannot drift
@@ -2226,6 +2234,39 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             rect.right() - self._PICKER_RIGHT_MARGIN - width,
         )
         return QRect(left, top, width, self._PICKER_HEIGHT)
+
+    def editorEvent(self, event, model, option, index) -> bool:
+        """Open a row's picker on a press inside its pill.
+
+        Everything else falls through to the base class, which is what
+        makes the painted check box a click toggles: this class had no
+        `editorEvent` before the picker, and the box depends on the
+        base's.
+        """
+        if event.type() == QEvent.Type.MouseButtonRelease:
+            rect = self._picker_rect(option, index)
+            if rect is not None and rect.contains(event.pos()):
+                self._open_picker(rect, index)
+                return True
+        return super().editorEvent(event, model, option, index)
+
+    def _open_picker(self, rect: QRect, index: QModelIndex) -> None:
+        """Pop a menu of this row's choices under its picker pill."""
+        menu = QMenu()
+        current = str(index.data(self.PICKER_TEXT_ROLE) or "")
+        for choice in index.data(self.PICKER_CHOICES_ROLE) or ():
+            action = menu.addAction(str(choice))
+            action.setCheckable(True)
+            action.setChecked(str(choice) == current)
+        # `exec_` first: on this binding, `exec` resolves to the real
+        # C++ method on the instance even after a test replaces it on
+        # the class, so preferring it here would make the popup
+        # unpatchable. `exec_` is absent only on bindings (PyQt6) that
+        # dropped it, where `exec` is the sole and real name anyway.
+        runner = getattr(menu, "exec_", None) or menu.exec
+        chosen = runner(rect.bottomLeft())
+        if chosen is not None:
+            self.picked.emit(index, chosen.text())
 
     def _check_width(
         self, option: QStyleOptionViewItem, index: QModelIndex

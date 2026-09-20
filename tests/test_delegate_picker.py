@@ -3,6 +3,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
+    QMenu,
     QStyleOptionViewItem,
     QTreeWidget,
     QTreeWidgetItem,
@@ -96,3 +97,42 @@ def test_the_hint_makes_room_for_the_pill(qtbot):
     ).width() > delegate.sizeHint(
         _option_for(plain, plain_index), plain_index
     ).width()
+
+
+def test_choosing_a_version_announces_it(qtbot, monkeypatch):
+    """The delegate reports the choice; it never writes it to the model."""
+
+    tree, delegate, item = _tree(qtbot, choices=["v001", "v002", "v003"])
+    index = tree.model().index(0, 1)
+
+    ran = []
+
+    def choose(self, *args, **kwargs):
+        ran.append(True)
+        return next(
+            action for action in self.actions() if action.text() == "v001"
+        )
+
+    monkeypatch.setattr(QMenu, "exec_", choose, raising=False)
+    monkeypatch.setattr(QMenu, "exec", choose, raising=False)
+
+    seen = []
+    delegate.picked.connect(lambda idx, value: seen.append((idx.row(), value)))
+    rect = delegate._picker_rect(_option_for(tree, index), index)
+    qtbot.mouseClick(tree.viewport(), Qt.LeftButton, pos=rect.center())
+
+    assert ran, "the patched exec method actually ran"
+    assert seen == [(0, "v001")]
+    assert item.text(1) == "v003"
+
+
+def test_a_click_outside_the_pill_announces_nothing(qtbot):
+    tree, delegate, _ = _tree(qtbot, choices=["v001", "v002", "v003"])
+    seen = []
+    delegate.picked.connect(lambda idx, value: seen.append(value))
+    qtbot.mouseClick(
+        tree.viewport(),
+        Qt.LeftButton,
+        pos=tree.visualRect(tree.model().index(0, 0)).center(),
+    )
+    assert seen == []
