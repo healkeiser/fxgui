@@ -1,7 +1,7 @@
 """A painted version picker: pixels, a menu, and a row that offers nothing."""
 
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QImage
+from qtpy.QtCore import QPoint, Qt
+from qtpy.QtGui import QFont, QImage
 from qtpy.QtWidgets import (
     QMenu,
     QStyleOptionViewItem,
@@ -75,8 +75,22 @@ def test_a_row_with_no_choices_paints_no_pill(qtbot):
     )
 
 
+def _raw_option_for(tree, index):
+    """The option the view really hands `editorEvent` and `sizeHint`.
+
+    Qt fills in the rect and the view's own font and stops there; it never
+    runs the delegate's `initStyleOption`, so no per-row `FontRole` reaches
+    this one.
+    """
+
+    option = QStyleOptionViewItem()
+    option.rect = tree.visualRect(index)
+    option.font = tree.font()
+    return option
+
+
 def _option_for(tree, index):
-    """The style option the view would hand the delegate for `index`."""
+    """The option `paint` works from: initialised, so `FontRole` applies."""
 
     option = QStyleOptionViewItem()
     option.rect = tree.visualRect(index)
@@ -136,3 +150,58 @@ def test_a_click_outside_the_pill_announces_nothing(qtbot):
         pos=tree.visualRect(tree.model().index(0, 0)).center(),
     )
     assert seen == []
+
+
+def test_the_drawn_pill_and_the_clickable_one_are_the_same_pill(qtbot):
+    """A row with its own font drew one pill and hit-tested another.
+
+    `paint` is handed an option run through `initStyleOption`, which is what
+    applies a row's `FontRole`. `sizeHint` and `editorEvent` are handed the
+    view's raw option, which is not. Measured against two fonts the same pill
+    lands in two places, and the gap is dead pixels that look clickable.
+    """
+
+    tree, delegate, item = _tree(qtbot, choices=["v001", "v002", "v003"])
+    big = QFont()
+    big.setPointSize(18)
+    big.setBold(True)
+    item.setData(1, Qt.ItemDataRole.FontRole, big)
+    index = tree.model().index(0, 1)
+
+    assert delegate._picker_rect(
+        _raw_option_for(tree, index), index
+    ) == delegate._picker_rect(_option_for(tree, index), index)
+
+
+def test_a_click_on_a_big_font_pill_opens_it(qtbot, monkeypatch):
+    """The same defect stated as the artist meets it: a click that misses."""
+
+    tree, delegate, item = _tree(qtbot, choices=["v001", "v002", "v003"])
+    big = QFont()
+    big.setPointSize(18)
+    big.setBold(True)
+    item.setData(1, Qt.ItemDataRole.FontRole, big)
+    index = tree.model().index(0, 1)
+
+    ran = []
+
+    def choose(self, *args, **kwargs):
+        ran.append(True)
+        return next(a for a in self.actions() if a.text() == "v001")
+
+    monkeypatch.setattr(QMenu, "exec_", choose, raising=False)
+    monkeypatch.setattr(QMenu, "exec", choose, raising=False)
+
+    seen = []
+    delegate.picked.connect(lambda idx, value: seen.append(value))
+
+    # Just inside the left edge of the pill the row actually paints.
+    drawn = delegate._picker_rect(_option_for(tree, index), index)
+    qtbot.mouseClick(
+        tree.viewport(),
+        Qt.LeftButton,
+        pos=QPoint(drawn.left() + 2, drawn.center().y()),
+    )
+
+    assert ran, "the patched exec method actually ran"
+    assert seen == ["v001"]

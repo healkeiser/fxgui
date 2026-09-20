@@ -2213,6 +2213,13 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         Answered from the model, so the paint path and the click path
         agree without either telling the other.
+
+        The option is re-initialised here rather than trusted, because the
+        three callers are not handed the same one: `paint` gets a copy run
+        through `initStyleOption`, while `sizeHint` and `editorEvent` get
+        the view's raw option, which never carries the row's `FontRole`.
+        Measuring the pill against two different fonts puts the drawn pill
+        and the clickable one in different places.
         """
         if index.column() != self._picker_column:
             return None
@@ -2220,7 +2227,9 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         if len(choices) < 2:
             return None
         text = str(index.data(self.PICKER_TEXT_ROLE) or "")
-        metrics = QFontMetrics(option.font)
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        metrics = QFontMetrics(opt.font)
         width = (
             metrics.horizontalAdvance(text)
             + self._PICKER_PADDING * 2
@@ -2236,7 +2245,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         return QRect(left, top, width, self._PICKER_HEIGHT)
 
     def editorEvent(self, event, model, option, index) -> bool:
-        """Open a row's picker on a press inside its pill.
+        """Open a row's picker on a click inside its pill.
 
         Everything else falls through to the base class, which is what
         makes the painted check box a click toggles: this class had no
