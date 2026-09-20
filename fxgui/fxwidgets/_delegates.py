@@ -2594,9 +2594,19 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         else:
             fixed_height = 30
 
-        # Only column 0 lays out a thumbnail, indicators and a description
+        # Only column 0 lays out a thumbnail, indicators and a
+        # description; another column lays out a picker or nothing
         if not is_col0:
-            return QSize(original_size.width(), fixed_height)
+            picker = self._picker_rect(option, index)
+            if picker is None:
+                return QSize(original_size.width(), fixed_height)
+            return QSize(
+                max(
+                    original_size.width(),
+                    picker.width() + self._PICKER_RIGHT_MARGIN * 2,
+                ),
+                fixed_height,
+            )
 
         show_thumbnail = self._show_thumbnail and (
             item_show_thumbnail is None or item_show_thumbnail

@@ -2,7 +2,11 @@
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage
-from qtpy.QtWidgets import QTreeWidget, QTreeWidgetItem
+from qtpy.QtWidgets import (
+    QStyleOptionViewItem,
+    QTreeWidget,
+    QTreeWidgetItem,
+)
 
 from fxgui.fxwidgets import FXThumbnailDelegate
 
@@ -68,3 +72,27 @@ def test_a_row_with_no_choices_paints_no_pill(qtbot):
     assert image.pixel(rect.right() - 2, rect.center().y()) == image.pixel(
         rect.right() - 2, rect.top() + 1
     )
+
+
+def _option_for(tree, index):
+    """The style option the view would hand the delegate for `index`."""
+
+    option = QStyleOptionViewItem()
+    option.rect = tree.visualRect(index)
+    option.font = tree.font()
+    tree.itemDelegate().initStyleOption(option, index)
+    return option
+
+
+def test_the_hint_makes_room_for_the_pill(qtbot):
+    """A cell sized to its contents must not clip the control it paints."""
+
+    picked, delegate, _ = _tree(qtbot, choices=["v001", "v002", "v003"])
+    plain, _, _ = _tree(qtbot, choices=[])
+    index = picked.model().index(0, 1)
+    plain_index = plain.model().index(0, 1)
+    assert delegate.sizeHint(
+        _option_for(picked, index), index
+    ).width() > delegate.sizeHint(
+        _option_for(plain, plain_index), plain_index
+    ).width()
