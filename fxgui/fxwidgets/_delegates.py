@@ -422,6 +422,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     CHILD_COUNT_VISIBLE_ROLE = Qt.UserRole + 10  # bool
     STARRED_ROLE = Qt.UserRole + 11  # bool
     STARRED_COLOR_ROLE = Qt.UserRole + 12  # QColor (default: gold)
+    PICKER_TEXT_ROLE = Qt.UserRole + 13  # str, the current value
+    PICKER_CHOICES_ROLE = Qt.UserRole + 14  # Sequence[str]
 
     # The first item-data role this delegate does NOT claim. Derive your
     # own roles from it rather than guessing a margin past the roles
@@ -435,7 +437,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     #
     # Roles added to this delegate go BELOW this line and move it up, so
     # a consumer that derived from it is moved along with it.
-    FIRST_FREE_ROLE = Qt.UserRole + 13
+    FIRST_FREE_ROLE = Qt.UserRole + 15
 
     # Layout geometry, shared by the paint and sizeHint paths so that the
     # space reserved for an element and the space it paints in cannot drift
@@ -471,6 +473,15 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     _CHILD_COUNT_MARGIN = 4
     _CHILD_COUNT_MIN_WIDTH = 18
 
+    # The picker pill: a value and a chevron in one column's cell,
+    # anchored to its right edge the way the indicators are anchored to
+    # column 0's
+    _PICKER_HEIGHT = 16
+    _PICKER_PADDING = 6
+    _PICKER_CHEVRON = 8
+    _PICKER_SPACING = 4
+    _PICKER_RIGHT_MARGIN = 4
+
     # Stylesheet constant is no longer used - apply_transparent_selection
     # now sets the stylesheet directly on the widget
     TRANSPARENT_SELECTION_STYLE = ""
@@ -488,6 +499,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         self._show_status_label = True
         self._show_child_count = True
         self._show_starred = True
+        # Which column paints a version picker, or -1 for none. One
+        # column for the whole view rather than a per-row role: it is
+        # the same column on every row, and a per-row answer is only a
+        # way to disagree with itself.
+        self._picker_column = -1
 
     def _on_theme_changed(self, _theme_name: str = None) -> None:
         """Handle theme change by triggering a repaint of the parent view."""
@@ -509,6 +525,15 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     def show_thumbnail(self, value: bool) -> None:
         """Set whether thumbnails are shown globally."""
         self._show_thumbnail = value
+
+    @property
+    def picker_column(self) -> int:
+        """Which column paints a picker, or -1 where none does."""
+        return self._picker_column
+
+    @picker_column.setter
+    def picker_column(self, column: int) -> None:
+        self._picker_column = column
 
     @property
     def show_status_dot(self) -> bool:
@@ -2173,6 +2198,35 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             QStyle.SE_ItemViewItemCheckIndicator, option, widget
         )
 
+    def _picker_rect(
+        self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> Optional[QRect]:
+        """Where this row's picker pill sits, or None where it has none.
+
+        Answered from the model, so the paint path and the click path
+        agree without either telling the other.
+        """
+        if index.column() != self._picker_column:
+            return None
+        choices = index.data(self.PICKER_CHOICES_ROLE) or ()
+        if len(choices) < 2:
+            return None
+        text = str(index.data(self.PICKER_TEXT_ROLE) or "")
+        metrics = QFontMetrics(option.font)
+        width = (
+            metrics.horizontalAdvance(text)
+            + self._PICKER_PADDING * 2
+            + self._PICKER_SPACING
+            + self._PICKER_CHEVRON
+        )
+        rect = option.rect
+        top = rect.top() + (rect.height() - self._PICKER_HEIGHT) // 2
+        left = max(
+            rect.left(),
+            rect.right() - self._PICKER_RIGHT_MARGIN - width,
+        )
+        return QRect(left, top, width, self._PICKER_HEIGHT)
+
     def _check_width(
         self, option: QStyleOptionViewItem, index: QModelIndex
     ) -> int:
@@ -2446,6 +2500,54 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 text_rect, Qt.AlignLeft | Qt.AlignVCenter, str(text)
             )
 
+    def _draw_picker(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        rect: QRect,
+        index: QModelIndex,
+    ) -> None:
+        """Draw a row's picker pill: a value and a chevron in one control.
+
+        Colours come from the theme, the same three `_draw_child_count`
+        reads, so the pill and the child-count badge share one style.
+        """
+        from qtpy.QtGui import QPolygonF
+
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        painter.setPen(QPen(QColor(self.theme.border_light), 1))
+        painter.setBrush(QBrush(QColor(self.theme.surface)))
+        painter.drawRoundedRect(QRectF(rect), 3, 3)
+
+        chevron_left = (
+            rect.right() - self._PICKER_PADDING - self._PICKER_CHEVRON
+        )
+        text_rect = QRect(
+            rect.left() + self._PICKER_PADDING,
+            rect.top(),
+            chevron_left
+            - self._PICKER_SPACING
+            - (rect.left() + self._PICKER_PADDING),
+            rect.height(),
+        )
+        text_color = QColor(self.theme.text_muted)
+        painter.setPen(text_color)
+        painter.setFont(option.font)
+        text = str(index.data(self.PICKER_TEXT_ROLE) or "")
+        painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, text)
+
+        cy = rect.center().y()
+        chevron = self._PICKER_CHEVRON
+        points = [
+            QPointF(chevron_left, cy - chevron / 4),
+            QPointF(chevron_left + chevron, cy - chevron / 4),
+            QPointF(chevron_left + chevron / 2, cy + chevron / 4),
+        ]
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(text_color)
+        painter.drawPolygon(QPolygonF(points))
+
     def sizeHint(
         self,
         option: QStyleOptionViewItem,
@@ -2657,7 +2759,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                             painter, opt.rect, child_count
                         )
         else:
-            self._draw_text(painter, opt, index)
+            picker = self._picker_rect(opt, index)
+            if picker is None:
+                self._draw_text(painter, opt, index)
+            else:
+                self._draw_picker(painter, opt, picker, index)
 
         painter.restore()
 
