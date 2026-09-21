@@ -205,3 +205,36 @@ def test_a_click_on_a_big_font_pill_opens_it(qtbot, monkeypatch):
 
     assert ran, "the patched exec method actually ran"
     assert seen == ["v001"]
+
+
+def _ink_right_edge(tree, rect, background) -> int:
+    """The rightmost column inside `rect` painting something over the row."""
+
+    image: QImage = tree.viewport().grab().toImage()
+    for x in range(rect.right(), rect.left() - 1, -1):
+        if any(
+            image.pixel(x, y) != background
+            for y in range(rect.top() + 2, rect.bottom() - 1)
+        ):
+            return x
+    return -1
+
+
+def test_a_row_with_nothing_to_offer_lines_up_with_the_pills(qtbot):
+    """A column that mixes pills and plain values keeps the values in line.
+
+    The pill is anchored to the cell's right edge, so a left-aligned plain
+    value on a row with only one version stepped back to the left and broke
+    the column. The tolerance is one glyph's worth of side bearing: the
+    measurement is painted ink and the target is a layout edge.
+    """
+
+    plain, delegate, _ = _tree(qtbot, choices=["v001"])
+    index = plain.model().index(0, 1)
+    cell = plain.visualRect(index)
+    shot: QImage = plain.viewport().grab().toImage()
+
+    edge = _ink_right_edge(plain, cell, shot.pixel(cell.left() + 2, cell.top() + 1))
+    expected = cell.right() - delegate._picker_text_inset()
+    assert edge != -1, "the plain value painted nothing"
+    assert abs(edge - expected) <= 8, (edge, expected)

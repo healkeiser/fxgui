@@ -2208,6 +2208,22 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             QStyle.SE_ItemViewItemCheckIndicator, option, widget
         )
 
+    def _picker_text_inset(self) -> int:
+        """How far a picker value's right edge sits from the cell's right.
+
+        A pill's own value ends here whatever the value is wide, because
+        everything right of it is fixed: the padding, the chevron and the
+        margins around them. Plain text in the same column uses it to land
+        on the same line.
+        """
+
+        return (
+            self._PICKER_RIGHT_MARGIN
+            + self._PICKER_PADDING
+            + self._PICKER_SPACING
+            + self._PICKER_CHEVRON
+        )
+
     def _picker_rect(
         self, option: QStyleOptionViewItem, index: QModelIndex
     ) -> Optional[QRect]:
@@ -2542,15 +2558,23 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 text_color = option.palette.text().color()
             painter.setPen(text_color)
             painter.setFont(option.font)
+            alignment = Qt.AlignLeft | Qt.AlignVCenter
+            right_inset = icon_margin
+            if index.column() == self._picker_column:
+                # The picker column paints a pill on the rows that have
+                # versions to offer and plain text on the rows that do
+                # not. Both end here, so the values line up down the
+                # column instead of stepping left wherever a row has
+                # nothing to choose from.
+                alignment = Qt.AlignRight | Qt.AlignVCenter
+                right_inset = self._picker_text_inset()
             text_rect = QRect(
                 text_x,
                 option.rect.top(),
-                option.rect.right() - text_x - icon_margin,
+                option.rect.right() - text_x - right_inset,
                 option.rect.height(),
             )
-            painter.drawText(
-                text_rect, Qt.AlignLeft | Qt.AlignVCenter, str(text)
-            )
+            painter.drawText(text_rect, alignment, str(text))
 
     def _draw_picker(
         self,
