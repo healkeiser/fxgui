@@ -429,6 +429,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     STARRED_COLOR_ROLE = Qt.UserRole + 12  # QColor (default: gold)
     PICKER_TEXT_ROLE = Qt.UserRole + 13  # str, the current value
     PICKER_CHOICES_ROLE = Qt.UserRole + 14  # Sequence[str]
+    # Mapping[str, str]: a choice listed but not pickable, to its reason.
+    PICKER_UNAVAILABLE_ROLE = Qt.UserRole + 15
 
     # The first item-data role this delegate does NOT claim. Derive your
     # own roles from it rather than guessing a margin past the roles
@@ -442,7 +444,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     #
     # Roles added to this delegate go BELOW this line and move it up, so
     # a consumer that derived from it is moved along with it.
-    FIRST_FREE_ROLE = Qt.UserRole + 15
+    FIRST_FREE_ROLE = Qt.UserRole + 16
 
     #: A viewer chose a value from a row's picker. The delegate writes
     #: nothing: what a choice means belongs to whoever put the choices
@@ -2281,10 +2283,15 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         """Pop a menu of this row's choices under its picker pill."""
         menu = QMenu()
         current = str(index.data(self.PICKER_TEXT_ROLE) or "")
+        unavailable = index.data(self.PICKER_UNAVAILABLE_ROLE) or {}
         for choice in index.data(self.PICKER_CHOICES_ROLE) or ():
-            action = menu.addAction(str(choice))
+            reason = unavailable.get(str(choice))
+            # QMenu right-aligns what follows a tab, in the shortcut column.
+            label = f"{choice}\t{reason}" if reason else str(choice)
+            action = menu.addAction(label)
             action.setCheckable(True)
             action.setChecked(str(choice) == current)
+            action.setEnabled(not reason)
         # `exec_` first: on this binding, `exec` resolves to the real
         # C++ method on the instance even after a test replaces it on
         # the class, so preferring it here would make the popup

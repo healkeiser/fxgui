@@ -140,6 +140,57 @@ def test_choosing_a_version_announces_it(qtbot, monkeypatch):
     assert item.text(1) == "v003"
 
 
+def _opened_menu(qtbot, monkeypatch, *, choices, unavailable):
+    """Each shown action's text and enabled state, read while the menu lives."""
+
+    tree, delegate, item = _tree(qtbot, choices=choices)
+    item.setData(1, FXThumbnailDelegate.PICKER_UNAVAILABLE_ROLE, unavailable)
+    index = tree.model().index(0, 1)
+    shown = []
+
+    def capture(self, *args, **kwargs):
+        shown.extend((a.text(), a.isEnabled()) for a in self.actions())
+        return None
+
+    monkeypatch.setattr(QMenu, "exec_", capture, raising=False)
+    monkeypatch.setattr(QMenu, "exec", capture, raising=False)
+    rect = delegate._picker_rect(_option_for(tree, index), index)
+    qtbot.mouseClick(tree.viewport(), Qt.LeftButton, pos=rect.center())
+    return shown
+
+
+def test_an_unavailable_choice_is_shown_greyed_with_its_reason(
+    qtbot, monkeypatch
+):
+    shown = _opened_menu(
+        qtbot,
+        monkeypatch,
+        choices=["v001", "v002", "v003"],
+        unavailable={"v001": "no files on disk"},
+    )
+    assert shown == [
+        ("v001\tno files on disk", False),
+        ("v002", True),
+        ("v003", True),
+    ]
+
+
+def test_a_row_whose_other_choices_are_unavailable_still_paints_a_pill(
+    qtbot,
+):
+    """Two choices with one unavailable is still a menu worth opening: it
+    says why the other version cannot be picked."""
+
+    tree, delegate, item = _tree(qtbot, choices=["v001", "v003"])
+    item.setData(
+        1,
+        FXThumbnailDelegate.PICKER_UNAVAILABLE_ROLE,
+        {"v001": "no files on disk"},
+    )
+    index = tree.model().index(0, 1)
+    assert delegate._picker_rect(_option_for(tree, index), index) is not None
+
+
 def test_a_click_outside_the_pill_announces_nothing(qtbot):
     tree, delegate, _ = _tree(qtbot, choices=["v001", "v002", "v003"])
     seen = []

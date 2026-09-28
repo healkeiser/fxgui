@@ -99,7 +99,7 @@ def test_the_fallback_keeps_the_size_and_colour_asked_for(qtbot, qapp):
 
 
 def test_the_delegates_role_ceiling_is_published(qtbot, qapp):
-    assert FXThumbnailDelegate.FIRST_FREE_ROLE == Qt.UserRole + 15
+    assert FXThumbnailDelegate.FIRST_FREE_ROLE == Qt.UserRole + 16
 
 
 def test_the_ceiling_is_clear_of_every_role_the_delegate_claims(
