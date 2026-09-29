@@ -25,7 +25,7 @@ from qtpy.QtWidgets import (
 from fxgui.fxwidgets import FXThumbnailDelegate
 
 
-def _tree(qtbot, *, checkable: bool):
+def _tree(qtbot, *, checkable: bool, title: str = "Beauty"):
     """A one-row tree drawn through the delegate, ticked or not tickable."""
 
     tree = QTreeWidget()
@@ -37,7 +37,7 @@ def _tree(qtbot, *, checkable: bool):
     delegate = FXThumbnailDelegate()
     delegate.show_thumbnail = False
     tree.setItemDelegate(delegate)
-    item = QTreeWidgetItem(tree, ["Beauty"])
+    item = QTreeWidgetItem(tree, [title])
     if checkable:
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Unchecked)
@@ -75,8 +75,10 @@ def test_a_tickable_row_paints_its_box(qtbot):
     row holds only what the row paints there, which is the background
     and its edge."""
 
-    ticked_tree, _, _ = _tree(qtbot, checkable=True)
-    plain_tree, _, _ = _tree(qtbot, checkable=False)
+    # No titles: an untickable row draws its title where the box would be,
+    # and a real font's antialiased glyphs outnumber the box's colours.
+    ticked_tree, _, _ = _tree(qtbot, checkable=True, title="")
+    plain_tree, _, _ = _tree(qtbot, checkable=False, title="")
     index = ticked_tree.model().index(0, 0)
     rect = _check_rect(ticked_tree, index)
     assert rect.isValid() and rect.width() > 4

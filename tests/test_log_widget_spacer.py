@@ -42,6 +42,9 @@ def test_a_hidden_clear_button_takes_its_spacer_with_it(qtbot, qapp):
     pane = _shown(qtbot, clear=False)
 
     pane._show_search()
+    # Qt lays out on a posted event; read geometry before it and the
+    # buttons sit where the last layout left them, which the font decides.
+    qapp.processEvents()
 
     assert not pane.log_spacer.isVisible()
     assert (
