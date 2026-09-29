@@ -104,6 +104,7 @@ Constants:
     STYLE_FILE: Path to the default QSS stylesheet.
     DEFAULT_COLOR_FILE: Path to the default color configuration.
     TITLE_PROPERTY: Dynamic property name selecting the title font role.
+    BUTTON_RADIUS: Corner radius of a push button, in pixels.
 
 Examples:
     Loading a stylesheet with a theme:
@@ -445,6 +446,7 @@ __all__ = [
     "STYLE_FILE",
     "DEFAULT_COLOR_FILE",
     "TITLE_PROPERTY",
+    "BUTTON_RADIUS",
     # Color configuration
     "colors",
     "get_colors",
@@ -497,6 +499,10 @@ _DEFAULT_THEME = "dark"
 # Dynamic property routing a widget to the title font role. Set it
 # through mark_as_title() rather than by hand.
 TITLE_PROPERTY = "fxTitle"
+
+# Styles QPushButton through @button_radius; widgets that draw a button
+# shape of their own read it here.
+BUTTON_RADIUS = 4
 
 # CSS generic keywords rather than family names: emitted unquoted, never
 # looked up in the font database, and terminal, so nothing is appended
@@ -1231,6 +1237,8 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     # Qt actually has so the sheet never names one it cannot honour.
     for role, entries in _font_config(theme_name).items():
         tokens[f"@font_{role}"] = _resolve_font_stack(entries)
+
+    tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
 
     # Icon folder path used by url(~icons/...) in QSS, chosen by the
     # target theme's surface lightness (not the globally current theme).

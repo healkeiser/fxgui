@@ -1,4 +1,4 @@
-"""FXIconButton is round; FXJoinedGroup draws its children as one pill."""
+"""FXIconButton is round; FXJoinedGroup draws its children in one outline."""
 
 import pytest
 from qtpy.QtCore import QPoint, QSize, Qt
@@ -154,7 +154,7 @@ def test_the_group_draws_one_outline_and_a_divider(qtbot, window):
     assert _near(_pixel(window, group, 0, 0), tokens["@surface"])
 
 
-def test_a_primary_keeps_its_fill_clipped_to_the_pill(qtbot, window):
+def test_a_primary_keeps_its_fill_clipped_to_the_outline(qtbot, window):
     group, combo, button = _group(
         qtbot, window, lambda p: FXPrimaryButton("Post", p))
     tokens = fxstyle._token_map("dark")
@@ -163,11 +163,29 @@ def test_a_primary_keeps_its_fill_clipped_to_the_pill(qtbot, window):
     assert _near(_pixel(window, group, button.x() + 4, mid), fill)
     assert _near(_pixel(window, group, group.width() - 6, mid), fill)
     assert not _near(_pixel(window, group, combo.x() + 6, mid), fill, 40)
-    # The outer corner lies outside the pill, so shows the window behind.
+    # The outer corner lies outside the outline, so shows the window behind.
     assert _near(_pixel(window, group, group.width() - 1, 0),
                  tokens["@surface"])
     # The inner side is square: the fill reaches the top next to the divider.
     assert _near(_pixel(window, group, button.x() + 2, 2), fill)
+
+
+def test_the_outline_has_the_push_button_corner(qtbot, window):
+    group, combo, button = _group(
+        qtbot, window, lambda p: FXPrimaryButton("Post", p))
+    plain = QPushButton("Cancel", window)
+    plain.setFixedHeight(group.height())
+    window.layout().insertWidget(0, plain)
+    QApplication.processEvents()
+    tokens = fxstyle._token_map("dark")
+    # 2 px in from the corner is inside a 4 px radius; a pill leaves it out.
+    assert _near(_pixel(window, group, group.width() - 3, 2),
+                 tokens["@primary_button"])
+    image = window.grab().toImage()
+    for x in range(5):
+        for y in range(5):
+            at, ref = (w.mapTo(window, QPoint(x, y)) for w in (group, plain))
+            assert _near(image.pixelColor(at), image.pixelColor(ref), 4), (x, y)
 
 
 def test_keyboard_focus_on_a_child_lights_the_outline(qtbot, window):

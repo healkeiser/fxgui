@@ -680,7 +680,7 @@ QPushButton
     padding-bottom: 5px;
     padding-left: 10px;
     padding-right: 10px;
-    border-radius: 4px;
+    border-radius: @button_radius;
     outline: none;
 }
 

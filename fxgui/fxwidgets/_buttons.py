@@ -205,14 +205,14 @@ def _each_state(selectors: str, body: str) -> str:
 
 
 # Children lose their own border in every state, or the theme's :hover and
-# :focus rules would draw one inside the pill.
-# Radii under half the height: Qt draws square corners at exactly half.
-_R = _JOINED_HEIGHT // 2 - 2
+# :focus rules would draw one inside the outline.
+# The end children sit 1 px inside the frame, so their radius is 1 px less.
+_R = fxstyle.BUTTON_RADIUS - 1
 fxstyle.register_widget_style(
     f"""
 FXJoinedGroup {{
     border: 1px solid @border_light;
-    border-radius: {_JOINED_HEIGHT // 2 - 1}px;
+    border-radius: @button_radius;
     background-color: transparent;
     padding: 0px;
 }}
@@ -268,7 +268,7 @@ FXJoinedGroup > QPushButton[fxRole="primary"]:disabled {
 
 
 class FXJoinedGroup(QFrame):
-    """Widgets side by side in one pill outline, with a divider between.
+    """Widgets side by side in one button outline, with a divider between.
 
     A child with keyboard focus lights the whole outline in the accent.
 
