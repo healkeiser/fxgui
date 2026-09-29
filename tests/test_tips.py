@@ -467,3 +467,42 @@ def test_every_migrated_tooltip_kept_its_wording(qtbot):
                 missing.append(f"{name}: {title!r} / {body!r}")
 
     assert missing == []
+
+
+# ' Accessible names
+
+
+def test_a_tip_names_the_control_for_a_screen_reader(qtbot):
+    button = QPushButton()
+    qtbot.addWidget(button)
+
+    _tips.apply_tip(button, "Attach", "Add files to the comment")
+
+    assert button.accessibleName() == "Attach"
+    assert button.accessibleDescription() == "Add files to the comment"
+
+
+def test_a_tip_keeps_a_name_the_caller_chose(qtbot):
+    button = QPushButton()
+    qtbot.addWidget(button)
+    button.setAccessibleName("Attach files")
+
+    _tips.apply_tip(button, "Attach")
+
+    assert button.accessibleName() == "Attach files"
+
+
+def test_icon_only_buttons_carry_a_name(qtbot):
+    from fxgui.fxwidgets import FXEmojiButton, FXEmojiPicker, FXIconButton
+
+    icon = FXIconButton("attach_file", tip="Attach")
+    emoji = FXEmojiButton()
+    picker = FXEmojiPicker()
+    for widget in (icon, emoji, picker):
+        qtbot.addWidget(widget)
+
+    assert icon.accessibleName() == "Attach"
+    assert emoji.accessibleName() == "Insert an emoji"
+    assert all(button.accessibleName() for button in picker.buttons())
+    assert picker.buttons()[0].accessibleName() != picker.buttons()[0].text()
+

@@ -179,6 +179,16 @@ def apply_tip(
     if hasattr(widget, "setStatusTip"):
         widget.setStatusTip(plain)
 
+    # A screen reader reads the accessible name, never the HTML tooltip.
+    if title and hasattr(widget, "setAccessibleName") and not (
+        widget.accessibleName()
+    ):
+        widget.setAccessibleName(title)
+    if body and hasattr(widget, "setAccessibleDescription") and not (
+        widget.accessibleDescription()
+    ):
+        widget.setAccessibleDescription(body)
+
 
 def example() -> None:
     """Show a window whose controls carry native rich tooltips."""

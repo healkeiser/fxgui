@@ -147,6 +147,7 @@ class FXEmojiPicker(QFrame):
             button = QToolButton(self)
             button.setText(emoji)
             button.setToolTip(_emoji_name(emoji))
+            button.setAccessibleName(_emoji_name(emoji))
             button.setFont(font)
             button.setAutoRaise(True)
             button.setFixedSize(QSize(_CELL, _CELL))
@@ -263,6 +264,7 @@ class FXEmojiButton(QToolButton):
         self.emoji_picked.connect(self._insert)
         self.setAutoRaise(True)
         self.setToolTip("Insert an emoji")
+        self.setAccessibleName("Insert an emoji")
         fxicons.set_icon(self, "add_reaction", fallback="mood")
         self.clicked.connect(self.open_picker)
 
