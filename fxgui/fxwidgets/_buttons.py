@@ -49,19 +49,35 @@ class FXPrimaryButton(fxstyle.FXThemeAware, QPushButton):
         super().__init__(text or "", parent)
         self._icon_name = icon
         self.setProperty("fxRole", "primary")
+        self.pressed.connect(self._on_theme_changed)
+        self.released.connect(self._on_theme_changed)
+        self._on_theme_changed()
+
+    def enterEvent(self, event) -> None:
+        """Draw the icon in the hover fill's ink."""
+        super().enterEvent(event)
+        self._on_theme_changed()
+
+    def leaveEvent(self, event) -> None:
+        """Draw the icon in the resting fill's ink."""
+        super().leaveEvent(event)
         self._on_theme_changed()
 
     def _on_theme_changed(self) -> None:
         # Not fxicons.set_icon: its refresh recolours to the plain icon
-        # colour, which vanishes on the accent in most themes.
-        if self._icon_name:
-            self.setIcon(
-                fxicons.get_icon(
-                    self._icon_name,
-                    color=fxstyle.get_icon_on_accent_primary(),
-                    include_active=False,
-                )
-            )
+        # colour, which vanishes on the accent in most themes. Qt has no
+        # icon mode for a hovered push button, so the ink follows the state.
+        if not self._icon_name:
+            return
+        hovered = self.underMouse() and not self.isDown()
+        ink = (
+            fxstyle.get_icon_on_accent_secondary()
+            if hovered
+            else fxstyle.get_icon_on_accent_primary()
+        )
+        self.setIcon(
+            fxicons.get_icon(self._icon_name, color=ink, include_active=False)
+        )
 
 
 fxstyle.register_widget_style("""

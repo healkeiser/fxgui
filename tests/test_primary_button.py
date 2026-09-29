@@ -1,7 +1,7 @@
 """FXPrimaryButton: the main action of a form, on the accent, in every theme."""
 
 import pytest
-from qtpy.QtCore import QPoint, QRect
+from qtpy.QtCore import QPoint, QRect, Qt
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
 
@@ -217,3 +217,38 @@ def test_a_hovered_press_draws_the_text_its_fill_was_tuned_for(
     ]
     assert any(c.lightness() > 230 for c in inks)
     assert not any(c.lightness() < 25 for c in inks)
+
+
+def _icon_inks(button) -> set:
+    image = button.icon().pixmap(16, 16).toImage()
+    return {
+        image.pixelColor(x, y).name()
+        for x in range(image.width()) for y in range(image.height())
+        if image.pixelColor(x, y).alpha() == 255
+    }
+
+
+def test_the_icon_takes_the_ink_of_each_state_fill(qtbot, qapp, monkeypatch):
+    colors = fxstyle.get_colors()
+    split = dict(colors["themes"]["dark"])
+    split.update({
+        "icon_on_accent_primary": "#ffffff",
+        "icon_on_accent_secondary": "#000000",
+    })
+    patched = dict(colors, themes={**colors["themes"], "split": split})
+    monkeypatch.setattr(fxstyle, "get_colors", lambda: patched)
+    window, button = _window_with_button(qtbot, "split", icon="send")
+    centre = QPoint(button.width() // 2, button.height() // 2)
+
+    qtbot.mouseMove(window, QPoint(1, 1))
+    qtbot.waitUntil(lambda: not button.underMouse())
+    assert _icon_inks(button) == {"#ffffff"}
+    qtbot.mouseMove(button, centre)
+    qtbot.waitUntil(button.underMouse)
+    qtbot.waitUntil(lambda: _icon_inks(button) == {"#000000"})
+    qtbot.mousePress(button, Qt.MouseButton.LeftButton, pos=centre)
+    assert _icon_inks(button) == {"#ffffff"}
+    qtbot.mouseRelease(button, Qt.MouseButton.LeftButton, pos=centre)
+    assert _icon_inks(button) == {"#000000"}
+    qtbot.mouseMove(window, QPoint(1, 1))
+    qtbot.waitUntil(lambda: _icon_inks(button) == {"#ffffff"})
