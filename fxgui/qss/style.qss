@@ -284,7 +284,19 @@ QMenu
 
 QMenu::icon
 {
-    margin-left: 25px;
+    /* Qt centres the icon on the whole box but draws the :checked frame
+       inside the margins; near-even margins put both in one place. */
+    margin-left: 12px;
+    margin-right: 13px;
+}
+
+/* Qt draws a checkable action's icon instead of its check box, so the
+   icon carries the checked state. */
+QMenu::icon:checked
+{
+    background-color: @state_pressed;
+    border: 1px solid @accent_primary;
+    border-radius: 2px;
 }
 
 QMenu::item
@@ -316,6 +328,9 @@ QMenu::separator {
 QMenu::indicator {
     width: 18px;
     height: 18px;
+    /* Centres an 18 px box on the 16 px icon QMenu::icon places. */
+    position: relative;
+    left: 12px;
 }
 
 /* non-exclusive indicator = check box style indicator
