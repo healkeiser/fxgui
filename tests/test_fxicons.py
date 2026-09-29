@@ -8,8 +8,9 @@ Icons carry per-state pixmaps:
 - Selected  -> accent color (selected item rows)
 - Active    -> accent color (hovered rows, highlighted menu items)
 
-Qt also renders a *focused button*'s icon in Active mode, but buttons have no
-accent background, so `set_icon` strips Active for button widgets only.
+Qt also renders a *focused push button*'s icon in Active mode, with no accent
+behind it, so `set_icon` strips Active for push buttons. A hovered tool
+button sits on the secondary accent and keeps it.
 """
 
 from qtpy.QtGui import QIcon
@@ -61,12 +62,27 @@ def test_button_icon_drops_active_recolor(qtbot):
     assert _active_matches_normal(icon)
 
 
-def test_toolbutton_icon_drops_active_recolor(qtbot):
-    """QToolButton hover also triggers Active mode; it must be stripped too."""
+def test_toolbutton_icon_keeps_the_accent_recolor(qtbot):
+    """A QToolButton hovers on the secondary accent, like a highlighted menu
+    item, so its hovered icon wears the colour made for that accent."""
+    from fxgui import fxstyle
+
     button = QToolButton()
     qtbot.addWidget(button)
     fxicons.set_icon(button, "check", width=48, height=48)
-    assert _active_matches_normal(button.icon())
+    assert not _active_matches_normal(button.icon())
+    assert _ink(button.icon(), QIcon.Active) == (
+        fxstyle.get_icon_on_accent_secondary().lower())
+
+
+def _ink(icon: QIcon, mode) -> str:
+    image = _img(icon, mode)
+    for x in range(image.width()):
+        for y in range(image.height()):
+            colour = image.pixelColor(x, y)
+            if colour.alpha() == 255:
+                return colour.name().lower()
+    return ""
 
 
 def test_menu_action_keeps_active_recolor(qapp):

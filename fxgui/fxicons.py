@@ -987,14 +987,17 @@ def refresh_all_icons() -> None:
 
 
 def _icon_for_widget(widget: Any, icon_name: str, kwargs: Dict) -> QIcon:
-    """Build the icon for a widget, omitting the Active recolor for buttons.
+    """Build the icon for a widget, omitting the Active recolor for push buttons.
 
-    Qt renders a focused QPushButton / hovered QToolButton icon in Active mode.
-    Buttons have no accent background, so the accent-colored Active pixmap would
-    clash; build those icons without it. Menus (QAction), item-view rows, and
-    everything else keep Active for their accent-background highlight.
+    Qt renders a focused QPushButton icon in Active mode over no accent
+    background, so the accent-colored Active pixmap would clash; build those
+    without it. A hovered QToolButton sits on the secondary accent, as do
+    menus (QAction), item-view rows and everything else, so they keep it.
     """
-    from qtpy.QtWidgets import QAbstractButton
+    from qtpy.QtWidgets import QAbstractButton, QToolButton
 
-    include_active = not isinstance(widget, QAbstractButton)
+    include_active = (
+        not isinstance(widget, QAbstractButton)
+        or isinstance(widget, QToolButton)
+    )
     return get_icon(icon_name, include_active=include_active, **kwargs)

@@ -1346,16 +1346,19 @@ QToolButton[popupMode="2"] { /* only for InstantPopup */
  border: 1px transparent @border_light;
 }
 
+/* The secondary accent, as a hovered item row: the icon's hover colour is
+   made for it, so no theme can draw the icon in the background's own. */
 QToolButton:hover,
 QToolButton::menu-button:hover {
-    background-color: transparent;
+    background-color: @accent_secondary;
     border: 1px solid @accent_primary;
+    color: @text_on_accent_secondary;
 }
 
 QToolButton[popupMode="1"]:hover {
     border: 1px solid @accent_primary;
-    background-color: @state_hover;
-    color: @text;
+    background-color: @accent_secondary;
+    color: @text_on_accent_secondary;
 }
 
 QToolButton:checked,
