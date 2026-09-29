@@ -30,6 +30,8 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
         fxconfig, "SETTINGS_FILE", tmp_path / "fxgui" / "settings.ini"
     )
     monkeypatch.setattr(fxconfig, "_settings_instance", None)
+    # Widget modules register their fragments at import; keep those.
+    fragments = dict(fxstyle._widget_fragments)
 
     yield
 
@@ -38,4 +40,5 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     fxstyle._theme_namespace = None
     fxstyle._standard_icon_map = None
     fxstyle._widget_fragments.clear()
+    fxstyle._widget_fragments.update(fragments)
     fxstyle._themed_roots = type(fxstyle._themed_roots)()

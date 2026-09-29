@@ -65,6 +65,7 @@ from pathlib import Path
 
 # Third-party
 from qtpy.QtWidgets import (
+    QComboBox,
     QDockWidget,
     QFormLayout,
     QVBoxLayout,
@@ -1172,6 +1173,38 @@ def _create_widgets_tab() -> QWidget:
     comment_layout.addWidget(fxwidgets.FXPrimaryButton("Post", icon="send"))
     comment_section.set_content_layout(comment_layout)
     layout.addWidget(comment_section)
+
+    # Composer toolbar: round icon buttons, a joined status + post pill
+    composer_section = fxwidgets.FXCollapsibleWidget(
+        title="FXIconButton / FXJoinedGroup",
+        icon="edit_note",
+        animation_duration=200,
+    )
+    composer_layout = QHBoxLayout()
+    for icon_name, tip_text in (
+        ("mood", "Insert an emoji"),
+        ("attach_file", "Attach a file"),
+        ("checklist", "Add a checklist"),
+    ):
+        composer_layout.addWidget(
+            fxwidgets.FXIconButton(icon_name, tip=tip_text))
+    composer_layout.addWidget(
+        fxwidgets.FXIconButton(
+            "visibility_off",
+            tip="Show to the client",
+            checkable=True,
+            checked_icon="visibility",
+        )
+    )
+    composer_layout.addStretch()
+    joined = fxwidgets.FXJoinedGroup()
+    status_combo = QComboBox()
+    status_combo.addItems(["WIP", "Retake", "Done"])
+    joined.add_widget(status_combo)
+    joined.add_widget(fxwidgets.FXPrimaryButton("Post"))
+    composer_layout.addWidget(joined)
+    composer_section.set_content_layout(composer_layout)
+    layout.addWidget(composer_section)
 
     layout.addStretch()
     scroll_area.setWidget(scroll_content)

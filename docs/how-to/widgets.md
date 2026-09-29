@@ -95,7 +95,9 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXEmojiPicker` | Popup grid of emoji, keyboard navigable |
 | `FXFilePathWidget` | File/folder path input with browse button |
 | `FXFloatingDialog` | Styled floating dialog |
+| `FXIconButton` | Round icon button; checkable, filled with the accent when checked |
 | `FXIconLineEdit` | Line edit with icon support |
+| `FXJoinedGroup` | Widgets side by side in one pill outline, such as a status and a Post button |
 | `FXLoadingSpinner` | Animated loading spinner |
 | `FXLoadingOverlay` | Loading overlay for widgets |
 | `FXMainWindow` | Main window with toolbar, status bar, and theme toggle |

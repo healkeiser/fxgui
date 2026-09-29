@@ -14,7 +14,11 @@ from fxgui.fxwidgets._accordion import FXAccordion, FXAccordionSection
 from fxgui.fxwidgets._application import FXApplication
 from fxgui.fxwidgets._avatar import FXAvatar
 from fxgui.fxwidgets._breadcrumb import FXBreadcrumb
-from fxgui.fxwidgets._buttons import FXPrimaryButton
+from fxgui.fxwidgets._buttons import (
+    FXIconButton,
+    FXJoinedGroup,
+    FXPrimaryButton,
+)
 from fxgui.fxwidgets._code_block import FXCodeBlock
 from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 from fxgui.fxwidgets._constants import (
@@ -108,8 +112,10 @@ __all__ = [
     "FXFloatingDialog",
     "FXFuzzySearchList",
     "FXFuzzySearchTree",
+    "FXIconButton",
     "FXIconLineEdit",
     "FXItemDelegate",
+    "FXJoinedGroup",
     "FXLettersUnderscoreValidator",
     "FXLoadingOverlay",
     "FXLoadingSpinner",
