@@ -828,8 +828,10 @@ QPushButton[fxRole="primary"]:hover
     border-color: @primary_button_hover;
 }
 
+/* After :hover, so a hovered press draws the text its fill was tuned for. */
 QPushButton[fxRole="primary"]:pressed
 {
+    color: @text_on_accent_primary;
     background-color: @primary_button_pressed;
     border-color: @primary_button_pressed;
 }

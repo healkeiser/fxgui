@@ -143,19 +143,26 @@ class FXIconButton(fxstyle.FXThemeAware, QToolButton):
         self._on_theme_changed()
 
     def _on_theme_changed(self) -> None:
-        # Not fxicons.set_icon: a tool button's Active pixmap is drawn for
-        # the accent, and this one hovers on state_hover. Rendered at this
-        # widget's own ratio, which a second screen may raise.
+        # Not fxicons.set_icon: its Active pixmap is drawn for the accent,
+        # and unchecked this button hovers on state_hover. Active is how Qt
+        # draws a hovered tool button's icon. Rendered at this widget's own
+        # ratio, which a second screen may raise.
         side = self.iconSize().width()
         ratio = self.devicePixelRatioF()
         disabled = fxicons._get_disabled_icon_color()
+        plain = fxstyle.get_icon_color()
         icon = QIcon()
-        for name, state, color in (
-            (self._icon_name, QIcon.Off, fxstyle.get_icon_color()),
+        for name, state, rest, hover in (
+            (self._icon_name, QIcon.Off, plain, plain),
             (self._checked_icon_name, QIcon.On,
-             fxstyle.get_icon_on_accent_primary()),
+             fxstyle.get_icon_on_accent_primary(),
+             fxstyle.get_icon_on_accent_secondary()),
         ):
-            for mode, ink in ((QIcon.Normal, color), (QIcon.Disabled, disabled)):
+            for mode, ink in (
+                (QIcon.Normal, rest),
+                (QIcon.Active, hover),
+                (QIcon.Disabled, disabled),
+            ):
                 icon.addPixmap(
                     fxicons.get_pixmap(name, side, side, color=ink, dpr=ratio),
                     mode,

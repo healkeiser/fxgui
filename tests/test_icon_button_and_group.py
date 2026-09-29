@@ -267,3 +267,32 @@ def test_the_icon_button_renders_at_its_own_pixel_ratio(qtbot, window,
         pixmap = icon.pixmap(QSize(16, 16), 2.0, icon.Mode.Normal, state)
         assert pixmap.size() == QSize(32, 32), state
     assert QSize(32, 32) in icon.availableSizes(icon.Mode.Normal)
+
+
+def test_a_hovered_checked_icon_takes_the_hover_ink(
+    qtbot, window, monkeypatch
+):
+    """Hovered, a checked button sits on the hover fill, which is tuned for
+    the secondary on-accent ink; Qt draws a hovered tool button's icon in
+    Active mode. A theme whose two inks differ tells the pixmaps apart."""
+    colors = fxstyle.get_colors()
+    split = dict(colors["themes"]["dark"])
+    split.update({
+        "icon_on_accent_primary": "#ffffff",
+        "icon_on_accent_secondary": "#000000",
+    })
+    patched = dict(colors, themes={**colors["themes"], "split": split})
+    monkeypatch.setattr(fxstyle, "get_colors", lambda: patched)
+    fxstyle.apply_theme("split")
+    button = FXIconButton("visibility_off", window, checkable=True,
+                          checked_icon="visibility")
+    icon = button.icon()
+    for state, token in ((icon.State.On, "@icon_on_accent_secondary"),
+                         (icon.State.Off, "@icon")):
+        image = icon.pixmap(16, 16, icon.Mode.Active, state).toImage()
+        inks = {
+            image.pixelColor(x, y).name()
+            for x in range(image.width()) for y in range(image.height())
+            if image.pixelColor(x, y).alpha() == 255
+        }
+        assert inks == {fxstyle._token_map("split")[token].lower()}, state

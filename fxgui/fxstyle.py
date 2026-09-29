@@ -148,7 +148,7 @@ import warnings
 import weakref
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 # Third-party
 import yaml
@@ -479,6 +479,7 @@ __all__ = [
     # Utility functions
     "get_luminance",
     "get_contrast_text_color",
+    "get_contrast_ratio",
     "invalidate_standard_icon_map",
 ]
 
@@ -1093,12 +1094,24 @@ def get_contrast_ratio(one_hex: str, two_hex: str) -> float:
     return (high + 0.05) / (low + 0.05)
 
 
-def _readable_fill(fill_hex: str, ink_hex: str, ratio: float = 4.5) -> str:
-    """Shift `fill_hex` away from `ink_hex` until the ink reads at `ratio`.
+def _visibly_differ(one_hex: str, two_hex: str) -> bool:
+    """Return whether two fills read as two states of one control."""
+    # Channels as well as luminance: dracula's purple and pink sit at the
+    # same luminance, and nobody mistakes one for the other.
+    one, two = QColor(one_hex), QColor(two_hex)
+    delta = max(
+        abs(one.red() - two.red()),
+        abs(one.green() - two.green()),
+        abs(one.blue() - two.blue()),
+    )
+    return get_contrast_ratio(one_hex, two_hex) >= 1.1 or delta >= 48
 
-    Several themes' accents miss WCAG AA against their own on-accent text,
-    so a fill that carries text is darkened under light ink and lightened
-    under dark ink, in steps that keep its hue.
+
+def _shift_away(fill_hex: str, ink_hex: str, done) -> str:
+    """Shift `fill_hex` away from `ink_hex` in steps until `done(color)`.
+
+    Darkens under light ink and lightens under dark ink, keeping the hue,
+    so every step only raises the ink's contrast.
     """
     fill = QColor(fill_hex)
     light_ink = get_luminance(ink_hex) > get_luminance(fill_hex)
@@ -1111,9 +1124,45 @@ def _readable_fill(fill_hex: str, ink_hex: str, ratio: float = 4.5) -> str:
             round(fill.green() + (toward.green() - fill.green()) * amount),
             round(fill.blue() + (toward.blue() - fill.blue()) * amount),
         )
-        if get_contrast_ratio(shifted.name(), ink_hex) >= ratio:
+        if done(shifted.name()):
             break
     return shifted.name()
+
+
+def _primary_button_fills(
+    accent_primary: str,
+    accent_secondary: str,
+    text_on_primary: str,
+    text_on_secondary: str,
+) -> Tuple[str, str, str]:
+    """Return the rest, hover and pressed fills of a primary button.
+
+    Several themes' accents miss WCAG AA against their own on-accent text,
+    so each fill is shifted until the text drawn on it reads at 4.5:1. Rest
+    and pressed carry `text_on_primary`, hover `text_on_secondary`; where
+    the secondary accent lands on the rest fill, hover steps off it instead.
+    """
+
+    def reads(ink):
+        return lambda color: get_contrast_ratio(color, ink) >= 4.5
+
+    rest = _shift_away(accent_primary, text_on_primary, reads(text_on_primary))
+    hover = _shift_away(
+        accent_secondary, text_on_secondary, reads(text_on_secondary))
+    if not _visibly_differ(rest, hover):
+        hover = _shift_away(
+            rest,
+            text_on_secondary,
+            lambda c: reads(text_on_secondary)(c) and _visibly_differ(c, rest),
+        )
+    pressed = _shift_away(
+        rest,
+        text_on_primary,
+        lambda c: reads(text_on_primary)(c)
+        and _visibly_differ(c, rest)
+        and _visibly_differ(c, hover),
+    )
+    return rest, hover, pressed
 
 
 def _token_map(theme_name: str) -> Dict[str, str]:
@@ -1170,17 +1219,12 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         "icon_on_accent_secondary", text_on_secondary
     )
 
-    # FXPrimaryButton fills: the accents, shifted until their text reads.
-    # Pressed goes a quarter further, so the press shows in every theme.
-    primary = _readable_fill(accent_primary, text_on_primary)
-    tokens["@primary_button"] = primary
-    tokens["@primary_button_hover"] = _readable_fill(
-        accent_secondary, text_on_secondary
-    )
-    tokens["@primary_button_pressed"] = _readable_fill(
-        primary,
-        text_on_primary,
-        get_contrast_ratio(primary, text_on_primary) * 1.25,
+    (
+        tokens["@primary_button"],
+        tokens["@primary_button_hover"],
+        tokens["@primary_button_pressed"],
+    ) = _primary_button_fills(
+        accent_primary, accent_secondary, text_on_primary, text_on_secondary
     )
 
     # Font roles flatten to @font_<role>, resolved against the families

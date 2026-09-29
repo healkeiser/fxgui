@@ -147,3 +147,73 @@ def test_it_takes_the_push_button_shapes(qtbot):
     before = set(map(id, QApplication.topLevelWidgets()))
     FXPrimaryButton("Send", parent, icon="send").show()
     assert set(map(id, QApplication.topLevelWidgets())) == before
+
+
+def test_every_public_getter_is_exported():
+    import inspect
+
+    getters = {
+        name for name, value in vars(fxstyle).items()
+        if name.startswith("get_") and inspect.isfunction(value)
+        and value.__module__ == fxstyle.__name__
+    }
+    assert getters - set(fxstyle.__all__) == set()
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+def test_rest_hover_and_pressed_fills_differ_visibly(qapp, theme):
+    tokens = fxstyle._token_map(theme)
+    rest = tokens["@primary_button"]
+    hover = tokens["@primary_button_hover"]
+    pressed = tokens["@primary_button_pressed"]
+    for one, two in ((rest, hover), (pressed, hover), (pressed, rest)):
+        # Hue counts too: dracula's purple and pink share a luminance.
+        assert _ratio(one, two) >= 1.1 or not _near(one, two, 47), (
+            f"{theme}: {one} vs {two}")
+
+
+def _split_theme(monkeypatch):
+    """A theme whose two accents carry opposite on-accent inks."""
+    colors = fxstyle.get_colors()
+    split = dict(colors["themes"]["dark"])
+    split.update({
+        "accent_primary": "#2f6fdb",
+        "accent_secondary": "#9ad0ff",
+        "text_on_accent_primary": "#ffffff",
+        "text_on_accent_secondary": "#000000",
+        "icon_on_accent_primary": "#ffffff",
+        "icon_on_accent_secondary": "#000000",
+    })
+    patched = dict(colors, themes={**colors["themes"], "split": split})
+    monkeypatch.setattr(fxstyle, "get_colors", lambda: patched)
+    return fxstyle._token_map("split")
+
+
+def test_each_fill_is_tuned_for_the_text_drawn_on_it(qapp, monkeypatch):
+    tokens = _split_theme(monkeypatch)
+    white, black = "#ffffff", "#000000"
+    assert _ratio(tokens["@primary_button"], white) >= 4.5
+    assert _ratio(tokens["@primary_button_hover"], black) >= 4.5
+    assert _ratio(tokens["@primary_button_pressed"], white) >= 4.5
+
+
+def test_a_hovered_press_draws_the_text_its_fill_was_tuned_for(
+    qtbot, qapp, monkeypatch
+):
+    tokens = _split_theme(monkeypatch)
+    window, button = _window_with_button(qtbot, "split")
+    qtbot.mouseMove(window, QPoint(1, 1))
+    qtbot.mouseMove(button, QPoint(button.width() // 2, button.height() // 2))
+    qtbot.waitUntil(button.underMouse)
+    button.setDown(True)
+    qapp.processEvents()
+    area = QRect(button.mapTo(window, QPoint(0, 0)), button.size())
+    image = window.grab(area).toImage()
+    assert _near(_most(image), tokens["@primary_button_pressed"])
+    inks = [
+        image.pixelColor(x, y)
+        for x in range(4, image.width() - 4)
+        for y in range(4, image.height() - 4)
+    ]
+    assert any(c.lightness() > 230 for c in inks)
+    assert not any(c.lightness() < 25 for c in inks)
