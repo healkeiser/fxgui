@@ -1087,6 +1087,35 @@ def get_contrast_text_color(background_hex: str) -> str:
     return "#FFFFFF" if luminance < 0.5 else "#000000"
 
 
+def get_contrast_ratio(one_hex: str, two_hex: str) -> float:
+    """Return the WCAG contrast ratio between two colors, 1.0 to 21.0."""
+    low, high = sorted([get_luminance(one_hex), get_luminance(two_hex)])
+    return (high + 0.05) / (low + 0.05)
+
+
+def _readable_fill(fill_hex: str, ink_hex: str, ratio: float = 4.5) -> str:
+    """Shift `fill_hex` away from `ink_hex` until the ink reads at `ratio`.
+
+    Several themes' accents miss WCAG AA against their own on-accent text,
+    so a fill that carries text is darkened under light ink and lightened
+    under dark ink, in steps that keep its hue.
+    """
+    fill = QColor(fill_hex)
+    light_ink = get_luminance(ink_hex) > get_luminance(fill_hex)
+    toward = QColor("#000000" if light_ink else "#ffffff")
+    shifted = fill
+    for step in range(21):
+        amount = step / 20
+        shifted = QColor(
+            round(fill.red() + (toward.red() - fill.red()) * amount),
+            round(fill.green() + (toward.green() - fill.green()) * amount),
+            round(fill.blue() + (toward.blue() - fill.blue()) * amount),
+        )
+        if get_contrast_ratio(shifted.name(), ink_hex) >= ratio:
+            break
+    return shifted.name()
+
+
 def _token_map(theme_name: str) -> Dict[str, str]:
     """Build the ``@token`` -> value map for a theme.
 
@@ -1139,6 +1168,19 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     )
     tokens["@icon_on_accent_secondary"] = theme_data.get(
         "icon_on_accent_secondary", text_on_secondary
+    )
+
+    # FXPrimaryButton fills: the accents, shifted until their text reads.
+    # Pressed goes a quarter further, so the press shows in every theme.
+    primary = _readable_fill(accent_primary, text_on_primary)
+    tokens["@primary_button"] = primary
+    tokens["@primary_button_hover"] = _readable_fill(
+        accent_secondary, text_on_secondary
+    )
+    tokens["@primary_button_pressed"] = _readable_fill(
+        primary,
+        text_on_primary,
+        get_contrast_ratio(primary, text_on_primary) * 1.25,
     )
 
     # Font roles flatten to @font_<role>, resolved against the families

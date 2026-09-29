@@ -86,10 +86,13 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 |--------|-------------|
 | `FXAccordion` | Accordion container with expandable sections |
 | `FXApplication` | Application with automatic theming and style |
+| `FXAvatar` | Round avatar: a photo, or initials on a disc coloured by the name |
 | `FXBreadcrumb` | Clickable breadcrumb trail for hierarchical navigation |
 | `FXCollapsibleWidget` | Expandable/collapsible container |
 | `FXColorLabelDelegate` | Delegate for color label rendering in views |
 | `FXElidedLabel` | Label with automatic text elision |
+| `FXEmojiButton` | Tool button that opens an emoji picker and can insert into an editor |
+| `FXEmojiPicker` | Popup grid of emoji, keyboard navigable |
 | `FXFilePathWidget` | File/folder path input with browse button |
 | `FXFloatingDialog` | Styled floating dialog |
 | `FXIconLineEdit` | Line edit with icon support |
@@ -99,6 +102,7 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXNotificationBanner` | Notification banner for messages |
 | `FXOutputLogWidget` | Log display with level filtering |
 | `FXPasswordLineEdit` | Password input with visibility toggle |
+| `FXPrimaryButton` | The main action of a form, on the theme's accent |
 | `FXProgressCard` | Progress indicator card |
 | `FXRangeSlider` | Dual-handle range slider |
 | `FXRatingWidget` | Star rating input widget |

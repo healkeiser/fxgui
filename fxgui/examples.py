@@ -1153,6 +1153,26 @@ def _create_widgets_tab() -> QWidget:
     filepath_section.set_content_layout(filepath_layout)
     layout.addWidget(filepath_section)
 
+    # Comment widgets: avatars, emoji picker, primary button
+    comment_section = fxwidgets.FXCollapsibleWidget(
+        title="FXAvatar / FXEmojiButton / FXPrimaryButton",
+        icon="forum",
+        animation_duration=200,
+    )
+    comment_layout = QHBoxLayout()
+    for name in ("Anne Martin", "Madonna", "Bob Stone", ""):
+        comment_layout.addWidget(fxwidgets.FXAvatar(name, size=32))
+    comment_edit = QLineEdit()
+    comment_edit.setPlaceholderText("Write a comment...")
+    comment_layout.addWidget(comment_edit, 1)
+    emoji_button = fxwidgets.FXEmojiButton()
+    emoji_button.attach(comment_edit)
+    comment_layout.addWidget(emoji_button)
+    comment_layout.addWidget(QPushButton("Cancel"))
+    comment_layout.addWidget(fxwidgets.FXPrimaryButton("Post", icon="send"))
+    comment_section.set_content_layout(comment_layout)
+    layout.addWidget(comment_section)
+
     layout.addStretch()
     scroll_area.setWidget(scroll_content)
 

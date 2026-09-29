@@ -12,7 +12,9 @@ from fxgui.fxstyle import (
 )
 from fxgui.fxwidgets._accordion import FXAccordion, FXAccordionSection
 from fxgui.fxwidgets._application import FXApplication
+from fxgui.fxwidgets._avatar import FXAvatar
 from fxgui.fxwidgets._breadcrumb import FXBreadcrumb
+from fxgui.fxwidgets._buttons import FXPrimaryButton
 from fxgui.fxwidgets._code_block import FXCodeBlock
 from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 from fxgui.fxwidgets._constants import (
@@ -30,6 +32,11 @@ from fxgui.fxwidgets._delegates import (
 )
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
 from fxgui.fxwidgets._drop_zone import FXDropZone
+from fxgui.fxwidgets._emoji_picker import (
+    DEFAULT_EMOJIS,
+    FXEmojiButton,
+    FXEmojiPicker,
+)
 from fxgui.fxwidgets._file_path_widget import FXFilePathWidget
 from fxgui.fxwidgets._fuzzy_search_list import FXFuzzySearchList
 from fxgui.fxwidgets._fuzzy_search_tree import FXFuzzySearchTree
@@ -78,6 +85,7 @@ from fxgui.fxwidgets._widget import FXWidget
 __all__ = [
     "CRITICAL",
     "DEBUG",
+    "DEFAULT_EMOJIS",
     "ERROR",
     "INFO",
     "SUCCESS",
@@ -85,6 +93,7 @@ __all__ = [
     "FXAccordion",
     "FXAccordionSection",
     "FXApplication",
+    "FXAvatar",
     "FXBreadcrumb",
     "FXCamelCaseValidator",
     "FXCapitalizedLetterValidator",
@@ -93,6 +102,8 @@ __all__ = [
     "FXColorLabelDelegate",
     "FXDropZone",
     "FXElidedLabel",
+    "FXEmojiButton",
+    "FXEmojiPicker",
     "FXFilePathWidget",
     "FXFloatingDialog",
     "FXFuzzySearchList",
@@ -108,6 +119,7 @@ __all__ = [
     "FXOutputLogHandler",
     "FXOutputLogWidget",
     "FXPasswordLineEdit",
+    "FXPrimaryButton",
     "FXProgressCard",
     "FXRangeSlider",
     "FXRatingWidget",

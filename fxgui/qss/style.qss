@@ -812,6 +812,35 @@ QPushButton:pressed
     background-color: @state_pressed;
 }
 
+/* FXPrimaryButton, or any QPushButton with fxRole="primary". The fills are
+   the accents shifted until their text reads at 4.5:1 (see fxstyle). */
+QPushButton[fxRole="primary"]
+{
+    color: @text_on_accent_primary;
+    background-color: @primary_button;
+    border-color: @primary_button;
+}
+
+QPushButton[fxRole="primary"]:hover
+{
+    color: @text_on_accent_secondary;
+    background-color: @primary_button_hover;
+    border-color: @primary_button_hover;
+}
+
+QPushButton[fxRole="primary"]:pressed
+{
+    background-color: @primary_button_pressed;
+    border-color: @primary_button_pressed;
+}
+
+QPushButton[fxRole="primary"]:disabled
+{
+    color: @text_disabled;
+    background-color: @surface_alt;
+    border-color: @border;
+}
+
 QAbstractSpinBox {
     padding-top: 2px;
     padding-bottom: 2px;
@@ -1696,4 +1725,10 @@ QCheckBox:focus,
 QRadioButton:focus
 {
     border-color: @accent_primary;
+}
+
+/* A primary button is filled with the accent, so its ring is the text. */
+QPushButton[fxRole="primary"]:focus
+{
+    border-color: @text;
 }
