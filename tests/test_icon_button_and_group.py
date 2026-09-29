@@ -1,7 +1,7 @@
 """FXIconButton is round; FXJoinedGroup draws its children as one pill."""
 
 import pytest
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QApplication,
@@ -196,3 +196,74 @@ def test_building_them_with_a_parent_opens_no_window(qtbot, window):
     QApplication.processEvents()
     after = {id(w) for w in QApplication.topLevelWidgets() if w.isVisible()}
     assert after - before == {id(window)}
+
+
+def _places(group_children) -> list:
+    return [child.property("fxJoined") for child in group_children]
+
+
+def test_a_deleted_child_leaves_the_group(qtbot, window):
+    from qtpy import shiboken
+
+    group = FXJoinedGroup(window)
+    a, b, c = (QPushButton(t, group) for t in "abc")
+    for child in (a, b, c):
+        group.add_widget(child)
+    shiboken.delete(c)
+    QApplication.processEvents()
+    assert _places([a, b]) == ["first", "last"]
+    d = QPushButton("d", group)
+    group.add_widget(d)
+    assert _places([a, b, d]) == ["first", "middle", "last"]
+
+
+def test_adding_right_after_a_delete_raises_nothing(qtbot, window):
+    from qtpy import shiboken
+
+    group = FXJoinedGroup(window)
+    a, b = QPushButton("a", group), QPushButton("b", group)
+    group.add_widget(a)
+    group.add_widget(b)
+    shiboken.delete(b)
+    c = QPushButton("c", group)
+    group.add_widget(c)
+    assert _places([a, c]) == ["first", "last"]
+
+
+def test_a_hidden_last_child_hands_the_round_end_on(qtbot, window):
+    group = FXJoinedGroup(window)
+    a, b = QPushButton("a", group), QPushButton("b", group)
+    group.add_widget(a)
+    group.add_widget(b)
+    _show(qtbot, window, group)
+    b.hide()
+    assert a.property("fxJoined") == "only"
+    b.show()
+    assert _places([a, b]) == ["first", "last"]
+
+
+def test_a_hidden_first_child_takes_the_divider_with_it(qtbot, window):
+    group = FXJoinedGroup(window)
+    a, b, c = (QPushButton(t, group) for t in "abc")
+    for child in (a, b, c):
+        group.add_widget(child)
+    a.hide()
+    assert _places([b, c]) == ["first", "last"]
+    _show(qtbot, window, group)
+    tokens = fxstyle._token_map("dark")
+    edge = _pixel(window, group, b.x(), group.height() // 2)
+    assert not _near(edge, tokens["@border"], 4), edge
+
+
+def test_the_icon_button_renders_at_its_own_pixel_ratio(qtbot, window,
+                                                        monkeypatch):
+    """A second screen can be denser than the primary one."""
+    button = FXIconButton("visibility_off", window, checkable=True,
+                          checked_icon="visibility")
+    monkeypatch.setattr(button, "devicePixelRatioF", lambda: 2.0)
+    button._on_theme_changed()
+    icon = button.icon()
+    for state in (icon.State.Off, icon.State.On):
+        pixmap = icon.pixmap(QSize(16, 16), 2.0, icon.Mode.Normal, state)
+        assert pixmap.size() == QSize(32, 32), state
+    assert QSize(32, 32) in icon.availableSizes(icon.Mode.Normal)

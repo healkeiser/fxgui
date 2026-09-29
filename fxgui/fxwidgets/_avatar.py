@@ -64,6 +64,7 @@ class FXAvatar(QWidget):
         self._size = size
         self._pixmap: Optional[QPixmap] = None
         self._face: Optional[QPixmap] = None
+        self._face_key: tuple = ()
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setFixedSize(size, size)
         self.set_name(name)
@@ -112,19 +113,23 @@ class FXAvatar(QWidget):
         return self.sizeHint()
 
     def _cropped_face(self, ratio: float) -> QPixmap:
-        """Return the photo scaled to cover the circle at `ratio`."""
+        """Return the photo centre-cropped square, `size` across at `ratio`."""
         side = round(self._size * ratio)
-        face = self._face
-        if face is None or face.width() != side:
-            face = self._pixmap.scaled(
-                side,
-                side,
-                Qt.KeepAspectRatioByExpanding,
-                Qt.SmoothTransformation,
+        key = (self._pixmap.cacheKey(), side, ratio)
+        if self._face is None or self._face_key != key:
+            source = self._pixmap
+            edge = min(source.width(), source.height())
+            square = source.copy(
+                (source.width() - edge) // 2,
+                (source.height() - edge) // 2,
+                edge,
+                edge,
             )
+            face = square.scaled(
+                side, side, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
             face.setDevicePixelRatio(ratio)
-            self._face = face
-        return face
+            self._face, self._face_key = face, key
+        return self._face
 
     def paintEvent(self, event) -> None:
         """Paint the photo or the initials disc."""
@@ -137,17 +142,7 @@ class FXAvatar(QWidget):
             clip = QPainterPath()
             clip.addEllipse(whole)
             painter.setClipPath(clip)
-            logical = face.deviceIndependentSize()
-            painter.drawPixmap(
-                QRectF(
-                    (self._size - logical.width()) / 2,
-                    (self._size - logical.height()) / 2,
-                    logical.width(),
-                    logical.height(),
-                ),
-                face,
-                QRectF(face.rect()),
-            )
+            painter.drawPixmap(whole, face, QRectF(face.rect()))
             # Inset half its width, or the ring is cut at the edge.
             painter.setClipping(False)
             painter.setPen(QPen(QColor(255, 255, 255, 127), 1.0))
@@ -163,7 +158,9 @@ class FXAvatar(QWidget):
         initials = self.initials()
         if not initials:
             side = round(self._size * 0.6)
-            glyph = fxicons.get_pixmap("person", side, side, color=ink)
+            glyph = fxicons.get_pixmap(
+                "person", side, side, color=ink,
+                dpr=self.devicePixelRatioF())
             offset = (self._size - side) / 2
             painter.drawPixmap(QRectF(offset, offset, side, side), glyph,
                                QRectF(glyph.rect()))

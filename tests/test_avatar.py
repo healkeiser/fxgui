@@ -98,3 +98,45 @@ def test_building_one_opens_no_window(qtbot):
     assert not (after - before)
     assert avatar.window() is parent
     assert avatar.testAttribute(Qt.WidgetAttribute.WA_WState_Hidden) is False
+
+
+def test_a_wide_photo_is_cropped_once(qtbot):
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    photo = QPixmap(200, 100)
+    photo.fill(QColor("#00ff00"))
+    avatar = FXAvatar("Anne", parent, size=40, pixmap=photo)
+    one = avatar._cropped_face(1.0)
+    two = avatar._cropped_face(1.0)
+    assert one.cacheKey() == two.cacheKey()
+    assert one.width() == one.height() == 40
+    assert avatar._cropped_face(2.0).width() == 80
+
+
+def test_the_placeholder_glyph_renders_at_the_avatar_ratio(
+    qtbot, monkeypatch
+):
+    from fxgui import fxicons
+
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    avatar = FXAvatar("", parent, size=40)
+    ratios = []
+    real = fxicons.get_pixmap
+
+    def spy(*args, **kwargs):
+        ratios.append(kwargs.get("dpr"))
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(fxicons, "get_pixmap", spy)
+    monkeypatch.setattr(avatar, "devicePixelRatioF", lambda: 2.0)
+    avatar.grab()
+    assert ratios == [2.0]
+
+
+def test_get_pixmap_takes_a_ratio(qapp):
+    from fxgui import fxicons
+
+    pixmap = fxicons.get_pixmap("person", 16, 16, dpr=2.0)
+    assert pixmap.size() == QSize(32, 32)
+    assert pixmap.devicePixelRatio() == 2.0

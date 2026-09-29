@@ -5,7 +5,7 @@ import unicodedata
 from typing import List, Optional, Sequence, Tuple
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject, QPoint, QSize, Qt, Signal
+from qtpy.QtCore import QEvent, QObject, QPoint, QRect, QSize, Qt, Signal
 from qtpy.QtGui import QFont, QGuiApplication
 from qtpy.QtWidgets import (
     QFrame,
@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import _compat, fxicons, fxstyle
 
 
 # Reactions and studio work, in the order the grid shows them.
@@ -134,6 +134,7 @@ class FXEmojiPicker(QFrame):
         # A shaped frame: the theme hides the border of a NoFrame QFrame.
         self.setFrameShape(QFrame.StyledPanel)
         self._columns = max(1, columns)
+        self._anchor: Optional[QRect] = None
         self._buttons: List[QToolButton] = []
         layout = QGridLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
@@ -165,21 +166,42 @@ class FXEmojiPicker(QFrame):
         """Return how many emoji each row holds."""
         return self._columns
 
-    def popup_at(self, pos: QPoint) -> None:
-        """Show the popup with its top-left at global `pos`, kept on screen."""
+    def popup_at(self, pos: QPoint, anchor: Optional[QRect] = None) -> None:
+        """Show the popup at global `pos`, kept on screen.
+
+        Args:
+            pos: The popup's top-left, in global coordinates.
+            anchor: The global rect of the widget that opened it. With no
+                room below, the popup opens above it instead of covering it.
+        """
         screen = (
             QGuiApplication.screenAt(pos) or QGuiApplication.primaryScreen()
         )
         area = screen.availableGeometry()
+        self._anchor = anchor
         self.move(pos)
         self.show()
         # Measured once shown: a platform may add a frame around the popup.
         size = self.frameGeometry().size()
+        y = pos.y()
+        if anchor is not None and y + size.height() - 1 > area.bottom():
+            y = anchor.top() - size.height()
         x = max(area.left(), min(pos.x(), area.right() - size.width() + 1))
-        y = max(area.top(), min(pos.y(), area.bottom() - size.height() + 1))
+        y = max(area.top(), min(y, area.bottom() - size.height() + 1))
         self.move(x, y)
         if self._buttons:
             self._buttons[0].setFocus(Qt.PopupFocusReason)
+
+    def mousePressEvent(self, event) -> None:
+        """Close on a press outside, without reopening from the anchor."""
+        # Qt replays the closing press to the widget under it; on the button
+        # that opened the popup, that press would open it again.
+        anchor = self._anchor
+        on_anchor = anchor is not None and anchor.contains(
+            event.globalPosition().toPoint()
+            if hasattr(event, "globalPosition") else event.globalPos())
+        self.setAttribute(Qt.WA_NoMouseReplay, on_anchor)
+        super().mousePressEvent(event)
 
     def _pick(self, emoji: str) -> None:
         # Closed first, so a listener can hand focus back to its editor.
@@ -237,6 +259,8 @@ class FXEmojiButton(QToolButton):
         super().__init__(parent)
         self._emojis = emojis
         self._picker: Optional[FXEmojiPicker] = None
+        self._editor: Optional[QWidget] = None
+        self.emoji_picked.connect(self._insert)
         self.setAutoRaise(True)
         self.setToolTip("Insert an emoji")
         fxicons.set_icon(self, "add_reaction", fallback="mood")
@@ -250,11 +274,16 @@ class FXEmojiButton(QToolButton):
         return self._picker
 
     def open_picker(self) -> None:
-        """Show the popup just below the button."""
-        self.picker().popup_at(self.mapToGlobal(QPoint(0, self.height())))
+        """Show the popup just below the button, or above it near the bottom."""
+        self.picker().popup_at(
+            self.mapToGlobal(QPoint(0, self.height())),
+            QRect(self.mapToGlobal(QPoint(0, 0)), self.size()),
+        )
 
     def attach(self, editor: QWidget) -> None:
         """Insert each picked emoji at `editor`'s cursor and focus it again.
+
+        Replaces the editor attached before, if any.
 
         Args:
             editor: A QLineEdit, QPlainTextEdit or QTextEdit.
@@ -262,18 +291,20 @@ class FXEmojiButton(QToolButton):
         Raises:
             TypeError: If `editor` is none of those.
         """
-        if isinstance(editor, QLineEdit):
-            insert = editor.insert
-        elif isinstance(editor, (QPlainTextEdit, QTextEdit)):
-            insert = editor.insertPlainText
-        else:
+        if not isinstance(editor, (QLineEdit, QPlainTextEdit, QTextEdit)):
             raise TypeError(f"cannot insert text into {type(editor).__name__}")
+        self._editor = editor
 
-        def _insert(emoji: str) -> None:
-            insert(emoji)
-            editor.setFocus(Qt.OtherFocusReason)
-
-        self.emoji_picked.connect(_insert)
+    def _insert(self, emoji: str) -> None:
+        editor = self._editor
+        if editor is None or not _compat.is_valid(editor):
+            self._editor = None
+            return
+        if isinstance(editor, QLineEdit):
+            editor.insert(emoji)
+        else:
+            editor.insertPlainText(emoji)
+        editor.setFocus(Qt.OtherFocusReason)
 
 
 def example() -> None:

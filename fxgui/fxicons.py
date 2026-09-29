@@ -500,6 +500,7 @@ def get_pixmap(
     library: Optional[str] = None,
     style: Optional[str] = None,
     extension: Optional[str] = None,
+    dpr: Optional[float] = None,
 ) -> QPixmap:
     """Get a QPixmap of the specified icon.
 
@@ -511,6 +512,9 @@ def get_pixmap(
         library: The library of the icon. Defaults to `None`.
         style: The style of the icon. Defaults to `None`.
         extension: The extension of the icon. Defaults to `None`.
+        dpr: The device pixel ratio to render at, such as a widget's
+            `devicePixelRatioF()` on a denser second screen. Defaults to
+            the primary screen's.
 
     Returns:
         QPixmap: The QPixmap of the icon.
@@ -535,7 +539,7 @@ def get_pixmap(
 
     return _get_pixmap_cached(
         icon_name, width, height, color, library, style, extension,
-        _screen_dpr(),
+        _screen_dpr() if dpr is None else float(dpr),
     )
 
 

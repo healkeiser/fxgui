@@ -4,7 +4,7 @@
 from typing import List, Optional, Union
 
 # Third-party
-from qtpy.QtCore import QSize
+from qtpy.QtCore import QEvent, QObject, QSize, QTimer
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle, fxutils
+from fxgui import _compat, fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._tips import apply_tip
 
 
@@ -144,23 +144,30 @@ class FXIconButton(fxstyle.FXThemeAware, QToolButton):
 
     def _on_theme_changed(self) -> None:
         # Not fxicons.set_icon: a tool button's Active pixmap is drawn for
-        # the accent, and this one hovers on state_hover.
+        # the accent, and this one hovers on state_hover. Rendered at this
+        # widget's own ratio, which a second screen may raise.
         side = self.iconSize().width()
-        icon = QIcon(
-            fxicons.get_icon(
-                self._icon_name, side, side, include_active=False)
-        )
-        icon.addPixmap(
-            fxicons.get_pixmap(
-                self._checked_icon_name,
-                side,
-                side,
-                color=fxstyle.get_icon_on_accent_primary(),
-            ),
-            QIcon.Normal,
-            QIcon.On,
-        )
+        ratio = self.devicePixelRatioF()
+        disabled = fxicons._get_disabled_icon_color()
+        icon = QIcon()
+        for name, state, color in (
+            (self._icon_name, QIcon.Off, fxstyle.get_icon_color()),
+            (self._checked_icon_name, QIcon.On,
+             fxstyle.get_icon_on_accent_primary()),
+        ):
+            for mode, ink in ((QIcon.Normal, color), (QIcon.Disabled, disabled)):
+                icon.addPixmap(
+                    fxicons.get_pixmap(name, side, side, color=ink, dpr=ratio),
+                    mode,
+                    state,
+                )
         self.setIcon(icon)
+
+    def event(self, event: QEvent) -> bool:
+        """Re-render the icon when the widget moves to a denser screen."""
+        if event.type() == getattr(QEvent, "DevicePixelRatioChange", None):
+            self._on_theme_changed()
+        return super().event(event)
 
 
 _JOINED_HEIGHT = 30
@@ -271,8 +278,21 @@ class FXJoinedGroup(QFrame):
         widget.setFixedHeight(_JOINED_HEIGHT - 2)
         self.layout().addWidget(widget)
         self._widgets.append(widget)
-        last = len(self._widgets) - 1
-        for index, child in enumerate(self._widgets):
+        widget.installEventFilter(self)
+        self._place_children()
+
+    def _place_children(self) -> None:
+        # Only shown children count: a hidden one must not keep the round
+        # end or leave a divider on the first one showing.
+        if not _compat.is_valid(self):
+            return
+        self._widgets = [
+            w for w in self._widgets
+            if _compat.is_valid(w) and w.parent() is self
+        ]
+        shown = [w for w in self._widgets if not w.isHidden()]
+        last = len(shown) - 1
+        for index, child in enumerate(shown):
             if last == 0:
                 place = "only"
             elif index == 0:
@@ -281,8 +301,22 @@ class FXJoinedGroup(QFrame):
                 place = "last"
             else:
                 place = "middle"
-            child.setProperty("fxJoined", place)
-            fxutils.repolish(child)
+            if child.property("fxJoined") != place:
+                child.setProperty("fxJoined", place)
+                fxutils.repolish(child)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Re-place the children when one is shown or hidden."""
+        if event.type() in (QEvent.ShowToParent, QEvent.HideToParent):
+            self._place_children()
+        return super().eventFilter(watched, event)
+
+    def event(self, event: QEvent) -> bool:
+        """Forget a child that is deleted or moved to another parent."""
+        # Deferred: a deleted child is still half alive while it is removed.
+        if event.type() == QEvent.ChildRemoved:
+            QTimer.singleShot(0, self._place_children)
+        return super().event(event)
 
     def _on_focus_changed(self, _old, new) -> None:
         inside = new is not None and self.isAncestorOf(new)

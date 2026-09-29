@@ -186,3 +186,101 @@ def test_building_them_with_a_parent_opens_no_window(qtbot, parent):
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
     qtbot.waitUntil(button.picker().isVisible)
     assert _windows() - before == {id(button.picker())}
+
+
+def test_a_pick_after_the_editor_is_deleted_raises_nothing(qtbot, parent):
+    from fxgui import _compat
+    from qtpy import shiboken
+
+    button = _button_under(qtbot, parent)
+    editor = QPlainTextEdit(parent)
+    button.attach(editor)
+    shiboken.delete(editor)
+    assert not _compat.is_valid(editor)
+    with qtbot.captureExceptions() as raised:
+        button.emoji_picked.emit("\U0001F525")
+    assert raised == []
+
+
+def test_attaching_twice_inserts_once_and_keeps_a_pair_whole(qtbot, parent):
+    button = _button_under(qtbot, parent)
+    editor = QPlainTextEdit(parent)
+    button.attach(editor)
+    button.attach(editor)
+    heart = "\u2764\ufe0f"
+    assert heart in DEFAULT_EMOJIS
+    picker = button.picker()
+    picker.popup_at(parent.mapToGlobal(QPoint(0, 0)))
+    qtbot.waitUntil(picker.isVisible)
+    qtbot.mouseClick(
+        picker.buttons()[DEFAULT_EMOJIS.index(heart)],
+        Qt.MouseButton.LeftButton)
+    assert editor.toPlainText() == heart
+
+
+def test_attaching_another_editor_moves_the_binding(qtbot, parent):
+    button = _button_under(qtbot, parent)
+    first, second = QLineEdit(parent), QLineEdit(parent)
+    button.attach(first)
+    button.attach(second)
+    button.emoji_picked.emit("\U0001F525")
+    assert (first.text(), second.text()) == ("", "\U0001F525")
+
+
+def test_near_the_screen_bottom_the_picker_opens_above_its_button(
+    qtbot, parent
+):
+    screen = QApplication.primaryScreen().availableGeometry()
+    button = _button_under(qtbot, parent)
+    qtbot.wait(10)
+    below = button.mapTo(parent, QPoint(0, button.height())).y()
+    parent.move(screen.left() + 40, screen.bottom() - below - 10)
+    qtbot.waitUntil(
+        lambda: button.mapToGlobal(QPoint(0, button.height())).y()
+        > screen.bottom() - 40)
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    picker = button.picker()
+    qtbot.waitUntil(picker.isVisible)
+    top = button.mapToGlobal(QPoint(0, 0)).y()
+    assert picker.frameGeometry().bottom() < top
+    assert screen.contains(picker.frameGeometry())
+
+
+def test_popup_at_a_point_still_works_without_an_anchor(qtbot, parent):
+    picker = FXEmojiPicker(parent)
+    at = parent.mapToGlobal(QPoint(5, 5))
+    picker.popup_at(at)
+    qtbot.waitUntil(picker.isVisible)
+    assert picker.frameGeometry().topLeft() == at
+
+
+def test_a_press_on_the_button_is_not_replayed_to_it(qtbot, parent):
+    """Qt replays the press that closes a popup to the widget under it,
+    which would reopen the picker its own button just closed.
+
+    QTest hands a click straight to the button, past the popup's mouse
+    grab, so the press is sent to the popup here, as the OS would.
+    """
+    from qtpy.QtCore import QEvent, QPointF
+    from qtpy.QtGui import QMouseEvent
+
+    button = _button_under(qtbot, parent)
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    picker = button.picker()
+    qtbot.waitUntil(picker.isVisible)
+
+    def press_at(global_pos):
+        local = QPointF(picker.mapFromGlobal(global_pos))
+        return QMouseEvent(
+            QEvent.Type.MouseButtonPress, local, QPointF(global_pos),
+            Qt.MouseButton.LeftButton, Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier)
+
+    on_button = button.mapToGlobal(QPoint(3, 3))
+    QApplication.sendEvent(picker, press_at(on_button))
+    assert picker.testAttribute(Qt.WidgetAttribute.WA_NoMouseReplay)
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(picker.isVisible)
+    elsewhere = parent.mapToGlobal(QPoint(parent.width() - 2, 2))
+    QApplication.sendEvent(picker, press_at(elsewhere))
+    assert not picker.testAttribute(Qt.WidgetAttribute.WA_NoMouseReplay)
