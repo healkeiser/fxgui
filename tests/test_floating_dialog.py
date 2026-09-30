@@ -95,3 +95,15 @@ def test_a_given_icon_survives_a_theme_switch(qtbot):
     fxstyle.apply_theme("github_light")
 
     assert dialog._icon_label.pixmap().toImage() == before
+
+
+def test_the_close_button_rejects_and_deletes_the_dialog(qtbot):
+    from fxgui import _compat
+
+    dialog = _dialog(qtbot)
+    dialog.show()
+
+    with qtbot.waitSignal(dialog.rejected, timeout=1000):
+        dialog.button_close.click()
+
+    qtbot.waitUntil(lambda: not _compat.is_valid(dialog), timeout=1000)

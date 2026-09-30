@@ -118,7 +118,6 @@ class FXFloatingDialog(QDialog):
         self._custom_icon: Optional[QPixmap] = icon
         self.dialog_icon: QPixmap = icon
         self.dialog_title: str = title
-        self._popup = popup
         self.parent_package = parent_package
 
         # Methods
@@ -126,7 +125,6 @@ class FXFloatingDialog(QDialog):
         self._setup_main_widget()
         self._setup_buttons()
         self._setup_layout()
-        self._handle_connections()
         self.set_dialog_icon(self.dialog_icon)
         self.set_dialog_title(self.dialog_title)
         fxstyle.theme_changed.connect(self._on_theme_changed)
@@ -209,6 +207,8 @@ class FXFloatingDialog(QDialog):
         self.button_box.setObjectName("fxFloatingDialogButtons")
         self.button_box.setContentsMargins(12, 8, 12, 12)
         self.button_close = self.button_box.addButton(QDialogButtonBox.Close)
+        # reject() closes, and WA_DeleteOnClose deletes, the dialog.
+        self.button_box.rejected.connect(self.reject)
 
     def _setup_layout(self):
         """Sets up the main dialog layout with title, content, and buttons.
@@ -236,12 +236,6 @@ class FXFloatingDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)  # Margin for shadow
         layout.addWidget(self._container)
-
-    def _handle_connections(self) -> None:
-        """Connects the dialog's slots."""
-
-        self.button_box.rejected.connect(self.reject)
-        self.button_box.rejected.connect(self.close)
 
     # Public methods
     def set_dialog_icon(self, icon: Optional[QPixmap] = None) -> None:
