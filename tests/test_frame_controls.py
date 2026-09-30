@@ -339,3 +339,23 @@ def test_a_theme_switch_survives_a_dropped_handle_wrapper(qtbot):
         qtbot.wait(10)
 
     assert not raised, raised
+
+
+def test_a_theme_switch_repaints_the_handles_by_itself(qtbot):
+    from qtpy.QtCore import QEvent, QObject
+
+    host, splitter = _splitter(qtbot, Qt.Horizontal)
+    qtbot.wait(10)
+
+    class Paints(QObject):
+        count = 0
+
+        def eventFilter(self, watched, event):
+            if event.type() == QEvent.Paint:
+                Paints.count += 1
+            return False
+
+    counter = Paints(splitter)
+    splitter.handle(1).installEventFilter(counter)
+    fxstyle.apply_theme("github_light")
+    qtbot.waitUntil(lambda: Paints.count > 0)

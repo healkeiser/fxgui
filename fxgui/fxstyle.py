@@ -1033,7 +1033,6 @@ class _SplitterMark(QObject):
     def __init__(self, splitter: QSplitter):
         super().__init__(splitter)
         splitter.installEventFilter(self)
-        theme_manager.theme_changed.connect(self._repaint)
         self._watch()
 
     def _handles(self):
@@ -1044,16 +1043,6 @@ class _SplitterMark(QObject):
         # Qt keeps one entry per filter, so installing again is harmless.
         for handle in self._handles():
             handle.installEventFilter(self)
-
-    def _repaint(self, _theme_name: str = None) -> None:
-        if not _compat.is_valid(self):
-            return
-        handles = self._handles()
-        # PySide can drop a live handle's wrapper; the splitter repaints it.
-        if not all(map(_compat.is_valid, handles)):
-            self.parent().update()
-        for handle in filter(_compat.is_valid, handles):
-            handle.update()
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Watch handles as they appear; paint the ones of a marked splitter."""
