@@ -178,6 +178,11 @@ leave `FXThemeAware`.
 - Move-over: every generic fix, workaround or widget that lives in
   ls-pipeline but belongs in fxgui moves into fxgui (inventory first),
   with its tests; ls-pipeline deletes its copy after the pin bump.
+  Every inventory item lands in one of three places: (1) generic and
+  missing from fxgui: moves in; (2) generic but fxgui or Qt already does
+  it: nothing new in fxgui, ls-pipeline deletes its helper and calls the
+  existing one; (3) a studio choice (brand sizes, which status items,
+  row kind names): stays in ls-pipeline. No duplicate survives.
   QtAds code goes in an optional module: `import PySide6QtAds as ads`
   only when used, the `docking` extra never required at import, works on
   PySide6 6.5.3 (Houdini 21: no 3-argument QTimer.singleShot with a
