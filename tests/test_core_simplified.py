@@ -36,7 +36,8 @@ def test_load_stylesheet_carries_registered_fragments(qapp):
     sheet = fxstyle.load_stylesheet(theme="dark")
 
     assert "FXProbeWidget" in sheet
-    assert sheet == fxstyle.build_stylesheet("dark")
+    assert sheet.endswith(fxstyle.build_stylesheet("dark"))
+    assert "background-color: transparent" in sheet[:200]
 
 
 def test_replace_colors_takes_no_prefix():

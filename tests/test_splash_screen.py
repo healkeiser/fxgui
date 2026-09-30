@@ -44,7 +44,7 @@ def test_the_splash_follows_a_theme_switch(qtbot):
     surface = QColor(fxstyle.colors().surface)
     rgb = f"{surface.red()}, {surface.green()}, {surface.blue()}"
     assert rgb in splash.overlay_frame.styleSheet()
-    assert splash.styleSheet() == fxstyle.build_stylesheet()
+    assert splash.styleSheet() == fxstyle.load_stylesheet()
 
 
 def test_a_theme_border_reads_the_theme_when_painted(qtbot):

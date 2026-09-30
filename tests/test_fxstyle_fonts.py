@@ -34,10 +34,11 @@ def test_shipped_color_file_emits_the_platform_font(qapp):
     assert fxstyle.get_fonts("dark")["title"] == default
 
 
-def test_font_block_is_unchanged_for_the_universal_selector(qapp):
+def test_the_body_family_is_the_root_font_not_a_sheet_rule(qapp):
     default = fxstyle._platform_default_font()
-    sheet = fxstyle.build_stylesheet("dark")
-    assert f'* {{\n    font-family: "{default}";\n}}\n' in sheet
+    assert fxstyle.font("dark").family() == default
+    assert fxstyle.font("dark").pixelSize() == fxstyle.FONT_SIZE
+    assert "@font_body" not in fxstyle._font_stylesheet()
 
 
 def test_missing_fonts_section_falls_back(qapp, monkeypatch):

@@ -83,6 +83,7 @@ import yaml
 from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal
 from qtpy.QtGui import (
     QColor,
+    QFont,
     QFontDatabase,
     QGuiApplication,
     QIcon,
@@ -91,6 +92,8 @@ from qtpy.QtGui import (
     QTransform,
 )
 from qtpy.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
     QProxyStyle,
     QSplitter,
     QStyle,
@@ -344,6 +347,8 @@ __all__ = [
     "DEFAULT_COLOR_FILE",
     "TITLE_PROPERTY",
     "BUTTON_RADIUS",
+    "FONT_SIZE",
+    "ROOT_PROPERTY",
     # Color configuration
     "colors",
     "get_colors",
@@ -378,6 +383,7 @@ __all__ = [
     "get_default_theme",
     "register_themed_root",
     "palette",
+    "font",
     # Utility functions
     "get_luminance",
     "get_contrast_text_color",
@@ -426,6 +432,12 @@ SPLITTER_MARK_MIN_CONTRAST = 1.3
 # CSS generic keywords rather than family names: emitted unquoted, never
 # looked up in the font database, and terminal, so nothing is appended
 # after one.
+# The body text size, in pixels, of every themed root.
+FONT_SIZE = 12
+
+# The dynamic property a widget registered as a themed root carries.
+ROOT_PROPERTY = "fxThemedRoot"
+
 _GENERIC_FONT_FAMILIES = frozenset(
     {"cursive", "fantasy", "monospace", "sans-serif", "serif"}
 )
@@ -1729,6 +1741,14 @@ class FXProxyStyle(QProxyStyle):
             return icon
         return super().standardIcon(standardIcon, option, widget)
 
+    def polish(self, widget):
+        """Lay an item view's rows out again once the sheet has styled them."""
+        super().polish(widget)
+        # A view sized before its first polish keeps rows measured without
+        # the sheet's item box; nothing else tells it to measure again.
+        if isinstance(widget, QAbstractItemView):
+            widget.scheduleDelayedItemsLayout()
+
 
 ###### Stylesheet Functions
 
@@ -1764,19 +1784,12 @@ def replace_colors(stylesheet: str, colors_dict: Optional[dict] = None) -> str:
 
 
 def _font_stylesheet() -> str:
-    """Return the font block mapping the font roles onto selectors.
+    """Return the title rule: a marked title takes the title family.
 
-    Emits ``@font_*`` tokens rather than resolved values; the caller runs
-    it through :func:`resolve` with the rest of the sheet.
-
-    The title rule is an attribute selector, which outranks both a
-    widget's own stylesheet and an explicit ``setFont``, so a marked
-    title takes the title family and keeps its size and weight. With a
-    color file that leaves the roles empty, both rules resolve to the
-    same platform font and the sheet behaves as it did with one block.
+    The body family and size are the root font (:func:`font`), which a
+    widget's own ``setFont`` overrides; the title rule outranks it.
     """
     return (
-        "* {\n    font-family: @font_body;\n}\n"
         f'[{TITLE_PROPERTY}="true"] {{\n'
         "    font-family: @font_title;\n}\n"
     )
@@ -1851,21 +1864,50 @@ def register_themed_root(root: QObject) -> None:
     """
     _ensure_theme_loaded()
     _themed_roots.add(root)
-    root.setPalette(palette())
-    root.setStyleSheet(build_stylesheet())
+    if isinstance(root, QWidget):
+        root.setProperty(ROOT_PROPERTY, True)
+    _apply_to_root(root, build_stylesheet(), palette(), font())
 
 
 def _reapply_to_roots() -> None:
-    """Re-apply the current theme palette and sheet to all live roots."""
+    """Re-apply the current theme palette, font and sheet to all live roots."""
     if not _themed_roots:
         return
     sheet = build_stylesheet()
     theme_palette = palette()
+    theme_font = font()
     for root in list(_themed_roots):
-        if not _compat.is_valid(root):
-            continue
-        root.setPalette(theme_palette)
-        root.setStyleSheet(sheet)
+        if _compat.is_valid(root):
+            _apply_to_root(root, sheet, theme_palette, theme_font)
+
+
+# Inside a host, Qt hands a widget made or moved under a styled parent the
+# host's palette and font, never the root's; only a sheet rule reaches it.
+# Put before the base sheet, so every class rule there still wins.
+_HOST_RULES = f"""
+QWidget {{
+    background-color: transparent;
+    font-family: @font_body;
+    font-size: {FONT_SIZE}px;
+}}
+[{ROOT_PROPERTY}="true"], QMainWindow, QDialog {{
+    background-color: @surface;
+}}
+"""
+
+
+def _in_host(root: QObject) -> bool:
+    """Return whether `root` is a widget in an application fxgui does not theme."""
+    app = QApplication.instance()
+    return isinstance(root, QWidget) and app not in _themed_roots
+
+
+def _apply_to_root(root, sheet: str, theme_palette, theme_font) -> None:
+    root.setPalette(theme_palette)
+    root.setFont(theme_font)
+    if _in_host(root):
+        sheet = resolve(_HOST_RULES) + sheet
+    root.setStyleSheet(sheet)
 
 
 # Palette role -> token, for every colour group; then the Disabled group.
@@ -1926,6 +1968,28 @@ def palette(theme: Optional[str] = None) -> QPalette:
     return result
 
 
+def font(theme: Optional[str] = None) -> QFont:
+    """Build the root font: the theme's body families at the body size.
+
+    Set on every themed root with the palette; a child's own ``setFont``
+    wins over it, which a sheet ``font`` rule would not allow.
+
+    Args:
+        theme: Theme name. Defaults to the current theme.
+    """
+    families = [
+        name.strip().strip('"')
+        for name in get_font_family("body", theme).split(",")
+    ]
+    result = QFont()
+    named = [name for name in families if name not in _GENERIC_FONT_FAMILIES]
+    result.setFamilies(named)
+    if named:
+        result.setFamily(named[0])
+    result.setPixelSize(FONT_SIZE)
+    return result
+
+
 def load_stylesheet(
     style_file: str = STYLE_FILE,
     extra: Optional[str] = None,
@@ -1933,7 +1997,8 @@ def load_stylesheet(
 ) -> str:
     """Return `build_stylesheet` over another QSS file; changes nothing.
 
-    For styling a DCC window by hand.
+    For styling a DCC window by hand: it carries the host rules a widget
+    root needs, and the window wants `palette()` and `font()` set too.
 
     Args:
         style_file: The path to the QSS file. Defaults to `STYLE_FILE`.
@@ -1945,4 +2010,5 @@ def load_stylesheet(
     """
     if not os.path.exists(style_file):
         return ""
-    return _build(style_file, theme) + (extra or "")
+    host = resolve(_HOST_RULES, theme)
+    return host + _build(style_file, theme) + (extra or "")

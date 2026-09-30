@@ -24,8 +24,9 @@ QToolTip
 
 QWidget
 {
+    /* Qt gives a widget made under a styled parent the app palette, not the
+       parent's, so the text inks live here rather than in the palette. */
     color: @text;
-    background-color: @surface;
     selection-background-color: @accent_primary;
     selection-color: @text_on_accent_primary;
     background-clip: border;
@@ -38,7 +39,6 @@ QWidget
        drawn in their own language instead, so the rectangle is off. See
        KEYBOARD FOCUS at the end of the file. */
     outline: none;
-    font-size: 12px;
 }
 
 QWidget:item:hover
@@ -394,7 +394,6 @@ QMenu::right-arrow {
 QWidget:disabled
 {
     color: @text_disabled;
-    background-color: @surface;
 }
 
 QAbstractItemView
@@ -442,7 +441,12 @@ QGroupBox::title {
     padding-top: 10px;
 }
 
-/* QAbstractScrollArea - styling handled by individual widget classes below */
+/* The gutter a scroll area keeps around its scroll bars. */
+QWidget#qt_scrollarea_hcontainer,
+QWidget#qt_scrollarea_vcontainer
+{
+    background-color: @surface;
+}
 
 QScrollBar:horizontal
 {
@@ -1282,9 +1286,17 @@ QTreeView {
 QListView::item,
 QTreeView::item {
     padding: 4px 8px;
-    border-radius: 2px;
     min-height: 18px;
     max-height: 18px;
+}
+
+/* A radius makes the sheet draw the whole cell, which hides an item's own
+   BackgroundRole; only the highlighted states carry one. */
+QListView::item:hover,
+QTreeView::item:hover,
+QListView::item:selected,
+QTreeView::item:selected {
+    border-radius: 2px;
 }
 
 QListView::item:!selected:hover,
