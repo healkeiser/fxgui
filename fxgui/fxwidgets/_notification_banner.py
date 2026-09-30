@@ -30,24 +30,8 @@ from qtpy.QtGui import QColor
 
 # Internal
 from fxgui import fxicons, fxstyle
-from fxgui.fxwidgets._constants import (
-    CRITICAL,
-    ERROR,
-    WARNING,
-    SUCCESS,
-    INFO,
-    DEBUG,
-)
+from fxgui.fxwidgets._severity import SEVERITIES, log, severity
 
-
-_FEEDBACK_KEYS = {
-    CRITICAL: "error",
-    ERROR: "error",
-    WARNING: "warning",
-    SUCCESS: "success",
-    INFO: "info",
-    DEBUG: "debug",
-}
 
 fxstyle.register_widget_style(
     """
@@ -182,24 +166,9 @@ class FXNotificationBanner(QFrame):
     # Uses WeakKeyDictionary so entries are auto-removed when parent is deleted
     _active_notifications: WeakKeyDictionary = WeakKeyDictionary()
 
-    # Severity icons mapping
-    SEVERITY_ICONS = {
-        CRITICAL: "cancel",
-        ERROR: "error",
-        WARNING: "warning",
-        SUCCESS: "check_circle",
-        INFO: "info",
-        DEBUG: "bug_report",
-    }
-
-    # Severity titles mapping
+    SEVERITY_ICONS = {level: kind.icon for level, kind in SEVERITIES.items()}
     SEVERITY_TITLES = {
-        CRITICAL: "Critical",
-        ERROR: "Error",
-        WARNING: "Warning",
-        SUCCESS: "Success",
-        INFO: "Info",
-        DEBUG: "Debug",
+        level: kind.title for level, kind in SEVERITIES.items()
     }
 
     def __init__(
@@ -234,7 +203,11 @@ class FXNotificationBanner(QFrame):
 
         # Fixed width for pop notification style
         self.setFixedWidth(width)
-        self.setProperty("severity", _FEEDBACK_KEYS.get(severity_type, ""))
+        self.setProperty(
+            "severity",
+            severity(severity_type).feedback if severity_type in SEVERITIES
+            else "",
+        )
 
         # Setup frame styling
         self.setFrameShape(QFrame.StyledPanel)
@@ -384,18 +357,13 @@ class FXNotificationBanner(QFrame):
     def _update_icons(self, _theme_name: Optional[str] = None) -> None:
         """Re-render the icon pixmaps in the current theme's colors."""
         theme = fxstyle.colors()
-        key = _FEEDBACK_KEYS.get(self._severity_type)
-        color = (
-            fxstyle.get_feedback_colors()[key]["foreground"]
-            if key
-            else theme.text
-        )
-        if self._custom_icon:
-            icon_name = self._custom_icon
-        elif self._severity_type is not None:
-            icon_name = self.SEVERITY_ICONS.get(self._severity_type, "info")
+        if self._severity_type is None:
+            color, icon_name = theme.text, "notifications"
         else:
-            icon_name = "notifications"
+            kind = severity(self._severity_type)
+            color = fxstyle.get_feedback_colors()[kind.feedback]["foreground"]
+            icon_name = kind.icon
+        icon_name = self._custom_icon or icon_name
         icon = fxicons.get_icon(icon_name, color=color)
         self._icon_label.setPixmap(icon.pixmap(18, 18))
         if self._closable:
@@ -412,9 +380,7 @@ class FXNotificationBanner(QFrame):
 
         super().show()
 
-        # Log message if logger is provided
-        if self._logger is not None:
-            self._log_message()
+        log(self._logger, self._severity_type, self._message)
 
         # Calculate positions for slide-in from right
         parent = self.parent()
@@ -591,31 +557,10 @@ class FXNotificationBanner(QFrame):
         """
         self._timeout = timeout
 
-    def _log_message(self) -> None:
-        """Log the notification message to the configured logger.
-
-        Maps the notification severity to the appropriate logging level.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-        if self._logger is None:
-            return
-
-        log_methods = {
-            CRITICAL: self._logger.critical,
-            ERROR: self._logger.error,
-            WARNING: self._logger.warning,
-            SUCCESS: self._logger.info,
-            INFO: self._logger.info,
-            DEBUG: self._logger.debug,
-        }
-        log_method = log_methods.get(self._severity_type, self._logger.info)
-        log_method(self._message)
-
 
 def example() -> None:
     import sys
+    from fxgui.fxwidgets._constants import DEBUG, ERROR, INFO, SUCCESS, WARNING
     from qtpy.QtWidgets import (
         QVBoxLayout,
         QHBoxLayout,

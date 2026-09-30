@@ -11,14 +11,8 @@ from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
-from fxgui.fxwidgets._constants import (
-    CRITICAL,
-    ERROR,
-    WARNING,
-    SUCCESS,
-    INFO,
-    DEBUG,
-)
+from fxgui.fxwidgets._constants import INFO
+from fxgui.fxwidgets._severity import log, severity
 
 # The painted lines replace the base sheet's top border.
 fxstyle.register_widget_style(
@@ -94,44 +88,10 @@ class FXStatusBar(QStatusBar):
         self.messageChanged.connect(self._on_status_message_changed)
         fxstyle.theme_changed.connect(self._theme_switched)
 
-    def _get_severity_info(
-        self, severity_type: int, colors_dict: dict
-    ) -> Tuple[str, QPixmap, str, str]:
-        """Return the prefix, icon, background and foreground of a severity.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        severity_configs = {
-            CRITICAL: ("Critical", "cancel", "error"),
-            ERROR: ("Error", "error", "error"),
-            WARNING: ("Warning", "warning", "warning"),
-            SUCCESS: ("Success", "check_circle", "success"),
-            INFO: ("Info", "info", "info"),
-            DEBUG: ("Debug", "bug_report", "debug"),
-        }
-
-        prefix, icon_name, feedback_key = severity_configs.get(
-            severity_type, ("Info", "info", "info")
-        )
-        feedback = colors_dict["feedback"][feedback_key]
-
-        icon_pixmap = fxicons.get_icon(
-            icon_name, color=feedback["foreground"]
-        ).pixmap(14, 14)
-
-        return (
-            prefix,
-            icon_pixmap,
-            feedback["background"],
-            feedback["foreground"],
-        )
-
     def showMessage(
         self,
         message: str,
-        severity_type: int = 4,
+        severity_type: int = INFO,
         duration: float = 2.5,
         time: bool = True,
         logger: Optional[logging.Logger] = None,
@@ -180,17 +140,14 @@ class FXStatusBar(QStatusBar):
         self.icon_label.setVisible(True)
         self.message_label.setVisible(True)
 
-        (
-            severity_prefix,
-            severity_icon,
-            status_bar_color,
-            status_bar_border_color,
-        ) = self._get_severity_info(severity_type, fxstyle.get_colors())
-
-        if pixmap is not None:
-            severity_icon = pixmap
-        if background_color is not None:
-            status_bar_color = background_color
+        kind = severity(severity_type)
+        feedback = fxstyle.get_colors()["feedback"][kind.feedback]
+        severity_prefix = kind.title
+        severity_icon = pixmap or fxicons.get_icon(
+            kind.icon, color=feedback["foreground"]
+        ).pixmap(14, 14)
+        status_bar_color = background_color or feedback["background"]
+        status_bar_border_color = feedback["foreground"]
 
         # Use inline style for bold as QSS can interfere with <b> tag rendering
         message_prefix = (
@@ -214,18 +171,7 @@ class FXStatusBar(QStatusBar):
             )
             self.update()
 
-        # Link `Logger` object
-        if logger is not None:
-            log_methods = {
-                CRITICAL: logger.critical,
-                ERROR: logger.error,
-                WARNING: logger.warning,
-                SUCCESS: logger.info,
-                INFO: logger.info,
-                DEBUG: logger.debug,
-            }
-            log_method = log_methods.get(severity_type, logger.info)
-            log_method(message)
+        log(logger, severity_type, message)
 
     def clearMessage(self):
         """Clear the message and its tint.
@@ -317,6 +263,7 @@ class FXStatusBar(QStatusBar):
 
 def example() -> None:
     import sys
+    from fxgui.fxwidgets._constants import ERROR, SUCCESS, WARNING
     from qtpy.QtWidgets import QVBoxLayout, QWidget, QPushButton
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 

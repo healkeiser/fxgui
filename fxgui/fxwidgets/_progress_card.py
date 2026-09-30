@@ -19,14 +19,7 @@ from qtpy.QtGui import QColor
 
 # Internal
 from fxgui import fxicons, fxstyle
-from fxgui.fxwidgets._constants import (
-    CRITICAL,
-    ERROR,
-    WARNING,
-    SUCCESS,
-    INFO,
-    DEBUG,
-)
+from fxgui.fxwidgets._severity import SEVERITIES
 
 
 fxstyle.register_widget_style(
@@ -99,13 +92,7 @@ class FXProgressCard(QFrame):
 
     # Status icon names mapped to feedback color keys
     STATUS_ICONS = {
-        None: None,
-        CRITICAL: ("cancel", "error"),
-        ERROR: ("error", "error"),
-        WARNING: ("warning", "warning"),
-        SUCCESS: ("check_circle", "success"),
-        INFO: ("info", "info"),
-        DEBUG: ("bug_report", "debug"),
+        level: (kind.icon, kind.feedback) for level, kind in SEVERITIES.items()
     }
 
     def __init__(
@@ -267,7 +254,7 @@ class FXProgressCard(QFrame):
 
     def _update_status_icon(self) -> None:
         """Update the status icon based on current status."""
-        if self._status is None or self._status not in self.STATUS_ICONS:
+        if self._status not in self.STATUS_ICONS:
             self._status_icon.clear()
             self._status_icon.setVisible(False)
         else:
@@ -294,6 +281,7 @@ class FXProgressCard(QFrame):
 
 def example() -> None:
     import sys
+    from fxgui.fxwidgets._constants import ERROR, SUCCESS
     from qtpy.QtWidgets import (
         QVBoxLayout,
         QWidget,
