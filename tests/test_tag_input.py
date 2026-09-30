@@ -38,8 +38,6 @@ def test_chips_style_through_the_theme_sheet(qtbot, qapp):
     qtbot.addWidget(tags)
     tags.add_tag("python")
     chip = tags._tags_layout.itemAt(0).widget()
-    assert not isinstance(chip, fxstyle.FXThemeAware)
-    assert not isinstance(tags, fxstyle.FXThemeAware)
     assert chip.styleSheet() == "" and chip.label.styleSheet() == ""
     assert tags._input.styleSheet() == ""
     sheet = fxstyle.build_stylesheet()

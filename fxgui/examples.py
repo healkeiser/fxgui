@@ -9,37 +9,20 @@ the fxgui framework's capabilities, including:
 - **Various Widgets**: Collapsible sections, validators, log output, etc.
 
 Theme Awareness Guide:
-    fxgui provides a complete theme system with automatic updates when
-    the user switches themes. There are several ways to make your code
-    theme-aware:
+    A widget follows a theme switch with no code of its own when:
 
-    1. **Icons** - Use `set_icon()` for automatic icon color updates:
-        >>> from fxgui.fxicons import set_icon
-        >>> set_icon(button, "check")  # Updates on theme change
+    1. **Its look is QSS** registered with `@tokens`:
+        >>> fxstyle.register_widget_style("MyCard { background: @surface; }")
 
-    2. **FXThemeAware Mixin** - For custom widget classes (recommended):
-        >>> class MyWidget(fxstyle.FXThemeAware, QWidget):
-        ...     def _on_theme_changed(self, _theme_name: str = None):
-        ...         # Called on init and theme changes
-        ...         self.setStyleSheet(f"background: {self.theme.surface};")
+    2. **It paints** with colours read at paint time:
+        >>> painter.fillRect(self.rect(), QColor(fxstyle.colors().surface))
 
-    3. **Custom Colors** - Define palettes for dark/light themes:
-        >>> COLORS = {
-        ...     "dark": {"red": QColor("#4a2020")},
-        ...     "light": {"red": QColor("#ffcccc")},
-        ... }
-        >>> def update_colors(_theme_name: str = None):
-        ...     palette = COLORS["light" if fxstyle.is_light_theme() else "dark"]
-        ...     item.setBackground(0, palette["red"])
-        >>> fxstyle.theme_manager.theme_changed.connect(update_colors)
+    3. **Its icons** name theme tokens, resolved when drawn:
+        >>> fxicons.set_icon(button, "check", color="feedback_success_foreground")
 
-    4. **Delegate Backgrounds** - Update item data on theme change:
-        >>> def update_item_colors(_theme_name: str = None):
-        ...     theme = fxstyle.FXThemeColors(fxstyle.get_theme_colors())
-        ...     for item in items:
-        ...         item.setBackground(0, QColor(theme.surface_sunken))
-        ...     tree.viewport().update()
-        >>> fxstyle.theme_manager.theme_changed.connect(update_item_colors)
+    Connect to `fxstyle.theme_changed` only for a real side effect, such
+    as item colours from a palette of your own:
+        >>> fxstyle.theme_changed.connect(update_item_colors)
 
 Note:
     Most widgets have their own `example()` function in their module.

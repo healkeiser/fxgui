@@ -4,13 +4,10 @@ Each test reproduces a defect found in the 2026-07 audit:
 - `extra` stylesheet content was appended twice by load_stylesheet.
 - A missing style file returned the literal string "None".
 - Token replacement corrupted longer keys (@border ate @border_light).
-- The declarative `theme_style` API crashed on nested theme sections
-  (the per-theme "feedback" dict) and corrupted long tokens.
 """
 
 # Third-party
 import pytest
-from qtpy.QtWidgets import QWidget
 
 # Internal
 from fxgui import fxstyle
@@ -44,44 +41,9 @@ def test_replace_colors_longest_key_first():
     assert "@" not in out
 
 
-def test_theme_style_declarative_api(qtbot):
-    """The documented `theme_style` class attribute must work: nested theme
-    sections must not raise TypeError and long tokens must not be corrupted
-    by their prefixes."""
-
-    class TokenWidget(fxstyle.FXThemeAware, QWidget):
-        theme_style = """
-            TokenWidget {
-                background: @surface_alt;
-                border: 1px solid @border_light;
-                color: @text_muted;
-            }
-        """
-
-    widget = TokenWidget()
-    qtbot.addWidget(widget)
-
-    # Triggers __apply_theme_style_attribute (old code: TypeError on the
-    # theme's nested "feedback" dict, and "#3a3939_light"-style corruption)
-    fxstyle.theme_manager.notify_theme_changed(fxstyle.get_theme())
-
-    sheet = widget.styleSheet()
-    colors = fxstyle.get_theme_colors()
-    assert colors["surface_alt"] in sheet
-    assert colors["border_light"] in sheet
-    assert colors["text_muted"] in sheet
-    assert "@" not in sheet
-
-
 def test_theme_namespace_is_cached_and_strict(qtbot):
-    class Probe(fxstyle.FXThemeAware, QWidget):
-        pass
-
-    widget = Probe()
-    qtbot.addWidget(widget)
-
-    first = widget.theme
-    second = widget.theme
+    first = fxstyle.colors()
+    second = fxstyle.colors()
     # Cached: paintEvent hot paths must not allocate a namespace per access
     assert first is second
 
@@ -90,21 +52,12 @@ def test_theme_namespace_is_cached_and_strict(qtbot):
 
 
 def test_apply_theme_switches_and_invalidates_cache(qtbot):
-    widget = QWidget()
-    qtbot.addWidget(widget)
-
-    class Probe(fxstyle.FXThemeAware, QWidget):
-        pass
-
-    probe = Probe()
-    qtbot.addWidget(probe)
-
-    fxstyle.apply_theme(widget, "light")
+    fxstyle.apply_theme("light")
     assert fxstyle.get_theme() == "light"
-    assert probe.theme.surface == "#f0f0f0"
+    assert fxstyle.colors().surface == "#f0f0f0"
 
-    fxstyle.apply_theme(widget, "dark")
-    assert probe.theme.surface == "#302f2f"
+    fxstyle.apply_theme("dark")
+    assert fxstyle.colors().surface == "#302f2f"
 
 
 def test_standard_icon_map_uses_feedback_fallbacks(qapp):

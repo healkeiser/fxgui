@@ -430,40 +430,6 @@ class FXCollapsibleWidget(QWidget):
         """
         return self._title
 
-    # Backward compatibility aliases
-    @property
-    def header_widget(self) -> QFrame:
-        """Return the header widget (deprecated, use _header)."""
-        return self._header
-
-    @property
-    def content_area(self) -> QScrollArea:
-        """Return the content area (deprecated, use _content_area)."""
-        return self._content_area
-
-    @property
-    def toggle_button(self) -> QToolButton:
-        """Return the toggle button (deprecated, use _toggle_btn)."""
-        return self._toggle_btn
-
-    @property
-    def title_label(self) -> QLabel:
-        """Return the title label (deprecated, use _title_label)."""
-        return self._title_label
-
-    @property
-    def title_icon_label(self) -> QLabel:
-        """Return the icon label (deprecated, use _icon_label)."""
-        return self._icon_label
-
-    def set_title_icon(self, icon: Union[QIcon, str, None]) -> None:
-        """Set the title icon (deprecated, use set_icon)."""
-        self.set_icon(icon)
-
-    def get_title_icon(self) -> Optional[QIcon]:
-        """Get the title icon (deprecated, use get_icon)."""
-        return self.get_icon()
-
 
 fxstyle.register_widget_style("""
 FXCollapsibleWidget QFrame#fx_collapsible_header[expanded="true"] {

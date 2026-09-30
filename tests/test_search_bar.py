@@ -37,7 +37,6 @@ def test_focus_in_the_field_lights_the_container(qtbot, qapp):
 
 def test_search_bar_styles_through_the_theme_sheet(qtbot, qapp):
     bar = _bar(qtbot)
-    assert not isinstance(bar, fxstyle.FXThemeAware)
     for child in (bar._search_container, bar._input, bar._clear_button,
                   bar._search_icon):
         assert child.styleSheet() == ""

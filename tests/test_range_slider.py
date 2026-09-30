@@ -41,7 +41,6 @@ def test_stacked_handles_split_toward_the_drag(qtbot, qapp):
 
 def test_handles_are_painted_in_the_theme_thumb_colour(qtbot, qapp):
     slider = _slider(qtbot, minimum=0, maximum=100, low=20, high=80)
-    assert not isinstance(slider, fxstyle.FXThemeAware)
     fxstyle.apply_theme("light")
     image = slider.grab().toImage()
     x = int(slider._value_to_position(20))

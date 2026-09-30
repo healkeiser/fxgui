@@ -53,7 +53,6 @@ def test_double_click_on_a_segment_opens_the_editor(qtbot, qapp):
 
 def test_theme_switch_redraws_the_separators_without_the_mixin(qtbot, qapp):
     crumb = _crumb(qtbot)
-    assert not isinstance(crumb, fxstyle.FXThemeAware)
     before = crumb._container.styleSheet()
     fxstyle.apply_theme("light")
     assert crumb._container.styleSheet() != before

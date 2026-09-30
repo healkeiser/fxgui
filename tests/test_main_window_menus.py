@@ -124,7 +124,6 @@ def test_the_theme_actions_follow_a_switch_without_the_mixin(qtbot):
 
     fxstyle.apply_theme("github_light")
 
-    assert not isinstance(window, fxstyle.FXThemeAware)
     assert window.theme_actions["github_light"].isChecked()
 
 

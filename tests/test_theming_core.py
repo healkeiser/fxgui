@@ -312,4 +312,3 @@ def test_fx_widget_sets_no_sheet_and_keeps_layout(qtbot):
 
     assert widget.styleSheet() == ""
     assert widget.layout() is widget.main_layout
-    assert not isinstance(widget, fxstyle.FXThemeAware)

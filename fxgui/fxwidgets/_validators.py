@@ -30,11 +30,7 @@ class FXCamelCaseValidator(QRegularExpressionValidator):
         # numbers
         camel_case_regex = QRegularExpression("^[a-z]+([A-Z][a-z]*)*$")
 
-        # Use the correct method based on what's available
-        if hasattr(self, "setRegularExpression"):
-            self.setRegularExpression(camel_case_regex)
-        else:
-            self.setRegExp(camel_case_regex)
+        self.setRegularExpression(camel_case_regex)
 
 
 class FXLowerCaseValidator(QRegularExpressionValidator):
@@ -72,11 +68,7 @@ class FXLowerCaseValidator(QRegularExpressionValidator):
 
         lowercase_regex = QRegularExpression(pattern)
 
-        # Use the correct method based on what's available
-        if hasattr(self, "setRegularExpression"):
-            self.setRegularExpression(lowercase_regex)
-        else:
-            self.setRegExp(lowercase_regex)
+        self.setRegularExpression(lowercase_regex)
 
 
 class FXLettersUnderscoreValidator(QRegularExpressionValidator):
@@ -104,11 +96,7 @@ class FXLettersUnderscoreValidator(QRegularExpressionValidator):
         else:
             letters_underscore_regex = QRegularExpression("^[a-zA-Z_]+$")
 
-        # Use the correct method based on what's available
-        if hasattr(self, "setRegularExpression"):
-            self.setRegularExpression(letters_underscore_regex)
-        else:
-            self.setRegExp(letters_underscore_regex)
+        self.setRegularExpression(letters_underscore_regex)
 
 
 class FXCapitalizedLetterValidator(QValidator):

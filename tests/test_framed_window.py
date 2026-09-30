@@ -42,7 +42,7 @@ def _window(qtbot, framed=True, theme="dark"):
     qtbot.addWidget(window)
     window.show()
     qtbot.waitExposed(window)
-    qtbot.wait(10)  # FXThemeAware styles on the first event loop pass.
+    qtbot.wait(10)
     return window
 
 

@@ -33,7 +33,6 @@ def test_only_a_left_click_on_the_header_toggles(qtbot, qapp):
 
 def test_expanded_header_is_a_property_the_theme_sheet_styles(qtbot, qapp):
     section = _section(qtbot)
-    assert not isinstance(section, fxstyle.FXThemeAware)
     section.expand(animate=False)
     assert section._header.property("expanded") is True
     assert section._header.styleSheet() == ""

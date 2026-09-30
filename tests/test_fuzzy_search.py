@@ -4,7 +4,6 @@
 from qtpy.QtCore import Qt
 
 # Internal
-from fxgui import fxstyle
 from fxgui.fxwidgets import FXFuzzySearchList, FXFuzzySearchTree
 
 
@@ -19,13 +18,6 @@ def test_list_and_tree_share_one_base():
 
     assert issubclass(FXFuzzySearchList, _FXFuzzySearchBase)
     assert issubclass(FXFuzzySearchTree, _FXFuzzySearchBase)
-
-
-def test_fuzzy_widgets_are_not_theme_aware_mixins(qtbot):
-    for cls in (FXFuzzySearchList, FXFuzzySearchTree):
-        widget = cls()
-        qtbot.addWidget(widget)
-        assert not isinstance(widget, fxstyle.FXThemeAware)
 
 
 def test_removing_a_parent_removes_its_children(qtbot):

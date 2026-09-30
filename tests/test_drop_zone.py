@@ -48,7 +48,6 @@ def test_zone_and_tree_accept_the_same_paths(qtbot, qapp, tmp_path):
 def test_drag_state_is_a_property_the_theme_sheet_styles(qtbot, qapp, tmp_path):
     zone = FXDropZone()
     qtbot.addWidget(zone)
-    assert not isinstance(zone, fxstyle.FXThemeAware)
     target = tmp_path / "a.png"
     target.write_text("x")
     mime = QMimeData()

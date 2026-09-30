@@ -273,11 +273,6 @@ def test_badges_follow_the_view_font(qtbot):
     assert large > small
 
 
-def test_delegates_are_not_theme_aware_mixins():
-    assert not isinstance(FXThumbnailDelegate(), fxstyle.FXThemeAware)
-    assert not isinstance(FXColorLabelDelegate({}), fxstyle.FXThemeAware)
-
-
 def test_a_theme_switch_repaints_with_the_new_colors(qtbot):
     tree, _ = _tree(qtbot)
     QTreeWidgetItem(tree, ["Row"])

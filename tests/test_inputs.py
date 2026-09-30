@@ -60,8 +60,6 @@ def test_icon_and_password_edits_style_through_the_theme(qtbot, qapp):
     icon_edit = FXIconLineEdit(icon_name="search")
     qtbot.addWidget(password)
     qtbot.addWidget(icon_edit)
-    for widget in (password, icon_edit):
-        assert not isinstance(widget, fxstyle.FXThemeAware)
     assert password.reveal_button.styleSheet() == ""
     assert icon_edit.icon_button.styleSheet() == ""
     sheet = fxstyle.build_stylesheet()

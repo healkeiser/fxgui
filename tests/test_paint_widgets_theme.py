@@ -16,7 +16,6 @@ def test_rating_stars_follow_a_theme_switch(qtbot, qapp):
     before = rating._stars[0].pixmap().toImage()
     fxstyle.apply_theme("dracula")
     assert rating._stars[0].pixmap().toImage() != before
-    assert not isinstance(rating, fxstyle.FXThemeAware)
 
 
 def test_rating_click_sets_the_star_under_the_pointer(qtbot, qapp):
@@ -40,4 +39,3 @@ def test_toggle_thumb_uses_the_theme_thumb_colour(qtbot, qapp):
     assert image.pixelColor(centre).name() == QColor(
         fxstyle.colors().slider_thumb
     ).name()
-    assert not isinstance(switch, fxstyle.FXThemeAware)

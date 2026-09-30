@@ -67,6 +67,5 @@ def test_start_spinbox_past_the_end_is_refused(qtbot, qapp):
 
 def test_track_reads_theme_colours_at_paint_time(qtbot, qapp):
     timeline = _timeline(qtbot)
-    assert not isinstance(timeline, fxstyle.FXThemeAware)
     fxstyle.apply_theme("light")
     assert timeline._track_color.name() == fxstyle.colors().surface_alt.lower()

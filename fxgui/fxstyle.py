@@ -71,7 +71,6 @@ __email__ = "valentin.onze@gmail.com"
 import hashlib
 import os
 import sys
-import warnings
 import weakref
 from collections import OrderedDict
 from functools import lru_cache
@@ -80,7 +79,7 @@ from typing import Dict, Optional, Tuple
 
 # Third-party
 import yaml
-from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal
+from qtpy.QtCore import QEvent, QObject, Qt, Signal
 from qtpy.QtGui import (
     QColor,
     QFont,
@@ -161,183 +160,12 @@ theme_manager = FXThemeManager()
 theme_changed = theme_manager.theme_changed
 
 
-class FXThemeAware:
-    """Mixin that makes widgets automatically respond to theme changes.
-
-    This mixin provides automatic theme updates for custom widgets. When the
-    theme changes, connected widgets are notified and can update their appearance.
-
-    Usage:
-        1. Inherit from FXThemeAware **FIRST**: `class MyWidget(FXThemeAware, QWidget)`
-        2. Override `_on_theme_changed()` to apply custom colors (optional)
-        3. Use `self.theme` property to access current theme colors
-        4. Optionally declare a `theme_style` class attribute for automatic QSS
-
-    Examples:
-        New API (recommended):
-        >>> from fxgui import fxstyle
-        >>> class FXMyWidget(FXThemeAware, QWidget):
-        ...     # Option 1: Declarative QSS with color tokens
-        ...     theme_style = '''
-        ...         FXMyWidget {
-        ...             background: @surface;
-        ...             border: 1px solid @border;
-        ...         }
-        ...     '''
-        ...
-        ...     # Option 2: Programmatic colors in paintEvent
-        ...     def paintEvent(self, event):
-        ...         painter = QPainter(self)
-        ...         painter.fillRect(self.rect(), QColor(self.theme.surface))
-
-        Legacy API (deprecated, still works):
-        >>> class FXMyWidget(FXThemeAware, QWidget):
-        ...     def _apply_theme_styles(self):
-        ...         colors = fxstyle.get_theme_colors()
-        ...         self.setStyleSheet(f"background: {colors['surface']};")
-
-    Attributes:
-        theme: Property returning current theme colors as a FXThemeColors object.
-        theme_style: Optional class attribute with QSS containing @color tokens.
-    """
-
-    # Class attribute for declarative QSS styling (optional)
-    theme_style: str = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        theme_manager.theme_changed.connect(self.__handle_theme_change)
-        # Auto-apply theme after widget is fully initialized
-        QTimer.singleShot(0, self.__handle_theme_change)
-
-    @property
-    def theme(self) -> FXThemeColors:
-        """Get current theme colors as a namespace object.
-
-        Returns:
-            FXThemeColors object with color attributes (e.g., theme.surface,
-            theme.accent_primary, theme.text).
-
-        Examples:
-            >>> def paintEvent(self, event):
-            ...     painter = QPainter(self)
-            ...     painter.fillRect(self.rect(), QColor(self.theme.surface))
-            ...     painter.setPen(QColor(self.theme.text))
-
-        Note:
-            The returned object is a shared, cached snapshot of the current
-            theme; treat it as read-only. It is rebuilt whenever the theme
-            changes.
-        """
-        return _get_theme_namespace()
-
-    def __handle_theme_change(self, _theme_name: str = None) -> None:
-        """Internal handler for theme changes."""
-        # Check if the C++ object is still valid (prevents RuntimeError).
-        # Uses fxgui._compat so this works under PyQt bindings too, where
-        # qtpy.shiboken does not exist.
-        if not _compat.is_valid(self):
-            # Drop the connection so the manager stops notifying a widget
-            # whose C++ side is gone; otherwise connections accumulate for
-            # every widget ever created.
-            try:
-                theme_manager.theme_changed.disconnect(
-                    self.__handle_theme_change
-                )
-            except (RuntimeError, TypeError):
-                pass
-            return
-
-        # Process theme_style class attribute if defined
-        if self.theme_style:
-            self.__apply_theme_style_attribute()
-
-        # Call the override point for custom logic
-        self._on_theme_changed()
-
-        # Always trigger repaint
-        if hasattr(self, "update"):
-            self.update()
-
-    def __apply_theme_style_attribute(self) -> None:
-        """Process the theme_style class attribute and apply it."""
-        if not self.theme_style:
-            return
-
-        if hasattr(self, "setStyleSheet"):
-            self.setStyleSheet(resolve(self.theme_style))
-
-    def _on_theme_changed(self) -> None:
-        """Override this to apply custom theme styling.
-
-        Called automatically when the theme changes. Use this for:
-        - Updating child widget styles
-        - Refreshing cached colors
-        - Any custom theme-dependent logic
-
-        Note:
-            You don't need to call `self.update()` - it's called automatically
-            after this method returns.
-
-        Examples:
-            >>> def _on_theme_changed(self):
-            ...     # Update a child widget that isn't theme-aware
-            ...     self.custom_label.setStyleSheet(
-            ...         f"color: {self.theme.text};"
-            ...     )
-        """
-        # Check if subclass overrides the deprecated _apply_theme_styles
-        # If so, call it for backward compatibility
-        if (
-            self.__class__._apply_theme_styles
-            is not FXThemeAware._apply_theme_styles
-        ):
-            import warnings
-
-            warnings.warn(
-                f"{self.__class__.__name__}._apply_theme_styles() is deprecated. "
-                "Override _on_theme_changed() instead, or use the theme_style "
-                "class attribute for declarative QSS.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            self._apply_theme_styles()
-
-    def _apply_theme_styles(self) -> None:
-        """Deprecated: Override _on_theme_changed() instead.
-
-        .. deprecated::
-            This method is deprecated. Use `_on_theme_changed()` for custom
-            logic or the `theme_style` class attribute for declarative QSS.
-        """
-        pass
-
-    # Deprecated methods kept for backward compatibility
-    def _safe_apply_theme_styles(self) -> None:
-        """Deprecated: No longer needed, theme changes are handled automatically.
-
-        .. deprecated::
-            This internal method is no longer used. Override `_on_theme_changed()`
-            for custom theme logic.
-        """
-        import warnings
-
-        warnings.warn(
-            "_safe_apply_theme_styles() is deprecated and no longer used. "
-            "Override _on_theme_changed() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._apply_theme_styles()
-
-
 ###### Public API
 
 __all__ = [
     # Classes
     "FXProxyStyle",
     "FXThemeManager",
-    "FXThemeAware",
     "FXThemeColors",
     # Singleton
     "theme_manager",
@@ -1505,70 +1333,31 @@ def colors() -> "FXThemeColors":
     return _get_theme_namespace()
 
 
-def apply_theme(*args, widget: Optional[QWidget] = None, theme: Optional[str] = None) -> str:
-    """Apply a theme everywhere.
-
-    Canonical form::
-
-        fxstyle.apply_theme("dracula")
-
-    Updates the persistent theme state, rebuilds the theme stylesheet,
-    re-applies it to every registered root (see
-    :func:`register_themed_root`), refreshes icon colors, and emits
-    ``theme_changed``.
-
-    .. deprecated::
-        The old form ``apply_theme(widget, theme)`` still works: it
-        registers ``widget`` as a themed root and proceeds. Prefer
-        ``apply_theme(theme)``.
+def apply_theme(theme: str) -> str:
+    """Apply a theme to every themed root and emit ``theme_changed``.
 
     Args:
         theme: The theme name to apply (e.g., "dark", "light").
-        widget: Deprecated. A widget to register as a themed root.
 
     Returns:
         The theme that was applied.
 
     Raises:
         ValueError: If the theme does not exist.
-        TypeError: If no theme name was provided.
+        TypeError: If `theme` is not a theme name.
+
+    Examples:
+        >>> fxstyle.apply_theme("dracula")
     """
     global _theme
 
-    # Untangle the two calling conventions.
-    if args:
-        if isinstance(args[0], str):
-            if len(args) > 1 or theme is not None:
-                raise TypeError("apply_theme() takes a single theme name")
-            theme = args[0]
-        else:
-            if widget is not None:
-                raise TypeError("apply_theme() got widget twice")
-            widget = args[0]
-            if len(args) == 2:
-                if theme is not None:
-                    raise TypeError("apply_theme() got theme twice")
-                theme = args[1]
-            elif len(args) > 2:
-                raise TypeError("apply_theme() takes at most 2 arguments")
-    if theme is None:
-        raise TypeError("apply_theme() missing required 'theme'")
-
+    if not isinstance(theme, str):
+        raise TypeError("apply_theme() takes a theme name")
     available_themes = get_available_themes()
     if theme not in available_themes:
         raise ValueError(
             f"Theme '{theme}' not found. Available themes: {available_themes}"
         )
-
-    if widget is not None:
-        warnings.warn(
-            "apply_theme(widget, theme) is deprecated; call "
-            "apply_theme(theme) once. For DCC-embedded windows, use "
-            "register_themed_root(widget) at construction instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        _themed_roots.add(widget)
 
     _theme = theme
     save_theme(theme)

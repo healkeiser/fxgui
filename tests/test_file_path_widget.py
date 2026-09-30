@@ -5,7 +5,6 @@ from qtpy.QtCore import QMimeData, QPointF, Qt, QThread, QUrl
 from qtpy.QtGui import QDropEvent
 
 # Internal
-from fxgui import fxstyle
 from fxgui.fxwidgets import FXFilePathWidget
 
 
@@ -45,7 +44,6 @@ def test_a_multi_file_drop_keeps_every_file(qtbot, qapp, tmp_path):
 def test_path_widget_leaves_the_mixin(qtbot, qapp):
     widget = FXFilePathWidget()
     qtbot.addWidget(widget)
-    assert not isinstance(widget, fxstyle.FXThemeAware)
 
 
 def test_a_result_for_a_deleted_widget_is_dropped(qtbot, qapp, tmp_path):

@@ -5,7 +5,6 @@ offering enhanced functionality and consistent styling for DCC applications.
 """
 
 from fxgui.fxstyle import (
-    FXThemeAware,
     FXThemeManager,
     FXThemeColors,
     theme_manager,
@@ -139,7 +138,6 @@ __all__ = [
     "FXSystemTray",
     "FXTagChip",
     "FXTagInput",
-    "FXThemeAware",
     "FXThemeManager",
     "FXThemeColors",
     "FXThumbnailDelegate",

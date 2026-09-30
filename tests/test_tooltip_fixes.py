@@ -10,7 +10,6 @@ from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem, QWidget
 
 # Internal
-from fxgui import fxstyle
 from fxgui.fxwidgets import FXThumbnailDelegate, FXTooltip, set_tooltip
 from fxgui.fxwidgets._tooltip import FXTooltipManager
 
@@ -69,14 +68,6 @@ def test_a_rect_tooltip_is_deleted_when_done(qtbot):
     gone = []
     tip.destroyed.connect(lambda: gone.append(True))
     qtbot.waitUntil(lambda: bool(gone), timeout=2000)
-
-
-def test_fxtooltip_is_not_a_theme_aware_mixin(qtbot):
-    tip = FXTooltip(description="probe")
-    try:
-        assert not isinstance(tip, fxstyle.FXThemeAware)
-    finally:
-        tip.deleteLater()
 
 
 def _tree_index(qtbot, text, **roles):

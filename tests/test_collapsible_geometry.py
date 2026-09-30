@@ -115,10 +115,10 @@ def test_an_opened_section_is_released_from_the_animations_cap(qtbot, qapp):
 
     section.expand(animate=False)
 
-    assert section.content_area.maximumHeight() == (
+    assert section._content_area.maximumHeight() == (
         FXCollapsibleWidget.NO_CAP
     ), "no cap asked for, so none left behind"
-    assert section.content_area.minimumHeight() > 0, "and still open"
+    assert section._content_area.minimumHeight() > 0, "and still open"
 
 
 def test_a_row_added_after_opening_is_not_clipped(qtbot, qapp):
@@ -127,18 +127,18 @@ def test_a_row_added_after_opening_is_not_clipped(qtbot, qapp):
     section = _section(max_content_height=0)
     host = _nested_host(qtbot, section)
     section.expand(animate=False)
-    before = section.content_area.minimumHeight()
+    before = section._content_area.minimumHeight()
 
     extra = QLabel("a row added later")
     extra.setFixedHeight(ROW_HEIGHT)
-    section.content_area.widget().layout().addWidget(extra)
+    section._content_area.widget().layout().addWidget(extra)
     _settled()
     # Re-opening is what re-measures, and it is also what a consumer
     # does; what matters is that the number it lands on is the new one.
     section.collapse(animate=False)
     section.expand(animate=False)
 
-    assert section.content_area.minimumHeight() > before
+    assert section._content_area.minimumHeight() > before
 
 
 def test_a_requested_cap_is_still_a_cap(qtbot, qapp):
@@ -151,8 +151,8 @@ def test_a_requested_cap_is_still_a_cap(qtbot, qapp):
 
     section.expand(animate=False)
 
-    assert section.content_area.maximumHeight() == limit
-    assert section.content_area.minimumHeight() == limit
+    assert section._content_area.maximumHeight() == limit
+    assert section._content_area.minimumHeight() == limit
 
 
 def _first_animation(section):
@@ -171,10 +171,10 @@ def test_an_interrupted_opening_is_reversed_from_where_it_got_to(
 
     section.expand(animate=True)
     qtbot.waitUntil(
-        lambda: 0 < section.content_area.maximumHeight() < ROWS * ROW_HEIGHT,
+        lambda: 0 < section._content_area.maximumHeight() < ROWS * ROW_HEIGHT,
         timeout=2000,
     )
-    reached = section.content_area.maximumHeight()
+    reached = section._content_area.maximumHeight()
 
     section.collapse(animate=True)
 
@@ -204,7 +204,7 @@ def test_a_collapse_after_a_finished_expansion_does_not_grow_first(
     host = _nested_host(qtbot, section)
     section.expand(animate=False)
     _settled()
-    on_screen = section.content_area.height()
+    on_screen = section._content_area.height()
     assert on_screen < section.max_content_height, (
         "the body must be SHORTER than its cap, or the bug hides"
     )
@@ -229,7 +229,7 @@ def test_an_uncapped_section_never_reports_qwidgetsize_max(qtbot, qapp):
     host = _nested_host(qtbot, section)
     section.expand(animate=False)
     _settled()
-    on_screen = section.content_area.height()
+    on_screen = section._content_area.height()
     frames = []
     section.resized.connect(frames.append)
 
@@ -246,13 +246,13 @@ def test_an_interrupted_closing_is_reversed_from_where_it_got_to(
     section = _section(animation_duration=400)
     host = _nested_host(qtbot, section)
     section.expand(animate=False)
-    full = section.content_area.minimumHeight()
+    full = section._content_area.minimumHeight()
 
     section.collapse(animate=True)
     qtbot.waitUntil(
-        lambda: 0 < section.content_area.maximumHeight() < full, timeout=2000
+        lambda: 0 < section._content_area.maximumHeight() < full, timeout=2000
     )
-    reached = section.content_area.maximumHeight()
+    reached = section._content_area.maximumHeight()
 
     section.expand(animate=True)
 
@@ -282,7 +282,7 @@ def test_the_movement_reports_every_frame(qtbot, qapp):
 def _spacing(section):
     """Whatever the content layout's own margins and spacing add."""
     return (
-        section.content_area.widget().sizeHint().height() - ROWS * ROW_HEIGHT
+        section._content_area.widget().sizeHint().height() - ROWS * ROW_HEIGHT
     )
 
 
