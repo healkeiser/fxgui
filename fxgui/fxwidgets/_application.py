@@ -18,8 +18,8 @@ class FXApplication(QApplication):
         and is not an FXApplication (e.g. inside Houdini, Maya, or Nuke),
         calling ``FXApplication()`` returns the host's application instance
         untouched instead of raising ``RuntimeError``. fxgui styling is NOT
-        applied to the host application in that case; style individual
-        widgets with ``fxstyle.load_stylesheet()`` instead.
+        applied to the host application in that case; fxgui's windows,
+        dialogs, tray menu and splash register themselves as themed roots.
     """
 
     def __new__(cls, *args, **kwargs):
