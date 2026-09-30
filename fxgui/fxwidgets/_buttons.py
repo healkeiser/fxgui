@@ -21,7 +21,7 @@ from fxgui import _compat, fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._tips import apply_tip
 
 
-class FXPrimaryButton(fxstyle.FXThemeAware, QPushButton):
+class FXPrimaryButton(QPushButton):
     """The main action of a form, drawn on the theme's accent.
 
     The look lives in the theme stylesheet under
@@ -52,6 +52,8 @@ class FXPrimaryButton(fxstyle.FXThemeAware, QPushButton):
         self.pressed.connect(self._on_theme_changed)
         self.released.connect(self._on_theme_changed)
         self._on_theme_changed()
+        # The icon is a pixmap baked in the on-accent ink.
+        fxstyle.theme_changed.connect(self._on_theme_changed)
 
     def enterEvent(self, event) -> None:
         """Draw the icon in the hover fill's ink."""
@@ -63,7 +65,8 @@ class FXPrimaryButton(fxstyle.FXThemeAware, QPushButton):
         super().leaveEvent(event)
         self._on_theme_changed()
 
-    def _on_theme_changed(self) -> None:
+    def _on_theme_changed(self, _theme_name: Optional[str] = None) -> None:
+        """Draw the icon in the ink of the current fill."""
         # Not fxicons.set_icon: its refresh recolours to the plain icon
         # colour, which vanishes on the accent in most themes. Qt has no
         # icon mode for a hovered push button, so the ink follows the state.
@@ -116,7 +119,7 @@ FXIconButton:checked:focus {
 """)
 
 
-class FXIconButton(fxstyle.FXThemeAware, QToolButton):
+class FXIconButton(QToolButton):
     """A round, flat icon button, filled with the accent when checked.
 
     Args:
@@ -157,8 +160,11 @@ class FXIconButton(fxstyle.FXThemeAware, QToolButton):
         if tip:
             apply_tip(self, tip)
         self._on_theme_changed()
+        # The icon pixmaps are baked in theme inks.
+        fxstyle.theme_changed.connect(self._on_theme_changed)
 
-    def _on_theme_changed(self) -> None:
+    def _on_theme_changed(self, _theme_name: Optional[str] = None) -> None:
+        """Render the icon pixmaps in the current theme's inks."""
         # Not fxicons.set_icon: its Active pixmap is drawn for the accent,
         # and unchecked this button hovers on state_hover. Active is how Qt
         # draws a hovered tool button's icon. Rendered at this widget's own
