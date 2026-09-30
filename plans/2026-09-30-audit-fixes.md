@@ -183,6 +183,10 @@ leave `FXThemeAware`.
   it: nothing new in fxgui, ls-pipeline deletes its helper and calls the
   existing one; (3) a studio choice (brand sizes, which status items,
   row kind names): stays in ls-pipeline. No duplicate survives.
+  The fxgui side is written from ls-pipeline qtads-everywhere at
+  b027e360 and never edits ls-pipeline. The ls-pipeline side waits for
+  the design-system session to merge that branch; before it, diff the
+  moved source files from b027e360 to the merge and fold new fixes in.
   QtAds code goes in an optional module: `import PySide6QtAds as ads`
   only when used, the `docking` extra never required at import, works on
   PySide6 6.5.3 (Houdini 21: no 3-argument QTimer.singleShot with a
