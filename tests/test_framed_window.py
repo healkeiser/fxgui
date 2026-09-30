@@ -257,8 +257,8 @@ def test_a_status_bar_leaving_the_frame_gets_its_accent_back(qtbot):
     bar.setProperty(fxstyle.FRAME_PROPERTY, False)
     qtbot.wait(10)
 
-    assert bar.status_line.isVisible()
-    assert bar.border_line.isVisible()
+    assert _pixel(window, bar, 0, 1) == QColor(
+        fxstyle.get_theme_colors()["accent_primary"]).name()
 
 
 def test_a_hidden_accent_stays_hidden_when_the_bar_leaves_the_frame(qtbot):
@@ -268,8 +268,10 @@ def test_a_hidden_accent_stays_hidden_when_the_bar_leaves_the_frame(qtbot):
     bar.setProperty(fxstyle.FRAME_PROPERTY, False)
     qtbot.wait(10)
 
-    assert not bar.status_line.isVisible()
-    assert not bar.border_line.isVisible()
+    assert _pixel(window, bar, 0, 1) != QColor(
+        fxstyle.get_theme_colors()["accent_primary"]).name()
+    assert _pixel(window, bar, bar.width() // 2, 3) != QColor(
+        fxstyle.get_theme_colors()["border"]).name()
 
 
 def test_a_status_bar_set_later_is_framed_too(qtbot):

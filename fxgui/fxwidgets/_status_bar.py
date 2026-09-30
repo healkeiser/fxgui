@@ -6,13 +6,8 @@ from typing import Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QEvent, Qt, Slot
-from qtpy.QtGui import QPixmap
-from qtpy.QtWidgets import (
-    QFrame,
-    QLabel,
-    QStatusBar,
-    QWidget,
-)
+from qtpy.QtGui import QColor, QLinearGradient, QPainter, QPixmap
+from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
@@ -25,9 +20,25 @@ from fxgui.fxwidgets._constants import (
     DEBUG,
 )
 
+# The painted lines replace the base sheet's top border.
+fxstyle.register_widget_style(
+    """
+    FXStatusBar {
+        border: none;
+    }
+    """
+)
 
-class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
+# Accent line height, then the border line under it.
+STATUS_LINE_HEIGHT = 3
+
+
+class FXStatusBar(QStatusBar):
     """Customized QStatusBar class.
+
+    The accent line and the border under it are painted along the top,
+    except on the frame (`fxstyle.mark_as_frame`) or after
+    `hide_status_line`.
 
     Args:
         parent (QWidget, optional): Parent widget. Defaults to `None`.
@@ -56,25 +67,15 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
 
         super().__init__(parent)
 
-        # Store colors for status line (will be set in _apply_theme_styles)
-        self._status_line_color_a = None
-        self._status_line_color_b = None
-
-        # Create status line (gradient bar at the top of the status bar)
-        self.status_line = QFrame(self)
-        self.status_line.setFrameShape(QFrame.NoFrame)
-        self.status_line.setFixedHeight(3)
-
-        # Create border line (sits just below the status line)
-        self.border_line = QFrame(self)
-        self.border_line.setFrameShape(QFrame.NoFrame)
-        self.border_line.setFixedHeight(1)
+        # Line state; `None` colours read the theme when painted.
         self._line_wanted = True
+        self._line_colors: Optional[Tuple[str, str]] = None
+        self._tint_border: Optional[str] = None
 
         # Attributes
         self.project = project or "Project"
         self.version = version or "0.0.0"
-        self.company = company or "\u00a9 Company"
+        self.company = company or "© Company"
         self.icon_label = QLabel()
         self.message_label = QLabel()
         self.project_label = QLabel(self.project)
@@ -83,48 +84,20 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
 
         self.message_label.setTextFormat(Qt.RichText)
 
-        left_widgets = [
-            self.icon_label,
-            self.message_label,
-        ]
-
-        right_widgets = [
-            self.project_label,
-            self.version_label,
-            self.company_label,
-        ]
-
-        for widget in left_widgets:
+        for widget in (self.icon_label, self.message_label):
             self.addWidget(widget)
             widget.setVisible(False)  # Hide if no message is shown
 
-        for widget in right_widgets:
+        for widget in (self.project_label, self.version_label, self.company_label):
             self.addPermanentWidget(widget)
 
         self.messageChanged.connect(self._on_status_message_changed)
-
-    def resizeEvent(self, event) -> None:
-        """Handle resize to position the status line and border correctly."""
-        super().resizeEvent(event)
-        # Status line at the very top
-        self.status_line.setGeometry(0, 0, self.width(), 3)
-        # Border line just below the status line
-        self.border_line.setGeometry(0, 3, self.width(), 1)
-        # Raise both to ensure they're on top
-        self.status_line.raise_()
-        self.border_line.raise_()
+        fxstyle.theme_changed.connect(self._theme_switched)
 
     def _get_severity_info(
         self, severity_type: int, colors_dict: dict
     ) -> Tuple[str, QPixmap, str, str]:
-        """Returns severity information for the given severity type.
-
-        Args:
-            severity_type: The severity level (0-5).
-            colors_dict: The colors dictionary from fxstyle.
-
-        Returns:
-            Tuple of (prefix, icon_pixmap, background_color, border_color).
+        """Return the prefix, icon, background and foreground of a severity.
 
         Warning:
             This method is intended for internal use only.
@@ -179,8 +152,8 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
                 the message. Defaults to `True`.
             logger (Logger, optional): A logger object to log the message.
                 Defaults to `None`.
-            set_color (bool): Whether to set the status bar color depending on
-                the log verbosity. Defaults to `True`.
+            set_color (bool): Whether to tint the bar in the severity's
+                colors until the message goes. Defaults to `True`.
             pixmap (QPixmap, optional): A custom pixmap to be displayed in the
                 status bar. Defaults to `None`.
             background_color (str, optional): A custom background color for
@@ -201,51 +174,45 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
             Overrides the base class method.
         """
 
-        # Send fake signal to trigger the `messageChanged` event
+        # Qt's own message only drives `messageChanged` and the timeout.
         super().showMessage(" ", timeout=int(duration * 1000))
 
-        # Show the icon and message label which were hidden at init time
         self.icon_label.setVisible(True)
         self.message_label.setVisible(True)
 
-        colors_dict = fxstyle.get_colors()
         (
             severity_prefix,
             severity_icon,
             status_bar_color,
             status_bar_border_color,
-        ) = self._get_severity_info(severity_type, colors_dict)
+        ) = self._get_severity_info(severity_type, fxstyle.get_colors())
 
-        # Use custom pixmap if provided
         if pixmap is not None:
             severity_icon = pixmap
-
-        # Use custom background color if provided
         if background_color is not None:
             status_bar_color = background_color
 
-        # Message
         # Use inline style for bold as QSS can interfere with <b> tag rendering
         message_prefix = (
             f"<b>{severity_prefix}</b>: {fxutils.get_formatted_time()} - "
             if time
             else f"<b>{severity_prefix}</b>: "
         )
-        notification_message = f"{message_prefix} {message}"
         self.icon_label.setPixmap(severity_icon)
-        self.message_label.setText(notification_message)
-        # self.clearMessage()
+        self.message_label.setText(f"{message_prefix} {message}")
 
         if set_color:
-            self._update_border_line_color(status_bar_border_color)
+            # The bar's own sheet is the tint and nothing else.
+            self._tint_border = status_bar_border_color
             self.setStyleSheet(
-                f"""QStatusBar {{
+                f"""FXStatusBar {{
                     background: {status_bar_color};
                 }}
-                QStatusBar QLabel {{
+                FXStatusBar QLabel {{
                     color: {fxstyle.readable_ink(status_bar_color)};
                 }}"""
             )
+            self.update()
 
         # Link `Logger` object
         if logger is not None:
@@ -261,117 +228,90 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
             log_method(message)
 
     def clearMessage(self):
-        """Clears the message from the status bar.
+        """Clear the message and its tint.
 
         Note:
             Overrides the base class method.
         """
-
-        self.icon_label.clear()
-        self.icon_label.setVisible(False)
-        self.message_label.clear()
-        self.message_label.setVisible(False)
         super().clearMessage()
+        self._clear()
 
-    @Slot()
-    def _on_status_message_changed(self, args):
-        """If there are no arguments, which means the message is being removed,
-        then change the status bar background back to black.
-        """
-
-        if not args:
-            self.clearMessage()
-            self._apply_stylesheet()
-
-    def _update_status_line_colors(self) -> None:
-        """Update the status line gradient colors.
+    def _clear(self) -> None:
+        """Hide the message labels and drop the tint.
 
         Warning:
             This method is intended for internal use only.
         """
-        self.status_line.setStyleSheet(
-            f"background: qlineargradient("
-            f"x1:0, y1:0, x2:1, y2:0, "
-            f"stop:0 {self._status_line_color_a}, "
-            f"stop:1 {self._status_line_color_b});"
-        )
+        self.icon_label.clear()
+        self.icon_label.setVisible(False)
+        self.message_label.clear()
+        self.message_label.setVisible(False)
+        self._tint_border = None
+        self.setStyleSheet("")
+        self.update()
+
+    @Slot(str)
+    def _on_status_message_changed(self, message: str) -> None:
+        """Clear the labels and tint when Qt's timeout empties the message."""
+        if not message:
+            self._clear()
+
+    def _theme_switched(self, _theme_name: str) -> None:
+        """Call `_on_theme_changed` without the theme name."""
+        self._on_theme_changed()
+
+    def _on_theme_changed(self, _theme_name: Optional[str] = None) -> None:
+        """Drop a tint drawn in the old theme's colors; override to extend."""
+        if self._tint_border is not None:
+            self._clear()
 
     def set_status_line_colors(self, color_a: str, color_b: str) -> None:
-        """Set the status line gradient colors.
-
-        Args:
-            color_a: The first color of the gradient.
-            color_b: The second color of the gradient.
-        """
-        self._status_line_color_a = color_a
-        self._status_line_color_b = color_b
-        self._update_status_line_colors()
-
-    def _update_border_line_color(self, color: str) -> None:
-        """Update the border line color.
-
-        Args:
-            color: The color for the border line.
-        """
-        self.border_line.setStyleSheet(f"background: {color};")
-
-    def _apply_stylesheet(self, with_status_line_padding: bool = True) -> None:
-        """Apply the status bar stylesheet.
-
-        Args:
-            with_status_line_padding: Whether to include padding for the
-                status line. Defaults to `True`.
-        """
-        # Update accent colors from current theme
-        self._status_line_color_a = self.theme.accent_primary
-        self._status_line_color_b = self.theme.accent_secondary
-        self._update_status_line_colors()
-
-        # Update theme colors
-        self._update_border_line_color(self.theme.border)
-        self.setStyleSheet(
-            f"""
-            QStatusBar {{
-                border: 0px solid transparent;
-                background: {self.theme.surface_sunken};
-            }}
-            QStatusBar[fxFrame="true"] {{
-                background: {self.theme.frame};
-            }}
-        """
-        )
-
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        self._apply_stylesheet()
+        """Paint the accent line as a gradient from `color_a` to `color_b`."""
+        self._line_colors = (color_a, color_b)
+        self.update()
 
     def hide_status_line(self) -> None:
-        """Hide the status line and border line."""
+        """Hide the accent line and the border under it."""
         self._line_wanted = False
-        self._sync_lines()
-        self._apply_stylesheet(with_status_line_padding=False)
+        self.update()
 
     def show_status_line(self) -> None:
-        """Show the status line and border line, unless on the frame."""
+        """Show the accent line and border, unless the bar is on the frame."""
         self._line_wanted = True
-        self._sync_lines()
-        self._apply_stylesheet(with_status_line_padding=True)
+        self.update()
 
-    def _sync_lines(self) -> None:
+    def paintEvent(self, event) -> None:
+        """Paint the bar, then its accent line and the border under it."""
+        super().paintEvent(event)
         # On the frame the bar joins the chrome, so it draws no line on top.
-        shown = self._line_wanted and not self.property(
-            fxstyle.FRAME_PROPERTY
+        if not self._line_wanted or self.property(fxstyle.FRAME_PROPERTY):
+            return
+        theme = fxstyle.colors()
+        start, end = self._line_colors or (
+            theme.accent_primary,
+            theme.accent_secondary,
         )
-        self.status_line.setVisible(shown)
-        self.border_line.setVisible(shown)
+        gradient = QLinearGradient(0, 0, self.width(), 0)
+        gradient.setColorAt(0, QColor(start))
+        gradient.setColorAt(1, QColor(end))
+        painter = QPainter(self)
+        painter.fillRect(0, 0, self.width(), STATUS_LINE_HEIGHT, gradient)
+        painter.fillRect(
+            0,
+            STATUS_LINE_HEIGHT,
+            self.width(),
+            1,
+            QColor(self._tint_border or theme.border),
+        )
+        painter.end()
 
     def event(self, event: QEvent) -> bool:
-        """Drop the lines when `fxstyle.mark_as_frame` marks the bar."""
+        """Repaint when `fxstyle.mark_as_frame` marks or unmarks the bar."""
         if (
             event.type() == QEvent.DynamicPropertyChange
             and bytes(event.propertyName()) == fxstyle.FRAME_PROPERTY.encode()
         ):
-            self._sync_lines()
+            self.update()
         return super().event(event)
 
 
