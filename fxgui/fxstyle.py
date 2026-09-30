@@ -5,62 +5,11 @@ This module provides comprehensive styling functionality including:
     - Theme persistence across application restarts (via fxconfig)
     - QSS stylesheet loading with dynamic color replacement
     - Custom QProxyStyle for standard icon overrides
-    - Theme toggling with icon cache invalidation
+    - A QPalette and icons that read the theme when drawn
     - Color loading from YAML configuration files with inheritance support
 
-Theme Color Reference
----------------------
-Each theme in ``style.yaml`` defines these semantic color roles:
-
-**Accent Colors** (interactive highlights):
-    - ``accent_primary``: Hover borders, selections, progress gradients (end)
-    - ``accent_secondary``: Gradient starts, item hover backgrounds
-
-**Surface Colors** (backgrounds):
-    - ``surface``: Main widget/window backgrounds, buttons, selected tabs
-    - ``surface_alt``: Alternate row backgrounds in lists/tables
-    - ``surface_sunken``: Recessed areas - inputs, lists, menus, status bar
-    - ``frame``: Chrome around the panes of a framed window (optional,
-      auto-computed; see `FRAME_MIN_CONTRAST`)
-    - ``well``: Lists and logs set into a pane (optional, auto-computed
-      half-way from ``surface`` to ``frame``)
-    - ``pane_border``: The 1 px edge of a pane on the frame (optional,
-      auto-computed; see `PANE_BORDER_MIN_CONTRAST`)
-    - ``splitter_mark``: The dots on a marked splitter's handles
-      (optional, auto-computed; see `SPLITTER_MARK_MIN_CONTRAST`)
-    - ``tooltip``: Tooltip backgrounds
-
-**Border Colors**:
-    - ``border``: Standard borders on inputs, containers, menus
-    - ``border_light``: Subtle borders - tooltips, buttons, tabs
-    - ``border_strong``: Emphasized borders - frames, separators
-
-**Text Colors**:
-    - ``text``: Primary text for all widgets
-    - ``text_muted``: De-emphasized text - inactive tabs, placeholders
-    - ``text_disabled``: Disabled widget text
-    - ``text_on_accent_primary``: Text on accent_primary backgrounds (optional, auto-computed)
-    - ``text_on_accent_secondary``: Text on accent_secondary backgrounds (optional, auto-computed)
-
-**Interactive States**:
-    - ``state_hover``: Hover state backgrounds
-    - ``state_pressed``: Pressed/checked/active backgrounds
-
-**Scrollbar**:
-    - ``scrollbar_track``: Track/gutter background
-    - ``scrollbar_thumb``: Draggable thumb
-    - ``scrollbar_thumb_hover``: Thumb hover state
-
-**Layout**:
-    - ``grid``: Table gridlines, header borders
-    - ``separator``: Separator/splitter hover backgrounds
-
-**Slider**:
-    - ``slider_thumb``: Slider handle color
-    - ``slider_thumb_hover``: Slider handle hover/pressed
-
-**Icon**:
-    - ``icon``: Monochrome icon tint color
+Every colour role a theme names is listed, with what it paints, at the top
+of the ``themes:`` section of ``style.yaml``.
 
 Theme Font Reference
 --------------------
@@ -82,45 +31,6 @@ A consumer names its fonts in its own ``fonts:`` block, through
 :func:`overlay_color_file` (a few keys) or :func:`set_color_file` (a
 whole file). Font files those names refer to are registered with
 :func:`register_fonts`.
-
-Classes:
-    FXProxyStyle: Custom style providing Material Design icons for Qt standard icons.
-    FXThemeManager: Singleton that emits signals when theme changes.
-    FXThemeAware: Mixin for widgets that auto-update on theme changes.
-
-Functions:
-    load_stylesheet: Load and customize QSS stylesheets.
-    get_colors: Get the cached color configuration.
-    set_color_file: Replace the color configuration file.
-    overlay_color_file: Merge a few keys onto the color configuration.
-    resolve: Replace every @token in a stylesheet.
-    apply_theme: Apply a theme to all registered roots (stylesheet + icons).
-    get_available_themes: Get list of available theme names.
-    get_theme: Get the current theme name.
-    get_theme_colors: Get the color palette for the current theme.
-    get_accent_colors: Get primary/secondary accent colors.
-    get_icon_color: Get the icon tint color for current theme.
-    register_fonts: Register font files so a color file may name them.
-    get_fonts: Get the resolved font stack for every role.
-    get_font_family: Get the resolved font stack for one role.
-    mark_as_title: Draw a widget's text in the title font role.
-    is_light_theme: Check if the current theme is light or dark.
-    save_theme: Save the current theme to persistent storage.
-    load_saved_theme: Load the previously saved theme.
-    set_default_theme: Set the theme to fall back to when none is saved.
-    get_default_theme: Get the theme to fall back to when none is saved.
-
-Constants:
-    STYLE_FILE: Path to the default QSS stylesheet.
-    DEFAULT_COLOR_FILE: Path to the default color configuration.
-    TITLE_PROPERTY: Dynamic property name selecting the title font role.
-    BUTTON_RADIUS: Corner radius of a push button, in pixels.
-    FRAME_MIN_CONTRAST: Least contrast between a pane and its frame.
-    WELL_MIN_CONTRAST: Least contrast between a pane and a well in it.
-    PANE_BORDER_MIN_CONTRAST: Least contrast between a pane's edge and
-        the frame.
-    SPLITTER_MARK_MIN_CONTRAST: Least contrast between the splitter mark
-        and the frame.
 
 Examples:
     Loading a stylesheet with a theme:
@@ -231,37 +141,13 @@ class FXThemeColors:
 
 
 class FXThemeManager(QObject):
-    """Singleton that emits theme_changed(str) when the theme changes."""
+    """Hold the `theme_changed(str)` signal `apply_theme` emits."""
 
     theme_changed = Signal(str)
-    _instance = None
-    # Class-level default so the re-init guard resolves through the class.
-    # Probing an *instance* attribute before super().__init__() raises
-    # RuntimeError under PyQt (sip), which made `import fxgui` fail outright
-    # on PyQt5/PyQt6.
-    _initialized = False
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    def __init__(self):
-        if self._initialized:
-            return
-        super().__init__()
-        self._initialized = True
-        self._current_theme: str = ""
 
     def notify_theme_changed(self, theme_name: str) -> None:
-        """Called by apply_theme() when theme changes."""
-        self._current_theme = theme_name
+        """Emit `theme_changed` with the theme now applied."""
         self.theme_changed.emit(theme_name)
-
-    @property
-    def current_theme(self) -> str:
-        """Return the current theme name."""
-        return self._current_theme
 
 
 # Global singleton instance
@@ -497,7 +383,6 @@ __all__ = [
     "get_contrast_text_color",
     "get_contrast_ratio",
     "readable_ink",
-    "invalidate_standard_icon_map",
 ]
 
 
@@ -604,36 +489,15 @@ def _get_theme_namespace() -> "FXThemeColors":
 ###### Private Helper Functions
 
 
-def _load_colors_from_yaml(yaml_file: str = None) -> dict:
-    """Load colors from a YAML configuration file.
-
-    YAML supports anchors and aliases for theme inheritance, allowing
-    themes to extend base themes and override specific colors.
-
-    Args:
-        yaml_file: The path to the YAML file. Defaults to
-            `DEFAULT_COLOR_FILE` or the file set via `set_color_file()`.
-
-    Returns:
-        A dictionary containing color definitions.
-    """
+def _load_colors_from_yaml() -> dict:
+    """Return the loaded colour file, reading it on first use."""
     global _colors, _color_file
-
-    # Use the set color file, or fall back to default
-    if yaml_file is None:
-        yaml_file = _color_file if _color_file else DEFAULT_COLOR_FILE
-
-    # Convert to string for comparison
-    yaml_file_str = str(yaml_file)
-
-    # Return cached if same file, otherwise reload
-    if _colors is not None and _color_file == yaml_file_str:
-        return _colors
-
-    with open(yaml_file, "r", encoding="utf-8") as f:
-        _colors = yaml.safe_load(f)
-        _color_file = yaml_file_str
-        return _colors
+    path = _color_file or str(DEFAULT_COLOR_FILE)
+    if _colors is None or _color_file != path:
+        with open(path, "r", encoding="utf-8") as in_file:
+            _colors = yaml.safe_load(in_file)
+        _color_file = path
+    return _colors
 
 
 @lru_cache(maxsize=1)
@@ -672,7 +536,7 @@ def _deep_merge(base: dict, over: dict) -> dict:
 
 
 def _colors_changed() -> None:
-    """Re-apply the current theme after the colour file changed."""
+    """Re-apply the current theme after the theme or colour file changed."""
     global _standard_icon_map
     _standard_icon_map = None
     _invalidate_theme_namespace()
@@ -757,11 +621,8 @@ def get_accent_colors() -> dict:
         >>> primary = colors["primary"]  # "#2196F3" for dark theme
         >>> secondary = colors["secondary"]  # "#1976D2" for dark theme
     """
-    theme_colors = get_theme_colors()
-    return {
-        "primary": theme_colors.get("accent_primary", "#2196F3"),
-        "secondary": theme_colors.get("accent_secondary", "#1976D2"),
-    }
+    theme = colors()
+    return {"primary": theme.accent_primary, "secondary": theme.accent_secondary}
 
 
 def get_feedback_colors() -> dict:
@@ -806,64 +667,9 @@ def _feedback(theme_name: str) -> dict:
 
 
 def get_theme_colors() -> dict:
-    """Get the color palette for the current theme.
+    """Get the resolved colours of the current theme, one key per role.
 
-    Returns a dictionary with all semantic color roles:
-
-    **Surface Colors (Backgrounds)**:
-
-    - ``surface``: Main widget/window backgrounds, buttons, selected tabs
-    - ``surface_alt``: Alternate row backgrounds in lists/tables
-    - ``surface_sunken``: Recessed areas - input fields, lists, menus
-    - ``frame``: Chrome around the panes of a framed window (computed
-      unless the theme states it)
-    - ``well``: Lists and logs set into a pane (computed unless stated)
-    - ``pane_border``: The 1 px edge of a pane on the frame (computed
-      unless stated)
-    - ``splitter_mark``: The dots on a marked splitter's handles
-      (computed unless stated)
-    - ``tooltip``: Tooltip backgrounds
-
-    **Border Colors**:
-
-    - ``border``: Standard borders on inputs, containers, menus
-    - ``border_light``: Subtle borders - tooltips, buttons, tabs
-    - ``border_strong``: Emphasized borders - frames, separators
-
-    **Text Colors**:
-
-    - ``text``: Primary text for all widgets
-    - ``text_muted``: De-emphasized text - inactive tabs, placeholders
-    - ``text_disabled``: Disabled widget text
-    - ``text_on_accent_primary``: Text on accent_primary backgrounds (optional)
-    - ``text_on_accent_secondary``: Text on accent_secondary backgrounds (optional)
-
-    **Interactive States**:
-
-    - ``state_hover``: Hover state backgrounds
-    - ``state_pressed``: Pressed/checked/active backgrounds
-
-    **Scrollbar Colors**:
-
-    - ``scrollbar_track``: Track/gutter background
-    - ``scrollbar_thumb``: Draggable thumb
-    - ``scrollbar_thumb_hover``: Thumb hover state
-
-    **Layout Colors**:
-
-    - ``grid``: Table gridlines, header borders
-    - ``separator``: Separator/splitter hover backgrounds
-
-    **Slider Colors**:
-
-    - ``slider_thumb``: Slider handle color
-    - ``slider_thumb_hover``: Slider handle hover/pressed
-
-    **Icon Colors**:
-
-    - ``icon``: Tint color for monochrome icons
-    - ``icon_on_accent_primary``: Icon color on accent_primary backgrounds (optional)
-    - ``icon_on_accent_secondary``: Icon color on accent_secondary backgrounds (optional)
+    The roles are listed at the top of ``style.yaml``'s ``themes:`` section.
 
     Returns:
         Every ``@token`` of the theme sheet, without the ``@``: a copy of
@@ -907,8 +713,7 @@ def get_icon_color() -> str:
         >>> color = fxstyle.get_icon_color()
         >>> print(color)  # "#b4b4b4" for dark, "#424242" for light
     """
-    theme_colors = get_theme_colors()
-    return theme_colors.get("icon", "#b4b4b4")
+    return colors().icon
 
 
 def get_icon_on_accent_primary() -> str:
@@ -1177,27 +982,20 @@ def get_luminance(hex_color: str) -> float:
     Uses the WCAG 2.0 formula for relative luminance.
 
     Args:
-        hex_color: A hex color string (e.g., "#007ACC" or "007ACC").
+        hex_color: Any colour QColor reads ("#007ACC", "white"), or hex
+            without its "#" ("007ACC").
 
     Returns:
         The relative luminance value between 0 (black) and 1 (white).
     """
-    # Remove # if present
-    hex_color = hex_color.lstrip("#")
+    color = QColor(hex_color if hex_color[:1] == "#" else f"#{hex_color}")
+    if not color.isValid():
+        color = QColor(hex_color)
 
-    # Handle shorthand hex (e.g., "FFF" -> "FFFFFF")
-    if len(hex_color) == 3:
-        hex_color = "".join(c * 2 for c in hex_color)
-
-    # Parse RGB values
-    r = int(hex_color[0:2], 16) / 255.0
-    g = int(hex_color[2:4], 16) / 255.0
-    b = int(hex_color[4:6], 16) / 255.0
-
-    # Apply gamma correction
     def gamma(c):
         return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
 
+    r, g, b = color.redF(), color.greenF(), color.blueF()
     return 0.2126 * gamma(r) + 0.7152 * gamma(g) + 0.0722 * gamma(b)
 
 
@@ -1260,26 +1058,10 @@ def _visibly_differ(one_hex: str, two_hex: str) -> bool:
     return get_contrast_ratio(one_hex, two_hex) >= 1.1 or delta >= 48
 
 
-def _shift_away(fill_hex: str, ink_hex: str, done) -> str:
-    """Shift `fill_hex` away from `ink_hex` in steps until `done(color)`.
-
-    Darkens under light ink and lightens under dark ink, keeping the hue,
-    so every step only raises the ink's contrast.
-    """
-    fill = QColor(fill_hex)
+def _away_from(ink_hex: str, fill_hex: str) -> str:
+    """Return the pole a fill moves to for more contrast with `ink_hex`."""
     light_ink = get_luminance(ink_hex) > get_luminance(fill_hex)
-    toward = QColor("#000000" if light_ink else "#ffffff")
-    shifted = fill
-    for step in range(21):
-        amount = step / 20
-        shifted = QColor(
-            round(fill.red() + (toward.red() - fill.red()) * amount),
-            round(fill.green() + (toward.green() - fill.green()) * amount),
-            round(fill.blue() + (toward.blue() - fill.blue()) * amount),
-        )
-        if done(shifted.name()):
-            break
-    return shifted.name()
+    return "#000000" if light_ink else "#ffffff"
 
 
 def _primary_button_fills(
@@ -1296,25 +1078,17 @@ def _primary_button_fills(
     the secondary accent lands on the rest fill, hover steps off it instead.
     """
 
-    def reads(ink):
-        return lambda color: get_contrast_ratio(color, ink) >= 4.5
+    def shifted(fill, ink, *apart):
+        reads = _reads(ink, 4.5)
+        return _step_toward(fill, _away_from(ink, fill), lambda color: (
+            reads(color) and all(_visibly_differ(color, o) for o in apart)
+        ))
 
-    rest = _shift_away(accent_primary, text_on_primary, reads(text_on_primary))
-    hover = _shift_away(
-        accent_secondary, text_on_secondary, reads(text_on_secondary))
+    rest = shifted(accent_primary, text_on_primary)
+    hover = shifted(accent_secondary, text_on_secondary)
     if not _visibly_differ(rest, hover):
-        hover = _shift_away(
-            rest,
-            text_on_secondary,
-            lambda c: reads(text_on_secondary)(c) and _visibly_differ(c, rest),
-        )
-    pressed = _shift_away(
-        rest,
-        text_on_primary,
-        lambda c: reads(text_on_primary)(c)
-        and _visibly_differ(c, rest)
-        and _visibly_differ(c, hover),
-    )
+        hover = shifted(rest, text_on_secondary, rest)
+    pressed = shifted(rest, text_on_primary, rest, hover)
     return rest, hover, pressed
 
 
@@ -1600,11 +1374,7 @@ def is_light_theme() -> bool:
         ... else:
         ...     use_light_icons()
     """
-    from qtpy.QtGui import QColor
-
-    colors = get_theme_colors()
-    surface_color = QColor(colors.get("surface", "#000000"))
-    return surface_color.lightness() > 128
+    return QColor(colors().surface).lightness() > 128
 
 
 ###### Theme Functions
@@ -1672,10 +1442,7 @@ def load_saved_theme() -> str:
     default = get_default_theme()
     saved_theme = fxconfig.get_value(_SETTINGS_THEME_KEY, default)
 
-    # Validate the saved theme exists
-    # We need to load colors first to get available themes
-    colors = _load_colors_from_yaml()
-    available_themes = list(colors.get("themes", {}).keys())
+    available_themes = get_available_themes()
 
     if saved_theme in available_themes:
         return saved_theme
@@ -1794,23 +1561,9 @@ def apply_theme(*args, widget: Optional[QWidget] = None, theme: Optional[str] = 
         _themed_roots.add(widget)
 
     _theme = theme
-    _invalidate_theme_namespace()
     save_theme(theme)
-    invalidate_standard_icon_map()
-    _reapply_to_roots()
-    theme_manager.notify_theme_changed(theme)
-
+    _colors_changed()
     return theme
-
-
-def invalidate_standard_icon_map() -> None:
-    """Invalidate the cached standard icon map.
-
-    This should be called when changing themes so icons are regenerated
-    with the new color scheme on next access.
-    """
-    global _standard_icon_map
-    _standard_icon_map = None
 
 
 def set_style(widget: QWidget, style: str = None) -> "FXProxyStyle":
@@ -1986,22 +1739,16 @@ class FXProxyStyle(QProxyStyle):
 ###### Stylesheet Functions
 
 
-def replace_colors(
-    stylesheet: str,
-    colors_dict: dict = None,
-    prefix: str = "",
-) -> str:
+def replace_colors(stylesheet: str, colors_dict: Optional[dict] = None) -> str:
     """Replace color placeholders in a stylesheet with actual color values.
 
-    This function searches for placeholders in the format `@{prefix}{key}`
-    and replaces them with the corresponding color values from the dictionary.
+    Placeholders are `@key`; the longest key is replaced first.
 
     Args:
         stylesheet: The stylesheet string containing color placeholders.
         colors_dict: Dictionary containing color definitions. Only top-level
             non-dict values are used. Defaults to every token of the
             current theme, as `resolve` substitutes them.
-        prefix: Prefix for placeholder names. Defaults to empty string.
 
     Returns:
         The stylesheet with all matching placeholders replaced.
@@ -2013,12 +1760,10 @@ def replace_colors(
         >>> print(result)
         'color: #FF5722; background: #E64A19;'
     """
-    if colors_dict is None and not prefix:
-        return resolve(stylesheet)
     if colors_dict is None:
-        colors_dict = get_theme_colors()
+        return resolve(stylesheet)
     return _substitute(stylesheet, {
-        f"@{prefix}{key}": str(value)
+        f"@{key}": str(value)
         for key, value in colors_dict.items()
         if not isinstance(value, dict)
     })
@@ -2056,11 +1801,14 @@ def build_stylesheet(theme: Optional[str] = None) -> str:
     Returns:
         The ready-to-apply stylesheet string.
     """
-    if theme is None:
-        theme = get_theme()
+    return _build(STYLE_FILE, theme)
+
+
+def _build(style_file, theme: Optional[str]) -> str:
+    """Resolve the font block, `style_file` and every registered fragment."""
     parts = [_font_stylesheet()]
-    if os.path.exists(STYLE_FILE):
-        with open(STYLE_FILE, "r", encoding="utf-8") as in_file:
+    if os.path.exists(style_file):
+        with open(style_file, "r", encoding="utf-8") as in_file:
             parts.append(in_file.read())
     parts.extend(_widget_fragments.values())
     return resolve("\n".join(parts), theme)
@@ -2189,10 +1937,9 @@ def load_stylesheet(
     extra: Optional[str] = None,
     theme: Optional[str] = None,
 ) -> str:
-    """Return a stylesheet file with every token resolved; changes nothing.
+    """Return `build_stylesheet` over another QSS file; changes nothing.
 
-    For styling a DCC window by hand. `build_stylesheet` also carries the
-    fragments of `register_widget_style`; this does not.
+    For styling a DCC window by hand.
 
     Args:
         style_file: The path to the QSS file. Defaults to `STYLE_FILE`.
@@ -2204,6 +1951,4 @@ def load_stylesheet(
     """
     if not os.path.exists(style_file):
         return ""
-    with open(style_file, "r", encoding="utf-8") as in_file:
-        stylesheet = resolve(_font_stylesheet() + in_file.read(), theme)
-    return stylesheet + extra if extra else stylesheet
+    return _build(style_file, theme) + (extra or "")

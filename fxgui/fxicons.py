@@ -66,14 +66,12 @@ __all__ = [
     "set_default_icon_library",
     "set_icon_defaults",
     "add_library",
-    "get_available_libraries",
     "get_available_icons_in_library",
     "get_icon_path",
     "get_icon",
     "get_icon_color",
     "get_pixmap",
     "change_pixmap_color",
-    "convert_icon_to_pixmap",
     "superpose_icons",
     "clear_icon_cache",
     "set_icon",
@@ -261,19 +259,6 @@ def add_library(
         "defaults": defaults,
         "root": root,
     }
-
-
-def get_available_libraries() -> List[str]:
-    """Get all available icon libraries.
-
-    Returns:
-        List[str]: The available icon libraries.
-
-    Examples:
-        >>> print(get_available_libraries())
-        ["beacon", "dcc", "material", "fontawesome"]
-    """
-    return list(_libraries_info.keys())
 
 
 def get_available_icons_in_library(library: str) -> List[str]:
@@ -507,6 +492,26 @@ def _raster(
 _get_pixmap_cached = lru_cache(maxsize=512)(_get_pixmap_internal)
 
 
+def _resolved(library, width, height, color):
+    """Fill a library, size and colour left unset from the library defaults.
+
+    A full-colour library answers no colour, whatever was asked.
+    """
+    library = library or _default_library
+    info = _libraries_info[library]
+    defaults = info["defaults"]
+    if not info["recolor"]:
+        color = None
+    elif color is None:
+        color = defaults["color"]
+    return (
+        library,
+        defaults["width"] if width is None else width,
+        defaults["height"] if height is None else height,
+        color,
+    )
+
+
 def get_pixmap(
     icon_name: str,
     width: Optional[int] = None,
@@ -539,20 +544,7 @@ def get_pixmap(
         >>> get_pixmap("lemon", library="fontawesome")
     """
 
-    if library is None:
-        library = _default_library
-
-    defaults = _libraries_info[library]["defaults"]
-
-    # Resolve defaults BEFORE caching - these become part of the cache key
-    if width is None:
-        width = defaults["width"]
-    if height is None:
-        height = defaults["height"]
-    if not _libraries_info[library]["recolor"]:
-        color = None
-    elif color is None:
-        color = defaults["color"]
+    library, width, height, color = _resolved(library, width, height, color)
     if color == _THEME:
         from fxgui import fxstyle
 
@@ -771,53 +763,14 @@ def get_icon(
                 include_active,
             )
 
-    defaults = _libraries_info[library]["defaults"]
-
-    # Resolve defaults BEFORE caching - these become part of the cache key
-    if width is None:
-        width = defaults["width"]
-    if height is None:
-        height = defaults["height"]
-    recolor = _libraries_info[library]["recolor"]
-    if not recolor:
-        color = None
-    elif color is None:
-        color = defaults["color"]
-
+    library, width, height, color = _resolved(library, width, height, color)
     path = get_icon_path(
         icon_name, library=library, style=style, extension=extension
     )
     return _get_icon_cached(
-        path, width, height, color, include_active, recolor
+        path, width, height, color, include_active,
+        _libraries_info[library]["recolor"],
     )
-
-
-def convert_icon_to_pixmap(
-    icon: QIcon, desired_size: Optional[QSize] = None
-) -> Optional[QPixmap]:
-    """Converts a QIcon to a QPixmap.
-
-    Args:
-        icon: The QIcon to convert.
-        desired_size: The desired size for the pixmap (QSize). If `None`,
-            the default size is 48x48.
-
-    Returns:
-        A QPixmap or `None` if no suitable pixmap is available.
-
-    Examples:
-        Let the size be decided
-        >>> icon = hou.qt.Icon("MISC_python")
-        >>> pixmap = convert_icon_to_pixmap(icon)
-
-        Choose a size
-        >>> icon = hou.qt.Icon("MISC_python")
-        >>> pixmap = convert_icon_to_pixmap(icon, QSize(48, 48))
-    """
-
-    if desired_size:
-        return icon.pixmap(desired_size)
-    return icon.pixmap(QSize(48, 48))
 
 
 def superpose_icons(*icons: QIcon) -> QIcon:

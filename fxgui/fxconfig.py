@@ -7,8 +7,6 @@ locations:
     - Unix/macOS: ~/.fxgui/settings.ini
 
 Functions:
-    get_settings: Get the QSettings instance for fxgui.
-    get_config_dir: Get the configuration directory path.
     get_value: Get a setting value.
     set_value: Set a setting value.
 
@@ -41,8 +39,6 @@ from qtpy.QtCore import QSettings
 
 __all__ = [
     "get_application_name",
-    "get_config_dir",
-    "get_settings",
     "get_value",
     "set_application_name",
     "set_value",
@@ -52,8 +48,7 @@ __all__ = [
 
 ###### Constants
 
-_DEFAULT_APP_NAME = "fxgui"
-_APP_NAME = _DEFAULT_APP_NAME
+_APP_NAME = "fxgui"
 
 
 def _get_config_dir() -> Path:
@@ -84,11 +79,6 @@ SETTINGS_FILE = CONFIG_DIR / "settings.ini"
 ###### Private Helpers
 
 _settings_instance: Optional[QSettings] = None
-
-
-def _ensure_config_dir() -> None:
-    """Ensure the configuration directory exists."""
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 ###### Public Functions
@@ -141,42 +131,12 @@ def get_application_name() -> str:
     return _APP_NAME
 
 
-def get_config_dir() -> Path:
-    """Get the configuration directory path.
-
-    The directory is created if it doesn't exist.
-
-    Returns:
-        Path to the configuration directory.
-
-    Examples:
-        >>> config_dir = fxconfig.get_config_dir()
-        >>> print(config_dir)  # C:/Users/user/AppData/Roaming/fxgui (Windows)
-    """
-    _ensure_config_dir()
-    return CONFIG_DIR
-
-
-def get_settings() -> QSettings:
-    """Get the QSettings instance for fxgui.
-
-    Settings are stored in an INI file at the platform-appropriate location.
-    The instance is cached for reuse.
-
-    Returns:
-        QSettings instance configured for fxgui using INI format.
-
-    Examples:
-        >>> settings = fxconfig.get_settings()
-        >>> settings.setValue("my/key", "my_value")
-        >>> settings.sync()
-    """
+def _settings() -> QSettings:
+    """Return the cached QSettings on the settings file, creating its folder."""
     global _settings_instance
-
     if _settings_instance is None:
-        _ensure_config_dir()
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         _settings_instance = QSettings(str(SETTINGS_FILE), QSettings.IniFormat)
-
     return _settings_instance
 
 
@@ -193,7 +153,7 @@ def get_value(key: str, default: Any = None) -> Any:
     Examples:
         >>> theme = fxconfig.get_value("theme/current", "dark")
     """
-    settings = get_settings()
+    settings = _settings()
     return settings.value(key, default)
 
 
@@ -209,6 +169,6 @@ def set_value(key: str, value: Any) -> None:
     Examples:
         >>> fxconfig.set_value("theme/current", "dracula")
     """
-    settings = get_settings()
+    settings = _settings()
     settings.setValue(key, value)
     settings.sync()
