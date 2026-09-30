@@ -1081,13 +1081,13 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         Note:
             Overrides the base class method.
         """
-        # Qt moves the corner widgets onto the new bar itself.
+        # Qt moves the corner widgets onto the new bar itself, and the
+        # bar's first resize fits the corner through `eventFilter`.
         super().setMenuBar(menu_bar)
         self.menu_bar = menu_bar
         if self.title_corner is not None and menu_bar is not None:
             menu_bar.installEventFilter(self)
             fxstyle.mark_as_frame(menu_bar)
-            self._fit_title_corner()
 
     def setCentralWidget(self, widget: QWidget) -> None:
         """Override the QMainWindow's setCentralWidget method.

@@ -329,6 +329,7 @@ def test_a_new_menu_bar_is_framed_at_once(qtbot, qapp):
     bar.addMenu("File")
 
     window.setMenuBar(bar)
+    assert window.menu_bar is bar, "before Qt deletes the old bar"
     qapp.processEvents()
 
     assert window.menu_bar is bar
@@ -336,6 +337,16 @@ def test_a_new_menu_bar_is_framed_at_once(qtbot, qapp):
     assert bar.cornerWidget() is corner
     bar.resize(bar.width(), bar.height() + 10)
     assert corner.height() == bar.height()
+
+
+def test_a_plain_window_leaves_a_new_menu_bar_unframed(qtbot):
+    window = _window(qtbot, framed=False)
+    bar = QMenuBar()
+
+    window.setMenuBar(bar)
+
+    assert window.menu_bar is bar
+    assert bar.property(fxstyle.FRAME_PROPERTY) is None
 
 
 def test_a_new_menu_bar_takes_the_corner_on_a_theme_switch(qtbot):
