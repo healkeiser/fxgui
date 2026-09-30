@@ -20,13 +20,6 @@ from qtpy.QtWidgets import QSizePolicy, QWidget
 from fxgui import fxstyle
 
 
-def _event_x(event: QMouseEvent) -> float:
-    """Return a mouse event's x on either Qt API."""
-    if hasattr(event, "position"):
-        return event.position().x()
-    return event.x()
-
-
 class FXRangeSlider(QWidget):
     """A slider with two handles for selecting a min/max range.
 
@@ -414,7 +407,7 @@ class FXRangeSlider(QWidget):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press."""
         if event.button() == Qt.LeftButton:
-            x = _event_x(event)
+            x = event.position().x()
             self._press_x = x
             self._pressed_handle = self._handle_at_position(x)
             if self._pressed_handle != self.HANDLE_NONE and self._low == self._high:
@@ -426,7 +419,7 @@ class FXRangeSlider(QWidget):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handle mouse move."""
-        x = _event_x(event)
+        x = event.position().x()
         if self._pressed_handle == self._HANDLE_TIED:
             if x == self._press_x:
                 return

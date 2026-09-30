@@ -12,13 +12,6 @@ from qtpy.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 from fxgui import fxicons, fxstyle
 
 
-def _event_x(event: QMouseEvent) -> int:
-    """Return a mouse event's x on either Qt API."""
-    if hasattr(event, "position"):
-        return int(event.position().x())
-    return event.x()
-
-
 class FXRatingWidget(QWidget):
     """A clickable star rating widget.
 
@@ -240,13 +233,13 @@ class FXRatingWidget(QWidget):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handle mouse move for hover preview."""
-        self._hover_rating = self._get_rating_from_pos(_event_x(event))
+        self._hover_rating = self._get_rating_from_pos(int(event.position().x()))
         self._update_stars()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse click to set rating."""
         if event.button() == Qt.LeftButton:
-            rating = self._get_rating_from_pos(_event_x(event))
+            rating = self._get_rating_from_pos(int(event.position().x()))
             self.set_rating(rating)
 
     def leaveEvent(self, event) -> None:

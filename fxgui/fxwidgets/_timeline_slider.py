@@ -39,13 +39,6 @@ def _coalesce_runs(frames) -> List[Tuple[int, int]]:
     return runs
 
 
-def _event_x(event: QMouseEvent) -> float:
-    """Return a mouse event's x on either Qt API."""
-    if hasattr(event, "position"):
-        return event.position().x()
-    return event.x()
-
-
 class FXTimelineSlider(QWidget):
     """A timeline/scrubber widget perfect for DCC applications.
 
@@ -1196,15 +1189,15 @@ class _TimelineTrack(QWidget):
         """Left = scrub; middle = start panning the zoomed window."""
         if event.button() == Qt.LeftButton:
             self._timeline._is_dragging = True
-            self._update_frame_from_mouse(_event_x(event))
+            self._update_frame_from_mouse(event.position().x())
         elif event.button() == Qt.MiddleButton:
-            self._pan_last_x = _event_x(event)
+            self._pan_last_x = event.position().x()
             self._pan_accum = 0.0
             self.setCursor(Qt.ClosedHandCursor)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handle mouse move for scrubbing, panning, and hover tracking."""
-        x = _event_x(event)
+        x = event.position().x()
         if self._pan_last_x is not None:
             self._pan_view(x)
             return
@@ -1250,12 +1243,7 @@ class _TimelineTrack(QWidget):
         if delta == 0:
             event.ignore()
             return
-        # QWheelEvent position: Qt6 position(), Qt5 pos().
-        x = (
-            event.position().x()
-            if hasattr(event, "position")
-            else event.pos().x()
-        )
+        x = event.position().x()
         first, last = self._timeline.view_range
         span = last - first
         # At least one frame per notch: 2 * 1.25 rounds back to 2.
