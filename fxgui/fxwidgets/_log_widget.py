@@ -154,17 +154,9 @@ class FXOutputLogWidget(QWidget):
         capture_output: If `True`, adds a logging handler to capture
             log output from Python's logging module.
         max_blocks: How many lines the pane keeps before Qt prunes the
-            oldest, as a terminal's scrollback does. Defaults to `0`,
-            which is no limit and is what this has always done.
-
-            Left unbounded by default deliberately: dropping the OLDEST
-            records silently is the same class of defect as dropping the
-            newest, and only a consumer knows whether something behind
-            the pane -- a session log file -- makes that safe. A pane
-            that is the only record of a session should stay unbounded;
-            one that is a view onto a file it does not own is exactly
-            what this is for. A long-running application that never sets
-            it grows a document without limit.
+            oldest, as a terminal's scrollback does. Defaults to `0`, no
+            limit: only the consumer knows whether dropping old records
+            is safe.
 
     Signals:
         log_message: Emitted when a log message is received (for thread-safe
@@ -179,18 +171,7 @@ class FXOutputLogWidget(QWidget):
     # Signal for thread-safe log message delivery
     log_message = Signal(str)
 
-    # How many queued records one flush writes before handing the event
-    # loop back. The queue keeps every record; this decides how much work
-    # any single flush may cost, which is the other half of staying
-    # responsive.
-    #
-    # Measured on PySide6 6.11: about 8.7 microseconds per record, linear
-    # from 100 to 10,000 (0.9ms, 8.5ms, 94.6ms). At 1,000 a flush costs
-    # roughly 8.5ms, comfortably inside the 16ms interval, so the main
-    # thread keeps half of every tick for everything else. Throughput is
-    # then about 60,000 records a second, far above any real log rate --
-    # a burst larger than that arrives over several ticks rather than in
-    # one freeze.
+    # Records per flush: 1000 take about 8.5 ms, inside the 16 ms tick.
     MAX_RECORDS_PER_FLUSH = 1000
 
     def __init__(
@@ -205,21 +186,17 @@ class FXOutputLogWidget(QWidget):
         self._capture_output = capture_output
         self._max_blocks = max_blocks
         self._log_handler = None
-        self._modified_loggers = []
         self._logger_check_timer = None
 
-        # Throttling mechanism to prevent UI freezing during
-        # high-frequency logging. A queue rather than one slot: what is
-        # throttled is how often the pane repaints, never how many
-        # records reach it.
+        # The throttle limits repaints, never records: all are queued.
         self._pending_logs: Deque[str] = deque()
         self._throttle_timer = QTimer(self)
         self._throttle_timer.setSingleShot(True)
         self._throttle_timer.timeout.connect(self._flush_pending_log)
         self._throttle_interval = 16
 
-        # Connect signal to slot for thread-safe log appending
-        self.log_message.connect(self._queue_log_message)
+        # Queued across threads: a handler may emit off the UI thread.
+        self.log_message.connect(self.append_log)
 
         # Setup UI
         self._setup_ui()
@@ -393,19 +370,9 @@ class FXOutputLogWidget(QWidget):
         self.output_area.setTextCursor(cursor)
 
     def _sync_spacer(self) -> None:
-        """Give the spacer room only while it has a button to push.
+        """Give the spacer room only while it has a Clear button to push.
 
-        The spacer exists to hold the Clear button against the right
-        edge. A consumer that hides that button -- a live log view has
-        nothing to clear -- leaves the spacer pushing nothing, and the
-        50px cap applied while the search bar is open then reads as dead
-        space between the bar's close button and the widget's own right
-        edge.
-
-        `isHidden` rather than `isVisible`: a child of a window that has
-        not been shown yet is not visible and not hidden, and this runs
-        while the search bar is opened for the first time on exactly such
-        a widget.
+        `isHidden`, not `isVisible`: this runs before the window is shown.
         """
         self.log_spacer.setVisible(not self.clear_button.isHidden())
 
@@ -522,78 +489,30 @@ class FXOutputLogWidget(QWidget):
         )
         self._log_handler.setFormatter(formatter)
 
-        # Add to root logger only - messages propagate up from child loggers
         logging.root.addHandler(self._log_handler)
-
-        # Track loggers with propagate=False that need direct handler attachment
-        self._modified_loggers = []
-        for name in list(logging.root.manager.loggerDict.keys()):
-            logger_instance = logging.getLogger(name)
-            if isinstance(logger_instance, logging.Logger):
-                # Only add handler to loggers that don't propagate
-                if not logger_instance.propagate:
-                    if self._log_handler not in logger_instance.handlers:
-                        logger_instance.addHandler(self._log_handler)
-                        self._modified_loggers.append(name)
-
-        # Setup a timer to periodically check for new loggers
+        self._check_for_new_loggers()
+        # A logger that does not propagate never reaches root; poll for them.
         self._logger_check_timer = QTimer(self)
         self._logger_check_timer.timeout.connect(self._check_for_new_loggers)
-        self._logger_check_timer.start(1000)  # Check every second
+        self._logger_check_timer.start(1000)
 
     def _check_for_new_loggers(self) -> None:
-        """Check for newly created loggers and attach handler to them."""
-        for name in list(logging.root.manager.loggerDict.keys()):
-            if name not in self._modified_loggers:
-                logger_instance = logging.getLogger(name)
-                if isinstance(logger_instance, logging.Logger):
-                    # Only add handler to loggers that don't propagate
-                    if not logger_instance.propagate:
-                        if self._log_handler not in logger_instance.handlers:
-                            logger_instance.addHandler(self._log_handler)
-                            self._modified_loggers.append(name)
-
-    def _queue_log_message(self, text: str) -> None:
-        """Queue a log message for throttled display.
-
-        This ensures the UI stays responsive by limiting update frequency
-        to ~60 FPS while still showing all messages.
-
-        Every record queued is a record displayed. The throttle decides
-        WHEN the pane catches up, not WHETHER a record survives: anything
-        handed over while the timer is running waits its turn in the
-        queue and lands on the next flush.
-
-        Args:
-            text: Text to queue for display.
-        """
-        # Queue the message
-        self._pending_logs.append(text)
-
-        # Start timer if not already running
-        if not self._throttle_timer.isActive():
-            # First message arrives immediately for responsiveness
-            self._flush_pending_log()
+        """Attach the handler to every logger that does not propagate."""
+        for logger in list(logging.root.manager.loggerDict.values()):
+            if (
+                isinstance(logger, logging.Logger)
+                and not logger.propagate
+                and self._log_handler not in logger.handlers
+            ):
+                logger.addHandler(self._log_handler)
 
     def _flush_pending_log(self) -> None:
         """Write up to `MAX_RECORDS_PER_FLUSH` queued messages.
 
-        Bounded rather than draining the whole queue, because a queue
-        that keeps every record is only half of staying responsive: an
-        unbounded drain makes one flush cost O(burst), and a producer
-        that never yields the event loop -- a tight loop with stdout
-        captured, a worker thread that emitted while the main thread was
-        busy -- hands over the whole burst at once. Measured, 50,000
-        records in one flush is a 513ms freeze on the main thread.
-
-        Nothing is lost to the bound. The timer below re-arms whichever
-        way this returns, so a partial drain simply continues on the next
-        tick, and the early return on an empty queue is what ends the
-        chain.
-
-        Writes through a document cursor, so the reader's cursor and
-        selection stay put, and scrolls once at the end, only when the
-        pane was already at the bottom.
+        Bounded, so one burst cannot freeze the UI; the timer re-arms and
+        the next tick continues. Writes through a document cursor, so the
+        reader's cursor and selection stay put, and scrolls only a pane
+        already at the bottom.
         """
         if not self._pending_logs:
             return
@@ -613,12 +532,17 @@ class FXOutputLogWidget(QWidget):
         self._throttle_timer.start(self._throttle_interval)
 
     def append_log(self, text: str) -> None:
-        """Append text to the log output with ANSI color conversion.
+        """Queue text for the pane; every record queued is shown.
+
+        The first record of a burst is written at once, the rest on the
+        throttle's ticks.
 
         Args:
             text: Text to append (may contain ANSI color codes).
         """
-        self._queue_log_message(text)
+        self._pending_logs.append(text)
+        if not self._throttle_timer.isActive():
+            self._flush_pending_log()
 
     def _insert_text_with_ansi(self, text: str) -> None:
         """Insert text with ANSI colors using QTextCharFormat.
@@ -678,19 +602,12 @@ class FXOutputLogWidget(QWidget):
         self.output_area.clear()
 
     def restore_output_streams(self) -> None:
-        """Remove logging handler from all loggers where it was added."""
-        # Flush anything still queued, all of it. This is the last chance
-        # those records have -- there will be no next tick to continue a
-        # partial drain on -- so the per-flush bound does not apply here.
-        # Responsiveness is not the concern of a widget being taken down.
-        if hasattr(self, "_throttle_timer"):
-            self._throttle_timer.stop()
-            while self._pending_logs:
-                self._flush_pending_log()
-            self._throttle_timer.stop()
-
-        # Stop the logger check timer if it exists
-        if hasattr(self, "_logger_check_timer") and self._logger_check_timer:
+        """Flush what is queued, then detach the handler from logging."""
+        # No next tick will come, so drain everything past the bound.
+        while self._pending_logs:
+            self._flush_pending_log()
+        self._throttle_timer.stop()
+        if self._logger_check_timer:
             self._logger_check_timer.stop()
             self._logger_check_timer.deleteLater()
             self._logger_check_timer = None
