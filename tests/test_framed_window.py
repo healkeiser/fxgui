@@ -220,6 +220,11 @@ def test_the_corner_does_not_grow_the_menu_bar(qtbot):
     framed = _window(qtbot)
 
     assert framed.menuBar().height() == plain.menuBar().height()
+    # Qt clips a taller corner rather than growing the bar, so the corner
+    # itself must be the bar's height.
+    corner = framed.title_corner.geometry()
+    assert corner.top() == 0
+    assert corner.height() == framed.menuBar().height()
 
 
 def test_hide_banner_hides_the_corner_of_a_framed_window(qtbot):

@@ -208,3 +208,7 @@ def test_a_pane_at_either_end_still_gets_a_frame_and_a_well(
     low, high = sorted([fxstyle.get_luminance(frame),
                         fxstyle.get_luminance(pane)])
     assert low <= fxstyle.get_luminance(well) <= high
+    assert fxstyle.get_contrast_ratio(colors["pane_border"], frame) >= (
+        fxstyle.PANE_BORDER_MIN_CONTRAST)
+    assert fxstyle.get_contrast_ratio(colors["splitter_mark"], frame) >= (
+        fxstyle.SPLITTER_MARK_MIN_CONTRAST)
