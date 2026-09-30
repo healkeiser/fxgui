@@ -55,3 +55,23 @@ def test_a_theme_border_reads_the_theme_when_painted(qtbot):
 
     assert splash._border_widget.color().name() == QColor(
         fxstyle.colors().border_light).name()
+
+
+def test_a_fade_in_ends_fully_opaque(qtbot):
+    splash = FXSplashScreen(fade_in=True)
+    qtbot.addWidget(splash)
+
+    splash.show()
+
+    assert splash.windowOpacity() < 1.0
+    qtbot.waitUntil(lambda: splash.windowOpacity() == 1.0, timeout=3000)
+
+
+def test_the_defaults_say_nothing_made_up(qtbot):
+    splash = FXSplashScreen()
+    qtbot.addWidget(splash)
+
+    assert splash.info_label.text() == ""
+    assert splash.copyright_label.text() == "Project | 0.0.0 | \u00a9 Company"
+    splash.set_project_label("Show")
+    assert splash.copyright_label.text() == "Show | 0.0.0 | \u00a9 Company"

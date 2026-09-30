@@ -5,7 +5,7 @@ import os
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import Qt, QRect, QTimer, Slot
+from qtpy.QtCore import QPropertyAnimation, QRect, Qt
 from qtpy.QtGui import (
     QBitmap,
     QColor,
@@ -120,11 +120,11 @@ class FXSplashScreen(QSplashScreen):
         self._default_icon = str(fxconstants.FAVICON_LIGHT)
         self.icon: QIcon = QIcon(icon) if icon else QIcon(self._default_icon)
         self.title: str = title or "Untitled"
-        self.information: str = information or self._default_information()
+        self.information: str = information or ""
         self.show_progress_bar: bool = show_progress_bar
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
-        self.company: str = company or "Company"
+        self.company: str = company or "\u00a9 Company"
         self.fade_in: bool = fade_in
         self.overlay_opacity: float = overlay_opacity
         self.corner_radius: int = corner_radius
@@ -160,23 +160,6 @@ class FXSplashScreen(QSplashScreen):
         elif not os.path.isfile(image_path):
             raise ValueError(f"Invalid image path: {image_path}")
         return self._resize_image(image_path)
-
-    def _default_information(self) -> str:
-        return (
-            "At vero eos et accusamus et iusto odio dignissimos ducimus qui "
-            "blanditiis praesentium voluptatum deleniti atque corrupti quos "
-            "dolores et quas molestias excepturi sint occaecati cupiditate non "
-            "provident, similique sunt in culpa qui officia deserunt mollitia "
-            "animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis "
-            "est et expedita distinctio. Nam libero tempore, cum soluta nobis est "
-            "eligendi optio cumque nihil impedit quo minus id quod maxime placeat "
-            "facere possimus, omnis voluptas assumenda est, omnis dolor "
-            "repellendus. Temporibus autem quibusdam et aut officiis debitis aut "
-            "rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint "
-            "et molestiae non recusandae. Itaque earum rerum hic tenetur a "
-            "sapiente delectus, ut aut reiciendis voluptatibus maiores alias "
-            "consequatur aut perferendis doloribus asperiores repellat."
-        )
 
     def _resize_image(self, image_path: str) -> QPixmap:
         pixmap = QPixmap(image_path)
@@ -268,9 +251,8 @@ class FXSplashScreen(QSplashScreen):
         )
 
         # Copyright QLabel
-        self.copyright_label = QLabel(
-            f"{self.project} | {self.version} | {self.company}"
-        )
+        self.copyright_label = QLabel()
+        self._update_copyright_label()
         self.copyright_label.setStyleSheet(
             "font-size: 8pt; qproperty-alignment: AlignBottom;"
         )
@@ -311,29 +293,17 @@ class FXSplashScreen(QSplashScreen):
             self._border_widget.update()
 
     def _update_copyright_label(self) -> None:
-        project = self.project or "Project"
-        version = self.version or "0.0.0"
-        company = self.company or "\u00a9 Company"
-        self.copyright_label.setText(f"{project} | {version} | {company}")
+        self.copyright_label.setText(
+            f"{self.project} | {self.version} | {self.company}"
+        )
 
     def _fade_in(self) -> None:
-        opaqueness = 0.0
-        step = 0.001
-        self.setWindowOpacity(opaqueness)
-        self.show()
-
-        @Slot()
-        def update_opacity():
-            nonlocal opaqueness
-            if opaqueness < 1:
-                self.setWindowOpacity(opaqueness)
-                opaqueness += step * 100
-            else:
-                self.fade_timer.stop()
-
-        self.fade_timer = QTimer(self)
-        self.fade_timer.timeout.connect(update_opacity)
-        self.fade_timer.start(100)
+        """Animate the window from transparent to opaque over one second."""
+        self._fade = QPropertyAnimation(self, b"windowOpacity", self)
+        self._fade.setDuration(1000)
+        self._fade.setStartValue(0.0)
+        self._fade.setEndValue(1.0)
+        self._fade.start()
 
     # Public methods
     def set_progress(self, value: int, max_range: int = 100):
