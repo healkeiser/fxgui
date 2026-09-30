@@ -213,8 +213,6 @@ class FXCodeBlock(QWidget):
     ):
         super().__init__(parent)
 
-        self._language = language
-
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -272,7 +270,6 @@ class FXCodeBlock(QWidget):
                 (e.g., "python", "javascript", "cpp", "rust", "go", "java").
                 Use get_supported_languages() to see all available options.
         """
-        self._language = language
         self._highlighter.set_language(language)
 
 

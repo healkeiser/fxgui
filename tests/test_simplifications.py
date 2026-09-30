@@ -121,3 +121,24 @@ def test_drop_zone_drag_leave_returns_to_idle(qtbot, qapp, tmp_path):
     assert zone._drop_area.property("dropState") == "drag"
     zone._handle_drag_leave(QDragLeaveEvent())
     assert zone._drop_area.property("dropState") == "idle"
+
+
+def test_code_block_language_lives_on_its_highlighter(qtbot, qapp):
+    from fxgui.fxwidgets._code_block import FXCodeBlock
+
+    block = FXCodeBlock("fn main() {}", language="python")
+    qtbot.addWidget(block)
+    block.set_language("rust")
+    assert block._highlighter.language() == "rust"
+
+
+def test_breadcrumb_edit_mode_opens_and_closes_publicly(qtbot, qapp):
+    from fxgui.fxwidgets import FXBreadcrumb
+
+    crumb = FXBreadcrumb()
+    qtbot.addWidget(crumb)
+    crumb.set_path(["a", "b"])
+    crumb.enter_edit_mode()
+    assert crumb.is_editing()
+    crumb.exit_edit_mode()
+    assert not crumb.is_editing()

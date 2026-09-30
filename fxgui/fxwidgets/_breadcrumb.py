@@ -255,7 +255,7 @@ class FXBreadcrumb(QWidget):
             obj in (self._scroll_area, self._container)
             or (isinstance(obj, QWidget) and obj.parent() is self._container)
         ):
-            self._enter_edit_mode()
+            self.enter_edit_mode()
             return True
         if (
             self.is_editing()
@@ -264,18 +264,18 @@ class FXBreadcrumb(QWidget):
             and obj is not self
             and not self.isAncestorOf(obj)
         ):
-            self._exit_edit_mode()
+            self.exit_edit_mode()
         if obj == self._line_edit:
             if event.type() == QEvent.Type.KeyPress:
                 if event.key() == Qt.Key_Escape:
-                    self._exit_edit_mode()
+                    self.exit_edit_mode()
                     return True
             elif event.type() == QEvent.Type.FocusOut:
                 # Exit edit mode when clicking outside
-                self._exit_edit_mode()
+                self.exit_edit_mode()
         return super().eventFilter(obj, event)
 
-    def _enter_edit_mode(self) -> None:
+    def enter_edit_mode(self) -> None:
         """Switch to edit mode with the line edit visible."""
         # Build path string, stripping trailing slashes from segments
         # to handle Windows drive letters like 'C:\\'
@@ -296,8 +296,12 @@ class FXBreadcrumb(QWidget):
         if application is not None:
             application.installEventFilter(self)
 
-    def _exit_edit_mode(self) -> None:
-        """Switch back to breadcrumb mode."""
+    def exit_edit_mode(self) -> None:
+        """Close the editor without submitting, as `Escape` does.
+
+        Public: a window-level `Escape` shortcut fires before this widget
+        sees the key, so such a window calls this itself.
+        """
         self._stacked.setCurrentIndex(0)
         application = QApplication.instance()
         if application is not None:
@@ -308,7 +312,7 @@ class FXBreadcrumb(QWidget):
         text = self._line_edit.text().strip()
         if text:
             self.path_edited.emit(text)
-        self._exit_edit_mode()
+        self.exit_edit_mode()
 
     def _update_nav_buttons(self) -> None:
         """Update the enabled state of navigation buttons."""
@@ -432,21 +436,6 @@ class FXBreadcrumb(QWidget):
         """Check if currently in edit mode."""
         return self._stacked.currentIndex() == 1
 
-    def enter_edit_mode(self) -> None:
-        """Programmatically enter edit mode."""
-        self._enter_edit_mode()
-
-    def exit_edit_mode(self) -> None:
-        """Close the editor without submitting, as `Escape` does.
-
-        Public because a window-level `Escape` shortcut is delivered
-        BEFORE the focused widget sees the key, so this widget's own
-        `Escape` handling never fires while such a shortcut exists. A
-        window that has one asks `is_editing()` and hands the key over
-        by calling this.
-        """
-        self._exit_edit_mode()
-
     def _rebuild_breadcrumb(self) -> None:
         """Rebuild the breadcrumb UI.
 
@@ -529,7 +518,7 @@ class FXBreadcrumb(QWidget):
                 button.clicked.connect(self._on_home_clicked)
             else:
                 button.clicked.connect(
-                    lambda checked, idx=index: self._on_segment_clicked(idx)
+                    lambda checked, idx=index: self.navigate_to(idx)
                 )
 
         button.installEventFilter(self)
@@ -570,10 +559,6 @@ class FXBreadcrumb(QWidget):
         label.installEventFilter(self)
 
         self._layout.insertWidget(self._layout.count() - 1, label)
-
-    def _on_segment_clicked(self, index: int) -> None:
-        """Handle segment click."""
-        self.navigate_to(index)
 
     def _on_home_clicked(self) -> None:
         """Handle home segment click."""
