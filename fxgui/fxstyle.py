@@ -1108,7 +1108,8 @@ def mark_as_frame(widget: QWidget, is_frame: bool = True) -> None:
         >>> fxstyle.mark_as_frame(splitter)
     """
     widget.setProperty(FRAME_PROPERTY, bool(is_frame))
-    marked = widget.findChild(_SplitterMark)
+    # Direct children only: a nested marked splitter's mark is not this one's.
+    marked = widget.findChild(_SplitterMark, "", Qt.FindDirectChildrenOnly)
     if isinstance(widget, QSplitter) and marked is None:
         _SplitterMark(widget)
     fxutils.repolish(widget)

@@ -309,6 +309,22 @@ def test_a_focused_flat_button_shows_the_accent_ring(qtbot, theme):
     assert _edges(window, button) == {_color("accent_primary")}
 
 
+def test_a_marked_splitter_wrapped_in_another_marks_both(qtbot):
+    """QtAds wraps a marked splitter in a new one when a pane docks."""
+    host, inner = _splitter(qtbot, Qt.Horizontal)
+    outer = QSplitter(Qt.Vertical)
+    outer.addWidget(inner)
+    outer.addWidget(QWidget())
+    outer.setHandleWidth(GAP)
+    fxstyle.mark_as_frame(outer)
+    host.layout().addWidget(outer)
+    qtbot.wait(10)
+
+    for splitter in (inner, outer):
+        box, _count = _mark(_handle_image(host, splitter), _color("frame"))
+        assert box is not None, f"no mark on {splitter.orientation()}"
+
+
 def test_a_theme_switch_survives_a_dropped_handle_wrapper(qtbot):
     """A splitter can hand back a handle whose wrapper PySide dropped."""
     shiboken = pytest.importorskip("shiboken6")
