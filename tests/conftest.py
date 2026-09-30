@@ -23,8 +23,14 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     - Resets fxstyle's module-level theme caches afterwards so theme changes
       made by one test cannot leak into the next.
     """
+    import tempfile
+
     from fxgui import fxconfig, fxstyle
 
+    # Anything written to the temp folder lands in this test's own.
+    temp = tmp_path / "tmp"
+    temp.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(temp))
     monkeypatch.setattr(fxconfig, "CONFIG_DIR", tmp_path / "fxgui")
     monkeypatch.setattr(
         fxconfig, "SETTINGS_FILE", tmp_path / "fxgui" / "settings.ini"

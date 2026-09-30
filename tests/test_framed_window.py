@@ -264,3 +264,21 @@ def test_a_status_bar_set_later_is_framed_too(qtbot):
     assert _pixel(window, bar, bar.width() // 2, bar.height() // 2) == (
         _frame())
     assert _pixel(window, bar, bar.width() // 2, 0) == _frame(), "no line"
+
+
+@pytest.mark.parametrize("theme", ["dark", "github_light"])
+def test_the_corner_title_is_inset_like_the_first_menu(qtbot, theme):
+    """The name ends as far from the right edge as "File" starts from the
+    left one."""
+    window = _window(qtbot, theme=theme)
+    window.set_banner_icon("widgets")
+    qtbot.wait(10)
+    bar = window.menuBar()
+    image = bar.grab().toImage()
+    ink = [x for x in range(image.width())
+           if any(not _close(image.pixelColor(x, y).name(), _frame(), 40)
+                  for y in range(image.height()))]
+
+    left = ink[0]
+    right = image.width() - 1 - ink[-1]
+    assert abs(left - right) <= 2, (left, right)

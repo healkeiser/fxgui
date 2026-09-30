@@ -26,6 +26,8 @@ Each theme in ``style.yaml`` defines these semantic color roles:
       half-way from ``surface`` to ``frame``)
     - ``pane_border``: The 1 px edge of a pane on the frame (optional,
       auto-computed; see `PANE_BORDER_MIN_CONTRAST`)
+    - ``splitter_mark``: The dots on a marked splitter's handles
+      (optional, auto-computed; see `SPLITTER_MARK_MIN_CONTRAST`)
     - ``tooltip``: Tooltip backgrounds
 
 **Border Colors**:
@@ -115,6 +117,8 @@ Constants:
     WELL_MIN_CONTRAST: Least contrast between a pane and a well in it.
     PANE_BORDER_MIN_CONTRAST: Least contrast between a pane's edge and
         the frame.
+    SPLITTER_MARK_MIN_CONTRAST: Least contrast between the splitter mark
+        and the frame.
 
 Examples:
     Loading a stylesheet with a theme:
@@ -523,13 +527,16 @@ BUTTON_RADIUS = 4
 # it. github_light's own pair, #ffffff on #f6f8fa, is 1.065.
 FRAME_MIN_CONTRAST = 1.06
 
-# Least contrast between a pane and a `well` inside it: the half-way mix
-# of a pane and a frame at FRAME_MIN_CONTRAST lands just above it.
-WELL_MIN_CONTRAST = 1.025
+# Least contrast between a pane and a `well` inside it. Rendered in
+# github_light, whose half-way well (1.030) read as no well at all.
+WELL_MIN_CONTRAST = 1.04
 
 # Least contrast between a pane's 1 px edge (`pane_border`) and the frame
 # around it; `light`'s own border, #e0e0e0 on #e4e4e4, is 1.04 and vanishes.
 PANE_BORDER_MIN_CONTRAST = 1.3
+
+# Least contrast between the splitter mark's dots and the frame.
+SPLITTER_MARK_MIN_CONTRAST = 1.3
 
 # CSS generic keywords rather than family names: emitted unquoted, never
 # looked up in the font database, and terminal, so nothing is appended
@@ -747,6 +754,8 @@ def get_theme_colors() -> dict:
     - ``well``: Lists and logs set into a pane (computed unless stated)
     - ``pane_border``: The 1 px edge of a pane on the frame (computed
       unless stated)
+    - ``splitter_mark``: The dots on a marked splitter's handles
+      (computed unless stated)
     - ``tooltip``: Tooltip backgrounds
 
     **Border Colors**:
@@ -1245,50 +1254,81 @@ def _mix(one_hex: str, two_hex: str, amount: float) -> str:
     ).name()
 
 
-def _depth_colors(theme_data: dict) -> Dict[str, str]:
-    """Return a theme's ``frame``, ``well`` and ``pane_border``, stated or not.
+def _step_toward(start: str, toward: str, done) -> str:
+    """Return the first color from `start` to `toward` that is `done`.
 
-    The frame is ``surface_sunken`` when that is darker than ``surface`` by
-    `FRAME_MIN_CONTRAST`; otherwise ``surface`` darkened toward black until
-    it is, which keeps the pane's own hue and brings in no accent. The well
-    is half-way from ``surface`` to the frame. The pane border is
-    ``border`` pushed away from the frame until they differ by
-    `PANE_BORDER_MIN_CONTRAST`.
+    Returns `toward` itself when no color on the way is.
+    """
+    for step in range(41):
+        color = _mix(start, toward, step / 40)
+        if done(color):
+            return color
+    return color
+
+
+def _reads(against: str, minimum: float):
+    """Return a test: does a color differ from `against` by `minimum`?"""
+    return lambda color: get_contrast_ratio(color, against) >= minimum
+
+
+def _depth_colors(theme_data: dict) -> Dict[str, str]:
+    """Return a theme's frame, well, pane border and splitter mark colors.
+
+    Each is the theme's own value when it states one. Otherwise:
+
+    - ``frame``: ``surface_sunken`` when that is darker than ``surface`` by
+      `FRAME_MIN_CONTRAST`, else ``surface`` darkened toward black until
+      it is, else, for a pane too dark to darken, lightened toward white.
+      The pane's hue stays; no accent comes in.
+    - ``well``: half-way from ``surface`` to the frame, stepped on toward
+      the frame until it differs from ``surface`` by `WELL_MIN_CONTRAST`.
+    - ``pane_border``: ``border`` pushed away from the frame until they
+      differ by `PANE_BORDER_MIN_CONTRAST`.
+    - ``splitter_mark``: ``border``, else ``border_light``, else
+      ``border_light`` stepped toward ``text``, whichever first differs
+      from the frame by `SPLITTER_MARK_MIN_CONTRAST`.
     """
     surface = theme_data["surface"]
     sunken = theme_data.get("surface_sunken", surface)
-
-    def deep_enough(color: str) -> bool:
-        return (
-            get_luminance(color) < get_luminance(surface)
-            and get_contrast_ratio(color, surface) >= FRAME_MIN_CONTRAST
-        )
+    deep = _reads(surface, FRAME_MIN_CONTRAST)
 
     frame = theme_data.get("frame")
     if not frame:
-        frame = sunken
-        step = 0
-        while not deep_enough(frame) and step < 40:
-            step += 1
-            frame = _mix(surface, "#000000", step / 40)
-    well = theme_data.get("well") or _mix(surface, frame, 0.5)
+        if get_luminance(sunken) < get_luminance(surface) and deep(sunken):
+            frame = sunken
+        else:
+            frame = _step_toward(surface, "#000000", deep)
+            if not deep(frame):
+                frame = _step_toward(surface, "#ffffff", deep)
 
+    well = theme_data.get("well") or _step_toward(
+        _mix(surface, frame, 0.5), frame, _reads(surface, WELL_MIN_CONTRAST))
+
+    border = theme_data.get("border", frame)
     edge = theme_data.get("pane_border")
     if not edge:
-        border = theme_data.get("border", frame)
         away = (
             "#000000"
             if get_luminance(border) <= get_luminance(frame)
             else "#ffffff"
         )
-        edge, step = border, 0
-        while (
-            get_contrast_ratio(edge, frame) < PANE_BORDER_MIN_CONTRAST
-            and step < 40
-        ):
-            step += 1
-            edge = _mix(border, away, step / 40)
-    return {"frame": frame, "well": well, "pane_border": edge}
+        edge = _step_toward(
+            border, away, _reads(frame, PANE_BORDER_MIN_CONTRAST))
+
+    mark = theme_data.get("splitter_mark")
+    if not mark:
+        visible = _reads(frame, SPLITTER_MARK_MIN_CONTRAST)
+        quiet = theme_data.get("border_light", border)
+        mark = next(
+            (color for color in (border, quiet) if visible(color)), None
+        ) or _step_toward(quiet, theme_data.get("text", border), visible)
+
+    return {
+        "frame": frame,
+        "well": well,
+        "pane_border": edge,
+        "splitter_mark": mark,
+    }
 
 
 # The splitter mark: this many square dots, each this many pixels a side,
@@ -1352,7 +1392,7 @@ class _SplitterMark(QObject):
         dot = max(1, round(_MARK_DOT * ratio))
         start = (length - (_MARK_DOTS * 2 - 1) * dot) // 2
         cross = (thickness - dot) // 2
-        ink = QColor(colors.border)
+        ink = QColor(colors.splitter_mark)
         for index in range(_MARK_DOTS):
             along = start + index * dot * 2
             if across:

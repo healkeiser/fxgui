@@ -63,13 +63,16 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 | `frame` | The chrome around the panes of a framed window (optional) |
 | `well` | Lists and logs set into a pane (optional) |
 | `pane_border` | The 1 px edge of a pane on the frame (optional) |
+| `splitter_mark` | The dots on a marked splitter's handles (optional) |
+| `tooltip` | Tooltip popup backgrounds |
 
-`frame`, `well` and `pane_border` are computed when a theme leaves them out, and a theme that states one keeps its own value:
+`frame`, `well`, `pane_border` and `splitter_mark` are computed when a theme leaves them out, and a theme that states one keeps its own value:
 
 - `frame` is `surface_sunken` when that is darker than `surface` by a contrast of at least `fxstyle.FRAME_MIN_CONTRAST` (1.06). Otherwise it is `surface` darkened toward black until it is, which keeps the pane's own tint and never brings in the accent. In every bundled dark theme, and in `github_light` and `catppuccin_latte`, that is `surface_sunken`; `light` and `solarized_light` have a sunken surface as light as the pane, so they get a darkened one.
-- `well` is half-way from `surface` to `frame`, so a list inside a pane reads one step deeper than the pane and one step shallower than the frame (at least `fxstyle.WELL_MIN_CONTRAST`, 1.025, in every bundled theme).
+- A pane too dark to darken (pure black, as in an OLED theme) gets a frame lighter than itself instead.
+- `well` is half-way from `surface` to `frame`, so a list inside a pane reads one step deeper than the pane and one step shallower than the frame. Where half-way differs from `surface` by less than `fxstyle.WELL_MIN_CONTRAST` (1.04), the well moves on toward the frame until it does; `github_light` is the one bundled theme where that happens.
 - `pane_border` is `border` when that differs from `frame` by a contrast of at least `fxstyle.PANE_BORDER_MIN_CONTRAST` (1.3). Otherwise it is `border` pushed further from the frame (darker on a light frame, lighter on a dark one) until it does. `light` and `catppuccin_latte` get a darker one; every other bundled theme keeps its `border`.
-| `tooltip` | Tooltip popup backgrounds |
+- `splitter_mark` is `border`, else `border_light`, else `border_light` moved toward `text`, whichever first differs from `frame` by `fxstyle.SPLITTER_MARK_MIN_CONTRAST` (1.3). `light` and `catppuccin_latte` use `border_light`.
 
 ### Border Colors
 

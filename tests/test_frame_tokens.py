@@ -163,3 +163,48 @@ def test_a_theme_that_states_its_pane_border_keeps_it(qapp, monkeypatch):
     })
 
     assert fxstyle.get_theme_colors()["pane_border"] == "#abcdef"
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_the_splitter_mark_reads_on_the_frame(qapp, monkeypatch, theme):
+    colors = _colors(monkeypatch, theme)
+
+    assert fxstyle._token_map(theme)["@splitter_mark"] == (
+        colors["splitter_mark"])
+    assert (
+        fxstyle.get_contrast_ratio(colors["splitter_mark"], colors["frame"])
+        >= fxstyle.SPLITTER_MARK_MIN_CONTRAST
+    )
+
+
+def test_the_splitter_mark_is_the_border_where_that_reads(qapp, monkeypatch):
+    colors = _colors(monkeypatch, "dark")
+
+    assert colors["splitter_mark"] == colors["border"]
+
+
+def test_the_splitter_mark_falls_back_to_border_light(qapp, monkeypatch):
+    """light: border #e0e0e0 is 1.04 on its frame; border_light reads."""
+    colors = _colors(monkeypatch, "light")
+
+    assert colors["splitter_mark"] == colors["border_light"]
+
+
+@pytest.mark.parametrize(
+    "pane", ["#000000", "#ffffff", "#0a0a0a", "#fafafa"])
+def test_a_pane_at_either_end_still_gets_a_frame_and_a_well(
+    qapp, monkeypatch, pane
+):
+    """A black pane cannot be darkened: its frame is lighter instead."""
+    _with_theme(monkeypatch, {"surface": pane, "surface_sunken": pane})
+    colors = fxstyle.get_theme_colors()
+    frame, well = colors["frame"], colors["well"]
+
+    assert frame != pane
+    assert fxstyle.get_contrast_ratio(frame, pane) >= (
+        fxstyle.FRAME_MIN_CONTRAST)
+    assert fxstyle.get_contrast_ratio(well, pane) >= (
+        fxstyle.WELL_MIN_CONTRAST)
+    low, high = sorted([fxstyle.get_luminance(frame),
+                        fxstyle.get_luminance(pane)])
+    assert low <= fxstyle.get_luminance(well) <= high

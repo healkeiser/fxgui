@@ -139,7 +139,7 @@ The window does not paint your central widget: mark it, and any band of your own
 |---------------|--------|
 | Any widget | Paints the `frame` color |
 | A `QLabel`, `QCheckBox`, `QRadioButton` or disabled `QToolButton` placed directly in it | No fill of its own, so it sits on the frame |
-| A `QSplitter` | Its handles are gaps in the `frame` color with a short centred mark of five dots in the `border` color; the handle keeps exactly the width `setHandleWidth()` gives it |
+| A `QSplitter` | Its handles are gaps in the `frame` color with a short centred mark of five dots in the `splitter_mark` color; the handle keeps exactly the width `setHandleWidth()` gives it |
 
 Call `fxstyle.mark_as_frame(widget, False)` to remove the mark. Only direct children lose their fill: a label inside a pane inside a marked band keeps the pane's color.
 

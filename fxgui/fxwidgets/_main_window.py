@@ -646,7 +646,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self.title_corner = QWidget(self.menu_bar)
         self.title_corner.setObjectName("fxMenuBarCorner")
         layout = QHBoxLayout(self.title_corner)
-        layout.setContentsMargins(0, 0, 10, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
         layout.addWidget(self.banner_icon)
         layout.addWidget(self.banner_label)
@@ -664,14 +664,33 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         fxstyle.mark_as_frame(self.centralWidget())
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Keep a framed window's menu bar corner as tall as the bar."""
+        """Fit a framed window's menu bar corner to the bar."""
         if (
             watched is self.menu_bar
             and event.type() == QEvent.Resize
             and self.title_corner is not None
         ):
-            self.title_corner.setFixedHeight(self.menu_bar.height())
+            self._fit_title_corner()
         return super().eventFilter(watched, event)
+
+    def _fit_title_corner(self) -> None:
+        """Size the corner as tall as the bar, inset like the first menu.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+        bar = self.menu_bar
+        self.title_corner.setFixedHeight(bar.height())
+        # The name ends as far from the right edge as the first menu's
+        # title starts from the left one.
+        actions = [action for action in bar.actions() if action.isVisible()]
+        if not actions:
+            return
+        item = bar.actionGeometry(actions[0])
+        title = actions[0].text().replace("&", "")
+        inset = item.left() + (
+            item.width() - bar.fontMetrics().horizontalAdvance(title)) // 2
+        self.title_corner.layout().setContentsMargins(0, 0, max(inset, 0), 0)
 
     def _show_about_dialog(self) -> None:
         """Shows the "About" dialog.
@@ -850,6 +869,10 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         # Update banner icon with new theme colors
         if self._banner_icon_name is not None:
             self._update_banner_icon()
+
+        # A theme may change the menu font, and with it the first title.
+        if self.title_corner is not None:
+            self._fit_title_corner()
 
         # Force menu bar to repaint with new icons
         if hasattr(self, "menu_bar") and self.menu_bar is not None:

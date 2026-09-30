@@ -100,7 +100,7 @@ def test_the_mark_is_five_dots_centred_in_the_gap(qtbot, orientation, theme):
     assert {image.pixelColor(x, y).name()
             for x in range(box.left(), box.right() + 1)
             for y in range(box.top(), box.bottom() + 1)} == {
-        _color("border"), _color("frame")}
+        _color("splitter_mark"), _color("frame")}
     across = orientation == Qt.Vertical
     length = box.width() if across else box.height()
     assert length == 18
@@ -204,7 +204,7 @@ def test_the_mark_follows_a_theme_switch(qtbot):
     colors = {image.pixelColor(x, y).name()
               for x in range(image.width()) for y in range(image.height())}
 
-    assert colors == {_color("frame"), _color("border")}
+    assert colors == {_color("frame"), _color("splitter_mark")}
 
 
 def test_an_unmarked_splitter_is_untouched(qtbot):

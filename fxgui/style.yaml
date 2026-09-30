@@ -122,6 +122,7 @@ fonts:
 #   frame             - (Optional) Chrome around the panes of a framed window, auto-computed if omitted
 #   well              - (Optional) Lists and logs set into a pane, auto-computed if omitted
 #   pane_border       - (Optional) 1 px edge of a pane on the frame, auto-computed if omitted
+#   splitter_mark     - (Optional) Dots on a marked splitter handle, auto-computed if omitted
 #   tooltip          - Tooltip backgrounds
 #
 # Border Colors:
