@@ -494,6 +494,8 @@ def test_focus_row_is_read_from_the_view_not_the_cell(qtbot, themed):
 
     tree.setItemDelegate(_Spy(tree))
     tree.viewport().grab()
+    # The spy must not paint after the test ends: on PySide 6.11.1 it crashed.
+    tree.setItemDelegate(delegate)
     assert flagged == [(1, 0)], flagged
 
     # Other rows are not the focus row
