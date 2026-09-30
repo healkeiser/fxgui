@@ -328,7 +328,7 @@ def test_a_marked_splitter_wrapped_in_another_marks_both(qtbot):
 def test_a_theme_switch_survives_a_dropped_handle_wrapper(qtbot):
     """A splitter can hand back a handle whose wrapper PySide dropped."""
     shiboken = pytest.importorskip("shiboken6")
-    host, splitter = _splitter(qtbot, Qt.Horizontal)
+    _host, splitter = _splitter(qtbot, Qt.Horizontal)
     dropped = QWidget()
     shiboken.delete(dropped)
     live = splitter.handle
