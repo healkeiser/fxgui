@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QEvent, Qt, Slot
-from qtpy.QtGui import QPixmap
+from qtpy.QtGui import QColor, QPixmap
 from qtpy.QtWidgets import (
     QFrame,
     QLabel,
@@ -24,6 +24,13 @@ from fxgui.fxwidgets._constants import (
     INFO,
     DEBUG,
 )
+
+
+def _ink_on(ground: str) -> str:
+    """Return white, or the first grey toward black that reads on `ground`."""
+    ground = QColor(ground).name()
+    return fxstyle._step_toward(
+        "#ffffff", "#000000", fxstyle._reads(ground, 4.5))
 
 
 class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
@@ -243,7 +250,7 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
                     background: {status_bar_color};
                 }}
                 QStatusBar QLabel {{
-                    color: white;
+                    color: {_ink_on(status_bar_color)};
                 }}"""
             )
 
