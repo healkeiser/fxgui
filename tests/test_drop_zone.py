@@ -1,10 +1,9 @@
 """The drop zone's Clear button, path rules and drag state."""
 
 # Built-in
-from pathlib import Path
 
 # Third-party
-from qtpy.QtCore import QMimeData, QPoint, QPointF, Qt, QUrl
+from qtpy.QtCore import QMimeData, QPoint, Qt, QUrl
 from qtpy.QtGui import QDragEnterEvent
 
 # Internal

@@ -84,7 +84,7 @@ def test_the_text_is_actually_shortened_when_the_room_runs_out(qtbot, qapp):
     qtbot.waitExposed(label)
 
     assert label.elided_text() != IDENTITY
-    assert "…" in label.elided_text() or "..." in label.elided_text()
+    assert "\u2026" in label.elided_text() or "..." in label.elided_text()
 
 
 def test_eliding_from_the_right_is_still_the_default(qtbot, qapp):
@@ -116,7 +116,7 @@ def test_a_label_can_be_asked_to_elide_from_the_middle(qtbot, qapp):
     # Split at the ellipsis rather than asserting a character count: how
     # much of each end survives is a pixel measurement, and what matters
     # is that BOTH ends do.
-    head, _, tail = painted.partition("…")
+    head, _, tail = painted.partition("\u2026")
     assert head and tail, "cut in the middle, not at an end"
     assert IDENTITY.startswith(head), "the part that identifies"
     assert IDENTITY.endswith(tail), "and the part that qualifies it"

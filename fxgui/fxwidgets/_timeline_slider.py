@@ -403,7 +403,7 @@ class FXTimelineSlider(QWidget):
         )
         self._fps_spinbox.valueChanged.connect(self._on_fps_changed)
 
-        # ── Arrangement ──────────────────────────────────────────────────
+        # -- Arrangement --------------------------------------------------
         # Consumers can append their own widgets to the right side of the
         # controls area via add_control_widget().
         self._extra_controls_layout = QHBoxLayout()
@@ -1310,7 +1310,7 @@ def example() -> None:
     layout = QVBoxLayout(widget)
     layout.setSpacing(12)
 
-    # ── Basic timeline: keyframes only ──────────────────────────────────
+    # -- Basic timeline: keyframes only ----------------------------------
     layout.addWidget(QLabel("Basic (keyframes):"))
     timeline = FXTimelineSlider(start_frame=1, end_frame=120, current_frame=1)
     for key in (1, 30, 60, 90, 120):
@@ -1323,7 +1323,7 @@ def example() -> None:
     )
     layout.addWidget(frame_label)
 
-    # ── Full-featured timeline ──────────────────────────────────────────
+    # -- Full-featured timeline ------------------------------------------
     # Marker layers + regions + in/out controls + track zoom. Hover the
     # track and use the mouse wheel to zoom around the cursor, drag with
     # the middle mouse button to pan, everything stays aligned.

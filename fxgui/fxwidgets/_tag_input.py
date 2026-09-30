@@ -96,7 +96,7 @@ class FXTagInput(QWidget):
 
     This widget provides an input field where users can type and press
     Enter to add tags. Tags are displayed as styled chips that can be
-    removed by clicking the × button.
+    removed by clicking the x button.
 
     Args:
         parent: Parent widget.

@@ -1,7 +1,7 @@
 """Input widgets style through the theme and leave the caller's state alone."""
 
 # Third-party
-from qtpy.QtCore import QAbstractAnimation, Qt
+from qtpy.QtCore import QAbstractAnimation
 from qtpy.QtTest import QTest
 
 # Internal
