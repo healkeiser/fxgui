@@ -77,6 +77,11 @@ the next major, and this is it.
    read the cache, not a per-cell recompute.
 8. `FXWidget`: sets no stylesheet; `self.layout` no longer shadows
    `layout()` (rename `main_layout`); drop the mixin.
+10. `fxstyle.palette()` builds a QPalette from the same table; it is set
+    on every themed root with the sheet (never on a foreign app).
+11. Icons: a QIconEngine resolves its colour from `colors()` at paint
+    time, cached in QPixmapCache; the widget registry and
+    `sync_colors_with_theme` go; `set_icon` keeps its signature.
 9. fxutils: delete `filter_tree`, `deprecated`, `set_formatted_tooltip`
    (unused in fxgui and ls-pipeline).
 
@@ -170,8 +175,11 @@ leave `FXThemeAware`.
 - One gallery: per-module `example()` blocks and `fxgui/ui/` deleted,
   `examples.py` covers every widget; `CLAUDE.md` and docs describe the
   pull-model contract.
+- Measure a theme switch on a large window and icon drawing in a long
+  list; prove the icon engine and palette in a live hython session.
 - Two whole-branch reviewers; fix every finding; release 13.0.0 (tell the
   ls-pipeline design-system session first); ls-pipeline adapts (drop
   `lotchi_colors.yaml` copy for the overlay, `docking.py` manual
   `@radius`, `FXElidedLabel` subclass, manual spinner stops, banner
-  `deleteLater`, `FXThemeAware` uses) and bumps its pin.
+  `deleteLater`, `FXThemeAware` uses, the hand-made palette in
+  `apps/theme.py`) and bumps its pin.
