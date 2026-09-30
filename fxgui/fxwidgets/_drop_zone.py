@@ -52,6 +52,8 @@ class _FileDropTree(QTreeWidget):
         self.setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DropOnly)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         self.setAlternatingRowColors(True)
         self.setRootIsDecorated(False)
 

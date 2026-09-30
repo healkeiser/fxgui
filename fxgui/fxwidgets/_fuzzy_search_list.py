@@ -148,6 +148,10 @@ class FXFuzzySearchList(fxstyle.FXThemeAware, QWidget):
         self._list_view.setAlternatingRowColors(True)
         self._list_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self._list_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self._list_view.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self._list_view.setHorizontalScrollMode(
+            QAbstractItemView.ScrollPerPixel
+        )
         layout.addWidget(self._list_view, 1)
 
         # Connect signals

@@ -161,6 +161,10 @@ class FXFuzzySearchTree(fxstyle.FXThemeAware, QWidget):
         self._tree_view.setAlternatingRowColors(True)
         self._tree_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self._tree_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self._tree_view.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self._tree_view.setHorizontalScrollMode(
+            QAbstractItemView.ScrollPerPixel
+        )
         self._tree_view.setHeaderHidden(True)
         self._tree_view.setAnimated(True)
         layout.addWidget(self._tree_view, 1)
