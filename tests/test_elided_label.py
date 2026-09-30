@@ -83,8 +83,8 @@ def test_the_text_is_actually_shortened_when_the_room_runs_out(qtbot, qapp):
     label.show()
     qtbot.waitExposed(label)
 
-    assert label.text() != IDENTITY
-    assert "…" in label.text() or "..." in label.text()
+    assert label.elided_text() != IDENTITY
+    assert "…" in label.elided_text() or "..." in label.elided_text()
 
 
 def test_eliding_from_the_right_is_still_the_default(qtbot, qapp):
@@ -96,7 +96,7 @@ def test_eliding_from_the_right_is_still_the_default(qtbot, qapp):
     label.show()
     qtbot.waitExposed(label)
 
-    assert label.text().startswith("valentin"), "the head survived"
+    assert label.elided_text().startswith("valentin"), "the head survived"
     assert label.mode == Qt.ElideRight
 
 
@@ -110,7 +110,7 @@ def test_a_label_can_be_asked_to_elide_from_the_middle(qtbot, qapp):
     label.show()
     qtbot.waitExposed(label)
 
-    painted = label.text()
+    painted = label.elided_text()
 
     assert painted != IDENTITY, "it did elide"
     # Split at the ellipsis rather than asserting a character count: how
@@ -133,7 +133,7 @@ def test_two_identities_sharing_a_tail_stay_tellable_apart(qtbot, qapp):
         qtbot.addWidget(label)
         label.show()
         qtbot.waitExposed(label)
-        return label.text()
+        return label.elided_text()
 
     from_right = (
         painted(first, Qt.ElideRight),
@@ -154,25 +154,35 @@ def test_changing_the_mode_re_cuts_the_text(qtbot, qapp):
     qtbot.addWidget(label)
     label.show()
     qtbot.waitExposed(label)
-    before = label.text()
+    before = label.elided_text()
 
     label.mode = Qt.ElideMiddle
 
-    assert label.text() != before
+    assert label.elided_text() != before
 
 
-def test_text_still_answers_what_is_painted(qtbot, qapp):
-    """`QLabel`'s own contract, deliberately kept: a caller reading this
-    label back gets what is on screen. Anything else would put an
-    ellipsis somewhere nobody could see it was a shortening."""
+def test_text_answers_the_whole_string(qtbot, qapp):
+    """`text()` is what was set; the shortened string is `elided_text()`."""
     label = FXElidedLabel(IDENTITY)
     label.setFixedWidth(80)
     qtbot.addWidget(label)
     label.show()
     qtbot.waitExposed(label)
 
-    assert label.text() == label.text().strip()
-    assert len(label.text()) < len(IDENTITY)
+    assert label.text() == IDENTITY
+    assert len(label.elided_text()) < len(IDENTITY)
+
+
+def test_size_hint_measures_the_whole_string(qtbot, qapp):
+    """A layout asking for room gets the full width, not the cut one."""
+    label = FXElidedLabel(IDENTITY)
+    plain = QLabel(IDENTITY)
+    qtbot.addWidget(label)
+    label.resize(60, 20)
+    label.show()
+    qtbot.waitExposed(label)
+
+    assert label.sizeHint().width() >= plain.sizeHint().width()
 
 
 def test_word_wrap_overruling_the_mode_says_so(qtbot, qapp):
@@ -247,7 +257,7 @@ def test_a_wrapped_label_still_elides_from_the_right(qtbot, qapp):
     label.show()
     qtbot.waitExposed(label)
 
-    painted = label.text()
+    painted = label.elided_text()
 
     assert painted.startswith("word"), "the head survives"
     assert painted.endswith("..."), "and the cut is at the end"

@@ -124,6 +124,25 @@ class FXElidedLabel(QLabel):
         super().setText(text)
         self._elide_text()
 
+    def text(self) -> str:
+        """Return the whole text that was set, not the shortened one."""
+        return self._full_text
+
+    def elided_text(self) -> str:
+        """Return the text as painted, shortened to fit the label."""
+        return super().text()
+
+    def sizeHint(self) -> QSize:
+        """Ask for the room the whole text needs, on one line."""
+        hint = super().sizeHint()
+        if self.wordWrap():
+            return hint
+        metrics = QFontMetrics(self.font())
+        extra = metrics.horizontalAdvance(self._full_text) - (
+            metrics.horizontalAdvance(super().text())
+        )
+        return QSize(hint.width() + max(0, extra), hint.height())
+
     def resizeEvent(self, event) -> None:
         """Re-elide text when the label is resized."""
         super().resizeEvent(event)
