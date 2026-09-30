@@ -183,6 +183,10 @@ leave `FXThemeAware`.
   PySide6 6.5.3 (Houdini 21: no 3-argument QTimer.singleShot with a
   callable); the rez fxgui package stays no_deps (Houdini ships its own
   houdini_qtads build).
+- Order-dependent tests: test_primary_button's shape test fails after
+  test_icon_button_and_group alone (compares id() of wrappers); some test
+  leaves the theme so a switch changes nothing. Fix both; the suite must
+  pass in any order (`-p randomly` or reversed).
 - Owner rule: wrong, costly or too complicated all require a change. After
   the merge, one whole-repo complexity audit (duplication, dead
   flexibility, hand-rolled Qt/stdlib) over the merged tree; every finding
