@@ -183,3 +183,29 @@ def test_a_view_filled_before_it_is_shown_lays_its_rows_out_once_styled(
     first, second = (view.visualItemRect(view.item(i)) for i in (0, 1))
     assert second.top() == first.bottom() + 1
     assert first.height() == 26
+
+
+@pytest.mark.parametrize("where", ["app_root", "host_root"])
+def test_a_framed_window_keeps_an_unmarked_page_on_the_surface(
+    qtbot, request, where
+):
+    from fxgui.fxwidgets import FXMainWindow
+
+    request.getfixturevalue(where)
+    window = FXMainWindow(framed=True)
+    qtbot.addWidget(window)
+    page, band = QWidget(), QWidget()
+    fxstyle.mark_as_frame(band)
+    QVBoxLayout(page).addWidget(band)
+    band.setMinimumHeight(40)
+    window.setCentralWidget(page)
+    window.resize(300, 200)
+    window.show()
+    qtbot.waitExposed(window)
+    image = window.grab().toImage()
+    corner = page.mapTo(window, QPoint(page.width() - 2, page.height() - 2))
+    inside = band.mapTo(window, QPoint(band.width() // 2, band.height() // 2))
+    assert image.pixelColor(corner).name() == QColor(
+        fxstyle.colors().surface).name()
+    assert image.pixelColor(inside).name() == QColor(
+        fxstyle.colors().frame).name()

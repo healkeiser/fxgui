@@ -1656,8 +1656,16 @@ QSplitter {
    matches an unmarked widget.
    ========================================================================== */
 
+/* A framed window paints the frame behind its panes; a child it holds
+   keeps the surface unless marked too. */
+QMainWindow[fxFrame="true"] > QWidget
+{
+    background-color: @surface;
+}
+
 *[fxFrame="true"],
-QMainWindow[fxFrame="true"] > QToolBar
+QMainWindow[fxFrame="true"] > QToolBar,
+QMainWindow[fxFrame="true"] > *[fxFrame="true"]
 {
     background-color: @frame;
 }
