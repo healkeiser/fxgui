@@ -172,6 +172,8 @@ __all__ = [
     "get_contrast_text_color",
     "get_contrast_ratio",
     "readable_ink",
+    "mix",
+    "step_toward",
 ]
 
 
@@ -835,7 +837,7 @@ def readable_ink(
         ("#000000", "#ffffff"),
         key=lambda pole: get_contrast_ratio(pole, ground),
     )
-    return _step_toward(start, toward, _reads(ground, floor))
+    return step_toward(start, toward, _reads(ground, floor))
 
 
 def _visibly_differ(one_hex: str, two_hex: str) -> bool:
@@ -873,7 +875,7 @@ def _primary_button_fills(
 
     def shifted(fill, ink, *apart):
         reads = _reads(ink, 4.5)
-        return _step_toward(fill, _away_from(ink, fill), lambda color: (
+        return step_toward(fill, _away_from(ink, fill), lambda color: (
             reads(color) and all(_visibly_differ(color, o) for o in apart)
         ))
 
@@ -885,8 +887,11 @@ def _primary_button_fills(
     return rest, hover, pressed
 
 
-def _mix(one_hex: str, two_hex: str, amount: float) -> str:
-    """Return the color `amount` of the way from `one_hex` to `two_hex`."""
+def mix(one_hex, two_hex, amount: float) -> str:
+    """Return the hex colour `amount` (0 to 1) of the way from one to two.
+
+    Either colour may be anything QColor reads, a QColor included.
+    """
     one, two = QColor(one_hex), QColor(two_hex)
     return QColor(
         round(one.red() + (two.red() - one.red()) * amount),
@@ -895,13 +900,23 @@ def _mix(one_hex: str, two_hex: str, amount: float) -> str:
     ).name()
 
 
-def _step_toward(start: str, toward: str, done) -> str:
-    """Return the first color from `start` to `toward` that is `done`.
+def step_toward(start, toward, done) -> str:
+    """Return the first hex colour from `start` to `toward` that is `done`.
 
-    Returns `toward` itself when no color on the way is.
+    Args:
+        start: The colour to begin at, tried first.
+        toward: The colour to move to, in 40 steps.
+        done: Takes a hex colour; True stops the walk there.
+
+    Returns:
+        The first colour `done` accepts, else `toward` itself.
+
+    Examples:
+        >>> fxstyle.step_toward("#202020", "#ffffff",
+        ...     lambda c: fxstyle.get_contrast_ratio(c, "#202020") >= 4.5)
     """
     for step in range(41):
-        color = _mix(start, toward, step / 40)
+        color = mix(start, toward, step / 40)
         if done(color):
             return color
     return color
@@ -938,12 +953,12 @@ def _depth_colors(theme_data: dict) -> Dict[str, str]:
         if get_luminance(sunken) < get_luminance(surface) and deep(sunken):
             frame = sunken
         else:
-            frame = _step_toward(surface, "#000000", deep)
+            frame = step_toward(surface, "#000000", deep)
             if not deep(frame):
-                frame = _step_toward(surface, "#ffffff", deep)
+                frame = step_toward(surface, "#ffffff", deep)
 
-    well = theme_data.get("well") or _step_toward(
-        _mix(surface, frame, 0.5), frame, _reads(surface, WELL_MIN_CONTRAST))
+    well = theme_data.get("well") or step_toward(
+        mix(surface, frame, 0.5), frame, _reads(surface, WELL_MIN_CONTRAST))
 
     border = theme_data.get("border", frame)
     edge = theme_data.get("pane_border")
@@ -953,7 +968,7 @@ def _depth_colors(theme_data: dict) -> Dict[str, str]:
             if get_luminance(border) <= get_luminance(frame)
             else "#ffffff"
         )
-        edge = _step_toward(
+        edge = step_toward(
             border, away, _reads(frame, PANE_BORDER_MIN_CONTRAST))
 
     mark = theme_data.get("splitter_mark")
@@ -962,7 +977,7 @@ def _depth_colors(theme_data: dict) -> Dict[str, str]:
         quiet = theme_data.get("border_light", border)
         mark = next(
             (color for color in (border, quiet) if visible(color)), None
-        ) or _step_toward(quiet, theme_data.get("text", border), visible)
+        ) or step_toward(quiet, theme_data.get("text", border), visible)
 
     return {
         "frame": frame,
