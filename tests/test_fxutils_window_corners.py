@@ -12,10 +12,19 @@ import ctypes
 import sys
 
 # Third-party
+import pytest
 from qtpy.QtWidgets import QWidget
 
 # Internal
 from fxgui import fxutils
+
+try:
+    from ctypes import wintypes  # noqa: F401
+except (ImportError, ValueError):
+    wintypes = None
+
+# The compositor calls build wintypes arguments, which only exist on Windows.
+needs_wintypes = pytest.mark.skipif(wintypes is None, reason="no ctypes.wintypes")
 
 
 def test_asking_for_the_flyout_chrome_answers_rather_than_raises(qtbot):
@@ -51,7 +60,10 @@ def test_a_platform_with_no_compositor_is_never_asked(qtbot, monkeypatch):
     reached = []
     monkeypatch.setattr(sys, "platform", "linux")
     monkeypatch.setattr(
-        ctypes, "WinDLL", lambda *args, **kwargs: reached.append("dwmapi")
+        ctypes,
+        "WinDLL",
+        lambda *args, **kwargs: reached.append("dwmapi"),
+        raising=False,
     )
     widget = QWidget()
     qtbot.addWidget(widget)
@@ -66,7 +78,10 @@ def test_a_window_with_no_handle_yet_is_not_asked(qtbot, monkeypatch):
     reached = []
     monkeypatch.setattr(sys, "platform", "win32")
     monkeypatch.setattr(
-        ctypes, "WinDLL", lambda *args, **kwargs: reached.append("dwmapi")
+        ctypes,
+        "WinDLL",
+        lambda *args, **kwargs: reached.append("dwmapi"),
+        raising=False,
     )
 
     class _Handleless(QWidget):
@@ -80,6 +95,7 @@ def test_a_window_with_no_handle_yet_is_not_asked(qtbot, monkeypatch):
     assert reached == []
 
 
+@needs_wintypes
 def test_a_compositor_that_declines_is_not_an_error(qtbot, monkeypatch):
     """The failure code path, which is the one an older Windows build
     takes. `ctypes.HRESULT` would raise on it; the raw `c_long` does not,
@@ -98,7 +114,9 @@ def test_a_compositor_that_declines_is_not_an_error(qtbot, monkeypatch):
         DwmSetWindowAttribute = DwmSetWindowAttribute()
 
     monkeypatch.setattr(sys, "platform", "win32")
-    monkeypatch.setattr(ctypes, "WinDLL", lambda *args, **kwargs: _Declining())
+    monkeypatch.setattr(
+        ctypes, "WinDLL", lambda *args, **kwargs: _Declining(), raising=False
+    )
     widget = QWidget()
     qtbot.addWidget(widget)
     widget.show()
@@ -106,6 +124,7 @@ def test_a_compositor_that_declines_is_not_an_error(qtbot, monkeypatch):
     assert fxutils.round_window_corners(widget) is False
 
 
+@needs_wintypes
 def test_a_compositor_that_accepts_says_so(qtbot, monkeypatch):
     """`S_OK` is zero, and zero is the only success."""
     asked = {}
@@ -126,7 +145,9 @@ def test_a_compositor_that_accepts_says_so(qtbot, monkeypatch):
         DwmSetWindowAttribute = DwmSetWindowAttribute()
 
     monkeypatch.setattr(sys, "platform", "win32")
-    monkeypatch.setattr(ctypes, "WinDLL", lambda *args, **kwargs: _Accepting())
+    monkeypatch.setattr(
+        ctypes, "WinDLL", lambda *args, **kwargs: _Accepting(), raising=False
+    )
     widget = QWidget()
     qtbot.addWidget(widget)
     widget.show()
@@ -138,6 +159,7 @@ def test_a_compositor_that_accepts_says_so(qtbot, monkeypatch):
     )
 
 
+@needs_wintypes
 def test_a_library_that_will_not_load_is_an_answer_too(qtbot, monkeypatch):
     """`dwmapi` missing, or the symbol absent from it."""
 
@@ -145,7 +167,7 @@ def test_a_library_that_will_not_load_is_an_answer_too(qtbot, monkeypatch):
         raise OSError("no dwmapi here")
 
     monkeypatch.setattr(sys, "platform", "win32")
-    monkeypatch.setattr(ctypes, "WinDLL", _refuse)
+    monkeypatch.setattr(ctypes, "WinDLL", _refuse, raising=False)
     widget = QWidget()
     qtbot.addWidget(widget)
     widget.show()
