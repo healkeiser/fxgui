@@ -4,7 +4,9 @@ Uses Pygments for syntax highlighting, supporting 500+ programming languages.
 """
 
 # Built-in
+import bisect
 import os
+import zlib
 from typing import Optional
 
 # Third-party
@@ -40,11 +42,13 @@ def get_supported_languages() -> list[str]:
     return sorted(languages)
 
 
-class FXPygmentsHighlighter(fxstyle.FXThemeAware, QSyntaxHighlighter):
+class FXPygmentsHighlighter(QSyntaxHighlighter):
     """Syntax highlighter using Pygments for multi-language support.
 
-    This highlighter uses Pygments lexers and styles to tokenize and format code.
-    It leverages Pygments' built-in style system for consistent token coloring.
+    The whole document is lexed once per change; each block then takes
+    its slice of the tokens, and records the token type at its end as
+    its state so Qt carries a change (an opened string) to the blocks
+    below.
 
     Args:
         document: The QTextDocument to highlight.
@@ -54,7 +58,6 @@ class FXPygmentsHighlighter(fxstyle.FXThemeAware, QSyntaxHighlighter):
         >>> highlighter = FXPygmentsHighlighter(text_edit.document(), "python")
     """
 
-    # Pygments style to use (One Dark-like theme)
     _DARK_STYLE = "one-dark"
     _LIGHT_STYLE = "friendly"
 
@@ -64,19 +67,13 @@ class FXPygmentsHighlighter(fxstyle.FXThemeAware, QSyntaxHighlighter):
         self._lexer = None
         self._style = None
         self._formats = {}
+        self._lexed_text = None
+        self._spans = []
+        self._span_starts = []
 
-        # Get the lexer for the specified language
         self._update_lexer(language)
-        # Initialize formats from Pygments style
         self._update_formats()
-
-        # Connect to document changes to trigger rehighlight
-        document.contentsChanged.connect(self._on_content_changed)
-
-    def _on_content_changed(self) -> None:
-        """Handle document content changes."""
-        # QSyntaxHighlighter automatically rehighlights on content change
-        pass
+        fxstyle.theme_changed.connect(self.refresh_formats)
 
     def _update_lexer(self, language: str) -> None:
         """Update the Pygments lexer for the specified language.
@@ -84,13 +81,15 @@ class FXPygmentsHighlighter(fxstyle.FXThemeAware, QSyntaxHighlighter):
         Args:
             language: The programming language name.
         """
+        # No stripping: token offsets must match the document's.
+        options = {"stripnl": False, "stripall": False, "ensurenl": False}
         try:
-            self._lexer = get_lexer_by_name(language, stripall=True)
+            self._lexer = get_lexer_by_name(language, **options)
             self._language = language
         except Exception:
-            # Fallback to text if language not found
-            self._lexer = get_lexer_by_name("text", stripall=True)
+            self._lexer = get_lexer_by_name("text", **options)
             self._language = "text"
+        self._lexed_text = None
 
     def set_language(self, language: str) -> None:
         """Change the syntax highlighting language.
@@ -109,16 +108,9 @@ class FXPygmentsHighlighter(fxstyle.FXThemeAware, QSyntaxHighlighter):
         """
         return self._language
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Update syntax highlighting formats based on current theme."""
-        self._update_formats()
-        self.rehighlight()
-
     def _update_formats(self) -> None:
         """Build format dictionary from Pygments style."""
         self._formats = {}
-
-        # Select style based on theme brightness
         style_name = self._LIGHT_STYLE if fxstyle.is_light_theme() else self._DARK_STYLE
 
         try:
@@ -126,30 +118,18 @@ class FXPygmentsHighlighter(fxstyle.FXThemeAware, QSyntaxHighlighter):
         except Exception:
             self._style = get_style_by_name("default")
 
-        # Build formats for all token types from the style
         for token_type, style_dict in self._style:
             fmt = QTextCharFormat()
-
-            # Foreground color
             if style_dict.get("color"):
                 fmt.setForeground(QColor(f"#{style_dict['color']}"))
-
-            # Background color (usually not set for code editors)
             if style_dict.get("bgcolor"):
                 fmt.setBackground(QColor(f"#{style_dict['bgcolor']}"))
-
-            # Font weight
             if style_dict.get("bold"):
                 fmt.setFontWeight(QFont.Bold)
-
-            # Italic
             if style_dict.get("italic"):
                 fmt.setFontItalic(True)
-
-            # Underline
             if style_dict.get("underline"):
                 fmt.setFontUnderline(True)
-
             self._formats[token_type] = fmt
 
     def _get_format_for_token(self, token_type) -> Optional[QTextCharFormat]:
@@ -161,71 +141,56 @@ class FXPygmentsHighlighter(fxstyle.FXThemeAware, QSyntaxHighlighter):
         Returns:
             The QTextCharFormat for the token, or None if not found.
         """
-        # Walk up the token type hierarchy until we find a match
         while token_type:
             if token_type in self._formats:
                 return self._formats[token_type]
-            # Move to parent token type
             token_type = token_type.parent
         return None
 
-    def highlightBlock(self, text: str) -> None:
-        """Apply syntax highlighting to a block of text.
-
-        Args:
-            text: The text to highlight.
-        """
-        if not self._lexer or not text:
+    def _lex_document(self) -> None:
+        """Lex the document again if its text changed since the last lex."""
+        text = self.document().toPlainText()
+        if text == self._lexed_text:
             return
+        self._lexed_text = text
+        self._spans = []
+        position = 0
+        for token_type, value in lex(text, self._lexer) if text else ():
+            if value:
+                self._spans.append((position, position + len(value), token_type))
+                position += len(value)
+        self._span_starts = [span[0] for span in self._spans]
 
-        # Get the starting position of this block in the full document
-        block = self.currentBlock()
-        block_start = block.position()
-
-        # Get full document text for proper context
-        document = self.document()
-        full_text = document.toPlainText()
-
-        # Tokenize the entire document to get proper context
-        # Then filter to tokens that affect this block
+    def highlightBlock(self, text: str) -> None:
+        """Apply the document's tokens that fall inside this block."""
+        if not self._lexer:
+            return
+        self._lex_document()
+        block_start = self.currentBlock().position()
         block_end = block_start + len(text)
-
-        current_pos = 0
-        for token_type, token_value in lex(full_text, self._lexer):
-            token_len = len(token_value)
-            token_end = current_pos + token_len
-
-            # Check if this token overlaps with the current block
-            if token_end > block_start and current_pos < block_end:
-                # Calculate the portion of this token that falls within the block
-                rel_start = max(0, current_pos - block_start)
-                rel_end = min(len(text), token_end - block_start)
-
-                if rel_end > rel_start:
-                    fmt = self._get_format_for_token(token_type)
-                    if fmt:
-                        self.setFormat(rel_start, rel_end - rel_start, fmt)
-
-            # Skip processing once we're past this block
-            if current_pos > block_end:
+        index = max(0, bisect.bisect_right(self._span_starts, block_start) - 1)
+        end_type = None
+        for start, end, token_type in self._spans[index:]:
+            if start > block_end:
                 break
+            end_type = token_type
+            rel_start = max(0, start - block_start)
+            rel_end = min(len(text), end - block_start)
+            if rel_end > rel_start:
+                fmt = self._get_format_for_token(token_type)
+                if fmt:
+                    self.setFormat(rel_start, rel_end - rel_start, fmt)
+        state = zlib.crc32(str(end_type).encode("ascii")) & 0x7FFFFFFF
+        self.setCurrentBlockState(state)
 
-            current_pos = token_end
-
-    def refresh_formats(self) -> None:
-        """Refresh formats when theme changes."""
+    def refresh_formats(self, _theme_name: Optional[str] = None) -> None:
+        """Rebuild the formats for the current theme and rehighlight."""
         self._update_formats()
         self.rehighlight()
 
 
-class FXCodeBlock(fxstyle.FXThemeAware, QWidget):
-    """A code block widget with syntax highlighting and theme-aware styling.
-
-    This widget displays code with:
-    - Syntax highlighting for 500+ languages via Pygments
-    - Theme-aware background and text colors
-    - Monospace font
-    - Read-only, selectable text
+class FXCodeBlock(QWidget):
+    """A read-only code block with syntax highlighting and theme styling.
 
     Args:
         code: The code string to display.
@@ -250,60 +215,25 @@ class FXCodeBlock(fxstyle.FXThemeAware, QWidget):
 
         self._language = language
 
-        # Main layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # Text edit for code display
         self._text_edit = QTextEdit()
         self._text_edit.setReadOnly(True)
         self._text_edit.setLineWrapMode(QTextEdit.NoWrap)
         self._text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self._text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-        # Set monospace font
         font = QFont("Consolas", 9)
         font.setStyleHint(QFont.Monospace)
         self._text_edit.setFont(font)
 
-        # Set up syntax highlighter for any language
         self._highlighter = FXPygmentsHighlighter(
             self._text_edit.document(), language
         )
-
-        # Set the code
         self._text_edit.setPlainText(code.strip())
-
         layout.addWidget(self._text_edit)
-
-        # Apply initial theme styles
-        self._on_theme_changed()
-
-        # Adjust height to content
         self._adjust_height()
-
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Apply theme-aware colors. Called on init and theme changes."""
-        theme = self.theme
-
-        # Style the text edit
-        self._text_edit.setStyleSheet(
-            f"""
-            QTextEdit {{
-                background-color: {theme.surface_sunken};
-                color: {theme.text};
-                border: 1px solid {theme.border};
-                border-radius: 4px;
-                padding: 8px;
-                selection-background-color: {theme.accent_primary};
-                selection-color: {theme.text};
-            }}
-            """
-        )
-
-        # Refresh syntax highlighting colors
-        if self._highlighter:
-            self._highlighter.refresh_formats()
 
     def _adjust_height(self) -> None:
         """Adjust widget height based on content."""
@@ -344,6 +274,21 @@ class FXCodeBlock(fxstyle.FXThemeAware, QWidget):
         """
         self._language = language
         self._highlighter.set_language(language)
+
+
+fxstyle.register_widget_style("""
+FXCodeBlock QTextEdit {
+    font-family: @font_mono;
+    font-size: 9pt;
+    background-color: @surface_sunken;
+    color: @text;
+    border: 1px solid @border;
+    border-radius: 4px;
+    padding: 8px;
+    selection-background-color: @accent_primary;
+    selection-color: @text_on_accent_primary;
+}
+""")
 
 
 def example() -> None:
