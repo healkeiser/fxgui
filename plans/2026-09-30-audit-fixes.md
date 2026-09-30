@@ -178,6 +178,11 @@ leave `FXThemeAware`.
 - Move-over: every generic fix, workaround or widget that lives in
   ls-pipeline but belongs in fxgui moves into fxgui (inventory first),
   with its tests; ls-pipeline deletes its copy after the pin bump.
+  QtAds code goes in an optional module: `import PySide6QtAds as ads`
+  only when used, the `docking` extra never required at import, works on
+  PySide6 6.5.3 (Houdini 21: no 3-argument QTimer.singleShot with a
+  callable); the rez fxgui package stays no_deps (Houdini ships its own
+  houdini_qtads build).
 - Owner rule: wrong, costly or too complicated all require a change. After
   the merge, one whole-repo complexity audit (duplication, dead
   flexibility, hand-rolled Qt/stdlib) over the merged tree; every finding
