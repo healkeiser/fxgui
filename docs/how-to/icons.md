@@ -123,24 +123,84 @@ icon_c = fxicons.get_icon("settings", color="red")
 icon = fxicons.superpose_icons(icon_a, icon_b, icon_c)
 ```
 
-## Theme-Aware Icons with `set_icon`
+## Icons Follow the Theme When Drawn
 
-Icons automatically update their colors when toggling between light and dark themes. Use `fxicons.set_icon()` to register any widget for automatic icon refresh:
+An fxgui icon is not a picture baked once. It names its colours, and it
+looks them up each time Qt draws it, so a theme switch reaches every icon
+with no code of yours.
 
 ```python
-from qtpy.QtWidgets import QPushButton, QToolButton
+from qtpy.QtWidgets import QPushButton
 from fxgui import fxicons
 
-# Create a button with a theme-aware icon
 button = QPushButton("Save")
 fxicons.set_icon(button, "save")
-
-# Works with any widget that has setIcon()
-tool_btn = QToolButton()
-fxicons.set_icon(tool_btn, "settings")
 ```
 
-When the theme changes, all widgets registered via `set_icon()` automatically have their icons refreshed to match the new theme colors.
+`set_icon(widget, name)` works on anything with `setIcon()`: buttons,
+actions, `FXIconLabel`. It is `widget.setIcon(get_icon(name))`, plus one
+rule for push buttons (see the table below).
+
+### Name the colour by token
+
+`color` is the icon's colour in its resting state. Give it a theme token
+name (any key of `fxstyle.colors()`, such as `"text_muted"` or
+`"feedback_error_foreground"`) and it follows the theme. Give it a colour
+(`"#ff0000"`, `"red"`) and it keeps that colour in every theme.
+
+```python
+# Follows the theme: the error colour of whichever theme is on.
+fxicons.set_icon(indicator, "error", color="feedback_error_foreground")
+
+# Stays red in every theme.
+fxicons.set_icon(indicator, "error", color="#ff0000")
+```
+
+### The other states
+
+Qt draws an icon in one of four modes. `inks` names the colour of the
+three that are not the resting one, each a token or a colour:
+
+| Mode | When Qt uses it | Default ink |
+|------|-----------------|-------------|
+| `color` (Normal) | At rest | The library's default, `"icon"` for material, fontawesome and simple |
+| `"active"` | A hovered tool button, a highlighted menu row; a focused push button | `"icon_on_accent_secondary"` |
+| `"selected"` | A selected item-view row | `"icon_on_accent_primary"` |
+| `"disabled"` | A disabled widget | A muted grey |
+
+```python
+icon = fxicons.get_icon(
+    "send",
+    color="icon_on_accent_primary",
+    inks={"active": "icon_on_accent_secondary"},
+)
+```
+
+Any other key in `inks` raises `ValueError`. `set_icon` gives a
+`QPushButton` an Active ink equal to its resting one, since Qt draws a
+focused push button's icon in Active mode on no accent fill.
+
+A full-colour library (`dcc`, or one added with `recolor=False`) keeps its
+own pixels in every mode, whatever colour you ask for.
+
+### An icon in a label
+
+A `QLabel` pixmap is baked once. `FXIconLabel` holds a `QIcon` instead
+and draws it when painted, so it follows the theme too. A disabled label
+draws the icon's Disabled mode.
+
+```python
+from fxgui import fxicons, fxwidgets
+
+label = fxwidgets.FXIconLabel(size=18)
+fxicons.set_icon(label, "info", color="feedback_info_foreground")
+```
+
+### `get_pixmap` is a snapshot
+
+`fxicons.get_pixmap()` returns a pixmap drawn now. A token colour is read
+once, at the call. Use it for something you redraw yourself; use
+`get_icon` or `set_icon` for anything that should follow the theme.
 
 ### Using `set_icon` with Actions
 
@@ -149,7 +209,6 @@ For menu and toolbar actions, use the `icon_name` parameter in `fxutils.create_a
 ```python
 from fxgui import fxutils
 
-# The action is automatically registered for icon refresh
 save_action = fxutils.create_action(
     parent,
     "Save",
@@ -157,9 +216,6 @@ save_action = fxutils.create_action(
     icon_name="save",
 )
 ```
-
-!!! tip
-    This approach is used internally by widgets like `FXCollapsibleWidget`, `FXOutputLogWidget`, and `FXPasswordLineEdit`, so their icons update automatically on theme change.
 
 ## QtAwesome (Optional)
 

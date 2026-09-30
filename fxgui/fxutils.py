@@ -134,15 +134,14 @@ def create_action(
     Args:
         parent: Parent widget for the action.
         name: Display name for the action.
-        icon: Icon for the action. Can be a path string or a QIcon object.
-            Deprecated: prefer using `icon_name` for automatic theme updates.
+        icon: A QIcon, or the path of an icon file.
         trigger: Callback function to execute when triggered. Defaults to None.
         enable: Whether the action is enabled. Defaults to True.
         visible: Whether the action is visible. Defaults to True.
         shortcut: Keyboard shortcut (e.g., "Ctrl+S"). Defaults to None.
         checkable: Whether the action is checkable. Defaults to False.
-        icon_name: Name of the icon from fxicons. When provided, the action
-            will be registered for automatic icon updates on theme changes.
+        icon_name: An fxicons name, drawn in the theme's colours; wins over
+            `icon`.
 
     Returns:
         The created QAction.
@@ -160,7 +159,6 @@ def create_action(
 
     action = QAction(name, parent or None)
 
-    # Prefer icon_name for automatic theme updates
     if icon_name is not None:
         fxicons.set_icon(action, icon_name)
     elif icon is not None:

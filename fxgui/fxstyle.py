@@ -1,63 +1,18 @@
-"""Styling, theming, and color management for `fxgui`.
+"""Themes for `fxgui`: the stylesheet, palette, font and colours of each.
 
-This module provides comprehensive styling functionality including:
-    - Multiple theme support with dynamic theme switching
-    - Theme persistence across application restarts (via fxconfig)
-    - QSS stylesheet loading with dynamic color replacement
-    - Custom QProxyStyle for standard icon overrides
-    - A QPalette and icons that read the theme when drawn
-    - Color loading from YAML configuration files with inheritance support
-
-Every colour role a theme names is listed, with what it paints, at the top
-of the ``themes:`` section of ``style.yaml``.
-
-Theme Font Reference
---------------------
-The color file may also name typefaces by role, in a ``fonts:`` mapping
-that a theme can override role by role:
-
-    - ``title``: Reached from QSS through the ``fxTitle`` property; see
-      :func:`mark_as_title`
-    - ``body``: Every widget, through the ``*`` selector
-    - ``mono``: Code, logs, anything whose columns must line up
-
-Each role is a family stack. A missing section, a missing role or an
-empty value all mean the platform default UI font, so a color file
-written before roles existed renders unchanged. Families the running Qt
-does not have are dropped and the platform default appended, so a role
-always resolves to something real.
-
-A consumer names its fonts in its own ``fonts:`` block, through
-:func:`overlay_color_file` (a few keys) or :func:`set_color_file` (a
-whole file). Font files those names refer to are registered with
-:func:`register_fonts`.
+A themed root (see `register_themed_root`) wears the theme's stylesheet
+(shapes, borders, states, each widget's look), palette (default fills)
+and font (body family, `FONT_SIZE`). `apply_theme(name)` puts the new
+theme on every root and emits `theme_changed`. Custom painting reads
+`colors()`; icons name their colours by token (see `fxicons`). Every
+colour role is listed at the top of ``style.yaml``; font roles (title,
+body, mono) come from its ``fonts:`` block.
 
 Examples:
-    Loading a stylesheet with a theme:
-
     >>> from fxgui import fxstyle
-    >>> stylesheet = fxstyle.load_stylesheet(theme="dracula")
-    >>> widget.setStyleSheet(stylesheet)
-
-    New code should prefer `apply_theme` / `register_themed_root` instead.
-
-    Applying a theme to a window:
-
     >>> fxstyle.apply_theme("one_dark_pro")
-
-    For DCC-embedded windows, call `fxstyle.register_themed_root(window)`
-    once at construction; `FXMainWindow` does this automatically.
-
-    Getting colors for custom widgets:
-
-    >>> colors = fxstyle.get_theme_colors()
-    >>> surface = colors["surface"]  # Main background
-    >>> sunken = colors["surface_sunken"]  # Input/list backgrounds
-    >>> text = colors["text"]  # Primary text color
-
-    Theme persistence (automatic):
-    Themes are automatically saved when using `apply_theme()`.
-    On next application startup, the saved theme is automatically loaded.
+    >>> fxstyle.register_themed_root(window)  # a window inside a host
+    >>> surface = fxstyle.colors().surface
 """
 
 # Metadata

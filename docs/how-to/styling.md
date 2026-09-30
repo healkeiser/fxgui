@@ -2,36 +2,8 @@
 
 ## Style an Existing Application
 
-In the case where you already have made some custom applications, and don't want to be bothered by subclassing the widgets inside the [fxwidgets](../technical/fxwidgets/index.md) module but still want all applications to look and feel the same, you can call the `fxstyle.load_stylesheet()` function and apply the returned stylesheet to your current application/widget.
-
-```python
-from qtpy.QtWidgets import QApplication
-from fxgui import fxstyle
-
-application = QApplication([])
-application.setStyleSheet(fxstyle.load_stylesheet())
-```
-
-```python
-from qtpy.QtWidgets import QMainWindow
-from fxgui import fxstyle
-
-window = QMainWindow()
-window.setStyleSheet(fxstyle.load_stylesheet())
-```
-
-!!! note
-    You can set this stylesheet on a `QMainWindow`, `QWidget`, etc.
-
-!!! note
-    You can pass extra arguments to the [load_stylesheet()](../technical/fxstyle.md) function.
-
-!!! warning
-    `load_stylesheet()` returns a one-time snapshot. If the user switches themes afterward, nothing updates on its own, you'd have to call it again and re-apply it yourself. For a widget that should keep following theme switches, register it as a themed root instead (see below).
-
-## Staying in Sync with Theme Switches
-
-`fxstyle.register_themed_root()` applies the current theme's stylesheet to a widget, or the `QApplication` itself, immediately, and re-applies it automatically on every later `fxstyle.apply_theme()` call. Qt cascades the stylesheet to all descendants, so registering the top-level widget is enough, children don't need to register themselves.
+To give an application you already have the fxgui look, make its
+`QApplication` a themed root:
 
 ```python
 from qtpy.QtWidgets import QApplication
@@ -42,13 +14,41 @@ fxstyle.register_themed_root(application)
 fxstyle.apply_theme("dracula")
 ```
 
-!!! note
-    `fxwidgets.FXApplication` and `fxwidgets.FXMainWindow(set_stylesheet=True)` (the default) call `register_themed_root()` on themselves already, so you rarely need to call it directly unless you're styling a plain `QApplication` or `QWidget`.
+That puts the theme's stylesheet, palette and font on the application,
+and again on every later `fxstyle.apply_theme()`. `FXApplication` does
+this on itself, so with it you call nothing.
 
-!!! warning "DCC-embedded windows"
-    If you're embedding a window inside a DCC host (Houdini, Maya, Nuke), register the window itself, never the host's `QApplication`. `FXMainWindow` already does this correctly at construction, so its stylesheet updates on theme switches without ever restyling the host application.
+Inside a host application (Houdini, Maya, Nuke), never register the
+host's `QApplication`: register your own top-level window.
 
-Use `load_stylesheet()` when you need a one-off stylesheet string, for example a manual snapshot handed to a DCC panel you don't want tracked as a themed root. Use `register_themed_root()` when the widget should keep following theme switches for the lifetime of the application. See [Theming](theming.md) for reading colors directly (`fxstyle.colors()`), reacting to switches (`theme_changed`), and registering your own widget styles (`register_widget_style()`).
+```python
+from qtpy.QtWidgets import QMainWindow
+from fxgui import fxstyle
+
+window = QMainWindow()
+fxstyle.register_themed_root(window)
+```
+
+`FXMainWindow`, `FXFloatingDialog`, `FXSplashScreen` and the
+`FXSystemTray` menu do this on themselves when the running application is
+not an `FXApplication`, so the host is never restyled.
+
+### A stylesheet by hand
+
+`fxstyle.load_stylesheet()` returns the theme's stylesheet as text and
+changes nothing. It is a snapshot: a later theme switch does not reach
+it. A window styled with it also needs the palette and the font:
+
+```python
+window.setStyleSheet(fxstyle.load_stylesheet())
+window.setPalette(fxstyle.palette())
+window.setFont(fxstyle.font())
+```
+
+Prefer `register_themed_root()` whenever the window should follow theme
+switches. See [Theming](theming.md) for what the stylesheet, the palette
+and the font each carry, reading colours (`fxstyle.colors()`), and
+registering your own widget styles (`register_widget_style()`).
 
 ## Apply the Custom Google Material Icons
 
@@ -123,25 +123,29 @@ What changes in a framed window:
 
 | Part | Plain window | Framed window |
 |------|--------------|---------------|
-| Banner | A 50 px band under the toolbar | Gone; its icon and text sit at the right end of the menu bar, centred on the menu titles, with no fill of their own |
-| `set_banner_text()`, `set_banner_icon()` | Change the banner | Change the menu bar corner; the icon defaults to 16 px |
-| `hide_banner()`, `show_banner()` | Hide or show the banner | Hide or show the menu bar corner |
 | Menu bar, toolbars, status bar | `surface_sunken` / `surface`, with a line under each | `frame`, no lines |
 | Status bar accent line | Shown, with a 1 px line under it | Shown, with no line under it |
 | A status bar set later with `setStatusBar()` | As given | Painted in `frame` too |
-| `window.title_corner` | `None` | The widget in the menu bar corner holding `banner_icon` and `banner_label` |
 
-The window does not paint your central widget: mark it, and any band of your own inside it, with `fxstyle.mark_as_frame()`. A widget left unmarked keeps its usual fill, which is what a pane should do.
+In both, the window's icon and name sit at the right end of the menu bar,
+in `window.title_corner` (`banner_icon` and `banner_label`), with no fill
+of their own. `set_banner_text()` and `set_banner_icon()` change them; the
+icon defaults to 16 px.
+
+A framed window paints the frame behind your central widget, but the
+central widget itself keeps the surface: mark it, and any band of your own
+inside it, with `fxstyle.mark_as_frame()`. A child of the window left
+unmarked keeps the surface, which is what a pane should do.
 
 ### What `mark_as_frame()` does
 
 | Widget marked | Result |
 |---------------|--------|
 | Any widget | Paints the `frame` color |
-| A `QLabel`, `QCheckBox`, `QRadioButton` or disabled `QToolButton` placed directly in it | No fill of its own, so it sits on the frame |
+| A disabled `QToolButton` placed directly in it | No fill and no border, so it sits on the frame |
 | A `QSplitter` | Its handles are gaps in the `frame` color with a short centred mark of five dots in the `splitter_mark` color; the handle keeps exactly the width `setHandleWidth()` gives it |
 
-Call `fxstyle.mark_as_frame(widget, False)` to remove the mark. Only direct children lose their fill: a label inside a pane inside a marked band keeps the pane's color.
+Call `fxstyle.mark_as_frame(widget, False)` to remove the mark. A plain label has no fill anywhere, so it shows whatever is behind it: the frame in a marked band, the pane's colour in a pane.
 
 !!! note
     The mark is painted, not loaded from an image: it follows theme switches, stays the same size on screen at 100 %, 150 % and 200 % scaling (each dot is two logical pixels, rounded to whole screen pixels), and reaches handles the splitter creates after it was marked. Set the handle width before or after marking; either order works.

@@ -31,36 +31,40 @@ mkdocs build    # Build static docs
 
 ### Core Modules
 
-- **fxstyle.py** - Theming engine with `FXThemeManager` singleton and `FXThemeAware` mixin. Uses YAML-based theme definitions (`style.yaml`) with semantic color roles
+- **fxstyle.py** - Themes from `style.yaml`. A themed root wears the theme's stylesheet, palette (`palette()`) and font (`font()`); `apply_theme(name)` re-applies all three and emits `theme_changed`. `colors()` is the cached colour namespace
 - **fxconfig.py** - QSettings-based persistent configuration (INI format)
 - **fxcore.py** - `FXSortFilterProxyModel` with fuzzy matching
 - **fxdcc.py** - DCC integration (Houdini, Maya, Nuke) with auto-detection
-- **fxicons.py** - Multi-library icon management (beacon, fontawesome, dcc-specific) with LRU caching and theme-aware updates
-- **fxutils.py** - UI utilities (load_ui, create_action, shadows, tooltips)
+- **fxicons.py** - Multi-library icons whose colours are theme token names, resolved by a `QIconEngine` each time the icon is drawn
+- **fxutils.py** - UI utilities (load_ui, create_action, shadows, repolish)
 
-### Widget Patterns
+### Theming Contract (pull model)
 
-The `fxwidgets/` directory contains 30+ custom widgets. Key patterns:
+Nothing is notified to restyle; everything reads the theme when Qt draws:
 
-**Theme Awareness** - Inherit from `FXThemeAware` mixin for automatic theme updates:
+- **Looks in QSS** - built-in rules live in `qss/style.qss`; a widget module registers its own with `fxstyle.register_widget_style(qss)` at import, `@tokens` for colours, the class name or an objectName as selector. State goes through a dynamic property plus `fxutils.repolish(widget)`.
+- **Base sheet carries shape and state only** - no rule sets a fill or a font on every widget. Default fills come from the palette and the default size and family from the root font, so `setFont`, item `BackgroundRole` and labels on cards behave. A root inside a host application adds `_HOST_RULES`, since Qt gives widgets made later in such a window the host's palette and font.
+- **Painting** - read `fxstyle.colors()` inside `paintEvent`; never cache colours.
+- **Icons** - `fxicons.get_icon`/`set_icon` take token names (`color="text_muted"`, `inks={"active": ...}`); `FXIconLabel` draws an icon in a label. No widget re-bakes an icon on a theme switch.
+- **`theme_changed`** - only for real side effects (re-highlighting, a cached render). Connect a bound method of the widget; Qt drops it with the widget.
+- No widget calls `setStyleSheet(load_stylesheet())` on itself; windows register as themed roots.
+
 ```python
-class MyWidget(FXThemeAware, QWidget):
-    def _on_theme_changed(self, _theme_name: str = None):
-        colors = fxstyle.get_theme_colors()
-        self.setStyleSheet(f"background: {colors['surface']};")
+fxstyle.register_widget_style("MyCard { background: @surface; }")
+
+class MyCard(QFrame):
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setPen(QColor(fxstyle.colors().accent_primary))
 ```
 
-**Icon Usage** - Use `set_icon()` for theme-aware icons:
-```python
-from fxgui.fxicons import set_icon, get_icon
-set_icon(button, "check")  # Auto-updates on theme change
-```
+### Widget Structure
 
-**Widget Structure** - Each widget module follows this pattern:
+The `fxwidgets/` directory contains 30+ custom widgets. Each module:
 - Private module name (e.g., `_accordion.py`)
 - Standalone `example()` function for testing (runs with `DEVELOPER_MODE=1`)
 - Signals/slots with `@Slot` decorator
-- Methods: `_initialize()`, `_connect_signals()` for setup
 
 ## Conventions
 
