@@ -203,7 +203,9 @@ leave `FXThemeAware`.
 - Owner rule: wrong, costly or too complicated all require a change. After
   the merge, one whole-repo complexity audit (duplication, dead
   flexibility, hand-rolled Qt/stdlib) over the merged tree; every finding
-  fixed before the release.
+  fixed before the release. 13.0.0 is a major: "public on PyPI" is not a
+  reason to keep a duplicate (e.g. FXFilePathWidget's `path` property
+  beside `get_path`/`set_path`); keep one name per job.
 - Measure a theme switch on a large window and icon drawing in a long
   list; prove the icon engine and palette in a live hython session.
 - Two whole-branch reviewers; fix every finding; release 13.0.0 (tell the
