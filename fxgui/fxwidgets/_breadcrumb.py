@@ -24,7 +24,7 @@ from fxgui import fxicons, fxstyle
 from fxgui.fxwidgets._tips import apply_tip
 
 
-class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
+class FXBreadcrumb(QWidget):
     """A clickable breadcrumb trail for hierarchical navigation.
 
     This widget provides a navigation breadcrumb with clickable path
@@ -147,11 +147,9 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
         self._scroll_area.setFrameShape(QFrame.NoFrame)
         self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._scroll_area.mouseDoubleClickEvent = self._on_double_click
 
         # Container widget for breadcrumb segments
         self._container = QWidget()
-        self._container.mouseDoubleClickEvent = self._on_double_click
         self._layout = QHBoxLayout(self._container)
         self._layout.setContentsMargins(4, 0, 4, 0)
         self._layout.setSpacing(2)
@@ -164,6 +162,9 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
         self._line_edit.setPlaceholderText("Enter path...")
         self._line_edit.returnPressed.connect(self._on_path_submitted)
         self._line_edit.installEventFilter(self)
+        # Installed last: the filter reads `_line_edit`.
+        self._scroll_area.installEventFilter(self)
+        self._container.installEventFilter(self)
 
         self._stacked.addWidget(self._scroll_area)  # Index 0: Breadcrumb
         self._stacked.addWidget(self._line_edit)  # Index 1: Edit mode
@@ -174,22 +175,15 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setFixedHeight(32)
 
-        # Filled here as well as on every rebuild, so the widget is
-        # already drawn correctly before the first event loop pass --
-        # `FXThemeAware` applies the theme through a `singleShot(0)`.
         self._fill_strip(False)
+        # Segment tints and separator pixmaps are baked from the theme.
+        fxstyle.theme_changed.connect(self._on_theme_changed)
 
         if self._show_navigation:
             self._update_nav_buttons()
 
     def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        # Re-apply icons with current theme color
-        if self._show_navigation:
-            fxicons.set_icon(self._back_button, "arrow_back")
-            fxicons.set_icon(self._forward_button, "arrow_forward")
-
-        # Rebuild breadcrumb to apply new segment styles
+        """Rebuild the segments in the new theme's colours."""
         self._rebuild_breadcrumb()
 
     def _fill_strip(self, lit: bool) -> None:
@@ -257,6 +251,12 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
         focus at all -- which left the editor open with the artist
         looking at a path they had already left.
         """
+        if event.type() == QEvent.Type.MouseButtonDblClick and (
+            obj in (self._scroll_area, self._container)
+            or (isinstance(obj, QWidget) and obj.parent() is self._container)
+        ):
+            self._enter_edit_mode()
+            return True
         if (
             self.is_editing()
             and event.type() == QEvent.Type.MouseButtonPress
@@ -274,10 +274,6 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
                 # Exit edit mode when clicking outside
                 self._exit_edit_mode()
         return super().eventFilter(obj, event)
-
-    def _on_double_click(self, event) -> None:
-        """Handle double-click to enter edit mode."""
-        self._enter_edit_mode()
 
     def _enter_edit_mode(self) -> None:
         """Switch to edit mode with the line edit visible."""
@@ -377,9 +373,8 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
             index: The index to navigate to.
         """
         if 0 <= index < len(self._path):
-            self._path = self._path[: index + 1]
-            self._rebuild_breadcrumb()
-            self.segment_clicked.emit(index, self._path)
+            self.set_path(self._path[: index + 1])
+            self.segment_clicked.emit(index, self.path)
 
     def clear(self) -> None:
         """Clear the breadcrumb path."""
@@ -537,8 +532,7 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
                     lambda checked, idx=index: self._on_segment_clicked(idx)
                 )
 
-        # Enable double-click on button to enter edit mode
-        button.mouseDoubleClickEvent = self._on_double_click
+        button.installEventFilter(self)
 
         # Insert before stretch
         self._layout.insertWidget(self._layout.count() - 1, button)
@@ -567,13 +561,13 @@ class FXBreadcrumb(fxstyle.FXThemeAware, QWidget):
         """Add a separator icon."""
         label = QLabel()
         icon = fxicons.get_icon(
-            self._separator, color=self.theme.text_muted
+            self._separator, color=fxstyle.colors().text_muted
         )
         label.setPixmap(icon.pixmap(12, 12))
         label.setStyleSheet("background: transparent;")
         label.setFixedSize(16, 16)
         label.setAlignment(Qt.AlignCenter)
-        label.mouseDoubleClickEvent = self._on_double_click
+        label.installEventFilter(self)
 
         self._layout.insertWidget(self._layout.count() - 1, label)
 
