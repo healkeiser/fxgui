@@ -42,6 +42,7 @@ from functools import lru_cache
 import glob
 from pathlib import Path
 import re
+import traceback
 from typing import Any, Dict, List, Optional, Union
 
 # Third-party
@@ -82,9 +83,13 @@ __all__ = [
 # A colour meaning the theme's icon colour, read when the icon is drawn.
 _THEME = "theme"
 
+# Opacity of a disabled icon, monochrome or full-colour.
+_DISABLED_ALPHA = 0.35
+
 # Globals
 _libraries_info = {
     "beacon": {
+        "recolor": True,
         "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
         "defaults": {
             "extension": "svg",
@@ -95,6 +100,7 @@ _libraries_info = {
         },
     },
     "dcc": {
+        "recolor": False,
         "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
         "defaults": {
             "extension": "svg",
@@ -105,6 +111,7 @@ _libraries_info = {
         },
     },
     "material": {
+        "recolor": True,
         "pattern": "{root}/{library}/{extension}/{icon_name}/{style}.{extension}",
         "defaults": {
             "extension": "svg",
@@ -115,6 +122,7 @@ _libraries_info = {
         },
     },
     "fontawesome": {
+        "recolor": True,
         "pattern": "{root}/{library}/{extension}s/{style}/{icon_name}.{extension}",
         "defaults": {
             "extension": "svg",
@@ -125,6 +133,7 @@ _libraries_info = {
         },
     },
     "simple": {
+        "recolor": True,
         "pattern": "{root}/{library}/icons/{icon_name}.{extension}",
         "defaults": {
             "extension": "svg",
@@ -188,7 +197,11 @@ def set_icon_defaults(apply_to: Optional[str] = None, **kwargs: Any) -> None:
 
 
 def add_library(
-    library: str, pattern: str, defaults: Dict, root: Optional[Path] = None
+    library: str,
+    pattern: str,
+    defaults: Dict,
+    root: Optional[Path] = None,
+    recolor: bool = True,
 ):
     """Add a new icon library to the available libraries.
 
@@ -203,6 +216,9 @@ def add_library(
         defaults: The default values for the library.
         root: The root path for the library. Defaults to
             `fxconstants.ICONS_ROOT`.
+        recolor: Whether the icons are monochrome and take a colour. A
+            full-colour library (logos) passes False; a colour asked of
+            it is ignored.
 
     Examples:
         >>> add_library(
@@ -240,6 +256,7 @@ def add_library(
 
     # Add the library
     _libraries_info[library] = {
+        "recolor": recolor,
         "pattern": pattern,
         "defaults": defaults,
         "root": root,
@@ -368,6 +385,18 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     painter.fillRect(colored.rect(), QColor(color))
     painter.end()
     return colored
+
+
+def _faded(pixmap: QPixmap) -> QPixmap:
+    """Return `pixmap` at the opacity a disabled icon is drawn with."""
+    faded = QPixmap(pixmap.size())
+    faded.setDevicePixelRatio(pixmap.devicePixelRatio())
+    faded.fill(Qt.transparent)
+    painter = QPainter(faded)
+    painter.setOpacity(_DISABLED_ALPHA)
+    painter.drawPixmap(0, 0, pixmap)
+    painter.end()
+    return faded
 
 
 def _screen_dpr() -> float:
@@ -520,7 +549,9 @@ def get_pixmap(
         width = defaults["width"]
     if height is None:
         height = defaults["height"]
-    if color is None:
+    if not _libraries_info[library]["recolor"]:
+        color = None
+    elif color is None:
         color = defaults["color"]
     if color == _THEME:
         from fxgui import fxstyle
@@ -542,20 +573,30 @@ class _ThemedIconEngine(QIconEngine):
     """
 
     def __init__(
-        self, path: str, size: QSize, color: Optional[str], include_active: bool
+        self,
+        path: str,
+        size: QSize,
+        color: Optional[str],
+        include_active: bool,
+        recolor: bool = True,
     ):
         super().__init__()
         self._path = path
         self._size = QSize(size)
         self._color = color
         self._include_active = include_active
+        self._recolor = recolor
 
     def clone(self) -> QIconEngine:
         """Return a copy of this engine, for a QIcon that detaches."""
         from fxgui._compat import is_valid
 
         copy = _ThemedIconEngine(
-            self._path, self._size, self._color, self._include_active
+            self._path,
+            self._size,
+            self._color,
+            self._include_active,
+            self._recolor,
         )
         # PySide keeps a returned engine Python-owned; the QIcon deletes it.
         _clones[:] = [engine for engine in _clones if is_valid(engine)]
@@ -579,6 +620,8 @@ class _ThemedIconEngine(QIconEngine):
         from fxgui import fxstyle
 
         theme = fxstyle.colors()
+        if not self._recolor:
+            return None
         if mode == QIcon.Disabled:
             return _get_disabled_icon_color(theme.icon)
         ink = theme.icon if self._color == _THEME else self._color
@@ -590,10 +633,18 @@ class _ThemedIconEngine(QIconEngine):
 
     def scaledPixmap(self, size: QSize, mode, state, scale: float) -> QPixmap:
         """Return the icon drawn for `mode` at `size` and pixel ratio `scale`."""
+        # An exception escaping a Qt virtual kills the process on PySide6.
+        try:
+            return self._drawn(size, mode, state, scale)
+        except Exception:
+            traceback.print_exc()
+            return QPixmap()
+
+    def _drawn(self, size: QSize, mode, state, scale: float) -> QPixmap:
         target = self.actualSize(size, mode, state)
         ink = self._ink(mode)
         key = (
-            f"fxicon|{self._path}|{ink}|"
+            f"fxicon|{self._path}|{ink}|{mode}|"
             f"{target.width()}x{target.height()}@{scale}"
         )
         pixmap = QPixmapCache.find(key)
@@ -602,6 +653,8 @@ class _ThemedIconEngine(QIconEngine):
         pixmap = _raster(
             self._path, target.width(), target.height(), scale, ink
         )
+        if not self._recolor and mode == QIcon.Disabled:
+            pixmap = _faded(pixmap)
         QPixmapCache.insert(key, pixmap)
         return pixmap
 
@@ -627,11 +680,11 @@ _clones: List[QIconEngine] = []
 @lru_cache(maxsize=512)
 def _get_icon_cached(
     path: str, width: int, height: int, color: Optional[str],
-    include_active: bool,
+    include_active: bool, recolor: bool,
 ) -> QIcon:
-    return QIcon(
-        _ThemedIconEngine(path, QSize(width, height), color, include_active)
-    )
+    return QIcon(_ThemedIconEngine(
+        path, QSize(width, height), color, include_active, recolor
+    ))
 
 
 def get_icon(
@@ -725,13 +778,18 @@ def get_icon(
         width = defaults["width"]
     if height is None:
         height = defaults["height"]
-    if color is None:
+    recolor = _libraries_info[library]["recolor"]
+    if not recolor:
+        color = None
+    elif color is None:
         color = defaults["color"]
 
     path = get_icon_path(
         icon_name, library=library, style=style, extension=extension
     )
-    return _get_icon_cached(path, width, height, color, include_active)
+    return _get_icon_cached(
+        path, width, height, color, include_active, recolor
+    )
 
 
 def convert_icon_to_pixmap(
@@ -858,8 +916,7 @@ def _get_disabled_icon_color(icon_color: Optional[str] = None) -> str:
     new_s = 0  # Fully desaturated (grayscale)
     new_l = 0.5  # Middle gray lightness
 
-    # Use low alpha for the "faded out" disabled look
-    color.setHslF(h, new_s, new_l, 0.35)
+    color.setHslF(h, new_s, new_l, _DISABLED_ALPHA)
     return color.name(QColor.HexArgb)
 
 

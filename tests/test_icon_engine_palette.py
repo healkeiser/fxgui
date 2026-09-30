@@ -167,3 +167,61 @@ def test_two_thousand_icon_draws_fit_a_small_budget(qtbot):
 
     print(f"2000 icon draws: {elapsed * 1000:.1f} ms")
     assert elapsed < 0.25
+
+
+# Monochrome and full-colour libraries
+
+
+def test_a_full_colour_icon_ignores_a_colour(qapp):
+    plain = fxicons.get_icon("blender", library="dcc").pixmap(_SIZE).toImage()
+    asked = fxicons.get_icon(
+        "blender", library="dcc", color="#00ff00").pixmap(_SIZE).toImage()
+    pixmap = fxicons.get_pixmap(
+        "blender", library="dcc", color="#00ff00", dpr=1.0).toImage()
+    raw = fxicons.get_pixmap("blender", library="dcc", dpr=1.0).toImage()
+
+    assert asked == plain
+    assert pixmap == raw
+
+
+def test_a_monochrome_icon_takes_a_colour(qapp):
+    icon = fxicons.get_icon("check", library="material", color="#00ff00")
+    assert _ink(icon.pixmap(_SIZE)) == "#00ff00"
+
+
+def test_libraries_declare_whether_they_recolour(qapp, monkeypatch, tmp_path):
+    monkeypatch.setattr(fxicons, "_libraries_info", dict(fxicons._libraries_info))
+    recolor = {name: info["recolor"] for name, info in fxicons._libraries_info.items()}
+    assert recolor == {
+        "beacon": True, "dcc": False, "material": True,
+        "fontawesome": True, "simple": True,
+    }
+    defaults = {"extension": "svg", "style": None, "color": None,
+                "width": 8, "height": 8}
+    fxicons.add_library("mono", "{root}/{icon_name}.{extension}", defaults,
+                        root=str(tmp_path))
+    fxicons.add_library("logos", "{root}/{icon_name}.{extension}", defaults,
+                        root=str(tmp_path), recolor=False)
+    assert fxicons._libraries_info["mono"]["recolor"] is True
+    assert fxicons._libraries_info["logos"]["recolor"] is False
+
+
+def test_recolouring_scans_no_pixels(qapp):
+    pixmap = QPixmap(512, 512)
+    pixmap.fill(QColor("#ff0000"))
+    start = time.perf_counter()
+    fxicons.change_pixmap_color(pixmap, "#00ff00")
+    assert time.perf_counter() - start < 0.05
+    assert not hasattr(fxicons, "has_transparency")
+
+
+def test_a_failing_draw_answers_a_blank_pixmap(qapp, monkeypatch, capsys):
+    """An exception escaping the engine would kill the process."""
+    icon = fxicons.get_icon("check")
+
+    def broken(*_args):
+        raise RuntimeError("theme table broken")
+
+    monkeypatch.setattr(fxicons._ThemedIconEngine, "_ink", broken)
+    assert icon.pixmap(QSize(20, 20)).isNull()
+    assert "theme table broken" in capsys.readouterr().err
