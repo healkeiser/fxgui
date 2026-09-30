@@ -74,11 +74,7 @@ class FXCollapsibleWidget(QWidget):
     collapsed = Signal()
     resized = Signal(int)
 
-    # What Qt itself means by "no maximum height", QWIDGETSIZE_MAX. The
-    # animation drives `maximumHeight`, so an opened content area has to
-    # be released from it afterwards or it stays capped at whatever
-    # height it happened to want when it opened, and a row added later
-    # is clipped by a number from before.
+    # QWIDGETSIZE_MAX: an opened area is released to it after animating.
     NO_CAP = 16777215
 
     def __init__(
@@ -99,8 +95,6 @@ class FXCollapsibleWidget(QWidget):
         self._icon: Optional[QIcon] = None
         self._icon_name: Optional[str] = None
         self._is_expanded = False
-        self._has_been_expanded = False
-        self._content_height = 0
 
         # Create fixed header layout
         self._header = QFrame()
@@ -259,13 +253,7 @@ class FXCollapsibleWidget(QWidget):
 
         self._mark_expanded(True)
 
-        # Measured on every expansion, not once ever. The content is not
-        # frozen after the first look at it: a row added, a label that
-        # wraps at a narrower width, a widget that grew -- and a height
-        # measured once is a height that goes stale and clips.
-        self._measure_content()
-
-        self._move_to(self._calculate_content_height(), animate)
+        self._move_to(self._target_height(), animate)
         self.expanded.emit()
 
     def collapse(self, animate: bool = True) -> None:
@@ -290,30 +278,10 @@ class FXCollapsibleWidget(QWidget):
     def _move_to(self, target_height: int, animate: bool) -> None:
         """Animate the content area to `target_height`.
 
-        Always forwards, from the height the area is at RIGHT NOW. Which
-        is the fix: a group run backwards starts at its own end value, so
-        a movement interrupted mid-flight jumped to a height it had never
-        reached before animating away from it. Measured on a header
-        clicked twice quickly -- open, then shut again 40px into a 300px
-        opening -- the content snapped to 300 and fell from there.
-
-        The current height is read BEFORE the running animation is
-        stopped, since stopping is what loses it.
-
-        And it is read from the widget's HEIGHT rather than from its
-        `maximumHeight`, which is the property the animation drives.
-        Those two agree only mid-flight: once an expansion finishes,
-        `_on_animation_finished` releases the maximum to the cap, so
-        reading it there starts the collapse from the cap instead of
-        from the height on screen. Measured, a 90px body under the
-        default 300px cap: the first frame of the collapse jumped to 300
-        -- a 210px upward lurch -- and with `max_content_height=0` the
-        maximum is QWIDGETSIZE_MAX, so the collapse ran from 16,777,215
-        and reported that number to `resized`.
-
-        Clamped by the maximum as well, which costs nothing and keeps
-        the answer honest if a cap is lowered before the next layout
-        pass has resized the widget to it.
+        Always forwards, from the height on screen now: a group run
+        backwards starts at its own end value and jumps. The height is
+        read before stopping the animation, and from `height()`, since
+        `maximumHeight` is released to the cap once an expansion ends.
 
         Args:
             target_height: Where the content area should end up.
@@ -346,18 +314,6 @@ class FXCollapsibleWidget(QWidget):
         """
         self.resized.emit(int(height))
 
-    def _measure_content(self) -> int:
-        """Re-read how tall the content wants to be, and remember it.
-
-        Returns:
-            int: The content's own preferred height, or 0 with no
-            content.
-        """
-        content = self._content_area.widget()
-        self._content_height = content.sizeHint().height() if content else 0
-        self._has_been_expanded = True
-        return self._content_height
-
     def toggle(self) -> None:
         """Toggle the expanded/collapsed state."""
         if self._is_expanded:
@@ -372,79 +328,39 @@ class FXCollapsibleWidget(QWidget):
         else:
             self.collapse()
 
-    def _calculate_content_height(self) -> int:
-        """Calculate appropriate content height based on constraints."""
-        if not self._content_area.widget():
-            return 0
-
-        # Get raw content height
-        content_height = self._content_height
-
-        # Apply max_content_height if specified
+    def _target_height(self) -> int:
+        """Return the open height: the content's own, under any cap."""
+        # Measured on every call: content grows after it was set.
+        content = self._content_area.widget()
+        height = content.sizeHint().height() if content else 0
         if self._max_content_height > 0:
-            content_height = min(content_height, self._max_content_height)
-
-        return content_height
+            height = min(height, self._max_content_height)
+        return height
 
     def _on_animation_finished(self) -> None:
-        """Handle animation completion.
+        """Settle the content area once a movement ends.
 
-        Whichever way it went, the parent layouts are told this widget's
-        size changed, and `updateGeometry` is the call that does it. A
-        layout raises its widget's own minimum height when a child grows
-        and never lowers it again, and every layout between here and the
-        window caches the height it worked out for a given width, so a
-        collapsed section left the window permanently taller. Measured on
-        PySide6 6.11, one section opened and shut again: the window went
-        on answering 552px against the 472px it started at, invalidating
-        the outer layout changed nothing at all -- the sections sat in a
-        nested one, and an outer layout does not reach into one -- and
-        `updateGeometry`, which walks the parent layouts itself, brought
-        it back to 472.
+        `updateGeometry` is what makes the parent layouts give back the
+        height of a section shut again; they cache it otherwise.
         """
+        # Bars stay off while moving, so the animation does not flicker.
+        policy = (
+            Qt.ScrollBarAsNeeded if self._is_expanded else Qt.ScrollBarAlwaysOff
+        )
+        self._content_area.setVerticalScrollBarPolicy(policy)
+        self._content_area.setHorizontalScrollBarPolicy(policy)
         if not self._is_expanded:
-            # When collapsed, ensure content is hidden
             self._content_area.setMinimumHeight(0)
             self._content_area.setMaximumHeight(0)
-            self._content_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            self._content_area.setHorizontalScrollBarPolicy(
-                Qt.ScrollBarAlwaysOff
-            )
         else:
-            # When expanded, ensure scrollbars appear as needed
-            height = self._calculate_content_height()
-            self._content_area.setMinimumHeight(height)
-            # Released from the height the animation drove it to. Left
-            # capped there, the area stays at whatever its content wanted
-            # at the moment it opened and anything added afterwards is
-            # clipped by a number from before. A `max_content_height` is
-            # a cap the caller asked for, so that one stays -- and it is
-            # the cap itself rather than the measured height, which is
-            # what lets taller content scroll instead of being cut.
+            self._content_area.setMinimumHeight(self._target_height())
+            # Released from the animated height, or later rows clip; a
+            # requested cap stays a cap.
             self._content_area.setMaximumHeight(
                 self._max_content_height
                 if self._max_content_height > 0
                 else self.NO_CAP
             )
-
-            # Enable scrollbars only if content exceeds visible area
-            if self._content_area.widget():
-                widget_width = self._content_area.widget().sizeHint().width()
-                widget_height = self._content_area.widget().sizeHint().height()
-
-                h_policy = (
-                    Qt.ScrollBarAsNeeded
-                    if widget_width > self.width()
-                    else Qt.ScrollBarAlwaysOff
-                )
-                v_policy = (
-                    Qt.ScrollBarAsNeeded
-                    if widget_height > height
-                    else Qt.ScrollBarAlwaysOff
-                )
-
-                self._content_area.setHorizontalScrollBarPolicy(h_policy)
-                self._content_area.setVerticalScrollBarPolicy(v_policy)
 
         self.updateGeometry()
 
@@ -465,17 +381,9 @@ class FXCollapsibleWidget(QWidget):
         Args:
             content_layout: The layout to set for the content area.
         """
-        # Create content widget
         content_widget = QWidget()
         content_widget.setLayout(content_layout)
-        self._content_area.setWidget(content_widget)
-
-        # Measure content height
-        self._content_height = content_widget.sizeHint().height()
-
-        # Initially collapsed
-        self._content_area.setMaximumHeight(0)
-        self._content_area.setMinimumHeight(0)
+        self.set_content_widget(content_widget)
 
     def set_content_widget(self, widget: QWidget) -> None:
         """Set the content widget directly.
@@ -484,8 +392,6 @@ class FXCollapsibleWidget(QWidget):
             widget: The widget to display when expanded.
         """
         self._content_area.setWidget(widget)
-        # Calculate content height
-        self._content_height = widget.sizeHint().height()
 
     def set_icon(self, icon: Union[QIcon, str, None]) -> None:
         """Set an icon to display before the title.
