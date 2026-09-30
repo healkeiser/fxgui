@@ -248,6 +248,7 @@ class FXTooltip(QFrame):
         self._duration_timer.setSingleShot(True)
         self._duration_timer.timeout.connect(self.hide_tooltip)
 
+
         # Setup window flags - use Window with FramelessWindowHint
         # Qt.Tool keeps it on top without taskbar entry
         self.setWindowFlags(
@@ -393,6 +394,9 @@ class FXTooltip(QFrame):
                 self.hide_tooltip()
 
         if watched == self._anchor:
+            # A window closing hides its children without deleting them.
+            if event.type() == QEvent.Hide and self.isVisible():
+                self.hide_tooltip()
             # Handle hover for non-persistent tooltips
             if not self._persistent:
                 if event.type() == QEvent.Enter:
@@ -452,7 +456,17 @@ class FXTooltip(QFrame):
         if widget is None:
             return
         widget.installEventFilter(self)
-        widget.destroyed.connect(self._on_anchor_destroyed)
+        # Not a bound method: dropping this tooltip can free the anchor, and
+        # its destroyed signal would then call into the half-freed tooltip.
+        tooltip = weakref.ref(self)
+
+        def gone(*_args) -> None:
+            alive = tooltip()
+            if alive is not None:
+                alive._on_anchor_destroyed()
+
+        self._anchor_gone = gone
+        widget.destroyed.connect(gone)
         self._previous_explicit = widget.property(_EXPLICIT)
         widget.setProperty(_EXPLICIT, True)
 
@@ -463,7 +477,7 @@ class FXTooltip(QFrame):
         self._anchor.removeEventFilter(self)
         self._anchor.setProperty(_EXPLICIT, self._previous_explicit)
         try:
-            self._anchor.destroyed.disconnect(self._on_anchor_destroyed)
+            self._anchor.destroyed.disconnect(self._anchor_gone)
         except (RuntimeError, TypeError):
             pass
         self._anchor = None
