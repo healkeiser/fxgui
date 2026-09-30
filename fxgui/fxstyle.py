@@ -497,6 +497,7 @@ __all__ = [
     "get_luminance",
     "get_contrast_text_color",
     "get_contrast_ratio",
+    "readable_ink",
     "invalidate_standard_icon_map",
 ]
 
@@ -1172,6 +1173,30 @@ def get_contrast_ratio(one_hex: str, two_hex: str) -> float:
     """Return the WCAG contrast ratio between two colors, 1.0 to 21.0."""
     low, high = sorted([get_luminance(one_hex), get_luminance(two_hex)])
     return (high + 0.05) / (low + 0.05)
+
+
+def readable_ink(
+    background: str, preferred: Optional[str] = None, floor: float = 4.5
+) -> str:
+    """Return an ink that reads on `background` at `floor`:1 or better.
+
+    Args:
+        background: The color the ink is drawn on.
+        preferred: The ink to keep if it reads. Defaults to white.
+        floor: The minimum WCAG contrast ratio.
+
+    Returns:
+        `preferred` when it reads, else the first color from it toward
+        black or white, whichever stands further from `background`, that
+        does. The pole itself when none does.
+    """
+    ground = QColor(background).name()
+    start = QColor(preferred or "#ffffff").name()
+    toward = max(
+        ("#000000", "#ffffff"),
+        key=lambda pole: get_contrast_ratio(pole, ground),
+    )
+    return _step_toward(start, toward, _reads(ground, floor))
 
 
 def _visibly_differ(one_hex: str, two_hex: str) -> bool:
