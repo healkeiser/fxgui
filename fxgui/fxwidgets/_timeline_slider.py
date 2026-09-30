@@ -39,7 +39,14 @@ def _coalesce_runs(frames) -> List[Tuple[int, int]]:
     return runs
 
 
-class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
+def _event_x(event: QMouseEvent) -> float:
+    """Return a mouse event's x on either Qt API."""
+    if hasattr(event, "position"):
+        return event.position().x()
+    return event.x()
+
+
+class FXTimelineSlider(QWidget):
     """A timeline/scrubber widget perfect for DCC applications.
 
     This widget provides a timeline slider with:
@@ -138,7 +145,9 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
 
         self._start_frame = start_frame
         self._end_frame = end_frame
-        self._current_frame = current_frame if current_frame else start_frame
+        self._current_frame = (
+            start_frame if current_frame is None else current_frame
+        )
         self._keyframes: List[int] = []
         self._is_playing = False
         self._is_dragging = False
@@ -159,12 +168,7 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._playback_timer = QTimer(self)
         self._playback_timer.timeout.connect(self._on_playback_tick)
 
-        # Theme colors (will be set in _apply_theme_styles)
-        self._track_color = None
-        self._playhead_color = None
         self._keyframe_color = QColor("#ff9800")
-        self._text_color = None
-        self._label_bg_color = None
 
         # Widgets are created first (per the show_* flags), then arranged
         # according to controls_position at the end of __init__.
@@ -551,18 +555,25 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
             self._balance_controls_row()
         return handled
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        self._track_color = QColor(self.theme.surface_alt)
-        self._playhead_color = QColor(self.theme.accent_primary)
-        self._text_color = QColor(self.theme.text)
-        # Backdrop for the hover-frame label (never hardcode black/white:
-        # it must stay readable on both dark and light themes).
-        self._label_bg_color = QColor(self.theme.surface_sunken)
+    @property
+    def _track_color(self) -> QColor:
+        """The track fill, read from the theme at paint time."""
+        return QColor(fxstyle.colors().surface_alt)
 
-        # Trigger repaint of track widget
-        if hasattr(self, "_track_widget"):
-            self._track_widget.update()
+    @property
+    def _playhead_color(self) -> QColor:
+        """The playhead colour, read from the theme at paint time."""
+        return QColor(fxstyle.colors().accent_primary)
+
+    @property
+    def _text_color(self) -> QColor:
+        """The tick and label colour, read from the theme at paint time."""
+        return QColor(fxstyle.colors().text)
+
+    @property
+    def _label_bg_color(self) -> QColor:
+        """The hover label backdrop, read from the theme at paint time."""
+        return QColor(fxstyle.colors().surface_sunken)
 
     @property
     def current_frame(self) -> int:
@@ -763,12 +774,14 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
                 self.frame_changed.emit(frame)
 
     def set_range(self, start: int, end: int) -> None:
-        """Set the frame range.
+        """Set the frame range, clamping the current frame and the view.
 
         Args:
             start: Start frame.
             end: End frame.
         """
+        zoomed = self._view_start is not None and self._view_end is not None
+        old_view = self.view_range
         self._start_frame = start
         self._end_frame = end
         self._start_spinbox.blockSignals(True)
@@ -779,11 +792,13 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
         self._end_spinbox.blockSignals(False)
         if hasattr(self, "_spinbox"):
             self._spinbox.setRange(start, end)
-        self._current_frame = max(start, min(self._current_frame, end))
-        # A new range invalidates any zoomed window.
-        if self._view_start is not None or self._view_end is not None:
+        self.set_frame(self._current_frame)
+        if zoomed:
+            # set_view_range clamps into the new range, or resets.
             self._view_start = self._view_end = None
-            self.view_changed.emit(start, end)
+            self.set_view_range(*old_view)
+            if self._view_start is None:
+                self.view_changed.emit(start, end)
         self._sync_view_spinboxes(*self.view_range)
         self._track_widget.update()
 
@@ -814,22 +829,16 @@ class FXTimelineSlider(fxstyle.FXThemeAware, QWidget):
     def _on_start_changed(self, value: int) -> None:
         """Handle start frame spinbox change."""
         if value < self._end_frame:
-            self._start_frame = value
-            if hasattr(self, "_spinbox"):
-                self._spinbox.setRange(value, self._end_frame)
-            if self._current_frame < value:
-                self.set_frame(value)
-            self._track_widget.update()
+            self.set_range(value, self._end_frame)
+        else:
+            self.set_range(self._start_frame, self._end_frame)
 
     def _on_end_changed(self, value: int) -> None:
         """Handle end frame spinbox change."""
         if value > self._start_frame:
-            self._end_frame = value
-            if hasattr(self, "_spinbox"):
-                self._spinbox.setRange(self._start_frame, value)
-            if self._current_frame > value:
-                self.set_frame(value)
-            self._track_widget.update()
+            self.set_range(self._start_frame, value)
+        else:
+            self.set_range(self._start_frame, self._end_frame)
 
     def add_keyframe(self, frame: int) -> None:
         """Add a keyframe marker.
@@ -1187,20 +1196,21 @@ class _TimelineTrack(QWidget):
         """Left = scrub; middle = start panning the zoomed window."""
         if event.button() == Qt.LeftButton:
             self._timeline._is_dragging = True
-            self._update_frame_from_mouse(event.x())
+            self._update_frame_from_mouse(_event_x(event))
         elif event.button() == Qt.MiddleButton:
-            self._pan_last_x = event.x()
+            self._pan_last_x = _event_x(event)
             self._pan_accum = 0.0
             self.setCursor(Qt.ClosedHandCursor)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handle mouse move for scrubbing, panning, and hover tracking."""
+        x = _event_x(event)
         if self._pan_last_x is not None:
-            self._pan_view(event.x())
+            self._pan_view(x)
             return
-        self._set_hover_from_x(event.x())
+        self._set_hover_from_x(x)
         if self._timeline._is_dragging:
-            self._update_frame_from_mouse(event.x())
+            self._update_frame_from_mouse(x)
 
     def leaveEvent(self, event) -> None:
         """Clear the hover indicator when the cursor leaves the track."""
@@ -1248,14 +1258,15 @@ class _TimelineTrack(QWidget):
         )
         first, last = self._timeline.view_range
         span = last - first
-        factor = 0.8 if delta > 0 else 1.25
-        new_span = span * factor
+        # At least one frame per notch: 2 * 1.25 rounds back to 2.
+        if delta > 0:
+            new_span = min(span - 1, round(span * 0.8))
+        else:
+            new_span = max(span + 1, round(span * 1.25))
         ratio = self._x_to_ratio(x)
         anchor = first + ratio * span
-        new_first = anchor - ratio * new_span
-        self._timeline.set_view_range(
-            round(new_first), round(new_first + new_span)
-        )
+        new_first = round(anchor - ratio * new_span)
+        self._timeline.set_view_range(new_first, new_first + new_span)
         event.accept()
 
     def _pan_view(self, x: int) -> None:
