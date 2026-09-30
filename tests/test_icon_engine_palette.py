@@ -138,9 +138,12 @@ def test_an_icon_copy_that_detaches_still_draws(qapp):
     gc.collect()
 
     assert all(not icon.pixmap(_SIZE).isNull() for icon in icons)
-    del icons
+    assert len(fxicons._clones) >= 50  # the only owner of each clone
+    del icons, icon
     gc.collect()
-    assert len(fxicons._clones) <= 1 + 50
+    last = QIcon(fxicons.get_icon("check"))
+    last.addPixmap(QPixmap(4, 4), QIcon.Normal, QIcon.On)
+    assert len(fxicons._clones) == 1  # dead clones dropped on the next one
 
 
 def test_the_widget_registry_is_gone(qapp):
