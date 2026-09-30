@@ -42,6 +42,7 @@ def test_expanded_header_is_a_property_the_theme_sheet_styles(qtbot, qapp):
 
 
 def test_a_named_title_icon_follows_the_theme(qtbot, qapp):
+    fxstyle.apply_theme("dark")
     section = FXCollapsibleWidget(title="Notes", icon="settings")
     qtbot.addWidget(section)
     before = section._icon_label.pixmap().toImage()
