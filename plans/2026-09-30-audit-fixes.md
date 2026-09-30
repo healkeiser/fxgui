@@ -175,6 +175,10 @@ leave `FXThemeAware`.
 - One gallery: per-module `example()` blocks and `fxgui/ui/` deleted,
   `examples.py` covers every widget; `CLAUDE.md` and docs describe the
   pull-model contract.
+- Owner rule: wrong, costly or too complicated all require a change. After
+  the merge, one whole-repo complexity audit (duplication, dead
+  flexibility, hand-rolled Qt/stdlib) over the merged tree; every finding
+  fixed before the release.
 - Measure a theme switch on a large window and icon drawing in a long
   list; prove the icon engine and palette in a live hython session.
 - Two whole-branch reviewers; fix every finding; release 13.0.0 (tell the
