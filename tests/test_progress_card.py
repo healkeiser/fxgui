@@ -52,3 +52,17 @@ def test_the_card_carries_no_sheet_and_follows_a_theme_switch(qtbot):
     assert card._title_label.styleSheet() == ""
     assert image.pixelColor(inside).name() == QColor(
         fxstyle.colors().surface).name()
+
+
+def test_the_bar_keeps_its_own_flat_fill_over_the_base_sheet(qtbot):
+    host, card = _card(qtbot, title="Render", progress=50)
+    bar = card._progress_bar
+    image = host.grab().toImage()
+
+    filled = bar.mapTo(host, QPoint(bar.width() // 4, bar.height() // 2))
+    empty = bar.mapTo(host, QPoint(bar.width() * 3 // 4, bar.height() // 2))
+
+    assert image.pixelColor(filled).name() == QColor(
+        fxstyle.colors().accent_primary).name()
+    assert image.pixelColor(empty).name() == QColor(
+        fxstyle.colors().surface_sunken).name()

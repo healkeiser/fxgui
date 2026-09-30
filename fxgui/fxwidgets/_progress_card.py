@@ -49,12 +49,13 @@ fxstyle.register_widget_style(
         color: @text_muted;
         font-size: 12px;
     }
-    FXProgressCard QProgressBar {
+    FXProgressCard QProgressBar:horizontal {
         background-color: @surface_sunken;
         border: none;
         border-radius: 3px;
+        padding: 0px;
     }
-    FXProgressCard QProgressBar::chunk {
+    FXProgressCard QProgressBar::chunk:horizontal {
         background-color: @accent_primary;
         border-radius: 2px;
     }
