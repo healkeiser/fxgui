@@ -2,15 +2,16 @@
 
 # Third-party
 from qtpy.QtCore import QObject
-from qtpy.QtWidgets import QWidget
+
+# Internal
+from fxgui import _compat
 
 
 class FXSingleton(type(QObject)):
     """Metaclass for Qt classes that are singletons.
 
-    This metaclass ensures that only one instance of each class can exist.
-    If an instance already exists, it returns the existing instance instead
-    of creating a new one. Each subclass gets its own singleton instance.
+    A call returns the live instance, shown and raised, or builds one when
+    there is none or Qt has deleted it. Each subclass gets its own.
 
     Examples:
         >>> from fxgui import fxwidgets
@@ -25,22 +26,18 @@ class FXSingleton(type(QObject)):
 
     def __init__(cls, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        cls._instance: QWidget = None
-        cls._initialized: bool = False
+        cls._instance = None
 
     def __call__(cls, *args, **kwargs):
-        if cls._instance is None:
+        instance = cls._instance
+        if instance is None or not _compat.is_valid(instance):
             cls._instance = super().__call__(*args, **kwargs)
-            cls._initialized = True
-        else:
-            # If instance already exists, just show it (if it's a window)
-            if hasattr(cls._instance, "show"):
-                cls._instance.show()
-                cls._instance.raise_()
-                cls._instance.activateWindow()
+        elif hasattr(instance, "show"):
+            instance.show()
+            instance.raise_()
+            instance.activateWindow()
         return cls._instance
 
     def reset_instance(cls):
-        """Reset the singleton instance. Useful for testing or cleanup."""
+        """Forget the instance, so the next call builds a new one."""
         cls._instance = None
-        cls._initialized = False
