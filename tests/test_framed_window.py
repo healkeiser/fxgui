@@ -448,3 +448,6 @@ def test_the_banner_sheet_follows_a_theme_switch(qtbot, framed):
     for widget in (window.banner, window.banner_label):
         assert not _stale(widget.styleSheet(), old, new), widget
     assert new["border"].lower() in window.banner.styleSheet().lower()
+    if framed:
+        # The name in the corner keeps the menu bar's own face.
+        assert window.banner_label.styleSheet() == ""
