@@ -8,7 +8,7 @@ from collections import deque
 from typing import Deque, Optional
 
 # Third-party
-from qtpy.QtCore import Qt, QTimer, Signal
+from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal
 from qtpy.QtGui import (
     QCloseEvent,
     QColor,
@@ -281,8 +281,19 @@ class FXOutputLogWidget(QWidget):
             "Clear all log messages",
         )
         bottom_layout.addWidget(self.clear_button)
+        # A consumer may hide Clear at any time; the spacer follows it.
+        self.clear_button.installEventFilter(self)
 
         layout.addLayout(bottom_layout)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Keep the spacer in step as the Clear button is shown or hidden."""
+        if watched is self.clear_button and event.type() in (
+            QEvent.ShowToParent,
+            QEvent.HideToParent,
+        ):
+            self._sync_spacer()
+        return super().eventFilter(watched, event)
 
     def _show_search(self) -> None:
         """Show the search bar and focus the input."""

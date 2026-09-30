@@ -61,3 +61,38 @@ def test_the_spacer_comes_back_with_the_clear_button(qtbot, qapp):
     pane._show_search()
 
     assert pane.log_spacer.isVisible()
+
+
+def _output_gap(pane, qapp):
+    qapp.processEvents()
+    return pane.height() - 1 - pane.output_area.geometry().bottom()
+
+
+def test_an_empty_bottom_row_takes_no_room(qtbot, qapp):
+    pane = _shown(qtbot, clear=False)
+
+    assert not pane.log_spacer.isVisible()
+    assert _output_gap(pane, qapp) == 0
+
+
+def test_the_bottom_row_follows_the_clear_button_both_ways(qtbot, qapp):
+    pane = _shown(qtbot)
+    pane.clear_button.hide()
+    assert _output_gap(pane, qapp) == 0
+
+    pane.clear_button.show()
+
+    assert pane.log_spacer.isVisible()
+    assert _output_gap(pane, qapp) > 0
+
+
+def test_the_search_bar_still_opens_and_closes_without_clear(qtbot, qapp):
+    pane = _shown(qtbot, clear=False)
+
+    pane._show_search()
+    assert pane.search_input.isVisible()
+    assert _output_gap(pane, qapp) > 0
+    pane._hide_search()
+
+    assert not pane.search_input.isVisible()
+    assert _output_gap(pane, qapp) == 0
