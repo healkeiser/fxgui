@@ -255,3 +255,68 @@ def test_marking_a_title_keeps_its_size_and_weight(qtbot, monkeypatch):
 
     assert label.fontInfo().family() == "Courier New"
     assert after == before
+
+
+###### Weight, hinting and a role's QFont
+
+
+def test_font_takes_a_role(qapp, monkeypatch):
+    _patch_color_file(monkeypatch, fonts={"mono": ["No Such QQQ", "monospace"]})
+    assert fxstyle.font("dark", role="mono").families() == []
+    assert fxstyle.font("dark", role="title").family() == (
+        fxstyle._platform_default_font())
+
+
+def test_a_face_names_its_weight_and_hinting(qapp, monkeypatch):
+    _patch_color_file(monkeypatch, fonts={
+        "body": {"family": ["Inter"], "weight": 500, "hinting": "none"},
+    })
+    body = fxstyle.font("dark")
+    assert body.weight() == QFont.Medium
+    assert body.hintingPreference() == QFont.PreferNoHinting
+    assert fxstyle.get_fonts("dark")["body"] == (
+        f'"{fxstyle._platform_default_font()}"')
+
+
+def test_a_face_without_weight_keeps_the_default(qapp):
+    body = fxstyle.font("dark")
+    assert body.weight() == QFont().weight()
+    assert body.hintingPreference() == QFont().hintingPreference()
+
+
+def test_an_unknown_weight_is_refused(qapp, monkeypatch):
+    _patch_color_file(monkeypatch, fonts={"body": {"weight": 450}})
+    with pytest.raises(ValueError, match="450"):
+        fxstyle.font("dark")
+
+
+def test_the_body_weight_reaches_a_themed_app(qtbot, qapp, monkeypatch):
+    font = QFont(qapp.font())
+    _patch_color_file(monkeypatch, fonts={"body": {"weight": 500}})
+    fxstyle.register_themed_root(qapp)
+    try:
+        label = QLabel("text")
+        qtbot.addWidget(label)
+        assert label.font().weight() == QFont.Medium
+    finally:
+        fxstyle._themed_roots.discard(qapp)
+        qapp.setStyleSheet("")
+        qapp.setFont(font)
+
+
+def test_the_body_weight_reaches_a_host_window(qtbot, monkeypatch):
+    _patch_color_file(monkeypatch, fonts={"body": {"weight": 500}})
+    from qtpy.QtWidgets import QApplication, QScrollArea
+
+    root = QWidget()
+    QVBoxLayout(root)
+    qtbot.addWidget(root)
+    fxstyle.register_themed_root(root)
+    root.show()
+    qtbot.waitExposed(root)
+    page = QScrollArea()
+    late = QLabel("moved in after the show")
+    page.setWidget(late)
+    root.layout().addWidget(page)
+    QApplication.processEvents()
+    assert late.font().weight() == QFont.Medium

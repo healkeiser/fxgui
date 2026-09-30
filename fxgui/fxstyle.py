@@ -236,6 +236,27 @@ _DEFAULT_FONTS = {
     "mono": ["Consolas", "Courier New", "monospace"],
 }
 
+# A face's `weight:` in the color file, on the CSS scale QSS also reads.
+_WEIGHTS = {
+    100: QFont.Thin,
+    200: QFont.ExtraLight,
+    300: QFont.Light,
+    400: QFont.Normal,
+    500: QFont.Medium,
+    600: QFont.DemiBold,
+    700: QFont.Bold,
+    800: QFont.ExtraBold,
+    900: QFont.Black,
+}
+
+# A face's `hinting:` in the color file.
+_HINTING = {
+    "default": QFont.PreferDefaultHinting,
+    "none": QFont.PreferNoHinting,
+    "vertical": QFont.PreferVerticalHinting,
+    "full": QFont.PreferFullHinting,
+}
+
 
 ###### Globals
 
@@ -626,7 +647,30 @@ def _font_config(theme_name: str) -> dict:
     for source in (get_colors().get("fonts"), theme_fonts):
         if isinstance(source, dict):
             fonts.update(source)
+    fonts.pop("ranks", None)
     return fonts
+
+
+def _families(entry):
+    """Return a role's families: the entry itself, or its `family` key."""
+    return entry.get("family") if isinstance(entry, dict) else entry
+
+
+def _shape(theme_name: str, role: str) -> Tuple[Optional[int], Optional[str]]:
+    """Return a role's configured weight and hinting, each None when unset."""
+    entry = _font_config(theme_name).get(role)
+    if not isinstance(entry, dict):
+        return None, None
+    weight, hinting = entry.get("weight"), entry.get("hinting")
+    if weight is not None and weight not in _WEIGHTS:
+        raise ValueError(
+            f"Font weight {weight!r} for '{role}' is not one of "
+            f"{sorted(_WEIGHTS)}")
+    if hinting is not None and hinting not in _HINTING:
+        raise ValueError(
+            f"Font hinting {hinting!r} for '{role}' is not one of "
+            f"{sorted(_HINTING)}")
+    return weight, hinting
 
 
 def _resolve_font_stack(entries) -> str:
@@ -650,6 +694,7 @@ def _resolve_font_stack(entries) -> str:
     Returns:
         A comma-separated QSS value, quoted except for CSS generics.
     """
+    entries = _families(entries)
     if not entries:
         entries = []
     elif isinstance(entries, str):
@@ -1636,12 +1681,20 @@ _HOST_RULES = f"""
 QWidget {{
     background-color: transparent;
     font-family: @font_body;
-    font-size: {FONT_SIZE}px;
+    font-size: {FONT_SIZE}px;@weight
 }}
 [{ROOT_PROPERTY}="true"], QMainWindow, QDialog {{
     background-color: @surface;
 }}
 """
+
+
+def _host_rules(theme: Optional[str] = None) -> str:
+    """Return the host rules resolved, with the body weight if one is set."""
+    theme = theme or get_theme()
+    weight, _hinting = _shape(theme, "body")
+    extra = f" font-weight: {weight};" if weight is not None else ""
+    return resolve(_HOST_RULES.replace("@weight", extra), theme)
 
 
 def _in_host(root: QObject) -> bool:
@@ -1654,7 +1707,7 @@ def _apply_to_root(root, sheet: str, theme_palette, theme_font) -> None:
     root.setPalette(theme_palette)
     root.setFont(theme_font)
     if _in_host(root):
-        sheet = resolve(_HOST_RULES) + sheet
+        sheet = _host_rules() + sheet
     root.setStyleSheet(sheet)
 
 
@@ -1716,18 +1769,28 @@ def palette(theme: Optional[str] = None) -> QPalette:
     return result
 
 
-def font(theme: Optional[str] = None) -> QFont:
-    """Build the root font: the theme's body families at the body size.
+def font(theme: Optional[str] = None, role: str = "body") -> QFont:
+    """Build a role's font: its installed families, weight and hinting.
 
-    Set on every themed root with the palette; a child's own ``setFont``
-    wins over it, which a sheet ``font`` rule would not allow.
+    The body role is the root font, set on every themed root with the
+    palette; a child's own ``setFont`` wins over it, which a sheet
+    ``font`` rule would not allow. Another role is for code that takes a
+    QFont, such as a QGraphicsTextItem.
 
     Args:
         theme: Theme name. Defaults to the current theme.
+        role: A role of the ``fonts:`` block. Defaults to "body".
+
+    Raises:
+        ValueError: If the role names a weight or hinting fxgui lacks.
+
+    Examples:
+        >>> item.setFont(fxstyle.font(role="mono"))
     """
+    theme = theme or get_theme()
     families = [
         name.strip().strip('"')
-        for name in get_font_family("body", theme).split(",")
+        for name in get_font_family(role, theme).split(",")
     ]
     result = QFont()
     named = [name for name in families if name not in _GENERIC_FONT_FAMILIES]
@@ -1735,6 +1798,11 @@ def font(theme: Optional[str] = None) -> QFont:
     if named:
         result.setFamily(named[0])
     result.setPixelSize(FONT_SIZE)
+    weight, hinting = _shape(theme, role)
+    if weight is not None:
+        result.setWeight(_WEIGHTS[weight])
+    if hinting is not None:
+        result.setHintingPreference(_HINTING[hinting])
     return result
 
 
@@ -1758,5 +1826,5 @@ def load_stylesheet(
     """
     if not os.path.exists(style_file):
         return ""
-    host = resolve(_HOST_RULES, theme)
+    host = _host_rules(theme)
     return host + _build(style_file, theme) + (extra or "")
