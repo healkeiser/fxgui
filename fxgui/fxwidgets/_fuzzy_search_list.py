@@ -5,7 +5,7 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 # Built-in
-from typing import List, Optional, Union
+from typing import List, Optional
 
 # Third-party
 from qtpy.QtCore import Qt, Signal, Slot, QModelIndex
@@ -23,46 +23,16 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxicons
 from fxgui.fxcore import FXSortFilterProxyModel
 from fxgui.fxwidgets._search_bar import FXSearchBar
 from fxgui.fxwidgets._tips import apply_tip
 
 
-class FXFuzzySearchList(fxstyle.FXThemeAware, QWidget):
-    """A searchable list widget with fuzzy matching capabilities.
+class _FXFuzzySearchBase(QWidget):
+    """A search bar, an optional ratio slider and a fuzzy-filtered view.
 
-    This widget combines a search bar with a list view that uses fuzzy matching
-    to filter and sort items by relevance. Items are colored based on their
-    match quality (green for good matches, red for poor matches).
-
-    Args:
-        parent: Parent widget.
-        placeholder: Placeholder text for the search input.
-        ratio: Initial similarity ratio threshold (0.0 to 1.0).
-        show_ratio_slider: Whether to show the ratio adjustment slider.
-        color_match: Whether to color items based on match quality.
-
-    Signals:
-        item_selected: Emitted when an item is clicked. Passes the item text.
-        item_double_clicked: Emitted when an item is double-clicked.
-            Passes the item text.
-        item_activated: Emitted when Enter is pressed on an item.
-            Passes the item text.
-        selection_changed: Emitted when the selection changes.
-            Passes a list of selected item texts.
-
-    Examples:
-        Basic usage with a list of strings:
-
-        >>> fuzzy_list = FXFuzzySearchList(placeholder="Search fruits...")
-        >>> fuzzy_list.set_items(["apple", "apricot", "banana", "cherry"])
-        >>> fuzzy_list.item_selected.connect(lambda text: print(f"Selected: {text}"))
-
-        With ratio slider for user adjustment:
-
-        >>> fuzzy_list = FXFuzzySearchList(show_ratio_slider=True, ratio=0.6)
-        >>> fuzzy_list.set_items(["character_hero", "character_villain", "prop_chair"])
+    Subclasses build the view in `_make_view` and own how items are added.
     """
 
     item_selected = Signal(str)
@@ -83,12 +53,10 @@ class FXFuzzySearchList(fxstyle.FXThemeAware, QWidget):
         self._ratio = ratio
         self._color_match = color_match
 
-        # Main layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
-        # Search bar
         self._search_bar = FXSearchBar(
             parent=self,
             placeholder=placeholder,
@@ -133,7 +101,6 @@ class FXFuzzySearchList(fxstyle.FXThemeAware, QWidget):
         self._slider_container.setVisible(show_ratio_slider)
         layout.addWidget(self._slider_container)
 
-        # Model setup
         self._source_model = QStandardItemModel(self)
         self._proxy_model = FXSortFilterProxyModel(
             ratio=ratio,
@@ -142,41 +109,39 @@ class FXFuzzySearchList(fxstyle.FXThemeAware, QWidget):
         )
         self._proxy_model.setSourceModel(self._source_model)
 
-        # List view
-        self._list_view = QListView()
-        self._list_view.setModel(self._proxy_model)
-        self._list_view.setAlternatingRowColors(True)
-        self._list_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self._list_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self._list_view.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
-        self._list_view.setHorizontalScrollMode(
-            QAbstractItemView.ScrollPerPixel
-        )
-        layout.addWidget(self._list_view, 1)
+        self._view = self._make_view()
+        self._view.setModel(self._proxy_model)
+        self._view.setAlternatingRowColors(True)
+        self._view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self._view.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self._view.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+        self._view.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
+        layout.addWidget(self._view, 1)
 
-        # Connect signals
         self._connect_signals()
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+    def _make_view(self) -> QAbstractItemView:
+        """Return the item view this widget filters."""
+        raise NotImplementedError
+
     def _connect_signals(self) -> None:
         """Connect internal signals."""
-        # Search bar -> proxy model
-        self._search_bar.search_changed.connect(
-            self._proxy_model.set_filter_text
-        )
+        self._search_bar.search_changed.connect(self._on_search_changed)
         self._search_bar.search_submitted.connect(self._on_search_submitted)
-
-        # Slider -> proxy model
         self._ratio_slider.valueChanged.connect(self._on_ratio_changed)
-
-        # List view signals
-        self._list_view.clicked.connect(self._on_item_clicked)
-        self._list_view.doubleClicked.connect(self._on_item_double_clicked)
-        self._list_view.activated.connect(self._on_item_activated)
-        self._list_view.selectionModel().selectionChanged.connect(
+        self._view.clicked.connect(self._on_item_clicked)
+        self._view.doubleClicked.connect(self._on_item_double_clicked)
+        self._view.activated.connect(self._on_item_activated)
+        self._view.selectionModel().selectionChanged.connect(
             self._on_selection_changed
         )
+
+    @Slot(str)
+    def _on_search_changed(self, text: str) -> None:
+        """Filter the view by the search text."""
+        self._proxy_model.set_filter_text(text)
 
     @Slot(int)
     def _on_ratio_changed(self, value: int) -> None:
@@ -191,7 +156,7 @@ class FXFuzzySearchList(fxstyle.FXThemeAware, QWidget):
         """Handle Enter key in search bar - select first item if available."""
         if self._proxy_model.rowCount() > 0:
             first_index = self._proxy_model.index(0, 0)
-            self._list_view.setCurrentIndex(first_index)
+            self._view.setCurrentIndex(first_index)
             self._on_item_activated(first_index)
 
     @Slot(QModelIndex)
@@ -218,37 +183,141 @@ class FXFuzzySearchList(fxstyle.FXThemeAware, QWidget):
     @Slot()
     def _on_selection_changed(self) -> None:
         """Handle selection changes."""
-        selected = self.selected_items
-        self.selection_changed.emit(selected)
+        self.selection_changed.emit(self.selected_items)
 
     # Public API
 
-    def set_items(self, items: List[str]) -> None:
-        """Set the list items from a list of strings.
+    def clear(self) -> None:
+        """Clear all items."""
+        self._source_model.clear()
 
-        Args:
-            items: List of strings to display.
-        """
+    def clear_search(self) -> None:
+        """Clear the search input."""
+        self._search_bar.clear()
+
+    @property
+    def selected_items(self) -> List[str]:
+        """Return the texts of the selected items."""
+        selection = self._view.selectionModel().selectedIndexes()
+        return [
+            index.data(Qt.DisplayRole) for index in selection if index.data()
+        ]
+
+    @property
+    def current_item(self) -> Optional[str]:
+        """Return the current item text, or None if no item is current."""
+        index = self._view.currentIndex()
+        return index.data(Qt.DisplayRole) if index.isValid() else None
+
+    @property
+    def search_text(self) -> str:
+        """Return the current search text."""
+        return self._search_bar.text
+
+    @search_text.setter
+    def search_text(self, value: str) -> None:
+        """Set the search text."""
+        self._search_bar.text = value
+
+    @property
+    def ratio(self) -> float:
+        """Return the similarity ratio threshold (0.0 to 1.0)."""
+        return self._ratio
+
+    @ratio.setter
+    def ratio(self, value: float) -> None:
+        """Set the similarity ratio threshold (0.0 to 1.0)."""
+        self._ratio = max(0.0, min(1.0, value))
+        self._ratio_slider.setValue(int(self._ratio * 100))
+        self._proxy_model.set_ratio(self._ratio)
+
+    def show_ratio_slider(self, visible: bool = True) -> None:
+        """Show or hide the ratio adjustment slider."""
+        self._slider_container.setVisible(visible)
+
+    def set_color_match(self, enabled: bool) -> None:
+        """Enable or disable color-coded match quality."""
+        self._color_match = enabled
+        self._proxy_model.set_color_match(enabled)
+
+    def set_placeholder(self, text: str) -> None:
+        """Set the search bar placeholder text."""
+        self._search_bar.set_placeholder(text)
+
+    def set_selection_mode(self, mode: QAbstractItemView.SelectionMode) -> None:
+        """Set the view's selection mode."""
+        self._view.setSelectionMode(mode)
+
+    def setFocus(self) -> None:
+        """Set focus to the search input."""
+        self._search_bar.setFocus()
+
+    @property
+    def source_model(self) -> QStandardItemModel:
+        """Return the underlying QStandardItemModel."""
+        return self._source_model
+
+    @property
+    def proxy_model(self) -> FXSortFilterProxyModel:
+        """Return the underlying FXSortFilterProxyModel."""
+        return self._proxy_model
+
+
+class FXFuzzySearchList(_FXFuzzySearchBase):
+    """A searchable list widget with fuzzy matching capabilities.
+
+    This widget combines a search bar with a list view that uses fuzzy matching
+    to filter and sort items by relevance. Items are colored based on their
+    match quality.
+
+    Args:
+        parent: Parent widget.
+        placeholder: Placeholder text for the search input.
+        ratio: Initial similarity ratio threshold (0.0 to 1.0).
+        show_ratio_slider: Whether to show the ratio adjustment slider.
+        color_match: Whether to color items based on match quality.
+
+    Signals:
+        item_selected: Emitted when an item is clicked. Passes the item text.
+        item_double_clicked: Emitted when an item is double-clicked.
+            Passes the item text.
+        item_activated: Emitted when Enter is pressed on an item.
+            Passes the item text.
+        selection_changed: Emitted when the selection changes.
+            Passes a list of selected item texts.
+
+    Examples:
+        Basic usage with a list of strings:
+
+        >>> fuzzy_list = FXFuzzySearchList(placeholder="Search fruits...")
+        >>> fuzzy_list.set_items(["apple", "apricot", "banana", "cherry"])
+        >>> fuzzy_list.item_selected.connect(lambda text: print(f"Selected: {text}"))
+
+        With ratio slider for user adjustment:
+
+        >>> fuzzy_list = FXFuzzySearchList(show_ratio_slider=True, ratio=0.6)
+        >>> fuzzy_list.set_items(["character_hero", "character_villain", "prop_chair"])
+    """
+
+    def _make_view(self) -> QListView:
+        """Return the list view."""
+        return QListView()
+
+    def set_items(self, items: List[str]) -> None:
+        """Replace the list items with the given strings."""
         self._source_model.clear()
         for item in items:
             self._source_model.appendRow(QStandardItem(item))
 
     def add_item(self, text: str) -> None:
-        """Add a single item to the list.
-
-        Args:
-            text: The item text to add.
-        """
+        """Add a single item to the list."""
         self._source_model.appendRow(QStandardItem(text))
 
     def remove_item(self, text: str) -> bool:
-        """Remove an item from the list by its text.
-
-        Args:
-            text: The item text to remove.
+        """Remove the first item with this text.
 
         Returns:
-            True if the item was found and removed, False otherwise.
+            True if an item was found and removed, False otherwise.
         """
         for row in range(self._source_model.rowCount()):
             item = self._source_model.item(row)
@@ -257,21 +326,9 @@ class FXFuzzySearchList(fxstyle.FXThemeAware, QWidget):
                 return True
         return False
 
-    def clear(self) -> None:
-        """Clear all items from the list."""
-        self._source_model.clear()
-
-    def clear_search(self) -> None:
-        """Clear the search input."""
-        self._search_bar.clear()
-
     @property
     def items(self) -> List[str]:
-        """Return all items in the source model.
-
-        Returns:
-            List of all item texts.
-        """
+        """Return all item texts in the source model."""
         return [
             self._source_model.item(row).text()
             for row in range(self._source_model.rowCount())
@@ -280,114 +337,14 @@ class FXFuzzySearchList(fxstyle.FXThemeAware, QWidget):
 
     @property
     def visible_items(self) -> List[str]:
-        """Return currently visible (filtered) items.
-
-        Returns:
-            List of visible item texts.
-        """
+        """Return the texts of the currently visible (filtered) items."""
         return [
             self._proxy_model.index(row, 0).data(Qt.DisplayRole)
             for row in range(self._proxy_model.rowCount())
         ]
 
-    @property
-    def selected_items(self) -> List[str]:
-        """Return currently selected items.
-
-        Returns:
-            List of selected item texts.
-        """
-        selection = self._list_view.selectionModel().selectedIndexes()
-        return [
-            index.data(Qt.DisplayRole) for index in selection if index.data()
-        ]
-
-    @property
-    def current_item(self) -> Optional[str]:
-        """Return the current item text.
-
-        Returns:
-            The current item text, or None if no item is current.
-        """
-        index = self._list_view.currentIndex()
-        return index.data(Qt.DisplayRole) if index.isValid() else None
-
-    @property
-    def search_text(self) -> str:
-        """Return the current search text.
-
-        Returns:
-            The current search text.
-        """
-        return self._search_bar.text
-
-    @search_text.setter
-    def search_text(self, value: str) -> None:
-        """Set the search text.
-
-        Args:
-            value: The search text to set.
-        """
-        self._search_bar.text = value
-
-    @property
-    def ratio(self) -> float:
-        """Return the current similarity ratio threshold.
-
-        Returns:
-            The ratio threshold (0.0 to 1.0).
-        """
-        return self._ratio
-
-    @ratio.setter
-    def ratio(self, value: float) -> None:
-        """Set the similarity ratio threshold.
-
-        Args:
-            value: The ratio threshold (0.0 to 1.0).
-        """
-        self._ratio = max(0.0, min(1.0, value))
-        self._ratio_slider.setValue(int(self._ratio * 100))
-        self._proxy_model.set_ratio(self._ratio)
-
-    def show_ratio_slider(self, visible: bool = True) -> None:
-        """Show or hide the ratio adjustment slider.
-
-        Args:
-            visible: Whether to show the slider.
-        """
-        self._slider_container.setVisible(visible)
-
-    def set_color_match(self, enabled: bool) -> None:
-        """Enable or disable color-coded match quality.
-
-        Args:
-            enabled: Whether to enable color matching.
-        """
-        self._color_match = enabled
-        self._proxy_model.set_color_match(enabled)
-
-    def set_placeholder(self, text: str) -> None:
-        """Set the search bar placeholder text.
-
-        Args:
-            text: The placeholder text.
-        """
-        self._search_bar.set_placeholder(text)
-
-    def set_selection_mode(self, mode: QAbstractItemView.SelectionMode) -> None:
-        """Set the list view selection mode.
-
-        Args:
-            mode: The selection mode (e.g., SingleSelection, ExtendedSelection).
-        """
-        self._list_view.setSelectionMode(mode)
-
     def select_item(self, text: str) -> bool:
-        """Select an item by its text.
-
-        Args:
-            text: The item text to select.
+        """Make the first visible item with this text current.
 
         Returns:
             True if the item was found and selected, False otherwise.
@@ -395,40 +352,14 @@ class FXFuzzySearchList(fxstyle.FXThemeAware, QWidget):
         for row in range(self._proxy_model.rowCount()):
             index = self._proxy_model.index(row, 0)
             if index.data(Qt.DisplayRole) == text:
-                self._list_view.setCurrentIndex(index)
+                self._view.setCurrentIndex(index)
                 return True
         return False
 
-    def setFocus(self) -> None:
-        """Set focus to the search input."""
-        self._search_bar.setFocus()
-
-    @property
-    def source_model(self) -> QStandardItemModel:
-        """Return the source model for advanced customization.
-
-        Returns:
-            The underlying QStandardItemModel.
-        """
-        return self._source_model
-
-    @property
-    def proxy_model(self) -> FXSortFilterProxyModel:
-        """Return the proxy model for advanced customization.
-
-        Returns:
-            The underlying FXSortFilterProxyModel.
-        """
-        return self._proxy_model
-
     @property
     def list_view(self) -> QListView:
-        """Return the list view for advanced customization.
-
-        Returns:
-            The underlying QListView.
-        """
-        return self._list_view
+        """Return the underlying QListView."""
+        return self._view
 
 
 def example() -> None:

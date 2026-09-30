@@ -1,7 +1,11 @@
 """Custom item delegates for tree/list views."""
 
 # Built-in
+import functools
+import html
+import math
 import os
+import re
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
@@ -27,6 +31,8 @@ from qtpy.QtGui import (
     QPainterPath,
     QPen,
     QPixmap,
+    QPixmapCache,
+    QPolygonF,
 )
 from qtpy.QtWidgets import (
     QApplication,
@@ -39,6 +45,62 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+
+try:
+    import markdown as _markdown
+except ImportError:
+    _markdown = None
+
+_FALLBACK_THUMBNAIL = (
+    Path(__file__).parent.parent / "images" / "missing_image.png"
+)
+_HTML_TAG = re.compile(r"<[^>]+>")
+
+
+def _paint_icon(
+    painter: QPainter, icon: QIcon, rect: QRect, state
+) -> None:
+    """Paint an icon in the mode its row's selection or hover asks for."""
+    if state & QStyle.State_Selected:
+        icon.paint(painter, rect, Qt.AlignCenter, QIcon.Selected, QIcon.On)
+    elif state & QStyle.State_MouseOver:
+        icon.paint(painter, rect, Qt.AlignCenter, QIcon.Active, QIcon.On)
+    else:
+        icon.paint(painter, rect)
+
+
+def _draw_overlay_disc(
+    painter: QPainter, center: QPointF, radius: float
+) -> None:
+    """Paint the translucent disc an overlay icon or star sits on."""
+    theme = fxstyle.colors()
+    fill = QColor(theme.surface)
+    fill.setAlpha(220)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setBrush(QBrush(fill))
+    painter.setPen(QPen(QColor(theme.border_light), 1))
+    painter.drawEllipse(center, radius, radius)
+
+
+def _find_cached(key: str) -> Optional[QPixmap]:
+    """Return the pixmap cached under a key, or None."""
+    try:
+        found = QPixmapCache.find(key)
+    except TypeError:  # PySide2 only offers find(key, pixmap)
+        found = QPixmap()
+        if not QPixmapCache.find(key, found):
+            return None
+    return found if found is not None and not found.isNull() else None
+
+
+@functools.lru_cache(maxsize=1)
+def _fallback_source() -> QPixmap:
+    """Return the image shown for a missing thumbnail, loaded once."""
+    if _FALLBACK_THUMBNAIL.exists():
+        return QPixmap(str(_FALLBACK_THUMBNAIL))
+    placeholder = QPixmap(70, 70)
+    placeholder.fill(QColor(80, 80, 80))
+    return placeholder
 
 
 class FXItemDelegate(QStyledItemDelegate):
@@ -92,23 +154,14 @@ class FXItemDelegate(QStyledItemDelegate):
                 QStyle.SE_ItemViewItemDecoration, opt, opt.widget
             )
 
-            # Draw icon with appropriate mode
-            mode = QIcon.Selected if is_selected else QIcon.Active
-            icon.paint(painter, icon_rect, Qt.AlignCenter, mode, QIcon.On)
+            _paint_icon(painter, icon, icon_rect, option.state)
         else:
             # Default painting for items without icons or in normal state
             super().paint(painter, option, index)
 
 
-class FXColorLabelDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
-    """A custom delegate to paint items with specific colors and icons based
-    on their text content.
-
-    Note:
-        This delegate automatically refreshes when the theme changes, ensuring
-        that default colors (for items without explicit color mappings) stay
-        in sync with the current theme.
-    """
+class FXColorLabelDelegate(QStyledItemDelegate):
+    """Paint items as colored labels chosen by their text content."""
 
     # Custom role to skip delegate
     SKIP_DELEGATE_ROLE = Qt.UserRole + 5
@@ -169,25 +222,24 @@ class FXColorLabelDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             super().paint(painter, option, index)
             return
 
-        # Retrieve the text and associated colors and icon
+        # The base paint re-reads text and icon from the index, so the
+        # selection and hover are drawn straight through the style instead
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        opt.text = ""
+        opt.icon = QIcon()
+        style = opt.widget.style() if opt.widget else QApplication.style()
+        style.drawControl(QStyle.CE_ItemViewItem, opt, painter, opt.widget)
+
         text = index.data()
         if not text:
-            return  # No need to paint anything if there's no text
-
-        # Create a copy of the option to modify to clear the text and icon
-        # XXX: Not working, need to investigate
-        option_modified = QStyleOptionViewItem(option)
-        option_modified.text = ""
-        option_modified.icon = QIcon()
-
-        # Call the base class paint method to draw selection and hover effects
-        super().paint(painter, option_modified, index)
+            return
 
         # Set the default colors and icon (theme-aware)
         background_color, border_color, text_icon_color, icon, color_icon = (
-            QColor(self.theme.surface),
-            QColor(self.theme.border_light),
-            QColor(self.theme.text),
+            QColor(fxstyle.colors().surface),
+            QColor(fxstyle.colors().border_light),
+            QColor(fxstyle.colors().text),
             fxicons.get_icon("drag_indicator"),
             False,  # Default to not coloring the icon
         )
@@ -298,7 +350,7 @@ class FXColorLabelDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         text = index.data()
         if not text:
-            return QSize()
+            return super().sizeHint(option, index)
         metrics = QFontMetrics(option.font)
         text_width = metrics.horizontalAdvance(text)
         text_height = metrics.height()
@@ -317,16 +369,8 @@ class FXColorLabelDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         )
         return QSize(width, height)
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme change by triggering a repaint of the parent view."""
-        parent = self.parent()
-        if parent and hasattr(parent, "viewport"):
-            parent.viewport().update()
-        elif parent and hasattr(parent, "update"):
-            parent.update()
 
-
-class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
+class FXThumbnailDelegate(QStyledItemDelegate):
     """Custom item delegate for showing thumbnails in tree/list views.
 
     This delegate displays items with thumbnails, titles, descriptions,
@@ -432,18 +476,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     # Mapping[str, str]: a choice listed but not pickable, to its reason.
     PICKER_UNAVAILABLE_ROLE = Qt.UserRole + 15
 
-    # The first item-data role this delegate does NOT claim. Derive your
-    # own roles from it rather than guessing a margin past the roles
-    # above: two studio repositories have now each picked a safe-looking
-    # offset by hand, and one of them picked +10 first and collided with
-    # `CHILD_COUNT_VISIBLE_ROLE`, which showed up as a child count
-    # appearing on rows that had no children.
-    #
-    #   MY_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE
-    #   MY_OTHER_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 1
-    #
-    # Roles added to this delegate go BELOW this line and move it up, so
-    # a consumer that derived from it is moved along with it.
+    # The first item-data role this delegate does not claim. Derive your
+    # own roles from it; roles added here go below and move it up.
     FIRST_FREE_ROLE = Qt.UserRole + 16
 
     #: A viewer chose a value from a row's picker. The delegate writes
@@ -494,9 +528,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     _PICKER_SPACING = 4
     _PICKER_RIGHT_MARGIN = 4
 
-    # Stylesheet constant is no longer used - apply_transparent_selection
-    # now sets the stylesheet directly on the widget
-    TRANSPARENT_SELECTION_STYLE = ""
+    # Pills and badges, one derived font per base font key
+    _badge_fonts: Dict[str, QFont] = {}
 
     def __init__(self, parent: Optional[QWidget] = None):
         """Initialize the thumbnail delegate.
@@ -516,14 +549,6 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         # the same column on every row, and a per-row answer is only a
         # way to disagree with itself.
         self._picker_column = -1
-
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme change by triggering a repaint of the parent view."""
-        parent = self.parent()
-        if parent and hasattr(parent, "viewport"):
-            parent.viewport().update()
-        elif parent and hasattr(parent, "update"):
-            parent.update()
 
     @property
     def show_thumbnail(self) -> bool:
@@ -654,6 +679,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             view: The tree view widget to apply transparent selection to.
         """
         current_style = view.styleSheet()
+        if FXThumbnailDelegate.TRANSPARENT_SELECTION_STYLE in current_style:
+            return
         view.setStyleSheet(
             current_style + FXThumbnailDelegate.TRANSPARENT_SELECTION_STYLE
         )
@@ -679,9 +706,9 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         either: it applies to every section, so the wide floor column 0 needs
         would also be forced on the narrow columns beside it.
 
-        The floor is measured from the model each time a resize would breach
-        it, walking the rows that are laid out (expanded branches only), so it
-        follows the widest pill the view currently shows.
+        The floor is measured once, walking the rows that are laid out
+        (expanded branches only), and measured again after the model or the
+        expansion changes, so it follows the widest pill the view shows.
 
         Args:
             view: The tree view whose header should be constrained.
@@ -703,36 +730,59 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         # A resize of our own re-enters sectionResized, so the enforcement
         # has to be able to tell its own resize from the user's
-        guard = {"busy": False}
+        state = {"busy": False, "floor": None}
+
+        def _floor() -> int:
+            if state["floor"] is None:
+                state["floor"] = cls._measure_minimum_width(view, column)
+            return state["floor"]
+
+        def _stale(*_args) -> None:
+            state["floor"] = None
 
         def _enforce(index: int, _old_size: int, new_size: int) -> None:
-            if index != column or guard["busy"]:
+            if index != column or state["busy"]:
                 return
-            floor = cls._measure_minimum_width(view, column)
+            floor = _floor()
             if new_size >= floor:
                 return
-            guard["busy"] = True
+            state["busy"] = True
             try:
                 header.resizeSection(column, floor)
             finally:
-                guard["busy"] = False
+                state["busy"] = False
 
-        # The connection is the only reference to the closure, and the binding
-        # a signal keeps is not something to rely on across Qt bindings. The
-        # handlers are kept per column so a second call replaces its own
-        # rather than stacking a duplicate on the signal
+        # ponytail: a delegate show_* toggle does not mark the floor stale;
+        # it catches up at the next model or expansion change.
+        model = view.model()
+        signals = [(header.sectionResized, _enforce)]
+        if model is not None:
+            signals += [
+                (model.dataChanged, _stale),
+                (model.rowsInserted, _stale),
+                (model.rowsRemoved, _stale),
+                (model.modelReset, _stale),
+                (model.layoutChanged, _stale),
+            ]
+        for name in ("expanded", "collapsed"):
+            if hasattr(view, name):
+                signals.append((getattr(view, name), _stale))
+
+        # The connections are the only references to the closures, and the
+        # binding a signal keeps is not something to rely on across Qt
+        # bindings. They are kept per column so a second call replaces its
+        # own rather than stacking duplicates on the signals
         installed = getattr(view, "_fxgui_minimum_section_guards", None)
         if installed is None:
             installed = {}
             view._fxgui_minimum_section_guards = installed
-        previous = installed.get(column)
-        if previous is not None:
-            header.sectionResized.disconnect(previous)
+        for signal, slot in installed.get(column, ()):
+            signal.disconnect(slot)
+        for signal, slot in signals:
+            signal.connect(slot)
+        installed[column] = signals
 
-        header.sectionResized.connect(_enforce)
-        installed[column] = _enforce
-
-        floor = cls._measure_minimum_width(view, column)
+        floor = _floor()
         if floor and header.sectionSize(column) < floor:
             header.resizeSection(column, floor)
 
@@ -769,6 +819,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         # A null rect starts at x 0, so the row floors come out as offsets
         option = QStyleOptionViewItem()
+        option.font = view.font()
+        option.widget = view
         can_expand = hasattr(view, "isExpanded")
 
         floor = 0
@@ -793,8 +845,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         return floor
 
     @staticmethod
+    @functools.lru_cache(maxsize=1024)
     def markdown_to_plain_text(text: str) -> str:
         """Convert Markdown text to plain text by removing formatting.
+
+        Without the optional `markdown` package the text is returned as is.
 
         Args:
             text: Markdown-formatted text.
@@ -803,44 +858,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             Plain text with Markdown formatting removed.
         """
 
-        if not text or text == "-":
+        if not text or text == "-" or _markdown is None:
             return text
-
-        try:
-            import markdown
-            from html.parser import HTMLParser
-
-            class _HTMLStripper(HTMLParser):
-                """Simple HTML tag stripper."""
-
-                def __init__(self):
-                    super().__init__()
-                    self.reset()
-                    self.strict = False
-                    self.convert_charrefs = True
-                    self.text = []
-
-                def handle_data(self, d):
-                    self.text.append(d)
-
-                def get_data(self):
-                    return "".join(self.text)
-
-            # Convert Markdown to HTML first
-            html = markdown.markdown(text, extensions=["extra", "nl2br"])
-
-            # Remove HTML tags to get plain text
-            stripper = _HTMLStripper()
-            stripper.feed(html)
-            plain_text = stripper.get_data()
-
-            # Clean up extra whitespace
-            plain_text = " ".join(plain_text.split())
-
-            return plain_text
-        except ImportError:
-            # Fallback if markdown is not installed
-            return text
+        rendered = _markdown.markdown(text, extensions=["extra", "nl2br"])
+        plain = html.unescape(_HTML_TAG.sub("", rendered))
+        return " ".join(plain.split())
 
     @staticmethod
     def _as_color(value) -> QColor:
@@ -871,6 +893,13 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         if isinstance(value, str):
             return QColor(value)
         return QColor()
+
+    @staticmethod
+    def _text_color(option: QStyleOptionViewItem) -> QColor:
+        """Return the palette's text color for the row's selection state."""
+        if option.state & QStyle.State_Selected:
+            return option.palette.highlightedText().color()
+        return option.palette.text().color()
 
     def _title_font(self, option: QStyleOptionViewItem) -> QFont:
         """Return the font the title is painted with.
@@ -951,8 +980,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         under it.
 
         Measured from the rect's exclusive right edge, not `QRect.right()`,
-        which is one pixel inside it. Mixing the two is what made `sizeHint`
-        reserve a pixel less than the paint path needed.
+        which is one pixel inside it.
 
         Args:
             option: The style options for the item.
@@ -967,12 +995,42 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             option.rect.left()
             + option.rect.width()
             - right_margin
-            - self._child_count_width(index)
-            - self._indicator_metrics(index)[2]
+            - self._child_count_width(index, option)
+            - self._indicator_metrics(index, option)[2]
         )
 
+    @classmethod
+    def _badge_font(
+        cls, option: Optional[QStyleOptionViewItem] = None
+    ) -> QFont:
+        """Return the small bold font pills and badges use, per base font.
+
+        Args:
+            option: The item's style option; its font is the base. Without
+                one the application font is.
+
+        Returns:
+            The base font two points smaller and bold.
+        """
+
+        base = option.font if option is not None else QApplication.font()
+        key = base.key()
+        font = cls._badge_fonts.get(key)
+        if font is None:
+            font = QFont(base)
+            font.setBold(True)
+            if base.pointSizeF() > 0:
+                font.setPointSizeF(max(6.0, base.pointSizeF() - 2))
+            else:
+                font.setPixelSize(max(8, base.pixelSize() - 3))
+            cls._badge_fonts[key] = font
+        return font
+
     def _status_label_width(
-        self, label_text: str, label_icon: Optional[QIcon] = None
+        self,
+        label_text: str,
+        label_icon: Optional[QIcon] = None,
+        option: Optional[QStyleOptionViewItem] = None,
     ) -> int:
         """Return the width of the status label pill.
 
@@ -982,15 +1040,13 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         Args:
             label_text: The text displayed in the pill.
             label_icon: Optional icon displayed before the text.
+            option: The item's style option, for the badge font.
 
         Returns:
             The pill width, in pixels.
         """
 
-        label_font = QFont()
-        label_font.setPointSize(7)
-        label_font.setBold(True)
-        label_metrics = QFontMetrics(label_font)
+        label_metrics = QFontMetrics(self._badge_font(option))
 
         icon_size = (
             self._LABEL_ICON_SIZE
@@ -1006,7 +1062,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             + icon_spacing
         )
 
-    def _indicator_metrics(self, index: QModelIndex) -> Tuple[int, int, int]:
+    def _indicator_metrics(
+        self,
+        index: QModelIndex,
+        option: Optional[QStyleOptionViewItem] = None,
+    ) -> Tuple[int, int, int]:
         """Measure the indicator region for an item.
 
         An indicator is measured only if it is actually painted, so the
@@ -1018,6 +1078,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         Args:
             index: The model index of the item.
+            option: The item's style option, for the badge font.
 
         Returns:
             Tuple of (label_width, dot_width, footprint), in pixels. A width
@@ -1041,7 +1102,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             and label_color.isValid()
         )
         label_width = (
-            self._status_label_width(label_text, label_icon)
+            self._status_label_width(label_text, label_icon, option)
             if show_label
             else 0
         )
@@ -1146,10 +1207,19 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             return option.rect.left() + self._THUMBNAIL_SPAN
 
         left = option.rect.left() + self._ICON_MARGIN
-        icon = index.data(Qt.DecorationRole)
-        if icon is not None and not icon.isNull():
+        if self._has_icon(index) or self._is_starred(index):
             left += self._ICON_SIZE + self._ICON_MARGIN
         return left
+
+    @staticmethod
+    def _has_icon(index: QModelIndex) -> bool:
+        """Whether the item carries a decoration icon."""
+        icon = index.data(Qt.DecorationRole)
+        return icon is not None and not icon.isNull()
+
+    def _is_starred(self, index: QModelIndex) -> bool:
+        """Whether the item paints a star."""
+        return self._show_starred and bool(index.data(self.STARRED_ROLE))
 
     def _text_left(
         self,
@@ -1180,9 +1250,9 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         """Return the narrowest column 0 this row can be laid out in.
 
         Below this the right-anchored indicators reach the thumbnail. It is
-        the thumbnail's full span (or the icon's), the gap after it, and the
-        space the row's own indicators take, so a row showing neither asks
-        only for its thumbnail.
+        the check box, the thumbnail's full span (or the icon's), the gap
+        after it, and the space the row's own indicators take, so a row
+        showing neither asks only for its box and thumbnail.
 
         Args:
             option: The style options for the item.
@@ -1194,33 +1264,40 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         """
 
         content_left = (
-            self._content_left(option, index, has_thumbnail)
+            self._check_width(option, index)
+            + self._content_left(option, index, has_thumbnail)
             - option.rect.left()
         )
-        footprint = self._indicator_metrics(index)[2]
+        footprint = self._indicator_metrics(index, option)[2]
         if not footprint:
             return content_left
         return content_left + self._CONTENT_SPACING + footprint
 
-    def _child_count_badge_width(self, count: int) -> int:
+    def _child_count_badge_width(
+        self, count: int, option: Optional[QStyleOptionViewItem] = None
+    ) -> int:
         """Return the width of the child count badge.
 
         Args:
             count: The number of children.
+            option: The item's style option, for the badge font.
 
         Returns:
             The badge width, in pixels.
         """
 
-        font = QFont()
-        font.setPointSize(7)
-        font.setBold(True)
-        text_width = QFontMetrics(font).horizontalAdvance(str(count))
+        text_width = QFontMetrics(self._badge_font(option)).horizontalAdvance(
+            str(count)
+        )
         return max(
             text_width + self._LABEL_PADDING * 2, self._CHILD_COUNT_MIN_WIDTH
         )
 
-    def _child_count_width(self, index: QModelIndex) -> int:
+    def _child_count_width(
+        self,
+        index: QModelIndex,
+        option: Optional[QStyleOptionViewItem] = None,
+    ) -> int:
         """Return the horizontal space the child count badge occupies.
 
         The badge is painted at the row's bottom-right corner, so the text
@@ -1246,7 +1323,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             return 0
 
         return (
-            self._child_count_badge_width(count) + self._CHILD_COUNT_MARGIN * 2
+            self._child_count_badge_width(count, option)
+            + self._CHILD_COUNT_MARGIN * 2
         )
 
     def _draw_status_dot(
@@ -1305,6 +1383,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         label_color: QColor,
         label_text: str,
         label_icon: QIcon = None,
+        label_font: Optional[QFont] = None,
     ) -> None:
         """Draw the status label pill at the given left edge.
 
@@ -1324,6 +1403,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 QColor or a string.
             label_text: The text to display in the status label.
             label_icon: Optional icon to display before the text.
+            label_font: The badge font; the application's when omitted.
         """
 
         label_color = self._as_color(label_color)
@@ -1338,10 +1418,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             label_x, label_y, label_width, self._INDICATOR_BAND_HEIGHT
         )
 
-        # Set up font for label text
-        label_font = QFont()
-        label_font.setPointSize(7)
-        label_font.setBold(True)
+        label_font = label_font or self._badge_font()
         label_metrics = QFontMetrics(label_font)
 
         # Draw the label background with rounded corners
@@ -1410,6 +1487,31 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         return is_first_column, is_last_column
 
+    @staticmethod
+    def _row_outline(
+        rect_f: QRectF,
+        radius: float,
+        is_first_column: bool,
+        is_last_column: bool,
+    ) -> QPainterPath:
+        """Return the row's rounded outline, run past the cell's inner edges.
+
+        A cell sits between the row's ends, so its share of the row's rounded
+        rectangle is this outline cut at the cell: only the ends it touches
+        get their corners.
+        """
+
+        reach = radius + 2
+        outline = QRectF(rect_f).adjusted(
+            0 if is_first_column else -reach,
+            0,
+            0 if is_last_column else reach,
+            0,
+        )
+        path = QPainterPath()
+        path.addRoundedRect(outline, radius, radius)
+        return path
+
     def _create_rounded_path(
         self,
         rect_f: QRectF,
@@ -1417,79 +1519,16 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         is_first_column: bool,
         is_last_column: bool,
     ) -> QPainterPath:
-        """Create a QPainterPath for a rounded rectangle based on column position.
+        """Return one cell's closed share of the row's rounded rectangle.
 
-        Args:
-            rect_f: The rectangle to create the path for.
-            radius: The corner radius.
-            is_first_column: Whether this is the first column.
-            is_last_column: Whether this is the last column.
-
-        Returns:
-            A QPainterPath with appropriate rounded corners.
+        Stroked, its inner edges are the column separators.
         """
 
-        path = QPainterPath()
-
-        if is_first_column and is_last_column:
-            # Single column - all corners rounded
-            path.addRoundedRect(rect_f, radius, radius)
-        elif is_first_column:
-            # First column - left corners rounded
-            path.moveTo(rect_f.topRight())
-            path.lineTo(rect_f.topLeft() + QRectF(radius, 0, 0, 0).topLeft())
-            path.arcTo(
-                QRectF(rect_f.left(), rect_f.top(), radius * 2, radius * 2),
-                90,
-                90,
-            )
-            path.lineTo(rect_f.bottomLeft() - QRectF(0, radius, 0, 0).topLeft())
-            path.arcTo(
-                QRectF(
-                    rect_f.left(),
-                    rect_f.bottom() - radius * 2,
-                    radius * 2,
-                    radius * 2,
-                ),
-                180,
-                90,
-            )
-            path.lineTo(rect_f.bottomRight())
-            path.lineTo(rect_f.topRight())
-        elif is_last_column:
-            # Last column - right corners rounded
-            path.moveTo(rect_f.topLeft())
-            path.lineTo(rect_f.topRight() - QRectF(radius, 0, 0, 0).topLeft())
-            path.arcTo(
-                QRectF(
-                    rect_f.right() - radius * 2,
-                    rect_f.top(),
-                    radius * 2,
-                    radius * 2,
-                ),
-                90,
-                -90,
-            )
-            path.lineTo(
-                rect_f.bottomRight() - QRectF(0, radius, 0, 0).topLeft()
-            )
-            path.arcTo(
-                QRectF(
-                    rect_f.right() - radius * 2,
-                    rect_f.bottom() - radius * 2,
-                    radius * 2,
-                    radius * 2,
-                ),
-                0,
-                -90,
-            )
-            path.lineTo(rect_f.bottomLeft())
-            path.lineTo(rect_f.topLeft())
-        else:
-            # Middle column - no rounded corners
-            path.addRect(rect_f)
-
-        return path
+        cell = QPainterPath()
+        cell.addRect(rect_f)
+        return self._row_outline(
+            rect_f, radius, is_first_column, is_last_column
+        ).intersected(cell)
 
     def _get_custom_background(
         self, index: QModelIndex, col0_index: Optional[QModelIndex] = None
@@ -1626,7 +1665,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         ):
             return
 
-        accent_color = QColor(self.theme.accent_primary)
+        accent_color = QColor(fxstyle.colors().accent_primary)
 
         if option.state & QStyle.State_Selected:
             fill_color = accent_color
@@ -1654,19 +1693,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         )
 
         painter.fillPath(path, QBrush(fill_color))
-        # And stroke it, so the row's own 1px border does not stay
-        # visible around the fill. `_draw_background_and_border` draws
-        # that border along this same path in `bg_color.lighter(160)`,
-        # and a fill alone covers only the path's interior -- measured
-        # on a 30px row, the selection reached y+1..y+28 and left the
-        # card's border showing top and bottom. Most visible where the
-        # row carries a check box, which is what it reads as a border
-        # on: the box appeared to be outlined by the unselected colour.
-        # Width 2, not 1: a pen straddles the path, so a 1px stroke
-        # puts only half a pixel outside it and the border shows
-        # through as a blend -- measured, the row's top and bottom came
-        # back `#4a7398` against a `#61afef` fill. Two covers the
-        # border's pixel outright.
+        # Stroke too, 2px wide: a 1px pen straddles the path and leaves the
+        # row's own border showing through as a blend
         painter.setPen(QPen(fill_color, 2))
         painter.drawPath(path)
         painter.restore()
@@ -1708,62 +1736,6 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             and current.parent() == index.parent()
         )
 
-    def _create_focus_path(
-        self,
-        rect_f: QRectF,
-        radius: float,
-        is_first_column: bool,
-        is_last_column: bool,
-    ) -> QPainterPath:
-        """Create the stroke path for a row's focus ring.
-
-        The ring belongs to the row, but a delegate is handed one cell at a
-        time, so each cell contributes its own segment: the top and bottom
-        edges always, and the outer vertical edge only where the row actually
-        ends. Stroking a closed rectangle per cell would instead draw a line
-        down every column boundary.
-
-        Args:
-            rect_f: The cell rectangle to stroke, already inset for the pen.
-            radius: The corner radius, matching the selection fill.
-            is_first_column: Whether this cell is in the first column.
-            is_last_column: Whether this cell is in the last column.
-
-        Returns:
-            A path covering this cell's share of the row's outline.
-        """
-
-        if is_first_column and is_last_column:
-            path = QPainterPath()
-            path.addRoundedRect(rect_f, radius, radius)
-            return path
-
-        if is_first_column or is_last_column:
-            # The closed per-column paths already round the outer corners in
-            # the right places; the segment to drop is the one they close
-            # with, which is the inner vertical edge
-            path = self._create_rounded_path(
-                rect_f, radius, is_first_column, is_last_column
-            )
-            elements = [path.elementAt(i) for i in range(path.elementCount())]
-            open_path = QPainterPath()
-            for element in elements[:-1]:
-                if element.isMoveTo():
-                    open_path.moveTo(element.x, element.y)
-                elif element.isLineTo():
-                    open_path.lineTo(element.x, element.y)
-                else:
-                    open_path.lineTo(element.x, element.y)
-            return open_path
-
-        # Middle column: the two horizontal edges and nothing else
-        path = QPainterPath()
-        path.moveTo(rect_f.topLeft())
-        path.lineTo(rect_f.topRight())
-        path.moveTo(rect_f.bottomLeft())
-        path.lineTo(rect_f.bottomRight())
-        return path
-
     def _draw_focus_indicator(
         self,
         painter: QPainter,
@@ -1795,21 +1767,12 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         if not self._is_focus_row(option, index):
             return
 
-        # A selected row needs no ring: the accent fill already marks it
-        # unmistakably, and outlining it in `text_on_accent_primary` --
-        # a dark colour, because the accent it is meant to carry text on
-        # is light -- drew a 1px black line inside the row. Measured on
-        # the current row of a focused tree: `#282c34` against a
-        # `#61afef` fill, and gone the moment the window lost focus,
-        # which is how it was reported.
-        #
-        # The ring still earns its place on an unselected current row --
-        # a keyboard moved without selecting, which is the case it was
-        # added for -- and there it is drawn in the accent.
+        # A selected row needs no ring: the accent fill already marks it,
+        # and `text_on_accent_primary` is dark on a light accent
         if option.state & QStyle.State_Selected:
             return
 
-        ring_color = QColor(self.theme.accent_primary)
+        ring_color = QColor(fxstyle.colors().accent_primary)
 
         if column_position is None:
             is_first_column, is_last_column = self._get_column_position(
@@ -1824,9 +1787,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         # A 1px pen straddles the coordinate it is given, so the rect is
         # pulled in by half a pixel to land the stroke inside the row
         inset = QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5)
-        path = self._create_focus_path(
-            inset, 4, is_first_column, is_last_column
-        )
+        path = self._row_outline(inset, 4, is_first_column, is_last_column)
+        painter.setClipRect(rect, Qt.IntersectClip)
 
         pen = QPen(ring_color)
         pen.setWidth(1)
@@ -1857,7 +1819,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             has_thumbnail: Whether the row paints a thumbnail.
         """
 
-        label_width, dot_width, _ = self._indicator_metrics(index)
+        label_width, dot_width, _ = self._indicator_metrics(index, option)
         label_x, dot_x = self._indicator_left(
             option.rect, label_width, dot_width
         )
@@ -1873,6 +1835,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 index.data(self.STATUS_LABEL_COLOR_ROLE),
                 index.data(self.STATUS_LABEL_TEXT_ROLE),
                 index.data(self.STATUS_LABEL_ICON_ROLE),
+                self._badge_font(option),
             )
 
         if dot_width:
@@ -1890,26 +1853,37 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         item_rect: QRect,
         color: QColor,
         has_thumbnail: bool = False,
+        has_icon: bool = True,
     ) -> None:
         """Draw a star indicator.
 
         For thumbnail items: bottom-left of the thumbnail, mirroring
         the decoration icon overlay on the bottom-right.
-        For non-thumbnail items: small star to the right of the icon.
+        For non-thumbnail items: on the icon's bottom-right corner, or
+        centered in the icon's slot when there is no icon.
 
         Args:
             painter: The painter to use for drawing.
             item_rect: The rectangle of the entire item.
             color: The color of the star.
             has_thumbnail: Whether the item shows a thumbnail.
+            has_icon: Whether a non-thumbnail item shows an icon.
         """
-        from qtpy.QtGui import QPolygonF
-        from qtpy.QtCore import QPointF
-        import math
 
         painter.setRenderHint(QPainter.Antialiasing)
 
-        if has_thumbnail:
+        if not has_thumbnail and not has_icon:
+            overlay_size = 11
+            icon_size = self._ICON_SIZE
+            overlay_x = (
+                item_rect.left()
+                + self._ICON_MARGIN
+                + (icon_size - overlay_size) // 2
+            )
+            overlay_y = item_rect.top() + (
+                item_rect.height() - overlay_size
+            ) // 2
+        elif has_thumbnail:
             # Match decoration icon overlay dimensions exactly
             overlay_size = 15
             overlay_margin = 6
@@ -1943,13 +1917,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         cx = overlay_x + overlay_size / 2
         cy = overlay_y + overlay_size / 2
 
-        # Background circle
-        bg_color = QColor(self.theme.surface)
-        bg_color.setAlpha(220)
-        painter.setBrush(QBrush(bg_color))
-        painter.setPen(QPen(QColor(self.theme.border_light), 1))
-        circle_r = overlay_size / 2 + 2
-        painter.drawEllipse(QPointF(cx, cy), circle_r, circle_r)
+        _draw_overlay_disc(painter, QPointF(cx, cy), overlay_size / 2 + 2)
 
         # Draw 5-point star
         outer_r = overlay_size / 2 - 1
@@ -1974,6 +1942,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         painter: QPainter,
         item_rect: QRect,
         count: int,
+        option: Optional[QStyleOptionViewItem] = None,
     ) -> None:
         """Draw a child count badge at the bottom-right corner.
 
@@ -1981,13 +1950,12 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             painter: The painter to use for drawing.
             item_rect: The rectangle of the entire item.
             count: The number of children.
+            option: The item's style option, for the badge font.
         """
         text = str(count)
-        font = QFont()
-        font.setPointSize(7)
-        font.setBold(True)
+        font = self._badge_font(option)
 
-        badge_width = self._child_count_badge_width(count)
+        badge_width = self._child_count_badge_width(count, option)
         badge_height = self._CHILD_COUNT_HEIGHT
         margin = self._CHILD_COUNT_MARGIN
 
@@ -1997,17 +1965,71 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         painter.setRenderHint(QPainter.Antialiasing)
 
         # Badge background — muted theme color
-        bg_color = QColor(self.theme.surface)
+        bg_color = QColor(fxstyle.colors().surface)
         bg_color.setAlpha(200)
         badge_rect = QRectF(badge_x, badge_y, badge_width, badge_height)
-        painter.setPen(QPen(QColor(self.theme.border_light), 1))
+        painter.setPen(QPen(QColor(fxstyle.colors().border_light), 1))
         painter.setBrush(QBrush(bg_color))
         painter.drawRoundedRect(badge_rect, 3, 3)
 
         # Badge text
-        painter.setPen(QColor(self.theme.text_muted))
+        painter.setPen(QColor(fxstyle.colors().text_muted))
         painter.setFont(font)
         painter.drawText(badge_rect, Qt.AlignCenter, text)
+
+    def _bordered_thumbnail(self, path: Optional[str]) -> QPixmap:
+        """Return the scaled, framed thumbnail for a path, from the cache.
+
+        Keyed by path, file mtime and the theme color the frame is filled
+        with, so an edited file or a theme switch builds a fresh one.
+
+        Args:
+            path: The image path, or None/empty for the fallback image.
+
+        Returns:
+            The finished pixmap, frame included.
+        """
+
+        sunken = fxstyle.colors().surface_sunken
+        try:
+            stamp = os.path.getmtime(path) if path else None
+        except (OSError, TypeError):
+            stamp = None
+        key = f"fxgui.thumbnail|{path}|{stamp}|{sunken}"
+        cached = _find_cached(key)
+        if cached is not None:
+            return cached
+
+        source = QPixmap(str(path)) if stamp is not None else QPixmap()
+        if source.isNull():
+            source = _fallback_source()
+        width, height = self._THUMBNAIL_WIDTH, self._THUMBNAIL_HEIGHT
+        source = source.scaled(
+            width, height, Qt.KeepAspectRatio, Qt.SmoothTransformation
+        )
+
+        framed = QPixmap(
+            width + self._THUMBNAIL_BORDER, height + self._THUMBNAIL_BORDER
+        )
+        framed.fill(Qt.transparent)
+        frame = framed.rect().marginsRemoved(QMargins(1, 1, 1, 1))
+        painter = QPainter(framed)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setBrush(QBrush(QColor(sunken)))
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(frame, 2, 2)
+        painter.drawPixmap(
+            1 + (width - source.width()) // 2,
+            1 + (height - source.height()) // 2,
+            source,
+        )
+        painter.setPen(QPen(Qt.white, 1))
+        painter.setBrush(Qt.NoBrush)
+        painter.drawRoundedRect(frame, 2, 2)
+        painter.end()
+
+        QPixmapCache.insert(key, framed)
+        return framed
 
     def _draw_thumbnail_content(
         self,
@@ -2023,74 +2045,16 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             index: The model index of the item.
         """
 
-        thumbnail_path = index.data(self.THUMBNAIL_PATH_ROLE)
-        thumbnail = QPixmap(thumbnail_path) if thumbnail_path else QPixmap()
-
-        # Use fallback if thumbnail is null/invalid
-        if thumbnail.isNull():
-            fallback_path = (
-                Path(__file__).parent.parent / "images" / "missing_image.png"
-            )
-            if fallback_path.exists():
-                thumbnail = QPixmap(str(fallback_path))
-            else:
-                # Create a simple placeholder pixmap
-                thumbnail = QPixmap(70, 70)
-                thumbnail.fill(QColor(80, 80, 80))
-
-        # Fixed thumbnail container size - 16:9 aspect ratio to match missing_image.png
-        # Row height is 50px, with 5px margin top/bottom = 40px for bordered thumbnail
-        # Bordered thumbnail adds 2px, so inner thumbnail is 38px height
-        thumbnail_height = self._THUMBNAIL_HEIGHT
-        thumbnail_width = self._THUMBNAIL_WIDTH
-        x_offset = self._THUMBNAIL_MARGIN  # Consistent margin on all sides
-
-        # Scale image to fit within container while keeping aspect ratio
-        if not thumbnail.isNull():
-            thumbnail = thumbnail.scaled(
-                thumbnail_width,
-                thumbnail_height,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation,
-            )
-
-        # Create fixed-size bordered thumbnail container with background
-        bordered_thumbnail = QPixmap(
-            thumbnail_width + self._THUMBNAIL_BORDER,
-            thumbnail_height + self._THUMBNAIL_BORDER,
+        bordered_thumbnail = self._bordered_thumbnail(
+            index.data(self.THUMBNAIL_PATH_ROLE)
         )
-        bordered_thumbnail.fill(Qt.transparent)
-
-        painter_with_border = QPainter(bordered_thumbnail)
-        painter_with_border.setRenderHint(QPainter.Antialiasing)
-
-        # Fill background with surface_sunken for visual separation
-        bg_color = QColor(self.theme.surface_sunken)
-        painter_with_border.setBrush(QBrush(bg_color))
-        painter_with_border.setPen(Qt.NoPen)
-        painter_with_border.drawRoundedRect(
-            bordered_thumbnail.rect().marginsRemoved(QMargins(1, 1, 1, 1)), 2, 2
-        )
-
-        # Center the scaled image within the fixed-size container
-        img_x = 1 + (thumbnail_width - thumbnail.width()) // 2
-        img_y = 1 + (thumbnail_height - thumbnail.height()) // 2
-        painter_with_border.drawPixmap(img_x, img_y, thumbnail)
-
-        # Draw border around the full container
-        painter_with_border.setPen(QPen(Qt.white, 1))
-        painter_with_border.setBrush(Qt.NoBrush)
-        painter_with_border.drawRoundedRect(
-            bordered_thumbnail.rect().marginsRemoved(QMargins(1, 1, 1, 1)), 2, 2
-        )
-        painter_with_border.end()
 
         # Draw the thumbnail
         thumbnail_y = (
             option.rect.top()
             + (option.rect.height() - bordered_thumbnail.height()) // 2
         )
-        thumbnail_x = option.rect.left() + x_offset
+        thumbnail_x = option.rect.left() + self._THUMBNAIL_MARGIN
         painter.drawPixmap(thumbnail_x, thumbnail_y, bordered_thumbnail)
 
         # Draw decoration icon overlay on bottom-right corner of thumbnail
@@ -2111,17 +2075,13 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 - overlay_margin
             )
 
-            # Draw a background circle for the icon
-            painter.setRenderHint(QPainter.Antialiasing)
-            bg_color = QColor(self.theme.surface)
-            bg_color.setAlpha(220)
-            painter.setBrush(QBrush(bg_color))
-            painter.setPen(QPen(QColor(self.theme.border_light), 1))
-            painter.drawEllipse(
-                overlay_x - 2, overlay_y - 2, overlay_size + 4, overlay_size + 4
+            _draw_overlay_disc(
+                painter,
+                QPointF(
+                    overlay_x + overlay_size / 2, overlay_y + overlay_size / 2
+                ),
+                overlay_size / 2 + 2,
             )
-
-            # Draw the icon
             icon_rect = QRect(overlay_x, overlay_y, overlay_size, overlay_size)
             decoration_icon.paint(
                 painter, icon_rect, Qt.AlignCenter, QIcon.Normal, QIcon.On
@@ -2152,11 +2112,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         description_metrics = QFontMetrics(description_font)
         title_height = title_metrics.height()
 
-        # Set text color
-        if option.state & QStyle.State_Selected:
-            text_color = option.palette.highlightedText().color()
-        else:
-            text_color = option.palette.text().color()
+        text_color = self._text_color(option)
 
         painter.setPen(text_color)
 
@@ -2267,21 +2223,35 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     def editorEvent(self, event, model, option, index) -> bool:
         """Open a row's picker on a click inside its pill.
 
-        Everything else falls through to the base class, which is what
-        makes the painted check box a click toggles: this class had no
-        `editorEvent` before the picker, and the box depends on the
-        base's.
+        Everything else goes to the base class, which toggles the painted
+        check box.
         """
         if event.type() == QEvent.Type.MouseButtonRelease:
             rect = self._picker_rect(option, index)
             if rect is not None and rect.contains(event.pos()):
-                self._open_picker(rect, index)
+                self._open_picker(rect, index, option.widget)
                 return True
         return super().editorEvent(event, model, option, index)
 
-    def _open_picker(self, rect: QRect, index: QModelIndex) -> None:
-        """Pop a menu of this row's choices under its picker pill."""
-        menu = QMenu()
+    def _open_picker(
+        self,
+        rect: QRect,
+        index: QModelIndex,
+        view: Optional[QWidget] = None,
+    ) -> None:
+        """Pop a menu of this row's choices under its picker pill.
+
+        Args:
+            rect: The pill, in the view's viewport coordinates.
+            index: The row's model index.
+            view: The view painting the row; parents the menu and maps
+                `rect` to the screen.
+        """
+        menu = QMenu(view)
+        anchor = rect.bottomLeft()
+        if view is not None:
+            surface = view.viewport() if hasattr(view, "viewport") else view
+            anchor = surface.mapToGlobal(anchor)
         current = str(index.data(self.PICKER_TEXT_ROLE) or "")
         unavailable = index.data(self.PICKER_UNAVAILABLE_ROLE) or {}
         for choice in index.data(self.PICKER_CHOICES_ROLE) or ():
@@ -2292,15 +2262,13 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             action.setCheckable(True)
             action.setChecked(str(choice) == current)
             action.setEnabled(not reason)
-        # `exec_` first: on this binding, `exec` resolves to the real
-        # C++ method on the instance even after a test replaces it on
-        # the class, so preferring it here would make the popup
-        # unpatchable. `exec_` is absent only on bindings (PyQt6) that
-        # dropped it, where `exec` is the sole and real name anyway.
+        # `exec_` first: `exec` is unpatchable on PySide; PyQt6 has only `exec`
         runner = getattr(menu, "exec_", None) or menu.exec
-        chosen = runner(rect.bottomLeft())
-        if chosen is not None:
-            self.picked.emit(index, chosen.text())
+        chosen = runner(anchor)
+        text = chosen.text() if chosen is not None else None
+        menu.deleteLater()
+        if text is not None:
+            self.picked.emit(index, text)
 
     def _check_width(
         self, option: QStyleOptionViewItem, index: QModelIndex
@@ -2314,7 +2282,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         opt = QStyleOptionViewItem(option)
         self.initStyleOption(opt, index)
         rect = self._check_rect(opt)
-        return 0 if rect is None else rect.width() + 1
+        return 0 if rect is None else rect.right() + 1 - opt.rect.left()
 
     def _draw_check_indicator(
         self,
@@ -2324,24 +2292,9 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
     ) -> None:
         """Paint a tickable row's check box in the delegate's own palette.
 
-        Drawn here rather than through the style's own
-        `PE_IndicatorItemViewItemCheck`, which was the first version of
-        this and looked wrong for two reasons. It fills a solid box in
-        the palette's Base colour, so on a row this delegate has already
-        painted a selection over, the box reads as a dark bar cut into
-        the highlight. And on Windows the native check glyph is drawn in
-        the OS accent colour, so a tick came out in whatever the artist
-        set their system accent to -- orange on a machine that had never
-        chosen it in this application -- rather than in the theme's own.
-        A flat box in the delegate's tokens answers both: it sits on the
-        selection instead of cutting a hole in it, and its colour is the
-        theme's rather than the desktop's.
-
-        The whole appearance is the delegate's, which is the same bargain
-        the rest of column 0 already strikes: a themed
-        `QTreeView::indicator` stylesheet rule no longer reaches it, and
-        in exchange the box matches the card, the border and the
-        selection this delegate draws around it.
+        Not the style's `PE_IndicatorItemViewItemCheck`: that fills a solid
+        Base-coloured box over the selection, and on Windows ticks in the
+        OS accent colour. A `QTreeView::indicator` rule does not reach it.
 
         Args:
             painter: The painter to use.
@@ -2360,17 +2313,17 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         radius = 3.0
         if checked or partial:
             fill = (
-                QColor(self.theme.text_on_accent_primary)
+                QColor(fxstyle.colors().text_on_accent_primary)
                 if selected
-                else QColor(self.theme.accent_primary)
+                else QColor(fxstyle.colors().accent_primary)
             )
             painter.setPen(Qt.NoPen)
             painter.setBrush(QBrush(fill))
             painter.drawRoundedRect(box, radius, radius)
             mark = (
-                QColor(self.theme.accent_primary)
+                QColor(fxstyle.colors().accent_primary)
                 if selected
-                else QColor(self.theme.text_on_accent_primary)
+                else QColor(fxstyle.colors().text_on_accent_primary)
             )
             pen = QPen(mark)
             pen.setWidthF(1.6)
@@ -2405,9 +2358,9 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 )
         else:
             edge = (
-                QColor(self.theme.text_on_accent_primary)
+                QColor(fxstyle.colors().text_on_accent_primary)
                 if selected
-                else QColor(self.theme.border_light)
+                else QColor(fxstyle.colors().border_light)
             )
             painter.setPen(QPen(edge, 1.2))
             painter.setBrush(Qt.NoBrush)
@@ -2434,29 +2387,13 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         icon_size = self._ICON_SIZE
         icon_margin = self._ICON_MARGIN
 
-        # Determine text color based on selection state
-        if option.state & QStyle.State_Selected:
-            text_color = option.palette.highlightedText().color()
-        else:
-            text_color = option.palette.text().color()
+        text_color = self._text_color(option)
 
         if icon is not None and not icon.isNull():
             icon_x = option.rect.left() + icon_margin
             icon_y = option.rect.top() + (option.rect.height() - icon_size) // 2
             icon_rect = QRect(icon_x, icon_y, icon_size, icon_size)
-
-            # Use QIcon's built-in modes for automatic color switching
-            # Icons created with get_icon() have Selected/Active pixmaps
-            if option.state & QStyle.State_Selected:
-                icon.paint(
-                    painter, icon_rect, Qt.AlignCenter, QIcon.Selected, QIcon.On
-                )
-            elif option.state & QStyle.State_MouseOver:
-                icon.paint(
-                    painter, icon_rect, Qt.AlignCenter, QIcon.Active, QIcon.On
-                )
-            else:
-                icon.paint(painter, icon_rect)
+            _paint_icon(painter, icon, icon_rect, option.state)
 
         title = index.data(Qt.DisplayRole) or ""
 
@@ -2533,8 +2470,8 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         icon = index.data(Qt.DecorationRole)
         text = index.data(Qt.DisplayRole)
 
-        icon_size = 16
-        icon_margin = 6
+        icon_size = self._ICON_SIZE
+        icon_margin = self._ICON_MARGIN
         text_x = option.rect.left() + icon_margin
 
         # Draw icon if present
@@ -2542,28 +2479,12 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             icon_x = option.rect.left() + icon_margin
             icon_y = option.rect.top() + (option.rect.height() - icon_size) // 2
             icon_rect = QRect(icon_x, icon_y, icon_size, icon_size)
-
-            # Use QIcon's built-in modes for automatic color switching
-            # Icons created with get_icon() have Selected/Active pixmaps
-            if option.state & QStyle.State_Selected:
-                icon.paint(
-                    painter, icon_rect, Qt.AlignCenter, QIcon.Selected, QIcon.On
-                )
-            elif option.state & QStyle.State_MouseOver:
-                icon.paint(
-                    painter, icon_rect, Qt.AlignCenter, QIcon.Active, QIcon.On
-                )
-            else:
-                icon.paint(painter, icon_rect)
+            _paint_icon(painter, icon, icon_rect, option.state)
             text_x = icon_x + icon_size + icon_margin
 
         # Draw text
         if text:
-            if option.state & QStyle.State_Selected:
-                text_color = option.palette.highlightedText().color()
-            else:
-                text_color = option.palette.text().color()
-            painter.setPen(text_color)
+            painter.setPen(self._text_color(option))
             painter.setFont(option.font)
             alignment = Qt.AlignLeft | Qt.AlignVCenter
             right_inset = icon_margin
@@ -2595,12 +2516,10 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         Colours come from the theme, the same three `_draw_child_count`
         reads, so the pill and the child-count badge share one style.
         """
-        from qtpy.QtGui import QPolygonF
-
         painter.setRenderHint(QPainter.Antialiasing)
 
-        painter.setPen(QPen(QColor(self.theme.border_light), 1))
-        painter.setBrush(QBrush(QColor(self.theme.surface)))
+        painter.setPen(QPen(QColor(fxstyle.colors().border_light), 1))
+        painter.setBrush(QBrush(QColor(fxstyle.colors().surface)))
         painter.drawRoundedRect(QRectF(rect), 3, 3)
 
         chevron_left = (
@@ -2614,7 +2533,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             - (rect.left() + self._PICKER_PADDING),
             rect.height(),
         )
-        text_color = QColor(self.theme.text_muted)
+        text_color = QColor(fxstyle.colors().text_muted)
         painter.setPen(text_color)
         painter.setFont(option.font)
         text = str(index.data(self.PICKER_TEXT_ROLE) or "")
@@ -2653,12 +2572,9 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         col0_index = index if is_col0 else index.sibling(index.row(), 0)
 
         # Check if ANY column in this row has a thumbnail
-        # Respect both the delegate's show_thumbnail property and item's role
-        has_thumbnail = False
-        item_show_thumbnail = None
-        if index.model() and self._show_thumbnail:
-            item_show_thumbnail = col0_index.data(self.THUMBNAIL_VISIBLE_ROLE)
-            has_thumbnail = item_show_thumbnail is None or item_show_thumbnail
+        has_thumbnail = bool(index.model()) and self._has_thumbnail(
+            index, col0_index
+        )
 
         # Check if the item has a description (needs more height)
         description = (
@@ -2691,9 +2607,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
                 fixed_height,
             )
 
-        show_thumbnail = self._show_thumbnail and (
-            item_show_thumbnail is None or item_show_thumbnail
-        )
+        show_thumbnail = has_thumbnail
 
         # Everything left of the text, from the same helper the paint path
         # uses: the thumbnail and its gutter, or the decoration icon
@@ -2704,7 +2618,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         # What the right-anchored indicators take out of the row (0 when the
         # item shows neither)
-        _, _, footprint = self._indicator_metrics(index)
+        _, _, footprint = self._indicator_metrics(index, option)
 
         # The text itself, measured with the fonts it is painted with. A
         # thumbnail row always bolds its title; a thumbnail-less row only
@@ -2720,11 +2634,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         right_margin = (
             self._TEXT_RIGHT_MARGIN if show_thumbnail else self._ICON_MARGIN
         )
-        child_count_width = self._child_count_width(index)
-
-        starred_width = 0
-        if self._show_starred and index.data(self.STARRED_ROLE):
-            starred_width = 22  # star + circle + margin
+        child_count_width = self._child_count_width(index, option)
 
         total_width = (
             self._check_width(option, index)
@@ -2733,7 +2643,6 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             + right_margin
             + child_count_width
             + footprint
-            + starred_width
         )
 
         # Never report a width the row cannot be laid out in, so anything
@@ -2767,8 +2676,11 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         opt = QStyleOptionViewItem(option)
         self.initStyleOption(opt, index)
 
+        # The check box narrows opt.rect below; the row keeps this one
+        row_rect = QRect(opt.rect)
+
         painter.save()
-        painter.setClipRect(opt.rect)
+        painter.setClipRect(row_rect)
 
         # Pre-compute column 0 index and column position once for reuse
         is_col0 = index.column() == 0
@@ -2780,7 +2692,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         )
         has_thumbnail = self._has_thumbnail(index, col0_index)
 
-        rect = opt.rect
+        rect = QRect(row_rect)
 
         # Pre-compute column position for background/hover drawing
         column_position = None
@@ -2791,7 +2703,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         if has_custom_background:
             # Fill with surface_sunken first to ensure consistent gap color
             # between items (matches non-custom-background items)
-            surface_color = QColor(self.theme.surface_sunken)
+            surface_color = QColor(fxstyle.colors().surface_sunken)
             painter.fillRect(opt.rect, surface_color)
 
             # Draw custom background with border
@@ -2801,7 +2713,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
         else:
             # Fill with theme surface color for items without custom background
             # This covers any selection Qt drew before calling delegate
-            surface_color = QColor(self.theme.surface_sunken)
+            surface_color = QColor(fxstyle.colors().surface_sunken)
             painter.fillRect(opt.rect, surface_color)
 
         # Draw hover/selection overlay (consistent for all items)
@@ -2829,28 +2741,24 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
             # Draw status indicators for column 0, anchored to its right edge
             self._draw_status_indicators(painter, opt, index, has_thumbnail)
 
-            # Draw starred indicator
-            if self._show_starred:
-                is_starred = index.data(self.STARRED_ROLE)
-                if is_starred:
-                    star_color = self._as_color(
-                        index.data(self.STARRED_COLOR_ROLE)
-                    )
-                    if not star_color.isValid():
-                        star_color = QColor("#FFD700")  # Gold
-                    self._draw_starred_indicator(
-                        painter, opt.rect, star_color, has_thumbnail
-                    )
+            if self._is_starred(index):
+                star_color = self._as_color(
+                    index.data(self.STARRED_COLOR_ROLE)
+                )
+                if not star_color.isValid():
+                    star_color = QColor("#FFD700")  # Gold
+                self._draw_starred_indicator(
+                    painter,
+                    opt.rect,
+                    star_color,
+                    has_thumbnail,
+                    self._has_icon(index),
+                )
 
-            # Draw child count badge
-            if self._show_child_count:
-                item_show_count = index.data(self.CHILD_COUNT_VISIBLE_ROLE)
-                if item_show_count is not False:
-                    child_count = index.model().rowCount(index)
-                    if child_count > 0:
-                        self._draw_child_count(
-                            painter, opt.rect, child_count
-                        )
+            if self._child_count_width(index, opt):
+                self._draw_child_count(
+                    painter, opt.rect, index.model().rowCount(index), opt
+                )
         else:
             picker = self._picker_rect(opt, index)
             if picker is None:
@@ -2862,7 +2770,7 @@ class FXThumbnailDelegate(fxstyle.FXThemeAware, QStyledItemDelegate):
 
         # The focus ring goes on last so no content can paint over it
         painter.save()
-        painter.setClipRect(opt.rect)
+        painter.setClipRect(row_rect)
         self._draw_focus_indicator(painter, rect, opt, index, column_position)
         painter.restore()
 
