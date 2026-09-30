@@ -183,6 +183,10 @@ leave `FXThemeAware`.
   PySide6 6.5.3 (Houdini 21: no 3-argument QTimer.singleShot with a
   callable); the rez fxgui package stays no_deps (Houdini ships its own
   houdini_qtads build).
+- Icon engine clones: `fxicons._clones` owns PySide clone() results. Prove
+  no crash at interpreter shutdown with cloned icons alive (subprocess
+  test: build an app, clone an icon, exit without cleanup), in the venv
+  and in hython.
 - Order-dependent tests: test_primary_button's shape test fails after
   test_icon_button_and_group alone (compares id() of wrappers); some test
   leaves the theme so a switch changes nothing. Fix both; the suite must
