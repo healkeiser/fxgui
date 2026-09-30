@@ -187,6 +187,15 @@ leave `FXThemeAware`.
   no crash at interpreter shutdown with cloned icons alive (subprocess
   test: build an app, clone an icon, exit without cleanup), in the venv
   and in hython.
+- Base sheet carries shape and state only: `QWidget { color;
+  background-color; font-size }` goes; the theme palette carries default
+  colours and the root font carries the default size, so `setFont`,
+  item BackgroundRole and plain labels behave (inventory items 3, 33,
+  69). Before/after renders of every widget in every bundled theme.
+- Prove PySide drops a `fxstyle.theme_changed` connection to a bound
+  method when the receiving widget is deleted (switch after delete, no
+  error), since the pull model relies on it.
+- docs/how-to/styling.md 127-132 still documents the banner.
 - Order-dependent tests: test_primary_button's shape test fails after
   test_icon_button_and_group alone (compares id() of wrappers); some test
   leaves the theme so a switch changes nothing. Fix both; the suite must
