@@ -204,7 +204,6 @@ def example() -> None:
     import sys
 
     from qtpy.QtWidgets import (
-        QApplication,
         QGroupBox,
         QVBoxLayout,
         QWidget,

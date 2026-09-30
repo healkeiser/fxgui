@@ -11,6 +11,7 @@ from typing import Optional
 
 # Third-party
 from pygments import lex
+from pygments.util import ClassNotFound
 from pygments.lexers import get_lexer_by_name, get_all_lexers
 from pygments.styles import get_style_by_name
 from qtpy.QtCore import Qt
@@ -86,7 +87,7 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
         try:
             self._lexer = get_lexer_by_name(language, **options)
             self._language = language
-        except Exception:
+        except ClassNotFound:
             self._lexer = get_lexer_by_name("text", **options)
             self._language = "text"
         self._lexed_text = None
@@ -115,7 +116,7 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
 
         try:
             self._style = get_style_by_name(style_name)
-        except Exception:
+        except ClassNotFound:
             self._style = get_style_by_name("default")
 
         for token_type, style_dict in self._style:

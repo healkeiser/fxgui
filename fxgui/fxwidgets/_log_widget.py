@@ -70,7 +70,7 @@ class FXOutputLogHandler(logging.Handler):
         try:
             # The signal hands the text to the widget's thread.
             widget.log_message.emit(self.format(record))
-        except Exception:
+        except Exception:  # noqa: BLE001 - logging's own handler contract
             self.handleError(record)
 
     def detach(self, *_args) -> None:

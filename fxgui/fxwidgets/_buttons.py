@@ -215,16 +215,16 @@ def _each_state(selectors: str, body: str) -> str:
 # The end children sit 1 px inside the frame, so their radius is 1 px less.
 _R = fxstyle.BUTTON_RADIUS - 1
 fxstyle.register_widget_style(
-    f"""
-FXJoinedGroup {{
+    """
+FXJoinedGroup {
     border: 1px solid @border_light;
     border-radius: @button_radius;
     background-color: transparent;
     padding: 0px;
-}}
-FXJoinedGroup[fxFocus="true"] {{
+}
+FXJoinedGroup[fxFocus="true"] {
     border-color: @accent_primary;
-}}
+}
 """
     + _each_state(
         "FXJoinedGroup > *[fxJoined]", "border: none; border-radius: 0px;")
