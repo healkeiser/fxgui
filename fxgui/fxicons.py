@@ -590,7 +590,8 @@ class _ThemedIconEngine(QIconEngine):
             self._include_active,
             self._recolor,
         )
-        # PySide keeps a returned engine Python-owned; the QIcon deletes it.
+        # PySide gives Qt no ownership of a clone() result and has no API to
+        # transfer it; this list is its only owner until the QIcon deletes it.
         _clones[:] = [engine for engine in _clones if is_valid(engine)]
         _clones.append(copy)
         return copy
