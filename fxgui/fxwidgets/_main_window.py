@@ -675,22 +675,16 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         return super().eventFilter(watched, event)
 
     def _live_menu_bar(self) -> QMenuBar:
-        """Return the menu bar, re-read once its wrapper is dead.
+        """Return the menu bar, re-read where PySide dropped its wrapper.
 
-        A wrapper dies when `setMenuBar` replaces the bar, or when PySide
-        drops it: that happens as the widget that last returned it from a
-        getter, such as ``nextInFocusChain``, dies.
+        PySide drops a live widget's wrapper when the widget that last
+        returned it from a getter, such as ``nextInFocusChain``, dies.
 
         Warning:
             This method is intended for internal use only.
         """
-        if _compat.is_valid(self.menu_bar):
-            return self.menu_bar
-        self.menu_bar = self.menuBar()
-        if self.title_corner is not None:
-            # setMenuBar moves the corner to a new bar; frame that bar too.
-            self.menu_bar.installEventFilter(self)
-            fxstyle.mark_as_frame(self.menu_bar)
+        if not _compat.is_valid(self.menu_bar):
+            self.menu_bar = self.menuBar()
         return self.menu_bar
 
     def _fit_title_corner(self) -> None:
@@ -1080,6 +1074,20 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self.status_bar = status_bar
         if self._framed and status_bar is not None:
             fxstyle.mark_as_frame(status_bar)
+
+    def setMenuBar(self, menu_bar: QMenuBar) -> None:
+        """Set the menu bar; a framed window frames it and fits its corner.
+
+        Note:
+            Overrides the base class method.
+        """
+        # Qt moves the corner widgets onto the new bar itself.
+        super().setMenuBar(menu_bar)
+        self.menu_bar = menu_bar
+        if self.title_corner is not None and menu_bar is not None:
+            menu_bar.installEventFilter(self)
+            fxstyle.mark_as_frame(menu_bar)
+            self._fit_title_corner()
 
     def setCentralWidget(self, widget: QWidget) -> None:
         """Override the QMainWindow's setCentralWidget method.

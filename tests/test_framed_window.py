@@ -322,6 +322,22 @@ def test_a_theme_switch_survives_a_dropped_menu_bar_wrapper(qtbot):
     assert window.title_corner.height() == window.menu_bar.height()
 
 
+def test_a_new_menu_bar_is_framed_at_once(qtbot, qapp):
+    window = _window(qtbot)
+    corner = window.title_corner
+    bar = QMenuBar()
+    bar.addMenu("File")
+
+    window.setMenuBar(bar)
+    qapp.processEvents()
+
+    assert window.menu_bar is bar
+    assert bar.property(fxstyle.FRAME_PROPERTY) is True
+    assert bar.cornerWidget() is corner
+    bar.resize(bar.width(), bar.height() + 10)
+    assert corner.height() == bar.height()
+
+
 def test_a_new_menu_bar_takes_the_corner_on_a_theme_switch(qtbot):
     window = _window(qtbot)
     corner = window.title_corner
