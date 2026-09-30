@@ -4,8 +4,8 @@
 from pathlib import Path
 
 # Third-party
-from qtpy.QtCore import QObject, QPoint
-from qtpy.QtGui import QIcon
+from qtpy.QtCore import QObject
+from qtpy.QtGui import QCursor, QIcon
 from qtpy.QtWidgets import (
     QAction,
     QApplication,
@@ -36,7 +36,7 @@ class FXSystemTray(QObject):
 
     Methods:
         show: Shows the system tray icon.
-        on_tray_icon_activated: Shows the tray menu above the taskbar.
+        on_tray_icon_activated: Opens the tray menu at the cursor.
         closeEvent: Quits an FXApplication; a DCC host keeps running.
 
     Examples:
@@ -107,71 +107,12 @@ class FXSystemTray(QObject):
             fxstyle.register_themed_root(self.tray_menu)
 
     def _handle_connections(self) -> None:
-        # Right-click
-        # self.tray_icon.setContextMenu(self.tray_menu)
-
-        # Left-click
         self.tray_icon.activated.connect(self._on_tray_icon_activated)
 
-    def _on_tray_icon_activated(self, reason):
-        """Shows the tray menu at the cursor's position.
-
-        Args:
-            reason (QSystemTrayIcon.ActivationReason): The reason for the tray
-                icon activation.
-        """
-
+    def _on_tray_icon_activated(self, reason) -> None:
+        """Open the menu at the cursor on a left click; Qt keeps it on screen."""
         if reason == QSystemTrayIcon.Trigger:
-            # Calculate taskbar position
-            screen = QApplication.primaryScreen()
-            screen_geometry = screen.geometry()
-            available_geometry = screen.availableGeometry()
-            tray_icon_geometry = self.tray_icon.geometry()
-
-            # Calculate the center position of the tray icon
-            tray_icon_center = tray_icon_geometry.center()
-
-            menu_width = self.tray_menu.sizeHint().width()
-            menu_height = self.tray_menu.sizeHint().height()
-
-            margin = 20  # Margin between the taskbar and the system tray menu
-
-            if available_geometry.y() > screen_geometry.y():
-                # Taskbar is on the top
-                pos = QPoint(
-                    tray_icon_center.x() - menu_width // 2,
-                    tray_icon_geometry.bottom() + margin,
-                )
-            elif available_geometry.x() > screen_geometry.x():
-                # Taskbar is on the left
-                pos = QPoint(
-                    tray_icon_geometry.right() + margin,
-                    tray_icon_center.y() - menu_height // 2,
-                )
-            elif available_geometry.height() < screen_geometry.height():
-                # Taskbar is on the bottom
-                pos = QPoint(
-                    tray_icon_center.x() - menu_width // 2,
-                    tray_icon_geometry.top() - menu_height - margin,
-                )
-            else:
-                # Taskbar is on the right or default position
-                pos = QPoint(
-                    tray_icon_geometry.left() - menu_width - margin,
-                    tray_icon_center.y() - menu_height // 2,
-                )
-
-            # Ensure the menu is completely visible
-            if pos.x() < available_geometry.x():
-                pos.setX(available_geometry.x())
-            if pos.y() < available_geometry.y():
-                pos.setY(available_geometry.y())
-            if pos.x() + menu_width > available_geometry.right():
-                pos.setX(available_geometry.right() - menu_width)
-            if pos.y() + menu_height > available_geometry.bottom():
-                pos.setY(available_geometry.bottom() - menu_height)
-
-            self.tray_menu.exec_(pos)
+            self.tray_menu.exec_(QCursor.pos())
 
     # Public methods
     def add_action(self, action: QAction) -> None:

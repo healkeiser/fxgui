@@ -1,7 +1,7 @@
 """FXSystemTray: a themed menu, a Quit that leaves a host alone."""
 
 # Third-party
-from qtpy.QtCore import QPoint, QSize
+from qtpy.QtCore import QPoint
 from qtpy.QtWidgets import QApplication, QSystemTrayIcon
 
 # Internal
@@ -28,22 +28,20 @@ def test_quit_leaves_a_host_application_running(qtbot, monkeypatch):
     assert quits == []
 
 
-def _int_point(x, y):
-    # PyQt refuses a float coordinate; PySide truncates it quietly.
-    assert isinstance(x, int) and isinstance(y, int), (x, y)
-    return QPoint(x, y)
-
-
-def test_the_menu_opens_at_a_whole_pixel(qtbot, monkeypatch):
+def test_a_left_click_opens_the_menu_at_the_cursor(qtbot, monkeypatch):
     from fxgui.fxwidgets import _system_tray
 
-    monkeypatch.setattr(_system_tray, "QPoint", _int_point)
+    class _Cursor:
+        @staticmethod
+        def pos():
+            return QPoint(321, 123)
+
+    monkeypatch.setattr(_system_tray, "QCursor", _Cursor)
     tray = FXSystemTray()
     opened = []
     monkeypatch.setattr(tray.tray_menu, "exec_", opened.append)
-    # Odd sizes halve to a float.
-    monkeypatch.setattr(tray.tray_menu, "sizeHint", lambda: QSize(101, 51))
 
+    tray._on_tray_icon_activated(QSystemTrayIcon.Context)
+    assert opened == []
     tray._on_tray_icon_activated(QSystemTrayIcon.Trigger)
-
-    assert len(opened) == 1 and isinstance(opened[0], QPoint)
+    assert opened == [QPoint(321, 123)]
