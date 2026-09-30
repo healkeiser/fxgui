@@ -24,6 +24,8 @@ Each theme in ``style.yaml`` defines these semantic color roles:
       auto-computed; see `FRAME_MIN_CONTRAST`)
     - ``well``: Lists and logs set into a pane (optional, auto-computed
       half-way from ``surface`` to ``frame``)
+    - ``pane_border``: The 1 px edge of a pane on the frame (optional,
+      auto-computed; see `PANE_BORDER_MIN_CONTRAST`)
     - ``tooltip``: Tooltip backgrounds
 
 **Border Colors**:
@@ -111,6 +113,8 @@ Constants:
     BUTTON_RADIUS: Corner radius of a push button, in pixels.
     FRAME_MIN_CONTRAST: Least contrast between a pane and its frame.
     WELL_MIN_CONTRAST: Least contrast between a pane and a well in it.
+    PANE_BORDER_MIN_CONTRAST: Least contrast between a pane's edge and
+        the frame.
 
 Examples:
     Loading a stylesheet with a theme:
@@ -151,7 +155,6 @@ __email__ = "valentin.onze@gmail.com"
 import hashlib
 import os
 import sys
-import tempfile
 import warnings
 import weakref
 from collections import OrderedDict
@@ -160,10 +163,11 @@ from typing import Dict, Optional, Tuple
 
 # Third-party
 import yaml
-from qtpy.QtCore import QObject, QTimer, Signal
-from qtpy.QtGui import QColor, QFontDatabase, QIcon, QImage, QPainter
+from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal
+from qtpy.QtGui import QColor, QFontDatabase, QIcon, QPainter, QTransform
 from qtpy.QtWidgets import (
     QProxyStyle,
+    QSplitter,
     QStyle,
     QStyleFactory,
     QStyleOption,
@@ -523,6 +527,10 @@ FRAME_MIN_CONTRAST = 1.06
 # of a pane and a frame at FRAME_MIN_CONTRAST lands just above it.
 WELL_MIN_CONTRAST = 1.025
 
+# Least contrast between a pane's 1 px edge (`pane_border`) and the frame
+# around it; `light`'s own border, #e0e0e0 on #e4e4e4, is 1.04 and vanishes.
+PANE_BORDER_MIN_CONTRAST = 1.3
+
 # CSS generic keywords rather than family names: emitted unquoted, never
 # looked up in the font database, and terminal, so nothing is appended
 # after one.
@@ -737,6 +745,8 @@ def get_theme_colors() -> dict:
     - ``frame``: Chrome around the panes of a framed window (computed
       unless the theme states it)
     - ``well``: Lists and logs set into a pane (computed unless stated)
+    - ``pane_border``: The 1 px edge of a pane on the frame (computed
+      unless stated)
     - ``tooltip``: Tooltip backgrounds
 
     **Border Colors**:
@@ -1089,6 +1099,9 @@ def mark_as_frame(widget: QWidget, is_frame: bool = True) -> None:
         >>> fxstyle.mark_as_frame(splitter)
     """
     widget.setProperty(FRAME_PROPERTY, bool(is_frame))
+    marked = widget.findChild(_SplitterMark)
+    if isinstance(widget, QSplitter) and marked is None:
+        _SplitterMark(widget)
     fxutils.repolish(widget)
     # Child selectors are matched when the child polishes, not the parent.
     for child in widget.findChildren(QWidget):
@@ -1233,12 +1246,14 @@ def _mix(one_hex: str, two_hex: str, amount: float) -> str:
 
 
 def _depth_colors(theme_data: dict) -> Dict[str, str]:
-    """Return a theme's ``frame`` and ``well`` roles, stated or computed.
+    """Return a theme's ``frame``, ``well`` and ``pane_border``, stated or not.
 
     The frame is ``surface_sunken`` when that is darker than ``surface`` by
     `FRAME_MIN_CONTRAST`; otherwise ``surface`` darkened toward black until
     it is, which keeps the pane's own hue and brings in no accent. The well
-    is half-way from ``surface`` to the frame.
+    is half-way from ``surface`` to the frame. The pane border is
+    ``border`` pushed away from the frame until they differ by
+    `PANE_BORDER_MIN_CONTRAST`.
     """
     surface = theme_data["surface"]
     sunken = theme_data.get("surface_sunken", surface)
@@ -1257,7 +1272,23 @@ def _depth_colors(theme_data: dict) -> Dict[str, str]:
             step += 1
             frame = _mix(surface, "#000000", step / 40)
     well = theme_data.get("well") or _mix(surface, frame, 0.5)
-    return {"frame": frame, "well": well}
+
+    edge = theme_data.get("pane_border")
+    if not edge:
+        border = theme_data.get("border", frame)
+        away = (
+            "#000000"
+            if get_luminance(border) <= get_luminance(frame)
+            else "#ffffff"
+        )
+        edge, step = border, 0
+        while (
+            get_contrast_ratio(edge, frame) < PANE_BORDER_MIN_CONTRAST
+            and step < 40
+        ):
+            step += 1
+            edge = _mix(border, away, step / 40)
+    return {"frame": frame, "well": well, "pane_border": edge}
 
 
 # The splitter mark: this many square dots, each this many pixels a side,
@@ -1266,45 +1297,69 @@ _MARK_DOTS = 5
 _MARK_DOT = 2
 
 
-def _mark_image(color: str, across: bool) -> str:
-    """Return the path of a PNG splitter mark in `color`, writing it once.
+class _SplitterMark(QObject):
+    """Paint a marked splitter's handles: the frame, and a short dot mark.
 
-    A PNG and its ``@2x`` twin rather than an SVG: Qt scales an SVG up to
-    fill the handle, and never scales a bitmap up.
-
-    Args:
-        color: The dots' color.
-        across: True for a mark running left to right, which sits in the
-            handle of a vertical splitter; False for one running down.
+    Painted rather than drawn from a stylesheet image, so it needs no file
+    and lands on whole device pixels at every screen scale.
     """
-    color = QColor(color)
-    folder = Path(tempfile.gettempdir()) / "fxgui" / "splitter_marks"
-    stem = f"{'across' if across else 'down'}_{color.name()[1:]}"
-    path = folder / f"{stem}.png"
-    if path.exists():
-        return path.as_posix()
-    folder.mkdir(parents=True, exist_ok=True)
-    length = _MARK_DOTS * _MARK_DOT * 2 - _MARK_DOT
-    # The @2x twin first: the plain file's presence means both are there.
-    for scale, name in ((2, f"{stem}@2x.png"), (1, f"{stem}.png")):
-        dot, run = _MARK_DOT * scale, length * scale
-        image = QImage(
-            run if across else dot, dot if across else run,
-            QImage.Format_ARGB32,
-        )
-        image.fill(0)
-        painter = QPainter(image)
-        for step in range(0, run, dot * 2):
+
+    def __init__(self, splitter: QSplitter):
+        super().__init__(splitter)
+        splitter.installEventFilter(self)
+        theme_manager.theme_changed.connect(self._repaint)
+        self._watch()
+
+    def _handles(self):
+        splitter = self.parent()
+        return [splitter.handle(index) for index in range(splitter.count())]
+
+    def _watch(self) -> None:
+        # Qt keeps one entry per filter, so installing again is harmless.
+        for handle in self._handles():
+            handle.installEventFilter(self)
+
+    def _repaint(self, _theme_name: str = None) -> None:
+        if _compat.is_valid(self):
+            for handle in self._handles():
+                handle.update()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Watch handles as they appear; paint the ones of a marked splitter."""
+        if isinstance(watched, QSplitter):
+            # A handle is polished before its first paint, never after.
+            if event.type() == QEvent.ChildPolished:
+                self._watch()
+            return False
+        splitter = self.parent()
+        if event.type() != QEvent.Paint or not splitter.property(
+            FRAME_PROPERTY
+        ):
+            return False
+        self._paint(watched, splitter.orientation() == Qt.Vertical)
+        return True
+
+    def _paint(self, handle: QWidget, across: bool) -> None:
+        colors = _get_theme_namespace()
+        painter = QPainter(handle)
+        painter.fillRect(handle.rect(), QColor(colors.frame))
+        # Device pixels from here on, so every dot is whole at any scale.
+        ratio = painter.device().devicePixelRatioF()
+        painter.setWorldTransform(QTransform.fromScale(1 / ratio, 1 / ratio))
+        width = round(handle.width() * ratio)
+        height = round(handle.height() * ratio)
+        length, thickness = (width, height) if across else (height, width)
+        dot = max(1, round(_MARK_DOT * ratio))
+        start = (length - (_MARK_DOTS * 2 - 1) * dot) // 2
+        cross = (thickness - dot) // 2
+        ink = QColor(colors.border)
+        for index in range(_MARK_DOTS):
+            along = start + index * dot * 2
             if across:
-                painter.fillRect(step, 0, dot, dot, color)
+                painter.fillRect(along, cross, dot, dot, ink)
             else:
-                painter.fillRect(0, step, dot, dot, color)
+                painter.fillRect(cross, along, dot, dot, ink)
         painter.end()
-        # Saved aside then renamed, so a second process never reads half.
-        partial = folder / f"{name}.{os.getpid()}.part"
-        image.save(str(partial), "PNG")
-        os.replace(partial, folder / name)
-    return path.as_posix()
 
 
 def _token_map(theme_name: str) -> Dict[str, str]:
@@ -1378,8 +1433,6 @@ def _token_map(theme_name: str) -> Dict[str, str]:
 
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
 
-    tokens["@splitter_mark_across"] = _mark_image(tokens["@border"], True)
-    tokens["@splitter_mark_down"] = _mark_image(tokens["@border"], False)
 
     # Icon folder path used by url(~icons/...) in QSS, chosen by the
     # target theme's surface lightness (not the globally current theme).

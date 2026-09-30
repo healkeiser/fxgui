@@ -5,7 +5,7 @@ import logging
 from typing import Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import Qt, Slot
+from qtpy.QtCore import QEvent, Qt, Slot
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
     QFrame,
@@ -351,10 +351,26 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
         self._apply_stylesheet(with_status_line_padding=False)
 
     def show_status_line(self) -> None:
-        """Show the status line and border line."""
+        """Show the status line, and the border line unless on the frame."""
         self.status_line.show()
-        self.border_line.show()
+        self._sync_border_line()
         self._apply_stylesheet(with_status_line_padding=True)
+
+    def _sync_border_line(self) -> None:
+        # On the frame the accent line is the only line.
+        self.border_line.setVisible(
+            not self.status_line.isHidden()
+            and not self.property(fxstyle.FRAME_PROPERTY)
+        )
+
+    def event(self, event: QEvent) -> bool:
+        """Drop the border line when `fxstyle.mark_as_frame` marks the bar."""
+        if (
+            event.type() == QEvent.DynamicPropertyChange
+            and bytes(event.propertyName()) == fxstyle.FRAME_PROPERTY.encode()
+        ):
+            self._sync_border_line()
+        return super().event(event)
 
 
 def example() -> None:

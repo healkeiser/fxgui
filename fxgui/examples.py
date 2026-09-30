@@ -1319,7 +1319,7 @@ def _create_timeline_tab() -> QWidget:
 fxstyle.register_widget_style("""
 QFrame#fxShowcasePane {
     background-color: @surface;
-    border: 1px solid @border;
+    border: 1px solid @pane_border;
     border-radius: @button_radius;
 }
 QFrame#fxShowcasePane > QListWidget,

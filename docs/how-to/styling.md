@@ -127,7 +127,9 @@ What changes in a framed window:
 | `set_banner_text()`, `set_banner_icon()` | Change the banner | Change the menu bar corner; the icon defaults to 16 px |
 | `hide_banner()`, `show_banner()` | Hide or show the banner | Hide or show the menu bar corner |
 | Menu bar, toolbars, status bar | `surface_sunken` / `surface`, with a line under each | `frame`, no lines |
-| Status bar accent line | Shown | Shown |
+| Status bar accent line | Shown, with a 1 px line under it | Shown, with no line under it |
+| A status bar set later with `setStatusBar()` | As given | Painted in `frame` too |
+| `window.title_corner` | `None` | The widget in the menu bar corner holding `banner_icon` and `banner_label` |
 
 The window does not paint your central widget: mark it, and any band of your own inside it, with `fxstyle.mark_as_frame()`. A widget left unmarked keeps its usual fill, which is what a pane should do.
 
@@ -142,7 +144,9 @@ The window does not paint your central widget: mark it, and any band of your own
 Call `fxstyle.mark_as_frame(widget, False)` to remove the mark. Only direct children lose their fill: a label inside a pane inside a marked band keeps the pane's color.
 
 !!! note
-    The mark is drawn once, centred, and follows theme switches and screen scaling. Set the handle width before or after marking; either order works.
+    The mark is painted, not loaded from an image: it follows theme switches, stays the same size on screen at 100 %, 150 % and 200 % scaling (each dot is two logical pixels, rounded to whole screen pixels), and reaches handles the splitter creates after it was marked. Set the handle width before or after marking; either order works.
+
+For the 1 px edge of a pane sitting on the frame, use the `@pane_border` token (or `get_theme_colors()["pane_border"]`) rather than `@border`: in some themes `border` is nearly the frame's own color.
 
 ## Flat Icon Buttons
 

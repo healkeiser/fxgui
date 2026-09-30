@@ -125,3 +125,41 @@ def test_a_darkened_frame_keeps_the_panes_hue(qapp, monkeypatch):
     pane = QColor("#fdf6e3")
 
     assert abs(frame.hsvHue() - pane.hsvHue()) <= 2
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_a_panes_edge_reads_on_the_frame(qapp, monkeypatch, theme):
+    colors = _colors(monkeypatch, theme)
+    tokens = fxstyle._token_map(theme)
+
+    assert tokens["@pane_border"] == colors["pane_border"]
+    assert (
+        fxstyle.get_contrast_ratio(colors["pane_border"], colors["frame"])
+        >= fxstyle.PANE_BORDER_MIN_CONTRAST
+    )
+
+
+def test_a_border_that_already_reads_is_the_panes_edge(qapp, monkeypatch):
+    colors = _colors(monkeypatch, "dark")
+
+    assert colors["pane_border"] == colors["border"]
+
+
+def test_a_faint_border_is_pushed_away_from_the_frame(qapp, monkeypatch):
+    _with_theme(monkeypatch, {
+        "surface": "#f0f0f0", "surface_sunken": "#ffffff",
+        "border": "#e0e0e0",
+    })
+    colors = fxstyle.get_theme_colors()
+
+    assert fxstyle.get_luminance(colors["pane_border"]) < (
+        fxstyle.get_luminance("#e0e0e0"))
+
+
+def test_a_theme_that_states_its_pane_border_keeps_it(qapp, monkeypatch):
+    _with_theme(monkeypatch, {
+        "surface": "#303030", "surface_sunken": "#202020",
+        "pane_border": "#abcdef",
+    })
+
+    assert fxstyle.get_theme_colors()["pane_border"] == "#abcdef"

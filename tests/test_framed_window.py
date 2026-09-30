@@ -230,3 +230,37 @@ def test_hide_banner_hides_the_corner_of_a_framed_window(qtbot):
     window.show_banner()
     assert window.title_corner.isVisible()
     assert not window.banner.isVisible()
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_a_framed_status_bar_drops_the_line_under_its_accent(qtbot, theme):
+    window = _window(qtbot, theme=theme)
+    bar = window.statusBar()
+    window.show_status_line()
+    qtbot.wait(10)
+
+    assert _pixel(window, bar, bar.width() // 2, 3) == _frame()
+    assert _pixel(window, bar, 0, 2) == QColor(
+        fxstyle.get_theme_colors()["accent_primary"]).name()
+
+
+def test_a_plain_status_bar_keeps_the_line_under_its_accent(qtbot):
+    window = _window(qtbot, framed=False)
+    bar = window.statusBar()
+
+    assert _pixel(window, bar, bar.width() // 2, 3) == QColor(
+        fxstyle.get_theme_colors()["border"]).name()
+
+
+def test_a_status_bar_set_later_is_framed_too(qtbot):
+    from qtpy.QtWidgets import QStatusBar
+
+    window = _window(qtbot)
+    bar = QStatusBar()
+    window.setStatusBar(bar)
+    qtbot.wait(10)
+
+    assert window.statusBar() is bar
+    assert _pixel(window, bar, bar.width() // 2, bar.height() // 2) == (
+        _frame())
+    assert _pixel(window, bar, bar.width() // 2, 0) == _frame(), "no line"

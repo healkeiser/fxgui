@@ -1,5 +1,11 @@
 """The splitter mark and the flat icon button, as a caller opts in."""
 
+# Built-in
+import json
+import os
+import subprocess
+import sys
+
 # Third-party
 import pytest
 from qtpy.QtCore import QPoint, QRect, Qt
@@ -103,24 +109,91 @@ def test_the_mark_is_five_dots_centred_in_the_gap(qtbot, orientation, theme):
     assert abs(box.top() - (image.height() - 1 - box.bottom())) <= 1
 
 
-@pytest.mark.parametrize("ratio", [1.5, 2.0])
-@pytest.mark.parametrize("orientation", ORIENTATIONS)
-def test_the_mark_stays_short_and_centred_at_high_dpi(
-    qtbot, orientation, ratio
-):
-    host, splitter = _splitter(qtbot, orientation)
-    image = _handle_image(host, splitter, ratio)
-    box, _count = _mark(image, _color("frame"))
+_SCREEN_PROBE = r"""
+import json, sys
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QApplication, QSplitter, QVBoxLayout, QWidget
+from fxgui import fxstyle
+app = QApplication(sys.argv)
+fxstyle.apply_theme("dark")
+host = QWidget()
+fxstyle.register_themed_root(host)
+splitter = QSplitter(Qt.Horizontal if sys.argv[1] == "h" else Qt.Vertical)
+splitter.addWidget(QWidget())
+splitter.addWidget(QWidget())
+splitter.setHandleWidth(6)
+fxstyle.mark_as_frame(splitter)
+QVBoxLayout(host).addWidget(splitter)
+host.resize(300, 200)
+host.show()
+for _ in range(5):
+    app.processEvents()
+image = splitter.handle(1).grab().toImage()
+frame = fxstyle.get_theme_colors()["frame"].lower()
+ink = [(x, y) for x in range(image.width()) for y in range(image.height())
+       if image.pixelColor(x, y).name() != frame]
+xs, ys = [p[0] for p in ink], [p[1] for p in ink]
+print(json.dumps({"size": [image.width(), image.height()],
+                  "box": [min(xs), min(ys), max(xs), max(ys)],
+                  "count": len(ink)}))
+"""
 
-    across = orientation == Qt.Vertical
-    length = box.width() if across else box.height()
-    thickness = box.height() if across else box.width()
-    assert abs(length - 18 * ratio) <= 1
-    assert abs(thickness - 2 * ratio) <= 1
-    if across:
-        assert abs(box.top() - (image.height() - 1 - box.bottom())) <= 1
-    else:
-        assert abs(box.left() - (image.width() - 1 - box.right())) <= 1
+
+@pytest.mark.parametrize("scale", ["1", "1.5", "2"])
+@pytest.mark.parametrize("orientation", ["h", "v"])
+def test_the_mark_is_exact_in_device_pixels_on_a_scaled_screen(
+    tmp_path, orientation, scale
+):
+    """On a real scaled screen, not a pixmap: QT_SCALE_FACTOR in its own
+    process, since a process has one scale."""
+    env = dict(os.environ, QT_SCALE_FACTOR=scale, QT_QPA_PLATFORM="offscreen",
+               APPDATA=str(tmp_path), LOCALAPPDATA=str(tmp_path))
+    result = subprocess.run(
+        [sys.executable, "-c", _SCREEN_PROBE, orientation],
+        env=env, capture_output=True, text=True, timeout=60, check=True)
+    probe = json.loads(result.stdout.strip().splitlines()[-1])
+    ratio = float(scale)
+    dot = round(2 * ratio)
+    width, height = probe["size"]
+    left, top, right, bottom = probe["box"]
+    across = orientation == "v"
+    run, thick = (right - left + 1, bottom - top + 1) if across else (
+        bottom - top + 1, right - left + 1)
+    side = height if across else width
+
+    assert side == round(6 * ratio), "the handle keeps its width"
+    assert probe["count"] == 5 * dot * dot, "five whole dots, drawn once"
+    assert thick == dot
+    assert run == 9 * dot
+    near, far = (top, height - 1 - bottom) if across else (
+        left, width - 1 - right)
+    assert abs(near - far) <= 1, "centred across the gap"
+
+
+def test_a_handle_added_after_marking_gets_the_mark(qtbot):
+    host, splitter = _splitter(qtbot, Qt.Horizontal)
+    splitter.addWidget(QWidget())
+    qtbot.wait(10)
+    handle = splitter.handle(2)
+    pixmap = QPixmap(handle.size())
+    handle.render(pixmap)
+    box, count = _mark(pixmap.toImage(), _color("frame"))
+
+    assert count == 5 * 2 * 2
+
+
+def test_marking_writes_no_file(qtbot, tmp_path, monkeypatch):
+    import tempfile
+
+    temp = tmp_path / "temp"
+    temp.mkdir()
+    monkeypatch.setattr(tempfile, "gettempdir", lambda: str(temp))
+    monkeypatch.setattr(tempfile, "tempdir", str(temp))
+    host, splitter = _splitter(qtbot, Qt.Horizontal)
+    _handle_image(host, splitter)
+
+    assert list(temp.iterdir()) == []
+    assert "splitter_mark" not in fxstyle.build_stylesheet()
 
 
 def test_the_mark_follows_a_theme_switch(qtbot):

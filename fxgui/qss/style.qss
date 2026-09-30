@@ -1650,6 +1650,7 @@ QMainWindow[fxFrame="true"] > QToolBar
 }
 
 QMenuBar[fxFrame="true"],
+QStatusBar[fxFrame="true"],
 QMainWindow[fxFrame="true"] > QToolBar
 {
     border: none;
@@ -1680,7 +1681,7 @@ QMainWindow[fxFrame="true"] > QToolBar > QToolButton:disabled
 }
 
 /* The handle is the gap: no border, margin or padding, so it is exactly as
-   wide as setHandleWidth() says, and the mark is drawn once, centred. */
+   wide as setHandleWidth() says. fxstyle paints its mark. */
 QSplitter[fxFrame="true"]::handle,
 QSplitter[fxFrame="true"]::handle:hover,
 QSplitter[fxFrame="true"]::handle:horizontal,
@@ -1692,19 +1693,6 @@ QSplitter[fxFrame="true"]::handle:vertical:hover
     border: none;
     margin: 0px;
     padding: 0px;
-    image-position: center;
-}
-
-QSplitter[fxFrame="true"]::handle:horizontal,
-QSplitter[fxFrame="true"]::handle:horizontal:hover
-{
-    image: url(@splitter_mark_down);
-}
-
-QSplitter[fxFrame="true"]::handle:vertical,
-QSplitter[fxFrame="true"]::handle:vertical:hover
-{
-    image: url(@splitter_mark_across);
 }
 
 /* A flat icon button: no box until hovered or pressed, and none when

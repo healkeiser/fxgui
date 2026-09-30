@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QMainWindow,
     QMenu,
+    QStatusBar,
     QToolBar,
     QVBoxLayout,
     QWidget,
@@ -98,8 +99,14 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             right end instead. The menu bar, toolbars, status bar and the
             window behind the central widget paint the theme's ``frame``
             color with no lines between them; the status bar keeps its
-            accent line. Mark bands of your own with
+            accent line, without the line under it, even when set later
+            through `setStatusBar`. Mark bands of your own with
             `fxstyle.mark_as_frame`. Defaults to `False`.
+
+    Attributes:
+        title_corner (QWidget or None): In a framed window, the widget at
+            the menu bar's right end holding `banner_icon` and
+            `banner_label`; `None` in a plain window.
     """
 
     # Class-level severity constants for convenience
@@ -651,7 +658,8 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         # QMenuBar pins a corner widget to its top at its own height; as
         # tall as the bar, the name centres on the menu titles.
         self.menu_bar.installEventFilter(self)
-        for widget in (self, self.menu_bar, self.status_bar):
+        # setStatusBar() marks the status bar, now and on a later swap.
+        for widget in (self, self.menu_bar):
             fxstyle.mark_as_frame(widget)
         fxstyle.mark_as_frame(self.centralWidget())
 
@@ -1015,6 +1023,17 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         """
 
         return self.status_bar
+
+    def setStatusBar(self, status_bar: QStatusBar) -> None:
+        """Set the status bar; a framed window paints it in the frame.
+
+        Note:
+            Overrides the base class method.
+        """
+        super().setStatusBar(status_bar)
+        self.status_bar = status_bar
+        if self._framed and status_bar is not None:
+            fxstyle.mark_as_frame(status_bar)
 
     def setCentralWidget(self, widget: QWidget) -> None:
         """Override the QMainWindow's setCentralWidget method.
