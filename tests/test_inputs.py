@@ -65,3 +65,29 @@ def test_icon_and_password_edits_style_through_the_theme(qtbot, qapp):
     sheet = fxstyle.build_stylesheet()
     assert "FXPasswordLineEdit" in sheet
     assert "fx_icon_line_edit_button" in sheet
+
+
+def test_the_flash_shows_over_a_focused_field(qtbot, qapp):
+    from qtpy.QtCore import QPoint, QRect
+    from qtpy.QtGui import QColor
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
+
+    window = QWidget()
+    qtbot.addWidget(window)
+    fxstyle.register_themed_root(window)
+    edit = FXValidatedLineEdit(flash_duration=400)
+    edit.setValidator(FXLowerCaseValidator())
+    QVBoxLayout(window).addWidget(edit)
+    window.show()
+    qtbot.waitExposed(window)
+    window.activateWindow()
+    edit.setFocus()
+    qtbot.waitUntil(edit.hasFocus)
+    QTest.keyClicks(edit, "1")
+    # Only the hold is the error colour itself; the fades blend it away.
+    qtbot.waitUntil(lambda: edit.borderColor.alpha() == 255, timeout=1000)
+    area = QRect(edit.mapTo(window, QPoint(0, 0)), edit.size())
+    image = window.grab(area).toImage()
+    error = QColor(fxstyle.colors().feedback_error_foreground).rgb()
+    edge = [image.pixel(x, 0) for x in range(8, image.width() - 8)]
+    assert all(pixel == error for pixel in edge)
