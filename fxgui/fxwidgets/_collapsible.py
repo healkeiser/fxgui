@@ -29,6 +29,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
+from fxgui.fxwidgets._labels import FXIconLabel
 
 
 class FXCollapsibleWidget(QWidget):
@@ -92,8 +93,6 @@ class FXCollapsibleWidget(QWidget):
         self._animation_duration = animation_duration
         self._max_content_height = max_content_height
         self._title = str(title)
-        self._icon: Optional[QIcon] = None
-        self._icon_name: Optional[str] = None
         self._is_expanded = False
 
         # Create fixed header layout
@@ -120,7 +119,7 @@ class FXCollapsibleWidget(QWidget):
         self._toggle_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Title icon label (optional)
-        self._icon_label = QLabel()
+        self._icon_label = FXIconLabel()
         self._icon_label.setObjectName("fx_collapsible_icon")
         self._icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self._icon_label.setVisible(False)
@@ -193,8 +192,6 @@ class FXCollapsibleWidget(QWidget):
         # Set icon if provided
         if icon is not None:
             self.set_icon(icon)
-        # A named title icon is a pixmap baked in the theme's icon colour.
-        fxstyle.theme_changed.connect(self._on_theme_changed)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Toggle on a left click anywhere on the header."""
@@ -369,12 +366,6 @@ class FXCollapsibleWidget(QWidget):
         self._header.setProperty("expanded", expanded)
         fxutils.repolish(self._header)
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Redraw a named title icon in the new theme's colour."""
-        if self._icon_name:
-            self._icon = fxicons.get_icon(self._icon_name)
-            self._icon_label.setPixmap(self._icon.pixmap(16, 16))
-
     def set_content_layout(self, content_layout: QLayout) -> None:
         """Set the layout for the content area.
 
@@ -408,21 +399,10 @@ class FXCollapsibleWidget(QWidget):
             >>> collapsible.set_icon(QIcon("path/to/icon.png"))  # Using QIcon
             >>> collapsible.set_icon(None)  # Remove icon
         """
-        if icon is None:
-            self._icon = None
-            self._icon_name = None
-            self._icon_label.setVisible(False)
-            self._icon_label.setPixmap(QIcon().pixmap(16, 16))
-        elif isinstance(icon, str):
-            self._icon_name = icon
-            self._icon = fxicons.get_icon(icon)
-            self._icon_label.setPixmap(self._icon.pixmap(16, 16))
-            self._icon_label.setVisible(True)
-        elif isinstance(icon, QIcon):
-            self._icon = icon
-            self._icon_name = None
-            self._icon_label.setPixmap(icon.pixmap(16, 16))
-            self._icon_label.setVisible(True)
+        if isinstance(icon, str):
+            icon = fxicons.get_icon(icon)
+        self._icon_label.setIcon(icon)
+        self._icon_label.setVisible(icon is not None)
 
     def get_icon(self) -> Optional[QIcon]:
         """Get the current icon.
@@ -430,7 +410,8 @@ class FXCollapsibleWidget(QWidget):
         Returns:
             The current icon, or None if no icon is set.
         """
-        return self._icon
+        icon = self._icon_label.icon()
+        return None if icon.isNull() else icon
 
     def set_title(self, title: str) -> None:
         """Set the title text.

@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxicons
 from fxgui._compat import is_valid as is_valid_object
 from fxgui.fxwidgets._tips import apply_tip
 
@@ -169,8 +169,6 @@ class FXFilePathWidget(QWidget):
         self._validation_timer.timeout.connect(self._do_validation)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        # The indicator's icon is baked in a feedback colour.
-        fxstyle.theme_changed.connect(self._update_indicator)
 
     @property
     def path(self) -> str:
@@ -284,39 +282,21 @@ class FXFilePathWidget(QWidget):
             self._update_indicator()
             self.path_valid.emit(self._is_valid)
 
-    def _update_indicator(self, _theme_name: Optional[str] = None) -> None:
+    def _update_indicator(self) -> None:
         """Update the validation indicator icon."""
         if not self._validate:
             return
 
-        path = self._input.text()
-
-        feedback = fxstyle.get_feedback_colors()
-
-        if not path:
-            fxicons.set_icon(
-                self._indicator,
-                "remove",
-                theme_color=False,
-                color=fxstyle.colors().text_disabled,
-            )
-            self._indicator.setToolTip("No path entered")
+        if not self._input.text():
+            icon, ink, tip = "remove", "text_disabled", "No path entered"
         elif self._is_valid:
-            fxicons.set_icon(
-                self._indicator,
-                "check_circle",
-                theme_color=False,
-                color=feedback["success"]["foreground"],
-            )
-            self._indicator.setToolTip("Path exists")
+            icon, ink, tip = (
+                "check_circle", "feedback_success_foreground", "Path exists")
         else:
-            fxicons.set_icon(
-                self._indicator,
-                "error",
-                theme_color=False,
-                color=feedback["error"]["foreground"],
-            )
-            self._indicator.setToolTip("Path does not exist")
+            icon, ink, tip = (
+                "error", "feedback_error_foreground", "Path does not exist")
+        fxicons.set_icon(self._indicator, icon, color=ink)
+        self._indicator.setToolTip(tip)
 
     def dragEnterEvent(self, event) -> None:
         """Handle drag enter for file drops."""

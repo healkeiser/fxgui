@@ -66,20 +66,10 @@ class FXTagChip(QFrame):
             self.remove_button.setCursor(Qt.PointingHandCursor)
             self.remove_button.clicked.connect(self._on_remove)
             layout.addWidget(self.remove_button)
-            self._update_remove_icon()
-            # The icon is baked in the on-accent colour.
-            fxstyle.theme_changed.connect(self._update_remove_icon)
+            fxicons.set_icon(
+                self.remove_button, "close", color="icon_on_accent_primary")
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-    def _update_remove_icon(self, _theme_name: Optional[str] = None) -> None:
-        """Draw the remove icon in the theme's on-accent icon colour."""
-        fxicons.set_icon(
-            self.remove_button,
-            "close",
-            theme_color=False,
-            color=fxstyle.colors().icon_on_accent_primary,
-        )
 
     @property
     def text(self) -> str:

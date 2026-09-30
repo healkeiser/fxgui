@@ -10,7 +10,6 @@ from qtpy.QtWidgets import (
     QApplication,
     QFrame,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
     QPushButton,
     QScrollArea,
@@ -21,6 +20,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._tips import apply_tip
 
 
@@ -176,7 +176,7 @@ class FXBreadcrumb(QWidget):
         self.setFixedHeight(32)
 
         self._fill_strip(False)
-        # Segment tints and separator pixmaps are baked from the theme.
+        # Segment hover tints are baked from the theme.
         fxstyle.theme_changed.connect(self._on_theme_changed)
 
         if self._show_navigation:
@@ -548,11 +548,8 @@ class FXBreadcrumb(QWidget):
 
     def _add_separator(self) -> None:
         """Add a separator icon."""
-        label = QLabel()
-        icon = fxicons.get_icon(
-            self._separator, color=fxstyle.colors().text_muted
-        )
-        label.setPixmap(icon.pixmap(12, 12))
+        label = FXIconLabel(
+            fxicons.get_icon(self._separator, color="text_muted"), size=12)
         label.setStyleSheet("background: transparent;")
         label.setFixedSize(16, 16)
         label.setAlignment(Qt.AlignCenter)

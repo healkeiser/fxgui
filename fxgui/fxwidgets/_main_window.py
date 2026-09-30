@@ -35,6 +35,7 @@ from fxgui.fxwidgets._constants import (
     DEBUG,
 )
 from fxgui.fxwidgets._status_bar import FXStatusBar
+from fxgui.fxwidgets._labels import FXIconLabel
 
 # fxgui's menus, found on whichever menu bar the window has by these names.
 _MENU_NAMES = {
@@ -154,8 +155,6 @@ class FXMainWindow(QMainWindow):
         self.theme_action_group: Optional[QActionGroup] = None
 
         # Banner icon storage for theme-aware updates
-        self._banner_icon_name: Optional[str] = None
-        self._banner_icon_size: int = 16
 
         # Initialize UI components
         self._create_actions()
@@ -495,7 +494,7 @@ class FXMainWindow(QMainWindow):
         layout = QHBoxLayout(self.title_corner)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
-        self.banner_icon = QLabel(self.title_corner)
+        self.banner_icon = FXIconLabel(parent=self.title_corner)
         self.banner_icon.setFixedSize(16, 16)
         self.banner_icon.hide()
         # Takes the menu bar's own font and color from the theme sheet.
@@ -695,7 +694,6 @@ class FXMainWindow(QMainWindow):
         Warning:
             This method is intended for internal use only.
         """
-        self._update_banner_icon()
         # A theme may change the menu font, and with it the first title.
         self._fit_title_corner()
         bar = self._current_menu_bar()
@@ -820,31 +818,12 @@ class FXMainWindow(QMainWindow):
             size: The size of the icon. Defaults to 16.
         """
         if size is not None:
-            self._banner_icon_size = size
-        size = self._banner_icon_size
-        self.banner_icon.setFixedSize(size, size)
-
+            self.banner_icon.setFixedSize(size, size)
+            self.banner_icon.setIconSize(QSize(size, size))
         if isinstance(icon, str):
-            self._banner_icon_name = icon
-            self._update_banner_icon()
-        else:
-            self._banner_icon_name = None
-            self.banner_icon.setPixmap(icon.pixmap(size, size))
-
+            icon = fxicons.get_icon(icon)
+        self.banner_icon.setIcon(icon)
         self.banner_icon.show()
-
-    def _update_banner_icon(self) -> None:
-        """Re-render a named banner icon in the current theme's colors.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-        if self._banner_icon_name is None:
-            return
-
-        icon = fxicons.get_icon(self._banner_icon_name)
-        size = self._banner_icon_size
-        self.banner_icon.setPixmap(icon.pixmap(size, size))
 
     # Status bar methods
     def _fx_status_bar(self) -> FXStatusBar:

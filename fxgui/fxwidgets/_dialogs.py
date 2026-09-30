@@ -10,6 +10,7 @@ from qtpy.QtGui import (
     QColor,
     QCursor,
     QFont,
+    QIcon,
     QMouseEvent,
     QPixmap,
 )
@@ -29,6 +30,7 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxdcc, fxicons, fxstyle
 from fxgui.fxwidgets._application import FXApplication
+from fxgui.fxwidgets._labels import FXIconLabel
 
 fxstyle.register_widget_style(
     """
@@ -115,7 +117,6 @@ class FXFloatingDialog(QDialog):
         super().__init__(parent)
 
         # Attributes
-        self._custom_icon: Optional[QPixmap] = icon
         self.dialog_icon: QPixmap = icon
         self.dialog_title: str = title
         self.parent_package = parent_package
@@ -127,7 +128,6 @@ class FXFloatingDialog(QDialog):
         self._setup_layout()
         self.set_dialog_icon(self.dialog_icon)
         self.set_dialog_title(self.dialog_title)
-        fxstyle.theme_changed.connect(self._on_theme_changed)
 
         # Window - frameless with transparent background for rounded corners
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -150,11 +150,6 @@ class FXFloatingDialog(QDialog):
         if not isinstance(QApplication.instance(), FXApplication):
             fxstyle.register_themed_root(self)
 
-    def _on_theme_changed(self, _theme_name: Optional[str] = None) -> None:
-        """Re-render the default icon in the new theme's color."""
-        if self._custom_icon is None:
-            self.set_dialog_icon(None)
-
     # Private methods
     def _setup_title(self):
         """Sets up the title bar with icon and label.
@@ -163,7 +158,7 @@ class FXFloatingDialog(QDialog):
             This method is intended for internal use only.
         """
 
-        self._icon_label = QLabel(self)
+        self._icon_label = FXIconLabel(parent=self, size=22)
         self._icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self._icon_label.setFixedSize(24, 24)
         self.title_widget = QWidget(self)
@@ -245,15 +240,9 @@ class FXFloatingDialog(QDialog):
             icon (QPixmap, optional): The QPixmap icon.
         """
 
-        self._custom_icon = icon or None
-        if not icon:
-            icon = fxicons.get_icon(
-                "home", color=fxstyle.colors().icon
-            ).pixmap(32, 32)
-        self._icon_label.setPixmap(
-            icon.scaled(22, 22, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        )
-        self.dialog_icon = icon
+        self._icon_label.setIcon(
+            QIcon(icon) if icon else fxicons.get_icon("home"))
+        self.dialog_icon = icon or self._icon_label.pixmap()
 
     def set_dialog_title(self, title: str = None) -> None:
         """Sets the dialog's title.

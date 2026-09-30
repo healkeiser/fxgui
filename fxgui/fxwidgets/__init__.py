@@ -49,7 +49,7 @@ from fxgui.fxwidgets._inputs import (
     FXPasswordLineEdit,
     FXValidatedLineEdit,
 )
-from fxgui.fxwidgets._labels import FXElidedLabel
+from fxgui.fxwidgets._labels import FXElidedLabel, FXIconLabel
 from fxgui.fxwidgets._loading_spinner import FXLoadingOverlay, FXLoadingSpinner
 from fxgui.fxwidgets._log_widget import (
     FXOutputLogHandler,
@@ -113,6 +113,7 @@ __all__ = [
     "FXFuzzySearchList",
     "FXFuzzySearchTree",
     "FXIconButton",
+    "FXIconLabel",
     "FXIconLineEdit",
     "FXItemDelegate",
     "FXJoinedGroup",

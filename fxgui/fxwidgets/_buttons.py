@@ -5,7 +5,6 @@ from typing import List, Optional, Union
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, QSize, QTimer
-from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
     QFrame,
@@ -47,40 +46,36 @@ class FXPrimaryButton(QPushButton):
         if isinstance(text, QWidget):
             text, parent = "", text
         super().__init__(text or "", parent)
-        self._icon_name = icon
+        self._icons = {}
+        if icon:
+            # Qt draws a hovered push button's icon in Normal mode, so the
+            # hover fill's ink is a second icon swapped in; each resolves
+            # its token when drawn. Active is focus, on the resting fill.
+            self._icons = {
+                hovered: fxicons.get_icon(icon, color=ink, inks={"active": ink})
+                for hovered, ink in (
+                    (False, "icon_on_accent_primary"),
+                    (True, "icon_on_accent_secondary"),
+                )
+            }
+            self.pressed.connect(self._show_icon)
+            self.released.connect(self._show_icon)
+            self._show_icon()
         self.setProperty("fxRole", "primary")
-        self.pressed.connect(self._on_theme_changed)
-        self.released.connect(self._on_theme_changed)
-        self._on_theme_changed()
-        # The icon is a pixmap baked in the on-accent ink.
-        fxstyle.theme_changed.connect(self._on_theme_changed)
 
     def enterEvent(self, event) -> None:
         """Draw the icon in the hover fill's ink."""
         super().enterEvent(event)
-        self._on_theme_changed()
+        self._show_icon()
 
     def leaveEvent(self, event) -> None:
         """Draw the icon in the resting fill's ink."""
         super().leaveEvent(event)
-        self._on_theme_changed()
+        self._show_icon()
 
-    def _on_theme_changed(self, _theme_name: Optional[str] = None) -> None:
-        """Draw the icon in the ink of the current fill."""
-        # Not fxicons.set_icon: its refresh recolours to the plain icon
-        # colour, which vanishes on the accent in most themes. Qt has no
-        # icon mode for a hovered push button, so the ink follows the state.
-        if not self._icon_name:
-            return
-        hovered = self.underMouse() and not self.isDown()
-        ink = (
-            fxstyle.get_icon_on_accent_secondary()
-            if hovered
-            else fxstyle.get_icon_on_accent_primary()
-        )
-        self.setIcon(
-            fxicons.get_icon(self._icon_name, color=ink, include_active=False)
-        )
+    def _show_icon(self) -> None:
+        if self._icons:
+            self.setIcon(self._icons[self.underMouse() and not self.isDown()])
 
 
 fxstyle.register_widget_style("""
@@ -146,8 +141,6 @@ class FXIconButton(QToolButton):
         size: int = 28,
     ):
         super().__init__(parent)
-        self._icon_name = icon
-        self._checked_icon_name = checked_icon or icon
         self.setAutoRaise(True)
         self.setCheckable(checkable)
         self.setFixedSize(size, size)
@@ -159,44 +152,18 @@ class FXIconButton(QToolButton):
             f"FXIconButton {{ border-radius: {size // 2 - 1}px; }}")
         if tip:
             apply_tip(self, tip)
-        self._on_theme_changed()
-        # The icon pixmaps are baked in theme inks.
-        fxstyle.theme_changed.connect(self._on_theme_changed)
+        # Unchecked it hovers on state_hover, so Active keeps the plain ink;
+        # checked it sits on the accent. Active is a hovered tool button.
+        self._icons = {
+            False: fxicons.get_icon(icon, inks={"active": "icon"}),
+            True: fxicons.get_icon(
+                checked_icon or icon, color="icon_on_accent_primary"),
+        }
+        self.toggled.connect(self._show_icon)
+        self._show_icon(self.isChecked())
 
-    def _on_theme_changed(self, _theme_name: Optional[str] = None) -> None:
-        """Render the icon pixmaps in the current theme's inks."""
-        # Not fxicons.set_icon: its Active pixmap is drawn for the accent,
-        # and unchecked this button hovers on state_hover. Active is how Qt
-        # draws a hovered tool button's icon. Rendered at this widget's own
-        # ratio, which a second screen may raise.
-        side = self.iconSize().width()
-        ratio = self.devicePixelRatioF()
-        disabled = fxicons._get_disabled_icon_color()
-        plain = fxstyle.get_icon_color()
-        icon = QIcon()
-        for name, state, rest, hover in (
-            (self._icon_name, QIcon.Off, plain, plain),
-            (self._checked_icon_name, QIcon.On,
-             fxstyle.get_icon_on_accent_primary(),
-             fxstyle.get_icon_on_accent_secondary()),
-        ):
-            for mode, ink in (
-                (QIcon.Normal, rest),
-                (QIcon.Active, hover),
-                (QIcon.Disabled, disabled),
-            ):
-                icon.addPixmap(
-                    fxicons.get_pixmap(name, side, side, color=ink, dpr=ratio),
-                    mode,
-                    state,
-                )
-        self.setIcon(icon)
-
-    def event(self, event: QEvent) -> bool:
-        """Re-render the icon when the widget moves to a denser screen."""
-        if event.type() == getattr(QEvent, "DevicePixelRatioChange", None):
-            self._on_theme_changed()
-        return super().event(event)
+    def _show_icon(self, checked: bool) -> None:
+        self.setIcon(self._icons[checked])
 
 
 _JOINED_HEIGHT = 30

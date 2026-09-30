@@ -6,10 +6,11 @@ from typing import Optional
 # Third-party
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QColor, QKeyEvent, QMouseEvent, QPainter, QPen
-from qtpy.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
+from qtpy.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._labels import FXIconLabel
 
 
 class FXRatingWidget(QWidget):
@@ -71,7 +72,7 @@ class FXRatingWidget(QWidget):
         # Create star labels
         self._stars: list = []
         for _ in range(max_rating):
-            star = QLabel()
+            star = FXIconLabel(size=icon_size)
             star.setFixedSize(icon_size, icon_size)
             star.setAlignment(Qt.AlignCenter)
             self._stars.append(star)
@@ -90,8 +91,6 @@ class FXRatingWidget(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        # The star pixmaps are baked in theme colours.
-        fxstyle.theme_changed.connect(self._update_stars)
 
     @property
     def rating(self) -> float:
@@ -128,19 +127,19 @@ class FXRatingWidget(QWidget):
         """Clear the rating (set to 0)."""
         self.set_rating(0)
 
-    def _update_stars(self, _theme_name: Optional[str] = None) -> None:
+    def _update_stars(self) -> None:
         """Update star icons based on current rating."""
-        theme = fxstyle.colors()
-        empty_color = theme.text_disabled
-        filled_color = theme.accent_primary
-        hover_color = theme.accent_secondary
-
+        empty_color = "text_disabled"
         display_rating = (
             self._hover_rating
             if self._hover_rating is not None
             else self._rating
         )
-        color = hover_color if self._hover_rating is not None else filled_color
+        color = (
+            "accent_secondary"
+            if self._hover_rating is not None
+            else "accent_primary"
+        )
 
         for i, star in enumerate(self._stars):
             star_value = i + 1
@@ -155,7 +154,7 @@ class FXRatingWidget(QWidget):
                 # Empty star
                 icon = fxicons.get_icon(self._empty_icon, color=empty_color)
 
-            star.setPixmap(icon.pixmap(self._icon_size, self._icon_size))
+            star.setIcon(icon)
 
     def _get_rating_from_pos(self, x: int) -> float:
         """Calculate rating from mouse x position."""

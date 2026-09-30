@@ -78,8 +78,17 @@ __all__ = [
 ]
 
 
-# A colour meaning the theme's icon colour, read when the icon is drawn.
-_THEME = "theme"
+# The modes an icon names an ink for, and each one's default ink.
+_MODES = {
+    "normal": QIcon.Normal,
+    "active": QIcon.Active,
+    "selected": QIcon.Selected,
+    "disabled": QIcon.Disabled,
+}
+_DEFAULT_INKS = {
+    "active": "icon_on_accent_secondary",
+    "selected": "icon_on_accent_primary",
+}
 
 # Opacity of a disabled icon, monochrome or full-colour.
 _DISABLED_ALPHA = 0.35
@@ -114,7 +123,7 @@ _libraries_info = {
         "defaults": {
             "extension": "svg",
             "style": "round",
-            "color": _THEME,
+            "color": "icon",
             "width": 48,
             "height": 48,
         },
@@ -125,7 +134,7 @@ _libraries_info = {
         "defaults": {
             "extension": "svg",
             "style": "solid",
-            "color": _THEME,
+            "color": "icon",
             "width": 48,
             "height": 48,
         },
@@ -136,7 +145,7 @@ _libraries_info = {
         "defaults": {
             "extension": "svg",
             "style": "solid",
-            "color": _THEME,
+            "color": "icon",
             "width": 48,
             "height": 48,
         },
@@ -372,6 +381,15 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     return colored
 
 
+def _theme_ink(ink: Optional[str]) -> Optional[str]:
+    """Return the colour `ink` names: a theme token's, or `ink` itself."""
+    if not ink:
+        return None
+    from fxgui import fxstyle
+
+    return vars(fxstyle.colors()).get(ink, ink)
+
+
 def _faded(pixmap: QPixmap) -> QPixmap:
     """Return `pixmap` at the opacity a disabled icon is drawn with."""
     faded = QPixmap(pixmap.size())
@@ -528,7 +546,8 @@ def get_pixmap(
         icon_name: The name of the icon.
         width: The width of the pixmap. Defaults to `None`.
         height: The height of the pixmap. Defaults to `None`.
-        color: The color to convert the pixmap to. Defaults to `None`.
+        color: A theme token such as "text_muted", read now, or a colour.
+            Defaults to the library's.
         library: The library of the icon. Defaults to `None`.
         style: The style of the icon. Defaults to `None`.
         extension: The extension of the icon. Defaults to `None`.
@@ -545,13 +564,8 @@ def get_pixmap(
     """
 
     library, width, height, color = _resolved(library, width, height, color)
-    if color == _THEME:
-        from fxgui import fxstyle
-
-        color = fxstyle.colors().icon
-
     return _get_pixmap_cached(
-        icon_name, width, height, color, library, style, extension,
+        icon_name, width, height, _theme_ink(color), library, style, extension,
         _screen_dpr() if dpr is None else float(dpr),
     )
 
@@ -559,24 +573,16 @@ def get_pixmap(
 class _ThemedIconEngine(QIconEngine):
     """Draw an icon file in the theme's colours of the moment.
 
-    Nothing is baked: each draw reads `fxstyle.colors()`, so a theme
-    switch reaches every icon without a signal. Pixmaps land in
-    QPixmapCache keyed by file, ink, size and pixel ratio.
+    Nothing is baked: each draw resolves the mode's ink token through
+    `fxstyle.colors()`, so a theme switch reaches every icon without a
+    signal. Pixmaps land in QPixmapCache keyed by file, ink, size and ratio.
     """
 
-    def __init__(
-        self,
-        path: str,
-        size: QSize,
-        color: Optional[str],
-        include_active: bool,
-        recolor: bool = True,
-    ):
+    def __init__(self, path: str, size: QSize, inks: tuple, recolor: bool):
         super().__init__()
         self._path = path
         self._size = QSize(size)
-        self._color = color
-        self._include_active = include_active
+        self._inks = dict(inks)
         self._recolor = recolor
 
     def clone(self) -> QIconEngine:
@@ -584,12 +590,7 @@ class _ThemedIconEngine(QIconEngine):
         from fxgui._compat import is_valid
 
         copy = _ThemedIconEngine(
-            self._path,
-            self._size,
-            self._color,
-            self._include_active,
-            self._recolor,
-        )
+            self._path, self._size, tuple(self._inks.items()), self._recolor)
         # PySide gives Qt no ownership of a clone() result and has no API to
         # transfer it; this list is its only owner until the QIcon deletes it.
         _clones[:] = [engine for engine in _clones if is_valid(engine)]
@@ -610,19 +611,17 @@ class _ThemedIconEngine(QIconEngine):
         return self._size.scaled(size, Qt.KeepAspectRatio)
 
     def _ink(self, mode) -> Optional[str]:
-        from fxgui import fxstyle
-
-        theme = fxstyle.colors()
         if not self._recolor:
             return None
-        if mode == QIcon.Disabled:
-            return _get_disabled_icon_color(theme.icon)
-        ink = theme.icon if self._color == _THEME else self._color
-        if ink and mode == QIcon.Selected:
-            return theme.icon_on_accent_primary
-        if ink and mode == QIcon.Active and self._include_active:
-            return theme.icon_on_accent_secondary
-        return ink
+        name = next(key for key, value in _MODES.items() if value == mode)
+        if name in self._inks:
+            return _theme_ink(self._inks[name])
+        if name == "disabled":
+            return _get_disabled_icon_color()
+        # An icon drawn in its file's own colours keeps them in every mode.
+        if not self._inks.get("normal"):
+            return None
+        return _theme_ink(_DEFAULT_INKS[name])
 
     def scaledPixmap(self, size: QSize, mode, state, scale: float) -> QPixmap:
         """Return the icon drawn for `mode` at `size` and pixel ratio `scale`."""
@@ -672,12 +671,9 @@ _clones: List[QIconEngine] = []
 
 @lru_cache(maxsize=512)
 def _get_icon_cached(
-    path: str, width: int, height: int, color: Optional[str],
-    include_active: bool, recolor: bool,
+    path: str, width: int, height: int, inks: tuple, recolor: bool,
 ) -> QIcon:
-    return QIcon(_ThemedIconEngine(
-        path, QSize(width, height), color, include_active, recolor
-    ))
+    return QIcon(_ThemedIconEngine(path, QSize(width, height), inks, recolor))
 
 
 def get_icon(
@@ -688,7 +684,7 @@ def get_icon(
     library: Optional[str] = None,
     style: Optional[str] = None,
     extension: Optional[str] = None,
-    include_active: bool = True,
+    inks: Optional[Dict[str, str]] = None,
     fallback: Optional[Union[str, QIcon]] = None,
 ) -> QIcon:
     """Get a QIcon of the specified icon.
@@ -697,15 +693,15 @@ def get_icon(
         icon_name: The name of the icon.
         width: The width of the pixmap. Defaults to `None`.
         height: The height of the pixmap. Defaults to `None`.
-        color: The color to convert the pixmap to. Defaults to `None`.
+        color: The normal ink: a theme token such as "text_muted", read
+            each time the icon is drawn, or a fixed colour. Defaults to the
+            library's ("icon" for the monochrome ones).
         library: The library of the icon. Defaults to `None`.
         style: The style of the icon. Defaults to `None`.
         extension: The extension of the icon. Defaults to `None`.
-        include_active: Whether to bake the `QIcon.Active` (hover/highlight)
-            pixmap, colored for accent backgrounds. Set to `False` for button
-            widgets, whose icons Qt renders in Active mode on focus over a
-            non-accent surface. `set_icon` handles this automatically.
-            Defaults to `True`.
+        inks: Inks for the other modes, keyed "active", "selected" or
+            "disabled", each a token or a colour. Unset, Active and
+            Selected take the on-accent tokens and Disabled a muted grey.
         fallback: What to answer with when `icon_name` is in no library
             this asked. A name is resolved in the DEFAULT library rather
             than in `library`, which is the point: a curated set is
@@ -716,6 +712,7 @@ def get_icon(
             raises as before.
 
     Raises:
+        ValueError: If `inks` names a mode other than the three above.
         FileNotFoundError: If `icon_name` is in no such library and no
             `fallback` was given -- or if the fallback name is not in
             the default library either, which is a mistake worth
@@ -726,6 +723,8 @@ def get_icon(
 
     Examples:
         >>> get_icon("add", color="red")
+        >>> get_icon("send", color="icon_on_accent_primary",
+        ...          inks={"active": "icon_on_accent_secondary"})
         >>> get_icon("lemon", library="fontawesome")
 
         Mapping open-ended studio data onto a curated set, where a name
@@ -748,7 +747,7 @@ def get_icon(
                 library,
                 style,
                 extension,
-                include_active,
+                inks,
             )
         except FileNotFoundError:
             if isinstance(fallback, QIcon):
@@ -761,15 +760,20 @@ def get_icon(
                 None,
                 None,
                 None,
-                include_active,
+                inks,
             )
 
-    library, width, height, color = _resolved(library, width, height, color)
+    inks = dict(inks or {})
+    unknown = set(inks) - set(_DEFAULT_INKS) - {"disabled"}
+    if unknown:
+        raise ValueError(f"No icon mode named {sorted(unknown)}.")
+    library, width, height, inks["normal"] = _resolved(
+        library, width, height, color)
     path = get_icon_path(
         icon_name, library=library, style=style, extension=extension
     )
     return _get_icon_cached(
-        path, width, height, color, include_active,
+        path, width, height, tuple(sorted(inks.items())),
         _libraries_info[library]["recolor"],
     )
 
@@ -877,17 +881,17 @@ def _get_disabled_icon_color(icon_color: Optional[str] = None) -> str:
 def set_icon(
     widget: Any, icon_name: str, theme_color: bool = True, **kwargs: Any
 ) -> QIcon:
-    """Set an icon on a widget; it follows the theme when drawn.
+    """Set an icon on a widget; it takes its theme inks when drawn.
 
-    Push buttons get no Active recolour (see `_icon_for_widget`).
+    A push button's Active ink is its normal one (see `_icon_for_widget`).
 
     Args:
         widget (Any): The widget to set the icon on (QAction, QPushButton, etc.).
         icon_name (str): The name of the icon.
-        theme_color (bool): Kept for callers. An icon without a `color`
-            follows the theme; one with a `color` keeps it.
-        **kwargs (Any): Optional parameters passed to get_icon (width, height,
-            color, library, style, extension).
+        theme_color (bool): Ignored: a token `color` follows the theme and
+            a fixed colour keeps it.
+        **kwargs (Any): Passed to `get_icon` (width, height, color, inks,
+            library, style, extension).
 
     Returns:
         The QIcon that was set on the widget.
@@ -907,17 +911,20 @@ def set_icon(
 
 
 def _icon_for_widget(widget: Any, icon_name: str, kwargs: Dict) -> QIcon:
-    """Build the icon for a widget, omitting the Active recolor for push buttons.
+    """Build the icon for a widget; a push button's Active ink is its normal.
 
-    Qt renders a focused QPushButton icon in Active mode over no accent
-    background, so the accent-colored Active pixmap would clash; build those
-    without it. A hovered QToolButton sits on the secondary accent, as do
-    menus (QAction), item-view rows and everything else, so they keep it.
+    Qt draws a focused QPushButton's icon in Active mode on no accent
+    fill, so the on-accent Active ink would clash there. A hovered
+    QToolButton, a menu row and an item-view row sit on the accent.
     """
     from qtpy.QtWidgets import QAbstractButton, QToolButton
 
-    include_active = (
-        not isinstance(widget, QAbstractButton)
-        or isinstance(widget, QToolButton)
-    )
-    return get_icon(icon_name, include_active=include_active, **kwargs)
+    if isinstance(widget, QAbstractButton) and not isinstance(
+        widget, QToolButton
+    ):
+        inks = dict(kwargs.pop("inks", None) or {})
+        library = kwargs.get("library")
+        inks.setdefault(
+            "active", _resolved(library, None, None, kwargs.get("color"))[3])
+        kwargs["inks"] = inks
+    return get_icon(icon_name, **kwargs)

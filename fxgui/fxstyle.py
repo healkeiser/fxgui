@@ -537,8 +537,6 @@ def _deep_merge(base: dict, over: dict) -> dict:
 
 def _colors_changed() -> None:
     """Re-apply the current theme after the theme or colour file changed."""
-    global _standard_icon_map
-    _standard_icon_map = None
     _invalidate_theme_namespace()
     _reapply_to_roots()
     theme_manager.notify_theme_changed(get_theme())
@@ -1602,10 +1600,6 @@ def _get_standard_icon_map() -> dict:
     if _standard_icon_map is not None:
         return _standard_icon_map
 
-    # Theme-aware feedback colors with fallbacks; the top-level "feedback"
-    # YAML block is deprecated and may be absent from custom color files.
-    feedback_colors = get_feedback_colors()
-
     # fmt: off
     _standard_icon_map = {
         QStyle.SP_ArrowBack: fxicons.get_icon("arrow_back"),
@@ -1670,10 +1664,10 @@ def _get_standard_icon_map() -> dict:
         QStyle.SP_MediaStop: fxicons.get_icon("stop"),
         QStyle.SP_MediaVolume: fxicons.get_icon("volume_up"),
         QStyle.SP_MediaVolumeMuted: fxicons.get_icon("volume_off"),
-        QStyle.SP_MessageBoxCritical: fxicons.get_icon("error", color=feedback_colors["error"]["foreground"]),
-        QStyle.SP_MessageBoxInformation: fxicons.get_icon("info", color=feedback_colors["info"]["foreground"]),
-        QStyle.SP_MessageBoxQuestion: fxicons.get_icon("help", color=feedback_colors["success"]["foreground"]),
-        QStyle.SP_MessageBoxWarning: fxicons.get_icon("warning", color=feedback_colors["warning"]["foreground"]),
+        QStyle.SP_MessageBoxCritical: fxicons.get_icon("error", color="feedback_error_foreground"),
+        QStyle.SP_MessageBoxInformation: fxicons.get_icon("info", color="feedback_info_foreground"),
+        QStyle.SP_MessageBoxQuestion: fxicons.get_icon("help", color="feedback_success_foreground"),
+        QStyle.SP_MessageBoxWarning: fxicons.get_icon("warning", color="feedback_warning_foreground"),
         QStyle.SP_RestoreDefaultsButton: fxicons.get_icon("restore"),
         QStyle.SP_TitleBarCloseButton: fxicons.get_icon("close"),
         QStyle.SP_TitleBarContextHelpButton: fxicons.get_icon("help"),

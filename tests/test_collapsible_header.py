@@ -45,6 +45,10 @@ def test_a_named_title_icon_follows_the_theme(qtbot, qapp):
     fxstyle.apply_theme("dark")
     section = FXCollapsibleWidget(title="Notes", icon="settings")
     qtbot.addWidget(section)
-    before = section._icon_label.pixmap().toImage()
+    section._icon_label.resize(16, 16)
+    before = section._icon_label.grab().toImage()
     fxstyle.apply_theme("light")
-    assert section._icon_label.pixmap().toImage() != before
+    assert section._icon_label.grab().toImage() != before
+    assert section.get_icon() is not None
+    section.set_icon(None)
+    assert section.get_icon() is None and section._icon_label.isHidden()

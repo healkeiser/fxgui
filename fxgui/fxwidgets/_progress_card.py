@@ -19,6 +19,7 @@ from qtpy.QtGui import QColor
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._severity import SEVERITIES
 
 
@@ -127,7 +128,7 @@ class FXProgressCard(QFrame):
         header_layout.setSpacing(8)
 
         # Task icon
-        self._icon_label = QLabel()
+        self._icon_label = FXIconLabel(size=18)
         self._icon_label.setFixedSize(20, 20)
         if icon:
             header_layout.addWidget(self._icon_label)
@@ -140,7 +141,7 @@ class FXProgressCard(QFrame):
         header_layout.addStretch()
 
         # Status icon
-        self._status_icon = QLabel()
+        self._status_icon = FXIconLabel(size=18)
         self._status_icon.setFixedSize(20, 20)
         header_layout.addWidget(self._status_icon)
 
@@ -185,16 +186,9 @@ class FXProgressCard(QFrame):
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-        self._update_icons()
-        fxstyle.theme_changed.connect(self._update_icons)
-
-    def _update_icons(self, _theme_name: Optional[str] = None) -> None:
-        """Re-render the icon pixmaps in the current theme's colors."""
         if self._icon:
-            task_icon = fxicons.get_icon(
-                self._icon, color=fxstyle.colors().text_muted
-            )
-            self._icon_label.setPixmap(task_icon.pixmap(18, 18))
+            self._icon_label.setIcon(
+                fxicons.get_icon(self._icon, color="text_muted"))
         self._update_status_icon()
 
     @property
@@ -255,14 +249,12 @@ class FXProgressCard(QFrame):
     def _update_status_icon(self) -> None:
         """Update the status icon based on current status."""
         if self._status not in self.STATUS_ICONS:
-            self._status_icon.clear()
+            self._status_icon.setIcon(None)
             self._status_icon.setVisible(False)
         else:
             icon_name, feedback_key = self.STATUS_ICONS[self._status]
-            colors = fxstyle.get_colors()
-            color = colors["feedback"][feedback_key]["foreground"]
-            icon = fxicons.get_icon(icon_name, color=color)
-            self._status_icon.setPixmap(icon.pixmap(18, 18))
+            self._status_icon.setIcon(fxicons.get_icon(
+                icon_name, color=f"feedback_{feedback_key}_foreground"))
             self._status_icon.setVisible(True)
 
     def increment(self, amount: int = 1) -> None:

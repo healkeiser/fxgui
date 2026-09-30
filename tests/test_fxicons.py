@@ -40,9 +40,10 @@ def test_get_icon_has_per_state_colors(qapp):
     assert _img(icon, QIcon.Active) != normal
 
 
-def test_include_active_false_drops_active(qapp):
-    """include_active=False yields a button-safe icon (Active == Normal)."""
-    icon = fxicons.get_icon("check", width=48, height=48, include_active=False)
+def test_an_active_ink_of_the_normal_token_matches_normal(qapp):
+    """An Active ink named like the normal one gives a button-safe icon."""
+    icon = fxicons.get_icon(
+        "check", width=48, height=48, inks={"active": "icon"})
     assert _active_matches_normal(icon)
 
 

@@ -26,6 +26,7 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._delegates import FXItemDelegate
+from fxgui.fxwidgets._labels import FXIconLabel
 
 
 def _local_paths(event) -> List[Path]:
@@ -201,7 +202,7 @@ class FXDropZone(QWidget):
         drop_layout.addStretch(1)
 
         # Icon label - centered horizontally
-        self._icon_label = QLabel()
+        self._icon_label = FXIconLabel(size=64)
         self._icon_label.setAlignment(Qt.AlignCenter)
         self._icon_label.setObjectName("FXDropZoneIcon")
         self._icon_label.setMinimumSize(64, 64)
@@ -284,12 +285,6 @@ class FXDropZone(QWidget):
             main_layout.addWidget(button_container)
 
         self._update_icon()
-        # The drop icon is a pixmap baked in the theme's icon colour.
-        fxstyle.theme_changed.connect(self._on_theme_changed)
-
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Redraw the drop icon in the new theme's colour."""
-        self._update_icon()
 
     def _set_drop_state(self, state: str) -> None:
         """Set the drop area's state: idle, drag, success or error."""
@@ -303,11 +298,7 @@ class FXDropZone(QWidget):
             feedback_type: Either 'success' or 'error'.
         """
         self._set_drop_state(feedback_type)
-        feedback = fxstyle.get_feedback_colors()
-        color = feedback.get(feedback_type, {}).get(
-            "foreground", fxstyle.colors().accent_primary
-        )
-        self._update_icon(color)
+        self._update_icon(f"feedback_{feedback_type}_foreground")
 
     def _flash_feedback(self, feedback_type: str, duration: int = 800) -> None:
         """Flash feedback color then return to default.
@@ -325,18 +316,8 @@ class FXDropZone(QWidget):
         self._update_icon()
 
     def _update_icon(self, color: Optional[str] = None) -> None:
-        """Update the icon with theme colors.
-
-        Args:
-            color: Optional color override for the icon.
-        """
-        if color:
-            pixmap = fxicons.get_icon(self._icon_name, color=color).pixmap(
-                64, 64
-            )
-        else:
-            pixmap = fxicons.get_icon(self._icon_name).pixmap(64, 64)
-        self._icon_label.setPixmap(pixmap)
+        """Draw the drop icon in `color`, a theme token, or the icon ink."""
+        self._icon_label.setIcon(fxicons.get_icon(self._icon_name, color=color))
 
     def _update_formats_label(self) -> None:
         """Update the formats label text."""

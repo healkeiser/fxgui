@@ -6,12 +6,13 @@ from typing import Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QEvent, Qt, Slot
-from qtpy.QtGui import QColor, QLinearGradient, QPainter, QPixmap
+from qtpy.QtGui import QColor, QIcon, QLinearGradient, QPainter, QPixmap
 from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._constants import INFO
+from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._severity import log, severity
 
 # The painted lines replace the base sheet's top border.
@@ -70,7 +71,7 @@ class FXStatusBar(QStatusBar):
         self.project = project or "Project"
         self.version = version or "0.0.0"
         self.company = company or "\u00a9 Company"
-        self.icon_label = QLabel()
+        self.icon_label = FXIconLabel(size=14)
         self.message_label = QLabel()
         self.project_label = QLabel(self.project)
         self.version_label = QLabel(self.version)
@@ -143,9 +144,8 @@ class FXStatusBar(QStatusBar):
         kind = severity(severity_type)
         feedback = fxstyle.get_colors()["feedback"][kind.feedback]
         severity_prefix = kind.title
-        severity_icon = pixmap or fxicons.get_icon(
-            kind.icon, color=feedback["foreground"]
-        ).pixmap(14, 14)
+        severity_icon = QIcon(pixmap) if pixmap else fxicons.get_icon(
+            kind.icon, color=f"feedback_{kind.feedback}_foreground")
         status_bar_color = background_color or feedback["background"]
         status_bar_border_color = feedback["foreground"]
 
@@ -155,7 +155,7 @@ class FXStatusBar(QStatusBar):
             if time
             else f"<b>{severity_prefix}</b>: "
         )
-        self.icon_label.setPixmap(severity_icon)
+        self.icon_label.setIcon(severity_icon)
         self.message_label.setText(f"{message_prefix} {message}")
 
         if set_color:
@@ -188,7 +188,7 @@ class FXStatusBar(QStatusBar):
         Warning:
             This method is intended for internal use only.
         """
-        self.icon_label.clear()
+        self.icon_label.setIcon(None)
         self.icon_label.setVisible(False)
         self.message_label.clear()
         self.message_label.setVisible(False)

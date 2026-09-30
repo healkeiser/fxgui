@@ -29,6 +29,7 @@ from qtpy.QtGui import QColor
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._severity import SEVERITIES, log, severity
 
 
@@ -228,7 +229,7 @@ class FXNotificationBanner(QFrame):
         header_layout.setSpacing(8)
 
         # Severity icon
-        self._icon_label = QLabel()
+        self._icon_label = FXIconLabel(size=18)
         self._icon_label.setFixedSize(20, 20)
         header_layout.addWidget(self._icon_label)
 
@@ -297,7 +298,6 @@ class FXNotificationBanner(QFrame):
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
 
         self._update_icons()
-        fxstyle.theme_changed.connect(self._update_icons)
 
         if action_text:
             self.add_action(action_text, self.action_clicked.emit)
@@ -360,20 +360,18 @@ class FXNotificationBanner(QFrame):
         else:
             self.move(self._target_pos)
 
-    def _update_icons(self, _theme_name: Optional[str] = None) -> None:
-        """Re-render the icon pixmaps in the current theme's colors."""
-        theme = fxstyle.colors()
+    def _update_icons(self) -> None:
+        """Set the severity icon and the close icon, in theme ink tokens."""
         if self._severity_type is None:
-            color, icon_name = theme.text, "notifications"
+            color, icon_name = "text", "notifications"
         else:
             kind = severity(self._severity_type)
-            color = fxstyle.get_feedback_colors()[kind.feedback]["foreground"]
+            color = f"feedback_{kind.feedback}_foreground"
             icon_name = kind.icon
         icon_name = self._custom_icon or icon_name
-        icon = fxicons.get_icon(icon_name, color=color)
-        self._icon_label.setPixmap(icon.pixmap(18, 18))
+        self._icon_label.setIcon(fxicons.get_icon(icon_name, color=color))
         if self._closable:
-            fxicons.set_icon(self._close_button, "close", color=theme.text_muted)
+            fxicons.set_icon(self._close_button, "close", color="text_muted")
 
     def show(self) -> None:
         """Show the notification with slide-in animation from the right.

@@ -90,13 +90,10 @@ def test_checkable_toggles_on_click_and_swaps_icon_and_fill(qtbot, window):
     button = _show(qtbot, window, FXIconButton(
         "visibility_off", window, checkable=True, checked_icon="visibility"))
     tokens = fxstyle._token_map("dark")
-    off = button.icon().pixmap(16, 16, mode=button.icon().Mode.Normal,
-                               state=button.icon().State.Off).toImage()
-    on = button.icon().pixmap(16, 16, mode=button.icon().Mode.Normal,
-                              state=button.icon().State.On).toImage()
-    assert off != on
+    off = button.icon().pixmap(16, 16).toImage()
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
     assert button.isChecked()
+    assert button.icon().pixmap(16, 16).toImage() != off
     qtbot.mouseMove(window, QPoint(1, 1))
     qtbot.waitUntil(lambda: not button.underMouse())
     QApplication.processEvents()
@@ -108,8 +105,8 @@ def test_checkable_toggles_on_click_and_swaps_icon_and_fill(qtbot, window):
 def test_the_checked_icon_is_drawn_in_the_on_accent_colour(qtbot, window):
     button = FXIconButton("visibility_off", window, checkable=True,
                           checked_icon="visibility")
-    icon = button.icon()
-    on = icon.pixmap(16, 16, icon.Mode.Normal, icon.State.On).toImage()
+    button.setChecked(True)
+    on = button.icon().pixmap(16, 16).toImage()
     inks = {
         on.pixelColor(x, y).name()
         for x in range(on.width()) for y in range(on.height())
@@ -278,13 +275,10 @@ def test_the_icon_button_renders_at_its_own_pixel_ratio(qtbot, window,
     """A second screen can be denser than the primary one."""
     button = FXIconButton("visibility_off", window, checkable=True,
                           checked_icon="visibility")
-    monkeypatch.setattr(button, "devicePixelRatioF", lambda: 2.0)
-    button._on_theme_changed()
-    icon = button.icon()
-    for state in (icon.State.Off, icon.State.On):
-        pixmap = icon.pixmap(QSize(16, 16), 2.0, icon.Mode.Normal, state)
-        assert pixmap.size() == QSize(32, 32), state
-    assert QSize(32, 32) in icon.availableSizes(icon.Mode.Normal)
+    for checked in (False, True):
+        button.setChecked(checked)
+        pixmap = button.icon().pixmap(QSize(16, 16), 2.0)
+        assert pixmap.size() == QSize(32, 32), checked
 
 
 def test_a_hovered_checked_icon_takes_the_hover_ink(
@@ -304,13 +298,14 @@ def test_a_hovered_checked_icon_takes_the_hover_ink(
     fxstyle.apply_theme("split")
     button = FXIconButton("visibility_off", window, checkable=True,
                           checked_icon="visibility")
-    icon = button.icon()
-    for state, token in ((icon.State.On, "@icon_on_accent_secondary"),
-                         (icon.State.Off, "@icon")):
-        image = icon.pixmap(16, 16, icon.Mode.Active, state).toImage()
+    for checked, token in ((True, "@icon_on_accent_secondary"),
+                           (False, "@icon")):
+        button.setChecked(checked)
+        icon = button.icon()
+        image = icon.pixmap(16, 16, icon.Mode.Active).toImage()
         inks = {
             image.pixelColor(x, y).name()
             for x in range(image.width()) for y in range(image.height())
             if image.pixelColor(x, y).alpha() == 255
         }
-        assert inks == {fxstyle._token_map("split")[token].lower()}, state
+        assert inks == {fxstyle._token_map("split")[token].lower()}, checked

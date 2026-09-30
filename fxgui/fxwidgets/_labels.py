@@ -6,8 +6,8 @@ from typing import Optional
 
 # Third-party
 from qtpy.QtCore import QSize, Qt
-from qtpy.QtGui import QFontMetrics
-from qtpy.QtWidgets import QLabel, QWidget
+from qtpy.QtGui import QFontMetrics, QIcon, QPainter, QPixmap
+from qtpy.QtWidgets import QLabel, QStyle, QWidget
 
 
 class FXElidedLabel(QLabel):
@@ -198,6 +198,78 @@ class FXElidedLabel(QLabel):
                 self._full_text, self._mode, available_width
             )
             super().setText(elided)
+
+
+class FXIconLabel(QLabel):
+    """A label that draws a QIcon when painted, so it takes theme inks then.
+
+    A QLabel pixmap is baked once; an fxicons icon here follows every
+    theme switch with no signal. Disabled draws the icon's Disabled mode.
+
+    Examples:
+        >>> label = FXIconLabel(size=18)
+        >>> fxicons.set_icon(label, "info", color="feedback_info_foreground")
+    """
+
+    def __init__(
+        self,
+        icon: Optional[QIcon] = None,
+        parent: Optional[QWidget] = None,
+        size: int = 16,
+    ):
+        super().__init__(parent)
+        self._icon = QIcon() if icon is None else QIcon(icon)
+        self._icon_size = QSize(size, size)
+        self.setAlignment(Qt.AlignCenter)
+
+    def icon(self) -> QIcon:
+        """Return the icon drawn."""
+        return QIcon(self._icon)
+
+    def setIcon(self, icon: Optional[QIcon]) -> None:
+        """Draw `icon`, or nothing for `None` or a null icon."""
+        self._icon = QIcon() if icon is None else QIcon(icon)
+        self.updateGeometry()
+        self.update()
+
+    def pixmap(self) -> QPixmap:
+        """Return the icon as drawn now, or the plain pixmap without one."""
+        if self._icon.isNull():
+            return super().pixmap()
+        mode = QIcon.Normal if self.isEnabled() else QIcon.Disabled
+        return self._icon.pixmap(self._icon_size, mode)
+
+    def iconSize(self) -> QSize:
+        """Return the size the icon is drawn at."""
+        return QSize(self._icon_size)
+
+    def setIconSize(self, size: QSize) -> None:
+        """Draw the icon at `size`."""
+        self._icon_size = QSize(size)
+        self.updateGeometry()
+        self.update()
+
+    def sizeHint(self) -> QSize:
+        """Return the icon size plus the margins."""
+        margins = self.contentsMargins()
+        return self._icon_size.grownBy(margins)
+
+    def minimumSizeHint(self) -> QSize:
+        """Return the size hint: the icon is not drawn smaller."""
+        return self.sizeHint()
+
+    def paintEvent(self, event) -> None:
+        """Draw the icon in the mode the enabled state asks for."""
+        if self._icon.isNull():
+            return
+        mode = QIcon.Normal if self.isEnabled() else QIcon.Disabled
+        rect = QStyle.alignedRect(
+            self.layoutDirection(), self.alignment(), self._icon_size,
+            self.contentsRect(),
+        )
+        painter = QPainter(self)
+        self._icon.paint(painter, rect, Qt.AlignCenter, mode)
+        painter.end()
 
 
 def example() -> None:
