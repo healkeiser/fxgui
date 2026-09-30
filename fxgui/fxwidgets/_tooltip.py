@@ -18,6 +18,7 @@ from qtpy.QtCore import (
     QPointF,
     QPropertyAnimation,
     QRect,
+    QSize,
     Qt,
     QTimer,
     QUrl,
@@ -43,7 +44,6 @@ from qtpy.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
-    QTableWidget,
     QTableWidgetItem,
     QTreeWidget,
     QTreeWidgetItem,
@@ -230,9 +230,6 @@ class FXTooltip(QFrame):
         self._arrow_position = FXTooltipPosition.TOP
         self._arrow_offset = 0  # Horizontal/vertical offset for arrow
 
-        # Animation opacity
-        self._opacity = 0.0
-
         # A one-shot tooltip closes (and is deleted) once it has faded out
         self._one_shot = False
         self._watching_app = False
@@ -279,16 +276,8 @@ class FXTooltip(QFrame):
         self._fade_animation.setDuration(150)
         self._fade_animation.finished.connect(self._on_fade_finished)
 
-        # Connect to anchor for cleanup
-        if self._anchor:
-            self._anchor.destroyed.connect(self._on_anchor_destroyed)
-            # Install event filter for hover detection (non-persistent)
-            # or move tracking (persistent)
-            self._anchor.installEventFilter(self)
-            # The global FXTooltipManager stays silent on a marked anchor,
-            # so one hover never shows two tooltips; closing restores it
-            self._previous_explicit = self._anchor.property(_EXPLICIT)
-            self._anchor.setProperty(_EXPLICIT, True)
+        self._anchor = None
+        self._attach(parent)
 
         # Track mouse for hide delay
         self.setMouseTracking(True)
@@ -419,9 +408,7 @@ class FXTooltip(QFrame):
             # Handle move/resize events to reposition visible tooltip
             if event.type() in (QEvent.Move, QEvent.Resize):
                 if self.isVisible():
-                    pos, _, arrow_offset = self._calculate_position()
-                    self._arrow_offset = arrow_offset
-                    self.move(pos)
+                    self.move(self._place(self._anchor_rect(), self._position))
                     self.update()
 
         return super().eventFilter(watched, event)
@@ -455,44 +442,59 @@ class FXTooltip(QFrame):
             self._action_callback()
         self.hide_tooltip()
 
-    def _calculate_position(self) -> tuple:
-        """Calculate tooltip position and arrow placement."""
-        if not self._anchor:
-            return QCursor.pos(), FXTooltipPosition.TOP, 0
+    def _attach(self, widget: Optional[QWidget]) -> None:
+        """Anchor to a widget: follow it, and mark it for the manager.
 
-        # Get anchor geometry in global coordinates
-        anchor_rect = self._anchor.rect()
-        anchor_global = self._anchor.mapToGlobal(anchor_rect.topLeft())
-        anchor_rect = QRect(
-            anchor_global.x(),
-            anchor_global.y(),
-            anchor_rect.width(),
-            anchor_rect.height(),
+        The global FXTooltipManager stays silent on a marked anchor, so one
+        hover never shows two tooltips; `_detach` restores the mark.
+        """
+        self._anchor = widget
+        if widget is None:
+            return
+        widget.installEventFilter(self)
+        widget.destroyed.connect(self._on_anchor_destroyed)
+        self._previous_explicit = widget.property(_EXPLICIT)
+        widget.setProperty(_EXPLICIT, True)
+
+    def _detach(self) -> None:
+        """Let go of the anchor and hand its mark back."""
+        if self._anchor is None:
+            return
+        self._anchor.removeEventFilter(self)
+        self._anchor.setProperty(_EXPLICIT, self._previous_explicit)
+        try:
+            self._anchor.destroyed.disconnect(self._on_anchor_destroyed)
+        except (RuntimeError, TypeError):
+            pass
+        self._anchor = None
+
+    def _anchor_rect(self) -> QRect:
+        """Return the anchor's global rect, or the cursor's point without one."""
+        if not self._anchor:
+            return QRect(QCursor.pos(), QSize(1, 1))
+        return QRect(
+            self._anchor.mapToGlobal(QPoint(0, 0)), self._anchor.size()
         )
 
-        # Get screen geometry
-        screen = QApplication.screenAt(anchor_global)
+    def _place(
+        self, rect: QRect, position: FXTooltipPosition
+    ) -> QPoint:
+        """Return where the tooltip goes beside a global rect; aims the arrow."""
+        screen = QApplication.screenAt(rect.topLeft())
         if not screen:
             screen = QApplication.primaryScreen()
         screen_rect = screen.availableGeometry()
 
-        # Calculate tooltip size
         self.adjustSize()
         tooltip_size = self.sizeHint()
-
-        # Determine best position
-        position = self._position
         if position == FXTooltipPosition.AUTO:
             position = self._find_best_position(
-                anchor_rect, tooltip_size, screen_rect
+                rect, tooltip_size, screen_rect
             )
-
-        # Calculate coordinates based on position
-        x, y, arrow_offset = self._calculate_coordinates(
-            position, anchor_rect, tooltip_size, screen_rect
+        x, y, self._arrow_offset = self._calculate_coordinates(
+            position, rect, tooltip_size, screen_rect
         )
-
-        return QPoint(x, y), position, arrow_offset
+        return QPoint(x, y)
 
     def _find_best_position(
         self, anchor_rect: QRect, tooltip_size, screen_rect: QRect
@@ -686,9 +688,7 @@ class FXTooltip(QFrame):
     def _do_show(self) -> None:
         """Actually show the tooltip."""
         self._refresh_icon()
-        pos, _, arrow_offset = self._calculate_position()
-        self._arrow_offset = arrow_offset
-        self._fade_in_at(pos)
+        self._fade_in_at(self._place(self._anchor_rect(), self._position))
 
     def _do_hide(self) -> None:
         """Actually hide the tooltip with fade out."""
@@ -726,14 +726,7 @@ class FXTooltip(QFrame):
         if self._watching_app:
             QApplication.instance().removeEventFilter(self)
             self._watching_app = False
-        if self._anchor is not None:
-            self._anchor.removeEventFilter(self)
-            self._anchor.setProperty(_EXPLICIT, self._previous_explicit)
-            try:
-                self._anchor.destroyed.disconnect(self._on_anchor_destroyed)
-            except (RuntimeError, TypeError):
-                pass
-            self._anchor = None
+        self._detach()
         _SHOWN.discard(self)
         super().closeEvent(event)
 
@@ -780,23 +773,8 @@ class FXTooltip(QFrame):
         Args:
             widget: New anchor widget.
         """
-        # Remove old event filter
-        if self._anchor:
-            self._anchor.removeEventFilter(self)
-            self._anchor.setProperty(_EXPLICIT, self._previous_explicit)
-            try:
-                self._anchor.destroyed.disconnect(self._on_anchor_destroyed)
-            except (RuntimeError, TypeError):
-                # Signal may already be disconnected or anchor deleted
-                pass
-
-        # Set new anchor
-        self._anchor = widget
-        if widget and not self._persistent:
-            widget.installEventFilter(self)
-            widget.destroyed.connect(self._on_anchor_destroyed)
-            self._previous_explicit = widget.property(_EXPLICIT)
-            widget.setProperty(_EXPLICIT, True)
+        self._detach()
+        self._attach(widget)
 
     def show_at_rect(
         self,
@@ -824,33 +802,9 @@ class FXTooltip(QFrame):
         self._hide_timer.stop()
         self._show_timer.stop()
         self._refresh_icon()
-
-        # Use provided position or fall back to instance position
-        use_position = position if position is not None else self._position
-
-        # Get screen geometry
-        screen = QApplication.screenAt(rect.topLeft())
-        if not screen:
-            screen = QApplication.primaryScreen()
-        screen_rect = screen.availableGeometry()
-
-        # Calculate tooltip size
-        self.adjustSize()
-        tooltip_size = self.sizeHint()
-
-        # Determine best position if AUTO
-        if use_position == FXTooltipPosition.AUTO:
-            use_position = self._find_best_position(
-                rect, tooltip_size, screen_rect
-            )
-
-        # Calculate coordinates
-        x, y, arrow_offset = self._calculate_coordinates(
-            use_position, rect, tooltip_size, screen_rect
-        )
-
-        self._arrow_offset = arrow_offset
-        self._fade_in_at(QPoint(x, y))
+        if position is None:
+            position = self._position
+        self._fade_in_at(self._place(rect, position))
 
     def show_at_point(
         self,
@@ -1043,7 +997,6 @@ class FXTooltipManager(QObject):
 
         # Track the widget we're showing tooltip for
         self._pending_widget: Optional[weakref.ref] = None
-        self._pending_pos: Optional[QPoint] = None
         self._pending_index: Optional[QPersistentModelIndex] = None
         self._pending_item_rect: Optional[QRect] = None
         self._current_widget: Optional[weakref.ref] = None
@@ -1052,76 +1005,46 @@ class FXTooltipManager(QObject):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Intercept tooltip events and show FXTooltip instead."""
         if event.type() == QEvent.ToolTip:
-            # Get the widget that triggered the tooltip
             widget = watched
             if not isinstance(widget, QWidget):
                 return False
-
-            # The widget owns an explicit FXTooltip (anchored on it): stay
-            # silent and block the standard tooltip too, otherwise a widget
-            # with both shows two tooltips on one hover.
-            if widget.property("fx_has_explicit_tooltip"):
+            # A widget anchoring its own FXTooltip: block both tooltips
+            if widget.property(_EXPLICIT):
                 return True
 
-            # Item view viewports: the text is built from the item's data
-            # only when the tooltip is about to show
-            parent_view = widget.parent()
-            if isinstance(parent_view, QAbstractItemView):
-                if isinstance(event, QHelpEvent):
-                    index = parent_view.indexAt(event.pos())
-                    if index.isValid():
-                        if (
-                            self._tooltip is not None
-                            and self._tooltip.isVisible()
-                            and self._current_index == index
-                        ):
-                            return True
-                        item_rect = parent_view.visualRect(index)
-                        self._pending_item_rect = QRect(
-                            widget.mapToGlobal(item_rect.topLeft()),
-                            item_rect.size(),
-                        )
-                        self._pending_widget = weakref.ref(widget)
-                        self._pending_pos = event.globalPos()
-                        self._pending_index = QPersistentModelIndex(index)
-                        if self._tooltip and self._tooltip.isVisible():
-                            self._do_show_tooltip()
-                        else:
-                            self._show_timer.start(self._show_delay)
-                return True  # Block the standard item tooltip
-
-            # Get tooltip text
-            tooltip_text = widget.toolTip()
-            if not tooltip_text:
-                return True  # Block empty tooltips
-
-            if isinstance(event, QHelpEvent):
-                global_pos = event.globalPos()
-            else:
-                global_pos = QCursor.pos()
-
-            # Check if we're already showing tooltip for this widget
-            if (
-                self._current_widget
+            showing = self._tooltip is not None and self._tooltip.isVisible()
+            self._pending_item_rect = None
+            self._pending_index = None
+            view = widget.parent()
+            if isinstance(view, QAbstractItemView):
+                # The item's text is built only when the tooltip shows
+                index = (
+                    view.indexAt(event.pos())
+                    if isinstance(event, QHelpEvent)
+                    else QModelIndex()
+                )
+                if not index.isValid() or (
+                    showing and self._current_index == index
+                ):
+                    return True
+                item_rect = view.visualRect(index)
+                self._pending_item_rect = QRect(
+                    widget.mapToGlobal(item_rect.topLeft()), item_rect.size()
+                )
+                self._pending_index = QPersistentModelIndex(index)
+            elif not widget.toolTip() or (
+                showing
+                and self._current_widget is not None
                 and self._current_widget() is widget
-                and self._tooltip
-                and self._tooltip.isVisible()
             ):
-                return True  # Already showing, block the event
+                return True
 
-            # Cancel any pending hide
             self._hide_timer.stop()
-
-            # Store pending tooltip data
             self._pending_widget = weakref.ref(widget)
-            self._pending_pos = global_pos
-
-            # Start show timer (or show immediately if already visible)
-            if self._tooltip and self._tooltip.isVisible():
+            if showing:
                 self._do_show_tooltip()
             else:
                 self._show_timer.start(self._show_delay)
-
             return True  # Block the standard Qt tooltip
 
         elif event.type() == QEvent.Leave:
@@ -1249,7 +1172,6 @@ class FXTooltipManager(QObject):
         self._current_widget = self._pending_widget
         self._current_index = index
         self._pending_widget = None
-        self._pending_pos = None
 
     def _do_hide_tooltip(self) -> None:
         """Hide the current tooltip."""
@@ -1268,7 +1190,6 @@ class FXTooltipManager(QObject):
         self._hide_timer.stop()
         self._do_hide_tooltip()
         self._pending_widget = None
-        self._pending_pos = None
         self._pending_index = None
 
     @classmethod
@@ -1362,6 +1283,8 @@ class _ItemTooltipHandler(QObject):
     def __init__(self, view: QAbstractItemView):
         super().__init__(view)
         self._view = weakref.ref(view)
+        # Keyed by id(): list and table items are unhashable. Holding the
+        # item keeps its wrapper, so itemAt() hands back the same object.
         # ponytail: entries outlive deleted items; prune if views churn items
         self._entries: dict = {}
         self._hovered = None
@@ -1383,9 +1306,9 @@ class _ItemTooltipHandler(QObject):
             view.viewport().setMouseTracking(True)
         return handler
 
-    def set_entry(self, item, **tooltip_kwargs) -> None:
+    def set_entry(self, item, show_delay: int, **tooltip_kwargs) -> None:
         """Store (or replace) the tooltip content for one item."""
-        self._entries[item] = tooltip_kwargs
+        self._entries[id(item)] = (item, show_delay, tooltip_kwargs)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Track the hovered item and show or hide its tooltip."""
@@ -1394,21 +1317,18 @@ class _ItemTooltipHandler(QObject):
             return False
 
         if event.type() == QEvent.MouseMove:
-            hovered = view.itemAt(event.pos())
-            if hovered not in self._entries:
-                hovered = None
+            entry = self._entries.get(id(view.itemAt(event.pos())))
+            hovered = entry[0] if entry else None
             if hovered is not self._hovered:
                 self._leave()
                 self._hovered = hovered
-                if hovered is not None:
-                    item_rect = self._get_item_rect(view, hovered)
-                    if item_rect is not None:
-                        self._pending_rect = QRect(
-                            view.viewport().mapToGlobal(item_rect.topLeft()),
-                            item_rect.size(),
-                        )
-                        delay = self._entries[hovered].get("show_delay", 500)
-                        self._show_timer.start(delay)
+                if entry:
+                    item_rect = view.visualItemRect(hovered)
+                    self._pending_rect = QRect(
+                        view.viewport().mapToGlobal(item_rect.topLeft()),
+                        item_rect.size(),
+                    )
+                    self._show_timer.start(entry[1])
         elif event.type() == QEvent.Leave:
             self._leave()
             self._hovered = None
@@ -1429,29 +1349,10 @@ class _ItemTooltipHandler(QObject):
         """Build and show the hovered item's tooltip."""
         if self._hovered is None or self._pending_rect is None:
             return
-        kwargs = dict(self._entries[self._hovered])
-        kwargs.pop("show_delay", None)
+        _, _, kwargs = self._entries[id(self._hovered)]
         self._tooltip = FXTooltip(parent=None, persistent=True, **kwargs)
         self._tooltip._one_shot = True
         self._tooltip.show_at_rect(self._pending_rect)
-
-    def _get_item_rect(
-        self,
-        view: QAbstractItemView,
-        item: Union[QTreeWidgetItem, QListWidgetItem, QTableWidgetItem],
-    ) -> Optional[QRect]:
-        """Get the visual rect for the item."""
-        if isinstance(view, QTreeWidget) and isinstance(item, QTreeWidgetItem):
-            return view.visualItemRect(item)
-        elif isinstance(view, QListWidget) and isinstance(
-            item, QListWidgetItem
-        ):
-            return view.visualItemRect(item)
-        elif isinstance(view, QTableWidget) and isinstance(
-            item, QTableWidgetItem
-        ):
-            return view.visualItemRect(view.indexFromItem(item))
-        return None
 
 
 def set_tooltip(
@@ -1595,10 +1496,8 @@ def example() -> None:
         QGroupBox,
         QHBoxLayout,
         QLabel,
-        QListWidget,
         QListWidgetItem,
         QPushButton,
-        QTreeWidget,
         QTreeWidgetItem,
         QVBoxLayout,
         QWidget,
