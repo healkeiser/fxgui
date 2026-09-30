@@ -165,17 +165,6 @@ def test_the_chrome_is_one_frame_with_no_lines(qtbot, theme):
 
 
 @pytest.mark.parametrize("theme", THEMES)
-def test_the_status_bar_is_frame_and_keeps_its_accent_line(qtbot, theme):
-    window = _window(qtbot, theme=theme)
-    bar = window.statusBar()
-
-    assert _pixel(window, bar, 0, 1) == QColor(
-        fxstyle.get_theme_colors()["accent_primary"]).name()
-    assert _pixel(window, bar, bar.width() // 2, bar.height() - 2) == (
-        _frame())
-
-
-@pytest.mark.parametrize("theme", THEMES)
 def test_controls_on_the_frame_have_no_fill(qtbot, theme):
     window = _window(qtbot, theme=theme)
 
@@ -241,23 +230,46 @@ def test_hide_banner_hides_the_corner_of_a_framed_window(qtbot):
 
 
 @pytest.mark.parametrize("theme", THEMES)
-def test_a_framed_status_bar_drops_the_line_under_its_accent(qtbot, theme):
+def test_a_framed_status_bar_has_no_line_on_top(qtbot, theme):
     window = _window(qtbot, theme=theme)
     bar = window.statusBar()
     window.show_status_line()
     qtbot.wait(10)
 
-    assert _pixel(window, bar, bar.width() // 2, 3) == _frame()
-    assert _pixel(window, bar, 0, 2) == QColor(
-        fxstyle.get_theme_colors()["accent_primary"]).name()
+    for y in (0, 1, 2, 3, bar.height() - 2):
+        assert _pixel(window, bar, 0, y) == _frame()
+        assert _pixel(window, bar, bar.width() // 2, y) == _frame()
 
 
-def test_a_plain_status_bar_keeps_the_line_under_its_accent(qtbot):
+def test_a_plain_status_bar_keeps_its_accent_and_the_line_under_it(qtbot):
     window = _window(qtbot, framed=False)
     bar = window.statusBar()
 
+    assert _pixel(window, bar, 0, 2) == QColor(
+        fxstyle.get_theme_colors()["accent_primary"]).name()
     assert _pixel(window, bar, bar.width() // 2, 3) == QColor(
         fxstyle.get_theme_colors()["border"]).name()
+
+
+def test_a_status_bar_leaving_the_frame_gets_its_accent_back(qtbot):
+    window = _window(qtbot)
+    bar = window.statusBar()
+    bar.setProperty(fxstyle.FRAME_PROPERTY, False)
+    qtbot.wait(10)
+
+    assert bar.status_line.isVisible()
+    assert bar.border_line.isVisible()
+
+
+def test_a_hidden_accent_stays_hidden_when_the_bar_leaves_the_frame(qtbot):
+    window = _window(qtbot)
+    bar = window.statusBar()
+    window.hide_status_line()
+    bar.setProperty(fxstyle.FRAME_PROPERTY, False)
+    qtbot.wait(10)
+
+    assert not bar.status_line.isVisible()
+    assert not bar.border_line.isVisible()
 
 
 def test_a_status_bar_set_later_is_framed_too(qtbot):

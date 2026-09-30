@@ -69,6 +69,7 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
         self.border_line = QFrame(self)
         self.border_line.setFrameShape(QFrame.NoFrame)
         self.border_line.setFixedHeight(1)
+        self._line_wanted = True
 
         # Attributes
         self.project = project or "Project"
@@ -346,30 +347,31 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
 
     def hide_status_line(self) -> None:
         """Hide the status line and border line."""
-        self.status_line.hide()
-        self.border_line.hide()
+        self._line_wanted = False
+        self._sync_lines()
         self._apply_stylesheet(with_status_line_padding=False)
 
     def show_status_line(self) -> None:
-        """Show the status line, and the border line unless on the frame."""
-        self.status_line.show()
-        self._sync_border_line()
+        """Show the status line and border line, unless on the frame."""
+        self._line_wanted = True
+        self._sync_lines()
         self._apply_stylesheet(with_status_line_padding=True)
 
-    def _sync_border_line(self) -> None:
-        # On the frame the accent line is the only line.
-        self.border_line.setVisible(
-            not self.status_line.isHidden()
-            and not self.property(fxstyle.FRAME_PROPERTY)
+    def _sync_lines(self) -> None:
+        # On the frame the bar joins the chrome, so it draws no line on top.
+        shown = self._line_wanted and not self.property(
+            fxstyle.FRAME_PROPERTY
         )
+        self.status_line.setVisible(shown)
+        self.border_line.setVisible(shown)
 
     def event(self, event: QEvent) -> bool:
-        """Drop the border line when `fxstyle.mark_as_frame` marks the bar."""
+        """Drop the lines when `fxstyle.mark_as_frame` marks the bar."""
         if (
             event.type() == QEvent.DynamicPropertyChange
             and bytes(event.propertyName()) == fxstyle.FRAME_PROPERTY.encode()
         ):
-            self._sync_border_line()
+            self._sync_lines()
         return super().event(event)
 
 
