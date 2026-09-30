@@ -4,7 +4,6 @@
 import logging
 import os
 from typing import Callable, Mapping, Optional
-from weakref import WeakKeyDictionary
 
 # Third-party
 from qtpy.QtCore import (
@@ -30,17 +29,87 @@ from qtpy.QtGui import QColor
 
 # Internal
 from fxgui import fxicons, fxstyle
-from fxgui.fxwidgets._constants import (
-    CRITICAL,
-    ERROR,
-    WARNING,
-    SUCCESS,
-    INFO,
-    DEBUG,
+from fxgui.fxwidgets._severity import SEVERITIES, log, severity
+
+
+fxstyle.register_widget_style(
+    """
+    FXNotificationBanner {
+        background-color: @surface_sunken;
+        border: 1px solid @border;
+        border-radius: 8px;
+    }
+    FXNotificationBanner QLabel {
+        background: transparent;
+    }
+    FXNotificationBanner QLabel#fxBannerTitle {
+        color: @text;
+        font-weight: bold;
+        font-size: 14px;
+    }
+    FXNotificationBanner[severity="error"] QLabel#fxBannerTitle {
+        color: @feedback_error_foreground;
+    }
+    FXNotificationBanner[severity="warning"] QLabel#fxBannerTitle {
+        color: @feedback_warning_foreground;
+    }
+    FXNotificationBanner[severity="success"] QLabel#fxBannerTitle {
+        color: @feedback_success_foreground;
+    }
+    FXNotificationBanner[severity="info"] QLabel#fxBannerTitle {
+        color: @feedback_info_foreground;
+    }
+    FXNotificationBanner[severity="debug"] QLabel#fxBannerTitle {
+        color: @feedback_debug_foreground;
+    }
+    FXNotificationBanner QLabel#fxBannerMessage {
+        color: @text_muted;
+    }
+    FXNotificationBanner QPushButton#fxBannerClose {
+        background: transparent;
+        border: none;
+        border-radius: 10px;
+    }
+    FXNotificationBanner QPushButton#fxBannerClose:hover {
+        background: @surface_alt;
+    }
+    FXNotificationBanner QPushButton#fxBannerAction {
+        background: transparent;
+        color: @text_muted;
+        border: 1px solid @border;
+        border-radius: 4px;
+        padding: 6px 16px;
+        font-weight: bold;
+        font-size: 12px;
+    }
+    FXNotificationBanner QPushButton#fxBannerAction:hover {
+        background: @surface_alt;
+    }
+    FXNotificationBanner QPushButton#fxBannerAction[primary="true"] {
+        background: @accent_primary;
+        color: @text_on_accent_primary;
+        border: none;
+    }
+    FXNotificationBanner QPushButton#fxBannerAction[primary="true"]:hover {
+        background: @accent_secondary;
+        color: @text_on_accent_secondary;
+    }
+    """
 )
 
 
-class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
+def _staying(parent: QWidget) -> list:
+    """Return the banners shown on `parent` that are not leaving."""
+    return [
+        banner
+        for banner in parent.findChildren(
+            FXNotificationBanner, options=Qt.FindDirectChildrenOnly
+        )
+        if not banner.isHidden() and not banner._dismissing
+    ]
+
+
+class FXNotificationBanner(QFrame):
     """Animated pop-up notification cards that slide in from the right.
 
     This widget provides toast-style notifications with severity levels,
@@ -103,28 +172,9 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
     closed = Signal()
     action_clicked = Signal()
 
-    # Class-level tracking of active notifications per parent widget
-    # Uses WeakKeyDictionary so entries are auto-removed when parent is deleted
-    _active_notifications: WeakKeyDictionary = WeakKeyDictionary()
-
-    # Severity icons mapping
-    SEVERITY_ICONS = {
-        CRITICAL: "cancel",
-        ERROR: "error",
-        WARNING: "warning",
-        SUCCESS: "check_circle",
-        INFO: "info",
-        DEBUG: "bug_report",
-    }
-
-    # Severity titles mapping
+    SEVERITY_ICONS = {level: kind.icon for level, kind in SEVERITIES.items()}
     SEVERITY_TITLES = {
-        CRITICAL: "Critical",
-        ERROR: "Error",
-        WARNING: "Warning",
-        SUCCESS: "Success",
-        INFO: "Info",
-        DEBUG: "Debug",
+        level: kind.title for level, kind in SEVERITIES.items()
     }
 
     def __init__(
@@ -159,6 +209,11 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
         # Fixed width for pop notification style
         self.setFixedWidth(width)
+        self.setProperty(
+            "severity",
+            severity(severity_type).feedback if severity_type in SEVERITIES
+            else "",
+        )
 
         # Setup frame styling
         self.setFrameShape(QFrame.StyledPanel)
@@ -175,7 +230,6 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         # Severity icon
         self._icon_label = QLabel()
         self._icon_label.setFixedSize(20, 20)
-        self._icon_label.setStyleSheet("background: transparent;")
         header_layout.addWidget(self._icon_label)
 
         # Title (custom title, severity name, or default)
@@ -185,6 +239,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
             else self.SEVERITY_TITLES.get(severity_type, "Notification")
         )
         self._title_label = QLabel(display_title)
+        self._title_label.setObjectName("fxBannerTitle")
         header_layout.addWidget(self._title_label)
 
         header_layout.addStretch()
@@ -192,6 +247,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         # Close button
         if closable:
             self._close_button = QPushButton()
+            self._close_button.setObjectName("fxBannerClose")
             self._close_button.setFixedSize(20, 20)
             self._close_button.setFlat(True)
             self._close_button.setCursor(Qt.PointingHandCursor)
@@ -202,6 +258,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
         # Message label
         self._message_label = QLabel(message)
+        self._message_label.setObjectName("fxBannerMessage")
         self._message_label.setTextFormat(Qt.RichText)
         self._message_label.setWordWrap(True)
         self._message_label.setSizePolicy(
@@ -239,8 +296,8 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         # Size policy - fixed width, minimum height to fit content
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
 
-        # Apply initial styling
-        self._on_theme_changed()
+        self._update_icons()
+        fxstyle.theme_changed.connect(self._update_icons)
 
         if action_text:
             self.add_action(action_text, self.action_clicked.emit)
@@ -294,7 +351,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
     def _update_position(self) -> None:
         """Update position when parent is resized."""
-        if not self.parent() or not self.isVisible() or self._dismissing:
+        if not self.parent() or self.isHidden() or self._dismissing:
             return
 
         self._target_pos = QPoint(self._resting_x(), self._target_pos.y())
@@ -303,136 +360,20 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         else:
             self.move(self._target_pos)
 
-    def _get_severity_colors(self, severity: Optional[int]) -> dict:
-        """Get colors based on severity level."""
-        # If no severity, use default text color
-        if severity is None:
-            return {
-                "icon": self.theme.text,
-                "accent": self.theme.text,
-            }
-
-        # Map severity to feedback key
-        severity_to_key = {
-            CRITICAL: "error",
-            ERROR: "error",
-            WARNING: "warning",
-            SUCCESS: "success",
-            INFO: "info",
-            DEBUG: "debug",
-        }
-
-        key = severity_to_key.get(severity, "info")
-        feedback = fxstyle.get_feedback_colors()
-        foreground = feedback[key]["foreground"]
-
-        return {
-            "icon": foreground,
-            "accent": foreground,
-        }
-
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        severity_colors = self._get_severity_colors(self._severity_type)
-
-        # Frame styling (card-like, darker background to stand out)
-        self.setStyleSheet(
-            f"""
-            FXNotificationBanner {{
-                background-color: {self.theme.surface_sunken};
-                border: 1px solid {self.theme.border};
-                border-radius: 8px;
-            }}
-        """
-        )
-
-        # Update icon (custom icon, severity-based, or default)
-        if self._custom_icon:
-            icon_name = self._custom_icon
-        elif self._severity_type is not None:
-            icon_name = self.SEVERITY_ICONS.get(self._severity_type, "info")
+    def _update_icons(self, _theme_name: Optional[str] = None) -> None:
+        """Re-render the icon pixmaps in the current theme's colors."""
+        theme = fxstyle.colors()
+        if self._severity_type is None:
+            color, icon_name = theme.text, "notifications"
         else:
-            icon_name = "notifications"  # Default icon for custom notifications
-
-        icon = fxicons.get_icon(icon_name, color=severity_colors["icon"])
+            kind = severity(self._severity_type)
+            color = fxstyle.get_feedback_colors()[kind.feedback]["foreground"]
+            icon_name = kind.icon
+        icon_name = self._custom_icon or icon_name
+        icon = fxicons.get_icon(icon_name, color=color)
         self._icon_label.setPixmap(icon.pixmap(18, 18))
-
-        # Title label (bold, like FXProgressCard)
-        self._title_label.setStyleSheet(
-            f"""
-            QLabel {{
-                color: {severity_colors['icon']};
-                font-weight: bold;
-                font-size: 14px;
-                background: transparent;
-            }}
-        """
-        )
-
-        # Message label (muted text, like FXProgressCard description)
-        # Note: We avoid setting font properties via stylesheet to preserve
-        # rich text formatting (bold, italic, etc.) from HTML tags
-        self._message_label.setStyleSheet(
-            f"color: {self.theme.text_muted}; background: transparent;"
-        )
-
-        # Close button styling
-        if hasattr(self, "_close_button"):
-            fxicons.set_icon(
-                self._close_button, "close", color=self.theme.text_muted
-            )
-            self._close_button.setStyleSheet(
-                f"""
-                QPushButton {{
-                    background: transparent;
-                    border: none;
-                    border-radius: 10px;
-                }}
-                QPushButton:hover {{
-                    background: {self.theme.surface_alt};
-                }}
-            """
-            )
-
-        # Action button styling - the first one leads, the rest step back so
-        # a two-button banner does not read as two equal choices
-        for index, button in enumerate(getattr(self, "_action_buttons", [])):
-            self._style_action_button(button, primary=index == 0)
-
-    def _style_action_button(self, button: QPushButton, primary: bool) -> None:
-        """Style one action button.
-
-        Args:
-            button: The button to style.
-            primary: Whether this is the banner's leading action.
-        """
-        if primary:
-            background = self.theme.accent_primary
-            hover = self.theme.accent_secondary
-            color = "#ffffff"
-            border = "none"
-        else:
-            background = "transparent"
-            hover = self.theme.surface_alt
-            color = self.theme.text_muted
-            border = f"1px solid {self.theme.border}"
-
-        button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background: {background};
-                color: {color};
-                border: {border};
-                border-radius: 4px;
-                padding: 6px 16px;
-                font-weight: bold;
-                font-size: 12px;
-            }}
-            QPushButton:hover {{
-                background: {hover};
-            }}
-        """
-        )
+        if self._closable:
+            fxicons.set_icon(self._close_button, "close", color=theme.text_muted)
 
     def show(self) -> None:
         """Show the notification with slide-in animation from the right.
@@ -445,40 +386,19 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
         super().show()
 
-        # Log message if logger is provided
-        if self._logger is not None:
-            self._log_message()
+        log(self._logger, self._severity_type, self._message)
 
-        # Calculate positions for slide-in from right
         parent = self.parent()
         if parent:
-            # Register this notification with parent tracking
-            if parent not in FXNotificationBanner._active_notifications:
-                FXNotificationBanner._active_notifications[parent] = []
-
-            active_list = FXNotificationBanner._active_notifications[parent]
-
-            # Add self to tracking if not already there
-            if self not in active_list:
-                active_list.append(self)
-
-            # Calculate y position based on existing visible notifications
-            # Find the bottom-most notification to stack below it
-            y_offset = self._margin
-            for notification in active_list:
-                # A dismissing banner is on its way out and keeps no slot
-                if (
-                    notification is not self
-                    and notification.isVisible()
-                    and not notification._dismissing
-                ):
-                    notification_bottom = (
-                        notification._target_pos.y() + notification.height()
-                    )
-                    y_offset = max(
-                        y_offset, notification_bottom + self._spacing
-                    )
-
+            # Below every banner already staying on this parent.
+            y_offset = max(
+                (
+                    n._target_pos.y() + n.height() + self._spacing
+                    for n in _staying(parent)
+                    if n is not self
+                ),
+                default=self._margin,
+            )
             self._dismissing = False
             self.move(parent.width(), y_offset)  # Off-screen, to the right
             self._animate_to(QPoint(self._resting_x(), y_offset))
@@ -507,17 +427,11 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
     def _on_slide_out_finished(self) -> None:
         """Handle slide-out completion and reposition remaining notifications."""
-        # Remove from tracking
-        parent = self.parent()
-        if parent and parent in FXNotificationBanner._active_notifications:
-            active_list = FXNotificationBanner._active_notifications[parent]
-            if self in active_list:
-                active_list.remove(self)
-            # Reposition remaining notifications
-            self._reposition_notifications(parent)
-
         self.hide()
+        if self.parent():
+            self._reposition_notifications(self.parent())
         self.closed.emit()
+        self.deleteLater()
 
     @classmethod
     def _reposition_notifications(cls, parent: QWidget) -> None:
@@ -528,17 +442,8 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         Args:
             parent: The parent widget containing the notifications.
         """
-        if parent not in cls._active_notifications:
-            return
-
-        active_list = cls._active_notifications[parent]
-        staying = [
-            n for n in active_list if n.isVisible() and not n._dismissing
-        ]
-
         # Sort by where each banner is headed, not by its transient position
-        staying.sort(key=lambda n: n._target_pos.y())
-
+        staying = sorted(_staying(parent), key=lambda n: n._target_pos.y())
         y_offset = staying[0]._margin if staying else 16
 
         for notification in staying:
@@ -577,13 +482,13 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
             self.layout().addLayout(self._actions_layout)
 
         button = QPushButton(text, self)
+        button.setObjectName("fxBannerAction")
+        # The first one leads; the rest step back.
+        button.setProperty("primary", not self._action_buttons)
         button.setCursor(Qt.PointingHandCursor)
         button.clicked.connect(lambda: self._run_action(callback))
         self._actions_layout.addWidget(button)
         self._action_buttons.append(button)
-        self._style_action_button(
-            button, primary=len(self._action_buttons) == 1
-        )
 
         # No timing out a banner that is waiting on an answer
         self._timeout = 0
@@ -591,7 +496,7 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
 
         # The banner just grew, so the ones stacked under it have moved
         self.adjustSize()
-        if self.isVisible() and self.parent():
+        if not self.isHidden() and self.parent():
             self._reposition_notifications(self.parent())
 
         return button
@@ -623,31 +528,10 @@ class FXNotificationBanner(fxstyle.FXThemeAware, QFrame):
         """
         self._timeout = timeout
 
-    def _log_message(self) -> None:
-        """Log the notification message to the configured logger.
-
-        Maps the notification severity to the appropriate logging level.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-        if self._logger is None:
-            return
-
-        log_methods = {
-            CRITICAL: self._logger.critical,
-            ERROR: self._logger.error,
-            WARNING: self._logger.warning,
-            SUCCESS: self._logger.info,
-            INFO: self._logger.info,
-            DEBUG: self._logger.debug,
-        }
-        log_method = log_methods.get(self._severity_type, self._logger.info)
-        log_method(self._message)
-
 
 def example() -> None:
     import sys
+    from fxgui.fxwidgets._constants import DEBUG, ERROR, INFO, SUCCESS, WARNING
     from qtpy.QtWidgets import (
         QVBoxLayout,
         QHBoxLayout,

@@ -19,6 +19,7 @@ blink out.
 from qtpy.QtWidgets import QWidget
 
 # Internal
+from fxgui import _compat
 from fxgui.fxwidgets import FXNotificationBanner
 from fxgui.fxwidgets._constants import INFO
 
@@ -38,7 +39,12 @@ def _banner(qtbot, parent, message):
         parent=parent, message=message, severity_type=INFO, timeout=0
     )
     banner.show()
+    # Where it was when it hid; it deletes itself right after.
+    banner.closed.connect(lambda: _left_at.__setitem__(message, banner.x()))
     return banner
+
+
+_left_at = {}
 
 
 def _resting_x(banner):
@@ -48,10 +54,10 @@ def _resting_x(banner):
 
 def _assert_gone(qtbot, banner, parent):
     """The banner is hidden, and hidden from off-screen, not from mid-window."""
-    qtbot.waitUntil(lambda: not banner.isVisible(), timeout=3000)
-    assert banner.x() >= parent.width(), (
-        f"{banner._message!r} stopped at x={banner.x()} instead of leaving "
-        f"past x={parent.width()}"
+    message = banner._message
+    qtbot.waitUntil(lambda: message in _left_at, timeout=3000)
+    assert _left_at.pop(message) >= parent.width(), (
+        f"{message!r} stopped instead of leaving past x={parent.width()}"
     )
 
 
@@ -90,3 +96,67 @@ def test_a_new_banner_does_not_stack_under_a_leaving_one(qtbot):
 
     arriving = _banner(qtbot, parent, "arriving")
     assert arriving.y() == arriving._margin
+
+
+def test_a_dismissed_banner_deletes_itself(qtbot):
+    parent = _host(qtbot)
+    banner = _banner(qtbot, parent, "bye")
+
+    banner.dismiss()
+
+    qtbot.waitUntil(lambda: not _compat.is_valid(banner), timeout=3000)
+
+
+def test_banners_shown_on_a_hidden_parent_stack(qtbot):
+    parent = QWidget()
+    parent.resize(800, 600)
+    qtbot.addWidget(parent)
+    first = _banner(qtbot, parent, "first")
+    second = _banner(qtbot, parent, "second")
+
+    assert second._target_pos.y() >= (
+        first._target_pos.y() + first.height() + first._spacing)
+
+
+def test_the_banner_carries_no_sheet_and_follows_a_theme_switch(qtbot):
+    from qtpy.QtCore import QPoint
+    from qtpy.QtGui import QColor
+
+    from fxgui import fxstyle
+
+    fxstyle.apply_theme("dark")
+    parent = _host(qtbot)
+    fxstyle.register_themed_root(parent)
+    banner = _banner(qtbot, parent, "themed")
+    qtbot.waitUntil(lambda: banner.x() == _resting_x(banner), timeout=3000)
+    fxstyle.apply_theme("github_light")
+    qtbot.wait(10)
+
+    image = parent.grab().toImage()
+    inside = banner.mapTo(parent, QPoint(banner.width() - 30, 6))
+
+    assert banner.styleSheet() == ""
+    assert all(not child.styleSheet() for child in banner.findChildren(QWidget))
+    assert image.pixelColor(inside).name() == QColor(
+        fxstyle.colors().surface_sunken).name()
+
+
+def test_banners_on_two_parents_stack_apart(qtbot):
+    one, two = _host(qtbot), _host(qtbot)
+    _banner(qtbot, one, "one")
+
+    other = _banner(qtbot, two, "two")
+
+    assert other._target_pos.y() == other._margin
+
+
+def test_the_survivor_moves_up_when_the_top_banner_leaves(qtbot):
+    parent = _host(qtbot)
+    top = _banner(qtbot, parent, "top")
+    below = _banner(qtbot, parent, "below")
+    assert below._target_pos.y() > below._margin
+
+    top.dismiss()
+    _assert_gone(qtbot, top, parent)
+
+    assert below._target_pos.y() == below._margin

@@ -250,30 +250,19 @@ def test_the_system_tray_still_takes_a_path(qtbot):
     assert not tray.tray_icon.icon().isNull()
 
 
-def test_the_fit_asks_for_the_screen_behind_the_files_own_qt_guard():
-    """`QWidget.screen()` arrived in Qt 5.14, and this library claims
-    PySide2 support -- where it raises `AttributeError` from inside a
-    `showEvent`, a hard failure at window-show time.
-
-    Asserted by reading the source, the way this suite already checks the
-    tooltip branch: only one Qt major version can be imported per
-    process, so the Qt 5 arm cannot be executed from here.
-    """
+def test_the_fit_asks_the_window_handle_for_its_screen():
+    """`QWidget.screen()` needs Qt 5.14; `QWindow.screen()` is in every Qt
+    5 and 6, so no version guard is needed. Asserted by reading the source:
+    only one Qt major version can be imported per process."""
     import inspect
 
     from fxgui.fxwidgets import _main_window
 
     source = inspect.getsource(_main_window.FXMainWindow.showEvent)
 
-    assert "QT_VERSION_MAJOR >= 6" in source, "guarded like the rest"
-    assert "QDesktopWidget().availableGeometry(self)" in source, (
-        "the Qt 5 arm, and window-aware rather than primary-screen"
-    )
-    # The unguarded call must not survive anywhere in the method.
-    guarded = source.split("QT_VERSION_MAJOR >= 6", 1)[1]
-    before = source.split("QT_VERSION_MAJOR >= 6", 1)[0]
-    assert "self.screen()" not in before, "nothing calls it before the guard"
-    assert "self.screen()" in guarded, "and it is inside the Qt 6 arm"
+    assert "self.screen()" not in source
+    assert "windowHandle()" in source
+    assert "QDesktopWidget" not in inspect.getsource(_main_window)
 
 
 def test_the_fit_is_still_bounded_by_the_screen(qtbot):

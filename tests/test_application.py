@@ -46,21 +46,9 @@ def test_fxapplication_is_themed_root(qtbot):
         app.setStyleSheet("")  # clean up for other tests
 
 
-def test_fxapplication_keeps_on_theme_changed_override_point(qapp):
-    """`_on_theme_changed` predates the themed-root registry and stays as
-    a subclass override point: subclasses that call ``super()`` must not
-    hit AttributeError.
-
-    Note:
-        Only the method's existence and super()-safety are covered here.
-        FXApplication cannot be instantiated under the test suite's
-        foreign QApplication, so the ``__init__`` connection itself is not
-        exercised; that `theme_changed` connections fire on apply_theme is
-        covered by tests/test_fxstyle_colors_api.py.
-    """
-    assert callable(FXApplication._on_theme_changed)
-    # A subclass override calling super() must be a safe no-op.
-    assert FXApplication._on_theme_changed(qapp, "dark") is None
+def test_fxapplication_has_no_theme_hook_of_its_own():
+    """Code that reacts to a switch connects to `fxstyle.theme_changed`."""
+    assert not hasattr(FXApplication, "_on_theme_changed")
 
 
 def test_fxapplication_constructs_with_no_arguments():
@@ -93,3 +81,57 @@ def test_fxapplication_constructs_with_no_arguments():
         f"stderr={result.stderr}"
     )
     assert "ok" in result.stdout
+
+
+def _run(code):
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, (result.stdout, result.stderr)
+    assert "ok" in result.stdout
+
+
+def test_instance_is_qts_own_and_answers_none_with_no_application():
+    _run(
+        "import os;"
+        "os.environ['QT_QPA_PLATFORM']='offscreen';"
+        "from fxgui.fxwidgets import FXApplication;"
+        "assert FXApplication.instance() is None, 'built one';"
+        "app=FXApplication();"
+        "assert FXApplication.instance() is app;"
+        "print('ok')"
+    )
+
+
+def test_a_deleted_application_is_not_handed_back():
+    _run(
+        "import os;"
+        "os.environ['QT_QPA_PLATFORM']='offscreen';"
+        "import shiboken6;"
+        "from qtpy.QtWidgets import QApplication;"
+        "from fxgui.fxwidgets import FXApplication;"
+        "app=FXApplication();"
+        "shiboken6.delete(app);"
+        "assert QApplication.instance() is None;"
+        "fresh=FXApplication.__new__(FXApplication);"
+        "assert fresh is not app, 'handed back a dead one';"
+        "print('ok')"
+    )
+
+
+def test_a_second_application_is_themed():
+    _run(
+        "import os;"
+        "os.environ['QT_QPA_PLATFORM']='offscreen';"
+        "import shiboken6;"
+        "from fxgui.fxwidgets import FXApplication;"
+        "shiboken6.delete(FXApplication());"
+        "assert FXApplication().styleSheet();"
+        "print('ok')"
+    )

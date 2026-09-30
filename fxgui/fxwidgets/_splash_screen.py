@@ -5,7 +5,7 @@ import os
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import Qt, QRect, QTimer, Slot
+from qtpy.QtCore import QPropertyAnimation, QRect, Qt
 from qtpy.QtGui import (
     QBitmap,
     QColor,
@@ -31,6 +31,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxconstants, fxstyle, fxutils
+from fxgui.fxwidgets._application import FXApplication
 from fxgui.fxwidgets._labels import FXElidedLabel
 
 
@@ -51,6 +52,10 @@ class _FXBorderWidget(QWidget):
         self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
 
+    def color(self) -> QColor:
+        """Return the border color: the given one, else the theme's."""
+        return QColor(self.border_color or fxstyle.colors().border_light)
+
     def paintEvent(self, event) -> None:
         if self.border_width <= 0:
             return
@@ -58,7 +63,7 @@ class _FXBorderWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
 
-        pen = QPen(QColor(self.border_color))
+        pen = QPen(self.color())
         pen.setWidthF(self.border_width)
         pen.setJoinStyle(Qt.RoundJoin)
         pen.setCapStyle(Qt.RoundCap)
@@ -80,8 +85,11 @@ class _FXBorderWidget(QWidget):
         painter.end()
 
 
-class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
-    """Customized QSplashScreen class."""
+class FXSplashScreen(QSplashScreen):
+    """Customized QSplashScreen class.
+
+    A `border_color` of `None` draws the theme's `border_light`.
+    """
 
     ICON_HEIGHT = 32
     IDEAL_WIDTH = 800
@@ -112,16 +120,16 @@ class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
         self._default_icon = str(fxconstants.FAVICON_LIGHT)
         self.icon: QIcon = QIcon(icon) if icon else QIcon(self._default_icon)
         self.title: str = title or "Untitled"
-        self.information: str = information or self._default_information()
+        self.information: str = information or ""
         self.show_progress_bar: bool = show_progress_bar
         self.project: str = project or "Project"
         self.version: str = version or "0.0.0"
-        self.company: str = company or "Company"
+        self.company: str = company or "\u00a9 Company"
         self.fade_in: bool = fade_in
         self.overlay_opacity: float = overlay_opacity
         self.corner_radius: int = corner_radius
         self.border_width: int = border_width
-        self.border_color: str = border_color  # Will use theme default if None
+        self.border_color: Optional[str] = border_color
 
         # Enable transparency for smooth anti-aliased corners
         # Both flags are required for truly transparent rounded corners
@@ -134,51 +142,24 @@ class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
         self._grey_overlay()
         self._create_border_overlay()
 
-        # Styling - load_stylesheet() automatically uses the saved theme
-        if set_stylesheet:
-            self.setStyleSheet(fxstyle.load_stylesheet())
+        # A top-level splash under a DCC host gets no application sheet.
+        if set_stylesheet and not isinstance(
+            QApplication.instance(), FXApplication
+        ):
+            fxstyle.register_themed_root(self)
 
-        # Apply overlay opacity after stylesheet to ensure it's not overridden
-        self._apply_overlay_opacity()
-
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        # Update overlay background color
-        if hasattr(self, "overlay_frame"):
-            self._apply_overlay_opacity()
-
-        # Update border color if using theme default (no explicit color set)
-        if self.border_color is None:
-            if hasattr(self, "_border_widget"):
-                self._border_widget.border_color = self.theme.border_light
-                self._border_widget.update()
+        # The overlay's translucent surface cannot be a QSS token.
+        fxstyle.theme_changed.connect(self._apply_overlay_opacity)
 
     # Private methods
     def _load_image(self, image_path: Optional[str]) -> QPixmap:
         if image_path is None:
             image_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)), "images", "snap.png"
+                os.path.dirname(os.path.dirname(__file__)), "images", "splash.png"
             )
         elif not os.path.isfile(image_path):
             raise ValueError(f"Invalid image path: {image_path}")
         return self._resize_image(image_path)
-
-    def _default_information(self) -> str:
-        return (
-            "At vero eos et accusamus et iusto odio dignissimos ducimus qui "
-            "blanditiis praesentium voluptatum deleniti atque corrupti quos "
-            "dolores et quas molestias excepturi sint occaecati cupiditate non "
-            "provident, similique sunt in culpa qui officia deserunt mollitia "
-            "animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis "
-            "est et expedita distinctio. Nam libero tempore, cum soluta nobis est "
-            "eligendi optio cumque nihil impedit quo minus id quod maxime placeat "
-            "facere possimus, omnis voluptas assumenda est, omnis dolor "
-            "repellendus. Temporibus autem quibusdam et aut officiis debitis aut "
-            "rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint "
-            "et molestiae non recusandae. Itaque earum rerum hic tenetur a "
-            "sapiente delectus, ut aut reiciendis voluptatibus maiores alias "
-            "consequatur aut perferendis doloribus asperiores repellat."
-        )
 
     def _resize_image(self, image_path: str) -> QPixmap:
         pixmap = QPixmap(image_path)
@@ -190,12 +171,12 @@ class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
 
         if aspect > ideal_aspect:
             new_width = int(ideal_aspect * height)
-            offset = (width - new_width) / 2
+            offset = (width - new_width) // 2
             crop_rect = QRect(offset, 0, new_width, height)
         else:
             new_height = int(width / ideal_aspect)
-            offset = (height - new_height) / 2
-            crop_rect = QRect(0, int(offset), width, new_height)
+            offset = (height - new_height) // 2
+            crop_rect = QRect(0, offset, width, new_height)
 
         cropped_pixmap = pixmap.copy(crop_rect)
         resized_pixmap = cropped_pixmap.scaled(
@@ -270,9 +251,8 @@ class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
         )
 
         # Copyright QLabel
-        self.copyright_label = QLabel(
-            f"{self.project} | {self.version} | {self.company}"
-        )
+        self.copyright_label = QLabel()
+        self._update_copyright_label()
         self.copyright_label.setStyleSheet(
             "font-size: 8pt; qproperty-alignment: AlignBottom;"
         )
@@ -293,12 +273,10 @@ class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
     def _create_border_overlay(self) -> None:
         """Create a transparent overlay widget that draws the border on top."""
 
-        # Use theme color if no explicit border color was provided
-        border_color = self.border_color or self.theme.border_light
         self._border_widget = _FXBorderWidget(
             self,
             self.border_width,
-            border_color,
+            self.border_color,
             self.corner_radius,
         )
         self._border_widget.setGeometry(self.rect())
@@ -308,38 +286,24 @@ class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
         """Update the border overlay with current settings."""
 
         if hasattr(self, "_border_widget"):
-            # Use theme color if no explicit border color was provided
-            border_color = self.border_color or self.theme.border_light
             self._border_widget.border_width = self.border_width
-            self._border_widget.border_color = border_color
+            self._border_widget.border_color = self.border_color
             self._border_widget.corner_radius = self.corner_radius
             self._border_widget.setGeometry(self.rect())
             self._border_widget.update()
 
     def _update_copyright_label(self) -> None:
-        project = self.project or "Project"
-        version = self.version or "0.0.0"
-        company = self.company or "\u00a9 Company"
-        self.copyright_label.setText(f"{project} | {version} | {company}")
+        self.copyright_label.setText(
+            f"{self.project} | {self.version} | {self.company}"
+        )
 
     def _fade_in(self) -> None:
-        opaqueness = 0.0
-        step = 0.001
-        self.setWindowOpacity(opaqueness)
-        self.show()
-
-        @Slot()
-        def update_opacity():
-            nonlocal opaqueness
-            if opaqueness < 1:
-                self.setWindowOpacity(opaqueness)
-                opaqueness += step * 100
-            else:
-                self.fade_timer.stop()
-
-        self.fade_timer = QTimer(self)
-        self.fade_timer.timeout.connect(update_opacity)
-        self.fade_timer.start(100)
+        """Animate the window from transparent to opaque over one second."""
+        self._fade = QPropertyAnimation(self, b"windowOpacity", self)
+        self._fade.setDuration(1000)
+        self._fade.setStartValue(0.0)
+        self._fade.setEndValue(1.0)
+        self._fade.start()
 
     # Public methods
     def set_progress(self, value: int, max_range: int = 100):
@@ -456,7 +420,7 @@ class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
         self.overlay_opacity = max(0.0, min(1.0, opacity))
         self._apply_overlay_opacity()
 
-    def _apply_overlay_opacity(self) -> None:
+    def _apply_overlay_opacity(self, _theme_name: Optional[str] = None) -> None:
         """Apply the overlay opacity to the frame's background color.
 
         Uses theme-aware surface color for the overlay background.
@@ -465,7 +429,7 @@ class FXSplashScreen(fxstyle.FXThemeAware, QSplashScreen):
         alpha = int(self.overlay_opacity * 255)
 
         # Get theme-aware surface color
-        surface_color = QColor(self.theme.surface)
+        surface_color = QColor(fxstyle.colors().surface)
 
         # Set the frame background with opacity, and ensure all child QLabel
         # widgets have transparent backgrounds so they don't show through

@@ -14,6 +14,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QWidget
 
 # Internal
+from fxgui import _compat
 from fxgui.fxwidgets import FXNotificationBanner
 from fxgui.fxwidgets._constants import ERROR
 
@@ -42,7 +43,7 @@ def test_actions_run_their_callback_then_close_the_banner(qtbot):
     banner._action_buttons[0].click()
 
     assert answered == ["Retry"]
-    qtbot.waitUntil(lambda: not banner.isVisible(), timeout=3000)
+    qtbot.waitUntil(lambda: not _compat.is_valid(banner), timeout=3000)
 
 
 def test_actions_cancel_the_auto_dismiss(qtbot):
@@ -99,7 +100,7 @@ def test_a_plain_banner_grows_no_action_row(qtbot):
 
 
 def test_action_buttons_are_clickable_looking(qtbot):
-    """The pointer says the banner can be answered."""
+    """The pointer says the banner can be answered; the first one leads."""
     parent = _host(qtbot)
     banner = FXNotificationBanner(
         parent=parent,
@@ -109,4 +110,7 @@ def test_action_buttons_are_clickable_looking(qtbot):
 
     button = banner._action_buttons[0]
     assert button.cursor().shape() == Qt.PointingHandCursor
-    assert button.styleSheet()  # Styled, not a bare platform button
+    # The theme sheet styles it by these, not a bare platform button.
+    assert button.objectName() == "fxBannerAction"
+    assert button.property("primary") is True
+    assert banner.add_action("Later").property("primary") is False

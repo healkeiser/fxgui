@@ -7,7 +7,7 @@ Regressions:
 """
 
 # Third-party
-from qtpy.QtWidgets import QApplication, QWidget
+from qtpy.QtWidgets import QWidget
 
 # Internal
 from fxgui.fxwidgets import FXMainWindow
