@@ -29,7 +29,40 @@ from fxgui.fxwidgets._constants import (
 )
 
 
-class FXProgressCard(fxstyle.FXThemeAware, QFrame):
+fxstyle.register_widget_style(
+    """
+    FXProgressCard {
+        background-color: @surface;
+        border: 1px solid @border;
+        border-radius: 8px;
+    }
+    FXProgressCard QLabel {
+        background: transparent;
+    }
+    FXProgressCard QLabel#fxProgressCardTitle {
+        color: @text;
+        font-weight: bold;
+        font-size: 14px;
+    }
+    FXProgressCard QLabel#fxProgressCardDescription,
+    FXProgressCard QLabel#fxProgressCardPercentage {
+        color: @text_muted;
+        font-size: 12px;
+    }
+    FXProgressCard QProgressBar {
+        background-color: @surface_sunken;
+        border: none;
+        border-radius: 3px;
+    }
+    FXProgressCard QProgressBar::chunk {
+        background-color: @accent_primary;
+        border-radius: 2px;
+    }
+    """
+)
+
+
+class FXProgressCard(QFrame):
     """A card widget showing task/step progress.
 
     This widget provides a styled card with:
@@ -108,12 +141,12 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
         # Task icon
         self._icon_label = QLabel()
         self._icon_label.setFixedSize(20, 20)
-        self._icon_label.setStyleSheet("background: transparent;")
         if icon:
             header_layout.addWidget(self._icon_label)
 
         # Title
         self._title_label = QLabel(title)
+        self._title_label.setObjectName("fxProgressCardTitle")
         header_layout.addWidget(self._title_label)
 
         header_layout.addStretch()
@@ -121,18 +154,16 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
         # Status icon
         self._status_icon = QLabel()
         self._status_icon.setFixedSize(20, 20)
-        self._status_icon.setStyleSheet("background: transparent;")
-        self._update_status_icon()
         header_layout.addWidget(self._status_icon)
 
         main_layout.addLayout(header_layout)
 
         # Description
-        self._description_label = None
-        if description:
-            self._description_label = QLabel(description)
-            self._description_label.setWordWrap(True)
-            main_layout.addWidget(self._description_label)
+        self._description_label = QLabel(description or "")
+        self._description_label.setObjectName("fxProgressCardDescription")
+        self._description_label.setWordWrap(True)
+        self._description_label.setVisible(bool(description))
+        main_layout.addWidget(self._description_label)
 
         # Progress row
         progress_layout = QHBoxLayout()
@@ -150,6 +181,7 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
         self._percentage_label = None
         if show_percentage:
             self._percentage_label = QLabel(f"{progress}%")
+            self._percentage_label.setObjectName("fxProgressCardPercentage")
             self._percentage_label.setFixedWidth(40)
             self._percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             progress_layout.addWidget(self._percentage_label)
@@ -165,78 +197,16 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        # Frame styling
-        self.setStyleSheet(
-            f"""
-            FXProgressCard {{
-                background-color: {self.theme.surface};
-                border: 1px solid {self.theme.border};
-                border-radius: 8px;
-            }}
-        """
-        )
+        self._update_icons()
+        fxstyle.theme_changed.connect(self._update_icons)
 
-        # Task icon
+    def _update_icons(self, _theme_name: Optional[str] = None) -> None:
+        """Re-render the icon pixmaps in the current theme's colors."""
         if self._icon:
             task_icon = fxicons.get_icon(
-                self._icon, color=self.theme.text_muted
+                self._icon, color=fxstyle.colors().text_muted
             )
             self._icon_label.setPixmap(task_icon.pixmap(18, 18))
-
-        # Title label
-        self._title_label.setStyleSheet(
-            f"""
-            QLabel {{
-                color: {self.theme.text};
-                font-weight: bold;
-                font-size: 14px;
-                background: transparent;
-            }}
-        """
-        )
-
-        # Description label
-        if self._description_label:
-            self._description_label.setStyleSheet(
-                f"""
-                QLabel {{
-                    color: {self.theme.text_muted};
-                    font-size: 12px;
-                    background: transparent;
-                }}
-            """
-            )
-
-        # Progress bar
-        self._progress_bar.setStyleSheet(
-            f"""
-            QProgressBar {{
-                background-color: {self.theme.surface_sunken};
-                border: none;
-                border-radius: 3px;
-            }}
-            QProgressBar::chunk {{
-                background-color: {self.theme.accent_primary};
-                border-radius: 2px;
-            }}
-        """
-        )
-
-        # Percentage label
-        if self._percentage_label:
-            self._percentage_label.setStyleSheet(
-                f"""
-                QLabel {{
-                    color: {self.theme.text_muted};
-                    font-size: 12px;
-                    background: transparent;
-                }}
-            """
-            )
-
-        # Update status icon
         self._update_status_icon()
 
     @property
@@ -282,8 +252,8 @@ class FXProgressCard(fxstyle.FXThemeAware, QFrame):
             description: The new description.
         """
         self._description = description
-        if hasattr(self, "_description_label"):
-            self._description_label.setText(description)
+        self._description_label.setText(description or "")
+        self._description_label.setVisible(bool(description))
 
     def set_status(self, status: Optional[int]) -> None:
         """Set the status icon.
