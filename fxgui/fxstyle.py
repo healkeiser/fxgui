@@ -177,6 +177,7 @@ from qtpy.QtGui import (
     QGuiApplication,
     QIcon,
     QPainter,
+    QPalette,
     QTransform,
 )
 from qtpy.QtWidgets import (
@@ -490,6 +491,7 @@ __all__ = [
     "set_default_theme",
     "get_default_theme",
     "register_themed_root",
+    "palette",
     # Utility functions
     "get_luminance",
     "get_contrast_text_color",
@@ -674,7 +676,6 @@ def _colors_changed() -> None:
     global _standard_icon_map
     _standard_icon_map = None
     _invalidate_theme_namespace()
-    fxicons.sync_colors_with_theme()
     _reapply_to_roots()
     theme_manager.notify_theme_changed(get_theme())
 
@@ -1795,7 +1796,6 @@ def apply_theme(*args, widget: Optional[QWidget] = None, theme: Optional[str] = 
     _theme = theme
     _invalidate_theme_namespace()
     save_theme(theme)
-    fxicons.sync_colors_with_theme()
     invalidate_standard_icon_map()
     _reapply_to_roots()
     theme_manager.notify_theme_changed(theme)
@@ -2108,20 +2108,80 @@ def register_themed_root(root: QObject) -> None:
         root: Any object with ``setStyleSheet`` (QWidget or QApplication).
     """
     _ensure_theme_loaded()
-    fxicons.sync_colors_with_theme()
     _themed_roots.add(root)
+    root.setPalette(palette())
     root.setStyleSheet(build_stylesheet())
 
 
 def _reapply_to_roots() -> None:
-    """Re-apply the current theme sheet to all live registered roots."""
+    """Re-apply the current theme palette and sheet to all live roots."""
     if not _themed_roots:
         return
     sheet = build_stylesheet()
+    theme_palette = palette()
     for root in list(_themed_roots):
         if not _compat.is_valid(root):
             continue
+        root.setPalette(theme_palette)
         root.setStyleSheet(sheet)
+
+
+# Palette role -> token, for every colour group; then the Disabled group.
+_PALETTE_ROLES = {
+    "Window": "surface",
+    "WindowText": "text",
+    "Base": "surface_sunken",
+    "AlternateBase": "surface_alt",
+    "Text": "text",
+    "Button": "surface",
+    "ButtonText": "text",
+    "BrightText": "text_on_accent_primary",
+    "Highlight": "accent_primary",
+    "HighlightedText": "text_on_accent_primary",
+    "ToolTipBase": "tooltip",
+    "ToolTipText": "text",
+    "PlaceholderText": "text_muted",
+    "Link": "accent_primary",
+    "LinkVisited": "accent_secondary",
+    "Accent": "accent_primary",
+}
+_DISABLED_ROLES = {
+    "WindowText": "text_disabled",
+    "Text": "text_disabled",
+    "ButtonText": "text_disabled",
+    "PlaceholderText": "text_disabled",
+    "HighlightedText": "text_disabled",
+}
+
+
+def palette(theme: Optional[str] = None) -> QPalette:
+    """Build a QPalette from a theme's resolved colours.
+
+    Roles a binding lacks (``Accent`` before Qt 6.6) are skipped.
+
+    Args:
+        theme: Theme name. Defaults to the current theme.
+
+    Returns:
+        The palette every themed root wears alongside the sheet.
+    """
+    if theme is None or theme == get_theme():
+        tokens = vars(_get_theme_namespace())
+    else:
+        tokens = {
+            name[1:]: value for name, value in _token_map(theme).items()
+            if name.startswith("@")
+        }
+    result = QPalette()
+    for roles, group in (
+        (_PALETTE_ROLES, QPalette.All),
+        (_DISABLED_ROLES, QPalette.Disabled),
+    ):
+        for role_name, token in roles.items():
+            role = getattr(QPalette, role_name, None)
+            if role is not None:
+                result.setColor(group, role, QColor(tokens[token]))
+    return result
 
 
 def load_stylesheet(

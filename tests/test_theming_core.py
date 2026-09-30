@@ -44,12 +44,10 @@ def _yaml(tmp_path, text):
 def test_load_stylesheet_leaves_the_current_theme_alone(qapp, monkeypatch):
     fxstyle.save_theme("dark")
     fxstyle._theme = "light"
-    synced = _count_calls(monkeypatch, fxicons, "sync_colors_with_theme")
 
     sheet = fxstyle.load_stylesheet()
 
     assert fxstyle.get_theme() == "light"
-    assert synced == []
     assert fxstyle.get_colors()["themes"]["light"]["surface"] in sheet
 
 
