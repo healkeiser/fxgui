@@ -687,15 +687,11 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             return self.menu_bar
         self.menu_bar = self.menuBar()
         if self.title_corner is not None:
-            corner = self.menu_bar.cornerWidget(Qt.TopRightCorner)
-            if corner is None and _compat.is_valid(self.title_corner):
-                # A new bar: the corner moves to it, as `_frame_chrome` set.
-                self.menu_bar.setCornerWidget(
-                    self.title_corner, Qt.TopRightCorner)
+            # setMenuBar moves the corner to a new bar; frame that bar too.
+            self.title_corner = self.menu_bar.cornerWidget(Qt.TopRightCorner)
+            if self.title_corner is not None:
                 self.menu_bar.installEventFilter(self)
                 fxstyle.mark_as_frame(self.menu_bar)
-            else:
-                self.title_corner = corner
         return self.menu_bar
 
     def _fit_title_corner(self) -> None:

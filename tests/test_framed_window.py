@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLabel,
+    QMenuBar,
     QRadioButton,
     QToolButton,
     QWidget,
@@ -317,3 +318,26 @@ def test_a_theme_switch_survives_a_dropped_menu_bar_wrapper(qtbot):
     assert window.menu_bar is window.menuBar()
     assert window.menu_bar.cornerWidget() is window.title_corner
     assert window.title_corner.height() == window.menu_bar.height()
+
+
+def test_a_new_menu_bar_takes_the_corner_on_a_theme_switch(qtbot):
+    window = _window(qtbot)
+    corner = window.title_corner
+    bar = QMenuBar()
+    bar.addMenu("File")
+    window.setMenuBar(bar)
+
+    with qtbot.captureExceptions() as raised:
+        fxstyle.apply_theme("github_light")
+        qtbot.wait(50)
+
+    assert not raised, raised
+    assert window.menu_bar is bar
+    assert window.title_corner is corner
+    assert bar.cornerWidget() is corner
+    assert corner.parentWidget() is bar
+    assert corner.height() == bar.height()
+    assert bar.property(fxstyle.FRAME_PROPERTY) is True
+    # The corner keeps fitting the new bar as it resizes.
+    bar.resize(bar.width(), bar.height() + 10)
+    assert corner.height() == bar.height()
