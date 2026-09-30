@@ -476,18 +476,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     # Mapping[str, str]: a choice listed but not pickable, to its reason.
     PICKER_UNAVAILABLE_ROLE = Qt.UserRole + 15
 
-    # The first item-data role this delegate does NOT claim. Derive your
-    # own roles from it rather than guessing a margin past the roles
-    # above: two studio repositories have now each picked a safe-looking
-    # offset by hand, and one of them picked +10 first and collided with
-    # `CHILD_COUNT_VISIBLE_ROLE`, which showed up as a child count
-    # appearing on rows that had no children.
-    #
-    #   MY_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE
-    #   MY_OTHER_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 1
-    #
-    # Roles added to this delegate go BELOW this line and move it up, so
-    # a consumer that derived from it is moved along with it.
+    # The first item-data role this delegate does not claim. Derive your
+    # own roles from it; roles added here go below and move it up.
     FIRST_FREE_ROLE = Qt.UserRole + 16
 
     #: A viewer chose a value from a row's picker. The delegate writes
@@ -904,6 +894,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             return QColor(value)
         return QColor()
 
+    @staticmethod
+    def _text_color(option: QStyleOptionViewItem) -> QColor:
+        """Return the palette's text color for the row's selection state."""
+        if option.state & QStyle.State_Selected:
+            return option.palette.highlightedText().color()
+        return option.palette.text().color()
+
     def _title_font(self, option: QStyleOptionViewItem) -> QFont:
         """Return the font the title is painted with.
 
@@ -983,8 +980,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         under it.
 
         Measured from the rect's exclusive right edge, not `QRect.right()`,
-        which is one pixel inside it. Mixing the two is what made `sizeHint`
-        reserve a pixel less than the paint path needed.
+        which is one pixel inside it.
 
         Args:
             option: The style options for the item.
@@ -1491,6 +1487,31 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         return is_first_column, is_last_column
 
+    @staticmethod
+    def _row_outline(
+        rect_f: QRectF,
+        radius: float,
+        is_first_column: bool,
+        is_last_column: bool,
+    ) -> QPainterPath:
+        """Return the row's rounded outline, run past the cell's inner edges.
+
+        A cell sits between the row's ends, so its share of the row's rounded
+        rectangle is this outline cut at the cell: only the ends it touches
+        get their corners.
+        """
+
+        reach = radius + 2
+        outline = QRectF(rect_f).adjusted(
+            0 if is_first_column else -reach,
+            0,
+            0 if is_last_column else reach,
+            0,
+        )
+        path = QPainterPath()
+        path.addRoundedRect(outline, radius, radius)
+        return path
+
     def _create_rounded_path(
         self,
         rect_f: QRectF,
@@ -1498,79 +1519,16 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         is_first_column: bool,
         is_last_column: bool,
     ) -> QPainterPath:
-        """Create a QPainterPath for a rounded rectangle based on column position.
+        """Return one cell's closed share of the row's rounded rectangle.
 
-        Args:
-            rect_f: The rectangle to create the path for.
-            radius: The corner radius.
-            is_first_column: Whether this is the first column.
-            is_last_column: Whether this is the last column.
-
-        Returns:
-            A QPainterPath with appropriate rounded corners.
+        Stroked, its inner edges are the column separators.
         """
 
-        path = QPainterPath()
-
-        if is_first_column and is_last_column:
-            # Single column - all corners rounded
-            path.addRoundedRect(rect_f, radius, radius)
-        elif is_first_column:
-            # First column - left corners rounded
-            path.moveTo(rect_f.topRight())
-            path.lineTo(rect_f.topLeft() + QRectF(radius, 0, 0, 0).topLeft())
-            path.arcTo(
-                QRectF(rect_f.left(), rect_f.top(), radius * 2, radius * 2),
-                90,
-                90,
-            )
-            path.lineTo(rect_f.bottomLeft() - QRectF(0, radius, 0, 0).topLeft())
-            path.arcTo(
-                QRectF(
-                    rect_f.left(),
-                    rect_f.bottom() - radius * 2,
-                    radius * 2,
-                    radius * 2,
-                ),
-                180,
-                90,
-            )
-            path.lineTo(rect_f.bottomRight())
-            path.lineTo(rect_f.topRight())
-        elif is_last_column:
-            # Last column - right corners rounded
-            path.moveTo(rect_f.topLeft())
-            path.lineTo(rect_f.topRight() - QRectF(radius, 0, 0, 0).topLeft())
-            path.arcTo(
-                QRectF(
-                    rect_f.right() - radius * 2,
-                    rect_f.top(),
-                    radius * 2,
-                    radius * 2,
-                ),
-                90,
-                -90,
-            )
-            path.lineTo(
-                rect_f.bottomRight() - QRectF(0, radius, 0, 0).topLeft()
-            )
-            path.arcTo(
-                QRectF(
-                    rect_f.right() - radius * 2,
-                    rect_f.bottom() - radius * 2,
-                    radius * 2,
-                    radius * 2,
-                ),
-                0,
-                -90,
-            )
-            path.lineTo(rect_f.bottomLeft())
-            path.lineTo(rect_f.topLeft())
-        else:
-            # Middle column - no rounded corners
-            path.addRect(rect_f)
-
-        return path
+        cell = QPainterPath()
+        cell.addRect(rect_f)
+        return self._row_outline(
+            rect_f, radius, is_first_column, is_last_column
+        ).intersected(cell)
 
     def _get_custom_background(
         self, index: QModelIndex, col0_index: Optional[QModelIndex] = None
@@ -1735,19 +1693,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         )
 
         painter.fillPath(path, QBrush(fill_color))
-        # And stroke it, so the row's own 1px border does not stay
-        # visible around the fill. `_draw_background_and_border` draws
-        # that border along this same path in `bg_color.lighter(160)`,
-        # and a fill alone covers only the path's interior -- measured
-        # on a 30px row, the selection reached y+1..y+28 and left the
-        # card's border showing top and bottom. Most visible where the
-        # row carries a check box, which is what it reads as a border
-        # on: the box appeared to be outlined by the unselected colour.
-        # Width 2, not 1: a pen straddles the path, so a 1px stroke
-        # puts only half a pixel outside it and the border shows
-        # through as a blend -- measured, the row's top and bottom came
-        # back `#4a7398` against a `#61afef` fill. Two covers the
-        # border's pixel outright.
+        # Stroke too, 2px wide: a 1px pen straddles the path and leaves the
+        # row's own border showing through as a blend
         painter.setPen(QPen(fill_color, 2))
         painter.drawPath(path)
         painter.restore()
@@ -1789,62 +1736,6 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             and current.parent() == index.parent()
         )
 
-    def _create_focus_path(
-        self,
-        rect_f: QRectF,
-        radius: float,
-        is_first_column: bool,
-        is_last_column: bool,
-    ) -> QPainterPath:
-        """Create the stroke path for a row's focus ring.
-
-        The ring belongs to the row, but a delegate is handed one cell at a
-        time, so each cell contributes its own segment: the top and bottom
-        edges always, and the outer vertical edge only where the row actually
-        ends. Stroking a closed rectangle per cell would instead draw a line
-        down every column boundary.
-
-        Args:
-            rect_f: The cell rectangle to stroke, already inset for the pen.
-            radius: The corner radius, matching the selection fill.
-            is_first_column: Whether this cell is in the first column.
-            is_last_column: Whether this cell is in the last column.
-
-        Returns:
-            A path covering this cell's share of the row's outline.
-        """
-
-        if is_first_column and is_last_column:
-            path = QPainterPath()
-            path.addRoundedRect(rect_f, radius, radius)
-            return path
-
-        if is_first_column or is_last_column:
-            # The closed per-column paths already round the outer corners in
-            # the right places; the segment to drop is the one they close
-            # with, which is the inner vertical edge
-            path = self._create_rounded_path(
-                rect_f, radius, is_first_column, is_last_column
-            )
-            elements = [path.elementAt(i) for i in range(path.elementCount())]
-            open_path = QPainterPath()
-            for element in elements[:-1]:
-                if element.isMoveTo():
-                    open_path.moveTo(element.x, element.y)
-                elif element.isLineTo():
-                    open_path.lineTo(element.x, element.y)
-                else:
-                    open_path.lineTo(element.x, element.y)
-            return open_path
-
-        # Middle column: the two horizontal edges and nothing else
-        path = QPainterPath()
-        path.moveTo(rect_f.topLeft())
-        path.lineTo(rect_f.topRight())
-        path.moveTo(rect_f.bottomLeft())
-        path.lineTo(rect_f.bottomRight())
-        return path
-
     def _draw_focus_indicator(
         self,
         painter: QPainter,
@@ -1876,17 +1767,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         if not self._is_focus_row(option, index):
             return
 
-        # A selected row needs no ring: the accent fill already marks it
-        # unmistakably, and outlining it in `text_on_accent_primary` --
-        # a dark colour, because the accent it is meant to carry text on
-        # is light -- drew a 1px black line inside the row. Measured on
-        # the current row of a focused tree: `#282c34` against a
-        # `#61afef` fill, and gone the moment the window lost focus,
-        # which is how it was reported.
-        #
-        # The ring still earns its place on an unselected current row --
-        # a keyboard moved without selecting, which is the case it was
-        # added for -- and there it is drawn in the accent.
+        # A selected row needs no ring: the accent fill already marks it,
+        # and `text_on_accent_primary` is dark on a light accent
         if option.state & QStyle.State_Selected:
             return
 
@@ -1905,9 +1787,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         # A 1px pen straddles the coordinate it is given, so the rect is
         # pulled in by half a pixel to land the stroke inside the row
         inset = QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5)
-        path = self._create_focus_path(
-            inset, 4, is_first_column, is_last_column
-        )
+        path = self._row_outline(inset, 4, is_first_column, is_last_column)
+        painter.setClipRect(rect, Qt.IntersectClip)
 
         pen = QPen(ring_color)
         pen.setWidth(1)
@@ -2231,11 +2112,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         description_metrics = QFontMetrics(description_font)
         title_height = title_metrics.height()
 
-        # Set text color
-        if option.state & QStyle.State_Selected:
-            text_color = option.palette.highlightedText().color()
-        else:
-            text_color = option.palette.text().color()
+        text_color = self._text_color(option)
 
         painter.setPen(text_color)
 
@@ -2346,10 +2223,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     def editorEvent(self, event, model, option, index) -> bool:
         """Open a row's picker on a click inside its pill.
 
-        Everything else falls through to the base class, which is what
-        makes the painted check box a click toggles: this class had no
-        `editorEvent` before the picker, and the box depends on the
-        base's.
+        Everything else goes to the base class, which toggles the painted
+        check box.
         """
         if event.type() == QEvent.Type.MouseButtonRelease:
             rect = self._picker_rect(option, index)
@@ -2387,11 +2262,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             action.setCheckable(True)
             action.setChecked(str(choice) == current)
             action.setEnabled(not reason)
-        # `exec_` first: on this binding, `exec` resolves to the real
-        # C++ method on the instance even after a test replaces it on
-        # the class, so preferring it here would make the popup
-        # unpatchable. `exec_` is absent only on bindings (PyQt6) that
-        # dropped it, where `exec` is the sole and real name anyway.
+        # `exec_` first: `exec` is unpatchable on PySide; PyQt6 has only `exec`
         runner = getattr(menu, "exec_", None) or menu.exec
         chosen = runner(anchor)
         text = chosen.text() if chosen is not None else None
@@ -2421,24 +2292,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     ) -> None:
         """Paint a tickable row's check box in the delegate's own palette.
 
-        Drawn here rather than through the style's own
-        `PE_IndicatorItemViewItemCheck`, which was the first version of
-        this and looked wrong for two reasons. It fills a solid box in
-        the palette's Base colour, so on a row this delegate has already
-        painted a selection over, the box reads as a dark bar cut into
-        the highlight. And on Windows the native check glyph is drawn in
-        the OS accent colour, so a tick came out in whatever the artist
-        set their system accent to -- orange on a machine that had never
-        chosen it in this application -- rather than in the theme's own.
-        A flat box in the delegate's tokens answers both: it sits on the
-        selection instead of cutting a hole in it, and its colour is the
-        theme's rather than the desktop's.
-
-        The whole appearance is the delegate's, which is the same bargain
-        the rest of column 0 already strikes: a themed
-        `QTreeView::indicator` stylesheet rule no longer reaches it, and
-        in exchange the box matches the card, the border and the
-        selection this delegate draws around it.
+        Not the style's `PE_IndicatorItemViewItemCheck`: that fills a solid
+        Base-coloured box over the selection, and on Windows ticks in the
+        OS accent colour. A `QTreeView::indicator` rule does not reach it.
 
         Args:
             painter: The painter to use.
@@ -2531,11 +2387,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         icon_size = self._ICON_SIZE
         icon_margin = self._ICON_MARGIN
 
-        # Determine text color based on selection state
-        if option.state & QStyle.State_Selected:
-            text_color = option.palette.highlightedText().color()
-        else:
-            text_color = option.palette.text().color()
+        text_color = self._text_color(option)
 
         if icon is not None and not icon.isNull():
             icon_x = option.rect.left() + icon_margin
@@ -2618,8 +2470,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         icon = index.data(Qt.DecorationRole)
         text = index.data(Qt.DisplayRole)
 
-        icon_size = 16
-        icon_margin = 6
+        icon_size = self._ICON_SIZE
+        icon_margin = self._ICON_MARGIN
         text_x = option.rect.left() + icon_margin
 
         # Draw icon if present
@@ -2632,11 +2484,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         # Draw text
         if text:
-            if option.state & QStyle.State_Selected:
-                text_color = option.palette.highlightedText().color()
-            else:
-                text_color = option.palette.text().color()
-            painter.setPen(text_color)
+            painter.setPen(self._text_color(option))
             painter.setFont(option.font)
             alignment = Qt.AlignLeft | Qt.AlignVCenter
             right_inset = icon_margin
@@ -2724,12 +2572,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         col0_index = index if is_col0 else index.sibling(index.row(), 0)
 
         # Check if ANY column in this row has a thumbnail
-        # Respect both the delegate's show_thumbnail property and item's role
-        has_thumbnail = False
-        item_show_thumbnail = None
-        if index.model() and self._show_thumbnail:
-            item_show_thumbnail = col0_index.data(self.THUMBNAIL_VISIBLE_ROLE)
-            has_thumbnail = item_show_thumbnail is None or item_show_thumbnail
+        has_thumbnail = bool(index.model()) and self._has_thumbnail(
+            index, col0_index
+        )
 
         # Check if the item has a description (needs more height)
         description = (
@@ -2762,9 +2607,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                 fixed_height,
             )
 
-        show_thumbnail = self._show_thumbnail and (
-            item_show_thumbnail is None or item_show_thumbnail
-        )
+        show_thumbnail = has_thumbnail
 
         # Everything left of the text, from the same helper the paint path
         # uses: the thumbnail and its gutter, or the decoration icon
@@ -2912,15 +2755,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                     self._has_icon(index),
                 )
 
-            # Draw child count badge
-            if self._show_child_count:
-                item_show_count = index.data(self.CHILD_COUNT_VISIBLE_ROLE)
-                if item_show_count is not False:
-                    child_count = index.model().rowCount(index)
-                    if child_count > 0:
-                        self._draw_child_count(
-                            painter, opt.rect, child_count, opt
-                        )
+            if self._child_count_width(index, opt):
+                self._draw_child_count(
+                    painter, opt.rect, index.model().rowCount(index), opt
+                )
         else:
             picker = self._picker_rect(opt, index)
             if picker is None:
