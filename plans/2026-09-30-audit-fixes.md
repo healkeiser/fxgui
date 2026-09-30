@@ -175,6 +175,9 @@ leave `FXThemeAware`.
 - One gallery: per-module `example()` blocks and `fxgui/ui/` deleted,
   `examples.py` covers every widget; `CLAUDE.md` and docs describe the
   pull-model contract.
+- Move-over: every generic fix, workaround or widget that lives in
+  ls-pipeline but belongs in fxgui moves into fxgui (inventory first),
+  with its tests; ls-pipeline deletes its copy after the pin bump.
 - Owner rule: wrong, costly or too complicated all require a change. After
   the merge, one whole-repo complexity audit (duplication, dead
   flexibility, hand-rolled Qt/stdlib) over the merged tree; every finding
