@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from webbrowser import open_new_tab
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject, QRect, QSize, Qt
+from qtpy.QtCore import QEvent, QObject, QSize, Qt
 from qtpy.QtGui import QAction, QIcon
 from qtpy.QtWidgets import (
     QActionGroup,
@@ -23,14 +23,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from qtpy import QT_VERSION
-
-QT_VERSION_MAJOR = int(QT_VERSION.split(".")[0])
-if QT_VERSION_MAJOR >= 6:
-    from qtpy.QtGui import QScreen
-else:
-    from qtpy.QtWidgets import QDesktopWidget
 
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._tooltip import FXTooltipManager
@@ -245,20 +237,16 @@ class FXMainWindow(QMainWindow):
 
         Grow-only, so a larger requested size stays, and once, so a window
         dragged smaller is not pushed back out. Bounded by the screen the
-        window is on; `QWidget.screen()` needs Qt 5.14, hence the guard.
+        window is on, read from its `QWindow`, which every Qt 5 and 6 has;
+        `QWidget.screen()` needs Qt 5.14.
         """
         super().showEvent(event)
         if not self._fit_to_contents or self._fitted:
             return
         self._fitted = True
-        wanted = self.sizeHint()
-        if QT_VERSION_MAJOR >= 6:
-            screen: QScreen = self.screen()
-            available = screen.availableGeometry() if screen else None
-        else:
-            available = QDesktopWidget().availableGeometry(self)
-        if available is not None:
-            wanted = wanted.boundedTo(available.size())
+        handle = self.windowHandle()
+        screen = handle.screen() if handle else QApplication.primaryScreen()
+        wanted = self.sizeHint().boundedTo(screen.availableGeometry().size())
         self.resize(self.size().expandedTo(wanted))
 
     def _create_actions(self) -> None:
@@ -360,7 +348,7 @@ class FXMainWindow(QMainWindow):
         self.toggle_theme_action = fxutils.create_action(
             self,
             "Toggle Theme",
-            trigger=self._toggle_theme,
+            trigger=self.toggle_theme,
             enable=True,
             visible=True,
             shortcut="Ctrl+Alt+t",
@@ -375,7 +363,7 @@ class FXMainWindow(QMainWindow):
                 self,
                 theme_name.title().replace("_", " "),
                 None,
-                lambda checked, t=theme_name: self._set_theme(t),
+                lambda checked, t=theme_name: self.set_theme(t),
                 enable=True,
                 visible=True,
                 checkable=True,
@@ -717,31 +705,6 @@ class FXMainWindow(QMainWindow):
         if current_theme in self.theme_actions:
             self.theme_actions[current_theme].setChecked(True)
 
-    def _set_theme(self, theme: str) -> None:
-        """Apply `theme` to every themed root.
-
-        Warning:
-            This method is intended for internal use only.
-            Use `set_theme()` for external theme selection.
-        """
-        fxstyle.apply_theme(theme)
-
-    def _toggle_theme(self) -> None:
-        """Apply the next available theme.
-
-        Warning:
-            This method is intended for internal use only.
-            Use `toggle_theme()` for external theme cycling.
-        """
-        themes = fxstyle.get_available_themes()
-        current = fxstyle.get_theme()
-        if current in themes:
-            next_theme = themes[(themes.index(current) + 1) % len(themes)]
-        else:
-            next_theme = themes[0] if themes else "dark"
-
-        self._set_theme(next_theme)
-
     # Public methods
     def set_theme(self, theme: str) -> str:
         """Set the theme of every fxgui window, standalone or in a DCC.
@@ -758,8 +721,7 @@ class FXMainWindow(QMainWindow):
             >>> window.set_theme("light")
             >>> window.set_theme("dark")
         """
-        self._set_theme(theme)
-        return fxstyle.get_theme()
+        return fxstyle.apply_theme(theme)
 
     def toggle_theme(self) -> str:
         """Switch every fxgui window to the next available theme.
@@ -773,8 +735,10 @@ class FXMainWindow(QMainWindow):
             >>> new_theme = window.toggle_theme()
             >>> print(f"Switched to {new_theme} theme")
         """
-        self._toggle_theme()
-        return fxstyle.get_theme()
+        themes = fxstyle.get_available_themes()
+        current = fxstyle.get_theme()
+        index = themes.index(current) + 1 if current in themes else 0
+        return fxstyle.apply_theme(themes[index % len(themes)])
 
     def get_available_themes(self) -> List[str]:
         """Get a list of all available theme names.
@@ -799,14 +763,9 @@ class FXMainWindow(QMainWindow):
             >>> window.show()
         """
         frame_geo = self.frameGeometry()
-
-        if QT_VERSION_MAJOR >= 6:
-            screen: QScreen = QApplication.primaryScreen()
-            desktop_geometry = screen.availableGeometry()
-        else:
-            desktop_geometry: QRect = QDesktopWidget().availableGeometry()
-
-        frame_geo.moveCenter(desktop_geometry.center())
+        frame_geo.moveCenter(
+            QApplication.primaryScreen().availableGeometry().center()
+        )
         self.move(frame_geo.topLeft())
 
     # Overrides

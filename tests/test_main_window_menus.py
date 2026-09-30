@@ -165,3 +165,30 @@ def test_a_replaced_central_widget_is_deleted_by_qt(qtbot):
     qtbot.wait(10)
 
     assert not _compat.is_valid(first)
+
+
+def test_the_theme_actions_switch_the_theme(qtbot):
+    fxstyle.apply_theme("dark")
+    window = _window(qtbot)
+
+    window.theme_actions["github_light"].trigger()
+    assert fxstyle.get_theme() == "github_light"
+
+    themes = fxstyle.get_available_themes()
+    window.toggle_theme_action.trigger()
+    assert fxstyle.get_theme() == themes[
+        (themes.index("github_light") + 1) % len(themes)]
+    assert window.set_theme("dark") == "dark"
+    assert window.toggle_theme() == fxstyle.get_theme() != "dark"
+
+
+def test_center_on_screen_centres_on_the_primary_screen(qtbot):
+    from qtpy.QtWidgets import QApplication
+
+    window = _window(qtbot)
+    window.resize(300, 200)
+
+    window.center_on_screen()
+
+    centre = QApplication.primaryScreen().availableGeometry().center()
+    assert (window.frameGeometry().center() - centre).manhattanLength() <= 2
