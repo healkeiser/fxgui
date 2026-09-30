@@ -4,6 +4,7 @@
 import os
 import logging
 import re
+import weakref
 from collections import deque
 from typing import Deque, Optional
 
@@ -30,15 +31,16 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons
+from fxgui._compat import is_valid
 from fxgui.fxwidgets._inputs import FXIconLineEdit
 from fxgui.fxwidgets._tips import apply_tip
 
 
 class FXOutputLogHandler(logging.Handler):
-    """Custom logging handler that sends log messages to an output log widget.
+    """Logging handler that sends records to an output log widget.
 
-    This handler is used internally by `FXOutputLogWidget` to capture
-    log messages and display them in the widget.
+    The widget is held weakly: once it is deleted the handler removes
+    itself from every logger instead of raising on each record.
 
     Args:
         log_widget: The `FXOutputLogWidget` to send messages to.
@@ -46,20 +48,59 @@ class FXOutputLogHandler(logging.Handler):
 
     def __init__(self, log_widget: "FXOutputLogWidget"):
         super().__init__()
-        self.log_widget = log_widget
+        self._widget = weakref.ref(log_widget)
+        log_widget.destroyed.connect(self.detach)
+
+    @property
+    def log_widget(self) -> Optional["FXOutputLogWidget"]:
+        """The widget records go to, or `None` once it is gone."""
+        widget = self._widget()
+        if widget is None or not is_valid(widget):
+            return None
+        return widget
 
     def emit(self, record: logging.LogRecord) -> None:
-        """Emit a log record to the output log widget."""
+        """Send a record to the widget, or detach if the widget is gone."""
+        widget = self.log_widget
+        if widget is None:
+            self.detach()
+            return
         try:
-            msg = self.format(record)
-            # Use the widget's signal to ensure thread-safe delivery
-            self.log_widget.log_message.emit(msg)
+            # The signal hands the text to the widget's thread.
+            widget.log_message.emit(self.format(record))
         except Exception:
             self.handleError(record)
+
+    def detach(self, *_args) -> None:
+        """Remove this handler from the root logger and every named logger."""
+        loggers = [logging.root, *logging.root.manager.loggerDict.values()]
+        for logger in loggers:
+            if isinstance(logger, logging.Logger) and self in logger.handlers:
+                # A new list, not `removeHandler`: this may run inside the
+                # logger's own loop over its handlers.
+                logger.handlers = [h for h in logger.handlers if h is not self]
 
 
 # Pre-compiled regex for ANSI escape codes (module-level for reuse)
 _ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[([0-9;]+)m")
+
+
+def _ansi_format(
+    base_font: QFont, color: Optional[str], dim: bool, bright: bool
+) -> QTextCharFormat:
+    """Build the character format for one ANSI-styled segment."""
+    fmt = QTextCharFormat()
+    font = QFont(base_font)
+    font.setBold(bright)
+    fmt.setFont(font)
+    if color:
+        foreground = QColor(color)
+        if dim:
+            foreground.setAlpha(128)
+        fmt.setForeground(foreground)
+    elif dim:
+        fmt.setForeground(QColor("#808080"))
+    return fmt
 
 
 class FXOutputLogWidget(QWidget):
@@ -526,27 +567,23 @@ class FXOutputLogWidget(QWidget):
         tick, and the early return on an empty queue is what ends the
         chain.
 
-        The auto-scroll runs once at the end rather than once per entry:
-        moving the scrollbar to its maximum is what forces the document
-        to lay out, so doing it per record is what the throttle was there
-        to avoid in the first place.
+        Writes through a document cursor, so the reader's cursor and
+        selection stay put, and scrolls once at the end, only when the
+        pane was already at the bottom.
         """
         if not self._pending_logs:
             return
 
-        cursor = self.output_area.textCursor()
-        for _ in range(min(len(self._pending_logs), self.MAX_RECORDS_PER_FLUSH)):
-            # Display the message
-            self._insert_text_with_ansi(self._pending_logs.popleft())
-
-            # Add extra line break after each log entry
-            cursor.movePosition(QTextCursor.End)
-            self.output_area.setTextCursor(cursor)
-            self.output_area.insertPlainText("\n")
-
-        # Auto-scroll to bottom
         scrollbar = self.output_area.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        following = scrollbar.value() >= scrollbar.maximum()
+        cursor = QTextCursor(self.output_area.document())
+        for _ in range(min(len(self._pending_logs), self.MAX_RECORDS_PER_FLUSH)):
+            self._insert_text_with_ansi(self._pending_logs.popleft())
+            cursor.movePosition(QTextCursor.End)
+            cursor.insertText("\n")
+
+        if following:
+            scrollbar.setValue(scrollbar.maximum())
 
         # Schedule next update if needed
         self._throttle_timer.start(self._throttle_interval)
@@ -565,48 +602,26 @@ class FXOutputLogWidget(QWidget):
         Args:
             text: Text with ANSI escape codes.
         """
-        # Move cursor to end
-        cursor = self.output_area.textCursor()
+        cursor = QTextCursor(self.output_area.document())
         cursor.movePosition(QTextCursor.End)
-
-        # Get the widget's font to preserve monospace
-        base_font = self.output_area.font()
 
         # Fast path: if no ANSI codes, insert plain text directly
         if "\x1b[" not in text:
             cursor.insertText(text)
             return
 
-        # Track current styles
+        base_font = self.output_area.font()
         current_color = None
         is_dim = False
         is_bright = False
         last_end = 0
 
-        # Find all ANSI escape sequences using module-level compiled pattern
         for match in _ANSI_ESCAPE_PATTERN.finditer(text):
-            # Insert text before this escape code
             if match.start() > last_end:
-                segment = text[last_end : match.start()]
-
-                # Create format for this segment, preserving monospace font
-                fmt = QTextCharFormat()
-                fmt.setFont(base_font)
-
-                if current_color:
-                    color = QColor(current_color)
-                    if is_dim:
-                        color.setAlpha(128)  # 50% opacity
-                    fmt.setForeground(color)
-                elif is_dim:
-                    fmt.setForeground(QColor("#808080"))
-
-                if is_bright:
-                    font = QFont(base_font)
-                    font.setBold(True)
-                    fmt.setFont(font)
-
-                cursor.insertText(segment, fmt)
+                cursor.insertText(
+                    text[last_end : match.start()],
+                    _ansi_format(base_font, current_color, is_dim, is_bright),
+                )
 
             # Parse the escape code
             codes = match.group(1).split(";")
@@ -627,28 +642,11 @@ class FXOutputLogWidget(QWidget):
 
             last_end = match.end()
 
-        # Insert remaining text
         if last_end < len(text):
-            segment = text[last_end:]
-
-            # Create format for this segment, preserving monospace font
-            fmt = QTextCharFormat()
-            fmt.setFont(base_font)
-
-            if current_color:
-                color = QColor(current_color)
-                if is_dim:
-                    color.setAlpha(128)  # 50% opacity
-                fmt.setForeground(color)
-            elif is_dim:
-                fmt.setForeground(QColor("#808080"))
-
-            if is_bright:
-                font = QFont(base_font)
-                font.setBold(True)
-                fmt.setFont(font)
-
-            cursor.insertText(segment, fmt)
+            cursor.insertText(
+                text[last_end:],
+                _ansi_format(base_font, current_color, is_dim, is_bright),
+            )
 
     def clear_log(self) -> None:
         """Clear the log output."""
@@ -672,19 +670,8 @@ class FXOutputLogWidget(QWidget):
             self._logger_check_timer.deleteLater()
             self._logger_check_timer = None
 
-        # Remove logging handler from all loggers where it was added
         if self._log_handler:
-            logging.root.removeHandler(self._log_handler)
-
-            # Remove from all modified loggers
-            if hasattr(self, "_modified_loggers"):
-                for logger_name in self._modified_loggers:
-                    logger_instance = logging.getLogger(logger_name)
-                    if (
-                        logger_instance
-                        and self._log_handler in logger_instance.handlers
-                    ):
-                        logger_instance.removeHandler(self._log_handler)
+            self._log_handler.detach()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle widget close event to restore output streams."""
