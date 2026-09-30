@@ -3,6 +3,7 @@
 # Built-in
 import os
 import logging
+import functools
 import re
 import weakref
 from collections import deque
@@ -18,6 +19,7 @@ from qtpy.QtGui import (
     QTextCharFormat,
     QTextCursor,
     QTextDocument,
+    QTextFormat,
 )
 from qtpy.QtWidgets import (
     QHBoxLayout,
@@ -30,7 +32,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons
+from fxgui import fxicons, fxstyle
 from fxgui._compat import is_valid
 from fxgui.fxwidgets._inputs import FXIconLineEdit
 from fxgui.fxwidgets._tips import apply_tip
@@ -85,21 +87,58 @@ class FXOutputLogHandler(logging.Handler):
 _ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[([0-9;]+)m")
 
 
-def _ansi_format(
-    base_font: QFont, color: Optional[str], dim: bool, bright: bool
-) -> QTextCharFormat:
+# ANSI foreground code -> theme role, after colorlog's level colours.
+# Feedback roles name `get_feedback_colors()` entries, others theme tokens.
+ANSI_ROLES = {
+    "30": "text_disabled",
+    "90": "text_disabled",
+    "37": "text",
+    "97": "text",
+    "31": "error",
+    "91": "error",
+    "35": "error",
+    "95": "error",
+    "33": "warning",
+    "93": "warning",
+    "32": "info",
+    "92": "info",
+    "34": "info",
+    "94": "info",
+    "36": "debug",
+    "96": "debug",
+}
+
+# Char format properties that remember a segment's role across themes.
+_ROLE = QTextFormat.UserProperty + 1
+_DIM = QTextFormat.UserProperty + 2
+
+_readable_ink = functools.lru_cache(maxsize=256)(fxstyle.readable_ink)
+
+
+def _paint_role(fmt: QTextCharFormat, role: str, dim: bool) -> None:
+    """Set `fmt`'s foreground to `role` in the current theme, readable."""
+    theme = fxstyle.colors()
+    feedback = fxstyle.get_feedback_colors()
+    wanted = (
+        feedback[role]["foreground"] if role in feedback else getattr(theme, role)
+    )
+    colour = QColor(_readable_ink(theme.surface_sunken, wanted))
+    if dim:
+        colour.setAlpha(128)
+    fmt.setForeground(colour)
+
+
+def _ansi_format(role: Optional[str], dim: bool, bright: bool) -> QTextCharFormat:
     """Build the character format for one ANSI-styled segment."""
     fmt = QTextCharFormat()
-    font = QFont(base_font)
-    font.setBold(bright)
-    fmt.setFont(font)
-    if color:
-        foreground = QColor(color)
-        if dim:
-            foreground.setAlpha(128)
-        fmt.setForeground(foreground)
-    elif dim:
-        fmt.setForeground(QColor("#808080"))
+    if bright:
+        fmt.setFontWeight(QFont.Bold)
+    if dim and role is None:
+        role, dim = "text_disabled", False
+    if role:
+        fmt.setProperty(_ROLE, role)
+        fmt.setProperty(_DIM, dim)
+        _paint_role(fmt, role, dim)
     return fmt
 
 
@@ -154,26 +193,6 @@ class FXOutputLogWidget(QWidget):
     # one freeze.
     MAX_RECORDS_PER_FLUSH = 1000
 
-    # ANSI color mapping for terminal colors
-    ANSI_COLORS = {
-        "30": "#000000",
-        "31": "#cd3131",
-        "32": "#0dbc79",
-        "33": "#e5e510",
-        "34": "#2472c8",
-        "35": "#bc3fbc",
-        "36": "#11a8cd",
-        "37": "#e5e5e5",
-        "90": "#666666",
-        "91": "#f14c4c",
-        "92": "#23d18b",
-        "93": "#f5f543",
-        "94": "#3b8eea",
-        "95": "#d670d6",
-        "96": "#29b8db",
-        "97": "#ffffff",
-    }
-
     def __init__(
         self,
         parent: Optional[QWidget] = None,
@@ -209,6 +228,9 @@ class FXOutputLogWidget(QWidget):
         if self._capture_output:
             self._setup_output_capture()
 
+        # Shown segments keep their role; a switch repaints them.
+        fxstyle.theme_changed.connect(self._recolour)
+
     def _setup_ui(self) -> None:
         """Setup the log widget UI components."""
         layout = QVBoxLayout(self)
@@ -219,6 +241,8 @@ class FXOutputLogWidget(QWidget):
         # We're using `QTextEdit` for HTML support
         self.output_area = QTextEdit()
         self.output_area.setReadOnly(True)
+        # A log is never undone; the undo stack would grow with it.
+        self.output_area.setUndoRedoEnabled(False)
         if self._max_blocks > 0:
             # Qt prunes from the top once the document is this long. Off
             # by default on purpose -- see the class docstring.
@@ -604,49 +628,50 @@ class FXOutputLogWidget(QWidget):
         """
         cursor = QTextCursor(self.output_area.document())
         cursor.movePosition(QTextCursor.End)
+        role, dim, bright = None, False, False
+        # split() alternates text and the codes captured between escapes.
+        for index, part in enumerate(_ANSI_ESCAPE_PATTERN.split(text)):
+            if index % 2 == 0:
+                if part:
+                    # Always an explicit format: the end of the document
+                    # would otherwise lend the last segment's colour.
+                    cursor.insertText(part, _ansi_format(role, dim, bright))
+                continue
+            for code in part.split(";"):
+                if code in ("0", ""):
+                    role, dim, bright = None, False, False
+                elif code == "1":
+                    bright = True
+                elif code == "2":
+                    dim = True
+                elif code == "22":
+                    dim = bright = False
+                elif code == "39":
+                    role = None
+                elif code in ANSI_ROLES:
+                    role = ANSI_ROLES[code]
 
-        # Fast path: if no ANSI codes, insert plain text directly
-        if "\x1b[" not in text:
-            cursor.insertText(text)
-            return
-
-        base_font = self.output_area.font()
-        current_color = None
-        is_dim = False
-        is_bright = False
-        last_end = 0
-
-        for match in _ANSI_ESCAPE_PATTERN.finditer(text):
-            if match.start() > last_end:
-                cursor.insertText(
-                    text[last_end : match.start()],
-                    _ansi_format(base_font, current_color, is_dim, is_bright),
-                )
-
-            # Parse the escape code
-            codes = match.group(1).split(";")
-            for code in codes:
-                if code == "0" or code == "":  # Reset
-                    current_color = None
-                    is_dim = False
-                    is_bright = False
-                elif code == "1":  # Bright/Bold
-                    is_bright = True
-                elif code == "2":  # Dim
-                    is_dim = True
-                elif code == "22":  # Normal intensity
-                    is_bright = False
-                    is_dim = False
-                elif code in self.ANSI_COLORS:
-                    current_color = self.ANSI_COLORS[code]
-
-            last_end = match.end()
-
-        if last_end < len(text):
-            cursor.insertText(
-                text[last_end:],
-                _ansi_format(base_font, current_color, is_dim, is_bright),
-            )
+    def _recolour(self, _theme_name: Optional[str] = None) -> None:
+        """Repaint every role-coloured segment in the current theme."""
+        document = self.output_area.document()
+        changes = []
+        block = document.begin()
+        while block.isValid():
+            it = block.begin()
+            while not it.atEnd():
+                fragment = it.fragment()
+                fmt = fragment.charFormat()
+                role = fmt.property(_ROLE)
+                if role:
+                    _paint_role(fmt, role, bool(fmt.property(_DIM)))
+                    changes.append((fragment.position(), fragment.length(), fmt))
+                it += 1
+            block = block.next()
+        cursor = QTextCursor(document)
+        for position, length, fmt in changes:
+            cursor.setPosition(position)
+            cursor.setPosition(position + length, QTextCursor.KeepAnchor)
+            cursor.setCharFormat(fmt)
 
     def clear_log(self) -> None:
         """Clear the log output."""
