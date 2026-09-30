@@ -1634,6 +1634,101 @@ QSplitter {
 
 
 /* ==========================================================================
+   FRAME
+   ==========================================================================
+   A widget marked with fxstyle.mark_as_frame() is window chrome: it paints
+   the frame colour, and the plain controls placed directly in it have no
+   fill of their own. A framed FXMainWindow marks itself, its menu bar and
+   its status bar; its toolbars are matched as its children. Nothing here
+   matches an unmarked widget.
+   ========================================================================== */
+
+*[fxFrame="true"],
+QMainWindow[fxFrame="true"] > QToolBar
+{
+    background-color: @frame;
+}
+
+QMenuBar[fxFrame="true"],
+QMainWindow[fxFrame="true"] > QToolBar
+{
+    border: none;
+}
+
+*[fxFrame="true"] > QLabel,
+*[fxFrame="true"] > QCheckBox,
+*[fxFrame="true"] > QRadioButton,
+QMainWindow[fxFrame="true"] > QToolBar > QLabel,
+QMainWindow[fxFrame="true"] > QToolBar > QCheckBox,
+QMainWindow[fxFrame="true"] > QToolBar > QRadioButton
+{
+    background-color: transparent;
+}
+
+/* A framed FXMainWindow's icon and name, at the menu bar's right end. */
+QWidget#fxMenuBarCorner,
+QWidget#fxMenuBarCorner > QLabel
+{
+    background-color: transparent;
+}
+
+*[fxFrame="true"] > QToolButton:disabled,
+QMainWindow[fxFrame="true"] > QToolBar > QToolButton:disabled
+{
+    background-color: transparent;
+    border-color: transparent;
+}
+
+/* The handle is the gap: no border, margin or padding, so it is exactly as
+   wide as setHandleWidth() says, and the mark is drawn once, centred. */
+QSplitter[fxFrame="true"]::handle,
+QSplitter[fxFrame="true"]::handle:hover,
+QSplitter[fxFrame="true"]::handle:horizontal,
+QSplitter[fxFrame="true"]::handle:horizontal:hover,
+QSplitter[fxFrame="true"]::handle:vertical,
+QSplitter[fxFrame="true"]::handle:vertical:hover
+{
+    background-color: @frame;
+    border: none;
+    margin: 0px;
+    padding: 0px;
+    image-position: center;
+}
+
+QSplitter[fxFrame="true"]::handle:horizontal,
+QSplitter[fxFrame="true"]::handle:horizontal:hover
+{
+    image: url(@splitter_mark_down);
+}
+
+QSplitter[fxFrame="true"]::handle:vertical,
+QSplitter[fxFrame="true"]::handle:vertical:hover
+{
+    image: url(@splitter_mark_across);
+}
+
+/* A flat icon button: no box until hovered or pressed, and none when
+   disabled. Its focus ring is in KEYBOARD FOCUS below. */
+QPushButton[fxRole="flat"],
+QPushButton[fxRole="flat"]:disabled
+{
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: 4px;
+}
+
+QPushButton[fxRole="flat"]:hover
+{
+    background-color: @state_hover;
+}
+
+QPushButton[fxRole="flat"]:pressed
+{
+    background-color: @state_pressed;
+}
+
+
+/* ==========================================================================
    KEYBOARD FOCUS
    ==========================================================================
    Focus is shown by changing something the widget already has, never by
@@ -1748,4 +1843,9 @@ QRadioButton:focus
 QPushButton[fxRole="primary"]:focus
 {
     border-color: @text;
+}
+
+QPushButton[fxRole="flat"]:focus
+{
+    border-color: @accent_primary;
 }

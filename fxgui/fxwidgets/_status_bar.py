@@ -334,6 +334,9 @@ class FXStatusBar(fxstyle.FXThemeAware, QStatusBar):
                 border: 0px solid transparent;
                 background: {self.theme.surface_sunken};
             }}
+            QStatusBar[fxFrame="true"] {{
+                background: {self.theme.frame};
+            }}
         """
         )
 

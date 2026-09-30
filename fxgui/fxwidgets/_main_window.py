@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from webbrowser import open_new_tab
 
 # Third-party
-from qtpy.QtCore import QPoint, QRect, QSize, Qt
+from qtpy.QtCore import QEvent, QObject, QPoint, QRect, QSize, Qt
 from qtpy.QtGui import QAction, QCloseEvent, QIcon
 from qtpy.QtWidgets import (
     QActionGroup,
@@ -92,6 +92,14 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             clamped. Off by default, since changing the opening size of
             every existing window is not something to do silently.
             Defaults to `False`.
+        framed (bool, optional): Whether to draw the window as a frame
+            around its panes. The 50 px banner goes, and its icon and text
+            (`set_banner_text`, `set_banner_icon`) sit at the menu bar's
+            right end instead. The menu bar, toolbars, status bar and the
+            window behind the central widget paint the theme's ``frame``
+            color with no lines between them; the status bar keeps its
+            accent line. Mark bands of your own with
+            `fxstyle.mark_as_frame`. Defaults to `False`.
     """
 
     # Class-level severity constants for convenience
@@ -117,8 +125,10 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         rich_tooltips: Optional[bool] = None,
         toolbar: bool = True,
         fit_to_contents: bool = False,
+        framed: bool = False,
     ):
         super().__init__(parent)
+        self._framed: bool = framed
 
         # Private attributes
         self._default_icon_path: str = os.path.join(
@@ -141,6 +151,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self.company: str = company or "\u00a9 Company"
         self.ui_file: Optional[str] = ui_file
         self.ui: Optional[QWidget] = None
+        self.title_corner: Optional[QWidget] = None
 
         # Theme action storage
         self.theme_actions: Dict[str, QAction] = {}
@@ -148,7 +159,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
 
         # Banner icon storage for theme-aware updates
         self._banner_icon_name: Optional[str] = None
-        self._banner_icon_size: int = 20
+        self._banner_icon_size: int = 16 if framed else 20
 
         # Initialize UI components
         self._create_actions()
@@ -171,6 +182,8 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self._create_status_bar()
         self._check_documentation()
         self._add_shadows()
+        if framed:
+            self._frame_chrome()
 
         # Styling: register as a themed root. The saved theme's sheet is
         # applied now and re-applied on every apply_theme(), whether the
@@ -588,7 +601,10 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        layout.addWidget(self.banner)
+        # A framed window keeps its banner out of every layout, so no
+        # central widget replaced later takes it down with it.
+        if not self._framed:
+            layout.addWidget(self.banner)
 
         if central_widget is not None:
             layout.addWidget(central_widget)
@@ -612,6 +628,42 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             company=self.company,
         )
         self.setStatusBar(self.status_bar)
+
+    def _frame_chrome(self) -> None:
+        """Paint the chrome in the frame color; the banner joins the menu bar.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+        self.banner.hide()
+        self.title_corner = QWidget(self.menu_bar)
+        self.title_corner.setObjectName("fxMenuBarCorner")
+        layout = QHBoxLayout(self.title_corner)
+        layout.setContentsMargins(0, 0, 10, 0)
+        layout.setSpacing(6)
+        layout.addWidget(self.banner_icon)
+        layout.addWidget(self.banner_label)
+        self.banner_icon.setFixedSize(
+            self._banner_icon_size, self._banner_icon_size)
+        # The menu bar's own font and color, and no fill of its own.
+        self.banner_label.setStyleSheet("")
+        self.menu_bar.setCornerWidget(self.title_corner, Qt.TopRightCorner)
+        # QMenuBar pins a corner widget to its top at its own height; as
+        # tall as the bar, the name centres on the menu titles.
+        self.menu_bar.installEventFilter(self)
+        for widget in (self, self.menu_bar, self.status_bar):
+            fxstyle.mark_as_frame(widget)
+        fxstyle.mark_as_frame(self.centralWidget())
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Keep a framed window's menu bar corner as tall as the bar."""
+        if (
+            watched is self.menu_bar
+            and event.type() == QEvent.Resize
+            and self.title_corner is not None
+        ):
+            self.title_corner.setFixedHeight(self.menu_bar.height())
+        return super().eventFilter(watched, event)
 
     def _show_about_dialog(self) -> None:
         """Shows the "About" dialog.
@@ -776,15 +828,13 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         Warning:
             This method is intended for internal use only.
         """
-        # Update banner container for the new theme (match _create_banner style)
-        if hasattr(self, "banner") and self.banner is not None:
+        # Update banner container for the new theme (match _create_banner
+        # style). A framed window's name is styled by the theme sheet.
+        if not self._framed and getattr(self, "banner", None) is not None:
             self.banner.setStyleSheet(
                 f"background: transparent; "
                 f"border-bottom: 1px solid {self.theme.border};"
             )
-
-        # Update banner label text color
-        if hasattr(self, "banner_label") and self.banner_label is not None:
             self.banner_label.setStyleSheet(
                 f"color: {self.theme.text}; font-size: 16px; border: none;"
             )
@@ -984,8 +1034,11 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         layout = QVBoxLayout(central_widget)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        # Add the banner first (top)
-        if hasattr(self, "banner") and self.banner is not None:
+        # Add the banner first (top); a framed window has none.
+        if self._framed:
+            layout.setSpacing(0)
+            fxstyle.mark_as_frame(central_widget)
+        elif hasattr(self, "banner") and self.banner is not None:
             layout.addWidget(self.banner)
 
         # Add the widget to the new layout
@@ -1017,20 +1070,23 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self.banner_label.setText(text)
 
     def set_banner_icon(
-        self, icon: Optional[Union[QIcon, str]], size: int = 20
+        self, icon: Optional[Union[QIcon, str]], size: Optional[int] = None
     ) -> None:
         """Sets the icon of the banner.
 
         Args:
             icon: The icon to set in the banner. Can be a QIcon or an icon
                 name string for theme-aware icons.
-            size: The size of the icon. Defaults to 20.
+            size: The size of the icon. Defaults to 20, or 16 in the menu
+                bar of a framed window.
 
         Note:
             Using an icon name string (e.g., "widgets") is recommended for
             theme-aware icons that automatically update when the theme changes.
         """
-        self._banner_icon_size = size
+        if size is not None:
+            self._banner_icon_size = size
+        size = self._banner_icon_size
         self.banner_icon.setFixedSize(size, size)
 
         if isinstance(icon, str):
@@ -1058,12 +1114,12 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self.banner_icon.setPixmap(icon.pixmap(size, size))
 
     def hide_banner(self) -> None:
-        """Hides the banner."""
-        self.banner.hide()
+        """Hides the banner, or the menu bar corner of a framed window."""
+        (self.title_corner if self._framed else self.banner).hide()
 
     def show_banner(self) -> None:
-        """Shows the banner."""
-        self.banner.show()
+        """Shows the banner, or the menu bar corner of a framed window."""
+        (self.title_corner if self._framed else self.banner).show()
 
     # Status line methods
     def set_status_line_colors(self, color_a: str, color_b: str) -> None:

@@ -151,6 +151,7 @@ __email__ = "valentin.onze@gmail.com"
 import hashlib
 import os
 import sys
+import tempfile
 import warnings
 import weakref
 from collections import OrderedDict
@@ -160,7 +161,7 @@ from typing import Dict, Optional, Tuple
 # Third-party
 import yaml
 from qtpy.QtCore import QObject, QTimer, Signal
-from qtpy.QtGui import QColor, QFontDatabase, QIcon
+from qtpy.QtGui import QColor, QFontDatabase, QIcon, QImage, QPainter
 from qtpy.QtWidgets import (
     QProxyStyle,
     QStyle,
@@ -505,6 +506,10 @@ _DEFAULT_THEME = "dark"
 # Dynamic property routing a widget to the title font role. Set it
 # through mark_as_title() rather than by hand.
 TITLE_PROPERTY = "fxTitle"
+
+# Dynamic property painting a widget in the frame colour. Set it through
+# mark_as_frame() rather than by hand.
+FRAME_PROPERTY = "fxFrame"
 
 # Styles QPushButton through @button_radius; widgets that draw a button
 # shape of their own read it here.
@@ -1066,6 +1071,31 @@ def mark_as_title(widget: QWidget, is_title: bool = True) -> None:
     fxutils.repolish(widget)
 
 
+def mark_as_frame(widget: QWidget, is_frame: bool = True) -> None:
+    """Paint a widget in the theme's ``frame`` color, as window chrome.
+
+    Labels, check boxes, radio buttons and disabled tool buttons placed
+    directly in it lose their own fill, so they sit on the frame. A
+    `QSplitter` so marked draws its handles as frame-colored gaps with a
+    short centred mark; its width stays whatever `setHandleWidth` says.
+
+    Args:
+        widget: The band, bar or splitter that is part of the frame.
+        is_frame: False removes the mark. Defaults to True.
+
+    Examples:
+        >>> fxstyle.mark_as_frame(project_bar)
+        >>> splitter.setHandleWidth(6)
+        >>> fxstyle.mark_as_frame(splitter)
+    """
+    widget.setProperty(FRAME_PROPERTY, bool(is_frame))
+    fxutils.repolish(widget)
+    # Child selectors are matched when the child polishes, not the parent.
+    for child in widget.findChildren(QWidget):
+        if child.parentWidget() is widget:
+            fxutils.repolish(child)
+
+
 ###### Color Utility Functions
 
 
@@ -1230,6 +1260,53 @@ def _depth_colors(theme_data: dict) -> Dict[str, str]:
     return {"frame": frame, "well": well}
 
 
+# The splitter mark: this many square dots, each this many pixels a side,
+# one dot apart. Short on purpose: a full-length line reads as a border.
+_MARK_DOTS = 5
+_MARK_DOT = 2
+
+
+def _mark_image(color: str, across: bool) -> str:
+    """Return the path of a PNG splitter mark in `color`, writing it once.
+
+    A PNG and its ``@2x`` twin rather than an SVG: Qt scales an SVG up to
+    fill the handle, and never scales a bitmap up.
+
+    Args:
+        color: The dots' color.
+        across: True for a mark running left to right, which sits in the
+            handle of a vertical splitter; False for one running down.
+    """
+    color = QColor(color)
+    folder = Path(tempfile.gettempdir()) / "fxgui" / "splitter_marks"
+    stem = f"{'across' if across else 'down'}_{color.name()[1:]}"
+    path = folder / f"{stem}.png"
+    if path.exists():
+        return path.as_posix()
+    folder.mkdir(parents=True, exist_ok=True)
+    length = _MARK_DOTS * _MARK_DOT * 2 - _MARK_DOT
+    # The @2x twin first: the plain file's presence means both are there.
+    for scale, name in ((2, f"{stem}@2x.png"), (1, f"{stem}.png")):
+        dot, run = _MARK_DOT * scale, length * scale
+        image = QImage(
+            run if across else dot, dot if across else run,
+            QImage.Format_ARGB32,
+        )
+        image.fill(0)
+        painter = QPainter(image)
+        for step in range(0, run, dot * 2):
+            if across:
+                painter.fillRect(step, 0, dot, dot, color)
+            else:
+                painter.fillRect(0, step, dot, dot, color)
+        painter.end()
+        # Saved aside then renamed, so a second process never reads half.
+        partial = folder / f"{name}.{os.getpid()}.part"
+        image.save(str(partial), "PNG")
+        os.replace(partial, folder / name)
+    return path.as_posix()
+
+
 def _token_map(theme_name: str) -> Dict[str, str]:
     """Build the ``@token`` -> value map for a theme.
 
@@ -1300,6 +1377,9 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         tokens[f"@font_{role}"] = _resolve_font_stack(entries)
 
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
+
+    tokens["@splitter_mark_across"] = _mark_image(tokens["@border"], True)
+    tokens["@splitter_mark_down"] = _mark_image(tokens["@border"], False)
 
     # Icon folder path used by url(~icons/...) in QSS, chosen by the
     # target theme's surface lightness (not the globally current theme).

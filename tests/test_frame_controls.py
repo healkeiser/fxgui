@@ -1,0 +1,236 @@
+"""The splitter mark and the flat icon button, as a caller opts in."""
+
+# Third-party
+import pytest
+from qtpy.QtCore import QPoint, QRect, Qt
+from qtpy.QtGui import QColor, QPixmap
+from qtpy.QtWidgets import (
+    QApplication,
+    QPushButton,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
+
+# Internal
+from fxgui import fxicons, fxstyle
+
+THEMES = fxstyle.get_available_themes()
+ORIENTATIONS = [Qt.Horizontal, Qt.Vertical]
+GAP = 6
+
+
+def _color(role):
+    return QColor(fxstyle.get_theme_colors()[role]).name()
+
+
+def _splitter(qtbot, orientation, theme="dark", gap=GAP):
+    fxstyle.apply_theme(theme)
+    host = QWidget()
+    fxstyle.register_themed_root(host)
+    splitter = QSplitter(orientation)
+    splitter.addWidget(QWidget())
+    splitter.addWidget(QWidget())
+    splitter.setHandleWidth(gap)
+    fxstyle.mark_as_frame(splitter)
+    layout = QVBoxLayout(host)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.addWidget(splitter)
+    host.resize(300, 200)
+    qtbot.addWidget(host)
+    host.show()
+    qtbot.waitExposed(host)
+    return host, splitter
+
+
+def _handle_image(host, splitter, ratio=1.0):
+    handle = splitter.handle(1)
+    pixmap = QPixmap(handle.size() * ratio)
+    pixmap.setDevicePixelRatio(ratio)
+    handle.render(pixmap)
+    return pixmap.toImage()
+
+
+def _mark(image, frame):
+    """Return the bounding box and pixel count of what is not the frame."""
+    xs, ys = [], []
+    for x in range(image.width()):
+        for y in range(image.height()):
+            if image.pixelColor(x, y).name() != frame:
+                xs.append(x)
+                ys.append(y)
+    if not xs:
+        return None, 0
+    return QRect(min(xs), min(ys), max(xs) - min(xs) + 1,
+                 max(ys) - min(ys) + 1), len(xs)
+
+
+@pytest.mark.parametrize("gap", [6, 9])
+@pytest.mark.parametrize("orientation", ORIENTATIONS)
+def test_a_marked_splitter_keeps_the_handle_width_it_was_given(
+    qtbot, orientation, gap
+):
+    host, splitter = _splitter(qtbot, orientation, gap=gap)
+    first = splitter.widget(0).geometry()
+    second = splitter.widget(1).geometry()
+
+    if orientation == Qt.Horizontal:
+        assert splitter.handle(1).width() == gap
+        assert second.left() - first.right() - 1 == gap
+    else:
+        assert splitter.handle(1).height() == gap
+        assert second.top() - first.bottom() - 1 == gap
+
+
+@pytest.mark.parametrize("theme", THEMES)
+@pytest.mark.parametrize("orientation", ORIENTATIONS)
+def test_the_mark_is_five_dots_centred_in_the_gap(qtbot, orientation, theme):
+    host, splitter = _splitter(qtbot, orientation, theme)
+    image = _handle_image(host, splitter)
+    box, count = _mark(image, _color("frame"))
+
+    assert box is not None, "no mark drawn"
+    assert count == 5 * 2 * 2, "five 2 px dots, drawn once"
+    assert {image.pixelColor(x, y).name()
+            for x in range(box.left(), box.right() + 1)
+            for y in range(box.top(), box.bottom() + 1)} == {
+        _color("border"), _color("frame")}
+    across = orientation == Qt.Vertical
+    length = box.width() if across else box.height()
+    assert length == 18
+    # Centred both ways: equal room on each side of the mark.
+    assert box.left() == image.width() - 1 - box.right()
+    assert abs(box.top() - (image.height() - 1 - box.bottom())) <= 1
+
+
+@pytest.mark.parametrize("ratio", [1.5, 2.0])
+@pytest.mark.parametrize("orientation", ORIENTATIONS)
+def test_the_mark_stays_short_and_centred_at_high_dpi(
+    qtbot, orientation, ratio
+):
+    host, splitter = _splitter(qtbot, orientation)
+    image = _handle_image(host, splitter, ratio)
+    box, _count = _mark(image, _color("frame"))
+
+    across = orientation == Qt.Vertical
+    length = box.width() if across else box.height()
+    thickness = box.height() if across else box.width()
+    assert abs(length - 18 * ratio) <= 1
+    assert abs(thickness - 2 * ratio) <= 1
+    if across:
+        assert abs(box.top() - (image.height() - 1 - box.bottom())) <= 1
+    else:
+        assert abs(box.left() - (image.width() - 1 - box.right())) <= 1
+
+
+def test_the_mark_follows_a_theme_switch(qtbot):
+    host, splitter = _splitter(qtbot, Qt.Horizontal)
+    fxstyle.apply_theme("github_light")
+    qtbot.wait(10)
+    image = _handle_image(host, splitter)
+    colors = {image.pixelColor(x, y).name()
+              for x in range(image.width()) for y in range(image.height())}
+
+    assert colors == {_color("frame"), _color("border")}
+
+
+def test_an_unmarked_splitter_is_untouched(qtbot):
+    fxstyle.apply_theme("dark")
+    host = QWidget()
+    fxstyle.register_themed_root(host)
+    splitter = QSplitter(Qt.Horizontal, host)
+    splitter.addWidget(QWidget())
+    splitter.addWidget(QWidget())
+    qtbot.addWidget(host)
+    host.show()
+    qtbot.waitExposed(host)
+
+    image = _handle_image(host, splitter)
+    colors = {image.pixelColor(x, y).name()
+              for x in range(image.width()) for y in range(image.height())}
+
+    assert _color("frame") not in colors
+
+
+def _flat(qtbot, theme="dark", on_frame=False, enabled=True):
+    fxstyle.apply_theme(theme)
+    window = QWidget()
+    fxstyle.register_themed_root(window)
+    if on_frame:
+        fxstyle.mark_as_frame(window)
+    layout = QVBoxLayout(window)
+    sink = QPushButton("sink")
+    button = QPushButton()
+    button.setProperty("fxRole", "flat")
+    fxicons.set_icon(button, "arrow_back")
+    button.setEnabled(enabled)
+    layout.addWidget(sink)
+    layout.addWidget(button)
+    qtbot.addWidget(window)
+    window.show()
+    qtbot.waitExposed(window)
+    window.activateWindow()
+    QApplication.processEvents()
+    sink.setFocus(Qt.TabFocusReason)
+    QApplication.processEvents()
+    return window, button
+
+
+def _at(window, button, x, y):
+    point = button.mapTo(window, QPoint(x, y))
+    return window.grab().toImage().pixelColor(point).name()
+
+
+def _edges(window, button):
+    """The button's outermost pixel on each side, at mid-height/width."""
+    w, h = button.width(), button.height()
+    return {_at(window, button, x, y)
+            for x, y in ((0, h // 2), (w - 1, h // 2), (w // 2, 0),
+                         (w // 2, h - 1))}
+
+
+@pytest.mark.parametrize("theme", THEMES)
+@pytest.mark.parametrize("on_frame", [False, True])
+def test_a_flat_button_has_no_box_at_rest(qtbot, theme, on_frame):
+    window, button = _flat(qtbot, theme, on_frame)
+    ground = _color("frame" if on_frame else "surface")
+
+    assert _edges(window, button) == {ground}
+    assert _at(window, button, 2, 2) == ground
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_a_disabled_flat_button_has_no_box(qtbot, theme):
+    window, button = _flat(qtbot, theme, on_frame=True, enabled=False)
+
+    assert _edges(window, button) == {_color("frame")}
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_a_hovered_flat_button_fills(qtbot, theme):
+    window, button = _flat(qtbot, theme, on_frame=True)
+    # From off the button: the cursor stays where the last test left it.
+    qtbot.mouseMove(window, QPoint(1, 1))
+    qtbot.mouseMove(button, button.rect().center())
+    qtbot.wait(20)
+
+    assert _at(window, button, 2, 2) == _color("state_hover")
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_a_pressed_flat_button_fills(qtbot, qapp, theme):
+    window, button = _flat(qtbot, theme, on_frame=True)
+    button.setDown(True)
+    qapp.processEvents()
+
+    assert _at(window, button, 2, 2) == _color("state_pressed")
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_a_focused_flat_button_shows_the_accent_ring(qtbot, theme):
+    window, button = _flat(qtbot, theme, on_frame=True)
+    button.setFocus(Qt.TabFocusReason)
+    QApplication.processEvents()
+
+    assert button.hasFocus()
+    assert _edges(window, button) == {_color("accent_primary")}
