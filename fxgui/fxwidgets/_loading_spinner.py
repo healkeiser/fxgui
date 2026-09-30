@@ -6,15 +6,26 @@ import math
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import Property, Qt, QTimer
+from qtpy.QtCore import QEvent, QObject, Qt, QTimer
 from qtpy.QtGui import QColor, QPainter, QPen
-from qtpy.QtWidgets import QSizePolicy, QWidget
+from qtpy.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 # Internal
 from fxgui import fxstyle
 
 
-class FXLoadingSpinner(fxstyle.FXThemeAware, QWidget):
+fxstyle.register_widget_style(
+    """
+    FXLoadingOverlay QLabel {
+        color: @text;
+        font-size: 14px;
+        margin-top: 12px;
+    }
+    """
+)
+
+
+class FXLoadingSpinner(QWidget):
     """A themeable animated loading indicator.
 
     This widget provides a modern spinning/pulsing loading indicator
@@ -60,17 +71,6 @@ class FXLoadingSpinner(fxstyle.FXThemeAware, QWidget):
         self.setFixedSize(size, size)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-    @Property(int)
-    def angle(self) -> int:
-        """The current rotation angle."""
-        return self._angle
-
-    @angle.setter
-    def angle(self, value: int) -> None:
-        """Set the rotation angle."""
-        self._angle = value % 360
-        self.update()
-
     def start(self) -> None:
         """Start the loading animation."""
         if not self._is_spinning:
@@ -81,6 +81,17 @@ class FXLoadingSpinner(fxstyle.FXThemeAware, QWidget):
     def stop(self) -> None:
         """Stop the loading animation."""
         self._is_spinning = False
+        self._timer.stop()
+
+    def showEvent(self, event) -> None:
+        """Resume the animation a hide paused."""
+        super().showEvent(event)
+        if self._is_spinning:
+            self._timer.start(16)
+
+    def hideEvent(self, event) -> None:
+        """Pause the animation while nothing can see it."""
+        super().hideEvent(event)
         self._timer.stop()
 
     def is_spinning(self) -> bool:
@@ -100,7 +111,7 @@ class FXLoadingSpinner(fxstyle.FXThemeAware, QWidget):
         """Get the current spinner color (theme-aware)."""
         if self._custom_color:
             return QColor(self._custom_color)
-        return QColor(self.theme.accent_primary)
+        return QColor(fxstyle.colors().accent_primary)
 
     def set_style(self, style: str) -> None:
         """Set the animation style.
@@ -240,7 +251,7 @@ class FXLoadingSpinner(fxstyle.FXThemeAware, QWidget):
         )
 
 
-class FXLoadingOverlay(fxstyle.FXThemeAware, QWidget):
+class FXLoadingOverlay(QWidget):
     """A loading overlay that blocks the parent widget.
 
     This widget creates a semi-transparent overlay with a loading
@@ -263,18 +274,9 @@ class FXLoadingOverlay(fxstyle.FXThemeAware, QWidget):
         message: Optional[str] = None,
     ):
         super().__init__(parent)
-
-        from qtpy.QtWidgets import QVBoxLayout, QLabel
-
-        # Setup overlay
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setStyleSheet(
-            """
-            FXLoadingOverlay {
-                background-color: rgba(0, 0, 0, 0.5);
-            }
-        """
-        )
+        if parent is not None:
+            parent.installEventFilter(self)
 
         # Layout
         layout = QVBoxLayout(self)
@@ -292,19 +294,6 @@ class FXLoadingOverlay(fxstyle.FXThemeAware, QWidget):
 
         self.hide()
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        if self._message_label:
-            self._message_label.setStyleSheet(
-                f"""
-                QLabel {{
-                    color: {self.theme.text};
-                    font-size: 14px;
-                    margin-top: 12px;
-                }}
-            """
-            )
-
     def show(self) -> None:
         """Show the overlay and start the spinner."""
         if self.parent():
@@ -318,11 +307,11 @@ class FXLoadingOverlay(fxstyle.FXThemeAware, QWidget):
         self._spinner.stop()
         super().hide()
 
-    def resizeEvent(self, event) -> None:
-        """Handle parent resize."""
-        if self.parent():
-            self.setGeometry(self.parent().rect())
-        super().resizeEvent(event)
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Cover the parent again when it resizes."""
+        if watched is self.parent() and event.type() == QEvent.Resize:
+            self.setGeometry(watched.rect())
+        return super().eventFilter(watched, event)
 
     def paintEvent(self, event) -> None:
         """Paint the semi-transparent background."""
