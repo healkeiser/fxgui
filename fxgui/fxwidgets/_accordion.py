@@ -101,10 +101,13 @@ class FXAccordion(QWidget):
             else:
                 section.set_content_layout(content)
 
-        # Connect signals
-        index = len(self._sections)
-        section.expanded.connect(lambda idx=index: self._on_section_expanded(idx))
-        section.collapsed.connect(lambda idx=index: self._on_section_collapsed(idx))
+        # The index is looked up when the signal fires: removals shift it.
+        section.expanded.connect(
+            lambda: self._on_section_expanded(self._index_of(section))
+        )
+        section.collapsed.connect(
+            lambda: self._on_section_collapsed(self._index_of(section))
+        )
 
         self._sections.append(section)
 
@@ -166,8 +169,17 @@ class FXAccordion(QWidget):
             for section in self._sections:
                 section.expand()
 
+    def _index_of(self, section: FXCollapsibleWidget) -> int:
+        """Return the section's current index, or -1 once removed."""
+        try:
+            return self._sections.index(section)
+        except ValueError:
+            return -1
+
     def _on_section_expanded(self, index: int) -> None:
         """Handle section expansion."""
+        if index < 0:
+            return
         if self._exclusive:
             # Collapse all other sections
             for i, section in enumerate(self._sections):
@@ -178,7 +190,8 @@ class FXAccordion(QWidget):
 
     def _on_section_collapsed(self, index: int) -> None:
         """Handle section collapse."""
-        self.section_collapsed.emit(index)
+        if index >= 0:
+            self.section_collapsed.emit(index)
 
     def __len__(self) -> int:
         """Return the number of sections."""
