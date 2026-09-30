@@ -7,6 +7,8 @@ from typing import Optional, Union
 from qtpy.QtCore import (
     QAbstractAnimation,
     QEasingCurve,
+    QEvent,
+    QObject,
     QParallelAnimationGroup,
     QPropertyAnimation,
     Qt,
@@ -26,10 +28,10 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxicons, fxstyle, fxutils
 
 
-class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
+class FXCollapsibleWidget(QWidget):
     """A widget that can expand or collapse its content.
 
     The widget consists of a header with a toggle button and a content area
@@ -102,12 +104,13 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
 
         # Create fixed header layout
         self._header = QFrame()
+        self._header.setObjectName("fx_collapsible_header")
+        self._header.setProperty("expanded", False)
         self._header.setFrameShape(QFrame.StyledPanel)
         self._header.setFrameShadow(QFrame.Raised)
         self._header.setCursor(Qt.PointingHandCursor)
         self._header.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        # Make header clickable
-        self._header.mousePressEvent = lambda e: self.toggle()
+        self._header.installEventFilter(self)
 
         header_layout = QHBoxLayout(self._header)
         header_layout.setContentsMargins(4, 2, 4, 2)
@@ -115,9 +118,7 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
 
         # Toggle button (chevron icon)
         self._toggle_btn = QToolButton()
-        self._toggle_btn.setStyleSheet(
-            "QToolButton { border: none; background: transparent; }"
-        )
+        self._toggle_btn.setObjectName("fx_collapsible_toggle")
         fxicons.set_icon(self._toggle_btn, "chevron_right")
         self._toggle_btn.setProperty("icon_name", "chevron_right")
         self._toggle_btn.setCheckable(True)
@@ -126,15 +127,13 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
 
         # Title icon label (optional)
         self._icon_label = QLabel()
-        self._icon_label.setStyleSheet("background: transparent;")
+        self._icon_label.setObjectName("fx_collapsible_icon")
         self._icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self._icon_label.setVisible(False)
 
         # Title label
         self._title_label = QLabel(self._title)
-        self._title_label.setStyleSheet(
-            "background: transparent; font-weight: bold;"
-        )
+        self._title_label.setObjectName("fx_collapsible_title")
         self._title_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Spacer to push content to the left, line spans remaining width
@@ -200,6 +199,19 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         # Set icon if provided
         if icon is not None:
             self.set_icon(icon)
+        # A named title icon is a pixmap baked in the theme's icon colour.
+        fxstyle.theme_changed.connect(self._on_theme_changed)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Toggle on a left click anywhere on the header."""
+        if (
+            watched is self._header
+            and event.type() == QEvent.MouseButtonPress
+            and event.button() == Qt.LeftButton
+        ):
+            self.toggle()
+            return True
+        return super().eventFilter(watched, event)
 
     @property
     def is_expanded(self) -> bool:
@@ -245,8 +257,7 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         fxicons.set_icon(self._toggle_btn, "expand_more")
         self._toggle_btn.setProperty("icon_name", "expand_more")
 
-        # Update header background based on expanded state
-        self._on_theme_changed()
+        self._mark_expanded(True)
 
         # Measured on every expansion, not once ever. The content is not
         # frozen after the first look at it: a row added, a label that
@@ -271,8 +282,7 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         fxicons.set_icon(self._toggle_btn, "chevron_right")
         self._toggle_btn.setProperty("icon_name", "chevron_right")
 
-        # Update header background based on expanded state
-        self._on_theme_changed()
+        self._mark_expanded(False)
 
         self._move_to(0, animate)
         self.collapsed.emit()
@@ -438,18 +448,13 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
 
         self.updateGeometry()
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        if self._is_expanded:
-            # Use hover state color when expanded
-            self._header.setStyleSheet(
-                f"QFrame {{ background-color: {self.theme.state_hover}; }}"
-            )
-        else:
-            # Use default (transparent) when collapsed
-            self._header.setStyleSheet("")
+    def _mark_expanded(self, expanded: bool) -> None:
+        """Let the header's QSS rule follow the expanded state."""
+        self._header.setProperty("expanded", expanded)
+        fxutils.repolish(self._header)
 
-        # Update title icon with new theme colors
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Redraw a named title icon in the new theme's colour."""
         if self._icon_name:
             self._icon = fxicons.get_icon(self._icon_name)
             self._icon_label.setPixmap(self._icon.pixmap(16, 16))
@@ -571,6 +576,24 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
     def get_title_icon(self) -> Optional[QIcon]:
         """Get the title icon (deprecated, use get_icon)."""
         return self.get_icon()
+
+
+fxstyle.register_widget_style("""
+FXCollapsibleWidget QFrame#fx_collapsible_header[expanded="true"] {
+    background-color: @state_hover;
+}
+FXCollapsibleWidget QToolButton#fx_collapsible_toggle {
+    border: none;
+    background: transparent;
+}
+FXCollapsibleWidget QLabel#fx_collapsible_icon {
+    background: transparent;
+}
+FXCollapsibleWidget QLabel#fx_collapsible_title {
+    background: transparent;
+    font-weight: bold;
+}
+""")
 
 
 def example() -> None:
