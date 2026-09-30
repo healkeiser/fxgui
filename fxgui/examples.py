@@ -83,6 +83,9 @@ from qtpy.QtWidgets import (
     QTabWidget,
     QGroupBox,
     QFrame,
+    QSplitter,
+    QTextEdit,
+    QToolButton,
 )
 from qtpy.QtCore import Qt, QSize, QTimer
 from qtpy.QtGui import QColor
@@ -1312,6 +1315,115 @@ def _create_timeline_tab() -> QWidget:
     return tab
 
 
+# Demo panes: a surface card with a well inside, on the frame.
+fxstyle.register_widget_style("""
+QFrame#fxShowcasePane {
+    background-color: @surface;
+    border: 1px solid @border;
+    border-radius: @button_radius;
+}
+QFrame#fxShowcasePane > QListWidget,
+QFrame#fxShowcasePane > QTextEdit {
+    background-color: @well;
+}
+""")
+
+
+def _showcase_pane(title: str, content: QWidget) -> QFrame:
+    """Return a titled pane card holding `content`."""
+    pane = QFrame()
+    pane.setObjectName("fxShowcasePane")
+    layout = QVBoxLayout(pane)
+    layout.setContentsMargins(8, 6, 8, 8)
+    layout.addWidget(QLabel(title))
+    layout.addWidget(content)
+    return pane
+
+
+def _framed_body() -> QWidget:
+    """Return a frame band with flat buttons and two panes in a splitter."""
+    body = QWidget()
+    fxstyle.mark_as_frame(body)
+    layout = QVBoxLayout(body)
+    layout.setContentsMargins(6, 0, 6, 6)
+    layout.setSpacing(6)
+
+    bar = QWidget()
+    fxstyle.mark_as_frame(bar)
+    bar_layout = QHBoxLayout(bar)
+    bar_layout.setContentsMargins(0, 0, 0, 0)
+    for icon, enabled in (("arrow_back", True), ("arrow_forward", False)):
+        button = QPushButton()
+        button.setProperty("fxRole", "flat")
+        set_icon(button, icon)
+        button.setEnabled(enabled)
+        bar_layout.addWidget(button)
+    bar_layout.addWidget(QLabel("Project"))
+    bar_layout.addWidget(QLineEdit("pipeline_episodic"))
+    bar_layout.addWidget(QCheckBox("My tasks only"))
+    bar_layout.addStretch()
+    layout.addWidget(bar)
+
+    shots = QListWidget()
+    shots.addItems([f"Shot {number:03d}" for number in range(10, 90, 10)])
+    right = QSplitter(Qt.Vertical)
+    right.setHandleWidth(6)
+    fxstyle.mark_as_frame(right)
+    right.addWidget(_showcase_pane("Notes", QTextEdit("A note")))
+    right.addWidget(_showcase_pane("Log", QTextEdit("Session log")))
+    splitter = QSplitter(Qt.Horizontal)
+    splitter.setHandleWidth(6)
+    fxstyle.mark_as_frame(splitter)
+    splitter.addWidget(_showcase_pane("Shots", shots))
+    splitter.addWidget(right)
+    layout.addWidget(splitter, 1)
+    return body
+
+
+def _create_framed_tab() -> QWidget:
+    """Create the Framed Window demonstration tab.
+
+    Shows `fxstyle.mark_as_frame` on a band, flat icon buttons and marked
+    splitters, and opens a whole `FXMainWindow(framed=True)`.
+    """
+    tab = QWidget()
+    layout = QVBoxLayout(tab)
+    hint = QLabel(
+        "A band marked with fxstyle.mark_as_frame() paints the theme's "
+        "frame color; the arrows are QPushButtons with fxRole=\"flat\"; "
+        "the splitters are marked too, so their handles are gaps with a "
+        "short centred mark."
+    )
+    hint.setWordWrap(True)
+    layout.addWidget(hint)
+    layout.addWidget(_framed_body(), 1)
+
+    def open_window():
+        window = fxwidgets.FXMainWindow(
+            parent=tab,
+            title="Framed Window",
+            project="fxgui",
+            version="1.0.0",
+            framed=True,
+        )
+        window.setWindowFlag(Qt.Window)
+        window.set_banner_text("Framed")
+        window.set_banner_icon("widgets")
+        disabled = QToolButton()
+        set_icon(disabled, "delete")
+        disabled.setEnabled(False)
+        window.toolbar.addWidget(disabled)
+        window.setCentralWidget(_framed_body())
+        window.resize(760, 480)
+        window.show()
+
+    open_button = QPushButton("Open a framed window")
+    set_icon(open_button, "open_in_new")
+    open_button.clicked.connect(open_window)
+    layout.addWidget(open_button)
+    return tab
+
+
 def main():
     """Main showcase application demonstrating fxgui capabilities.
 
@@ -1395,6 +1507,7 @@ def main():
     tabs.addTab(_create_delegates_tab(), "Delegates")
     tabs.addTab(_create_widgets_tab(), "Widgets")
     tabs.addTab(_create_timeline_tab(), "Timeline")
+    tabs.addTab(_create_framed_tab(), "Framed Window")
 
     central_layout.addWidget(tabs)
     window.setCentralWidget(central_widget)

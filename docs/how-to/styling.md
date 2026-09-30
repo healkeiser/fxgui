@@ -87,3 +87,74 @@ application.exec_()
 
 !!! warning
     Applying the `FXProxyStyle` is only allowed on a `QApplication` instance! So if you're instantiating a `FXMainWindow` inside a parent DCC, **do not** set the style on it.
+
+## Frame a Window Around Its Panes
+
+`FXMainWindow(framed=True)` draws the window as one frame around its panes, the way a code editor does: the menu bar, the toolbars, the status bar and the window behind the central widget all paint the theme's `frame` color, with no lines between them.
+
+```python
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QListWidget, QSplitter, QTextEdit, QVBoxLayout, QWidget
+from fxgui import fxstyle, fxwidgets
+
+application = fxwidgets.FXApplication()
+window = fxwidgets.FXMainWindow(title="My App", framed=True)
+window.set_banner_text("My App")
+window.set_banner_icon("widgets")
+
+body = QWidget()
+fxstyle.mark_as_frame(body)
+layout = QVBoxLayout(body)
+layout.setContentsMargins(6, 0, 6, 6)
+
+splitter = QSplitter(Qt.Horizontal)
+splitter.setHandleWidth(6)
+fxstyle.mark_as_frame(splitter)
+splitter.addWidget(QListWidget())
+splitter.addWidget(QTextEdit())
+layout.addWidget(splitter)
+
+window.setCentralWidget(body)
+window.show()
+application.exec_()
+```
+
+What changes in a framed window:
+
+| Part | Plain window | Framed window |
+|------|--------------|---------------|
+| Banner | A 50 px band under the toolbar | Gone; its icon and text sit at the right end of the menu bar, centred on the menu titles, with no fill of their own |
+| `set_banner_text()`, `set_banner_icon()` | Change the banner | Change the menu bar corner; the icon defaults to 16 px |
+| `hide_banner()`, `show_banner()` | Hide or show the banner | Hide or show the menu bar corner |
+| Menu bar, toolbars, status bar | `surface_sunken` / `surface`, with a line under each | `frame`, no lines |
+| Status bar accent line | Shown | Shown |
+
+The window does not paint your central widget: mark it, and any band of your own inside it, with `fxstyle.mark_as_frame()`. A widget left unmarked keeps its usual fill, which is what a pane should do.
+
+### What `mark_as_frame()` does
+
+| Widget marked | Result |
+|---------------|--------|
+| Any widget | Paints the `frame` color |
+| A `QLabel`, `QCheckBox`, `QRadioButton` or disabled `QToolButton` placed directly in it | No fill of its own, so it sits on the frame |
+| A `QSplitter` | Its handles are gaps in the `frame` color with a short centred mark of five dots in the `border` color; the handle keeps exactly the width `setHandleWidth()` gives it |
+
+Call `fxstyle.mark_as_frame(widget, False)` to remove the mark. Only direct children lose their fill: a label inside a pane inside a marked band keeps the pane's color.
+
+!!! note
+    The mark is drawn once, centred, and follows theme switches and screen scaling. Set the handle width before or after marking; either order works.
+
+## Flat Icon Buttons
+
+An icon-only `QPushButton` given the `fxRole="flat"` property has no box: it shows a fill on hover and a darker one when pressed, an accent border when it has keyboard focus, and nothing when disabled.
+
+```python
+from qtpy.QtWidgets import QPushButton
+from fxgui import fxicons
+
+back = QPushButton()
+back.setProperty("fxRole", "flat")
+fxicons.set_icon(back, "arrow_back")
+```
+
+Set the property before the button is shown, or call `fxutils.repolish(button)` after changing it.

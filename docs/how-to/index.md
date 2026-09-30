@@ -42,7 +42,7 @@ Welcome to the fxgui how-to guides. Choose a topic to get started:
 
 | Topic | Description |
 |-------|-------------|
-| [Styling](styling.md) | Apply stylesheets, use FXProxyStyle for Material icons |
+| [Styling](styling.md) | Apply stylesheets, use FXProxyStyle for Material icons, frame a window around its panes, flat icon buttons |
 | [Theming](theming.md) | Create custom themes, switch themes, make widgets theme-aware |
 | [Widgets](widgets.md) | Subclass FXMainWindow, available widget reference |
 | [Icons](icons.md) | Use fxicons, theme-aware icons, add custom libraries |
