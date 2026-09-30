@@ -28,35 +28,25 @@ from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._delegates import FXItemDelegate
 
 
-def _accepts(path: Path, mode: str, extensions: Optional[Set[str]]) -> bool:
-    """Return whether a drop zone in `mode` takes `path`."""
-    if mode != "files" and path.is_dir():
-        return True
-    if mode != "folders" and path.is_file():
-        return extensions is None or path.suffix.lower() in extensions
-    return False
+def _local_paths(event) -> List[Path]:
+    """Return the existing local paths a drag or drop event carries."""
+    paths = [
+        Path(url.toLocalFile())
+        for url in event.mimeData().urls()
+        if url.isLocalFile()
+    ]
+    return [path for path in paths if path.exists()]
 
 
 class _FileDropTree(QTreeWidget):
-    """Internal tree widget that accepts drag & drop for additional files.
+    """The zone's list of dropped files, which also takes more drops.
 
-    This tree displays the files that have been dropped and allows
-    adding more files via drag & drop.
+    Its rules are the zone's own, read at drop time.
     """
 
-    files_dropped = Signal(list)
-
-    def __init__(
-        self,
-        parent: Optional[QWidget] = None,
-        accept_mode: str = "files",
-        extensions: Optional[Set[str]] = None,
-        multiple: bool = True,
-    ):
-        super().__init__(parent)
-        self._accept_mode = accept_mode
-        self._extensions = extensions
-        self._multiple = multiple
+    def __init__(self, zone: "FXDropZone"):
+        super().__init__(zone)
+        self._zone = zone
 
         self.setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DropOnly)
@@ -80,58 +70,25 @@ class _FileDropTree(QTreeWidget):
         # Use FXItemDelegate for icon hover/selection states
         self.setItemDelegate(FXItemDelegate())
 
-    def set_accept_mode(self, mode: str) -> None:
-        """Set the accept mode."""
-        self._accept_mode = mode
-
-    def set_extensions(self, extensions: Optional[Set[str]]) -> None:
-        """Set accepted extensions."""
-        self._extensions = extensions
-
-    def set_multiple(self, multiple: bool) -> None:
-        """Set whether multiple files are accepted."""
-        self._multiple = multiple
-
-    def _is_valid_path(self, path: Path) -> bool:
-        """Check if a path is valid for this tree."""
-        return _accepts(path, self._accept_mode, self._extensions)
-
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """Handle drag enter."""
-        if event.mimeData().hasUrls():
-            for url in event.mimeData().urls():
-                if url.isLocalFile():
-                    path = Path(url.toLocalFile())
-                    if self._is_valid_path(path):
-                        event.acceptProposedAction()
-                        return
-        event.ignore()
-
-    def dragMoveEvent(self, event) -> None:
-        """Handle drag move."""
-        if event.mimeData().hasUrls():
+        """Accept a drag that carries a path the zone takes."""
+        if any(self._zone._accepts(path) for path in _local_paths(event)):
             event.acceptProposedAction()
         else:
             event.ignore()
 
+    def dragMoveEvent(self, event) -> None:
+        """Keep accepting over the tree's rows."""
+        event.acceptProposedAction()
+
     def dropEvent(self, event: QDropEvent) -> None:
-        """Handle drop."""
-        if event.mimeData().hasUrls():
-            valid_paths = []
-            for url in event.mimeData().urls():
-                if url.isLocalFile():
-                    path = Path(url.toLocalFile())
-                    if self._is_valid_path(path):
-                        valid_paths.append(path)
-
-            if valid_paths:
-                if not self._multiple:
-                    valid_paths = valid_paths[:1]
-                self.files_dropped.emit(valid_paths)
-                event.acceptProposedAction()
-                return
-
-        event.ignore()
+        """Hand the accepted paths to the zone."""
+        paths = [p for p in _local_paths(event) if self._zone._accepts(p)]
+        if not paths:
+            event.ignore()
+            return
+        self._zone._on_files_added(paths, flash=False)
+        event.acceptProposedAction()
 
 
 class FXDropZone(QWidget):
@@ -217,7 +174,6 @@ class FXDropZone(QWidget):
         self._show_formats = show_formats
         self._show_buttons = show_buttons
         self._show_tree = show_tree
-        self._is_drag_active = False
         self._selected_files: List[Path] = []
 
         self._init_ui()
@@ -281,15 +237,9 @@ class FXDropZone(QWidget):
 
         # File tree (hidden initially)
         if self._show_tree:
-            self._file_tree = _FileDropTree(
-                parent=self,
-                accept_mode=self._accept_mode,
-                extensions=self._extensions,
-                multiple=self._multiple,
-            )
+            self._file_tree = _FileDropTree(self)
             self._file_tree.setObjectName("FXDropZoneTree")
             self._file_tree.setVisible(False)
-            self._file_tree.files_dropped.connect(self._on_tree_files_dropped)
             self._file_tree.setContextMenuPolicy(Qt.CustomContextMenu)
             self._file_tree.customContextMenuRequested.connect(
                 self._show_context_menu
@@ -346,18 +296,6 @@ class FXDropZone(QWidget):
         self._drop_area.setProperty("dropState", state)
         fxutils.repolish(self._drop_area)
 
-    def _update_styles(self) -> None:
-        """Update widget styles based on current state."""
-        self._set_drop_state("drag" if self._is_drag_active else "idle")
-
-    def _apply_default_style(self) -> None:
-        """Apply default (non-drag) style."""
-        self._set_drop_state("idle")
-
-    def _apply_drag_active_style(self) -> None:
-        """Apply drag-active style."""
-        self._set_drop_state("drag")
-
     def _apply_feedback_style(self, feedback_type: str) -> None:
         """Apply feedback style (success/error).
 
@@ -383,7 +321,7 @@ class FXDropZone(QWidget):
 
     def _reset_to_default(self) -> None:
         """Reset to default style after feedback flash."""
-        self._apply_default_style()
+        self._set_drop_state("idle")
         self._update_icon()
 
     def _update_icon(self, color: Optional[str] = None) -> None:
@@ -552,7 +490,9 @@ class FXDropZone(QWidget):
             return
 
         if not self._multiple:
-            self._selected_files = new_files[:1]
+            # One file replaces the last; the signal names what was kept.
+            new_files = new_files[:1]
+            self._selected_files = new_files
         else:
             self._selected_files.extend(new_files)
 
@@ -564,10 +504,6 @@ class FXDropZone(QWidget):
 
         self._update_file_tree()
         self.files_dropped.emit(new_files)
-
-    def _on_tree_files_dropped(self, paths: List[Path]) -> None:
-        """Handle files dropped on the tree widget."""
-        self._on_files_added(paths, flash=False)
 
     def _on_clear_clicked(self) -> None:
         """Handle clear button click."""
@@ -583,19 +519,16 @@ class FXDropZone(QWidget):
 
         self.files_cleared.emit()
 
-    def _is_valid_drop(self, paths: List[Path]) -> bool:
-        """Check if the dropped paths are valid.
-
-        Args:
-            paths: List of dropped paths.
-
-        Returns:
-            True if at least one path is valid, False otherwise.
-        """
-        return any(
-            _accepts(path, self._accept_mode, self._extensions)
-            for path in paths
-        )
+    def _accepts(self, path: Path) -> bool:
+        """Return whether this zone takes `path`, by mode and extension."""
+        if self._accept_mode != "files" and path.is_dir():
+            return True
+        if self._accept_mode != "folders" and path.is_file():
+            return (
+                self._extensions is None
+                or path.suffix.lower() in self._extensions
+            )
+        return False
 
     def eventFilter(self, obj, event) -> bool:
         """Filter events for the drop area."""
@@ -617,25 +550,16 @@ class FXDropZone(QWidget):
 
     def _handle_drag_enter(self, event: QDragEnterEvent) -> None:
         """Handle drag enter events."""
-        if event.mimeData().hasUrls():
-            paths = []
-            for url in event.mimeData().urls():
-                if url.isLocalFile():
-                    paths.append(Path(url.toLocalFile()))
-
-            if paths and self._is_valid_drop(paths):
-                event.acceptProposedAction()
-                self._is_drag_active = True
-                self._update_styles()
-                self.drag_entered.emit()
-                return
-
+        if any(self._accepts(path) for path in _local_paths(event)):
+            event.acceptProposedAction()
+            self._set_drop_state("drag")
+            self.drag_entered.emit()
+            return
         event.ignore()
 
     def _handle_drag_leave(self, event: QDragLeaveEvent) -> None:
         """Handle drag leave events."""
-        self._is_drag_active = False
-        self._update_styles()
+        self._set_drop_state("idle")
         self.drag_left.emit()
         event.accept()
 
@@ -648,33 +572,15 @@ class FXDropZone(QWidget):
 
     def _handle_drop(self, event: QDropEvent) -> None:
         """Handle drop events."""
-        self._is_drag_active = False
-        self._update_styles()
-
-        if event.mimeData().hasUrls():
-            paths = [
-                Path(url.toLocalFile())
-                for url in event.mimeData().urls()
-                if url.isLocalFile()
-            ]
-            paths = [path for path in paths if path.exists()]
-
-            if paths:
-                valid_paths = [
-                    path
-                    for path in paths
-                    if _accepts(path, self._accept_mode, self._extensions)
-                ]
-
-                if valid_paths:
-                    if not self._multiple:
-                        valid_paths = valid_paths[:1]
-                    self._on_files_added(valid_paths)
-                    event.acceptProposedAction()
-                    return
-                else:
-                    self._flash_feedback("error")
-
+        self._set_drop_state("idle")
+        paths = _local_paths(event)
+        accepted = [path for path in paths if self._accepts(path)]
+        if accepted:
+            self._on_files_added(accepted)
+            event.acceptProposedAction()
+            return
+        if paths:
+            self._flash_feedback("error")
         event.ignore()
 
     # Public API
@@ -715,8 +621,6 @@ class FXDropZone(QWidget):
                 "folder_open" if value == "folders" else "file_open"
             )
             fxicons.set_icon(self._browse_btn, self._browse_icon_name)
-        if self._show_tree:
-            self._file_tree.set_accept_mode(value)
 
     @property
     def extensions(self) -> Optional[Set[str]]:
@@ -728,8 +632,6 @@ class FXDropZone(QWidget):
         """Set the accepted extensions."""
         self._extensions = value
         self._update_formats_label()
-        if self._show_tree:
-            self._file_tree.set_extensions(value)
 
     @property
     def multiple(self) -> bool:
@@ -740,8 +642,6 @@ class FXDropZone(QWidget):
     def multiple(self, value: bool) -> None:
         """Set whether multiple selection is enabled."""
         self._multiple = value
-        if self._show_tree:
-            self._file_tree.set_multiple(value)
 
     @property
     def has_files(self) -> bool:

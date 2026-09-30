@@ -91,12 +91,21 @@ def test_drop_zone_tree_follows_rules_set_after_construction(
     qtbot.addWidget(zone)
     text = tmp_path / "notes.txt"
     text.write_text("x")
-    assert not zone.file_tree._is_valid_path(text)
+    def taken(path):
+        mime = QMimeData()
+        mime.setUrls([QUrl.fromLocalFile(str(path))])
+        event = QDragEnterEvent(
+            QPoint(5, 5), Qt.CopyAction, mime, Qt.LeftButton, Qt.NoModifier
+        )
+        zone.file_tree.dragEnterEvent(event)
+        return event.isAccepted()
+
+    assert not taken(text)
     zone.extensions = {".txt"}
-    assert zone.file_tree._is_valid_path(text)
+    assert taken(text)
     zone.accept_mode = "folders"
-    assert not zone.file_tree._is_valid_path(text)
-    assert zone.file_tree._is_valid_path(tmp_path)
+    assert not taken(text)
+    assert taken(tmp_path)
 
 
 def test_drop_zone_drag_leave_returns_to_idle(qtbot, qapp, tmp_path):
