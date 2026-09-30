@@ -140,12 +140,16 @@ def test_item_tooltips_share_one_handler_and_build_on_show(qtbot):
     ]
     assert created == []
 
+    # An earlier test's tooltip may still be up until its anchor is freed.
+    def mine():
+        return [tip for tip in _visible_tooltips() if tip not in before]
+
     center = tree.visualItemRect(items[1]).center()
     QTest.mouseMove(tree.viewport(), center)
-    qtbot.waitUntil(lambda: bool(_visible_tooltips()), timeout=1000)
-    assert _visible_tooltips()[0]._title == "Item 1"
+    qtbot.waitUntil(lambda: bool(mine()), timeout=1000)
+    assert mine()[0]._title == "Item 1"
     QTest.mouseMove(tree.viewport(), QPoint(190, 115))
-    qtbot.waitUntil(lambda: not _visible_tooltips(), timeout=1000)
+    qtbot.waitUntil(lambda: not mine(), timeout=1000)
 
 
 def test_dropping_a_shown_tooltip_does_not_crash(qtbot):
@@ -263,3 +267,4 @@ def test_the_manager_shows_an_item_tooltip(qtbot):
     assert manager._tooltip._description == "item tip"
     manager._hide_tooltip_immediate()
     qtbot.waitUntil(lambda: not _visible_tooltips(), timeout=1000)
+

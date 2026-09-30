@@ -19,9 +19,16 @@ def _receivers() -> int:
     return fxstyle.theme_manager.receivers(SIGNAL("theme_changed(QString)"))
 
 
+def _settled() -> int:
+    """Return the receiver count once earlier tests' widgets are freed."""
+    QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+    gc.collect()
+    return _receivers()
+
+
 def test_qt_deleting_the_widget_drops_the_connection(qapp):
     fxstyle.apply_theme("dark")
-    before = _receivers()
+    before = _settled()
     parent = QWidget()
     widget = _Listener(parent)
     fxstyle.theme_changed.connect(widget.on_theme)
@@ -36,7 +43,7 @@ def test_qt_deleting_the_widget_drops_the_connection(qapp):
 
 def test_python_dropping_the_widget_drops_the_connection(qapp):
     fxstyle.apply_theme("dark")
-    before = _receivers()
+    before = _settled()
     widget = _Listener()
     fxstyle.theme_changed.connect(widget.on_theme)
     assert _receivers() == before + 1

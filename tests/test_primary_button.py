@@ -144,9 +144,10 @@ def test_it_takes_the_push_button_shapes(qtbot):
     button = FXPrimaryButton("Post", parent)
     assert button.text() == "Post" and button.parent() is parent
     assert button.property("fxRole") == "primary"
-    before = set(map(id, QApplication.topLevelWidgets()))
-    FXPrimaryButton("Send", parent, icon="send").show()
-    assert set(map(id, QApplication.topLevelWidgets())) == before
+    shown = FXPrimaryButton("Send", parent, icon="send")
+    shown.show()
+    assert not shown.isWindow()
+    assert shown not in QApplication.topLevelWidgets()
 
 
 def test_every_public_getter_is_exported():

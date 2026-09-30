@@ -20,8 +20,9 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     - Redirects fxconfig's settings file to a temp directory so tests never
       touch the user's real ``%APPDATA%/fxgui/settings.ini`` (apply_theme
       persists the theme).
-    - Resets fxstyle's module-level theme caches afterwards so theme changes
-      made by one test cannot leak into the next.
+    - Starts every test on the dark theme with the pointer off every
+      window, and resets fxstyle's caches afterwards, so no test leaks a
+      theme or a hover into the next.
     """
     import tempfile
 
@@ -38,9 +39,24 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     monkeypatch.setattr(fxconfig, "_settings_instance", None)
     # Widget modules register their fragments at import; keep those.
     fragments = dict(fxstyle._widget_fragments)
+    # Every test starts on the dark theme, with the pointer off every window.
+    fxstyle._theme = fxstyle._DEFAULT_THEME
+    fxstyle._invalidate_theme_namespace()
+    from qtpy.QtWidgets import QApplication
+
+    if QApplication.instance() is not None:
+        from qtpy.QtGui import QCursor
+
+        QCursor.setPos(-1000, -1000)
 
     yield
 
+    # A popup left open grabs the mouse from every later test.
+    app = QApplication.instance()
+    if app is not None:
+        for widget in app.topLevelWidgets():
+            if widget.isVisible():
+                widget.close()
     fxstyle._theme = None
     fxstyle._default_theme = fxstyle._DEFAULT_THEME
     fxstyle._theme_namespace = None

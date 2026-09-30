@@ -3,7 +3,7 @@
 # Third-party
 from qtpy.QtCore import Qt
 from qtpy.QtTest import QTest
-from qtpy.QtWidgets import QPushButton
+from qtpy.QtWidgets import QApplication, QPushButton
 
 # Internal
 from fxgui import fxstyle
@@ -49,6 +49,10 @@ def test_double_click_on_a_segment_opens_the_editor(qtbot, qapp):
     assert "mouseDoubleClickEvent" not in vars(segment)
     QTest.mouseDClick(segment, Qt.LeftButton)
     assert crumb.is_editing()
+    # QTest drops the release on the now hidden segment; without one the
+    # button stays down for every later test.
+    QTest.mouseRelease(crumb, Qt.LeftButton)
+    assert QApplication.mouseButtons() == Qt.NoButton
 
 
 def test_theme_switch_redraws_the_separators_without_the_mixin(qtbot, qapp):
