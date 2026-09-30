@@ -119,7 +119,9 @@ fonts:
 #   surface           - Main widget/window backgrounds
 #   surface_alt       - Alternating row backgrounds
 #   surface_sunken    - Input fields, lists, menus, status bar
-#   tooltip           - Tooltip backgrounds
+#   frame             - (Optional) Chrome around the panes of a framed window, auto-computed if omitted
+#   well              - (Optional) Lists and logs set into a pane, auto-computed if omitted
+#   tooltip          - Tooltip backgrounds
 #
 # Border Colors:
 #   border            - Standard borders (inputs, containers, menus)

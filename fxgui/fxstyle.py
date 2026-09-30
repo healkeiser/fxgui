@@ -20,6 +20,10 @@ Each theme in ``style.yaml`` defines these semantic color roles:
     - ``surface``: Main widget/window backgrounds, buttons, selected tabs
     - ``surface_alt``: Alternate row backgrounds in lists/tables
     - ``surface_sunken``: Recessed areas - inputs, lists, menus, status bar
+    - ``frame``: Chrome around the panes of a framed window (optional,
+      auto-computed; see `FRAME_MIN_CONTRAST`)
+    - ``well``: Lists and logs set into a pane (optional, auto-computed
+      half-way from ``surface`` to ``frame``)
     - ``tooltip``: Tooltip backgrounds
 
 **Border Colors**:
@@ -105,6 +109,8 @@ Constants:
     DEFAULT_COLOR_FILE: Path to the default color configuration.
     TITLE_PROPERTY: Dynamic property name selecting the title font role.
     BUTTON_RADIUS: Corner radius of a push button, in pixels.
+    FRAME_MIN_CONTRAST: Least contrast between a pane and its frame.
+    WELL_MIN_CONTRAST: Least contrast between a pane and a well in it.
 
 Examples:
     Loading a stylesheet with a theme:
@@ -504,6 +510,14 @@ TITLE_PROPERTY = "fxTitle"
 # shape of their own read it here.
 BUTTON_RADIUS = 4
 
+# Least WCAG contrast between a pane (`surface`) and the `frame` around
+# it. github_light's own pair, #ffffff on #f6f8fa, is 1.065.
+FRAME_MIN_CONTRAST = 1.06
+
+# Least contrast between a pane and a `well` inside it: the half-way mix
+# of a pane and a frame at FRAME_MIN_CONTRAST lands just above it.
+WELL_MIN_CONTRAST = 1.025
+
 # CSS generic keywords rather than family names: emitted unquoted, never
 # looked up in the font database, and terminal, so nothing is appended
 # after one.
@@ -715,6 +729,9 @@ def get_theme_colors() -> dict:
     - ``surface``: Main widget/window backgrounds, buttons, selected tabs
     - ``surface_alt``: Alternate row backgrounds in lists/tables
     - ``surface_sunken``: Recessed areas - input fields, lists, menus
+    - ``frame``: Chrome around the panes of a framed window (computed
+      unless the theme states it)
+    - ``well``: Lists and logs set into a pane (computed unless stated)
     - ``tooltip``: Tooltip backgrounds
 
     **Border Colors**:
@@ -767,8 +784,12 @@ def get_theme_colors() -> dict:
         >>> sunken = colors["surface_sunken"]  # Input/list backgrounds
         >>> text = colors["text"]  # Primary text color
     """
-    colors_dict = get_colors()
-    return colors_dict["themes"].get(_theme, colors_dict["themes"]["dark"])
+    themes = get_colors()["themes"]
+    theme_data = themes.get(_theme, themes["dark"])
+    return {
+        **theme_data,
+        **_depth_colors({**themes["dark"], **theme_data}),
+    }
 
 
 def get_available_themes() -> list:
@@ -1171,6 +1192,44 @@ def _primary_button_fills(
     return rest, hover, pressed
 
 
+def _mix(one_hex: str, two_hex: str, amount: float) -> str:
+    """Return the color `amount` of the way from `one_hex` to `two_hex`."""
+    one, two = QColor(one_hex), QColor(two_hex)
+    return QColor(
+        round(one.red() + (two.red() - one.red()) * amount),
+        round(one.green() + (two.green() - one.green()) * amount),
+        round(one.blue() + (two.blue() - one.blue()) * amount),
+    ).name()
+
+
+def _depth_colors(theme_data: dict) -> Dict[str, str]:
+    """Return a theme's ``frame`` and ``well`` roles, stated or computed.
+
+    The frame is ``surface_sunken`` when that is darker than ``surface`` by
+    `FRAME_MIN_CONTRAST`; otherwise ``surface`` darkened toward black until
+    it is, which keeps the pane's own hue and brings in no accent. The well
+    is half-way from ``surface`` to the frame.
+    """
+    surface = theme_data["surface"]
+    sunken = theme_data.get("surface_sunken", surface)
+
+    def deep_enough(color: str) -> bool:
+        return (
+            get_luminance(color) < get_luminance(surface)
+            and get_contrast_ratio(color, surface) >= FRAME_MIN_CONTRAST
+        )
+
+    frame = theme_data.get("frame")
+    if not frame:
+        frame = sunken
+        step = 0
+        while not deep_enough(frame) and step < 40:
+            step += 1
+            frame = _mix(surface, "#000000", step / 40)
+    well = theme_data.get("well") or _mix(surface, frame, 0.5)
+    return {"frame": frame, "well": well}
+
+
 def _token_map(theme_name: str) -> Dict[str, str]:
     """Build the ``@token`` -> value map for a theme.
 
@@ -1196,6 +1255,8 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         for key, value in theme_data.items()
         if isinstance(value, str)
     }
+    for key, value in _depth_colors(theme_data).items():
+        tokens[f"@{key}"] = value
 
     # Feedback colors flatten to @feedback_<level>_<part>. Theme-level
     # block wins over the deprecated top-level one.
