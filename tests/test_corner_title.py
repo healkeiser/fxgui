@@ -26,28 +26,17 @@ def _window(qtbot, corner=True, theme="dark"):
     return window
 
 
-def test_the_banner_band_goes_and_the_corner_shows(qtbot):
+def test_the_body_sits_under_the_toolbar_and_the_corner_shows(qtbot):
     window = _window(qtbot)
     bar = window.menuBar()
     body_top = window.body.mapTo(window, QPoint(0, 0)).y()
 
-    assert not window.banner.isVisible()
     assert body_top == window.toolbar.geometry().bottom() + 1
     assert bar.cornerWidget() is window.title_corner
     assert window.title_corner.isVisible()
     assert window.title_corner.isAncestorOf(window.banner_label)
     assert window.banner_label.text() == "Probe"
     assert bar.property(fxstyle.FRAME_PROPERTY) is None
-
-
-def test_hide_and_show_banner_toggle_the_corner(qtbot):
-    window = _window(qtbot)
-
-    window.hide_banner()
-    assert not window.title_corner.isVisible()
-    window.show_banner()
-    assert window.title_corner.isVisible()
-    assert not window.banner.isVisible()
 
 
 def test_a_corner_widget_sits_left_of_the_name_inside_the_bar(qtbot):
@@ -78,7 +67,6 @@ def test_a_corner_widget_asks_for_the_corner_itself(qtbot):
     window.add_corner_widget(QToolButton())
 
     assert window.menuBar().cornerWidget() is window.title_corner
-    assert not window.banner.isVisible()
 
 
 def test_a_theme_switch_keeps_the_corner_in_the_menu_bar_face(qtbot):
@@ -110,7 +98,7 @@ def test_a_new_menu_bar_set_later_gets_the_corner(qtbot, qapp):
     assert bar.property(fxstyle.FRAME_PROPERTY) is None
 
 
-def test_a_new_central_widget_keeps_the_band_gone(qtbot):
+def test_a_new_central_widget_keeps_the_corner(qtbot):
     window = _window(qtbot)
 
     window.setCentralWidget(QWidget())
@@ -120,4 +108,4 @@ def test_a_new_central_widget_keeps_the_band_gone(qtbot):
         qtbot.wait(10)
 
     assert not raised, raised
-    assert not window.banner.isVisible()
+    assert window.menuBar().cornerWidget() is window.title_corner

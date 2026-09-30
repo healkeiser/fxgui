@@ -1,4 +1,4 @@
-"""A framed FXMainWindow: no banner band, one frame colour for the chrome."""
+"""A framed FXMainWindow: one frame colour for the chrome."""
 
 # Third-party
 import pytest
@@ -56,20 +56,11 @@ def _frame():
     return QColor(fxstyle.get_theme_colors()["frame"]).name()
 
 
-def test_a_window_keeps_its_banner_by_default(qtbot):
-    window = _window(qtbot, framed=False)
-
-    assert window.banner.isVisible()
-    assert window.banner.height() == 50
-    assert window.menuBar().cornerWidget() is None
-
-
-def test_a_framed_window_has_no_banner_band(qtbot):
+def test_a_framed_body_sits_under_the_toolbar(qtbot):
     window = _window(qtbot)
     body_top = window.label.parentWidget().mapTo(window, QPoint(0, 0)).y()
     toolbar_bottom = window.toolbar.geometry().bottom()
 
-    assert not window.banner.isVisible()
     assert body_top == toolbar_bottom + 1
 
 
@@ -217,16 +208,6 @@ def test_the_corner_does_not_grow_the_menu_bar(qtbot):
     corner = framed.title_corner.geometry()
     assert corner.top() == 0
     assert corner.height() == framed.menuBar().height()
-
-
-def test_hide_banner_hides_the_corner_of_a_framed_window(qtbot):
-    window = _window(qtbot)
-
-    window.hide_banner()
-    assert not window.title_corner.isVisible()
-    window.show_banner()
-    assert window.title_corner.isVisible()
-    assert not window.banner.isVisible()
 
 
 @pytest.mark.parametrize("theme", THEMES)
@@ -438,30 +419,3 @@ def test_a_pressed_menu_item_keeps_the_selected_shape(qtbot, framed, theme):
     assert pressed == selected
     assert pressed_round
     assert pressed_text == selected_text, "the title does not jump"
-
-
-def _stale(sheet, old, new):
-    """Return the colours of `old` in `sheet` that `new` does not use."""
-    gone = {value.lower() for value in old.values()
-            if isinstance(value, str) and value.startswith("#")}
-    gone -= {value.lower() for value in new.values()
-             if isinstance(value, str) and value.startswith("#")}
-    return sorted(colour for colour in gone if colour in sheet.lower())
-
-
-@pytest.mark.parametrize("framed", [True, False])
-def test_the_banner_sheet_follows_a_theme_switch(qtbot, framed):
-    """show_banner can bring the banner back, so its sheet stays current."""
-    window = _window(qtbot, framed=framed, theme="dark")
-    old = dict(fxstyle.get_theme_colors())
-
-    fxstyle.apply_theme("github_light")
-    qtbot.wait(10)
-    new = fxstyle.get_theme_colors()
-
-    for widget in (window.banner, window.banner_label):
-        assert not _stale(widget.styleSheet(), old, new), widget
-    assert new["border"].lower() in window.banner.styleSheet().lower()
-    if framed:
-        # The name in the corner keeps the menu bar's own face.
-        assert window.banner_label.styleSheet() == ""

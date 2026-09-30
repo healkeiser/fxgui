@@ -75,7 +75,7 @@ class FXStatusBar(QStatusBar):
         # Attributes
         self.project = project or "Project"
         self.version = version or "0.0.0"
-        self.company = company or "© Company"
+        self.company = company or "\u00a9 Company"
         self.icon_label = QLabel()
         self.message_label = QLabel()
         self.project_label = QLabel(self.project)
@@ -317,7 +317,6 @@ class FXStatusBar(QStatusBar):
 
 def example() -> None:
     import sys
-    from qtpy.QtCore import QTimer
     from qtpy.QtWidgets import QVBoxLayout, QWidget, QPushButton
     from fxgui.fxwidgets import FXApplication, FXMainWindow
 
