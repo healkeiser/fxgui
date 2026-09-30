@@ -29,15 +29,15 @@ def test_token_map_merges_unknown_theme_over_dark(qapp):
     assert fxstyle._token_map("no_such_theme") == fxstyle._token_map("dark")
 
 
-def test_resolve_tokens_longest_key_first(qapp):
+def test_resolve_longest_key_first(qapp):
     qss = "a: @border; b: @border_light;"
-    resolved = fxstyle._resolve_tokens(qss, "dark")
+    resolved = fxstyle.resolve(qss, "dark")
     assert "@" not in resolved
     assert "_light" not in resolved  # @border must not corrupt @border_light
 
 
-def test_resolve_tokens_icons_path(qapp):
-    resolved = fxstyle._resolve_tokens("url(~icons/x.svg)", "dark")
+def test_resolve_icons_path(qapp):
+    resolved = fxstyle.resolve("url(~icons/x.svg)", "dark")
     assert "~icons" not in resolved
     assert "stylesheet_dark" in resolved or "stylesheet_light" in resolved
 

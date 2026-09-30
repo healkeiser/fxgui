@@ -1,17 +1,14 @@
 """Utility functions for the `fxgui` package.
 
 This module provides general-purpose utility functions for Qt-based
-applications including UI loading, action creation, widget effects,
-tree filtering, and tooltip formatting.
+applications including UI loading, action creation, widget effects
+and window corners.
 
 Functions:
     load_ui: Load a Qt Designer UI file.
     create_action: Create a QAction with common settings.
     add_shadows: Apply drop shadow effect to a widget.
-    filter_tree: Filter QTreeWidget items by text.
-    set_formatted_tooltip: Set a styled tooltip with title.
     get_formatted_time: Get current time as formatted string.
-    deprecated: Decorator to mark functions as deprecated.
     repolish: Force re-evaluation of stylesheet rules for a widget.
     round_window_corners: Ask Windows 11 for a flyout's rounded corners.
 
@@ -41,17 +38,13 @@ import ctypes
 import os
 import sys
 from datetime import datetime
-from functools import wraps
 from typing import Callable, Optional, Union
-import warnings
 
 # Third-party
 from qtpy.QtWidgets import (
     QAction,
     QWidget,
     QGraphicsDropShadowEffect,
-    QLineEdit,
-    QTreeWidget,
 )
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtCore import QFile
@@ -62,10 +55,7 @@ __all__ = [
     "load_ui",
     "create_action",
     "add_shadows",
-    "filter_tree",
-    "set_formatted_tooltip",
     "get_formatted_time",
-    "deprecated",
     "repolish",
     "round_window_corners",
 ]
@@ -224,90 +214,6 @@ def add_shadows(
     return shadow
 
 
-def filter_tree(
-    filter_bar_object: QLineEdit,
-    tree_to_filter: QTreeWidget,
-    column: int = 0,
-) -> None:
-    """Filters the items of a tree by displaying or hiding them based
-    on whether they match the filter text. Both root and child items are
-    considered.
-
-    .. deprecated::
-        Consider using :class:`fxgui.fxcore.FXSortFilterProxyModel` for
-        more sophisticated filtering with fuzzy matching support.
-
-    Args:
-        filter_bar_object (QLineEdit): The QLineEdit widget representing the
-            filter bar.
-        tree_to_filter (QTreeWidget): The QTreeWidget to be filtered.
-        column (int, optional): The column index to use for text filtering.
-            Defaults to `0`.
-
-    Examples:
-        >>> filter_bar = QLineEdit()
-        >>> tree_widget = QTreeWidget()
-        >>> filter_tree(filter_bar, tree_widget, column=1)
-    """
-    warnings.warn(
-        "filter_tree is deprecated. Consider using FXSortFilterProxyModel "
-        "from fxgui.fxcore for more sophisticated fuzzy filtering.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    filter_text = filter_bar_object.text().lower()
-    root = tree_to_filter.invisibleRootItem()
-
-    for child in range(root.childCount()):
-        item = root.child(child)
-        item_text = item.text(column).lower()
-        item.setHidden(filter_text not in item_text)
-
-        if item.childCount() > 0:
-            should_hide_parent = all(
-                filter_text not in item.child(grandchild).text(column).lower()
-                for grandchild in range(item.childCount())
-            )
-            item.setHidden(item.isHidden() or should_hide_parent)
-
-
-def set_formatted_tooltip(
-    widget: QWidget, title: str, tooltip: str, duration: int = 5
-) -> None:
-    """Set a formatted tooltip. The tooltip will be displayed with a bold title,
-    and a separator line between the title and the tooltip text.
-
-    Args:
-        widget (QWidget): The widget to set the tooltip.
-        title (str): The title of the tooltip.
-        tooltip (str): The tooltip text.
-        duration (int): The duration in seconds to show the tooltip.
-            Defaults to `5`.
-
-    Examples:
-        >>> set_formatted_tooltip(
-        ...     self, "Tooltip", "This is a <b>formatted</b> tooltip."
-        ... )
-
-    Note:
-        Superseded by `fxwidgets.apply_tip`, which is theme-aware, escapes
-        the caller's strings, renders a keyboard shortcut as a keycap and
-        also sets a status tip. Prefer it for new code.
-
-        This function is kept as-is rather than reimplemented over
-        `apply_tip` because the two have incompatible contracts: `tooltip`
-        here is documented as accepting markup (see the example above), which
-        `apply_tip` escapes on purpose so a path or a name cannot corrupt the
-        layout. Rewriting it would turn a caller's `<b>` into literal text
-        and drop `setToolTipDuration`.
-    """
-
-    tooltip = f"<b>{title}</b><hr>{tooltip}"
-    widget.setToolTip(tooltip)
-    widget.setToolTipDuration(duration * 1000)
-
-
 # ' Misc
 def get_formatted_time(
     display_seconds: bool = False, display_date: bool = False
@@ -336,37 +242,6 @@ def get_formatted_time(
     if display_date:
         format_string = "%Y-%m-%d " + format_string
     return datetime.now().strftime(format_string)
-
-
-def deprecated(func: Callable) -> Callable:
-    """Decorator to mark functions as deprecated.
-
-    When a decorated function is called, it emits a DeprecationWarning
-    to alert users that the function will be removed in a future version.
-
-    Args:
-        func: The function to mark as deprecated.
-
-    Returns:
-        A wrapper function that emits a warning before calling the original.
-
-    Examples:
-        >>> @deprecated
-        ... def old_function():
-        ...     return "old behavior"
-        >>> old_function()  # Emits DeprecationWarning
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        warnings.warn(
-            f"{func.__name__} is deprecated and will be removed in a future version",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 def repolish(widget: QWidget) -> None:

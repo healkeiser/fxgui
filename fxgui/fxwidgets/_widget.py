@@ -7,10 +7,12 @@ from typing import Optional
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 # Internal
-from fxgui import fxstyle, fxutils
+from fxgui import fxutils
 
 
-class FXWidget(fxstyle.FXThemeAware, QWidget):
+class FXWidget(QWidget):
+    """Widget holding an optional Designer UI file in a padded box layout."""
+
     def __init__(
         self,
         parent=None,
@@ -45,20 +47,10 @@ class FXWidget(fxstyle.FXThemeAware, QWidget):
             This method is intended for internal use only.
         """
 
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(9, 9, 9, 9)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(9, 9, 9, 9)
         if self.ui:
-            self.layout.addWidget(self.ui)
-
-    def _on_theme_changed(self) -> None:
-        """Apply theme-specific styles to the widget.
-
-        This method is called automatically when the theme changes.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-        self.setStyleSheet(fxstyle.load_stylesheet())
+            self.main_layout.addWidget(self.ui)
 
 
 def example() -> None:
@@ -72,8 +64,8 @@ def example() -> None:
 
     # Create a simple FXWidget
     widget = FXWidget()
-    widget.layout.addWidget(QLabel("This is an FXWidget with styled theme."))
-    widget.layout.addWidget(QPushButton("Click Me"))
+    widget.main_layout.addWidget(QLabel("This is an FXWidget with styled theme."))
+    widget.main_layout.addWidget(QPushButton("Click Me"))
 
     window.setCentralWidget(widget)
     window.resize(400, 200)

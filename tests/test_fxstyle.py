@@ -110,6 +110,6 @@ def test_apply_theme_switches_and_invalidates_cache(qtbot):
 def test_standard_icon_map_uses_feedback_fallbacks(qapp):
     """The standard icon map must build from get_feedback_colors() (the
     top-level "feedback" YAML block is deprecated and may be absent)."""
-    fxstyle.invalidate_standard_icon_map()
+    fxstyle._standard_icon_map = None
     icon_map = fxstyle._get_standard_icon_map()
     assert icon_map  # Built without KeyError

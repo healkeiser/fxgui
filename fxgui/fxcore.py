@@ -47,6 +47,12 @@ __all__ = [
 ]
 
 
+def _text(index: QModelIndex) -> str:
+    """Return an index's display data as lower-case text, whatever its type."""
+    value = index.data(Qt.DisplayRole)
+    return "" if value is None else str(value).lower()
+
+
 class FXSortFilterProxyModel(QSortFilterProxyModel):
     """A filter model that uses `SequenceMatcher` to filter items based on
     a similarity ratio. The similarity ratio is a value between 0 and 1,
@@ -155,9 +161,7 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         if self._show_all or not self._filter_text or self._ratio <= 0.0:
             return True
 
-        text = (
-            self.sourceModel().index(source_row, 0, source_parent).data() or ""
-        ).lower()
+        text = _text(self.sourceModel().index(source_row, 0, source_parent))
         if not text:
             return False
 
@@ -183,8 +187,8 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         if not self._filter_text or self._show_all:
             return left.row() < right.row()
 
-        left_text = left.data().lower() if left.data() else ""
-        right_text = right.data().lower() if right.data() else ""
+        left_text = _text(left)
+        right_text = _text(right)
 
         # Filter text stays cached in seq2; only seq1 changes per row
         self._matcher.set_seq1(left_text)
@@ -214,9 +218,7 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         ):
             # Get text from source model to avoid recursion
             source_index = self.mapToSource(index)
-            text = (
-                self.sourceModel().data(source_index, Qt.DisplayRole) or ""
-            ).lower()
+            text = _text(source_index)
 
             self._matcher.set_seq1(text)
             ratio = self._matcher.quick_ratio()
@@ -242,9 +244,9 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         # Imported here to avoid a circular import at module load
         from fxgui import fxstyle
 
-        colors = fxstyle.get_theme_colors()
-        poor = QColor(colors.get("text_disabled", "#777777"))
-        good = QColor(colors.get("accent_primary", "#2196F3"))
+        colors = fxstyle.colors()
+        poor = QColor(colors.text_disabled)
+        good = QColor(colors.accent_primary)
         ratio = max(0.0, min(1.0, ratio))
         return QColor(
             int(poor.red() + (good.red() - poor.red()) * ratio),
