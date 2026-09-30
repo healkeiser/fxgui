@@ -22,33 +22,21 @@ class FXApplication(QApplication):
         widgets with ``fxstyle.load_stylesheet()`` instead.
     """
 
-    _instance = None  # Private class attribute to hold the singleton instance
-
     def __new__(cls, *args, **kwargs):
         existing = QApplication.instance()
-        if existing is not None and not isinstance(existing, cls):
-            # A foreign QApplication is already running (DCC host or another
-            # framework). Returning a non-`cls` instance from __new__ skips
-            # __init__, so the host application is left untouched.
+        if existing is not None:
+            # A foreign application skips __init__, so the host is untouched.
             return existing
-
-        if cls._instance is None:
-
-            # Create the instance if it doesn't exist
-            cls._instance = super(FXApplication, cls).__new__(cls)
-
-            # Initialize the instance once
-            cls._instance.__initialized = False
-        return cls._instance
+        return super().__new__(cls)
 
     def __init__(self, *args, **kwargs):
-        if not self.__initialized:
+        if not getattr(self, "_fx_initialized", False):
             if not args:
                 # PyQt's QApplication requires argv positionally; PySide
-                # defaults it. An empty list matches PySide's no-argument
-                # behavior.
+                # defaults it.
                 args = ([],)
             super().__init__(*args, **kwargs)
+            self._fx_initialized = True
 
             fxstyle.set_style(self, "Fusion")
 
@@ -59,9 +47,6 @@ class FXApplication(QApplication):
             # The registry owns the stylesheet now, but subclasses may
             # override `_on_theme_changed`, so the hook still has to fire.
             fxstyle.theme_changed.connect(self._on_theme_changed)
-
-            # Mark the instance as initialized
-            self.__initialized = True
 
     def _on_theme_changed(self, theme_name: str) -> None:
         """Hook invoked after a theme change, for subclasses to extend.
@@ -76,16 +61,6 @@ class FXApplication(QApplication):
             set here wins over the registry's sheet. New code can connect
             to ``fxstyle.theme_changed`` instead of subclassing.
         """
-
-    @classmethod
-    def instance(cls, *args, **kwargs):
-        """Return the existing instance or create a new one if it doesn't
-        exist.
-        """
-
-        # This ensures that `__new__` and `__init__` are called if the instance
-        # doesn't exist
-        return cls(*args, **kwargs)
 
 
 def example() -> None:
