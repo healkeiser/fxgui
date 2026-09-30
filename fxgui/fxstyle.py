@@ -78,9 +78,9 @@ written before roles existed renders unchanged. Families the running Qt
 does not have are dropped and the platform default appended, so a role
 always resolves to something real.
 
-Because :func:`set_color_file` replaces this file wholesale, a consumer
-declaring ``fonts:`` in its own copy has full typographic control with no
-further API. Font files those names refer to are registered with
+A consumer names its fonts in its own ``fonts:`` block, through
+:func:`overlay_color_file` (a few keys) or :func:`set_color_file` (a
+whole file). Font files those names refer to are registered with
 :func:`register_fonts`.
 
 Classes:
@@ -91,7 +91,9 @@ Classes:
 Functions:
     load_stylesheet: Load and customize QSS stylesheets.
     get_colors: Get the cached color configuration.
-    set_color_file: Set a custom color configuration file.
+    set_color_file: Replace the color configuration file.
+    overlay_color_file: Merge a few keys onto the color configuration.
+    resolve: Replace every @token in a stylesheet.
     apply_theme: Apply a theme to all registered roots (stylesheet + icons).
     get_available_themes: Get list of available theme names.
     get_theme: Get the current theme name.
@@ -162,13 +164,21 @@ import sys
 import warnings
 import weakref
 from collections import OrderedDict
+from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 # Third-party
 import yaml
 from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal
-from qtpy.QtGui import QColor, QFontDatabase, QIcon, QPainter, QTransform
+from qtpy.QtGui import (
+    QColor,
+    QFontDatabase,
+    QGuiApplication,
+    QIcon,
+    QPainter,
+    QTransform,
+)
 from qtpy.QtWidgets import (
     QProxyStyle,
     QSplitter,
@@ -364,23 +374,8 @@ class FXThemeAware:
         if not self.theme_style:
             return
 
-        stylesheet = self.theme_style
-        colors = get_theme_colors()
-
-        # Replace @tokens with actual colors. Only string values are tokens:
-        # themes may contain nested sections (e.g. the per-theme "feedback"
-        # block). Longest keys first so @border does not corrupt
-        # @border_light into "<hex>_light".
-        flat_colors = {
-            key: value
-            for key, value in colors.items()
-            if isinstance(value, str)
-        }
-        for key in sorted(flat_colors, key=len, reverse=True):
-            stylesheet = stylesheet.replace(f"@{key}", flat_colors[key])
-
         if hasattr(self, "setStyleSheet"):
-            self.setStyleSheet(stylesheet)
+            self.setStyleSheet(resolve(self.theme_style))
 
     def _on_theme_changed(self) -> None:
         """Override this to apply custom theme styling.
@@ -466,6 +461,7 @@ __all__ = [
     "colors",
     "get_colors",
     "set_color_file",
+    "overlay_color_file",
     "get_accent_colors",
     "get_feedback_colors",
     "get_theme_colors",
@@ -488,6 +484,7 @@ __all__ = [
     # Stylesheet functions
     "load_stylesheet",
     "replace_colors",
+    "resolve",
     "build_stylesheet",
     "register_widget_style",
     "set_default_theme",
@@ -564,13 +561,17 @@ _theme = None  # Will be loaded from settings on first access
 _default_theme = _DEFAULT_THEME  # What load_saved_theme() falls back to
 _standard_icon_map = None  # Lazy-loaded icon map cache
 _theme_namespace = None  # Cached FXThemeColors for the current theme
+_theme_namespace_key = None  # (theme, colour dict id) the cache was built for
 _widget_fragments: "OrderedDict[str, str]" = OrderedDict()
 _themed_roots: "weakref.WeakSet" = weakref.WeakSet()
 
-# GATE from the spike (tests/test_style_cascade.py): False when Qt's
-# cascade reliably repaints custom-painted descendants after an ancestor
-# restyle; True enables an explicit update() walk as fallback.
-_FORCE_UPDATE_WALK = False
+_DEFAULT_FEEDBACK = {
+    "debug": {"foreground": "#26C6DA", "background": "#006064"},
+    "info": {"foreground": "#7661f6", "background": "#372d75"},
+    "success": {"foreground": "#8ac549", "background": "#466425"},
+    "warning": {"foreground": "#ffbb33", "background": "#7b5918"},
+    "error": {"foreground": "#ff4444", "background": "#7b2323"},
+}
 
 
 def _invalidate_theme_namespace() -> None:
@@ -580,14 +581,21 @@ def _invalidate_theme_namespace() -> None:
 
 
 def _get_theme_namespace() -> "FXThemeColors":
-    """Return a cached FXThemeColors for the current theme.
+    """Return the cached resolved colours of the current theme.
 
-    Widgets read `self.theme` in paintEvent hot paths; rebuilding the
-    namespace object on every access would allocate per frame.
+    Keyed on the colour dict too, so a swapped `_colors` never serves the
+    old file's colours.
     """
-    global _theme_namespace
-    if _theme_namespace is None:
-        _theme_namespace = FXThemeColors(get_theme_colors())
+    global _theme_namespace, _theme_namespace_key
+    _ensure_theme_loaded()
+    key = (_theme, id(get_colors()))
+    if _theme_namespace is None or _theme_namespace_key != key:
+        _theme_namespace = FXThemeColors({
+            name[1:]: value
+            for name, value in _token_map(_theme).items()
+            if name.startswith("@")
+        })
+        _theme_namespace_key = key
     return _theme_namespace
 
 
@@ -626,29 +634,86 @@ def _load_colors_from_yaml(yaml_file: str = None) -> dict:
         return _colors
 
 
+@lru_cache(maxsize=1)
+def _builtin_theme() -> dict:
+    """Return the default file's dark theme, the baseline for every key.
+
+    Keys computed from others are left out, so a file whose accent differs
+    gets them computed from its own accent.
+    """
+    with open(DEFAULT_COLOR_FILE, "r", encoding="utf-8") as in_file:
+        theme = yaml.safe_load(in_file)["themes"][_DEFAULT_THEME]
+    return {
+        key: value for key, value in theme.items()
+        if not key.startswith(("text_on_accent", "icon_on_accent"))
+    }
+
+
+def _theme_data(theme_name: str) -> dict:
+    """Return a theme's raw values over the file's dark and the built-in dark."""
+    themes = get_colors().get("themes", {})
+    return {
+        **_builtin_theme(),
+        **themes.get(_DEFAULT_THEME, {}),
+        **themes.get(theme_name, {}),
+    }
+
+
+def _deep_merge(base: dict, over: dict) -> dict:
+    """Return `base` with `over` merged in, nested dicts key by key."""
+    merged = dict(base)
+    for key, value in over.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            value = _deep_merge(merged[key], value)
+        merged[key] = value
+    return merged
+
+
+def _colors_changed() -> None:
+    """Re-apply the current theme after the colour file changed."""
+    global _standard_icon_map
+    _standard_icon_map = None
+    _invalidate_theme_namespace()
+    fxicons.sync_colors_with_theme()
+    _reapply_to_roots()
+    theme_manager.notify_theme_changed(get_theme())
+
+
 ###### Color Configuration
 
 
 def set_color_file(color_file: str) -> None:
-    """Set a custom color configuration file.
+    """Replace the whole colour file, then re-apply the theme everywhere.
 
-    This clears the color cache and sets the new file as the active
-    color source. The next call to `get_colors()` will load from this file.
-
-    Supports both YAML (.yaml, .yml) files with inheritance via anchors.
+    A file setting only a few keys belongs in `overlay_color_file`.
 
     Args:
-        color_file: Path to the custom YAML color configuration file.
+        color_file: Path to the YAML color configuration file.
+    """
+    global _colors, _color_file
+    _colors = None
+    _color_file = str(color_file)
+    _colors_changed()
+
+
+def overlay_color_file(color_file: str) -> None:
+    """Merge a colour file onto the loaded one, then re-apply the theme.
+
+    Nested mappings (`themes`, each theme, `fonts`) merge key by key, so
+    the file needs only the keys it changes. A new theme takes every key
+    it omits from the dark theme.
+
+    Args:
+        color_file: Path to the YAML file holding the keys to change.
 
     Examples:
-        >>> fxstyle.set_color_file("path/to/custom_theme.yaml")
-        >>> colors = fxstyle.get_colors()  # Loads from custom file
+        >>> fxstyle.overlay_color_file("studio_colors.yaml")
     """
-    global _colors, _color_file, _standard_icon_map
-    _colors = None  # Clear cache to force reload
-    _color_file = str(color_file)
-    _standard_icon_map = None  # Clear icon cache as colors may have changed
-    _invalidate_theme_namespace()
+    global _colors
+    with open(color_file, "r", encoding="utf-8") as in_file:
+        over = yaml.safe_load(in_file) or {}
+    _colors = _deep_merge(get_colors(), over)
+    _colors_changed()
 
 
 def get_colors() -> dict:
@@ -721,23 +786,22 @@ def get_feedback_colors() -> dict:
         >>> colors["error"]["background"]  # "#7b2323"
         >>> colors["success"]["foreground"]  # "#8ac549"
     """
-    # Default fallback colors
-    default_feedback = {
-        "debug": {"foreground": "#26C6DA", "background": "#006064"},
-        "info": {"foreground": "#7661f6", "background": "#372d75"},
-        "success": {"foreground": "#8ac549", "background": "#466425"},
-        "warning": {"foreground": "#ffbb33", "background": "#7b5918"},
-        "error": {"foreground": "#ff4444", "background": "#7b2323"},
-    }
+    return _feedback(get_theme())
 
-    # First, try to get theme-specific feedback colors
-    theme_colors = get_theme_colors()
-    if "feedback" in theme_colors:
-        return theme_colors["feedback"]
 
-    # Fall back to global feedback colors for backward compatibility
+def _feedback(theme_name: str) -> dict:
+    """Return a theme's feedback block: its own, dark's, the file's, built-in."""
     colors_dict = get_colors()
-    return colors_dict.get("feedback", default_feedback)
+    themes = colors_dict.get("themes", {})
+    for source in (
+        themes.get(theme_name, {}),
+        themes.get(_DEFAULT_THEME, {}),
+        colors_dict,
+        _builtin_theme(),
+    ):
+        if isinstance(source.get("feedback"), dict):
+            return source["feedback"]
+    return _DEFAULT_FEEDBACK
 
 
 def get_theme_colors() -> dict:
@@ -801,7 +865,9 @@ def get_theme_colors() -> dict:
     - ``icon_on_accent_secondary``: Icon color on accent_secondary backgrounds (optional)
 
     Returns:
-        Dictionary containing theme-specific colors.
+        Every ``@token`` of the theme sheet, without the ``@``: a copy of
+        the cache `colors` reads, with keys the theme omits filled from
+        the default theme.
 
     Examples:
         >>> colors = get_theme_colors()
@@ -809,12 +875,7 @@ def get_theme_colors() -> dict:
         >>> sunken = colors["surface_sunken"]  # Input/list backgrounds
         >>> text = colors["text"]  # Primary text color
     """
-    themes = get_colors()["themes"]
-    theme_data = themes.get(_theme, themes["dark"])
-    return {
-        **theme_data,
-        **_depth_colors({**themes["dark"], **theme_data}),
-    }
+    return dict(vars(_get_theme_namespace()))
 
 
 def get_available_themes() -> list:
@@ -865,14 +926,7 @@ def get_icon_on_accent_primary() -> str:
         >>> color = fxstyle.get_icon_on_accent_primary()
         >>> print(color)  # "#ffffff" for dark theme with blue accent
     """
-    theme_colors = get_theme_colors()
-    # Fallback chain: icon_on_accent_primary -> text_on_accent_primary -> computed
-    if "icon_on_accent_primary" in theme_colors:
-        return theme_colors["icon_on_accent_primary"]
-    if "text_on_accent_primary" in theme_colors:
-        return theme_colors["text_on_accent_primary"]
-    accent = theme_colors.get("accent_primary", "#2196F3")
-    return get_contrast_text_color(accent)
+    return colors().icon_on_accent_primary
 
 
 def get_icon_on_accent_secondary() -> str:
@@ -891,14 +945,7 @@ def get_icon_on_accent_secondary() -> str:
         >>> color = fxstyle.get_icon_on_accent_secondary()
         >>> print(color)  # "#ffffff" for dark theme with blue accent
     """
-    theme_colors = get_theme_colors()
-    # Fallback chain: icon_on_accent_secondary -> text_on_accent_secondary -> computed
-    if "icon_on_accent_secondary" in theme_colors:
-        return theme_colors["icon_on_accent_secondary"]
-    if "text_on_accent_secondary" in theme_colors:
-        return theme_colors["text_on_accent_secondary"]
-    accent = theme_colors.get("accent_secondary", "#1976D2")
-    return get_contrast_text_color(accent)
+    return colors().icon_on_accent_secondary
 
 
 ###### Font Configuration
@@ -973,12 +1020,9 @@ def _font_config(theme_name: str) -> dict:
     Returns:
         Mapping of role name to its configured family list or string.
     """
-    colors_dict = get_colors()
-    themes = colors_dict.get("themes", {})
-    theme_data = {**themes.get("dark", {}), **themes.get(theme_name, {})}
-
     fonts = dict(_DEFAULT_FONTS)
-    for source in (colors_dict.get("fonts"), theme_data.get("fonts")):
+    theme_fonts = _theme_data(theme_name).get("fonts")
+    for source in (get_colors().get("fonts"), theme_fonts):
         if isinstance(source, dict):
             fonts.update(source)
     return fonts
@@ -1010,7 +1054,10 @@ def _resolve_font_stack(entries) -> str:
     elif isinstance(entries, str):
         entries = [entries]
 
-    available = set(QFontDatabase.families())
+    # QFontDatabase needs a QGuiApplication; before one, only the default.
+    available = (
+        set(QFontDatabase.families()) if QGuiApplication.instance() else set()
+    )
 
     stack = []
     for entry in entries:
@@ -1442,16 +1489,13 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     ``~icons`` folder path.
 
     Args:
-        theme_name: Theme to resolve. Unknown names fall back to "dark"
-            key-by-key (the dark theme acts as the defaults baseline).
+        theme_name: Theme to resolve. Keys it omits come from the file's
+            dark theme, then the built-in one.
 
     Returns:
         Mapping of placeholder (including the ``@``/``~`` prefix) to value.
     """
-    colors_dict = get_colors()
-    themes = colors_dict.get("themes", {})
-    base = themes.get("dark", {})
-    theme_data = {**base, **themes.get(theme_name, {})}
+    theme_data = _theme_data(theme_name)
 
     tokens: Dict[str, str] = {
         f"@{key}": value
@@ -1461,10 +1505,8 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     for key, value in _depth_colors(theme_data).items():
         tokens[f"@{key}"] = value
 
-    # Feedback colors flatten to @feedback_<level>_<part>. Theme-level
-    # block wins over the deprecated top-level one.
-    feedback = theme_data.get("feedback") or colors_dict.get("feedback") or {}
-    for level, pair in feedback.items():
+    # Feedback colors flatten to @feedback_<level>_<part>.
+    for level, pair in _feedback(theme_name).items():
         if isinstance(pair, dict):
             for part, value in pair.items():
                 tokens[f"@feedback_{level}_{part}"] = value
@@ -1503,7 +1545,8 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         tokens[f"@font_{role}"] = _resolve_font_stack(entries)
 
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
-
+    # A bare number, for a sheet that writes its own unit: `@radiuspx`.
+    tokens["@radius"] = str(BUTTON_RADIUS)
 
     # Icon folder path used by url(~icons/...) in QSS, chosen by the
     # target theme's surface lightness (not the globally current theme).
@@ -1517,21 +1560,27 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     return tokens
 
 
-def _resolve_tokens(qss: str, theme_name: str) -> str:
-    """Replace all ``@token``/``~icons`` placeholders in a stylesheet.
-
-    Args:
-        qss: Stylesheet text containing placeholders.
-        theme_name: Theme whose values to substitute.
-
-    Returns:
-        The stylesheet with placeholders replaced, longest keys first so
-        ``@border`` cannot corrupt ``@border_light``.
-    """
-    tokens = _token_map(theme_name)
+def _substitute(qss: str, tokens: Dict[str, str]) -> str:
+    """Replace each placeholder, longest first so @border spares @border_light."""
     for key in sorted(tokens, key=len, reverse=True):
         qss = qss.replace(key, tokens[key])
     return qss
+
+
+def resolve(qss: str, theme: Optional[str] = None) -> str:
+    """Replace every ``@token`` and ``~icons`` placeholder in a stylesheet.
+
+    Args:
+        qss: Stylesheet text containing placeholders.
+        theme: Theme whose values to substitute. Defaults to the current.
+
+    Returns:
+        The stylesheet with every known placeholder replaced.
+
+    Examples:
+        >>> fxstyle.resolve("QFrame { border-radius: @button_radius; }")
+    """
+    return _substitute(qss, _token_map(theme or get_theme()))
 
 
 def is_light_theme() -> bool:
@@ -1908,12 +1957,6 @@ class FXProxyStyle(QProxyStyle):
         >>> fxstyle.set_style(app, "Fusion")
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Get icon color from theme configuration
-        theme_colors = get_theme_colors()
-        self.icon_color = theme_colors.get("icon", "#b4b4b4")
-
     def standardIcon(
         self,
         standardIcon: QStyle.StandardPixmap,
@@ -1939,15 +1982,6 @@ class FXProxyStyle(QProxyStyle):
             return icon
         return super().standardIcon(standardIcon, option, widget)
 
-    def set_icon_color(self, color: str):
-        """Set the color of the icons.
-
-        Args:
-            color: The color to set the icons to.
-        """
-        self.icon_color = color
-        self.update()
-
 
 ###### Stylesheet Functions
 
@@ -1965,7 +1999,8 @@ def replace_colors(
     Args:
         stylesheet: The stylesheet string containing color placeholders.
         colors_dict: Dictionary containing color definitions. Only top-level
-            non-dict values are used. Defaults to colors from get_colors().
+            non-dict values are used. Defaults to every token of the
+            current theme, as `resolve` substitutes them.
         prefix: Prefix for placeholder names. Defaults to empty string.
 
     Returns:
@@ -1978,26 +2013,22 @@ def replace_colors(
         >>> print(result)
         'color: #FF5722; background: #E64A19;'
     """
+    if colors_dict is None and not prefix:
+        return resolve(stylesheet)
     if colors_dict is None:
-        colors_dict = get_colors()
-
-    placeholders = {
-        f"@{prefix}{key}": value
+        colors_dict = get_theme_colors()
+    return _substitute(stylesheet, {
+        f"@{prefix}{key}": str(value)
         for key, value in colors_dict.items()
         if not isinstance(value, dict)
-    }
-    # Longest placeholders first so e.g. @border does not corrupt
-    # @border_light.
-    for placeholder in sorted(placeholders, key=len, reverse=True):
-        stylesheet = stylesheet.replace(placeholder, placeholders[placeholder])
-    return stylesheet
+    })
 
 
 def _font_stylesheet() -> str:
     """Return the font block mapping the font roles onto selectors.
 
     Emits ``@font_*`` tokens rather than resolved values; the caller runs
-    it through :func:`_resolve_tokens` with the rest of the sheet.
+    it through :func:`resolve` with the rest of the sheet.
 
     The title rule is an attribute selector, which outranks both a
     widget's own stylesheet and an explicit ``setFont``, so a marked
@@ -2032,7 +2063,7 @@ def build_stylesheet(theme: Optional[str] = None) -> str:
         with open(STYLE_FILE, "r", encoding="utf-8") as in_file:
             parts.append(in_file.read())
     parts.extend(_widget_fragments.values())
-    return _resolve_tokens("\n".join(parts), theme)
+    return resolve("\n".join(parts), theme)
 
 
 def register_widget_style(qss: str) -> None:
@@ -2091,55 +2122,28 @@ def _reapply_to_roots() -> None:
         if not _compat.is_valid(root):
             continue
         root.setStyleSheet(sheet)
-        if _FORCE_UPDATE_WALK and hasattr(root, "findChildren"):
-            for child in root.findChildren(QWidget):
-                child.update()
 
 
 def load_stylesheet(
     style_file: str = STYLE_FILE,
     extra: Optional[str] = None,
-    theme: str = None,
+    theme: Optional[str] = None,
 ) -> str:
-    """Load the stylesheet and replace placeholders with actual values.
+    """Return a stylesheet file with every token resolved; changes nothing.
 
-    Note:
-        Kept for backward compatibility and manual DCC styling. New code
-        should rely on :func:`register_themed_root` /
-        :func:`apply_theme`, which use :func:`build_stylesheet`
-        (including registered widget fragments; this function does not).
+    For styling a DCC window by hand. `build_stylesheet` also carries the
+    fragments of `register_widget_style`; this does not.
 
     Args:
         style_file: The path to the QSS file. Defaults to `STYLE_FILE`.
         extra: Extra stylesheet content to append. Defaults to None.
-        theme: The theme to use (e.g., "dark", "light", "dracula").
-            If None, uses the saved theme from persistent storage.
+        theme: The theme to use. Defaults to the current theme.
 
     Returns:
-        The stylesheet with all placeholders replaced.
+        The resolved stylesheet, or "" when `style_file` does not exist.
     """
-    global _theme
-
     if not os.path.exists(style_file):
-        # An empty string is a valid "no-op" stylesheet.
         return ""
-
-    if theme is None:
-        theme = load_saved_theme()
-
-    # Keep the historical side effects: global theme state stays in sync
-    # and icon colors follow (important for startup with a saved theme).
-    _theme = theme
-    _invalidate_theme_namespace()
-    fxicons.sync_colors_with_theme()
-
     with open(style_file, "r", encoding="utf-8") as in_file:
-        stylesheet = in_file.read()
-
-    # The font block carries @font_* tokens, so it has to go through the
-    # resolver with the rest of the sheet rather than be prepended after.
-    stylesheet = _resolve_tokens(_font_stylesheet() + stylesheet, theme)
-    if extra:
-        stylesheet += extra
-
-    return stylesheet
+        stylesheet = resolve(_font_stylesheet() + in_file.read(), theme)
+    return stylesheet + extra if extra else stylesheet
