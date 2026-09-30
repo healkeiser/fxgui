@@ -675,10 +675,11 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         return super().eventFilter(watched, event)
 
     def _live_menu_bar(self) -> QMenuBar:
-        """Return the menu bar, re-read where PySide dropped its wrapper.
+        """Return the menu bar, re-read once its wrapper is dead.
 
-        PySide drops a live widget's wrapper when the widget that last
-        returned it from a getter, such as ``nextInFocusChain``, dies.
+        A wrapper dies when `setMenuBar` replaces the bar, or when PySide
+        drops it: that happens as the widget that last returned it from a
+        getter, such as ``nextInFocusChain``, dies.
 
         Warning:
             This method is intended for internal use only.
@@ -688,10 +689,8 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         self.menu_bar = self.menuBar()
         if self.title_corner is not None:
             # setMenuBar moves the corner to a new bar; frame that bar too.
-            self.title_corner = self.menu_bar.cornerWidget(Qt.TopRightCorner)
-            if self.title_corner is not None:
-                self.menu_bar.installEventFilter(self)
-                fxstyle.mark_as_frame(self.menu_bar)
+            self.menu_bar.installEventFilter(self)
+            fxstyle.mark_as_frame(self.menu_bar)
         return self.menu_bar
 
     def _fit_title_corner(self) -> None:
