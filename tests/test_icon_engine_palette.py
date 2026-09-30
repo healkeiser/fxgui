@@ -228,3 +228,37 @@ def test_a_failing_draw_answers_a_blank_pixmap(qapp, monkeypatch, capsys):
     monkeypatch.setattr(fxicons._ThemedIconEngine, "_ink", broken)
     assert icon.pixmap(QSize(20, 20)).isNull()
     assert "theme table broken" in capsys.readouterr().err
+
+
+def test_cloned_icons_alive_at_exit_do_not_crash_the_interpreter():
+    """Python quits with cloned icons still held by widgets and by itself."""
+    import subprocess
+    import sys
+
+    code = (
+        "import os;"
+        "os.environ['QT_QPA_PLATFORM']='offscreen';"
+        "from qtpy.QtGui import QIcon, QPixmap;"
+        "from qtpy.QtWidgets import QApplication, QPushButton;"
+        "app=QApplication([]);"
+        "from fxgui import fxicons;"
+        "icons=[];buttons=[];\n"
+        "for _ in range(20):\n"
+        "    icon=QIcon(fxicons.get_icon('check'))\n"
+        "    icon.addPixmap(QPixmap(4,4),QIcon.Normal,QIcon.On)\n"
+        "    icons.append(icon)\n"
+        "    button=QPushButton()\n"
+        "    button.setIcon(icon)\n"
+        "    buttons.append(button)\n"
+        "assert fxicons._clones\n"
+        "assert not icons[0].pixmap(16,16).isNull()\n"
+        "print('ok')\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True,
+        timeout=120,
+    )
+    output = result.stdout + result.stderr
+    assert result.returncode == 0, output
+    assert "ok" in result.stdout
+    assert "Fatal" not in output and "access violation" not in output, output
