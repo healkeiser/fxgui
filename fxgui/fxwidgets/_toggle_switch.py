@@ -10,6 +10,7 @@ from qtpy.QtCore import (
     QPropertyAnimation,
     QRect,
     QRectF,
+    QSize,
     Qt,
 )
 from qtpy.QtGui import QColor, QPainter, QPainterPath
@@ -80,8 +81,6 @@ class FXToggleSwitch(QAbstractButton):
 
     def minimumSizeHint(self):
         """Return the minimum size of the switch."""
-        from qtpy.QtCore import QSize
-
         return QSize(44, 24)
 
     def hitButton(self, pos):

@@ -4,9 +4,10 @@
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import QRectF, QSize, Qt, Signal
 from qtpy.QtGui import (
     QColor,
+    QFontMetrics,
     QKeyEvent,
     QLinearGradient,
     QMouseEvent,
@@ -94,14 +95,10 @@ class FXRangeSlider(QWidget):
 
     def sizeHint(self):
         """Return the preferred size."""
-        from qtpy.QtCore import QSize
-
         return QSize(200, 70)
 
     def minimumSizeHint(self):
         """Return the minimum size."""
-        from qtpy.QtCore import QSize
-
         return QSize(100, 70)
 
     @property
@@ -302,49 +299,25 @@ class FXRangeSlider(QWidget):
         if self._show_values:
             font = painter.font()
             font.setPointSize(8)
-            # font.setBold(True)
             painter.setFont(font)
-
             text_color = QColor(theme.text)
             bg_color = QColor(theme.surface)
             bg_color.setAlpha(200)
-
-            from qtpy.QtCore import QRectF
-            from qtpy.QtGui import QFontMetrics
-
             fm = QFontMetrics(font)
-
-            # Low value label
-            low_text = str(self._low)
-            low_text_width = fm.horizontalAdvance(low_text) + 8
-            low_text_height = fm.height() + 4
-            low_rect = QRectF(
-                low_x - low_text_width / 2,
-                track_y - self._handle_radius - low_text_height - 4,
-                low_text_width,
-                low_text_height,
-            )
-            painter.setBrush(bg_color)
-            painter.setPen(Qt.NoPen)
-            painter.drawRoundedRect(low_rect, 3, 3)
-            painter.setPen(text_color)
-            painter.drawText(low_rect, Qt.AlignCenter, low_text)
-
-            # High value label
-            high_text = str(self._high)
-            high_text_width = fm.horizontalAdvance(high_text) + 8
-            high_text_height = fm.height() + 4
-            high_rect = QRectF(
-                high_x - high_text_width / 2,
-                track_y + self._handle_radius + 4,
-                high_text_width,
-                high_text_height,
-            )
-            painter.setBrush(bg_color)
-            painter.setPen(Qt.NoPen)
-            painter.drawRoundedRect(high_rect, 3, 3)
-            painter.setPen(text_color)
-            painter.drawText(high_rect, Qt.AlignCenter, high_text)
+            height = fm.height() + 4
+            # Low label above its handle, high label below its own.
+            for value, x_pos, top in (
+                (self._low, low_x, track_y - self._handle_radius - height - 4),
+                (self._high, high_x, track_y + self._handle_radius + 4),
+            ):
+                text = str(value)
+                width = fm.horizontalAdvance(text) + 8
+                rect = QRectF(x_pos - width / 2, top, width, height)
+                painter.setBrush(bg_color)
+                painter.setPen(Qt.NoPen)
+                painter.drawRoundedRect(rect, 3, 3)
+                painter.setPen(text_color)
+                painter.drawText(rect, Qt.AlignCenter, text)
 
         painter.end()
 
