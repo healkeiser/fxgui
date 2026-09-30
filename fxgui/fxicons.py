@@ -39,6 +39,7 @@ __email__ = "valentin.onze@gmail.com"
 
 # Built-in
 from functools import lru_cache
+import glob
 from pathlib import Path
 import re
 import weakref
@@ -51,7 +52,6 @@ from qtpy.QtGui import (
     QImage,
     QPainter,
     QPixmap,
-    QBitmap,
 )
 from qtpy.QtCore import Qt, QRectF, QSize
 
@@ -279,12 +279,26 @@ def get_available_icons_in_library(library: str) -> List[str]:
         ["3d_equalizer", "adobe_photoshop", "blender", "hiero"]
     """
 
-    library_path = fxconstants.ICONS_ROOT / library
-    if not library_path.exists():
+    if library not in _libraries_info:
         raise ValueError(f"Library '{library}' does not exist.")
-
-    icon_files = library_path.glob("**/*.*")
-    icon_names = sorted(icon_file.stem for icon_file in icon_files)
+    info = _libraries_info[library]
+    defaults = info["defaults"]
+    fields = {
+        "root": str(info.get("root", fxconstants.ICONS_ROOT)),
+        "library": library,
+        "style": defaults.get("style") or "*",
+        "extension": defaults.get("extension") or "*",
+    }
+    template = info["pattern"].format(icon_name="\0", **fields)
+    template = template.replace("\\", "/")
+    name = re.compile(
+        re.escape(template).replace(r"\*", "[^/]*").replace("\0", "([^/]+)")
+    )
+    matches = (
+        name.fullmatch(path.replace("\\", "/"))
+        for path in glob.glob(template.replace("\0", "*"))
+    )
+    icon_names = sorted({match.group(1) for match in matches if match})
 
     if not icon_names:
         raise FileNotFoundError(f"No icons found in library '{library}'.")
@@ -340,32 +354,8 @@ def get_icon_path(
     return path
 
 
-def has_transparency(mask: QBitmap) -> bool:
-    """Check if a mask has any transparency.
-
-    Args:
-        mask: The mask to check.
-
-    Returns:
-        bool: `True` if the mask has transparency, `False` otherwise.
-    """
-    image = mask.toImage()
-    width = mask.width()
-    height = mask.height()
-
-    # Early exit: scan row by row for better cache locality
-    for y in range(height):
-        for x in range(width):
-            if image.pixelIndex(x, y) == 0:
-                return True
-    return False
-
-
 def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
-    """Change the color of a pixmap.
-
-    Uses QPainter with composition mode for efficient colorization
-    while preserving the original alpha channel.
+    """Return a copy of `pixmap` in `color`, its alpha kept.
 
     Args:
         pixmap (QPixmap): The pixmap to change the color of.
@@ -374,20 +364,12 @@ def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
     Returns:
         QPixmap: The pixmap with the new color applied.
     """
-    mask = pixmap.createMaskFromColor(Qt.transparent)
-    if not has_transparency(mask):
-        return pixmap
-
-    # Create a copy to avoid modifying the original
-    colored_pixmap = pixmap.copy()
-
-    # Use QPainter with SourceIn composition to colorize while preserving alpha
-    painter = QPainter(colored_pixmap)
+    colored = pixmap.copy()
+    painter = QPainter(colored)
     painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-    painter.fillRect(colored_pixmap.rect(), QColor(color))
+    painter.fillRect(colored.rect(), QColor(color))
     painter.end()
-
-    return colored_pixmap
+    return colored
 
 
 def _screen_dpr() -> float:
@@ -543,16 +525,6 @@ def get_pixmap(
     )
 
 
-def _colored_copy(qpixmap: QPixmap, color: str) -> QPixmap:
-    """Return a copy of ``qpixmap`` recolored to ``color`` (alpha preserved)."""
-    pixmap = qpixmap.copy()
-    painter = QPainter(pixmap)
-    painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-    painter.fillRect(pixmap.rect(), QColor(color))
-    painter.end()
-    return pixmap
-
-
 def _get_icon_internal(
     icon_name: str,
     width: int,
@@ -585,18 +557,18 @@ def _get_icon_internal(
     icon = QIcon(qpixmap)
 
     # `QPixmap` for disabled state - use derived muted color
-    icon.addPixmap(_colored_copy(qpixmap, disabled_color), QIcon.Disabled)
+    icon.addPixmap(change_pixmap_color(qpixmap, disabled_color), QIcon.Disabled)
 
     # Only add selected/active pixmaps if there's a color (monochrome icons)
     if color:
         # Selected state (selected item rows) - icon_on_accent_primary color
         if selected_color:
-            icon.addPixmap(_colored_copy(qpixmap, selected_color), QIcon.Selected)
+            icon.addPixmap(change_pixmap_color(qpixmap, selected_color), QIcon.Selected)
 
         # Active state (hovered rows, highlighted menu items) -
         # icon_on_accent_secondary color. Omitted for button widgets.
         if active_color:
-            icon.addPixmap(_colored_copy(qpixmap, active_color), QIcon.Active)
+            icon.addPixmap(change_pixmap_color(qpixmap, active_color), QIcon.Active)
 
     return icon
 
@@ -699,10 +671,12 @@ def get_icon(
     if color is None:
         color = defaults["color"]
 
-    # Get disabled, selected, and active icon colors from theme
-    disabled_color = _get_disabled_icon_color()
-    selected_color = _get_selected_icon_color()
-    active_color = _get_active_icon_color() if include_active else ""
+    from fxgui import fxstyle
+
+    theme = fxstyle.colors()
+    disabled_color = _get_disabled_icon_color(theme.icon)
+    selected_color = theme.icon_on_accent_primary
+    active_color = theme.icon_on_accent_secondary if include_active else ""
 
     return _get_icon_cached(
         icon_name,
@@ -817,16 +791,20 @@ def get_icon_color() -> str:
     return fxstyle.get_icon_color()
 
 
-def _get_disabled_icon_color() -> str:
+def _get_disabled_icon_color(icon_color: Optional[str] = None) -> str:
     """Get the disabled icon color derived from the main icon color.
 
     Creates a muted version of the icon color by significantly reducing
     opacity and shifting toward neutral gray for clear visual distinction.
 
+    Args:
+        icon_color: The icon color to mute. Defaults to the theme's.
+
     Returns:
         The disabled icon color as a hex string (with alpha).
     """
-    icon_color = get_icon_color()
+    if icon_color is None:
+        icon_color = get_icon_color()
     if not icon_color:
         return "#80808060"
 
@@ -843,34 +821,6 @@ def _get_disabled_icon_color() -> str:
     # Use low alpha for the "faded out" disabled look
     color.setHslF(h, new_s, new_l, 0.35)
     return color.name(QColor.HexArgb)
-
-
-def _get_selected_icon_color() -> str:
-    """Get the icon color for selected state.
-
-    Returns the icon_on_accent_primary color from the theme, which is used
-    when items are selected in list/tree views.
-
-    Returns:
-        The selected icon color as a hex string.
-    """
-    from fxgui import fxstyle
-
-    return fxstyle.get_icon_on_accent_primary()
-
-
-def _get_active_icon_color() -> str:
-    """Get the icon color for active/hover state.
-
-    Returns the icon_on_accent_secondary color from the theme, used when items
-    are hovered in list/tree views or menu items are highlighted.
-
-    Returns:
-        The active icon color as a hex string.
-    """
-    from fxgui import fxstyle
-
-    return fxstyle.get_icon_on_accent_secondary()
 
 
 def sync_colors_with_theme() -> None:
@@ -890,9 +840,7 @@ def sync_colors_with_theme() -> None:
     # Import here to avoid circular imports
     from fxgui import fxstyle
 
-    # Get the icon color from the current theme
-    theme_colors = fxstyle.get_theme_colors()
-    icon_color = theme_colors.get("icon", "#b4b4b4")
+    icon_color = fxstyle.colors().icon
 
     # Update all libraries that support colorization
     for library_name, library_info in _libraries_info.items():
