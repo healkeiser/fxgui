@@ -871,13 +871,14 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         Warning:
             This method is intended for internal use only.
         """
-        # Update banner container for the new theme (match _create_banner
-        # style). A framed window's name is styled by the theme sheet.
-        if not self._framed and getattr(self, "banner", None) is not None:
+        # Match _create_banner. A framed window's banner is hidden but keeps
+        # current colours; its name is styled by the theme sheet.
+        if getattr(self, "banner", None) is not None:
             self.banner.setStyleSheet(
                 f"background: transparent; "
                 f"border-bottom: 1px solid {self.theme.border};"
             )
+        if not self._framed and getattr(self, "banner", None) is not None:
             self.banner_label.setStyleSheet(
                 f"color: {self.theme.text}; font-size: 16px; border: none;"
             )

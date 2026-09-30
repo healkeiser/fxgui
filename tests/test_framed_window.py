@@ -424,3 +424,27 @@ def test_a_pressed_menu_item_keeps_the_selected_shape(qtbot, framed, theme):
     assert pressed == selected
     assert pressed_round
     assert pressed_text == selected_text, "the title does not jump"
+
+
+def _stale(sheet, old, new):
+    """Return the colours of `old` in `sheet` that `new` does not use."""
+    gone = {value.lower() for value in old.values()
+            if isinstance(value, str) and value.startswith("#")}
+    gone -= {value.lower() for value in new.values()
+             if isinstance(value, str) and value.startswith("#")}
+    return sorted(colour for colour in gone if colour in sheet.lower())
+
+
+@pytest.mark.parametrize("framed", [True, False])
+def test_the_banner_sheet_follows_a_theme_switch(qtbot, framed):
+    """show_banner can bring the banner back, so its sheet stays current."""
+    window = _window(qtbot, framed=framed, theme="dark")
+    old = dict(fxstyle.get_theme_colors())
+
+    fxstyle.apply_theme("github_light")
+    qtbot.wait(10)
+    new = fxstyle.get_theme_colors()
+
+    for widget in (window.banner, window.banner_label):
+        assert not _stale(widget.styleSheet(), old, new), widget
+    assert new["border"].lower() in window.banner.styleSheet().lower()
