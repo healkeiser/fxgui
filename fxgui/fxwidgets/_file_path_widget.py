@@ -2,10 +2,11 @@
 
 # Built-in
 import os
+import weakref
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import Qt, Signal, QTimer, QThread, QObject
+from qtpy.QtCore import QObject, QRunnable, Qt, QThreadPool, QTimer, Signal
 from qtpy.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -17,43 +18,57 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui._compat import is_valid as is_valid_object
 from fxgui.fxwidgets._tips import apply_tip
 
 
-class _PathValidator(QObject):
-    """Background worker for path validation."""
+def _path_is_valid(path: str, mode: str) -> bool:
+    """Return whether `path` exists as `mode` asks."""
+    if not path:
+        return False
+    if mode == "folder":
+        return os.path.isdir(path)
+    if mode == "save":
+        return os.path.isdir(os.path.dirname(path))
+    if mode == "files":
+        paths = [p.strip() for p in path.split(";") if p.strip()]
+        return bool(paths) and all(os.path.isfile(p) for p in paths)
+    return os.path.isfile(path)
 
-    finished = Signal(str, bool)  # path, is_valid
 
-    def __init__(self, path: str, mode: str):
+class _Relay(QObject):
+    """Carries a pool check's result back to the UI thread."""
+
+    finished = Signal(object, str, bool)
+
+
+_relay: Optional[_Relay] = None
+
+
+def _deliver(widget_ref, path: str, is_valid: bool) -> None:
+    """Hand a result to its widget if the widget is still alive."""
+    widget = widget_ref()
+    if widget is not None and is_valid_object(widget):
+        widget._on_validation_finished(path, is_valid)
+
+
+class _PathCheck(QRunnable):
+    """One path check on the global thread pool."""
+
+    def __init__(self, widget_ref, path: str, mode: str):
         super().__init__()
+        self._widget_ref = widget_ref
         self._path = path
         self._mode = mode
 
     def run(self) -> None:
-        """Perform the validation in background thread."""
-        path = self._path
-        is_valid = False
-
-        if path:
-            if self._mode == "folder":
-                is_valid = os.path.isdir(path)
-            elif self._mode == "save":
-                is_valid = (
-                    os.path.isdir(os.path.dirname(path)) if path else False
-                )
-            elif self._mode == "files":
-                paths = path.split(";")
-                is_valid = all(
-                    os.path.isfile(p.strip()) for p in paths if p.strip()
-                )
-            else:  # file
-                is_valid = os.path.isfile(path)
-
-        self.finished.emit(path, is_valid)
+        """Check the path and post the result to the UI thread."""
+        _relay.finished.emit(
+            self._widget_ref, self._path, _path_is_valid(self._path, self._mode)
+        )
 
 
-class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
+class FXFilePathWidget(QWidget):
     """A line edit with integrated browse button for file/folder selection.
 
     This widget provides:
@@ -153,15 +168,9 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
         self._validation_timer.setInterval(300)  # ms
         self._validation_timer.timeout.connect(self._do_validation)
 
-        # Background validation thread
-        self._validation_thread: Optional[QThread] = None
-        self._validator: Optional[_PathValidator] = None
-
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        # Update indicator icon with new theme's feedback colors
-        self._update_indicator()
+        # The indicator's icon is baked in a feedback colour.
+        fxstyle.theme_changed.connect(self._update_indicator)
 
     @property
     def path(self) -> str:
@@ -249,11 +258,6 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
         """Start background validation (called after debounce)."""
         path = self._input.text()
 
-        # Cancel any existing validation
-        if self._validation_thread and self._validation_thread.isRunning():
-            self._validation_thread.quit()
-            self._validation_thread.wait(100)
-
         if not self._validate:
             return
 
@@ -263,14 +267,14 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
             self.path_valid.emit(self._is_valid)
             return
 
-        # Run validation in background thread
-        self._validation_thread = QThread(self)
-        self._validator = _PathValidator(path, self._mode)
-        self._validator.moveToThread(self._validation_thread)
-        self._validation_thread.started.connect(self._validator.run)
-        self._validator.finished.connect(self._on_validation_finished)
-        self._validator.finished.connect(self._validation_thread.quit)
-        self._validation_thread.start()
+        # A share that does not answer stalls the check, never the UI.
+        global _relay
+        if _relay is None:
+            _relay = _Relay()
+            _relay.finished.connect(_deliver)
+        QThreadPool.globalInstance().start(
+            _PathCheck(weakref.ref(self), path, self._mode)
+        )
 
     def _on_validation_finished(self, path: str, is_valid: bool) -> None:
         """Handle validation result from background thread."""
@@ -280,7 +284,7 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
             self._update_indicator()
             self.path_valid.emit(self._is_valid)
 
-    def _update_indicator(self) -> None:
+    def _update_indicator(self, _theme_name: Optional[str] = None) -> None:
         """Update the validation indicator icon."""
         if not self._validate:
             return
@@ -294,7 +298,7 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
                 self._indicator,
                 "remove",
                 theme_color=False,
-                color=self.theme.text_disabled,
+                color=fxstyle.colors().text_disabled,
             )
             self._indicator.setToolTip("No path entered")
         elif self._is_valid:
@@ -321,20 +325,13 @@ class FXFilePathWidget(fxstyle.FXThemeAware, QWidget):
 
     def dropEvent(self, event) -> None:
         """Handle file drop."""
-        urls = event.mimeData().urls()
-        if urls:
-            path = urls[0].toLocalFile()
-            if self._mode == "folder" and os.path.isdir(path):
-                self._input.setText(path)
-            elif self._mode != "folder" and os.path.isfile(path):
-                self._input.setText(path)
-            elif self._mode == "files":
-                paths = [
-                    url.toLocalFile()
-                    for url in urls
-                    if os.path.isfile(url.toLocalFile())
-                ]
+        paths = [url.toLocalFile() for url in event.mimeData().urls()]
+        if self._mode == "files":
+            paths = [p for p in paths if os.path.isfile(p)]
+            if paths:
                 self._input.setText(";".join(paths))
+        elif paths and _path_is_valid(paths[0], self._mode):
+            self._input.setText(paths[0])
 
 
 def example() -> None:
