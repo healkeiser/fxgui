@@ -3,13 +3,15 @@
 # Third-party
 import pytest
 from qtpy.QtCore import QPoint, QRect, QSize
-from qtpy.QtGui import QColor
+from qtpy.QtGui import QColor, QImage, QPainter
 from qtpy.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLabel,
     QMenuBar,
     QRadioButton,
+    QStyle,
+    QStyleOptionMenuItem,
     QToolButton,
     QWidget,
 )
@@ -341,3 +343,49 @@ def test_a_new_menu_bar_takes_the_corner_on_a_theme_switch(qtbot):
     # The corner keeps fitting the new bar as it resizes.
     bar.resize(bar.width(), bar.height() + 10)
     assert corner.height() == bar.height()
+
+
+_UNPAINTED = "#123456"
+
+
+def _item_fill(bar, state):
+    """Draw the first menu item in `state`; return where it painted."""
+    item = bar.actionGeometry(bar.actions()[0])
+    image = QImage(bar.size(), QImage.Format_ARGB32)
+    image.fill(QColor(_UNPAINTED))
+    option = QStyleOptionMenuItem()
+    option.initFrom(bar)
+    option.rect = item
+    option.menuRect = bar.rect()
+    option.text = bar.actions()[0].text()
+    option.menuItemType = QStyleOptionMenuItem.Normal
+    option.state = QStyle.State_Enabled | state
+    painter = QPainter(image)
+    bar.style().drawControl(QStyle.CE_MenuBarItem, option, painter, bar)
+    painter.end()
+    painted = [(x, y) for x in range(item.left(), item.right() + 1)
+               for y in range(item.top(), item.bottom() + 1)
+               if image.pixelColor(x, y).name() != _UNPAINTED]
+    xs, ys = [x for x, _ in painted], [y for _, y in painted]
+    box = QRect(min(xs), min(ys), max(xs) - min(xs) + 1,
+                max(ys) - min(ys) + 1)
+    # A rounded corner blends its pixel; a square one is the fill itself.
+    round_corner = (image.pixelColor(box.topLeft()).name()
+                    != image.pixelColor(box.left() + 2, box.top() + 2).name())
+    return box, item, round_corner
+
+
+@pytest.mark.parametrize("framed", [True, False])
+@pytest.mark.parametrize("theme", ["dark", "github_light"])
+def test_a_pressed_menu_item_keeps_the_selected_shape(qtbot, framed, theme):
+    """Pressed, as a mouse release leaves it, differs in colour only."""
+    window = _window(qtbot, framed=framed, theme=theme)
+    bar = window.menuBar()
+
+    selected, item, selected_round = _item_fill(bar, QStyle.State_Selected)
+    pressed, _item, pressed_round = _item_fill(bar, QStyle.State_Sunken)
+
+    assert selected == item.adjusted(5, 5, -5, -5), "selected keeps 5 px"
+    assert selected_round
+    assert pressed == selected
+    assert pressed_round

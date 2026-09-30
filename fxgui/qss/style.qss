@@ -265,12 +265,13 @@ QMenuBar::item:selected
     /* border: 1px solid @border; */
 }
 
+/* The selected shape, so a release does not flash edge to edge. */
 QMenuBar::item:pressed
 {
-    border: 1px solid @border;
     background-color: @accent_secondary;
     color: @text_on_accent_secondary;
-    padding-bottom:8px;
+    border-radius: 2px;
+    margin: 5px;
 }
 
 QMenu
