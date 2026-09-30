@@ -4,7 +4,7 @@
 from pathlib import Path
 
 # Third-party
-from qtpy.QtCore import QObject, QPoint, Slot
+from qtpy.QtCore import QObject, QPoint
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QAction,
@@ -37,7 +37,7 @@ class FXSystemTray(QObject):
     Methods:
         show: Shows the system tray icon.
         on_tray_icon_activated: Shows the tray menu above the taskbar.
-        closeEvent: Closes the application.
+        closeEvent: Quits an FXApplication; a DCC host keeps running.
 
     Examples:
         >>> app = FXApplication()
@@ -102,10 +102,10 @@ class FXSystemTray(QObject):
         self.tray_menu = QMenu(self.parent())
         self.tray_menu.addAction(self.quit_action)
 
-        # Styling
-        self.tray_menu.setStyleSheet(fxstyle.load_stylesheet())
+        # A parentless menu under a DCC host gets no application sheet.
+        if not isinstance(QApplication.instance(), FXApplication):
+            fxstyle.register_themed_root(self.tray_menu)
 
-    @Slot()
     def _handle_connections(self) -> None:
         # Right-click
         # self.tray_icon.setContextMenu(self.tray_menu)
@@ -113,7 +113,6 @@ class FXSystemTray(QObject):
         # Left-click
         self.tray_icon.activated.connect(self._on_tray_icon_activated)
 
-    @Slot()
     def _on_tray_icon_activated(self, reason):
         """Shows the tray menu at the cursor's position.
 
@@ -140,26 +139,26 @@ class FXSystemTray(QObject):
             if available_geometry.y() > screen_geometry.y():
                 # Taskbar is on the top
                 pos = QPoint(
-                    tray_icon_center.x() - menu_width / 2,
+                    tray_icon_center.x() - menu_width // 2,
                     tray_icon_geometry.bottom() + margin,
                 )
             elif available_geometry.x() > screen_geometry.x():
                 # Taskbar is on the left
                 pos = QPoint(
                     tray_icon_geometry.right() + margin,
-                    tray_icon_center.y() - menu_height / 2,
+                    tray_icon_center.y() - menu_height // 2,
                 )
             elif available_geometry.height() < screen_geometry.height():
                 # Taskbar is on the bottom
                 pos = QPoint(
-                    tray_icon_center.x() - menu_width / 2,
+                    tray_icon_center.x() - menu_width // 2,
                     tray_icon_geometry.top() - menu_height - margin,
                 )
             else:
                 # Taskbar is on the right or default position
                 pos = QPoint(
                     tray_icon_geometry.left() - menu_width - margin,
-                    tray_icon_center.y() - menu_height / 2,
+                    tray_icon_center.y() - menu_height // 2,
                 )
 
             # Ensure the menu is completely visible
@@ -201,9 +200,10 @@ class FXSystemTray(QObject):
 
     # Events
     def closeEvent(self, _) -> None:
-        FXApplication.instance().quit()
-        QApplication.instance().quit()
-        self.setParent(None)
+        """Quit the application, unless it is a host fxgui does not own."""
+        application = QApplication.instance()
+        if isinstance(application, FXApplication):
+            application.quit()
 
 
 def example() -> None:
