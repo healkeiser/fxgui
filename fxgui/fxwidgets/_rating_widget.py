@@ -70,7 +70,7 @@ class FXRatingWidget(QWidget):
 
         # Create star labels
         self._stars: list = []
-        for i in range(max_rating):
+        for _ in range(max_rating):
             star = QLabel()
             star.setFixedSize(icon_size, icon_size)
             star.setAlignment(Qt.AlignCenter)

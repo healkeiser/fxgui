@@ -142,3 +142,22 @@ def test_breadcrumb_edit_mode_opens_and_closes_publicly(qtbot, qapp):
     assert crumb.is_editing()
     crumb.exit_edit_mode()
     assert not crumb.is_editing()
+
+
+def test_avatar_shows_a_new_photo_and_a_new_size(qtbot, qapp):
+    from qtpy.QtGui import QColor, QPixmap
+
+    from fxgui.fxwidgets import FXAvatar
+
+    def photo(colour):
+        pixmap = QPixmap(40, 40)
+        pixmap.fill(QColor(colour))
+        return pixmap
+
+    avatar = FXAvatar("Anne Martin", size=32, pixmap=photo("#ff0000"))
+    qtbot.addWidget(avatar)
+    assert avatar.grab().toImage().pixelColor(16, 16).name() == "#ff0000"
+    avatar.set_pixmap(photo("#0000ff"))
+    assert avatar.grab().toImage().pixelColor(16, 16).name() == "#0000ff"
+    avatar.set_size(48)
+    assert avatar.grab().toImage().pixelColor(24, 24).name() == "#0000ff"

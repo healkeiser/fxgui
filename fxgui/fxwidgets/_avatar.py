@@ -93,13 +93,11 @@ class FXAvatar(QWidget):
     def set_pixmap(self, pixmap: Optional[QPixmap]) -> None:
         """Show `pixmap` cropped round, or the initials again for `None`."""
         self._pixmap = pixmap if pixmap and not pixmap.isNull() else None
-        self._face = None
         self.update()
 
     def set_size(self, size: int) -> None:
         """Resize the circle to `size` logical pixels across."""
         self._size = size
-        self._face = None
         self.setFixedSize(size, size)
         self.updateGeometry()
         self.update()
@@ -116,7 +114,8 @@ class FXAvatar(QWidget):
         """Return the photo centre-cropped square, `size` across at `ratio`."""
         side = round(self._size * ratio)
         key = (self._pixmap.cacheKey(), side, ratio)
-        if self._face is None or self._face_key != key:
+        # The key holds the photo, side and ratio, so any change misses.
+        if self._face_key != key:
             source = self._pixmap
             edge = min(source.width(), source.height())
             square = source.copy(
