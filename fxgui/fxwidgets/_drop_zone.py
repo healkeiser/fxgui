@@ -24,8 +24,17 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._delegates import FXItemDelegate
+
+
+def _accepts(path: Path, mode: str, extensions: Optional[Set[str]]) -> bool:
+    """Return whether a drop zone in `mode` takes `path`."""
+    if mode != "files" and path.is_dir():
+        return True
+    if mode != "folders" and path.is_file():
+        return extensions is None or path.suffix.lower() in extensions
+    return False
 
 
 class _FileDropTree(QTreeWidget):
@@ -85,24 +94,7 @@ class _FileDropTree(QTreeWidget):
 
     def _is_valid_path(self, path: Path) -> bool:
         """Check if a path is valid for this tree."""
-        if not path.exists():
-            return False
-
-        if self._accept_mode == "files":
-            if path.is_file():
-                if self._extensions is None:
-                    return True
-                return path.suffix.lower() in self._extensions
-        elif self._accept_mode == "folders":
-            return path.is_dir()
-        else:  # both
-            if path.is_dir():
-                return True
-            if path.is_file():
-                if self._extensions is None:
-                    return True
-                return path.suffix.lower() in self._extensions
-        return False
+        return _accepts(path, self._accept_mode, self._extensions)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Handle drag enter."""
@@ -142,7 +134,7 @@ class _FileDropTree(QTreeWidget):
         event.ignore()
 
 
-class FXDropZone(fxstyle.FXThemeAware, QWidget):
+class FXDropZone(QWidget):
     """A drag and drop zone widget for file and folder selection.
 
     This widget provides a visual drop target for files and folders with:
@@ -241,6 +233,8 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
         self._drop_area = QWidget()
         self._drop_area.setAcceptDrops(True)
         self._drop_area.setObjectName("FXDropZoneArea")
+        self._drop_area.setAttribute(Qt.WA_StyledBackground, True)
+        self._drop_area.setProperty("dropState", "idle")
         self._drop_area.installEventFilter(self)
 
         drop_layout = QVBoxLayout(self._drop_area)
@@ -339,76 +333,30 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
 
             main_layout.addWidget(button_container)
 
-        # Initialize icon (will be updated by theme change, but set initial state)
         self._update_icon()
+        # The drop icon is a pixmap baked in the theme's icon colour.
+        fxstyle.theme_changed.connect(self._on_theme_changed)
 
     def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        self._update_styles()
+        """Redraw the drop icon in the new theme's colour."""
         self._update_icon()
-        # Button icons are automatically refreshed by fxicons.set_icon registration
+
+    def _set_drop_state(self, state: str) -> None:
+        """Set the drop area's state: idle, drag, success or error."""
+        self._drop_area.setProperty("dropState", state)
+        fxutils.repolish(self._drop_area)
 
     def _update_styles(self) -> None:
         """Update widget styles based on current state."""
-        if self._is_drag_active:
-            self._apply_drag_active_style()
-        else:
-            self._apply_default_style()
-
-        # Style the count label (specific to this widget)
-        if self._show_tree:
-            self._count_label.setStyleSheet(
-                f"color: {self.theme.text_muted};"
-                f"font-size: 11px;"
-            )
+        self._set_drop_state("drag" if self._is_drag_active else "idle")
 
     def _apply_default_style(self) -> None:
         """Apply default (non-drag) style."""
-        self._drop_area.setStyleSheet(
-            f"QWidget#FXDropZoneArea {{"
-            f"  border: 2px dashed {self.theme.border};"
-            f"  border-radius: 8px;"
-            f"  background-color: {self.theme.surface_sunken};"
-            f"}}"
-            f"QWidget#FXDropZoneArea:hover {{"
-            f"  border-color: {self.theme.border_light};"
-            f"  background-color: {self.theme.state_hover};"
-            f"}}"
-        )
-
-        self._icon_label.setStyleSheet("background: transparent; border: none;")
-
-        self._title_label.setStyleSheet(
-            f"color: {self.theme.text};"
-            f"font-size: 12px;"
-            f"font-weight: bold;"
-            f"background: transparent;"
-            f"border: none;"
-        )
-
-        self._formats_label.setStyleSheet(
-            f"color: {self.theme.accent_primary};"
-            f"font-size: 11px;"
-            f"background: transparent;"
-            f"border: none;"
-        )
-
-        self._description_label.setStyleSheet(
-            f"color: {self.theme.text_muted};"
-            f"font-size: 11px;"
-            f"background: transparent;"
-            f"border: none;"
-        )
+        self._set_drop_state("idle")
 
     def _apply_drag_active_style(self) -> None:
         """Apply drag-active style."""
-        self._drop_area.setStyleSheet(
-            f"QWidget#FXDropZoneArea {{"
-            f"  border: 2px dashed {self.theme.accent_primary};"
-            f"  border-radius: 8px;"
-            f"  background-color: {self.theme.state_hover};"
-            f"}}"
-        )
+        self._set_drop_state("drag")
 
     def _apply_feedback_style(self, feedback_type: str) -> None:
         """Apply feedback style (success/error).
@@ -416,17 +364,10 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
         Args:
             feedback_type: Either 'success' or 'error'.
         """
+        self._set_drop_state(feedback_type)
         feedback = fxstyle.get_feedback_colors()
         color = feedback.get(feedback_type, {}).get(
-            "foreground", self.theme.accent_primary
-        )
-
-        self._drop_area.setStyleSheet(
-            f"QWidget#FXDropZoneArea {{"
-            f"  border: 2px dashed {color};"
-            f"  border-radius: 8px;"
-            f"  background-color: {self.theme.state_hover};"
-            f"}}"
+            "foreground", fxstyle.colors().accent_primary
         )
         self._update_icon(color)
 
@@ -486,6 +427,7 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
     def _update_file_tree(self) -> None:
         """Update the file tree with current selected files."""
         if not self._show_tree:
+            self._update_visibility()
             return
 
         self._file_tree.clear()
@@ -650,29 +592,10 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
         Returns:
             True if at least one path is valid, False otherwise.
         """
-        for path in paths:
-            if not path.exists():
-                continue
-
-            if self._accept_mode == "files":
-                if path.is_file():
-                    if self._extensions is None:
-                        return True
-                    if path.suffix.lower() in self._extensions:
-                        return True
-            elif self._accept_mode == "folders":
-                if path.is_dir():
-                    return True
-            else:  # both
-                if path.is_dir():
-                    return True
-                if path.is_file():
-                    if self._extensions is None:
-                        return True
-                    if path.suffix.lower() in self._extensions:
-                        return True
-
-        return False
+        return any(
+            _accepts(path, self._accept_mode, self._extensions)
+            for path in paths
+        )
 
     def eventFilter(self, obj, event) -> bool:
         """Filter events for the drop area."""
@@ -729,33 +652,19 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
         self._update_styles()
 
         if event.mimeData().hasUrls():
-            paths = []
-            for url in event.mimeData().urls():
-                if url.isLocalFile():
-                    path = Path(url.toLocalFile())
-                    if path.exists():
-                        paths.append(path)
+            paths = [
+                Path(url.toLocalFile())
+                for url in event.mimeData().urls()
+                if url.isLocalFile()
+            ]
+            paths = [path for path in paths if path.exists()]
 
             if paths:
-                valid_paths = []
-                for path in paths:
-                    if self._accept_mode == "files" and path.is_file():
-                        if (
-                            self._extensions is None
-                            or path.suffix.lower() in self._extensions
-                        ):
-                            valid_paths.append(path)
-                    elif self._accept_mode == "folders" and path.is_dir():
-                        valid_paths.append(path)
-                    elif self._accept_mode == "both":
-                        if path.is_dir():
-                            valid_paths.append(path)
-                        elif path.is_file():
-                            if (
-                                self._extensions is None
-                                or path.suffix.lower() in self._extensions
-                            ):
-                                valid_paths.append(path)
+                valid_paths = [
+                    path
+                    for path in paths
+                    if _accepts(path, self._accept_mode, self._extensions)
+                ]
 
                 if valid_paths:
                     if not self._multiple:
@@ -894,6 +803,58 @@ class FXDropZone(fxstyle.FXThemeAware, QWidget):
             self._drop_area.setVisible(False)
             self._file_tree.setVisible(True)
             self._count_label.setVisible(True)
+
+
+fxstyle.register_widget_style("""
+FXDropZone QWidget#FXDropZoneArea {
+    border: 2px dashed @border;
+    border-radius: 8px;
+    background-color: @surface_sunken;
+}
+FXDropZone QWidget#FXDropZoneArea:hover {
+    border-color: @border_light;
+    background-color: @state_hover;
+}
+FXDropZone QWidget#FXDropZoneArea[dropState="drag"] {
+    border-color: @accent_primary;
+    background-color: @state_hover;
+}
+FXDropZone QWidget#FXDropZoneArea[dropState="success"] {
+    border-color: @feedback_success_foreground;
+    background-color: @state_hover;
+}
+FXDropZone QWidget#FXDropZoneArea[dropState="error"] {
+    border-color: @feedback_error_foreground;
+    background-color: @state_hover;
+}
+FXDropZone QLabel#FXDropZoneIcon {
+    background: transparent;
+    border: none;
+}
+FXDropZone QLabel#FXDropZoneTitle {
+    color: @text;
+    font-size: 12px;
+    font-weight: bold;
+    background: transparent;
+    border: none;
+}
+FXDropZone QLabel#FXDropZoneFormats {
+    color: @accent_primary;
+    font-size: 11px;
+    background: transparent;
+    border: none;
+}
+FXDropZone QLabel#FXDropZoneDescription {
+    color: @text_muted;
+    font-size: 11px;
+    background: transparent;
+    border: none;
+}
+FXDropZone QLabel#FXDropZoneCount {
+    color: @text_muted;
+    font-size: 11px;
+}
+""")
 
 
 def example() -> None:
