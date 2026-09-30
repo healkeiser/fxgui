@@ -370,9 +370,14 @@ def _item_fill(bar, state):
     box = QRect(min(xs), min(ys), max(xs) - min(xs) + 1,
                 max(ys) - min(ys) + 1)
     # A rounded corner blends its pixel; a square one is the fill itself.
-    round_corner = (image.pixelColor(box.topLeft()).name()
-                    != image.pixelColor(box.left() + 2, box.top() + 2).name())
-    return box, item, round_corner
+    fill = image.pixelColor(box.left() + 2, box.top() + 2).name()
+    round_corner = image.pixelColor(box.topLeft()).name() != fill
+    inner = box.adjusted(2, 2, -2, -2)
+    ink = [(x, y) for x in range(inner.left(), inner.right() + 1)
+           for y in range(inner.top(), inner.bottom() + 1)
+           if image.pixelColor(x, y).name() != fill]
+    text = (min(y for _, y in ink), max(y for _, y in ink))
+    return box, item, round_corner, text
 
 
 @pytest.mark.parametrize("framed", [True, False])
@@ -382,10 +387,13 @@ def test_a_pressed_menu_item_keeps_the_selected_shape(qtbot, framed, theme):
     window = _window(qtbot, framed=framed, theme=theme)
     bar = window.menuBar()
 
-    selected, item, selected_round = _item_fill(bar, QStyle.State_Selected)
-    pressed, _item, pressed_round = _item_fill(bar, QStyle.State_Sunken)
+    selected, item, selected_round, selected_text = _item_fill(
+        bar, QStyle.State_Selected)
+    pressed, _item, pressed_round, pressed_text = _item_fill(
+        bar, QStyle.State_Sunken)
 
     assert selected == item.adjusted(5, 5, -5, -5), "selected keeps 5 px"
     assert selected_round
     assert pressed == selected
     assert pressed_round
+    assert pressed_text == selected_text, "the title does not jump"
