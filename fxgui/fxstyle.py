@@ -236,6 +236,13 @@ _DEFAULT_FONTS = {
     "mono": ["Consolas", "Courier New", "monospace"],
 }
 
+# Title ranks when the color file's `fonts: ranks:` names none: pixel size
+# and weight of a heading marked with `mark_as_title(widget, rank=...)`.
+_DEFAULT_RANKS = {
+    "section": {"size": 15, "weight": 600},
+    "card": {"size": 16, "weight": 600},
+}
+
 # A face's `weight:` in the color file, on the CSS scale QSS also reads.
 _WEIGHTS = {
     100: QFont.Thin,
@@ -760,27 +767,46 @@ def get_font_family(role: str = "body", theme: Optional[str] = None) -> str:
     return fonts.get(role) or fonts["body"]
 
 
-def mark_as_title(widget: QWidget, is_title: bool = True) -> None:
+def _ranks(theme_name: str) -> Dict[str, dict]:
+    """Return a theme's title ranks: built-in, the file's, then the theme's."""
+    ranks = dict(_DEFAULT_RANKS)
+    theme_fonts = _theme_data(theme_name).get("fonts")
+    for source in (get_colors().get("fonts"), theme_fonts):
+        if isinstance(source, dict) and isinstance(source.get("ranks"), dict):
+            ranks.update(source["ranks"])
+    return ranks
+
+
+def mark_as_title(
+    widget: QWidget, is_title: bool = True, rank: Optional[str] = None
+) -> None:
     """Draw a widget's text in the theme's title font role.
 
-    Sets the dynamic property the theme stylesheet keys the title role
-    on, then repolishes so the change lands on an already-shown widget.
-    Only the family changes: size and weight keep coming from whatever
-    rule or ``setFont`` call already governed the widget.
-
-    With a color file that leaves ``title`` empty, or names the same
-    family for both roles, this is a no-op visually.
+    Without a rank only the family changes. A rank ("section", "card",
+    or one the color file's ``fonts: ranks:`` adds) also sets the size
+    and weight, from the stylesheet, so it holds inside a host too,
+    where a font set in code loses to the host rules.
 
     Args:
         widget: The widget whose text is a title.
         is_title: False removes the mark and returns the widget to the
             body role. Defaults to True.
+        rank: The heading's rank. Defaults to None, the family alone.
+
+    Raises:
+        ValueError: If `rank` is not a rank of the current theme.
 
     Examples:
-        >>> heading = QLabel("Render Settings")
-        >>> fxstyle.mark_as_title(heading)
+        >>> fxstyle.mark_as_title(heading, rank="section")
     """
-    widget.setProperty(TITLE_PROPERTY, bool(is_title))
+    value = bool(is_title)
+    if rank is not None:
+        ranks = _ranks(get_theme())
+        if rank not in ranks:
+            raise ValueError(
+                f"No title rank {rank!r}. Ranks: {sorted(ranks)}")
+        value = rank if is_title else False
+    widget.setProperty(TITLE_PROPERTY, value)
     fxutils.repolish(widget)
 
 
@@ -1576,16 +1602,32 @@ def replace_colors(stylesheet: str, colors_dict: Optional[dict] = None) -> str:
     })
 
 
-def _font_stylesheet() -> str:
-    """Return the title rule: a marked title takes the title family.
+def _font_stylesheet(theme: Optional[str] = None) -> str:
+    """Return the title rules: the title family, then each rank's size.
 
     The body family and size are the root font (:func:`font`), which a
-    widget's own ``setFont`` overrides; the title rule outranks it.
+    widget's own ``setFont`` overrides; the title rules outrank it.
     """
-    return (
-        f'[{TITLE_PROPERTY}="true"] {{\n'
-        "    font-family: @font_title;\n}\n"
-    )
+    ranks = _ranks(theme or get_theme())
+    selectors = [f'[{TITLE_PROPERTY}="true"]'] + [
+        f'[{TITLE_PROPERTY}="{rank}"]' for rank in ranks
+    ]
+    rules = [f"{', '.join(selectors)} {{ font-family: @font_title; }}"]
+    for rank, shape in ranks.items():
+        declarations = []
+        if shape.get("size") is not None:
+            declarations.append(f"font-size: {int(shape['size'])}px;")
+        weight = shape.get("weight")
+        if weight is not None:
+            if weight not in _WEIGHTS:
+                raise ValueError(
+                    f"Font weight {weight!r} for rank '{rank}' is not one "
+                    f"of {sorted(_WEIGHTS)}")
+            declarations.append(f"font-weight: {weight};")
+        if declarations:
+            rules.append(
+                f'[{TITLE_PROPERTY}="{rank}"] {{ {" ".join(declarations)} }}')
+    return "\n".join(rules) + "\n"
 
 
 def build_stylesheet(theme: Optional[str] = None) -> str:
@@ -1606,7 +1648,7 @@ def build_stylesheet(theme: Optional[str] = None) -> str:
 
 def _build(style_file, theme: Optional[str]) -> str:
     """Resolve the font block, `style_file` and every registered fragment."""
-    parts = [_font_stylesheet()]
+    parts = [_font_stylesheet(theme)]
     if os.path.exists(style_file):
         with open(style_file, "r", encoding="utf-8") as in_file:
             parts.append(in_file.read())
