@@ -4,7 +4,6 @@
 import logging
 import os
 from typing import Callable, Mapping, Optional
-from weakref import WeakKeyDictionary
 
 # Third-party
 from qtpy.QtCore import (
@@ -99,6 +98,17 @@ fxstyle.register_widget_style(
 )
 
 
+def _staying(parent: QWidget) -> list:
+    """Return the banners shown on `parent` that are not leaving."""
+    return [
+        banner
+        for banner in parent.findChildren(
+            FXNotificationBanner, options=Qt.FindDirectChildrenOnly
+        )
+        if not banner.isHidden() and not banner._dismissing
+    ]
+
+
 class FXNotificationBanner(QFrame):
     """Animated pop-up notification cards that slide in from the right.
 
@@ -161,10 +171,6 @@ class FXNotificationBanner(QFrame):
 
     closed = Signal()
     action_clicked = Signal()
-
-    # Class-level tracking of active notifications per parent widget
-    # Uses WeakKeyDictionary so entries are auto-removed when parent is deleted
-    _active_notifications: WeakKeyDictionary = WeakKeyDictionary()
 
     SEVERITY_ICONS = {level: kind.icon for level, kind in SEVERITIES.items()}
     SEVERITY_TITLES = {
@@ -382,36 +388,17 @@ class FXNotificationBanner(QFrame):
 
         log(self._logger, self._severity_type, self._message)
 
-        # Calculate positions for slide-in from right
         parent = self.parent()
         if parent:
-            # Register this notification with parent tracking
-            if parent not in FXNotificationBanner._active_notifications:
-                FXNotificationBanner._active_notifications[parent] = []
-
-            active_list = FXNotificationBanner._active_notifications[parent]
-
-            # Add self to tracking if not already there
-            if self not in active_list:
-                active_list.append(self)
-
-            # Calculate y position based on existing visible notifications
-            # Find the bottom-most notification to stack below it
-            y_offset = self._margin
-            for notification in active_list:
-                # A dismissing banner is on its way out and keeps no slot
-                if (
-                    notification is not self
-                    and not notification.isHidden()
-                    and not notification._dismissing
-                ):
-                    notification_bottom = (
-                        notification._target_pos.y() + notification.height()
-                    )
-                    y_offset = max(
-                        y_offset, notification_bottom + self._spacing
-                    )
-
+            # Below every banner already staying on this parent.
+            y_offset = max(
+                (
+                    n._target_pos.y() + n.height() + self._spacing
+                    for n in _staying(parent)
+                    if n is not self
+                ),
+                default=self._margin,
+            )
             self._dismissing = False
             self.move(parent.width(), y_offset)  # Off-screen, to the right
             self._animate_to(QPoint(self._resting_x(), y_offset))
@@ -440,16 +427,9 @@ class FXNotificationBanner(QFrame):
 
     def _on_slide_out_finished(self) -> None:
         """Handle slide-out completion and reposition remaining notifications."""
-        # Remove from tracking
-        parent = self.parent()
-        if parent and parent in FXNotificationBanner._active_notifications:
-            active_list = FXNotificationBanner._active_notifications[parent]
-            if self in active_list:
-                active_list.remove(self)
-            # Reposition remaining notifications
-            self._reposition_notifications(parent)
-
         self.hide()
+        if self.parent():
+            self._reposition_notifications(self.parent())
         self.closed.emit()
         self.deleteLater()
 
@@ -462,17 +442,8 @@ class FXNotificationBanner(QFrame):
         Args:
             parent: The parent widget containing the notifications.
         """
-        if parent not in cls._active_notifications:
-            return
-
-        active_list = cls._active_notifications[parent]
-        staying = [
-            n for n in active_list if not n.isHidden() and not n._dismissing
-        ]
-
         # Sort by where each banner is headed, not by its transient position
-        staying.sort(key=lambda n: n._target_pos.y())
-
+        staying = sorted(_staying(parent), key=lambda n: n._target_pos.y())
         y_offset = staying[0]._margin if staying else 16
 
         for notification in staying:

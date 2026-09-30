@@ -139,3 +139,24 @@ def test_the_banner_carries_no_sheet_and_follows_a_theme_switch(qtbot):
     assert all(not child.styleSheet() for child in banner.findChildren(QWidget))
     assert image.pixelColor(inside).name() == QColor(
         fxstyle.colors().surface_sunken).name()
+
+
+def test_banners_on_two_parents_stack_apart(qtbot):
+    one, two = _host(qtbot), _host(qtbot)
+    _banner(qtbot, one, "one")
+
+    other = _banner(qtbot, two, "two")
+
+    assert other._target_pos.y() == other._margin
+
+
+def test_the_survivor_moves_up_when_the_top_banner_leaves(qtbot):
+    parent = _host(qtbot)
+    top = _banner(qtbot, parent, "top")
+    below = _banner(qtbot, parent, "below")
+    assert below._target_pos.y() > below._margin
+
+    top.dismiss()
+    _assert_gone(qtbot, top, parent)
+
+    assert below._target_pos.y() == below._margin
