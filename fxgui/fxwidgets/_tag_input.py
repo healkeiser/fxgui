@@ -21,7 +21,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 
 
-class FXTagChip(fxstyle.FXThemeAware, QFrame):
+class FXTagChip(QFrame):
     """A single removable tag chip.
 
     Args:
@@ -64,47 +64,22 @@ class FXTagChip(fxstyle.FXThemeAware, QFrame):
             self.remove_button.setFixedSize(16, 16)
             self.remove_button.setFlat(True)
             self.remove_button.setCursor(Qt.PointingHandCursor)
-            self.remove_button.setStyleSheet(
-                """
-                QPushButton {
-                    background: transparent;
-                    border: none;
-                    border-radius: 8px;
-                }
-                QPushButton:hover {
-                    background: rgba(255, 255, 255, 0.2);
-                }
-            """
-            )
             self.remove_button.clicked.connect(self._on_remove)
             layout.addWidget(self.remove_button)
+            self._update_remove_icon()
+            # The icon is baked in the on-accent colour.
+            fxstyle.theme_changed.connect(self._update_remove_icon)
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        self.setStyleSheet(
-            f"""
-            FXTagChip {{
-                background-color: {self.theme.accent_primary};
-                border-radius: 12px;
-                padding: 2px 4px;
-            }}
-        """
+    def _update_remove_icon(self, _theme_name: Optional[str] = None) -> None:
+        """Draw the remove icon in the theme's on-accent icon colour."""
+        fxicons.set_icon(
+            self.remove_button,
+            "close",
+            theme_color=False,
+            color=fxstyle.colors().icon_on_accent_primary,
         )
-
-        self.label.setStyleSheet(
-            """
-            QLabel {
-                color: white;
-                background: transparent;
-                font-size: 11px;
-            }
-        """
-        )
-
-        if self.remove_button:
-            fxicons.set_icon(self.remove_button, "close", color="#ffffff")
 
     @property
     def text(self) -> str:
@@ -116,7 +91,7 @@ class FXTagChip(fxstyle.FXThemeAware, QFrame):
         self.removed.emit(self._text)
 
 
-class FXTagInput(fxstyle.FXThemeAware, QWidget):
+class FXTagInput(QWidget):
     """A styled input widget that displays tags as removable chips.
 
     This widget provides an input field where users can type and press
@@ -167,8 +142,9 @@ class FXTagInput(fxstyle.FXThemeAware, QWidget):
         self._scroll_area = QScrollArea()
         self._scroll_area.setWidgetResizable(True)
         self._scroll_area.setFrameShape(QFrame.NoFrame)
-        self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # One row that scrolls sideways: a chip past the edge stays reachable.
+        self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._scroll_area.setMaximumHeight(80)
 
         # Tags container widget
@@ -182,6 +158,7 @@ class FXTagInput(fxstyle.FXThemeAware, QWidget):
 
         # Input field
         self._input = QLineEdit()
+        self._input.setObjectName("fx_tag_input_field")
         self._input.setPlaceholderText(placeholder)
         self._input.returnPressed.connect(self._on_return_pressed)
 
@@ -190,22 +167,6 @@ class FXTagInput(fxstyle.FXThemeAware, QWidget):
 
         # Hide scroll area initially if no tags
         self._scroll_area.setVisible(False)
-
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        self._input.setStyleSheet(
-            f"""
-            QLineEdit {{
-                background-color: {self.theme.surface_sunken};
-                border: 1px solid {self.theme.border};
-                border-radius: 4px;
-                padding: 6px 8px;
-            }}
-            QLineEdit:focus {{
-                border-color: {self.theme.accent_primary};
-            }}
-        """
-        )
 
     @property
     def tags(self) -> List[str]:
@@ -245,7 +206,7 @@ class FXTagInput(fxstyle.FXThemeAware, QWidget):
 
         # Emit signals
         self.tag_added.emit(tag)
-        self.tags_changed.emit(self._tags)
+        self.tags_changed.emit(self.tags)
 
         return True
 
@@ -278,7 +239,7 @@ class FXTagInput(fxstyle.FXThemeAware, QWidget):
 
         # Emit signals
         self.tag_removed.emit(tag)
-        self.tags_changed.emit(self._tags)
+        self.tags_changed.emit(self.tags)
 
         return True
 
@@ -302,6 +263,37 @@ class FXTagInput(fxstyle.FXThemeAware, QWidget):
         text = self._input.text().strip()
         if text and self.add_tag(text):
             self._input.clear()
+
+
+fxstyle.register_widget_style("""
+FXTagChip {
+    background-color: @accent_primary;
+    border-radius: 12px;
+    padding: 2px 4px;
+}
+FXTagChip QLabel {
+    color: @text_on_accent_primary;
+    background: transparent;
+    font-size: 11px;
+}
+FXTagChip QPushButton {
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+}
+FXTagChip QPushButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+FXTagInput QLineEdit#fx_tag_input_field {
+    background-color: @surface_sunken;
+    border: 1px solid @border;
+    border-radius: 4px;
+    padding: 6px 8px;
+}
+FXTagInput QLineEdit#fx_tag_input_field:focus {
+    border-color: @accent_primary;
+}
+""")
 
 
 def example() -> None:
