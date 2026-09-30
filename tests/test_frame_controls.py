@@ -307,3 +307,19 @@ def test_a_focused_flat_button_shows_the_accent_ring(qtbot, theme):
 
     assert button.hasFocus()
     assert _edges(window, button) == {_color("accent_primary")}
+
+
+def test_a_theme_switch_survives_a_dropped_handle_wrapper(qtbot):
+    """A splitter can hand back a handle whose wrapper PySide dropped."""
+    shiboken = pytest.importorskip("shiboken6")
+    host, splitter = _splitter(qtbot, Qt.Horizontal)
+    dropped = QWidget()
+    shiboken.delete(dropped)
+    live = splitter.handle
+    splitter.handle = lambda index: dropped if index == 1 else live(index)
+
+    with qtbot.captureExceptions() as raised:
+        fxstyle.apply_theme("github_light")
+        qtbot.wait(10)
+
+    assert not raised, raised

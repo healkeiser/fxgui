@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QMainWindow,
     QMenu,
+    QMenuBar,
     QStatusBar,
     QToolBar,
     QVBoxLayout,
@@ -32,7 +33,7 @@ if QT_VERSION_MAJOR >= 6:
 else:
     from qtpy.QtWidgets import QDesktopWidget
 
-from fxgui import fxicons, fxstyle, fxutils
+from fxgui import _compat, fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._tooltip import FXTooltipManager
 from fxgui.fxwidgets._constants import (
     CRITICAL,
@@ -666,12 +667,36 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Fit a framed window's menu bar corner to the bar."""
         if (
-            watched is self.menu_bar
-            and event.type() == QEvent.Resize
+            event.type() == QEvent.Resize
             and self.title_corner is not None
+            and watched is self._live_menu_bar()
         ):
             self._fit_title_corner()
         return super().eventFilter(watched, event)
+
+    def _live_menu_bar(self) -> QMenuBar:
+        """Return the menu bar, re-read where PySide dropped its wrapper.
+
+        PySide drops a live widget's wrapper when the widget that last
+        returned it from a getter, such as ``nextInFocusChain``, dies.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+        if _compat.is_valid(self.menu_bar):
+            return self.menu_bar
+        self.menu_bar = self.menuBar()
+        if self.title_corner is not None:
+            corner = self.menu_bar.cornerWidget(Qt.TopRightCorner)
+            if corner is None and _compat.is_valid(self.title_corner):
+                # A new bar: the corner moves to it, as `_frame_chrome` set.
+                self.menu_bar.setCornerWidget(
+                    self.title_corner, Qt.TopRightCorner)
+                self.menu_bar.installEventFilter(self)
+                fxstyle.mark_as_frame(self.menu_bar)
+            else:
+                self.title_corner = corner
+        return self.menu_bar
 
     def _fit_title_corner(self) -> None:
         """Size the corner as tall as the bar, inset like the first menu.
@@ -679,7 +704,9 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         Warning:
             This method is intended for internal use only.
         """
-        bar = self.menu_bar
+        bar = self._live_menu_bar()
+        if self.title_corner is None:
+            return
         self.title_corner.setFixedHeight(bar.height())
         # The name ends as far from the right edge as the first menu's
         # title starts from the left one.
@@ -875,9 +902,10 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
             self._fit_title_corner()
 
         # Force menu bar to repaint with new icons
-        if hasattr(self, "menu_bar") and self.menu_bar is not None:
-            self.menu_bar.update()
-            self.menu_bar.repaint()
+        if getattr(self, "menu_bar", None) is not None:
+            bar = self._live_menu_bar()
+            bar.update()
+            bar.repaint()
 
         # Update the checked state of theme actions
         current_theme = fxstyle.get_theme()

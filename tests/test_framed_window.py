@@ -287,3 +287,33 @@ def test_the_corner_title_is_inset_like_the_first_menu(qtbot, theme):
     left = ink[0]
     right = image.width() - 1 - ink[-1]
     assert abs(left - right) <= 2, (left, right)
+
+
+def _drop_wrapper(widget):
+    """Leave `widget` alive in Qt with its PySide wrapper dropped.
+
+    PySide makes the caller of a getter such as ``focusProxy`` or
+    ``nextInFocusChain`` the owner of the widget it returns, and drops
+    every wrapper an owner holds as that owner dies.
+    """
+    shiboken = pytest.importorskip("shiboken6")
+    doomed = QWidget(widget.window())
+    doomed.setFocusProxy(widget)
+    assert doomed.focusProxy() is widget
+    doomed.setFocusProxy(None)
+    shiboken.delete(doomed)
+    assert not shiboken.isValid(widget)
+
+
+def test_a_theme_switch_survives_a_dropped_menu_bar_wrapper(qtbot):
+    window = _window(qtbot)
+    _drop_wrapper(window.menu_bar)
+
+    with qtbot.captureExceptions() as raised:
+        fxstyle.apply_theme("github_light")
+        qtbot.wait(10)
+
+    assert not raised, raised
+    assert window.menu_bar is window.menuBar()
+    assert window.menu_bar.cornerWidget() is window.title_corner
+    assert window.title_corner.height() == window.menu_bar.height()
