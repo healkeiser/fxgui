@@ -678,7 +678,6 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         # QMenuBar pins a corner widget to its top at its own height; as
         # tall as the bar, the name centres on the menu titles.
         bar.installEventFilter(self)
-        self._fit_title_corner()
 
     def add_corner_widget(self, widget: QWidget) -> None:
         """Add `widget` to the menu bar corner, left of the icon and name.
@@ -687,10 +686,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         """
         self.use_corner_title()
         layout = self.title_corner.layout()
-        layout.insertWidget(
-            layout.indexOf(self.banner_icon), widget,
-            alignment=Qt.AlignVCenter)
-        self._fit_title_corner()
+        layout.insertWidget(layout.indexOf(self.banner_icon), widget)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Fit a framed window's menu bar corner to the bar."""
@@ -1141,7 +1137,7 @@ class FXMainWindow(fxstyle.FXThemeAware, QMainWindow):
         if self._framed:
             layout.setSpacing(0)
             fxstyle.mark_as_frame(central_widget)
-        elif self.title_corner is None and getattr(self, "banner", None):
+        elif hasattr(self, "banner") and self.banner is not None:
             layout.addWidget(self.banner)
 
         # Add the widget to the new layout
