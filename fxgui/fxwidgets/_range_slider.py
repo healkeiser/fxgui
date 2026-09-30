@@ -4,9 +4,10 @@
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import QRectF, QSize, Qt, Signal
 from qtpy.QtGui import (
     QColor,
+    QFontMetrics,
     QKeyEvent,
     QLinearGradient,
     QMouseEvent,
@@ -20,7 +21,7 @@ from qtpy.QtWidgets import QSizePolicy, QWidget
 from fxgui import fxstyle
 
 
-class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
+class FXRangeSlider(QWidget):
     """A slider with two handles for selecting a min/max range.
 
     This widget provides a dual-handle slider perfect for filtering
@@ -53,6 +54,8 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
     HANDLE_NONE = 0
     HANDLE_LOW = 1
     HANDLE_HIGH = 2
+    # Both handles under the press; the first move picks one.
+    _HANDLE_TIED = 3
 
     def __init__(
         self,
@@ -74,6 +77,7 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
 
         # UI state
         self._pressed_handle = self.HANDLE_NONE
+        self._press_x = 0.0
         self._hover_handle = self.HANDLE_NONE
         # Handle addressed by keyboard input (arrow keys); Tab toggles it
         # while the widget has focus.
@@ -91,14 +95,10 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
 
     def sizeHint(self):
         """Return the preferred size."""
-        from qtpy.QtCore import QSize
-
         return QSize(200, 70)
 
     def minimumSizeHint(self):
         """Return the minimum size."""
-        from qtpy.QtCore import QSize
-
         return QSize(100, 70)
 
     @property
@@ -188,7 +188,7 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
 
         ratio = (pos - margin) / available_width
         ratio = max(0.0, min(1.0, ratio))
-        return int(self._minimum + ratio * value_range)
+        return round(self._minimum + ratio * value_range)
 
     def _handle_at_position(self, pos: int) -> int:
         """Return which handle is at the given x position."""
@@ -217,10 +217,11 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Get current theme colors (dynamic for theme switching)
-        track_color = QColor(self.theme.surface_sunken)
-        handle_color = QColor("#ffffff")
-        handle_border_color = QColor(self.theme.accent_primary)
+        theme = fxstyle.colors()
+        track_color = QColor(theme.surface_sunken)
+        handle_color = QColor(theme.slider_thumb)
+        hover_color = QColor(theme.slider_thumb_hover)
+        handle_border_color = QColor(theme.accent_primary)
 
         # Calculate positions
         margin = self._handle_radius
@@ -251,8 +252,8 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
             self._track_height // 2,
         )
         range_gradient = QLinearGradient(low_x, 0, high_x, 0)
-        range_gradient.setColorAt(0, QColor(self.theme.accent_primary))
-        range_gradient.setColorAt(1, QColor(self.theme.accent_secondary))
+        range_gradient.setColorAt(0, QColor(theme.accent_primary))
+        range_gradient.setColorAt(1, QColor(theme.accent_secondary))
         painter.fillPath(range_path, range_gradient)
 
         # Draw handles
@@ -275,10 +276,8 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
 
             # Handle fill
             current_handle_color = handle_color
-            if is_pressed:
-                current_handle_color = handle_color.darker(110)
-            elif is_hovered:
-                current_handle_color = handle_color.darker(105)
+            if is_pressed or is_hovered:
+                current_handle_color = hover_color
 
             painter.setBrush(current_handle_color)
             # Focus indicator: the keyboard-active handle gets a thicker
@@ -300,49 +299,25 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
         if self._show_values:
             font = painter.font()
             font.setPointSize(8)
-            # font.setBold(True)
             painter.setFont(font)
-
-            text_color = QColor(self.theme.text)
-            bg_color = QColor(self.theme.surface)
+            text_color = QColor(theme.text)
+            bg_color = QColor(theme.surface)
             bg_color.setAlpha(200)
-
-            from qtpy.QtCore import QRectF
-            from qtpy.QtGui import QFontMetrics
-
             fm = QFontMetrics(font)
-
-            # Low value label
-            low_text = str(self._low)
-            low_text_width = fm.horizontalAdvance(low_text) + 8
-            low_text_height = fm.height() + 4
-            low_rect = QRectF(
-                low_x - low_text_width / 2,
-                track_y - self._handle_radius - low_text_height - 4,
-                low_text_width,
-                low_text_height,
-            )
-            painter.setBrush(bg_color)
-            painter.setPen(Qt.NoPen)
-            painter.drawRoundedRect(low_rect, 3, 3)
-            painter.setPen(text_color)
-            painter.drawText(low_rect, Qt.AlignCenter, low_text)
-
-            # High value label
-            high_text = str(self._high)
-            high_text_width = fm.horizontalAdvance(high_text) + 8
-            high_text_height = fm.height() + 4
-            high_rect = QRectF(
-                high_x - high_text_width / 2,
-                track_y + self._handle_radius + 4,
-                high_text_width,
-                high_text_height,
-            )
-            painter.setBrush(bg_color)
-            painter.setPen(Qt.NoPen)
-            painter.drawRoundedRect(high_rect, 3, 3)
-            painter.setPen(text_color)
-            painter.drawText(high_rect, Qt.AlignCenter, high_text)
+            height = fm.height() + 4
+            # Low label above its handle, high label below its own.
+            for value, x_pos, top in (
+                (self._low, low_x, track_y - self._handle_radius - height - 4),
+                (self._high, high_x, track_y + self._handle_radius + 4),
+            ):
+                text = str(value)
+                width = fm.horizontalAdvance(text) + 8
+                rect = QRectF(x_pos - width / 2, top, width, height)
+                painter.setBrush(bg_color)
+                painter.setPen(Qt.NoPen)
+                painter.drawRoundedRect(rect, 3, 3)
+                painter.setPen(text_color)
+                painter.drawText(rect, Qt.AlignCenter, text)
 
         painter.end()
 
@@ -405,23 +380,35 @@ class FXRangeSlider(fxstyle.FXThemeAware, QWidget):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press."""
         if event.button() == Qt.LeftButton:
-            self._pressed_handle = self._handle_at_position(event.x())
-            if self._pressed_handle != self.HANDLE_NONE:
+            x = event.position().x()
+            self._press_x = x
+            self._pressed_handle = self._handle_at_position(x)
+            if self._pressed_handle != self.HANDLE_NONE and self._low == self._high:
+                self._pressed_handle = self._HANDLE_TIED
+            if self._pressed_handle not in (self.HANDLE_NONE, self._HANDLE_TIED):
                 # Keyboard input follows the last handle grabbed
                 self._active_handle = self._pressed_handle
             self.update()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handle mouse move."""
+        x = event.position().x()
+        if self._pressed_handle == self._HANDLE_TIED:
+            if x == self._press_x:
+                return
+            self._pressed_handle = (
+                self.HANDLE_LOW if x < self._press_x else self.HANDLE_HIGH
+            )
+            self._active_handle = self._pressed_handle
         if self._pressed_handle != self.HANDLE_NONE:
-            value = self._position_to_value(event.x())
+            value = self._position_to_value(x)
             if self._pressed_handle == self.HANDLE_LOW:
                 self.low = min(value, self._high)
             else:
                 self.high = max(value, self._low)
         else:
             # Update hover state
-            new_hover = self._handle_at_position(event.x())
+            new_hover = self._handle_at_position(x)
             if new_hover != self._hover_handle:
                 self._hover_handle = new_hover
                 self.update()

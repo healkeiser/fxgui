@@ -10,6 +10,7 @@ from qtpy.QtCore import (
     QPropertyAnimation,
     QRect,
     QRectF,
+    QSize,
     Qt,
 )
 from qtpy.QtGui import QColor, QPainter, QPainterPath
@@ -19,7 +20,7 @@ from qtpy.QtWidgets import QAbstractButton, QSizePolicy, QWidget
 from fxgui import fxstyle
 
 
-class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
+class FXToggleSwitch(QAbstractButton):
     """A modern iOS/Material-style animated toggle switch.
 
     This widget provides a sleek alternative to QCheckBox with smooth
@@ -29,7 +30,8 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
         parent: Parent widget.
         on_color: Color when switch is on. If None, uses theme accent.
         off_color: Color when switch is off. If None, uses theme surface.
-        thumb_color: Color of the thumb/knob. If None, uses white.
+        thumb_color: Color of the thumb/knob. If None, uses the theme's
+            slider thumb colour.
 
     Signals:
         toggled: Emitted when the switch state changes.
@@ -79,8 +81,6 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
 
     def minimumSizeHint(self):
         """Return the minimum size of the switch."""
-        from qtpy.QtCore import QSize
-
         return QSize(44, 24)
 
     def hitButton(self, pos):
@@ -130,11 +130,10 @@ class FXToggleSwitch(fxstyle.FXThemeAware, QAbstractButton):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Get current theme colors once (dynamic for theme switching)
-        theme = self.theme
+        theme = fxstyle.colors()
         on_color = QColor(self._custom_on_color or theme.accent_primary)
         off_color = QColor(self._custom_off_color or theme.surface_sunken)
-        thumb_color = QColor(self._custom_thumb_color or "#ffffff")
+        thumb_color = QColor(self._custom_thumb_color or theme.slider_thumb)
         border_color = QColor(theme.border)
         disabled_color = QColor(theme.text_disabled)
 

@@ -3,7 +3,9 @@
 # Built-in
 import os
 import logging
+import functools
 import re
+import weakref
 from collections import deque
 from typing import Deque, Optional
 
@@ -17,6 +19,7 @@ from qtpy.QtGui import (
     QTextCharFormat,
     QTextCursor,
     QTextDocument,
+    QTextFormat,
 )
 from qtpy.QtWidgets import (
     QHBoxLayout,
@@ -29,16 +32,17 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons
+from fxgui import fxicons, fxstyle
+from fxgui._compat import is_valid
 from fxgui.fxwidgets._inputs import FXIconLineEdit
 from fxgui.fxwidgets._tips import apply_tip
 
 
 class FXOutputLogHandler(logging.Handler):
-    """Custom logging handler that sends log messages to an output log widget.
+    """Logging handler that sends records to an output log widget.
 
-    This handler is used internally by `FXOutputLogWidget` to capture
-    log messages and display them in the widget.
+    The widget is held weakly: once it is deleted the handler removes
+    itself from every logger instead of raising on each record.
 
     Args:
         log_widget: The `FXOutputLogWidget` to send messages to.
@@ -46,20 +50,96 @@ class FXOutputLogHandler(logging.Handler):
 
     def __init__(self, log_widget: "FXOutputLogWidget"):
         super().__init__()
-        self.log_widget = log_widget
+        self._widget = weakref.ref(log_widget)
+        log_widget.destroyed.connect(self.detach)
+
+    @property
+    def log_widget(self) -> Optional["FXOutputLogWidget"]:
+        """The widget records go to, or `None` once it is gone."""
+        widget = self._widget()
+        if widget is None or not is_valid(widget):
+            return None
+        return widget
 
     def emit(self, record: logging.LogRecord) -> None:
-        """Emit a log record to the output log widget."""
+        """Send a record to the widget, or detach if the widget is gone."""
+        widget = self.log_widget
+        if widget is None:
+            self.detach()
+            return
         try:
-            msg = self.format(record)
-            # Use the widget's signal to ensure thread-safe delivery
-            self.log_widget.log_message.emit(msg)
-        except Exception:
+            # The signal hands the text to the widget's thread.
+            widget.log_message.emit(self.format(record))
+        except Exception:  # noqa: BLE001 - logging's own handler contract
             self.handleError(record)
+
+    def detach(self, *_args) -> None:
+        """Remove this handler from the root logger and every named logger."""
+        loggers = [logging.root, *logging.root.manager.loggerDict.values()]
+        for logger in loggers:
+            if isinstance(logger, logging.Logger) and self in logger.handlers:
+                # A new list, not `removeHandler`: this may run inside the
+                # logger's own loop over its handlers.
+                logger.handlers = [h for h in logger.handlers if h is not self]
 
 
 # Pre-compiled regex for ANSI escape codes (module-level for reuse)
 _ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[([0-9;]+)m")
+
+
+# ANSI foreground code -> theme role, after colorlog's level colours.
+# Feedback roles name `get_feedback_colors()` entries, others theme tokens.
+ANSI_ROLES = {
+    "30": "text_disabled",
+    "90": "text_disabled",
+    "37": "text",
+    "97": "text",
+    "31": "error",
+    "91": "error",
+    "35": "error",
+    "95": "error",
+    "33": "warning",
+    "93": "warning",
+    "32": "info",
+    "92": "info",
+    "34": "info",
+    "94": "info",
+    "36": "debug",
+    "96": "debug",
+}
+
+# Char format properties that remember a segment's role across themes.
+_ROLE = QTextFormat.UserProperty + 1
+_DIM = QTextFormat.UserProperty + 2
+
+_readable_ink = functools.lru_cache(maxsize=256)(fxstyle.readable_ink)
+
+
+def _paint_role(fmt: QTextCharFormat, role: str, dim: bool) -> None:
+    """Set `fmt`'s foreground to `role` in the current theme, readable."""
+    theme = fxstyle.colors()
+    feedback = fxstyle.get_feedback_colors()
+    wanted = (
+        feedback[role]["foreground"] if role in feedback else getattr(theme, role)
+    )
+    colour = QColor(_readable_ink(theme.surface_sunken, wanted))
+    if dim:
+        colour.setAlpha(128)
+    fmt.setForeground(colour)
+
+
+def _ansi_format(role: Optional[str], dim: bool, bright: bool) -> QTextCharFormat:
+    """Build the character format for one ANSI-styled segment."""
+    fmt = QTextCharFormat()
+    if bright:
+        fmt.setFontWeight(QFont.Bold)
+    if dim and role is None:
+        role, dim = "text_disabled", False
+    if role:
+        fmt.setProperty(_ROLE, role)
+        fmt.setProperty(_DIM, dim)
+        _paint_role(fmt, role, dim)
+    return fmt
 
 
 class FXOutputLogWidget(QWidget):
@@ -74,17 +154,9 @@ class FXOutputLogWidget(QWidget):
         capture_output: If `True`, adds a logging handler to capture
             log output from Python's logging module.
         max_blocks: How many lines the pane keeps before Qt prunes the
-            oldest, as a terminal's scrollback does. Defaults to `0`,
-            which is no limit and is what this has always done.
-
-            Left unbounded by default deliberately: dropping the OLDEST
-            records silently is the same class of defect as dropping the
-            newest, and only a consumer knows whether something behind
-            the pane -- a session log file -- makes that safe. A pane
-            that is the only record of a session should stay unbounded;
-            one that is a view onto a file it does not own is exactly
-            what this is for. A long-running application that never sets
-            it grows a document without limit.
+            oldest, as a terminal's scrollback does. Defaults to `0`, no
+            limit: only the consumer knows whether dropping old records
+            is safe.
 
     Signals:
         log_message: Emitted when a log message is received (for thread-safe
@@ -99,39 +171,8 @@ class FXOutputLogWidget(QWidget):
     # Signal for thread-safe log message delivery
     log_message = Signal(str)
 
-    # How many queued records one flush writes before handing the event
-    # loop back. The queue keeps every record; this decides how much work
-    # any single flush may cost, which is the other half of staying
-    # responsive.
-    #
-    # Measured on PySide6 6.11: about 8.7 microseconds per record, linear
-    # from 100 to 10,000 (0.9ms, 8.5ms, 94.6ms). At 1,000 a flush costs
-    # roughly 8.5ms, comfortably inside the 16ms interval, so the main
-    # thread keeps half of every tick for everything else. Throughput is
-    # then about 60,000 records a second, far above any real log rate --
-    # a burst larger than that arrives over several ticks rather than in
-    # one freeze.
+    # Records per flush: 1000 take about 8.5 ms, inside the 16 ms tick.
     MAX_RECORDS_PER_FLUSH = 1000
-
-    # ANSI color mapping for terminal colors
-    ANSI_COLORS = {
-        "30": "#000000",
-        "31": "#cd3131",
-        "32": "#0dbc79",
-        "33": "#e5e510",
-        "34": "#2472c8",
-        "35": "#bc3fbc",
-        "36": "#11a8cd",
-        "37": "#e5e5e5",
-        "90": "#666666",
-        "91": "#f14c4c",
-        "92": "#23d18b",
-        "93": "#f5f543",
-        "94": "#3b8eea",
-        "95": "#d670d6",
-        "96": "#29b8db",
-        "97": "#ffffff",
-    }
 
     def __init__(
         self,
@@ -145,21 +186,17 @@ class FXOutputLogWidget(QWidget):
         self._capture_output = capture_output
         self._max_blocks = max_blocks
         self._log_handler = None
-        self._modified_loggers = []
         self._logger_check_timer = None
 
-        # Throttling mechanism to prevent UI freezing during
-        # high-frequency logging. A queue rather than one slot: what is
-        # throttled is how often the pane repaints, never how many
-        # records reach it.
+        # The throttle limits repaints, never records: all are queued.
         self._pending_logs: Deque[str] = deque()
         self._throttle_timer = QTimer(self)
         self._throttle_timer.setSingleShot(True)
         self._throttle_timer.timeout.connect(self._flush_pending_log)
         self._throttle_interval = 16
 
-        # Connect signal to slot for thread-safe log appending
-        self.log_message.connect(self._queue_log_message)
+        # Queued across threads: a handler may emit off the UI thread.
+        self.log_message.connect(self.append_log)
 
         # Setup UI
         self._setup_ui()
@@ -167,6 +204,9 @@ class FXOutputLogWidget(QWidget):
         # Setup output capture if requested
         if self._capture_output:
             self._setup_output_capture()
+
+        # Shown segments keep their role; a switch repaints them.
+        fxstyle.theme_changed.connect(self._recolour)
 
     def _setup_ui(self) -> None:
         """Setup the log widget UI components."""
@@ -178,6 +218,8 @@ class FXOutputLogWidget(QWidget):
         # We're using `QTextEdit` for HTML support
         self.output_area = QTextEdit()
         self.output_area.setReadOnly(True)
+        # A log is never undone; the undo stack would grow with it.
+        self.output_area.setUndoRedoEnabled(False)
         if self._max_blocks > 0:
             # Qt prunes from the top once the document is this long. Off
             # by default on purpose -- see the class docstring.
@@ -328,19 +370,9 @@ class FXOutputLogWidget(QWidget):
         self.output_area.setTextCursor(cursor)
 
     def _sync_spacer(self) -> None:
-        """Give the spacer room only while it has a button to push.
+        """Give the spacer room only while it has a Clear button to push.
 
-        The spacer exists to hold the Clear button against the right
-        edge. A consumer that hides that button -- a live log view has
-        nothing to clear -- leaves the spacer pushing nothing, and the
-        50px cap applied while the search bar is open then reads as dead
-        space between the bar's close button and the widget's own right
-        edge.
-
-        `isHidden` rather than `isVisible`: a child of a window that has
-        not been shown yet is not visible and not hidden, and this runs
-        while the search bar is opened for the first time on exactly such
-        a widget.
+        `isHidden`, not `isVisible`: this runs before the window is shown.
         """
         self.log_spacer.setVisible(not self.clear_button.isHidden())
 
@@ -457,107 +489,60 @@ class FXOutputLogWidget(QWidget):
         )
         self._log_handler.setFormatter(formatter)
 
-        # Add to root logger only - messages propagate up from child loggers
         logging.root.addHandler(self._log_handler)
-
-        # Track loggers with propagate=False that need direct handler attachment
-        self._modified_loggers = []
-        for name in list(logging.root.manager.loggerDict.keys()):
-            logger_instance = logging.getLogger(name)
-            if isinstance(logger_instance, logging.Logger):
-                # Only add handler to loggers that don't propagate
-                if not logger_instance.propagate:
-                    if self._log_handler not in logger_instance.handlers:
-                        logger_instance.addHandler(self._log_handler)
-                        self._modified_loggers.append(name)
-
-        # Setup a timer to periodically check for new loggers
+        self._check_for_new_loggers()
+        # A logger that does not propagate never reaches root; poll for them.
         self._logger_check_timer = QTimer(self)
         self._logger_check_timer.timeout.connect(self._check_for_new_loggers)
-        self._logger_check_timer.start(1000)  # Check every second
+        self._logger_check_timer.start(1000)
 
     def _check_for_new_loggers(self) -> None:
-        """Check for newly created loggers and attach handler to them."""
-        for name in list(logging.root.manager.loggerDict.keys()):
-            if name not in self._modified_loggers:
-                logger_instance = logging.getLogger(name)
-                if isinstance(logger_instance, logging.Logger):
-                    # Only add handler to loggers that don't propagate
-                    if not logger_instance.propagate:
-                        if self._log_handler not in logger_instance.handlers:
-                            logger_instance.addHandler(self._log_handler)
-                            self._modified_loggers.append(name)
-
-    def _queue_log_message(self, text: str) -> None:
-        """Queue a log message for throttled display.
-
-        This ensures the UI stays responsive by limiting update frequency
-        to ~60 FPS while still showing all messages.
-
-        Every record queued is a record displayed. The throttle decides
-        WHEN the pane catches up, not WHETHER a record survives: anything
-        handed over while the timer is running waits its turn in the
-        queue and lands on the next flush.
-
-        Args:
-            text: Text to queue for display.
-        """
-        # Queue the message
-        self._pending_logs.append(text)
-
-        # Start timer if not already running
-        if not self._throttle_timer.isActive():
-            # First message arrives immediately for responsiveness
-            self._flush_pending_log()
+        """Attach the handler to every logger that does not propagate."""
+        for logger in list(logging.root.manager.loggerDict.values()):
+            if (
+                isinstance(logger, logging.Logger)
+                and not logger.propagate
+                and self._log_handler not in logger.handlers
+            ):
+                logger.addHandler(self._log_handler)
 
     def _flush_pending_log(self) -> None:
         """Write up to `MAX_RECORDS_PER_FLUSH` queued messages.
 
-        Bounded rather than draining the whole queue, because a queue
-        that keeps every record is only half of staying responsive: an
-        unbounded drain makes one flush cost O(burst), and a producer
-        that never yields the event loop -- a tight loop with stdout
-        captured, a worker thread that emitted while the main thread was
-        busy -- hands over the whole burst at once. Measured, 50,000
-        records in one flush is a 513ms freeze on the main thread.
-
-        Nothing is lost to the bound. The timer below re-arms whichever
-        way this returns, so a partial drain simply continues on the next
-        tick, and the early return on an empty queue is what ends the
-        chain.
-
-        The auto-scroll runs once at the end rather than once per entry:
-        moving the scrollbar to its maximum is what forces the document
-        to lay out, so doing it per record is what the throttle was there
-        to avoid in the first place.
+        Bounded, so one burst cannot freeze the UI; the timer re-arms and
+        the next tick continues. Writes through a document cursor, so the
+        reader's cursor and selection stay put, and scrolls only a pane
+        already at the bottom.
         """
         if not self._pending_logs:
             return
 
-        cursor = self.output_area.textCursor()
-        for _ in range(min(len(self._pending_logs), self.MAX_RECORDS_PER_FLUSH)):
-            # Display the message
-            self._insert_text_with_ansi(self._pending_logs.popleft())
-
-            # Add extra line break after each log entry
-            cursor.movePosition(QTextCursor.End)
-            self.output_area.setTextCursor(cursor)
-            self.output_area.insertPlainText("\n")
-
-        # Auto-scroll to bottom
         scrollbar = self.output_area.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        following = scrollbar.value() >= scrollbar.maximum()
+        cursor = QTextCursor(self.output_area.document())
+        for _ in range(min(len(self._pending_logs), self.MAX_RECORDS_PER_FLUSH)):
+            self._insert_text_with_ansi(self._pending_logs.popleft())
+            cursor.movePosition(QTextCursor.End)
+            cursor.insertText("\n")
+
+        if following:
+            scrollbar.setValue(scrollbar.maximum())
 
         # Schedule next update if needed
         self._throttle_timer.start(self._throttle_interval)
 
     def append_log(self, text: str) -> None:
-        """Append text to the log output with ANSI color conversion.
+        """Queue text for the pane; every record queued is shown.
+
+        The first record of a burst is written at once, the rest on the
+        throttle's ticks.
 
         Args:
             text: Text to append (may contain ANSI color codes).
         """
-        self._queue_log_message(text)
+        self._pending_logs.append(text)
+        if not self._throttle_timer.isActive():
+            self._flush_pending_log()
 
     def _insert_text_with_ansi(self, text: str) -> None:
         """Insert text with ANSI colors using QTextCharFormat.
@@ -565,126 +550,70 @@ class FXOutputLogWidget(QWidget):
         Args:
             text: Text with ANSI escape codes.
         """
-        # Move cursor to end
-        cursor = self.output_area.textCursor()
+        cursor = QTextCursor(self.output_area.document())
         cursor.movePosition(QTextCursor.End)
+        role, dim, bright = None, False, False
+        # split() alternates text and the codes captured between escapes.
+        for index, part in enumerate(_ANSI_ESCAPE_PATTERN.split(text)):
+            if index % 2 == 0:
+                if part:
+                    # Always an explicit format: the end of the document
+                    # would otherwise lend the last segment's colour.
+                    cursor.insertText(part, _ansi_format(role, dim, bright))
+                continue
+            for code in part.split(";"):
+                if code in ("0", ""):
+                    role, dim, bright = None, False, False
+                elif code == "1":
+                    bright = True
+                elif code == "2":
+                    dim = True
+                elif code == "22":
+                    dim = bright = False
+                elif code == "39":
+                    role = None
+                elif code in ANSI_ROLES:
+                    role = ANSI_ROLES[code]
 
-        # Get the widget's font to preserve monospace
-        base_font = self.output_area.font()
-
-        # Fast path: if no ANSI codes, insert plain text directly
-        if "\x1b[" not in text:
-            cursor.insertText(text)
-            return
-
-        # Track current styles
-        current_color = None
-        is_dim = False
-        is_bright = False
-        last_end = 0
-
-        # Find all ANSI escape sequences using module-level compiled pattern
-        for match in _ANSI_ESCAPE_PATTERN.finditer(text):
-            # Insert text before this escape code
-            if match.start() > last_end:
-                segment = text[last_end : match.start()]
-
-                # Create format for this segment, preserving monospace font
-                fmt = QTextCharFormat()
-                fmt.setFont(base_font)
-
-                if current_color:
-                    color = QColor(current_color)
-                    if is_dim:
-                        color.setAlpha(128)  # 50% opacity
-                    fmt.setForeground(color)
-                elif is_dim:
-                    fmt.setForeground(QColor("#808080"))
-
-                if is_bright:
-                    font = QFont(base_font)
-                    font.setBold(True)
-                    fmt.setFont(font)
-
-                cursor.insertText(segment, fmt)
-
-            # Parse the escape code
-            codes = match.group(1).split(";")
-            for code in codes:
-                if code == "0" or code == "":  # Reset
-                    current_color = None
-                    is_dim = False
-                    is_bright = False
-                elif code == "1":  # Bright/Bold
-                    is_bright = True
-                elif code == "2":  # Dim
-                    is_dim = True
-                elif code == "22":  # Normal intensity
-                    is_bright = False
-                    is_dim = False
-                elif code in self.ANSI_COLORS:
-                    current_color = self.ANSI_COLORS[code]
-
-            last_end = match.end()
-
-        # Insert remaining text
-        if last_end < len(text):
-            segment = text[last_end:]
-
-            # Create format for this segment, preserving monospace font
-            fmt = QTextCharFormat()
-            fmt.setFont(base_font)
-
-            if current_color:
-                color = QColor(current_color)
-                if is_dim:
-                    color.setAlpha(128)  # 50% opacity
-                fmt.setForeground(color)
-            elif is_dim:
-                fmt.setForeground(QColor("#808080"))
-
-            if is_bright:
-                font = QFont(base_font)
-                font.setBold(True)
-                fmt.setFont(font)
-
-            cursor.insertText(segment, fmt)
+    def _recolour(self, _theme_name: Optional[str] = None) -> None:
+        """Repaint every role-coloured segment in the current theme."""
+        document = self.output_area.document()
+        changes = []
+        block = document.begin()
+        while block.isValid():
+            it = block.begin()
+            while not it.atEnd():
+                fragment = it.fragment()
+                fmt = fragment.charFormat()
+                role = fmt.property(_ROLE)
+                if role:
+                    _paint_role(fmt, role, bool(fmt.property(_DIM)))
+                    changes.append((fragment.position(), fragment.length(), fmt))
+                it += 1
+            block = block.next()
+        cursor = QTextCursor(document)
+        for position, length, fmt in changes:
+            cursor.setPosition(position)
+            cursor.setPosition(position + length, QTextCursor.KeepAnchor)
+            cursor.setCharFormat(fmt)
 
     def clear_log(self) -> None:
         """Clear the log output."""
         self.output_area.clear()
 
     def restore_output_streams(self) -> None:
-        """Remove logging handler from all loggers where it was added."""
-        # Flush anything still queued, all of it. This is the last chance
-        # those records have -- there will be no next tick to continue a
-        # partial drain on -- so the per-flush bound does not apply here.
-        # Responsiveness is not the concern of a widget being taken down.
-        if hasattr(self, "_throttle_timer"):
-            self._throttle_timer.stop()
-            while self._pending_logs:
-                self._flush_pending_log()
-            self._throttle_timer.stop()
-
-        # Stop the logger check timer if it exists
-        if hasattr(self, "_logger_check_timer") and self._logger_check_timer:
+        """Flush what is queued, then detach the handler from logging."""
+        # No next tick will come, so drain everything past the bound.
+        while self._pending_logs:
+            self._flush_pending_log()
+        self._throttle_timer.stop()
+        if self._logger_check_timer:
             self._logger_check_timer.stop()
             self._logger_check_timer.deleteLater()
             self._logger_check_timer = None
 
-        # Remove logging handler from all loggers where it was added
         if self._log_handler:
-            logging.root.removeHandler(self._log_handler)
-
-            # Remove from all modified loggers
-            if hasattr(self, "_modified_loggers"):
-                for logger_name in self._modified_loggers:
-                    logger_instance = logging.getLogger(logger_name)
-                    if (
-                        logger_instance
-                        and self._log_handler in logger_instance.handlers
-                    ):
-                        logger_instance.removeHandler(self._log_handler)
+            self._log_handler.detach()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handle widget close event to restore output streams."""

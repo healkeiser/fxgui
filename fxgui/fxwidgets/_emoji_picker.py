@@ -199,8 +199,7 @@ class FXEmojiPicker(QFrame):
         # that opened the popup, that press would open it again.
         anchor = self._anchor
         on_anchor = anchor is not None and anchor.contains(
-            event.globalPosition().toPoint()
-            if hasattr(event, "globalPosition") else event.globalPos())
+            event.globalPosition().toPoint())
         self.setAttribute(Qt.WA_NoMouseReplay, on_anchor)
         super().mousePressEvent(event)
 

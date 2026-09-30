@@ -125,10 +125,13 @@ class FXCapitalizedLetterValidator(QValidator):
     """
 
     def validate(self, input_string: str, pos: int):
-        """Allow only letters and must start with a capital letter."""
+        """Allow only letters; a lowercase start waits for `fixup`."""
         if input_string:
-            if not input_string[0].isupper() or not input_string.isalpha():
+            if not input_string.isalpha():
                 return (QValidator.Invalid, input_string, pos)
+            if not input_string[0].isupper():
+                # Intermediate, not Invalid: Qt only calls fixup on it.
+                return (QValidator.Intermediate, input_string, pos)
         return (QValidator.Acceptable, input_string, pos)
 
     def fixup(self, input_string: str) -> str:

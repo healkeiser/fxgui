@@ -7,6 +7,8 @@ from typing import Optional, Union
 from qtpy.QtCore import (
     QAbstractAnimation,
     QEasingCurve,
+    QEvent,
+    QObject,
     QParallelAnimationGroup,
     QPropertyAnimation,
     Qt,
@@ -26,10 +28,10 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxicons, fxstyle, fxutils
 
 
-class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
+class FXCollapsibleWidget(QWidget):
     """A widget that can expand or collapse its content.
 
     The widget consists of a header with a toggle button and a content area
@@ -72,11 +74,7 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
     collapsed = Signal()
     resized = Signal(int)
 
-    # What Qt itself means by "no maximum height", QWIDGETSIZE_MAX. The
-    # animation drives `maximumHeight`, so an opened content area has to
-    # be released from it afterwards or it stays capped at whatever
-    # height it happened to want when it opened, and a row added later
-    # is clipped by a number from before.
+    # QWIDGETSIZE_MAX: an opened area is released to it after animating.
     NO_CAP = 16777215
 
     def __init__(
@@ -97,17 +95,16 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         self._icon: Optional[QIcon] = None
         self._icon_name: Optional[str] = None
         self._is_expanded = False
-        self._has_been_expanded = False
-        self._content_height = 0
 
         # Create fixed header layout
         self._header = QFrame()
+        self._header.setObjectName("fx_collapsible_header")
+        self._header.setProperty("expanded", False)
         self._header.setFrameShape(QFrame.StyledPanel)
         self._header.setFrameShadow(QFrame.Raised)
         self._header.setCursor(Qt.PointingHandCursor)
         self._header.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        # Make header clickable
-        self._header.mousePressEvent = lambda e: self.toggle()
+        self._header.installEventFilter(self)
 
         header_layout = QHBoxLayout(self._header)
         header_layout.setContentsMargins(4, 2, 4, 2)
@@ -115,9 +112,7 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
 
         # Toggle button (chevron icon)
         self._toggle_btn = QToolButton()
-        self._toggle_btn.setStyleSheet(
-            "QToolButton { border: none; background: transparent; }"
-        )
+        self._toggle_btn.setObjectName("fx_collapsible_toggle")
         fxicons.set_icon(self._toggle_btn, "chevron_right")
         self._toggle_btn.setProperty("icon_name", "chevron_right")
         self._toggle_btn.setCheckable(True)
@@ -126,15 +121,13 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
 
         # Title icon label (optional)
         self._icon_label = QLabel()
-        self._icon_label.setStyleSheet("background: transparent;")
+        self._icon_label.setObjectName("fx_collapsible_icon")
         self._icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self._icon_label.setVisible(False)
 
         # Title label
         self._title_label = QLabel(self._title)
-        self._title_label.setStyleSheet(
-            "background: transparent; font-weight: bold;"
-        )
+        self._title_label.setObjectName("fx_collapsible_title")
         self._title_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Spacer to push content to the left, line spans remaining width
@@ -200,6 +193,19 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         # Set icon if provided
         if icon is not None:
             self.set_icon(icon)
+        # A named title icon is a pixmap baked in the theme's icon colour.
+        fxstyle.theme_changed.connect(self._on_theme_changed)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Toggle on a left click anywhere on the header."""
+        if (
+            watched is self._header
+            and event.type() == QEvent.MouseButtonPress
+            and event.button() == Qt.LeftButton
+        ):
+            self.toggle()
+            return True
+        return super().eventFilter(watched, event)
 
     @property
     def is_expanded(self) -> bool:
@@ -245,16 +251,9 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         fxicons.set_icon(self._toggle_btn, "expand_more")
         self._toggle_btn.setProperty("icon_name", "expand_more")
 
-        # Update header background based on expanded state
-        self._on_theme_changed()
+        self._mark_expanded(True)
 
-        # Measured on every expansion, not once ever. The content is not
-        # frozen after the first look at it: a row added, a label that
-        # wraps at a narrower width, a widget that grew -- and a height
-        # measured once is a height that goes stale and clips.
-        self._measure_content()
-
-        self._move_to(self._calculate_content_height(), animate)
+        self._move_to(self._target_height(), animate)
         self.expanded.emit()
 
     def collapse(self, animate: bool = True) -> None:
@@ -271,8 +270,7 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         fxicons.set_icon(self._toggle_btn, "chevron_right")
         self._toggle_btn.setProperty("icon_name", "chevron_right")
 
-        # Update header background based on expanded state
-        self._on_theme_changed()
+        self._mark_expanded(False)
 
         self._move_to(0, animate)
         self.collapsed.emit()
@@ -280,30 +278,10 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
     def _move_to(self, target_height: int, animate: bool) -> None:
         """Animate the content area to `target_height`.
 
-        Always forwards, from the height the area is at RIGHT NOW. Which
-        is the fix: a group run backwards starts at its own end value, so
-        a movement interrupted mid-flight jumped to a height it had never
-        reached before animating away from it. Measured on a header
-        clicked twice quickly -- open, then shut again 40px into a 300px
-        opening -- the content snapped to 300 and fell from there.
-
-        The current height is read BEFORE the running animation is
-        stopped, since stopping is what loses it.
-
-        And it is read from the widget's HEIGHT rather than from its
-        `maximumHeight`, which is the property the animation drives.
-        Those two agree only mid-flight: once an expansion finishes,
-        `_on_animation_finished` releases the maximum to the cap, so
-        reading it there starts the collapse from the cap instead of
-        from the height on screen. Measured, a 90px body under the
-        default 300px cap: the first frame of the collapse jumped to 300
-        -- a 210px upward lurch -- and with `max_content_height=0` the
-        maximum is QWIDGETSIZE_MAX, so the collapse ran from 16,777,215
-        and reported that number to `resized`.
-
-        Clamped by the maximum as well, which costs nothing and keeps
-        the answer honest if a cap is lowered before the next layout
-        pass has resized the widget to it.
+        Always forwards, from the height on screen now: a group run
+        backwards starts at its own end value and jumps. The height is
+        read before stopping the animation, and from `height()`, since
+        `maximumHeight` is released to the cap once an expansion ends.
 
         Args:
             target_height: Where the content area should end up.
@@ -336,18 +314,6 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         """
         self.resized.emit(int(height))
 
-    def _measure_content(self) -> int:
-        """Re-read how tall the content wants to be, and remember it.
-
-        Returns:
-            int: The content's own preferred height, or 0 with no
-            content.
-        """
-        content = self._content_area.widget()
-        self._content_height = content.sizeHint().height() if content else 0
-        self._has_been_expanded = True
-        return self._content_height
-
     def toggle(self) -> None:
         """Toggle the expanded/collapsed state."""
         if self._is_expanded:
@@ -362,94 +328,49 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         else:
             self.collapse()
 
-    def _calculate_content_height(self) -> int:
-        """Calculate appropriate content height based on constraints."""
-        if not self._content_area.widget():
-            return 0
-
-        # Get raw content height
-        content_height = self._content_height
-
-        # Apply max_content_height if specified
+    def _target_height(self) -> int:
+        """Return the open height: the content's own, under any cap."""
+        # Measured on every call: content grows after it was set.
+        content = self._content_area.widget()
+        height = content.sizeHint().height() if content else 0
         if self._max_content_height > 0:
-            content_height = min(content_height, self._max_content_height)
-
-        return content_height
+            height = min(height, self._max_content_height)
+        return height
 
     def _on_animation_finished(self) -> None:
-        """Handle animation completion.
+        """Settle the content area once a movement ends.
 
-        Whichever way it went, the parent layouts are told this widget's
-        size changed, and `updateGeometry` is the call that does it. A
-        layout raises its widget's own minimum height when a child grows
-        and never lowers it again, and every layout between here and the
-        window caches the height it worked out for a given width, so a
-        collapsed section left the window permanently taller. Measured on
-        PySide6 6.11, one section opened and shut again: the window went
-        on answering 552px against the 472px it started at, invalidating
-        the outer layout changed nothing at all -- the sections sat in a
-        nested one, and an outer layout does not reach into one -- and
-        `updateGeometry`, which walks the parent layouts itself, brought
-        it back to 472.
+        `updateGeometry` is what makes the parent layouts give back the
+        height of a section shut again; they cache it otherwise.
         """
+        # Bars stay off while moving, so the animation does not flicker.
+        policy = (
+            Qt.ScrollBarAsNeeded if self._is_expanded else Qt.ScrollBarAlwaysOff
+        )
+        self._content_area.setVerticalScrollBarPolicy(policy)
+        self._content_area.setHorizontalScrollBarPolicy(policy)
         if not self._is_expanded:
-            # When collapsed, ensure content is hidden
             self._content_area.setMinimumHeight(0)
             self._content_area.setMaximumHeight(0)
-            self._content_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            self._content_area.setHorizontalScrollBarPolicy(
-                Qt.ScrollBarAlwaysOff
-            )
         else:
-            # When expanded, ensure scrollbars appear as needed
-            height = self._calculate_content_height()
-            self._content_area.setMinimumHeight(height)
-            # Released from the height the animation drove it to. Left
-            # capped there, the area stays at whatever its content wanted
-            # at the moment it opened and anything added afterwards is
-            # clipped by a number from before. A `max_content_height` is
-            # a cap the caller asked for, so that one stays -- and it is
-            # the cap itself rather than the measured height, which is
-            # what lets taller content scroll instead of being cut.
+            self._content_area.setMinimumHeight(self._target_height())
+            # Released from the animated height, or later rows clip; a
+            # requested cap stays a cap.
             self._content_area.setMaximumHeight(
                 self._max_content_height
                 if self._max_content_height > 0
                 else self.NO_CAP
             )
 
-            # Enable scrollbars only if content exceeds visible area
-            if self._content_area.widget():
-                widget_width = self._content_area.widget().sizeHint().width()
-                widget_height = self._content_area.widget().sizeHint().height()
-
-                h_policy = (
-                    Qt.ScrollBarAsNeeded
-                    if widget_width > self.width()
-                    else Qt.ScrollBarAlwaysOff
-                )
-                v_policy = (
-                    Qt.ScrollBarAsNeeded
-                    if widget_height > height
-                    else Qt.ScrollBarAlwaysOff
-                )
-
-                self._content_area.setHorizontalScrollBarPolicy(h_policy)
-                self._content_area.setVerticalScrollBarPolicy(v_policy)
-
         self.updateGeometry()
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        if self._is_expanded:
-            # Use hover state color when expanded
-            self._header.setStyleSheet(
-                f"QFrame {{ background-color: {self.theme.state_hover}; }}"
-            )
-        else:
-            # Use default (transparent) when collapsed
-            self._header.setStyleSheet("")
+    def _mark_expanded(self, expanded: bool) -> None:
+        """Let the header's QSS rule follow the expanded state."""
+        self._header.setProperty("expanded", expanded)
+        fxutils.repolish(self._header)
 
-        # Update title icon with new theme colors
+    def _on_theme_changed(self, _theme_name: str = None) -> None:
+        """Redraw a named title icon in the new theme's colour."""
         if self._icon_name:
             self._icon = fxicons.get_icon(self._icon_name)
             self._icon_label.setPixmap(self._icon.pixmap(16, 16))
@@ -460,17 +381,9 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
         Args:
             content_layout: The layout to set for the content area.
         """
-        # Create content widget
         content_widget = QWidget()
         content_widget.setLayout(content_layout)
-        self._content_area.setWidget(content_widget)
-
-        # Measure content height
-        self._content_height = content_widget.sizeHint().height()
-
-        # Initially collapsed
-        self._content_area.setMaximumHeight(0)
-        self._content_area.setMinimumHeight(0)
+        self.set_content_widget(content_widget)
 
     def set_content_widget(self, widget: QWidget) -> None:
         """Set the content widget directly.
@@ -479,8 +392,6 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
             widget: The widget to display when expanded.
         """
         self._content_area.setWidget(widget)
-        # Calculate content height
-        self._content_height = widget.sizeHint().height()
 
     def set_icon(self, icon: Union[QIcon, str, None]) -> None:
         """Set an icon to display before the title.
@@ -571,6 +482,24 @@ class FXCollapsibleWidget(fxstyle.FXThemeAware, QWidget):
     def get_title_icon(self) -> Optional[QIcon]:
         """Get the title icon (deprecated, use get_icon)."""
         return self.get_icon()
+
+
+fxstyle.register_widget_style("""
+FXCollapsibleWidget QFrame#fx_collapsible_header[expanded="true"] {
+    background-color: @state_hover;
+}
+FXCollapsibleWidget QToolButton#fx_collapsible_toggle {
+    border: none;
+    background: transparent;
+}
+FXCollapsibleWidget QLabel#fx_collapsible_icon {
+    background: transparent;
+}
+FXCollapsibleWidget QLabel#fx_collapsible_title {
+    background: transparent;
+    font-weight: bold;
+}
+""")
 
 
 def example() -> None:

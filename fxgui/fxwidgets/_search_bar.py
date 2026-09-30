@@ -4,7 +4,7 @@
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import Qt, Signal, QTimer
+from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal
 from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -15,10 +15,10 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxicons, fxstyle, fxutils
 
 
-class FXSearchBar(fxstyle.FXThemeAware, QWidget):
+class FXSearchBar(QWidget):
     """An enhanced search input widget with built-in features.
 
     This widget provides a search input with:
@@ -77,6 +77,9 @@ class FXSearchBar(fxstyle.FXThemeAware, QWidget):
 
         # Search container
         self._search_container = QWidget()
+        self._search_container.setObjectName("fx_search_container")
+        self._search_container.setAttribute(Qt.WA_StyledBackground, True)
+        self._search_container.setProperty("focused", False)
         search_layout = QHBoxLayout(self._search_container)
         search_layout.setContentsMargins(8, 0, 4, 0)
         search_layout.setSpacing(4)
@@ -86,23 +89,15 @@ class FXSearchBar(fxstyle.FXThemeAware, QWidget):
         fxicons.set_icon(self._search_icon, "search")
         self._search_icon.setFixedSize(20, 20)
         self._search_icon.setFlat(True)
-        self._search_icon.setStyleSheet(
-            "background: transparent; border: none;"
-        )
+        self._search_icon.setObjectName("fx_search_icon")
+        self._search_icon.setFocusPolicy(Qt.NoFocus)
         search_layout.addWidget(self._search_icon)
 
         # Search input
         self._input = QLineEdit()
+        self._input.setObjectName("fx_search_input")
         self._input.setPlaceholderText(placeholder)
-        self._input.setStyleSheet(
-            """
-            QLineEdit {
-                background: transparent;
-                border: none;
-                padding: 6px 0;
-            }
-        """
-        )
+        self._input.installEventFilter(self)
         self._input.textChanged.connect(self._on_text_changed)
         self._input.returnPressed.connect(self._on_return_pressed)
         search_layout.addWidget(self._input, 1)
@@ -113,18 +108,7 @@ class FXSearchBar(fxstyle.FXThemeAware, QWidget):
         self._clear_button.setFixedSize(20, 20)
         self._clear_button.setFlat(True)
         self._clear_button.setCursor(Qt.PointingHandCursor)
-        self._clear_button.setStyleSheet(
-            """
-            QPushButton {
-                background: transparent;
-                border: none;
-                border-radius: 10px;
-            }
-            QPushButton:hover {
-                background: rgba(128, 128, 128, 0.2);
-            }
-        """
-        )
+        self._clear_button.setObjectName("fx_search_clear")
         self._clear_button.clicked.connect(self.clear)
         self._clear_button.setVisible(False)
         search_layout.addWidget(self._clear_button)
@@ -137,21 +121,20 @@ class FXSearchBar(fxstyle.FXThemeAware, QWidget):
         self._debounce_timer.timeout.connect(self._emit_search_changed)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setFocusProxy(self._input)
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Handle theme changes."""
-        self._search_container.setStyleSheet(
-            f"""
-            QWidget {{
-                background-color: {self.theme.surface_sunken};
-                border: 1px solid {self.theme.border};
-                border-radius: 4px;
-            }}
-            QWidget:focus-within {{
-                border-color: {self.theme.accent_primary};
-            }}
-        """
-        )
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Light the container while the field has focus."""
+        if watched is self._input and event.type() in (
+            QEvent.FocusIn,
+            QEvent.FocusOut,
+        ):
+            # QSS has no :focus-within, so a property carries it.
+            self._search_container.setProperty(
+                "focused", event.type() == QEvent.FocusIn
+            )
+            fxutils.repolish(self._search_container)
+        return super().eventFilter(watched, event)
 
     @property
     def text(self) -> str:
@@ -217,9 +200,35 @@ class FXSearchBar(fxstyle.FXThemeAware, QWidget):
         self._debounce_timer.stop()
         self.search_submitted.emit(self._input.text())
 
-    def setFocus(self) -> None:
-        """Set focus to the search input."""
-        self._input.setFocus()
+
+
+fxstyle.register_widget_style("""
+FXSearchBar QWidget#fx_search_container {
+    background-color: @surface_sunken;
+    border: 1px solid @border;
+    border-radius: 4px;
+}
+FXSearchBar QWidget#fx_search_container[focused="true"] {
+    border-color: @accent_primary;
+}
+FXSearchBar QPushButton#fx_search_icon {
+    background: transparent;
+    border: none;
+}
+FXSearchBar QLineEdit#fx_search_input {
+    background: transparent;
+    border: none;
+    padding: 6px 0;
+}
+FXSearchBar QPushButton#fx_search_clear {
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+}
+FXSearchBar QPushButton#fx_search_clear:hover {
+    background: rgba(128, 128, 128, 0.2);
+}
+""")
 
 
 def example() -> None:

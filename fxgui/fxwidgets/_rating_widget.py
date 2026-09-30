@@ -12,7 +12,7 @@ from qtpy.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 from fxgui import fxicons, fxstyle
 
 
-class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
+class FXRatingWidget(QWidget):
     """A clickable star rating widget.
 
     This widget provides a configurable star rating with:
@@ -70,7 +70,7 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
 
         # Create star labels
         self._stars: list = []
-        for i in range(max_rating):
+        for _ in range(max_rating):
             star = QLabel()
             star.setFixedSize(icon_size, icon_size)
             star.setAlignment(Qt.AlignCenter)
@@ -90,6 +90,8 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        # The star pixmaps are baked in theme colours.
+        fxstyle.theme_changed.connect(self._update_stars)
 
     @property
     def rating(self) -> float:
@@ -126,12 +128,12 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
         """Clear the rating (set to 0)."""
         self.set_rating(0)
 
-    def _update_stars(self) -> None:
+    def _update_stars(self, _theme_name: Optional[str] = None) -> None:
         """Update star icons based on current rating."""
-        # Get current theme colors (dynamic for theme switching)
-        empty_color = self.theme.text_disabled
-        filled_color = self.theme.accent_primary
-        hover_color = self.theme.accent_secondary
+        theme = fxstyle.colors()
+        empty_color = theme.text_disabled
+        filled_color = theme.accent_primary
+        hover_color = theme.accent_secondary
 
         display_rating = (
             self._hover_rating
@@ -220,7 +222,7 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
         if self.hasFocus():
             painter = QPainter(self)
             painter.setRenderHint(QPainter.Antialiasing)
-            pen = QPen(QColor(self.theme.accent_primary))
+            pen = QPen(QColor(fxstyle.colors().accent_primary))
             pen.setWidth(1)
             painter.setPen(pen)
             painter.setBrush(Qt.NoBrush)
@@ -231,13 +233,13 @@ class FXRatingWidget(fxstyle.FXThemeAware, QWidget):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handle mouse move for hover preview."""
-        self._hover_rating = self._get_rating_from_pos(event.x())
+        self._hover_rating = self._get_rating_from_pos(int(event.position().x()))
         self._update_stars()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse click to set rating."""
         if event.button() == Qt.LeftButton:
-            rating = self._get_rating_from_pos(event.x())
+            rating = self._get_rating_from_pos(int(event.position().x()))
             self.set_rating(rating)
 
     def leaveEvent(self, event) -> None:
