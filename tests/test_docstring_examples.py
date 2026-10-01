@@ -7,6 +7,7 @@ it raises fails the test, since it may name a widget the page assumes.
 # Built-in
 import doctest
 import importlib
+import importlib.util
 import pkgutil
 
 # Third-party
@@ -22,6 +23,11 @@ def _stated_tests():
     found = []
     for info in pkgutil.walk_packages(fxgui.__path__, "fxgui."):
         if ".icons" in info.name:
+            continue
+        # Docking is optional: its module imports QtAds.
+        if info.name == "fxgui.fxdocking" and importlib.util.find_spec(
+            "PySide6QtAds"
+        ) is None:
             continue
         module = importlib.import_module(info.name)
         for test in finder.find(module, info.name):
