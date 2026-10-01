@@ -1,14 +1,22 @@
 """The base sheet's chrome: branches, scroll bars, arrows, cards, tabs, popups."""
 
+# Built-in
+import re
+
 # Third-party
 import pytest
-from qtpy.QtCore import QEvent, QPoint, QPointF, Qt
+from qtpy.QtCore import QEvent, QPoint, QPointF, QRect, Qt
 from qtpy.QtGui import QColor, QHoverEvent
 from qtpy.QtWidgets import (
     QApplication,
+    QComboBox,
     QListWidget,
+    QSpinBox,
     QStyle,
+    QStyleOptionComboBox,
     QStyleOptionSlider,
+    QStyleOptionSpinBox,
+    QTableWidget,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -158,3 +166,59 @@ def test_a_scroll_bar_is_a_thin_pill_with_no_arrows(qtbot, theme):
     hovered = _thumb_width(bar)
     assert 0 < rest < hovered <= bar.width(), (rest, hovered)
     assert bar.width() == fxstyle.THIN_SCROLL_WIDTH
+
+
+# (3) One arrow everywhere: the chevrons, in the icon token.
+
+
+def _ink_near(image, rect, ink):
+    return min(_distance(pixel, ink) for pixel in _pixels(image, rect))
+
+
+@THEMES
+def test_every_arrow_in_the_sheet_is_a_chevron(theme):
+    sheet = fxstyle.build_stylesheet(theme)
+    assert "~icon(" not in sheet
+    assert not re.search(r"_arrow(_disabled)?.svg", sheet)
+    for name in ("expand_more", "expand_less", "chevron_right"):
+        assert f"/{name}_" in sheet, name
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_combo_spin_and_header_arrows_wear_the_icon_token(qtbot, theme):
+    holder = QWidget()
+    column = QVBoxLayout(holder)
+    combo = QComboBox()
+    combo.addItems(["one", "two"])
+    spin = QSpinBox()
+    spin.setValue(5)
+    table = QTableWidget(3, 2)
+    table.setSortingEnabled(True)
+    table.sortByColumn(0, Qt.AscendingOrder)
+    for widget in (combo, spin, table):
+        column.addWidget(widget)
+    window = _shown(qtbot, theme, holder, (320, 320))
+    image = window.grab().toImage()
+    icon = fxstyle.colors().icon
+
+    def mapped(widget, rect):
+        return rect.translated(widget.mapTo(window, QPoint()))
+
+    option = QStyleOptionComboBox()
+    combo.initStyleOption(option)
+    arrow = combo.style().subControlRect(
+        QStyle.CC_ComboBox, option, QStyle.SC_ComboBoxArrow, combo
+    )
+    assert _ink_near(image, mapped(combo, arrow), icon) <= 24
+    option = QStyleOptionSpinBox()
+    spin.initStyleOption(option)
+    for control in (QStyle.SC_SpinBoxUp, QStyle.SC_SpinBoxDown):
+        button = spin.style().subControlRect(
+            QStyle.CC_SpinBox, option, control, spin
+        )
+        assert _ink_near(image, mapped(spin, button), icon) <= 24, control
+    header = table.horizontalHeader()
+    # The sort mark sits at the section's right end, clear of its text.
+    right = header.sectionViewportPosition(0) + header.sectionSize(0)
+    mark = QRect(right - 20, 0, 20, header.height())
+    assert _ink_near(image, mapped(header, mark), icon) <= 40

@@ -387,7 +387,13 @@ QMenu::indicator:exclusive:checked:selected {
 
 QMenu::right-arrow {
     margin: 5px;
-    image: url(~icons/right_arrow.svg)
+    width: 16px;
+    height: 16px;
+    image: ~icon(chevron_right, icon);
+}
+
+QMenu::right-arrow:selected {
+    image: ~icon(chevron_right, icon_on_accent_primary);
 }
 
 
@@ -746,28 +752,27 @@ QComboBox QAbstractItemView::item:selected
     background-color: @accent_primary;
 }
 
+/* Every arrow is the accordion's chevron in @icon: here, on a spin box,
+   a header's sort mark, a menu, a tab bar's scroll buttons, a tool button
+   and a push button with a menu. */
 QComboBox::drop-down
 {
     subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 15px;
-    border-left-width: 0px;
-    border-left-color: darkgray;
-    border-left-style: solid;
-    border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
+    subcontrol-position: center right;
+    width: 16px;
+    border: none;
 }
 
 QComboBox::down-arrow
 {
-    image: url(~icons/down_arrow_disabled.svg);
+    image: ~icon(expand_more, icon);
+    width: 16px;
+    height: 16px;
 }
 
-QComboBox::down-arrow:on,
-QComboBox::down-arrow:hover,
-QComboBox[fxFocusVisible="true"]::down-arrow:focus
+QComboBox::down-arrow:disabled
 {
-    image: url(~icons/down_arrow.svg);
+    image: ~icon(expand_more, text_disabled);
 }
 
 QPushButton:pressed
@@ -832,28 +837,33 @@ QAbstractSpinBox:down-button
 }
 
 QAbstractSpinBox::up-arrow,
-QAbstractSpinBox::up-arrow:disabled,
-QAbstractSpinBox::up-arrow:off {
-    image: url(~icons/up_arrow_disabled.svg);
-    width: 10px;
-    height: 10px;
-}
-QAbstractSpinBox::up-arrow:hover
+QAbstractSpinBox::down-arrow
 {
-    image: url(~icons/up_arrow.svg);
+    width: 16px;
+    height: 16px;
 }
 
-QAbstractSpinBox::down-arrow,
+QAbstractSpinBox::up-arrow
+{
+    image: ~icon(expand_less, icon);
+}
+
+QAbstractSpinBox::down-arrow
+{
+    image: ~icon(expand_more, icon);
+}
+
+/* :off is an arrow at its end of the range. */
+QAbstractSpinBox::up-arrow:disabled,
+QAbstractSpinBox::up-arrow:off
+{
+    image: ~icon(expand_less, text_disabled);
+}
+
 QAbstractSpinBox::down-arrow:disabled,
 QAbstractSpinBox::down-arrow:off
 {
-    image: url(~icons/down_arrow_disabled.svg);
-    width: 10px;
-    height: 10px;
-}
-QAbstractSpinBox::down-arrow:hover
-{
-    image: url(~icons/down_arrow.svg);
+    image: ~icon(expand_more, text_disabled);
 }
 
 QLabel
@@ -905,28 +915,26 @@ QTabBar QToolButton:pressed {
     background-color: @state_pressed;
 }
 
-QTabBar QToolButton::right-arrow:enabled {
-    image: url(~icons/right_arrow.svg);
-    width: 10px;
-    height: 10px;
+QTabBar QToolButton::right-arrow,
+QTabBar QToolButton::left-arrow {
+    width: 16px;
+    height: 16px;
 }
 
-QTabBar QToolButton::left-arrow:enabled {
-    image: url(~icons/left_arrow.svg);
-    width: 10px;
-    height: 10px;
+QTabBar QToolButton::right-arrow {
+    image: ~icon(chevron_right, icon);
+}
+
+QTabBar QToolButton::left-arrow {
+    image: ~icon(chevron_left, icon);
 }
 
 QTabBar QToolButton::right-arrow:disabled {
-    image: url(~icons/right_arrow_disabled.svg);
-    width: 10px;
-    height: 10px;
+    image: ~icon(chevron_right, text_disabled);
 }
 
 QTabBar QToolButton::left-arrow:disabled {
-    image: url(~icons/left_arrow_disabled.svg);
-    width: 10px;
-    height: 10px;
+    image: ~icon(chevron_left, text_disabled);
 }
 
 QTabBar::close-button  {
@@ -1371,9 +1379,9 @@ QToolButton:pressed,
 
 /* the subcontrol below is used only in the InstantPopup or DelayedPopup mode */
 QToolButton::menu-indicator {
-    image: url(~icons/down_arrow.svg);
-    width: 8px;
-    height: 8px;
+    image: ~icon(expand_more, icon);
+    width: 12px;
+    height: 12px;
     subcontrol-origin: padding;
     subcontrol-position: right center;
     right: 2px;
@@ -1395,33 +1403,26 @@ QToolButton::menu-button:hover {
 }
 
 QToolButton::menu-arrow {
-    image: url(~icons/down_arrow.svg);
-    width: 8px;
-    height: 8px;
+    image: ~icon(expand_more, icon);
+    width: 12px;
+    height: 12px;
 }
 
 QToolButton::menu-arrow:disabled {
-    image: url(~icons/down_arrow_disabled.svg);
-}
-
-QToolButton::menu-arrow:open {
-    top: 1px; left: 1px; /* shift it a bit */
+    image: ~icon(expand_more, text_disabled);
 }
 
 
 QPushButton::menu-indicator  {
+    image: ~icon(expand_more, icon);
     subcontrol-origin: padding;
     subcontrol-position: right;
-    width: 8px;
-    height: 8px;
-    padding-right: 5px;
+    width: 12px;
+    height: 12px;
 }
 
 QPushButton::menu-indicator:disabled {
-    image: url(~icons/down_arrow_disabled.svg);
-    width: 9px;
-    height: 9px;
-    padding-right: 3px;
+    image: ~icon(expand_more, text_disabled);
 }
 
 
@@ -1494,18 +1495,19 @@ QHeaderView::section:checked
 }
 
 /* style the sort indicator */
+QHeaderView::down-arrow,
+QHeaderView::up-arrow {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+}
+
 QHeaderView::down-arrow {
-    image: url(~icons/down_arrow.svg);
-    width: 7px;
-    height: 7px;
-    margin-right: 7px;
+    image: ~icon(expand_more, icon);
 }
 
 QHeaderView::up-arrow {
-    image: url(~icons/up_arrow.svg);
-    width: 7px;
-    height: 7px;
-    margin-right: 7px;
+    image: ~icon(expand_less, icon);
 }
 
 QTableCornerButton::section {
