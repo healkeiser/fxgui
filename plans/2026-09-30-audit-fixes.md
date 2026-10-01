@@ -243,7 +243,11 @@ leave `FXThemeAware`.
   hover and selection only; (6) tabs: the active underline is a straight
   bar (today a bottom border on a rounded box curls up at both ends), one
   tab look for QtAds tabs (fxdocking.py) and QTabBar (style.qss); test the
-  underline's ends sit on its middle's pixel row.
+  underline's ends sit on its middle's pixel row; (7) no state moves an
+  item: a hovered combo-box popup item shifts its text right (its
+  selected rule pads differently); one padding for every state in combo
+  popups, menus, lists and trees; test the text's start x in rest, hover
+  and selected is identical.
 - Delegate hover: one look, @accent_secondary as plain lists use.
 - Order hang: `pytest -p no:randomly tests/test_gallery.py
   tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
