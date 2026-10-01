@@ -601,6 +601,66 @@ QScrollBar::sub-page:vertical
     background: none;
 }
 
+/* A thin scroll area (fxstyle.mark_as_thin_scroll) sits on its card. */
+[fxThinScroll="true"],
+[fxThinScroll="true"] > QWidget#qt_scrollarea_viewport,
+[fxThinScroll="true"] > QWidget#qt_scrollarea_vcontainer,
+[fxThinScroll="true"] > QWidget#qt_scrollarea_hcontainer
+{
+    background: transparent;
+    border: none;
+}
+
+[fxThinScroll="true"] QScrollBar:vertical
+{
+    background: transparent;
+    border: none;
+    width: @thin_scroll;
+    margin: 0px;
+}
+
+[fxThinScroll="true"] QScrollBar:horizontal
+{
+    background: transparent;
+    border: none;
+    height: @thin_scroll;
+    margin: 0px;
+}
+
+[fxThinScroll="true"] QScrollBar::handle:vertical,
+[fxThinScroll="true"] QScrollBar::handle:horizontal
+{
+    background: @border_light;
+    border-radius: @thin_scroll_radius;
+    min-height: 12px;
+    min-width: 12px;
+    margin: 0px;
+}
+
+[fxThinScroll="true"] QScrollBar::handle:vertical:hover,
+[fxThinScroll="true"] QScrollBar::handle:horizontal:hover
+{
+    background: @scrollbar_thumb_hover;
+}
+
+[fxThinScroll="true"] QScrollBar::add-line,
+[fxThinScroll="true"] QScrollBar::sub-line,
+[fxThinScroll="true"] QScrollBar::add-line:hover,
+[fxThinScroll="true"] QScrollBar::sub-line:hover
+{
+    width: 0px;
+    height: 0px;
+    margin: 0px;
+    border: none;
+    border-image: none;
+}
+
+[fxThinScroll="true"] QScrollBar::add-page,
+[fxThinScroll="true"] QScrollBar::sub-page
+{
+    background: transparent;
+}
+
 QSizeGrip {
     background: transparent;
     /* image: url(~icons/sizegrip.svg); */

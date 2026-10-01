@@ -47,6 +47,7 @@ from qtpy.QtGui import (
 )
 from qtpy.QtWidgets import (
     QAbstractItemView,
+    QAbstractScrollArea,
     QApplication,
     QProxyStyle,
     QSplitter,
@@ -132,6 +133,9 @@ __all__ = [
     "BUTTON_RADIUS",
     "FONT_SIZE",
     "ROOT_PROPERTY",
+    "THIN_SCROLL_PROPERTY",
+    "THIN_SCROLL_WIDTH",
+    "WIDGET_STYLE_PROPERTY",
     # Color configuration
     "colors",
     "get_colors",
@@ -148,6 +152,8 @@ __all__ = [
     "get_fonts",
     "get_font_family",
     "mark_as_title",
+    "mark_as_frame",
+    "mark_as_thin_scroll",
     # Theme functions
     "get_available_themes",
     "get_theme",
@@ -162,6 +168,7 @@ __all__ = [
     "resolve",
     "build_stylesheet",
     "register_widget_style",
+    "set_widget_style",
     "set_default_theme",
     "get_default_theme",
     "register_themed_root",
@@ -172,6 +179,11 @@ __all__ = [
     "get_contrast_text_color",
     "get_contrast_ratio",
     "readable_ink",
+    "mix",
+    "step_toward",
+    "depth_shade",
+    "DEPTH_STEP",
+    "DEPTH_CAP",
 ]
 
 
@@ -192,6 +204,20 @@ TITLE_PROPERTY = "fxTitle"
 # Dynamic property painting a widget in the frame colour. Set it through
 # mark_as_frame() rather than by hand.
 FRAME_PROPERTY = "fxFrame"
+
+# Dynamic property drawing a scroll area as a card's thin scroll. Set it
+# through mark_as_thin_scroll() rather than by hand.
+THIN_SCROLL_PROPERTY = "fxThinScroll"
+
+# The width, in pixels, of a thin scroll area's bar: `@thin_scroll` in QSS.
+THIN_SCROLL_WIDTH = 6
+
+# Per tree level, toward `border_light`; the cap's 48% stays short of a border.
+DEPTH_STEP = 0.12
+
+# ponytail: rows deeper than this shade like this level; raise it for a
+# tree that nests deeper and needs telling apart.
+DEPTH_CAP = 4
 
 # Styles QPushButton through @button_radius; widgets that draw a button
 # shape of their own read it here.
@@ -221,6 +247,10 @@ FONT_SIZE = 12
 # The dynamic property a widget registered as a themed root carries.
 ROOT_PROPERTY = "fxThemedRoot"
 
+# The dynamic property holding the unresolved sheet `set_widget_style` gave.
+# On the C++ object, so a label Qt made keeps it when its wrapper is gone.
+WIDGET_STYLE_PROPERTY = "fxWidgetStyle"
+
 _GENERIC_FONT_FAMILIES = frozenset(
     {"cursive", "fantasy", "monospace", "sans-serif", "serif"}
 )
@@ -232,6 +262,34 @@ _DEFAULT_FONTS = {
     "title": [],
     "body": [],
     "mono": ["Consolas", "Courier New", "monospace"],
+}
+
+# Title ranks when the color file's `fonts: ranks:` names none: pixel size
+# and weight of a heading marked with `mark_as_title(widget, rank=...)`.
+_DEFAULT_RANKS = {
+    "section": {"size": 15, "weight": 600},
+    "card": {"size": 16, "weight": 600},
+}
+
+# A face's `weight:` in the color file, on the CSS scale QSS also reads.
+_WEIGHTS = {
+    100: QFont.Thin,
+    200: QFont.ExtraLight,
+    300: QFont.Light,
+    400: QFont.Normal,
+    500: QFont.Medium,
+    600: QFont.DemiBold,
+    700: QFont.Bold,
+    800: QFont.ExtraBold,
+    900: QFont.Black,
+}
+
+# A face's `hinting:` in the color file.
+_HINTING = {
+    "default": QFont.PreferDefaultHinting,
+    "none": QFont.PreferNoHinting,
+    "vertical": QFont.PreferVerticalHinting,
+    "full": QFont.PreferFullHinting,
 }
 
 
@@ -334,6 +392,7 @@ def _colors_changed() -> None:
     """Re-apply the current theme after the theme or colour file changed."""
     _invalidate_theme_namespace()
     _reapply_to_roots()
+    _reapply_widget_styles()
     theme_manager.notify_theme_changed(get_theme())
 
 
@@ -602,6 +661,7 @@ def register_fonts(paths) -> Dict[str, list]:
 
     if any(results.values()):
         _reapply_to_roots()
+        _reapply_widget_styles()
     return results
 
 
@@ -624,7 +684,30 @@ def _font_config(theme_name: str) -> dict:
     for source in (get_colors().get("fonts"), theme_fonts):
         if isinstance(source, dict):
             fonts.update(source)
+    fonts.pop("ranks", None)
     return fonts
+
+
+def _families(entry):
+    """Return a role's families: the entry itself, or its `family` key."""
+    return entry.get("family") if isinstance(entry, dict) else entry
+
+
+def _shape(theme_name: str, role: str) -> Tuple[Optional[int], Optional[str]]:
+    """Return a role's configured weight and hinting, each None when unset."""
+    entry = _font_config(theme_name).get(role)
+    if not isinstance(entry, dict):
+        return None, None
+    weight, hinting = entry.get("weight"), entry.get("hinting")
+    if weight is not None and weight not in _WEIGHTS:
+        raise ValueError(
+            f"Font weight {weight!r} for '{role}' is not one of "
+            f"{sorted(_WEIGHTS)}")
+    if hinting is not None and hinting not in _HINTING:
+        raise ValueError(
+            f"Font hinting {hinting!r} for '{role}' is not one of "
+            f"{sorted(_HINTING)}")
+    return weight, hinting
 
 
 def _resolve_font_stack(entries) -> str:
@@ -648,6 +731,7 @@ def _resolve_font_stack(entries) -> str:
     Returns:
         A comma-separated QSS value, quoted except for CSS generics.
     """
+    entries = _families(entries)
     if not entries:
         entries = []
     elif isinstance(entries, str):
@@ -713,27 +797,46 @@ def get_font_family(role: str = "body", theme: Optional[str] = None) -> str:
     return fonts.get(role) or fonts["body"]
 
 
-def mark_as_title(widget: QWidget, is_title: bool = True) -> None:
+def _ranks(theme_name: str) -> Dict[str, dict]:
+    """Return a theme's title ranks: built-in, the file's, then the theme's."""
+    ranks = dict(_DEFAULT_RANKS)
+    theme_fonts = _theme_data(theme_name).get("fonts")
+    for source in (get_colors().get("fonts"), theme_fonts):
+        if isinstance(source, dict) and isinstance(source.get("ranks"), dict):
+            ranks.update(source["ranks"])
+    return ranks
+
+
+def mark_as_title(
+    widget: QWidget, is_title: bool = True, rank: Optional[str] = None
+) -> None:
     """Draw a widget's text in the theme's title font role.
 
-    Sets the dynamic property the theme stylesheet keys the title role
-    on, then repolishes so the change lands on an already-shown widget.
-    Only the family changes: size and weight keep coming from whatever
-    rule or ``setFont`` call already governed the widget.
-
-    With a color file that leaves ``title`` empty, or names the same
-    family for both roles, this is a no-op visually.
+    Without a rank only the family changes. A rank ("section", "card",
+    or one the color file's ``fonts: ranks:`` adds) also sets the size
+    and weight, from the stylesheet, so it holds inside a host too,
+    where a font set in code loses to the host rules.
 
     Args:
         widget: The widget whose text is a title.
         is_title: False removes the mark and returns the widget to the
             body role. Defaults to True.
+        rank: The heading's rank. Defaults to None, the family alone.
+
+    Raises:
+        ValueError: If `rank` is not a rank of the current theme.
 
     Examples:
-        >>> heading = QLabel("Render Settings")
-        >>> fxstyle.mark_as_title(heading)
+        >>> fxstyle.mark_as_title(heading, rank="section")
     """
-    widget.setProperty(TITLE_PROPERTY, bool(is_title))
+    value = bool(is_title)
+    if rank is not None:
+        ranks = _ranks(get_theme())
+        if rank not in ranks:
+            raise ValueError(
+                f"No title rank {rank!r}. Ranks: {sorted(ranks)}")
+        value = rank if is_title else False
+    widget.setProperty(TITLE_PROPERTY, value)
     fxutils.repolish(widget)
 
 
@@ -764,6 +867,29 @@ def mark_as_frame(widget: QWidget, is_frame: bool = True) -> None:
     for child in widget.findChildren(QWidget):
         if child.parentWidget() is widget:
             fxutils.repolish(child)
+
+
+def mark_as_thin_scroll(area: QAbstractScrollArea, is_thin: bool = True) -> None:
+    """Draw a scroll area as part of the card it sits on.
+
+    No fill of its own, and a narrow bar (`THIN_SCROLL_WIDTH`) with a
+    quiet handle and no arrows, where the theme's full bar is too loud.
+
+    Args:
+        area: The scroll area, or any QAbstractScrollArea.
+        is_thin: False gives it the theme's own look back. Defaults to True.
+
+    Examples:
+        >>> fxstyle.mark_as_thin_scroll(runs_area)
+    """
+    area.setProperty(THIN_SCROLL_PROPERTY, bool(is_thin))
+    # Child selectors are matched when the child polishes, not the parent.
+    parts = [area, area.viewport()]
+    for bar in (area.verticalScrollBar(), area.horizontalScrollBar()):
+        parts += [bar, bar.parentWidget()]
+    for part in parts:
+        if part is not None:
+            fxutils.repolish(part)
 
 
 ###### Color Utility Functions
@@ -835,7 +961,7 @@ def readable_ink(
         ("#000000", "#ffffff"),
         key=lambda pole: get_contrast_ratio(pole, ground),
     )
-    return _step_toward(start, toward, _reads(ground, floor))
+    return step_toward(start, toward, _reads(ground, floor))
 
 
 def _visibly_differ(one_hex: str, two_hex: str) -> bool:
@@ -873,7 +999,7 @@ def _primary_button_fills(
 
     def shifted(fill, ink, *apart):
         reads = _reads(ink, 4.5)
-        return _step_toward(fill, _away_from(ink, fill), lambda color: (
+        return step_toward(fill, _away_from(ink, fill), lambda color: (
             reads(color) and all(_visibly_differ(color, o) for o in apart)
         ))
 
@@ -885,8 +1011,11 @@ def _primary_button_fills(
     return rest, hover, pressed
 
 
-def _mix(one_hex: str, two_hex: str, amount: float) -> str:
-    """Return the color `amount` of the way from `one_hex` to `two_hex`."""
+def mix(one_hex, two_hex, amount: float) -> str:
+    """Return the hex colour `amount` (0 to 1) of the way from one to two.
+
+    Either colour may be anything QColor reads, a QColor included.
+    """
     one, two = QColor(one_hex), QColor(two_hex)
     return QColor(
         round(one.red() + (two.red() - one.red()) * amount),
@@ -895,13 +1024,23 @@ def _mix(one_hex: str, two_hex: str, amount: float) -> str:
     ).name()
 
 
-def _step_toward(start: str, toward: str, done) -> str:
-    """Return the first color from `start` to `toward` that is `done`.
+def step_toward(start, toward, done) -> str:
+    """Return the first hex colour from `start` to `toward` that is `done`.
 
-    Returns `toward` itself when no color on the way is.
+    Args:
+        start: The colour to begin at, tried first.
+        toward: The colour to move to, in 40 steps.
+        done: Takes a hex colour; True stops the walk there.
+
+    Returns:
+        The first colour `done` accepts, else `toward` itself.
+
+    Examples:
+        >>> fxstyle.step_toward("#202020", "#ffffff",
+        ...     lambda c: fxstyle.get_contrast_ratio(c, "#202020") >= 4.5)
     """
     for step in range(41):
-        color = _mix(start, toward, step / 40)
+        color = mix(start, toward, step / 40)
         if done(color):
             return color
     return color
@@ -910,6 +1049,31 @@ def _step_toward(start: str, toward: str, done) -> str:
 def _reads(against: str, minimum: float):
     """Return a test: does a color differ from `against` by `minimum`?"""
     return lambda color: get_contrast_ratio(color, against) >= minimum
+
+
+def depth_shade(base, depth: int) -> str:
+    """Return a tree row's `base` colour tinted for its `depth`.
+
+    Each level steps `DEPTH_STEP` toward the theme's ``border_light``,
+    its mid-tone rather than its text, which washes a dark blue to grey.
+    The step is held back where the text would fall under 4.5:1.
+
+    Args:
+        base: The row's colour at depth 0, anything QColor reads.
+        depth: How many rows sit above it; 0 is a top-level row.
+
+    Examples:
+        >>> fxstyle.depth_shade(colors["surface"], 2)
+    """
+    base = QColor(base).name()
+    if depth <= 0:
+        return base
+    colors = get_theme_colors()
+    text = colors["text"]
+    floor = min(4.5, get_contrast_ratio(text, base))
+    deepest = mix(
+        base, colors["border_light"], min(depth, DEPTH_CAP) * DEPTH_STEP)
+    return step_toward(deepest, base, _reads(text, floor))
 
 
 def _depth_colors(theme_data: dict) -> Dict[str, str]:
@@ -938,12 +1102,12 @@ def _depth_colors(theme_data: dict) -> Dict[str, str]:
         if get_luminance(sunken) < get_luminance(surface) and deep(sunken):
             frame = sunken
         else:
-            frame = _step_toward(surface, "#000000", deep)
+            frame = step_toward(surface, "#000000", deep)
             if not deep(frame):
-                frame = _step_toward(surface, "#ffffff", deep)
+                frame = step_toward(surface, "#ffffff", deep)
 
-    well = theme_data.get("well") or _step_toward(
-        _mix(surface, frame, 0.5), frame, _reads(surface, WELL_MIN_CONTRAST))
+    well = theme_data.get("well") or step_toward(
+        mix(surface, frame, 0.5), frame, _reads(surface, WELL_MIN_CONTRAST))
 
     border = theme_data.get("border", frame)
     edge = theme_data.get("pane_border")
@@ -953,7 +1117,7 @@ def _depth_colors(theme_data: dict) -> Dict[str, str]:
             if get_luminance(border) <= get_luminance(frame)
             else "#ffffff"
         )
-        edge = _step_toward(
+        edge = step_toward(
             border, away, _reads(frame, PANE_BORDER_MIN_CONTRAST))
 
     mark = theme_data.get("splitter_mark")
@@ -962,7 +1126,7 @@ def _depth_colors(theme_data: dict) -> Dict[str, str]:
         quiet = theme_data.get("border_light", border)
         mark = next(
             (color for color in (border, quiet) if visible(color)), None
-        ) or _step_toward(quiet, theme_data.get("text", border), visible)
+        ) or step_toward(quiet, theme_data.get("text", border), visible)
 
     return {
         "frame": frame,
@@ -1102,6 +1266,8 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         tokens[f"@font_{role}"] = _resolve_font_stack(entries)
 
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
+    tokens["@thin_scroll_radius"] = f"{THIN_SCROLL_WIDTH // 2}px"
+    tokens["@thin_scroll"] = f"{THIN_SCROLL_WIDTH}px"
     # A bare number, for a sheet that writes its own unit: `@radiuspx`.
     tokens["@radius"] = str(BUTTON_RADIUS)
 
@@ -1516,16 +1682,32 @@ def replace_colors(stylesheet: str, colors_dict: Optional[dict] = None) -> str:
     })
 
 
-def _font_stylesheet() -> str:
-    """Return the title rule: a marked title takes the title family.
+def _font_stylesheet(theme: Optional[str] = None) -> str:
+    """Return the title rules: the title family, then each rank's size.
 
     The body family and size are the root font (:func:`font`), which a
-    widget's own ``setFont`` overrides; the title rule outranks it.
+    widget's own ``setFont`` overrides; the title rules outrank it.
     """
-    return (
-        f'[{TITLE_PROPERTY}="true"] {{\n'
-        "    font-family: @font_title;\n}\n"
-    )
+    ranks = _ranks(theme or get_theme())
+    selectors = [f'[{TITLE_PROPERTY}="true"]'] + [
+        f'[{TITLE_PROPERTY}="{rank}"]' for rank in ranks
+    ]
+    rules = [f"{', '.join(selectors)} {{ font-family: @font_title; }}"]
+    for rank, shape in ranks.items():
+        declarations = []
+        if shape.get("size") is not None:
+            declarations.append(f"font-size: {int(shape['size'])}px;")
+        weight = shape.get("weight")
+        if weight is not None:
+            if weight not in _WEIGHTS:
+                raise ValueError(
+                    f"Font weight {weight!r} for rank '{rank}' is not one "
+                    f"of {sorted(_WEIGHTS)}")
+            declarations.append(f"font-weight: {weight};")
+        if declarations:
+            rules.append(
+                f'[{TITLE_PROPERTY}="{rank}"] {{ {" ".join(declarations)} }}')
+    return "\n".join(rules) + "\n"
 
 
 def build_stylesheet(theme: Optional[str] = None) -> str:
@@ -1546,7 +1728,7 @@ def build_stylesheet(theme: Optional[str] = None) -> str:
 
 def _build(style_file, theme: Optional[str]) -> str:
     """Resolve the font block, `style_file` and every registered fragment."""
-    parts = [_font_stylesheet()]
+    parts = [_font_stylesheet(theme)]
     if os.path.exists(style_file):
         with open(style_file, "r", encoding="utf-8") as in_file:
             parts.append(in_file.read())
@@ -1577,6 +1759,40 @@ def register_widget_style(qss: str) -> None:
         return
     _widget_fragments[key] = qss
     _reapply_to_roots()
+
+
+def set_widget_style(widget: QWidget, qss: str) -> None:
+    """Give one widget a stylesheet whose ``@tokens`` follow every switch.
+
+    For a look one widget alone has; a look every widget of a class
+    shares belongs in `register_widget_style`. The widget's sheet is this
+    one from now on: a later ``setStyleSheet`` is overwritten at the next
+    switch, unless ``set_widget_style(widget, "")`` stopped it first.
+
+    Args:
+        widget: The widget to style.
+        qss: Declarations or rules, with any ``@token``. Empty stops.
+
+    Examples:
+        >>> fxstyle.set_widget_style(hint, "color: @text_muted;")
+    """
+    widget.setProperty(WIDGET_STYLE_PROPERTY, qss or None)
+    widget.setStyleSheet(resolve(qss) if qss else "")
+
+
+def _reapply_widget_styles() -> None:
+    """Resolve every `set_widget_style` sheet again in the current theme."""
+    app = QApplication.instance()
+    if app is None:
+        return
+    tokens = None
+    # ponytail: walks every widget at a switch, cheaper than the root
+    # restyle that precedes it; keep a registry if a host ever has 100k.
+    for widget in app.allWidgets():
+        qss = widget.property(WIDGET_STYLE_PROPERTY)
+        if qss:
+            tokens = tokens or _token_map(get_theme())
+            widget.setStyleSheet(_substitute(qss, tokens))
 
 
 def register_themed_root(root: QObject) -> None:
@@ -1621,12 +1837,20 @@ _HOST_RULES = f"""
 QWidget {{
     background-color: transparent;
     font-family: @font_body;
-    font-size: {FONT_SIZE}px;
+    font-size: {FONT_SIZE}px;@weight
 }}
 [{ROOT_PROPERTY}="true"], QMainWindow, QDialog {{
     background-color: @surface;
 }}
 """
+
+
+def _host_rules(theme: Optional[str] = None) -> str:
+    """Return the host rules resolved, with the body weight if one is set."""
+    theme = theme or get_theme()
+    weight, _hinting = _shape(theme, "body")
+    extra = f" font-weight: {weight};" if weight is not None else ""
+    return resolve(_HOST_RULES.replace("@weight", extra), theme)
 
 
 def _in_host(root: QObject) -> bool:
@@ -1639,7 +1863,7 @@ def _apply_to_root(root, sheet: str, theme_palette, theme_font) -> None:
     root.setPalette(theme_palette)
     root.setFont(theme_font)
     if _in_host(root):
-        sheet = resolve(_HOST_RULES) + sheet
+        sheet = _host_rules() + sheet
     root.setStyleSheet(sheet)
 
 
@@ -1701,18 +1925,28 @@ def palette(theme: Optional[str] = None) -> QPalette:
     return result
 
 
-def font(theme: Optional[str] = None) -> QFont:
-    """Build the root font: the theme's body families at the body size.
+def font(theme: Optional[str] = None, role: str = "body") -> QFont:
+    """Build a role's font: its installed families, weight and hinting.
 
-    Set on every themed root with the palette; a child's own ``setFont``
-    wins over it, which a sheet ``font`` rule would not allow.
+    The body role is the root font, set on every themed root with the
+    palette; a child's own ``setFont`` wins over it, which a sheet
+    ``font`` rule would not allow. Another role is for code that takes a
+    QFont, such as a QGraphicsTextItem.
 
     Args:
         theme: Theme name. Defaults to the current theme.
+        role: A role of the ``fonts:`` block. Defaults to "body".
+
+    Raises:
+        ValueError: If the role names a weight or hinting fxgui lacks.
+
+    Examples:
+        >>> item.setFont(fxstyle.font(role="mono"))
     """
+    theme = theme or get_theme()
     families = [
         name.strip().strip('"')
-        for name in get_font_family("body", theme).split(",")
+        for name in get_font_family(role, theme).split(",")
     ]
     result = QFont()
     named = [name for name in families if name not in _GENERIC_FONT_FAMILIES]
@@ -1720,6 +1954,11 @@ def font(theme: Optional[str] = None) -> QFont:
     if named:
         result.setFamily(named[0])
     result.setPixelSize(FONT_SIZE)
+    weight, hinting = _shape(theme, role)
+    if weight is not None:
+        result.setWeight(_WEIGHTS[weight])
+    if hinting is not None:
+        result.setHintingPreference(_HINTING[hinting])
     return result
 
 
@@ -1743,5 +1982,5 @@ def load_stylesheet(
     """
     if not os.path.exists(style_file):
         return ""
-    host = resolve(_HOST_RULES, theme)
+    host = _host_rules(theme)
     return host + _build(style_file, theme) + (extra or "")

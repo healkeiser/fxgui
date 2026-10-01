@@ -52,6 +52,8 @@ from qtpy.QtGui import (
     QColor,
     QImage,
     QPainter,
+    QPainterPath,
+    QPen,
     QPixmap,
     QPixmapCache,
 )
@@ -73,6 +75,7 @@ __all__ = [
     "get_pixmap",
     "change_pixmap_color",
     "superpose_icons",
+    "rounded_pixmap",
     "clear_icon_cache",
     "set_icon",
 ]
@@ -556,7 +559,7 @@ def get_pixmap(
             the primary screen's.
 
     Returns:
-        QPixmap: The QPixmap of the icon.
+        QPixmap: The caller's own pixmap; changing it touches no other.
 
     Examples:
         >>> get_pixmap("add", color="red")
@@ -564,10 +567,12 @@ def get_pixmap(
     """
 
     library, width, height, color = _resolved(library, width, height, color)
-    return _get_pixmap_cached(
+    # A copy: one shares the pixels until written, so a caller changing it
+    # leaves the cached one alone.
+    return QPixmap(_get_pixmap_cached(
         icon_name, width, height, _theme_ink(color), library, style, extension,
         _screen_dpr() if dpr is None else float(dpr),
-    )
+    ))
 
 
 class _ThemedIconEngine(QIconEngine):
@@ -719,7 +724,7 @@ def get_icon(
             hearing about rather than a second silent stand-in.
 
     Returns:
-        QIcon: The QIcon of the icon.
+        QIcon: The caller's own icon; deleting it touches no other.
 
     Examples:
         >>> get_icon("add", color="red")
@@ -772,10 +777,12 @@ def get_icon(
     path = get_icon_path(
         icon_name, library=library, style=style, extension=extension
     )
-    return _get_icon_cached(
+    # A copy, which shares the engine: a binding that deletes the icon it
+    # is handed (QtAds' icon provider) must not delete the cached one.
+    return QIcon(_get_icon_cached(
         path, width, height, tuple(sorted(inks.items())),
         _libraries_info[library]["recolor"],
-    )
+    ))
 
 
 def superpose_icons(*icons: QIcon) -> QIcon:
@@ -813,6 +820,65 @@ def superpose_icons(*icons: QIcon) -> QIcon:
     painter.end()
 
     return QIcon(pixmap)
+
+
+def rounded_pixmap(
+    image: Union[str, Path, QPixmap],
+    side: int,
+    ratio: float,
+    radius: Optional[float] = None,
+) -> Optional[QPixmap]:
+    """Return an image cropped to a rounded square, for a thumbnail.
+
+    Scaled to cover the square and centred, so the long edge is cut.
+    Outlined as `FXThumbnailDelegate` outlines its thumbnails.
+
+    Args:
+        image: An image file Qt can read, or a pixmap.
+        side: The square's side, in logical pixels.
+        ratio: The device pixel ratio to draw at, a widget's
+            `devicePixelRatioF()`; a wrong one looks right and is soft.
+        radius: The corner radius in logical pixels. Defaults to
+            `fxstyle.BUTTON_RADIUS`.
+
+    Returns:
+        The thumbnail, or None when `image` is no readable image.
+
+    Examples:
+        >>> label.setPixmap(fxicons.rounded_pixmap(
+        ...     path, 48, ratio=label.devicePixelRatioF()))
+    """
+    from fxgui import fxstyle
+
+    source = image if isinstance(image, QPixmap) else QPixmap(str(image))
+    if source.isNull():
+        return None
+    corner = (fxstyle.BUTTON_RADIUS if radius is None else radius) * ratio
+    pixels = round(side * ratio)
+    covered = source.scaled(
+        pixels, pixels, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+    result = QPixmap(pixels, pixels)
+    result.fill(Qt.transparent)
+    painter = QPainter(result)
+    painter.setRenderHint(QPainter.Antialiasing, True)
+    clip = QPainterPath()
+    clip.addRoundedRect(QRectF(0, 0, pixels, pixels), corner, corner)
+    painter.setClipPath(clip)
+    painter.drawPixmap(
+        (pixels - covered.width()) // 2,
+        (pixels - covered.height()) // 2,
+        covered,
+    )
+    # Unclipped and inset half its width, or the ring is cut at the edge.
+    painter.setClipping(False)
+    width = ratio
+    painter.setPen(QPen(QColor(255, 255, 255, 127), width))
+    painter.setBrush(Qt.NoBrush)
+    inside = QRectF(width / 2, width / 2, pixels - width, pixels - width)
+    painter.drawRoundedRect(inside, corner, corner)
+    painter.end()
+    result.setDevicePixelRatio(ratio)
+    return result
 
 
 def clear_icon_cache() -> None:

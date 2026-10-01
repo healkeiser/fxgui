@@ -66,33 +66,41 @@ dcc:
 # FONTS
 # =============================================================================
 # Typefaces by role, the way the sections above name colors by role. Each
-# role is a family stack resolved into a stylesheet token: the first family
-# the running Qt actually has wins, and the platform default UI font is
-# appended, so a role can never resolve to nothing.
+# role is a family stack: the first family the running Qt has wins, and the
+# platform default UI font is appended, so a role never resolves to nothing.
 #
-#   title - Reached from QSS through the `fxTitle` property, which
-#           `fxstyle.mark_as_title(widget)` sets. Left empty here, so it
-#           resolves to the same font as body and marking a widget as a
-#           title changes nothing until a family is named.
-#   body  - Every widget, through the `*` selector.
+#   title - Text marked with `fxstyle.mark_as_title(widget)`. Left empty
+#           here, so it draws like body until a family is named.
+#   body  - Every widget: the root font of each themed window.
 #   mono  - Code, logs, anything whose columns must line up.
 #
-# An empty value means the platform default: Segoe UI on Windows, the
-# system UI font elsewhere. A missing role, or this whole section being
-# absent, means the same, so a color file written before roles existed
-# renders unchanged.
+# A role is a list of families, or a mapping that also names a weight
+# (100 to 900, as in CSS) and a hinting ("default", "none", "vertical",
+# "full"). The body role's weight and hinting go on the root font;
+# `fxstyle.font(role=...)` builds any role's QFont.
 #
-# To use your own typefaces, copy this file, name the families here, and
-# point fxgui at it:
+#   body: {family: ["Inter"], weight: 500, hinting: "none"}
+#
+# `ranks` is not a role: it sizes headings marked with
+# `fxstyle.mark_as_title(widget, rank="section")`. Each rank names a pixel
+# size and a weight; left out, "section" is 15 px and "card" 16 px, both
+# at 600. A rank named here replaces the built-in one of that name.
+#
+#   ranks:
+#     section: {size: 15, weight: 600}
+#
+# An empty value, a missing role or a missing section means the platform
+# default: Segoe UI on Windows, the system UI font elsewhere.
+#
+# To use your own typefaces, register the files, then overlay a file that
+# names them:
 #
 #   fxstyle.register_fonts(["/path/to/YourFace-Regular.ttf"])
-#   fxstyle.set_color_file("path/to/your_theme.yaml")
+#   fxstyle.overlay_color_file("path/to/studio_fonts.yaml")
 #
 # `register_fonts` returns the family names Qt registered from each file,
-# which are the names to write below; it reports an empty list for a file
-# that failed to load. Naming a family that is not installed and not
-# registered is the one thing to avoid, and fxgui guards it by dropping
-# such a family rather than emitting it.
+# which are the names to write here; an empty list means the file did not
+# load. A family that is neither installed nor registered is dropped.
 #
 # A theme may override this block with its own `fonts:` section, merged
 # role by role, exactly as it may override `feedback:`.
