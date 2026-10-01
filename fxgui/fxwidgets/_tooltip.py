@@ -53,6 +53,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui._compat import is_valid
 from fxgui.fxwidgets._delegates import FXThumbnailDelegate
 
 fxstyle.register_widget_style(
@@ -462,7 +463,8 @@ class FXTooltip(QFrame):
 
         def gone(*_args) -> None:
             alive = tooltip()
-            if alive is not None:
+            # At exit Qt may delete the tooltip before its anchor.
+            if alive is not None and is_valid(alive):
                 alive._on_anchor_destroyed()
 
         self._anchor_gone = gone

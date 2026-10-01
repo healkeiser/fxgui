@@ -268,3 +268,14 @@ def test_the_manager_shows_an_item_tooltip(qtbot):
     manager._hide_tooltip_immediate()
     qtbot.waitUntil(lambda: not _visible_tooltips(), timeout=1000)
 
+
+
+def test_an_anchor_outliving_its_tooltip_is_deleted_quietly(qtbot):
+    from qtpy import shiboken
+
+    anchor = QWidget()
+    tooltip = set_tooltip(anchor, "probe")
+    # As at exit, where Qt deletes top-level widgets in any order.
+    shiboken.delete(tooltip)
+    anchor.deleteLater()
+    QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
