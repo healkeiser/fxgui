@@ -63,3 +63,25 @@ def test_no_fragment_sets_a_third_weight_or_a_point_size():
         # An emoji is a picture, sized as one; text takes the root font.
         if not all(n.startswith("FXEmojiPicker") for n in names):
             assert "font-size" not in body, names
+
+
+_RAMP = {0, 2, 4, 6, 8, 12, 16, 24}
+_LITERAL = re.compile(
+    r"\.(?:setSpacing|setContentsMargins|addSpacing)\(([0-9, ]+)\)")
+
+
+def test_a_widget_lays_itself_out_on_the_spacing_ramp():
+    from pathlib import Path
+
+    files = Path(fxgui.fxwidgets.__file__).parent.glob("*.py")
+    off = []
+    for path in files:
+        for number, line in enumerate(path.read_text().splitlines(), 1):
+            for group in _LITERAL.findall(line):
+                values = {int(v) for v in group.split(",")}
+                # The accordion's 1 px is a hairline between sections.
+                if path.name == "_accordion.py" and values == {1}:
+                    continue
+                if values - _RAMP:
+                    off.append(f"{path.name}:{number} {group}")
+    assert off == []

@@ -198,14 +198,14 @@ class FXSplashScreen(QSplashScreen):
         fxutils.add_shadow(self.overlay_frame)
 
         layout = QVBoxLayout(self.overlay_frame)
-        layout.setContentsMargins(50, 50, 50, 50)
+        layout.setContentsMargins(24, 24, 24, 24)
 
         self.icon_label = QLabel()
         self.icon_label.setPixmap(icon.pixmap(self.ICON_HEIGHT))
         self.title_label = QLabel(title)
         fxstyle.mark_as_title(self.title_label, rank="card")
         heading = QHBoxLayout()
-        heading.setSpacing(10)
+        heading.setSpacing(8)
         heading.addWidget(self.icon_label)
         heading.addWidget(self.title_label)
         heading.addStretch()

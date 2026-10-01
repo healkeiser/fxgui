@@ -144,7 +144,7 @@ class FXDropZone(QWidget):
         self._drop_area.setProperty("dropState", "idle")
 
         drop_layout = QVBoxLayout(self._drop_area)
-        drop_layout.setContentsMargins(20, 20, 20, 20)
+        drop_layout.setContentsMargins(16, 16, 16, 16)
         drop_layout.setSpacing(8)
         drop_layout.addStretch(1)
 
