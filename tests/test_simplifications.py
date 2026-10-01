@@ -97,13 +97,13 @@ def test_drop_zone_tree_follows_rules_set_after_construction(
         event = QDragEnterEvent(
             QPoint(5, 5), Qt.CopyAction, mime, Qt.LeftButton, Qt.NoModifier
         )
-        zone.file_tree.dragEnterEvent(event)
+        zone.dragEnterEvent(event)
         return event.isAccepted()
 
     assert not taken(text)
-    zone.extensions = {".txt"}
+    zone.set_extensions({".txt"})
     assert taken(text)
-    zone.accept_mode = "folders"
+    zone.set_accept_mode("folders")
     assert not taken(text)
     assert taken(tmp_path)
 
@@ -115,11 +115,11 @@ def test_drop_zone_drag_leave_returns_to_idle(qtbot, qapp, tmp_path):
     target.write_text("x")
     mime = QMimeData()
     mime.setUrls([QUrl.fromLocalFile(str(target))])
-    zone._handle_drag_enter(QDragEnterEvent(
+    zone.dragEnterEvent(QDragEnterEvent(
         QPoint(5, 5), Qt.CopyAction, mime, Qt.LeftButton, Qt.NoModifier
     ))
     assert zone._drop_area.property("dropState") == "drag"
-    zone._handle_drag_leave(QDragLeaveEvent())
+    zone.dragLeaveEvent(QDragLeaveEvent())
     assert zone._drop_area.property("dropState") == "idle"
 
 
