@@ -54,7 +54,7 @@ def test_hover_open_and_closed_items_share_one_rounded_shape(qtbot, theme):
     action = bar.actions()[0]
     rect = bar.actionGeometry(action)
     colors = fxstyle.colors()
-    hover_ink, open_ink = colors.state_hover, colors.accent_primary
+    hover_ink, open_ink = colors.state_hover, colors.state_pressed
     assert hover_ink.lower() != open_ink.lower()
 
     assert _shape(bar, rect, hover_ink) is None, "a resting item is bare"
@@ -62,11 +62,13 @@ def test_hover_open_and_closed_items_share_one_rounded_shape(qtbot, theme):
 
     _point_at(bar, rect)
     hover = _shape(bar, rect, hover_ink)
-    assert _shape(bar, rect, open_ink) is None, "hover is not the accent"
+    assert _shape(bar, rect, open_ink) is None, "hover is not the open fill"
+    assert _shape(bar, rect, colors.accent_primary) is None
 
     QTest.mouseClick(bar, Qt.LeftButton, Qt.NoModifier, rect.center())
     QTest.qWait(30)
     opened = _shape(bar, rect, open_ink)
+    assert _shape(bar, rect, colors.accent_primary) is None, "open is neutral"
 
     # The owner's case: the menu closes with the pointer still on the item.
     action.menu().close()

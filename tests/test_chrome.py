@@ -192,7 +192,7 @@ def _ink_near(image, rect, ink):
 
 @THEMES
 def test_every_arrow_in_the_sheet_is_a_chevron(theme):
-    sheet = fxstyle.build_stylesheet(theme)
+    sheet = fxstyle._build_stylesheet(theme)
     assert "~icon(" not in sheet
     assert not re.search(r"_arrow(_disabled)?.svg", sheet)
     for name in ("expand_more", "expand_less", "chevron_right"):
@@ -346,11 +346,12 @@ def test_the_current_tab_is_an_edged_pill(qtbot, theme):
     inside = QPoint(corner.x() + 3, current.center().y())
     assert image.pixelColor(inside).name() == colors.state_hover.lower()
     # The other tabs are bare text on the strip, in the muted tab ink.
+    # Above the pane's top edge, which the bar overlaps by a pixel.
     other = bar.tabRect(1).translated(bar.mapTo(window, QPoint()))
-    inks = _pixels(image, other)
+    inks = _pixels(image, other.adjusted(0, 0, 0, -2))
     assert colors.control_edge.lower() not in inks
     assert colors.state_hover.lower() not in inks
-    assert min(_distance(ink, colors.tab_muted) for ink in inks) <= 24
+    assert min(_distance(ink, colors.text_muted) for ink in inks) <= 24
     assert bar.tabRect(0).height() == bar.tabRect(1).height()
 
 
@@ -358,7 +359,7 @@ def test_the_current_tab_is_an_edged_pill(qtbot, theme):
 def test_inactive_tab_text_reads_at_4_5_to_1(theme):
     fxstyle.apply_theme(theme)
     colors = fxstyle.colors()
-    assert fxstyle.get_contrast_ratio(colors.tab_muted, colors.surface) >= 4.5
+    assert fxstyle.get_contrast_ratio(colors.text_muted, colors.surface) >= 4.5
     # The pill's edge is what marks the current tab at 3:1.
     assert fxstyle.get_contrast_ratio(colors.control_edge, colors.surface) >= 3
 
@@ -373,6 +374,31 @@ def test_selecting_a_tab_moves_nothing(qtbot):
     tabs.setCurrentIndex(1)
     QApplication.processEvents()
     assert [bar.tabRect(index) for index in range(3)] == before
+
+
+@THEMES
+def test_no_tab_text_shows_inside_the_scroll_buttons(qtbot, theme):
+    tabs = QTabWidget()
+    for index in range(14):
+        tabs.addTab(QLabel(str(index)), f"Crowded tab {index}")
+    # A widget's own rule outranks the theme's, so tab text is one ink.
+    tabs.tabBar().setStyleSheet("QTabBar::tab { color: #ff00ff; }")
+    window = _shown(qtbot, theme, tabs, (420, 120))
+    bar = tabs.tabBar()
+    buttons = [
+        button for button in bar.findChildren(QWidget)
+        if button.metaObject().className() == "QToolButton"
+        and button.isVisible()
+    ]
+    assert len(buttons) == 2
+    image = window.grab().toImage()
+    area = buttons[0].geometry().united(buttons[1].geometry())
+    strip = area.translated(bar.mapTo(window, QPoint()))
+    inks = _pixels(image, strip)
+    assert min(_distance(ink, "#ff00ff") for ink in inks) > 120
+    # The buttons stand off the tabs by a gap in the strip's own colour.
+    gap = QRect(strip.left(), strip.top(), 4, strip.height())
+    assert _pixels(image, gap) == {fxstyle.colors().surface.lower()}
 
 
 # (7) No state moves an item's text.

@@ -70,12 +70,6 @@ fxstyle.register_widget_style(
 #fxDocks ads--CDockAreaWidget QComboBox QAbstractItemView {
     background-color: @surface_sunken;
 }
-#fxDocks ads--CDockAreaWidget QHeaderView {
-    background: transparent; border: none;
-}
-#fxDocks ads--CDockAreaWidget QHeaderView::section {
-    background: @surface; border: none; border-bottom: 1px solid @border;
-}
 """
 )
 

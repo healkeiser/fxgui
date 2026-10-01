@@ -1,4 +1,4 @@
-"""A hovered tool button sits on the secondary accent, its icon readable."""
+"""A hovered tool button sits on the neutral hover fill, its icon readable."""
 
 import pytest
 from qtpy.QtCore import QEvent, QPoint, QPointF, QRect, QSize, Qt
@@ -24,11 +24,10 @@ def _near(a: str, b: str, step: int = 12) -> bool:
 
 
 @pytest.mark.parametrize("theme", fxstyle.get_available_themes())
-def test_a_hovered_tool_button_shows_its_icon_on_the_accent(
+def test_a_hovered_tool_button_shows_its_icon_on_the_hover_fill(
     qtbot, qapp, theme
 ):
-    """In a theme whose on-accent icon colour is its window background, a
-    hover on a bare background drew the icon in that background: gone."""
+    """Hover is a fill, never the accent, and the icon stands out on it."""
     fxstyle.apply_theme(theme)
     window = QWidget()
     qtbot.addWidget(window)
@@ -49,8 +48,9 @@ def test_a_hovered_tool_button_shows_its_icon_on_the_accent(
     area = QRect(button.mapTo(window, QPoint(0, 0)), button.size())
     seen = _most(window.grab(area).toImage())
 
-    colours = fxstyle.get_theme_colors()
-    assert _near(seen[0], colours["accent_secondary"]), seen[:3]
-    # The icon stands out from the accent it sits on, however it blends.
-    assert any(not _near(c, colours["accent_secondary"], 80)
+    colours = dict(vars(fxstyle.colors()))
+    assert _near(seen[0], colours["state_hover"], 2), seen[:3]
+    assert not any(_near(c, colours["accent_primary"], 2) for c in seen)
+    # The icon stands out from the fill it sits on, however it blends.
+    assert any(not _near(c, colours["state_hover"], 80)
                for c in seen[1:6]), seen[:6]
