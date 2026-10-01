@@ -17,8 +17,16 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxconstants, fxstyle, fxutils
-from fxgui.fxwidgets._labels import FXElidedLabel
+from fxgui import fxconstants, fxicons, fxstyle, fxutils
+from fxgui.fxwidgets._labels import FXElidedLabel, FXIconLabel
+
+# fxgui's mark, one ink, recoloured each time it is drawn.
+fxicons.add_library(
+    "_fxgui_mark",
+    "{root}/{icon_name}_light.{extension}",
+    {"extension": "png", "style": None, "color": None,
+     "width": 48, "height": 48},
+)
 
 fxstyle.register_widget_style(
     """
@@ -147,7 +155,8 @@ class FXSplashScreen(QSplashScreen):
         # The corners outside the painted clip stay see-through.
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self._build_panel(
-            QIcon(icon or str(fxconstants.FAVICON_LIGHT)),
+            QIcon(icon) if icon else fxicons.get_icon(
+                "favicon", library="_fxgui_mark", color="icon"),
             title or "Untitled",
             information or "",
             show_progress_bar,
@@ -200,8 +209,7 @@ class FXSplashScreen(QSplashScreen):
         layout = QVBoxLayout(self.overlay_frame)
         layout.setContentsMargins(40, 40, 40, 40)
 
-        self.icon_label = QLabel()
-        self.icon_label.setPixmap(icon.pixmap(self.ICON_HEIGHT))
+        self.icon_label = FXIconLabel(icon, size=self.ICON_HEIGHT)
         self.title_label = QLabel(title)
         fxstyle.mark_as_title(self.title_label, rank="card")
         heading = QHBoxLayout()

@@ -161,3 +161,22 @@ def test_a_show_costs_what_a_widget_show_costs(qtbot):
 
     assert splash.isVisible()
     assert elapsed < 0.5, elapsed
+
+
+def _mark_inks(splash):
+    image = splash.icon_label.pixmap().toImage()
+    return {
+        image.pixelColor(x, y).name()
+        for x in range(image.width())
+        for y in range(image.height())
+        if image.pixelColor(x, y).alpha() == 255
+    }
+
+
+def test_the_default_mark_wears_the_icon_ink_of_every_theme(qtbot):
+    splash = FXSplashScreen()
+    qtbot.addWidget(splash)
+
+    for theme in ("light", "dark"):
+        fxstyle.apply_theme(theme)
+        assert _mark_inks(splash) == {QColor(fxstyle.colors().icon).name()}
