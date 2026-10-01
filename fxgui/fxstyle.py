@@ -1850,7 +1850,9 @@ QLineEdit {{ height: -1px; }}
 QMenu::separator {{ margin: 0px; }}
 QMenu::indicator {{ margin-left: 0px; border: none; }}
 QMenu::icon {{ position: relative; top: 0px; left: 0px; bottom: 0px; right: 0px; }}
-QTableView::item {{ border: none; }}
+/* Native, not none: any other ::item border makes the sheet paint the cell
+   and hide its BackgroundRole. */
+QTableView::item {{ border: native; }}
 QMenuBar {{ border: none; padding: 0px; }}
 QSpinBox {{ padding-left: 0px; padding-right: 0px; }}
 QAbstractSpinBox::up-arrow, QAbstractSpinBox::down-arrow {{ background: none; border: none; }}

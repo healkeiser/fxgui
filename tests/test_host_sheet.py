@@ -11,7 +11,7 @@ from pathlib import Path
 # Third-party
 import pytest
 from qtpy.QtCore import QPoint, Qt
-from qtpy.QtGui import QActionGroup
+from qtpy.QtGui import QActionGroup, QColor
 from qtpy.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -32,6 +32,7 @@ from qtpy.QtWidgets import (
     QSpinBox,
     QSplitter,
     QTableWidget,
+    QTableWidgetItem,
     QTabWidget,
     QTextEdit,
     QToolButton,
@@ -243,3 +244,20 @@ def test_a_window_reparented_into_a_host_takes_the_reset(qtbot):
     twin = [b for b in free.findChildren(QToolButton) if b.isVisible()][0]
     assert button.sizeHint() == twin.sizeHint()
     assert QApplication.instance() is not None
+
+
+@pytest.mark.parametrize("sheet", _houdini_sheets())
+def test_a_table_cell_background_shows_under_a_host_s_sheet(qtbot, sheet):
+    host = _host(qtbot, sheet)
+    window = _Probe(parent=host)
+    table = QTableWidget(2, 1)
+    item = QTableWidgetItem("cell")
+    item.setBackground(QColor("#aa3333"))
+    table.setItem(0, 0, item)
+    window.setCentralWidget(table)
+    _shown(qtbot, window, (400, 300))
+
+    rect = table.visualItemRect(item)
+    image = table.viewport().grab().toImage()
+    for x in (rect.center().x(), rect.right()):
+        assert image.pixelColor(x, rect.center().y()).name() == "#aa3333"
