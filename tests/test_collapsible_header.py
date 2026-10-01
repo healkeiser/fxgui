@@ -85,3 +85,37 @@ def test_a_new_cap_applies_to_an_open_section(qtbot, qapp):
     assert section.max_content_height() == 50
     assert section._content_area.maximumHeight() == 50
     assert section._content_area.minimumHeight() == 50
+
+
+def _header_fill(section):
+    from qtpy.QtGui import QColor
+
+    header = section._header
+    image = header.grab().toImage()
+    return image.pixelColor(header.width() - 6, header.height() // 2).name()
+
+
+def test_a_header_is_a_section_header_hover_fills_open_weighs(qtbot, qapp):
+    """Hover fills the header; the open one is told by its 600 title and
+    chevron, not by a fill that reads as a hover that never ends."""
+    from qtpy.QtGui import QColor, QFont
+
+    fxstyle.apply_theme("dark")
+    window = QLabel()
+    fxstyle.register_themed_root(window)
+    section = FXCollapsibleWidget(window, title="Notes", animation_duration=0)
+    window.resize(300, 80)
+    window.show()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    hover = QColor(fxstyle.colors().state_hover).name()
+    resting = _header_fill(section)
+
+    section.expand(animate=False)
+    assert _header_fill(section) == resting
+    assert section._title_label.font().weight() == QFont.DemiBold
+    section.collapse(animate=False)
+    assert section._title_label.font().weight() == QFont.Normal
+
+    section._header.setAttribute(Qt.WA_UnderMouse, True)
+    assert _header_fill(section) == hover

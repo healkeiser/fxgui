@@ -95,6 +95,8 @@ class FXCollapsibleWidget(QWidget):
         self._header.setFrameShape(QFrame.StyledPanel)
         self._header.setFrameShadow(QFrame.Raised)
         self._header.setCursor(Qt.PointingHandCursor)
+        # A QFrame matches :hover only with hover events on.
+        self._header.setAttribute(Qt.WA_Hover)
         self._header.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self._header.installEventFilter(self)
 
@@ -321,9 +323,10 @@ class FXCollapsibleWidget(QWidget):
         self.updateGeometry()
 
     def _mark_expanded(self, expanded: bool) -> None:
-        """Let the header's QSS rule follow the expanded state."""
+        """Let the header's QSS rules follow the expanded state."""
         self._header.setProperty("expanded", expanded)
         fxutils.repolish(self._header)
+        fxutils.repolish(self._title_label)
 
     def set_content_layout(self, content_layout: QLayout) -> None:
         """Set the layout for the content area.
@@ -386,7 +389,10 @@ class FXCollapsibleWidget(QWidget):
 
 
 fxstyle.register_widget_style("""
-FXCollapsibleWidget QFrame#fx_collapsible_header[expanded="true"] {
+FXCollapsibleWidget QFrame#fx_collapsible_header {
+    border-radius: @button_radius;
+}
+FXCollapsibleWidget QFrame#fx_collapsible_header:hover {
     background-color: @state_hover;
 }
 FXCollapsibleWidget QToolButton#fx_collapsible_toggle {
@@ -398,6 +404,9 @@ FXCollapsibleWidget QLabel#fx_collapsible_icon {
 }
 FXCollapsibleWidget QLabel#fx_collapsible_title {
     background: transparent;
+}
+FXCollapsibleWidget
+QFrame#fx_collapsible_header[expanded="true"] QLabel#fx_collapsible_title {
     font-weight: 600;
 }
 """)
