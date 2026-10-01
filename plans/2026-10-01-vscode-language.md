@@ -402,3 +402,7 @@ Defects the renders found in the "after" sheet itself:
 6. The theming page `docs/how-to/theming.md`, "Fills and edges by state" and
    "Accent, text and icons", must be rewritten with the table in section 4
    when this lands; both still describe accent hover.
+
+## Owner rulings
+
+- 2026-10-01: a selected row keeps the accent in every view, focused or not (no grey inactive selection). The selection in one view drives what other views show (e.g. the Hub Browse tree), so it must stay visible. Change 5 is dropped, and with it the inactive-selection icon contrast problem.
