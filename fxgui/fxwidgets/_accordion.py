@@ -98,13 +98,10 @@ class FXAccordion(QWidget):
             else:
                 section.set_content_layout(content)
 
-        # The index is looked up when the signal fires: removals shift it.
-        section.expanded.connect(
-            lambda: self._on_section_expanded(self._index_of(section))
-        )
-        section.collapsed.connect(
-            lambda: self._on_section_collapsed(self._index_of(section))
-        )
+        # Bound methods, not lambdas holding `self`: that cycle lets Python's
+        # collector delete a shown accordion mid-event.
+        section.expanded.connect(self._on_section_expanded)
+        section.collapsed.connect(self._on_section_collapsed)
 
         self._sections.append(section)
 
@@ -178,8 +175,10 @@ class FXAccordion(QWidget):
         except ValueError:
             return -1
 
-    def _on_section_expanded(self, index: int) -> None:
-        """Handle section expansion."""
+    def _on_section_expanded(self) -> None:
+        """Collapse the others when exclusive, and say which opened."""
+        # Looked up now: removals shift the indexes.
+        index = self._index_of(self.sender())
         if index < 0:
             return
         if self._exclusive:
@@ -190,8 +189,9 @@ class FXAccordion(QWidget):
 
         self.section_expanded.emit(index)
 
-    def _on_section_collapsed(self, index: int) -> None:
-        """Handle section collapse."""
+    def _on_section_collapsed(self) -> None:
+        """Say which section closed."""
+        index = self._index_of(self.sender())
         if index >= 0:
             self.section_collapsed.emit(index)
 
