@@ -705,6 +705,24 @@ QFrame[frameShape="0"]
     border: 1px transparent @border_strong;
 }
 
+/* HLine and VLine: one flat pixel, not Qt's two-tone bevel, which reads as
+   a groove on a dark panel. */
+QFrame[frameShape="4"]
+{
+    border: none;
+    background-color: @border;
+    min-height: 1px;
+    max-height: 1px;
+}
+
+QFrame[frameShape="5"]
+{
+    border: none;
+    background-color: @border;
+    min-width: 1px;
+    max-width: 1px;
+}
+
 QStackedWidget
 {
     border: 1px transparent;
