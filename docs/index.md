@@ -44,7 +44,7 @@ app.exec()
 |--------|-------------|
 | [fxconfig](technical/fxgui/fxconfig.md) | Configuration and settings management |
 | [fxcore](technical/fxgui/fxcore.md) | Core functionality (fuzzy filtering proxy model) |
-| [fxdocking](technical/fxgui/fxdocking.md) | Docked panes around a body (needs the `docking` extra) |
+| [fxdocking](technical/fxgui/fxdocking.md) | Docked panes around a body (needs `PySide6-QtAds`) |
 | [fxicons](technical/fxgui/fxicons.md) | Icon management with multiple libraries |
 | [fxstyle](technical/fxgui/fxstyle.md) | Theming, stylesheets, and color management |
 | [fxutils](technical/fxgui/fxutils.md) | General utility functions |

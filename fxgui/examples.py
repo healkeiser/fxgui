@@ -781,7 +781,7 @@ def _docking_page() -> QWidget:
         return _page(
             _section(
                 "FXDockArea",
-                QLabel("Install the docking extra: pip install fxgui[docking]"),
+                QLabel("Install PySide6-QtAds for your PySide6 (see Installation)"),
             )
         )
     docks = fxdocking.FXDockArea()

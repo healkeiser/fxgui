@@ -45,8 +45,9 @@ dependencies = [
     "Pygments>=2.0",
 ]
 
+# No docking extra: every PySide6-QtAds wheel pins one exact PySide6, so
+# installing it would replace the binding (see docs/installation.md).
 [project.optional-dependencies]
-docking = ["PySide6-QtAds"]
 # The documentation site. Unpinned: always the newest zensical.
 # Versioned deploys also need the mike fork for zensical, which is not
 # on PyPI: pip install git+https://github.com/squidfunk/mike.git

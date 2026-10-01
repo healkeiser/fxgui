@@ -1,7 +1,7 @@
 """Dock panes in Qt Advanced Docking System, drawn as cards on the frame.
 
-Needs the `docking` extra (PySide6-QtAds); importing this module imports
-it, and nothing else in fxgui does. A window puts an `FXDockArea` where its
+Needs PySide6-QtAds, installed beside the PySide6 it was built for;
+importing this module imports it, and nothing else in fxgui does. A window puts an `FXDockArea` where its
 body goes and docks its panes on it.
 """
 

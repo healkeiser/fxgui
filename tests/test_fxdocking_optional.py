@@ -1,4 +1,4 @@
-"""The docking extra stays optional: fxgui imports without QtAds."""
+"""Docking stays optional: fxgui imports without QtAds."""
 
 # Built-in
 import subprocess

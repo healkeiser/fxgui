@@ -578,7 +578,7 @@ def test_every_themed_popup_asks_for_flyout_corners(qtbot, monkeypatch):
 @pytest.mark.parametrize("theme", ["dark", "light"])
 def test_a_dock_tab_matches_a_tab_bar_tab(qtbot, theme):
     if fxdocking is None:
-        pytest.skip("needs the docking extra")
+        pytest.skip("needs PySide6-QtAds")
 
     holder = QWidget()
     column = QVBoxLayout(holder)
@@ -636,7 +636,7 @@ def _room_for_tabs(docks, name, width=400):
 
 def test_a_tab_is_its_text_plus_the_padding_in_every_state(qtbot):
     if fxdocking is None:
-        pytest.skip("needs the docking extra")
+        pytest.skip("needs PySide6-QtAds")
     names = ("A", "Render", "Lighting and shading")
     holder = QWidget()
     column = QVBoxLayout(holder)
@@ -682,7 +682,7 @@ def test_a_tab_is_its_text_plus_the_padding_in_every_state(qtbot):
 
 def test_no_dock_tab_in_the_gallery_is_elided(qtbot):
     if fxdocking is None:
-        pytest.skip("needs the docking extra")
+        pytest.skip("needs PySide6-QtAds")
     from fxgui import examples
 
     fxstyle.apply_theme("dark")
@@ -720,7 +720,7 @@ def _first_edge(image, y, start, stop):
 def test_a_dock_tab_starts_as_far_in_as_a_tab_bar_tab(qtbot):
     """Measured from each pane's outer edge."""
     if fxdocking is None:
-        pytest.skip("needs the docking extra")
+        pytest.skip("needs PySide6-QtAds")
     from fxgui import examples
 
     fxstyle.apply_theme("dark")
@@ -794,7 +794,7 @@ def test_a_hovered_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
 @pytest.mark.parametrize("theme", ["dark", "light"])
 def test_a_hovered_dock_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
     if fxdocking is None:
-        pytest.skip("needs the docking extra")
+        pytest.skip("needs PySide6-QtAds")
     docks = fxdocking.FXDockArea()
     docks.set_central(QLabel("central"))
     docks.add_dock("one", "Render", QLabel("one"), "left")
@@ -847,7 +847,7 @@ def _gap_between(image, y, start, stop):
 
 def test_the_gaps_around_and_between_tab_pills_are_one_size(qtbot):
     if fxdocking is None:
-        pytest.skip("needs the docking extra")
+        pytest.skip("needs PySide6-QtAds")
     from fxgui import examples
 
     fxstyle.apply_theme("dark")
@@ -912,7 +912,7 @@ def test_the_gaps_around_and_between_tab_pills_are_one_size(qtbot):
 
 def test_a_hovered_title_bar_button_is_a_tab_pill_tall(qtbot):
     if fxdocking is None:
-        pytest.skip("needs the docking extra")
+        pytest.skip("needs PySide6-QtAds")
     docks = fxdocking.FXDockArea()
     docks.set_central(QLabel("central"))
     docks.add_dock("one", "Render", QLabel("one"), "left")

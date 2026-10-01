@@ -15,10 +15,10 @@ jobs:
       matrix:
         include:
           - name: latest PySide6, docking
-            extras: test,docking
-            pin: ""
-          # Houdini 21's PySide6: nothing newer may slip in. No docking, as
-          # the QtAds wheel pins its own PySide6.
+            extras: test
+            pin: PySide6-QtAds
+          # Houdini 21's PySide6: nothing newer may slip in. No docking:
+          # no QtAds wheel was built for it.
           - name: PySide6 6.5.3
             extras: test
             pin: PySide6==6.5.3

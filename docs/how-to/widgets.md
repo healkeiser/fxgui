@@ -65,7 +65,7 @@ A window opens with every public widget, a page per kind: buttons,
 inputs, display, containers, lists and trees, the timeline, windows and
 dialogs, and docking. Each box is titled with the class names it shows.
 **Window > Theme** switches the theme, so you can see a widget in each.
-The Docking page needs the `docking` extra (`pip install fxgui[docking]`).
+The Docking page needs `PySide6-QtAds` (see [Installation](../installation.md#docking)).
 
 ## Available Widgets
 
@@ -135,8 +135,8 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXToggleSwitch` | On/off switch that slides |
 | `FXValidatedLineEdit` | Line edit that shakes and flashes when its validator refuses a key |
 
-`fxdocking.FXDockArea` docks named panes around a body; it needs the
-`docking` extra (`pip install fxgui[docking]`).
+`fxdocking.FXDockArea` docks named panes around a body; it needs
+`PySide6-QtAds` (see [Installation](../installation.md#docking)).
 
 And these functions and constants:
 

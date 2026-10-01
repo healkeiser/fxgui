@@ -18,8 +18,9 @@ install it yourself:
 pip install fxgui "PySide6>=6.5"
 ```
 
-Qt 5 (PySide2, PyQt5) is not supported: `import fxgui` raises an
-`ImportError` that names the binding it found.
+Qt 5 (PySide2, PyQt5) and PySide6 older than 6.5 are not supported:
+`import fxgui` raises an `ImportError` that names the binding or the
+version it found.
 
 ## From Source
 
@@ -41,13 +42,32 @@ pip install -r requirements.txt
 
 ### Docking
 
-`fxdocking.FXDockArea` docks panes with Qt Advanced Docking System:
+`fxdocking.FXDockArea` docks panes with Qt Advanced Docking System
+(QtAds). Its Python package, `PySide6-QtAds`, is built against one exact
+PySide6: each release names the PySide6 it needs, and pip replaces the
+one you have to match it. So install it with your own PySide6 version
+named beside it. Find your version first:
 
 ``` shell
-pip install "fxgui[docking]"
+pip show PySide6-Essentials
 ```
 
-Nothing else in fxgui imports it.
+Then name it, here 6.8.2:
+
+``` shell
+pip install PySide6-QtAds "PySide6-Essentials==6.8.2"
+```
+
+pip picks the QtAds release made for that PySide6 and leaves your
+PySide6 alone. If it answers `ResolutionImpossible`, no QtAds release was
+made for your PySide6 (6.5.3, Houdini 21's, has none): docking is not
+available there.
+
+Inside a DCC, PySide6 comes with the application, not from pip, so
+`pip show` finds nothing. Do not pip install QtAds into a DCC's Python:
+its PySide6 would load beside the host's and break it.
+
+Only `fxgui.fxdocking` imports QtAds; the rest of fxgui works without it.
 
 ### Documentation
 
