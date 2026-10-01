@@ -13,7 +13,7 @@ import logging
 from pathlib import Path
 
 # Third-party
-from qtpy.QtCore import QPoint, QRect, Qt, QTimer
+from qtpy.QtCore import QRect, Qt, QTimer
 from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -779,9 +779,7 @@ def _windows_page(window: fxwidgets.FXMainWindow) -> QWidget:
             _row(
                 _button(
                     "Open the palette",
-                    lambda: palette.open_commands(
-                        window.mapToGlobal(QPoint(window.width() // 2, 40))
-                    ),
+                    lambda: palette.open_commands(position="top"),
                 )
             ),
         ),

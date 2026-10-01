@@ -6,7 +6,6 @@ from typing import Optional
 # Third-party
 from qtpy.QtCore import Qt
 from qtpy.QtGui import (
-    QColor,
     QCursor,
     QIcon,
     QMouseEvent,
@@ -16,7 +15,6 @@ from qtpy.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFrame,
-    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QSizePolicy,
@@ -25,7 +23,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxdcc, fxicons, fxstyle
+from fxgui import fxdcc, fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXIconLabel
 
 # Title, body and buttons start on one left edge.
@@ -125,11 +123,7 @@ class FXFloatingDialog(QDialog):
         else:
             self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
             # A shadow on a popup leaves artifacts.
-            shadow = QGraphicsDropShadowEffect(self._container)
-            shadow.setBlurRadius(24)
-            shadow.setOffset(0, 4)
-            shadow.setColor(QColor(0, 0, 0, 100))
-            self._container.setGraphicsEffect(shadow)
+            fxutils.add_shadows(self._container, self._container)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.resize(200, 40)
 

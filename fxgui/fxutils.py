@@ -61,7 +61,7 @@ from qtpy.QtWidgets import (
     QWidget,
     QGraphicsDropShadowEffect,
 )
-from qtpy.QtGui import QIcon, QKeySequence
+from qtpy.QtGui import QColor, QIcon, QKeySequence
 from qtpy.QtCore import QFile, QModelIndex, QPoint
 
 # Internal
@@ -208,17 +208,18 @@ def create_action(
 def add_shadows(
     parent: QWidget,
     shadow_object: QWidget,
-    color: str = "#000000",
-    blur: float = 10,
+    color: str = "#50000000",
+    blur: float = 20,
     offset: float = 0,
 ) -> QGraphicsDropShadowEffect:
-    """Apply shadows to a widget.
+    """Apply shadows to a widget; the defaults are every floating card's.
 
     Args:
         parent (QWidget, optional): Parent object.
         shadow_object (QWidget): Object to receive shadows.
-        color (str, optional): Color of the shadows. Defaults to `#000000`.
-        blur (float, optional): Blur level of the shadows. Defaults to `10`.
+        color (str, optional): Color of the shadows, `#AARRGGBB` for an
+            alpha. Defaults to black at 80 of 255.
+        blur (float, optional): Blur level of the shadows. Defaults to `20`.
         offset (float, optional): Offset of the shadow from the
             `shadow_object`. Defaults to `0`.
 
@@ -233,7 +234,7 @@ def add_shadows(
     shadow = QGraphicsDropShadowEffect(parent)
     shadow.setBlurRadius(blur)
     shadow.setOffset(offset)
-    shadow.setColor(color)
+    shadow.setColor(QColor(color))
     shadow_object.setGraphicsEffect(shadow)
 
     return shadow

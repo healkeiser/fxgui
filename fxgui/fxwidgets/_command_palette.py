@@ -7,7 +7,7 @@ from functools import partial
 from typing import Callable, List, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QPoint, QRect, QSize, Qt
 from qtpy.QtGui import QBrush, QColor, QKeyEvent, QKeySequence
 from qtpy.QtWidgets import (
     QFrame,
@@ -21,14 +21,16 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxicons, fxstyle, fxutils
 
 
 fxstyle.register_widget_style(
     """
+    /* A popup's frame, as a menu's. */
     FXCommandPalette {
         background-color: @surface;
-        border: 1px solid @border_strong;
+        border: 1px solid @border;
+        border-radius: @button_radius;
     }
     FXCommandPalette QLabel#fxPaletteHint {
         color: @text_muted;
@@ -89,19 +91,23 @@ class FXCommandPalette(QFrame):
         >>> palette = FXCommandPalette(window, lambda: [
         ...     FXCommand("Collapse all", tree.collapseAll, "Ctrl+-"),
         ... ])
-        >>> palette.open_commands(window.mapToGlobal(QPoint(400, 40)))
+        >>> palette.open_commands(position="top")
     """
 
     # Rows drawn per keystroke; thousands of rows stay typeable.
     SHOWN = 200
     WIDTH = 640
     ROWS = 12
+    POSITIONS = ("top", "center", "bottom")
 
     def __init__(
         self, window: QWidget, commands: Callable[[], List[FXCommand]]
     ):
         super().__init__(window)
         self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+        # A NoFrame QFrame loses its border to the base sheet.
+        self.setFrameShape(QFrame.StyledPanel)
+        self._position = "center"
         self._window = window
         self._commands = commands
         self._items: List[QTreeWidgetItem] = []
@@ -160,19 +166,23 @@ class FXCommandPalette(QFrame):
         )
 
     def open_commands(
-        self, at: QPoint, placeholder: str = "Type a command"
+        self, placeholder: str = "Type a command", position: str = "center"
     ) -> None:
-        """Open on the window's commands, its top centre at global `at`."""
+        """Open on the window's commands, at `position` in the window.
+
+        Raises:
+            ValueError: If `position` is not one of `POSITIONS`.
+        """
         self._going = False
-        self._open(at, placeholder)
+        self._open(placeholder, position)
 
     def open_go_to(
         self,
-        at: QPoint,
         load: GoTo,
         select: Callable[[str], None],
         placeholder: str = "Type a name, or > for a command",
         loading: str = "Loading",
+        position: str = "center",
     ) -> None:
         """Open on the rows `load` hands back; picking one `select`s its id.
 
@@ -180,17 +190,20 @@ class FXCommandPalette(QFrame):
         the list reads `loading`.
 
         Args:
-            at: The global point the palette's top centre opens at.
             load: Called once with a callback taking `(row id, words)`
                 pairs; it may call back later, from this thread.
             select: Called with the picked row's id.
             placeholder: What the empty field says.
             loading: What the list says until the rows land.
+            position: Where in the window it opens; one of `POSITIONS`.
+
+        Raises:
+            ValueError: If `position` is not one of `POSITIONS`.
         """
         self._going = True
         self._go_to = None
         self._loading = loading
-        self._open(at, placeholder)
+        self._open(placeholder, position)
 
         def landed(entries: List[Tuple[str, str]]) -> None:
             self._go_to = [
@@ -201,7 +214,12 @@ class FXCommandPalette(QFrame):
 
         load(landed)
 
-    def _open(self, at: QPoint, placeholder: str) -> None:
+    def _open(self, placeholder: str, position: str) -> None:
+        if position not in self.POSITIONS:
+            raise ValueError(
+                f"position must be one of {self.POSITIONS}, not {position!r}"
+            )
+        self._position = position
         self.field.setPlaceholderText(placeholder)
         self._command_rows = self._commands()
         self.field.blockSignals(True)
@@ -211,8 +229,9 @@ class FXCommandPalette(QFrame):
         width = min(self.WIDTH, self._window.width() - 4 * margin)
         self.resize(width, self.height())
         self._filter("")
-        self.move(at.x() - width // 2, at.y())
         self.show()
+        # A popup's corners and shadow are the platform's, as a flyout's.
+        fxutils.round_window_corners(self)
         self.field.setFocus()
 
     def _filter(self, text: str) -> None:
@@ -228,6 +247,29 @@ class FXCommandPalette(QFrame):
     def _fit(self) -> None:
         self.layout().activate()
         self.resize(self.width(), self.sizeHint().height())
+        self._place()
+
+    def _place(self) -> None:
+        """Centre across the window, at `_position` in its content area."""
+        window = self._window
+        gap = self.layout().contentsMargins().left()
+        # Below the menu and the command rows, above the status bar.
+        central = getattr(window, "centralWidget", lambda: None)()
+        area = central.geometry() if central is not None else window.rect()
+        area = area.adjusted(gap, gap, -gap, -gap)
+        height = min(self.height(), window.height() - 2 * gap)
+        if self._position == "top":
+            top = area.top()
+        elif self._position == "bottom":
+            top = area.bottom() + 1 - height
+        else:
+            top = area.center().y() - height // 2
+        # A small window: the palette keeps inside it rather than the area.
+        top = max(gap, min(top, window.height() - gap - height))
+        left = (window.width() - self.width()) // 2
+        self.setGeometry(
+            QRect(window.mapToGlobal(QPoint(left, top)), QSize(self.width(), height))
+        )
 
     def _tell(self, text: str) -> None:
         """Say `text` under the list; with nothing to say, take no room."""

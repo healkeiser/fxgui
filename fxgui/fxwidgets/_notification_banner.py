@@ -16,7 +16,6 @@ from qtpy.QtCore import (
 )
 from qtpy.QtWidgets import (
     QFrame,
-    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -24,10 +23,9 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from qtpy.QtGui import QColor
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._constants import CRITICAL, ERROR
 from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._severity import SEVERITIES, log, severity
@@ -287,11 +285,7 @@ class FXNotificationBanner(QFrame):
         self._slide_handler = None
 
         # Setup drop shadow effect
-        self._shadow_effect = QGraphicsDropShadowEffect(self)
-        self._shadow_effect.setBlurRadius(20)
-        self._shadow_effect.setOffset(0, 0)
-        self._shadow_effect.setColor(QColor(0, 0, 0, 80))
-        self.setGraphicsEffect(self._shadow_effect)
+        self._shadow_effect = fxutils.add_shadows(self, self)
 
         # Auto-dismiss timer
         self._dismiss_timer = QTimer(self)

@@ -7,7 +7,6 @@ from typing import Optional
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QFrame,
-    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QProgressBar,
@@ -15,10 +14,9 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from qtpy.QtGui import QColor
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._severity import SEVERITIES
 
@@ -177,11 +175,7 @@ class FXProgressCard(QFrame):
             progress_layout.addWidget(self._percentage_label)
 
         # Setup drop shadow effect
-        self._shadow_effect = QGraphicsDropShadowEffect(self)
-        self._shadow_effect.setBlurRadius(20)
-        self._shadow_effect.setOffset(0, 0)
-        self._shadow_effect.setColor(QColor(0, 0, 0, 80))
-        self.setGraphicsEffect(self._shadow_effect)
+        self._shadow_effect = fxutils.add_shadows(self, self)
 
         main_layout.addLayout(progress_layout)
 

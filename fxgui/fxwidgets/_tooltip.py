@@ -38,7 +38,6 @@ from qtpy.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QFrame,
-    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QListWidgetItem,
@@ -50,7 +49,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxicons, fxstyle, fxutils
 from fxgui._compat import is_valid
 from fxgui.fxwidgets._delegates import FXThumbnailDelegate
 from fxgui.fxwidgets._labels import FXIconLabel
@@ -354,11 +353,7 @@ class FXTooltip(QFrame):
             content_layout.addWidget(self._action_button)
 
         # Drop shadow on content
-        shadow = QGraphicsDropShadowEffect(self._content_widget)
-        shadow.setBlurRadius(20)
-        shadow.setOffset(0, 0)
-        shadow.setColor(QColor(0, 0, 0, 80))
-        self._content_widget.setGraphicsEffect(shadow)
+        fxutils.add_shadows(self._content_widget, self._content_widget)
         self._refresh_icon()
 
     def _refresh_icon(self) -> None:

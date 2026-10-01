@@ -1,9 +1,10 @@
 """The command palette filters as you type, runs on Enter, and gets out of the way."""
 
 # Third-party
+import pytest
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtTest import QTest
-from qtpy.QtWidgets import QApplication, QMainWindow
+from qtpy.QtWidgets import QApplication, QLabel, QMainWindow
 
 # Internal
 from fxgui import fxstyle
@@ -27,7 +28,7 @@ def _window(qtbot):
 def _palette(qtbot, commands):
     window = _window(qtbot)
     palette = FXCommandPalette(window, lambda: commands)
-    palette.open_commands(window.mapToGlobal(QPoint(450, 20)))
+    palette.open_commands()
     qtbot.waitUntil(palette.isVisible, timeout=1000)
     return window, palette
 
@@ -175,7 +176,7 @@ def test_go_to_reads_loading_until_the_rows_land(qtbot):
     held, picked = [], []
 
     palette.open_go_to(
-        window.mapToGlobal(QPoint(450, 20)), held.append, picked.append,
+        held.append, picked.append,
         loading="Loading shots and tasks",
     )
 
@@ -190,7 +191,6 @@ def test_a_leading_angle_switches_go_to_to_commands(qtbot):
     window = _window(qtbot)
     palette = FXCommandPalette(window, lambda: _commands([]))
     palette.open_go_to(
-        window.mapToGlobal(QPoint(450, 20)),
         lambda landed: landed([("a", "sh0010 lighting")]),
         lambda _row: None,
     )
@@ -207,3 +207,77 @@ def test_the_list_scrolls_by_the_pixel(qtbot):
 
     pixel = QAbstractItemView.ScrollPerPixel
     assert palette.rows.verticalScrollMode() == pixel
+
+
+def _placed(qtbot, position, size=(900, 600)):
+    window = QMainWindow()
+    fxstyle.register_themed_root(window)
+    window.menuBar().addMenu("File")
+    window.setCentralWidget(QLabel("body"))
+    window.statusBar().showMessage("ready")
+    qtbot.addWidget(window)
+    window.resize(*size)
+    window.show()
+    qtbot.waitExposed(window)
+    palette = FXCommandPalette(window, lambda: _commands([]))
+    palette.open_commands(position=position)
+    qtbot.waitUntil(palette.isVisible, timeout=1000)
+    central = window.centralWidget()
+    area = central.geometry()
+    area.moveTopLeft(window.mapToGlobal(area.topLeft()))
+    return window, palette, palette.frameGeometry(), area
+
+
+@pytest.mark.parametrize("position", ["top", "center", "bottom"])
+def test_the_palette_opens_centred_across_its_window(qtbot, position):
+    window, _palette_, frame, area = _placed(qtbot, position)
+    middle = window.mapToGlobal(window.rect().center()).x()
+    assert abs(frame.center().x() - middle) <= 1
+
+
+def test_top_opens_under_the_menu_and_bottom_over_the_status_bar(qtbot):
+    _w, _p, top, area = _placed(qtbot, "top")
+    assert area.top() <= top.top() <= area.top() + 16
+    _w, _p, bottom, area = _placed(qtbot, "bottom")
+    assert area.bottom() - 16 <= bottom.bottom() <= area.bottom()
+    _w, _p, centre, area = _placed(qtbot, "center")
+    assert abs(centre.center().y() - area.center().y()) <= 1
+
+
+@pytest.mark.parametrize("position", ["top", "center", "bottom"])
+def test_the_palette_stays_inside_a_small_window(qtbot, position):
+    window, _palette_, frame, _area = _placed(qtbot, position, (320, 200))
+    inside = window.frameGeometry()
+    assert inside.contains(frame.topLeft()) and inside.contains(
+        frame.bottomRight()
+    ), (inside, frame)
+
+
+def test_an_unknown_position_is_refused(qtbot):
+    window = _window(qtbot)
+    palette = FXCommandPalette(window, lambda: [])
+    with pytest.raises(ValueError):
+        palette.open_commands(position="left")
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_the_palette_wears_a_popup_frame(qtbot, theme):
+    fxstyle.apply_theme(theme)
+    _window_, palette = _palette(qtbot, _commands([]))
+    image = palette.grab().toImage()
+    border = fxstyle.colors().border.lower()
+    middle = palette.height() // 2
+    assert image.pixelColor(palette.width() // 2, 0).name() == border
+    assert image.pixelColor(0, middle).name() == border
+    # Rounded at the radius: the corner pixel is not the edge.
+    assert image.pixelColor(fxstyle.BUTTON_RADIUS + 1, 0).name() == border
+    assert image.pixelColor(0, 0).name() != border
+
+
+def test_the_palette_asks_for_the_platform_s_flyout_corners(qtbot, monkeypatch):
+    from fxgui import fxutils
+
+    asked = []
+    monkeypatch.setattr(fxutils, "round_window_corners", asked.append)
+    _window_, palette = _palette(qtbot, _commands([]))
+    assert asked == [palette]

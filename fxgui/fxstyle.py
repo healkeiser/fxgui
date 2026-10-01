@@ -223,7 +223,7 @@ DEPTH_CAP = 4
 # shape of their own read it here.
 BUTTON_RADIUS = 4
 
-# The corners of a floating card: a tooltip, a banner, a dialog, a palette.
+# The corners of a floating card: a tooltip, a banner, a dialog.
 CARD_RADIUS = 8
 
 # WCAG's least contrast for the parts of a control: an edge on its
