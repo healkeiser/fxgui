@@ -1092,7 +1092,7 @@ def test_thumbnail_less_rows_start_from_the_left_edge(qtbot, decoration):
     tree, delegate, index = _tree_with_item(
         qtbot, thumbnail=False, decoration=decoration
     )
-    option = _option_for(tree, index)
+    option = delegate._init(_option_for(tree, index), index)
 
     expected = option.rect.left() + delegate._ICON_MARGIN
     if decoration:

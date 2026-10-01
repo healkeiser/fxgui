@@ -277,3 +277,43 @@ def test_a_row_with_nothing_to_offer_lines_up_with_the_pills(qtbot):
     expected = cell.right() - delegate._picker_text_inset()
     assert edge != -1, "the plain value painted nothing"
     assert abs(edge - expected) <= 8, (edge, expected)
+
+
+def test_a_choice_follows_its_row_through_the_menu(qtbot, monkeypatch):
+    """A row inserted above while the menu is open moves the picked row."""
+    from qtpy.QtWidgets import QTreeWidgetItem
+
+    tree, delegate, item = _tree(qtbot, choices=["v001", "v002", "v003"])
+    index = tree.model().index(0, 1)
+
+    def choose(self, *args, **kwargs):
+        tree.insertTopLevelItem(0, QTreeWidgetItem(["Above"]))
+        return self.actions()[0]
+
+    monkeypatch.setattr(QMenu, "exec_", choose, raising=False)
+    monkeypatch.setattr(QMenu, "exec", choose, raising=False)
+    seen = []
+    delegate.picked.connect(
+        lambda idx, value: seen.append((idx.row(), idx.data(), value)))
+    rect = delegate._picker_rect(_option_for(tree, index), index)
+    qtbot.mouseClick(tree.viewport(), Qt.LeftButton, pos=rect.center())
+
+    assert seen == [(1, "v003", "v001")]
+
+
+def test_a_row_removed_under_the_menu_picks_nothing(qtbot, monkeypatch):
+    tree, delegate, _item = _tree(qtbot, choices=["v001", "v002"])
+    index = tree.model().index(0, 1)
+
+    def choose(self, *args, **kwargs):
+        tree.clear()
+        return self.actions()[0]
+
+    monkeypatch.setattr(QMenu, "exec_", choose, raising=False)
+    monkeypatch.setattr(QMenu, "exec", choose, raising=False)
+    seen = []
+    delegate.picked.connect(lambda idx, value: seen.append(value))
+    rect = delegate._picker_rect(_option_for(tree, index), index)
+    qtbot.mouseClick(tree.viewport(), Qt.LeftButton, pos=rect.center())
+
+    assert seen == []
