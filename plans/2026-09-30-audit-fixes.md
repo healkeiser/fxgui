@@ -219,6 +219,12 @@ leave `FXThemeAware`.
   PySide6 6.5 (Houdini 21 ships 6.5.3; Houdini 22 ships 6.8.3). Every fix
   group deletes the Qt 5 branches in its own files; CI adds a PySide6
   6.5.3 job so nothing newer than 6.5 slips in.
+- Owner ruling: the floating-card shadow comes from the theme. Tokens
+  @shadow (colour with alpha, lighter on light themes) and @shadow_blur
+  in style.yaml per theme; fxutils.add_shadows reads them, and every
+  shadow it made follows a theme switch through one module-level list
+  (a QGraphicsDropShadowEffect colour is fixed once set, so this is a
+  real side effect). Test: switch theme, shadow colour changes.
 - Delegate hover: one look, @accent_secondary as plain lists use.
 - Order hang: `pytest -p no:randomly tests/test_gallery.py
   tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
