@@ -1,7 +1,6 @@
 """Multi-section collapsible widget (accordion)."""
 
 # Built-in
-import warnings
 from typing import List, Optional, Union
 
 # Third-party
@@ -200,30 +199,3 @@ class FXAccordion(QWidget):
     def __iter__(self):
         """Iterate over sections."""
         return iter(self._sections)
-
-
-# Backward compatibility alias
-class FXAccordionSection(FXCollapsibleWidget):
-    """Deprecated: Use FXCollapsibleWidget instead.
-
-    This class is kept for backward compatibility only.
-    """
-
-    def __init__(
-        self,
-        parent: Optional[QWidget] = None,
-        title: str = "",
-        icon: Optional[str] = None,
-        animation_duration: int = 150,
-    ):
-        warnings.warn(
-            "FXAccordionSection is deprecated. Use FXCollapsibleWidget instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(
-            parent=parent,
-            title=title,
-            icon=icon,
-            animation_duration=animation_duration,
-        )

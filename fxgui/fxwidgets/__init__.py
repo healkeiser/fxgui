@@ -9,7 +9,7 @@ from fxgui.fxstyle import (
     FXThemeColors,
     theme_manager,
 )
-from fxgui.fxwidgets._accordion import FXAccordion, FXAccordionSection
+from fxgui.fxwidgets._accordion import FXAccordion
 from fxgui.fxwidgets._application import FXApplication
 from fxgui.fxwidgets._avatar import FXAvatar
 from fxgui.fxwidgets._breadcrumb import FXBreadcrumb
@@ -113,7 +113,6 @@ __all__ = [
     "ERROR",
     "fix_wrapped_heights",
     "FXAccordion",
-    "FXAccordionSection",
     "FXApplication",
     "FXAvatar",
     "FXBreadcrumb",

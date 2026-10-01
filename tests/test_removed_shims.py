@@ -35,3 +35,8 @@ def test_the_collapsible_aliases_are_gone():
 
 def test_the_validators_name_no_qt4_method():
     assert "setRegExp" not in inspect.getsource(_validators)
+
+
+def test_the_accordion_section_alias_is_gone():
+    assert not hasattr(fxwidgets, "FXAccordionSection")
+    assert "FXAccordionSection" not in fxwidgets.__all__

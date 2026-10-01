@@ -392,7 +392,7 @@ def _containers_page() -> QWidget:
     plain.main_layout.addWidget(QLabel("An FXWidget holding a label."))
 
     return _page(
-        _section("FXAccordion / FXAccordionSection", accordion),
+        _section("FXAccordion", accordion),
         _section("FXCollapsibleWidget", collapsible),
         _section("FXResizedScrollArea", scroll),
         _section(
