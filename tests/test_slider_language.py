@@ -151,11 +151,12 @@ def test_a_slider_reads_in_every_theme(qtbot, theme, make):
     ratio = fxstyle.get_contrast_ratio
     assert parts["edge"] == colors.accent_primary.lower()
     assert parts["fill"] == colors.surface.lower()
-    # The span carries the value: 3:1 on the groove and on the surface.
     assert parts["span"] == colors.accent_primary.lower()
-    assert parts["groove"] == colors.surface_sunken.lower()
-    assert ratio(parts["span"], parts["groove"]) >= 3, parts
+    assert parts["groove"] == colors.control_edge.lower()
+    # Both read at 3:1 on the surface; no theme has room for 3:1 between.
+    assert ratio(parts["groove"], colors.surface) >= 3, parts
     assert ratio(parts["span"], colors.surface) >= 3, parts
+    assert parts["span"] != parts["groove"]
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
@@ -192,7 +193,7 @@ def test_the_groove_is_a_4px_pill_and_the_handle_is_whole(qtbot, make):
     # A rounded end leaves the groove's corner pixel unpainted.
     window = slider.window()
     image = window.grab().toImage()
-    sunken = fxstyle.colors().surface_sunken.lower()
+    sunken = fxstyle.colors().control_edge.lower()
 
     def at(x, y):
         return image.pixelColor(slider.mapTo(window, QPoint(x, y))).name()

@@ -1153,7 +1153,9 @@ QTreeView::item:selected:hover {
    pressed. The handle overhangs the groove by a negative margin, and the
    slider is as thick as an indicator so the handle is never clipped. A
    handle's width excludes its border, so every state keeps a 16 px box and
-   the handle never shifts along the groove. */
+   the handle never shifts along the groove. The empty groove is
+   @control_edge, 3:1 on the surface; the span is told from it by hue and
+   by the handle, since both cannot also read 3:1 on each other. */
 QSlider:horizontal {
     min-height: @indicator_size;
 }
@@ -1167,7 +1169,7 @@ QSlider::sub-page:horizontal {
     border: none;
     height: 4px;
     margin: 0;
-    background: @surface_sunken;
+    background: @control_edge;
     border-radius: 2px;
 }
 
@@ -1176,7 +1178,7 @@ QSlider::add-page:vertical {
     border: none;
     width: 4px;
     margin: 0;
-    background: @surface_sunken;
+    background: @control_edge;
     border-radius: 2px;
 }
 

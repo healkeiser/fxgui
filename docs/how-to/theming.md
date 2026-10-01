@@ -59,7 +59,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 |------|---------|
 | `surface` | Main widget/window backgrounds, buttons, selected tabs, toolbar |
 | `surface_alt` | Alternate surface - odd rows in lists/tables, secondary panels |
-| `surface_sunken` | Recessed/inset areas - input fields, lists, menus, status bar, slider tracks |
+| `surface_sunken` | Recessed/inset areas - input fields, lists, status bar |
 | `frame` | The chrome around the panes of a framed window (optional) |
 | `well` | Lists and logs set into a pane (optional) |
 | `pane_border` | The 1 px edge of a pane on the frame (optional) |
@@ -465,10 +465,15 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 
 | Part | Token | Rule |
 |------|-------|------|
-| Edge of a switch or a slider handle | `@control_edge` | `border_strong`, darkened or lightened until it reads at 3:1 on `@surface` |
-| Filled part of a slider | `@accent_primary` | Reads at 3:1 on the `@surface_sunken` groove |
+| Edge of a switch or a slider handle, and a slider's empty groove | `@control_edge` | `border_strong`, darkened or lightened until it reads at 3:1 on `@surface` |
+| Filled part of a slider | `@accent_primary` | Reads at 3:1 on `@surface`; told from the groove by its hue and the handle |
 | Thumb of a switch | `@text_muted` off, `@text_on_accent_primary` on | Pushed to 3:1 on the track |
 | Moving part of a spinner | `@accent_primary` | Over a `@border_light` track |
+
+A slider's groove and span both read at 3:1 on `@surface`, so they cannot
+also read at 3:1 on each other: the bundled accents reach only 3.4:1 to
+7.8:1 on their surface. The span's hue and the handle at its end tell the
+two apart.
 
 3:1 is the WCAG minimum for the parts of a control
 (`fxstyle.CONTROL_CONTRAST`). `fxstyle.readable_ink(background, ink,
@@ -509,7 +514,7 @@ too small for it. Anything else raises `ValueError`.
 | Control | Rest | Hover | Focus | Disabled |
 |---------|------|-------|-------|----------|
 | `QSlider`, `FXRangeSlider` handle | fill `@slider_thumb`, edge `@control_edge` | fill `@slider_thumb_hover` | fill `@text_on_accent_primary`, edge `@accent_primary` | fill `@surface`, edge `@border` |
-| `QSlider`, `FXRangeSlider` groove and span | groove `@surface_sunken`, span `@accent_primary` | | | span `@border_strong` |
+| `QSlider`, `FXRangeSlider` groove and span | groove `@control_edge`, span `@accent_primary` | | | span `@border_strong` |
 | `FXToggleSwitch` off | fill `@surface_sunken`, edge `@control_edge` | edge `@accent_primary` | edge `@accent_primary` | fill `@surface`, edge `@border` |
 | `FXToggleSwitch` on | fill `@accent_primary` | fill `@primary_button_hover` | edge `@text` | fill `@surface_alt`, edge `@border` |
 
