@@ -9,7 +9,6 @@ from fxgui.fxwidgets import (
     FXCommandPalette,
     FXNotificationBanner,
     FXProgressCard,
-    FXTooltip,
 )
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
 
@@ -28,8 +27,6 @@ _CARDS = {
         lambda w: (w, w))(FXNotificationBanner(p, message="hi")),
     "FXProgressCard": lambda p: (
         lambda w: (w, w))(FXProgressCard(p, title="Task")),
-    "FXTooltip": lambda p: (
-        lambda w: (w, w._content_widget))(FXTooltip(p, title="Tip")),
     "FXFloatingDialog": lambda p: (
         lambda w: (w, w._container))(FXFloatingDialog(p)),
 }

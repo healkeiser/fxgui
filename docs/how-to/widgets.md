@@ -101,7 +101,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXItemDelegate` | Item delegate that switches icons to their hover and selected looks |
 | `FXJoinedGroup` | Widgets side by side in one pill outline, such as a status and a Post button |
 | `FXKeyboardTree` | Tree whose row menus, Enter and typing work from the keyboard |
-| `FXKeycap` | One shortcut drawn as a key, round at the button radius; follows every theme switch |
+| `FXKeycap` | A shortcut drawn as keys, one cap per key, round at the button radius; follows every theme switch |
 | `FXLettersUnderscoreValidator` | Accepts letters and underscores, numbers optional |
 | `FXLoadingOverlay` | Spinner over a widget, dimming it and blocking its input |
 | `FXLoadingSpinner` | Animated loading indicator: spinner, dots or pulse |
@@ -145,11 +145,11 @@ And these functions and constants:
 | Name | What it does |
 |------|--------------|
 | `align_labels` | Gives the labels of several forms one right-aligned column |
-| `apply_tip` | Sets a rich tooltip and a plain status tip on a widget (see [Tooltips](#tooltips)) |
+| `apply_tip` | Sets a rich tooltip and a plain status tip on a widget, an action or a view's item (see [Tooltips](#tooltips)) |
 | `fix_wrapped_heights` | Gives every word-wrapped label under a widget the height its width needs |
 | `grab_screen_region` | Lets the user drag out a screen region and returns it, or `None` on Escape |
-| `keycap` | Renders one shortcut as a key in a tooltip's HTML; on a window, use `FXKeycap` |
-| `tip` | Returns the HTML `apply_tip` sets |
+| `keycap` | Renders a shortcut as keys in a tooltip's HTML; on a window, use `FXKeycap` |
+| `tip` | Returns the HTML `apply_tip` shows, in the theme in force |
 | `DEFAULT_EMOJIS` | The emoji an `FXEmojiPicker` offers by default |
 | `CRITICAL`, `ERROR`, `WARNING`, `SUCCESS`, `INFO`, `DEBUG` | Severities for messages, banners and progress cards |
 
@@ -218,7 +218,7 @@ derived from it moves too.
 
 ## Tooltips
 
-`apply_tip` is the everyday path. It formats a small HTML string and hands it to Qt's own `setToolTip`, plus a markup-free status tip for the window's status bar:
+`apply_tip` is fxgui's tooltip. It hands Qt's own `setToolTip` a small HTML string, and sets a markup-free status tip for the window's status bar:
 
 ``` python
 # Internal
@@ -232,31 +232,17 @@ apply_tip(
 )
 ```
 
-The title renders in the theme's primary text, the body dimmed, and the shortcut sits right-aligned as a keycap. The HTML names palette roles, not colours, and Qt reads them when the tooltip shows, so a tooltip set in one theme shows in the theme of the moment. Inside a host, those are the host's colours, as the host draws the tooltip box. Qt's rich text draws no rounded background, so the keycap in a tooltip is square. Every string is HTML-escaped, so a path holding `&` or `<` reaches the user as text.
+The title is in the theme's primary text, the body dimmed, and the shortcut sits on the right as keycaps, one per key: `Ctrl` `S`. The keys of one chord sit close; a second chord (`Ctrl+K, Ctrl+S`) sits further away. Key names come from `QKeySequence`, so a Mac shows its own glyphs rather than the word "Ctrl".
 
-Two lower-level helpers are exported alongside it: `tip()` returns the HTML if you need to set it yourself, and `keycap()` renders one shortcut as a key (through `QKeySequence`, so a Mac shows the platform glyphs rather than the literal "Ctrl"). A label reads rich text once, when its text is set, so a keycap on a window is an `FXKeycap` instead: a widget, round at the button radius, that follows every theme switch.
+| Target | What happens |
+|--------|--------------|
+| A widget | The tip is rebuilt each time it is about to show |
+| A `QAction` | The tip is rebuilt when the action is hovered, before its tool button or menu shows it |
+| An item of a `QListWidget`, `QTreeWidget` or `QTableWidget` | The view builds the tip when it shows; a tree item gets it on every column. Add the item to its view first, or `apply_tip` raises `ValueError` |
 
-Reach for [`FXTooltip`](../technical/fxgui/fxwidgets/index.md) instead when a native tooltip cannot do the job:
+The HTML holds the colours of the theme in force, so rebuilding at show time is what makes a tip set in one theme show in the next. Every string is HTML-escaped, so a path holding `&` or `<` reaches the user as text, and a newline in the body breaks the line. Qt's rich text draws no rounded background, so a keycap in a tooltip is square.
 
-- hosting live widgets (icons, images, action buttons)
-- staying up while the pointer is over the tooltip itself
-- persistent or programmatic show/hide
-- arrow-anchored placement relative to a specific widget
+Two lower-level helpers:
 
-### Opting in to FXTooltipManager
-
-`FXTooltipManager` installs an application-wide event filter that replaces *every* tooltip with an `FXTooltip`. It is opt-in:
-
-``` python
-window = fxwidgets.FXMainWindow(rich_tooltips=True)
-```
-
-Without `rich_tooltips=True`, tooltips are Qt's own. The manager adds:
-
-- **Tooltips that stay while the pointer is on them.** They hide on a delay, so a user can move onto one to finish reading. Native tooltips vanish on the first mouse move.
-- **Item-view tooltips with no code.** Hovering a row in any item view builds a tooltip from the `FXThumbnailDelegate` roles: a 200 px thumbnail, `name (type)` and the description. Native tooltips show `Qt.ToolTipRole` only.
-- **Delays of your own.** `FXTooltipManager.install(show_delay=..., hide_delay=...)` sets them for the whole application. Native tooltips use the platform style's delay.
-- **An arrow and anchored placement.** The tooltip sits against the widget or item with an arrow pointing at it. Native tooltips appear at the pointer.
-- **Icons and images inside a tooltip**, fade animations and a drop shadow.
-
-`set_tooltip()` returns `None` while the manager is installed, and stores the rich fields on the widget for it. Without the manager it creates an `FXTooltip` for the widget and returns it.
+- `tip()` returns the HTML. Call it when the tip shows: a model returns `tip(...)` from `data()` for `Qt.ToolTipRole`, which Qt asks for on hover.
+- `keycap()` returns a shortcut's keycaps as HTML. A label reads its text once, so a keycap on a window is an `FXKeycap` instead: a widget, one cap per key, round at the button radius, that follows every theme switch.
