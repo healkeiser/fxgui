@@ -132,6 +132,7 @@ __all__ = [
     "BUTTON_RADIUS",
     "FONT_SIZE",
     "ROOT_PROPERTY",
+    "WIDGET_STYLE_PROPERTY",
     # Color configuration
     "colors",
     "get_colors",
@@ -162,6 +163,7 @@ __all__ = [
     "resolve",
     "build_stylesheet",
     "register_widget_style",
+    "set_widget_style",
     "set_default_theme",
     "get_default_theme",
     "register_themed_root",
@@ -222,6 +224,10 @@ FONT_SIZE = 12
 
 # The dynamic property a widget registered as a themed root carries.
 ROOT_PROPERTY = "fxThemedRoot"
+
+# The dynamic property holding the unresolved sheet `set_widget_style` gave.
+# On the C++ object, so a label Qt made keeps it when its wrapper is gone.
+WIDGET_STYLE_PROPERTY = "fxWidgetStyle"
 
 _GENERIC_FONT_FAMILIES = frozenset(
     {"cursive", "fantasy", "monospace", "sans-serif", "serif"}
@@ -364,6 +370,7 @@ def _colors_changed() -> None:
     """Re-apply the current theme after the theme or colour file changed."""
     _invalidate_theme_namespace()
     _reapply_to_roots()
+    _reapply_widget_styles()
     theme_manager.notify_theme_changed(get_theme())
 
 
@@ -632,6 +639,7 @@ def register_fonts(paths) -> Dict[str, list]:
 
     if any(results.values()):
         _reapply_to_roots()
+        _reapply_widget_styles()
     return results
 
 
@@ -1679,6 +1687,40 @@ def register_widget_style(qss: str) -> None:
         return
     _widget_fragments[key] = qss
     _reapply_to_roots()
+
+
+def set_widget_style(widget: QWidget, qss: str) -> None:
+    """Give one widget a stylesheet whose ``@tokens`` follow every switch.
+
+    For a look one widget alone has; a look every widget of a class
+    shares belongs in `register_widget_style`. The widget's sheet is this
+    one from now on: a later ``setStyleSheet`` is overwritten at the next
+    switch, unless ``set_widget_style(widget, "")`` stopped it first.
+
+    Args:
+        widget: The widget to style.
+        qss: Declarations or rules, with any ``@token``. Empty stops.
+
+    Examples:
+        >>> fxstyle.set_widget_style(hint, "color: @text_muted;")
+    """
+    widget.setProperty(WIDGET_STYLE_PROPERTY, qss or None)
+    widget.setStyleSheet(resolve(qss) if qss else "")
+
+
+def _reapply_widget_styles() -> None:
+    """Resolve every `set_widget_style` sheet again in the current theme."""
+    app = QApplication.instance()
+    if app is None:
+        return
+    tokens = None
+    # ponytail: walks every widget at a switch, cheaper than the root
+    # restyle that precedes it; keep a registry if a host ever has 100k.
+    for widget in app.allWidgets():
+        qss = widget.property(WIDGET_STYLE_PROPERTY)
+        if qss:
+            tokens = tokens or _token_map(get_theme())
+            widget.setStyleSheet(_substitute(qss, tokens))
 
 
 def register_themed_root(root: QObject) -> None:
