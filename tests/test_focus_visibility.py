@@ -480,7 +480,7 @@ def test_focus_row_is_read_from_the_view_not_the_cell(qtbot, themed):
 
     for column in range(tree.columnCount()):
         cell = tree.model().index(1, column)
-        assert delegate._is_focus_row(option, cell), f"column {column}"
+        assert delegate.has_focus_ring(option, cell), f"column {column}"
 
     # Not a claim about the delegate, a claim about Qt: only one cell of the
     # row carries the flag the naive implementation would have used
@@ -499,7 +499,7 @@ def test_focus_row_is_read_from_the_view_not_the_cell(qtbot, themed):
     assert flagged == [(1, 0)], flagged
 
     # Other rows are not the focus row
-    assert not delegate._is_focus_row(option, tree.model().index(0, 0))
+    assert not delegate.has_focus_ring(option, tree.model().index(0, 0))
 
 
 def test_focus_row_is_empty_when_the_view_is_not_focused(qtbot, themed):
@@ -515,10 +515,10 @@ def test_focus_row_is_empty_when_the_view_is_not_focused(qtbot, themed):
     option.widget = tree
 
     assert not tree.hasFocus()
-    assert not delegate._is_focus_row(option, index)
+    assert not delegate.has_focus_ring(option, index)
 
     _focus(tree)
-    assert delegate._is_focus_row(option, index)
+    assert delegate.has_focus_ring(option, index)
 
 
 def test_ring_paints_on_every_shipped_theme(qtbot, qapp):
