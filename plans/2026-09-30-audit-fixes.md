@@ -247,7 +247,14 @@ leave `FXThemeAware`.
   item: a hovered combo-box popup item shifts its text right (its
   selected rule pads differently); one padding for every state in combo
   popups, menus, lists and trees; test the text's start x in rest, hover
-  and selected is identical.
+  and selected is identical; (8) one popup look for menus, the command
+  palette and combo-box popups: today the combo popup's container (Qt's
+  private QFrame around the view) is unstyled, so default-coloured strips
+  show top and bottom, with no border or radius. Style the container in
+  @surface with no stray margins, the popup border, Windows 11 flyout
+  corners as the palette does, and items drawn as menu items; test: no
+  pixel of the popup outside the theme's surface/border/item colours, and
+  rounded corners where the platform allows.
 - Delegate hover: one look, @accent_secondary as plain lists use.
 - Order hang: `pytest -p no:randomly tests/test_gallery.py
   tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
