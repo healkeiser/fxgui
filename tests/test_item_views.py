@@ -1,4 +1,4 @@
-"""Item views: the thumbnail delegate, the fuzzy proxy and widget, sorting."""
+"""Item views: the thumbnail delegate, the fuzzy proxy, trees, sorting."""
 
 # Built-in
 import os
@@ -370,44 +370,10 @@ def test_keyed_and_keyless_rows_sort_in_two_blocks(qtbot):
     assert [tree.topLevelItem(n).text(0) for n in range(3)] == ["c", "a", "b"]
 
 
-# FXFuzzySearchTree ----------------------------------------------------------
+# FXFilteredTree ------------------------------------------------------------
 
 
-def test_the_list_is_a_flat_tree():
-    assert not hasattr(fxwidgets, "FXFuzzySearchList")
-
-
-def test_a_flat_fuzzy_tree_has_no_root_decoration(qtbot):
-    search = fxwidgets.FXFuzzySearchTree()
-    qtbot.addWidget(search)
-    search.set_items(["apple", "banana"])
-    assert not search.view().rootIsDecorated()
-    search.add_item("pip", parent="apple")
-    assert search.view().rootIsDecorated()
-
-
-def test_set_focus_takes_a_reason(qtbot):
-    search = fxwidgets.FXFuzzySearchTree()
-    qtbot.addWidget(search)
-    search.show()
-    qtbot.waitExposed(search)
-    search.setFocus(Qt.TabFocusReason)
-    qtbot.waitUntil(lambda: search.focusWidget() is not None)
-    assert search.focusProxy() is search._search_bar
-
-
-def test_the_ratio_lives_in_the_proxy(qtbot):
-    search = fxwidgets.FXFuzzySearchTree(ratio=0.5)
-    qtbot.addWidget(search)
-    search.set_ratio(0.73)
-    assert search.ratio() == search.proxy_model().ratio() == 0.73
-    search._ratio_slider.setValue(20)
-    assert search.proxy_model().ratio() == 0.2
-    assert not hasattr(search, "_color_match")
-    assert not hasattr(search, "_ratio")
-
-
-def test_building_the_fuzzy_tree_shows_no_window(qtbot, qapp):
+def test_building_the_filtered_tree_shows_no_window(qtbot, qapp):
     from qtpy.QtCore import QEvent, QObject
 
     shown = []
@@ -425,7 +391,7 @@ def test_building_the_fuzzy_tree_shows_no_window(qtbot, qapp):
     spy = _Spy()
     qapp.installEventFilter(spy)
     try:
-        search = fxwidgets.FXFuzzySearchTree(show_ratio_slider=True)
+        search = fxwidgets.FXFilteredTree()
         qtbot.addWidget(search)
         qapp.processEvents()
     finally:

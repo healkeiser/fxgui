@@ -27,14 +27,10 @@ def _banner():
         fxwidgets.FXMainWindow,
         _breadcrumb,
         fxwidgets.FXEmojiPicker,
-        fxwidgets.FXFuzzySearchTree,
         fxwidgets.FXFilteredTree,
         _banner,
     ],
-    ids=[
-        "main_window", "breadcrumb", "emoji_picker", "fuzzy", "filtered",
-        "banner",
-    ],
+    ids=["main_window", "breadcrumb", "emoji_picker", "filtered", "banner"],
 )
 def test_a_dropped_widget_is_freed(qapp, build):
     ref = weakref.ref(build())

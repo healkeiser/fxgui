@@ -16,7 +16,6 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXFuzzySearchTree
 
 from _helpers import hover
 
@@ -30,14 +29,6 @@ def _plain(orientation=Qt.Horizontal):
 
 
 _HORIZONTAL = _plain()
-
-
-def _in(kind):
-    def make():
-        widget = kind(show_ratio_slider=True)
-        return widget, widget._ratio_slider
-
-    return make
 
 
 def _rect(slider, control):
@@ -128,15 +119,7 @@ ORIENTATIONS = pytest.mark.parametrize(
 
 
 @pytest.mark.parametrize("theme", fxstyle.get_available_themes())
-@pytest.mark.parametrize(
-    "make",
-    [
-        _plain(Qt.Horizontal),
-        _plain(Qt.Vertical),
-        _in(FXFuzzySearchTree),
-    ],
-    ids=["horizontal", "vertical", "FXFuzzySearchTree"],
-)
+@ORIENTATIONS
 def test_a_slider_reads_in_every_theme(qtbot, theme, make):
     parts = _parts(qtbot, theme, make=make)
     colors = fxstyle.colors()
