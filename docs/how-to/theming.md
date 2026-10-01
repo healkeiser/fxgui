@@ -430,8 +430,10 @@ pointer moves the current item, so there alone hover is the accent.
 
 Focus never draws a box around a control. It recolours the edge the
 control already has, so nothing moves. Qt's own focus rectangle is off:
-`FXProxyStyle` (which `FXApplication` installs) never draws it, so a
-focused current cell keeps its `BackgroundRole` on PySide6 6.5 as well.
+`FXProxyStyle` (which `FXApplication` installs) never draws it, and inside
+a host each list, tree and table of a themed window gets its own
+`FXProxyStyle` when it first shows, so a focused current cell keeps its
+`BackgroundRole` on PySide6 6.5 as well.
 
 ### Focus shows only after the keyboard
 

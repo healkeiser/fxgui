@@ -54,6 +54,7 @@ from qtpy.QtWidgets import (
     QApplication,
     QComboBox,
     QFrame,
+    QHeaderView,
     QProxyStyle,
     QSplitter,
     QStyle,
@@ -1754,10 +1755,36 @@ _KEYBOARD_REASONS = (
 )
 
 
+def _drop_focus_rect(view: QAbstractItemView) -> None:
+    """Give an item view in a themed host window a style with no focus rect.
+
+    A host's own style draws it on the focused current cell, over the cell's
+    BackgroundRole, on PySide6 6.5; a themed application's FXProxyStyle
+    already skips it. Done once, at the view's first show, after the sheet
+    has polished it; a popup's list is left alone.
+    """
+    if (
+        QApplication.instance() in _themed_roots
+        or isinstance(view, QHeaderView)
+        or view.window().windowType() == Qt.Popup
+        or not _is_themed(view)
+        # Any proxy already on it (a delegate's) has its own say.
+        or view.findChild(QProxyStyle, "", Qt.FindDirectChildrenOnly)
+        is not None
+    ):
+        return
+    # No base: it takes the application's style. Parented, since a style
+    # freed before its view crashes.
+    style = FXProxyStyle()
+    style.setParent(view)
+    view.setStyle(style)
+
+
 class _FocusVisibility(QObject):
     """Mark a themed widget's focus visible when it came by keyboard.
 
-    It also gives every themed popup, Qt's own included, flyout corners.
+    It also gives every themed popup, Qt's own included, flyout corners,
+    and an item view in a host window a style without the focus rect.
     """
 
     def __init__(self, parent: QObject):
@@ -1781,6 +1808,8 @@ class _FocusVisibility(QObject):
             and watched.windowType() == Qt.Popup
         ):
             self._dress_popup(watched)
+        elif kind == QEvent.Show and isinstance(watched, QAbstractItemView):
+            _drop_focus_rect(watched)
         return False
 
     @staticmethod

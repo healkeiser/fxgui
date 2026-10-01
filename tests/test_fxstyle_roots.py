@@ -60,3 +60,29 @@ def test_a_root_switched_before_its_first_show_wears_the_new_theme(qtbot):
     qtbot.waitExposed(root)
     image = root.grab().toImage()
     assert image.pixelColor(1, 1).name() == fxstyle.colors().surface.lower()
+
+
+def test_a_view_in_a_host_window_draws_no_focus_rect(qtbot):
+    """PySide6 6.5 drew the host style's focus rect over a current cell."""
+    from qtpy.QtCore import Qt
+    from qtpy.QtWidgets import QComboBox, QTreeWidget, QVBoxLayout
+
+    root = QWidget()
+    qtbot.addWidget(root)
+    tree, combo = QTreeWidget(), QComboBox()
+    combo.addItems(["a", "b"])
+    layout = QVBoxLayout(root)
+    layout.addWidget(tree)
+    layout.addWidget(combo)
+    fxstyle.register_themed_root(root)
+    root.show()
+    qtbot.waitExposed(root)
+    combo.showPopup()
+    qtbot.waitUntil(combo.view().isVisible)
+
+    own = Qt.FindDirectChildrenOnly
+    assert len(tree.findChildren(fxstyle.FXProxyStyle, "", own)) == 1
+    # A header draws no cell; a popup's list keeps its menu rows.
+    assert tree.header().findChild(fxstyle.FXProxyStyle) is None
+    assert combo.view().findChild(fxstyle.FXProxyStyle) is None
+    combo.hidePopup()

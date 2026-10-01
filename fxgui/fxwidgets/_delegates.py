@@ -408,6 +408,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             style = _DelegateOwnsTheRow()
             style.setParent(view)
             view.setStyle(style)
+            # The host window's no-focus-rect style it replaces goes too.
+            for old in view.findChildren(
+                fxstyle.FXProxyStyle, "", Qt.FindDirectChildrenOnly
+            ):
+                old.setParent(None)
+                old.deleteLater()
         view.setProperty(_OWNS_ROW, True)
         fxutils.repolish(view)
 
