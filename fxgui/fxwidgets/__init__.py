@@ -163,3 +163,10 @@ __all__ = [
     "FXKeyboardTree",
     "FXSplitButton",
 ]
+
+from fxgui.fxwidgets._status_bar import FXStatusItem  # noqa: E402
+
+__all__ += ["FXStatusItem"]
+from fxgui.fxwidgets._main_window import FXCommandRow  # noqa: E402
+
+__all__ += ["FXCommandRow"]

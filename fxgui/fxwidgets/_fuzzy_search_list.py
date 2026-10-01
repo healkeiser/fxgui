@@ -114,8 +114,6 @@ class _FXFuzzySearchBase(QWidget):
         self._view.setAlternatingRowColors(True)
         self._view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self._view.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self._view.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
-        self._view.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         layout.addWidget(self._view, 1)
 
         self._connect_signals()

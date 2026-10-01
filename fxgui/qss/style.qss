@@ -404,6 +404,10 @@ QAbstractItemView
     border: 1px solid @border;
     border-radius: 4px;
     padding: 1px;
+    /* Pixel scrolling, set at polish; a view that wants rows names
+       ScrollPerItem in a rule of its own, by objectName. */
+    qproperty-verticalScrollMode: ScrollPerPixel;
+    qproperty-horizontalScrollMode: ScrollPerPixel;
 }
 
 /* Only remove focus border on widgets that don't need visible borders */

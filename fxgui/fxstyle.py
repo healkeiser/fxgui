@@ -1842,6 +1842,31 @@ QWidget {{
 [{ROOT_PROPERTY}="true"], QMainWindow, QDialog {{
     background-color: @surface;
 }}
+/* Undo what a host's sheet on the parent (Houdini's base.qss) sets and
+   the base sheet leaves open; -1px is Qt's own unset size. */
+QWidget {{ margin: 0px; outline: none; }}
+QToolButton {{ width: -1px; height: -1px; }}
+QLineEdit {{ height: -1px; }}
+QMenu::separator {{ margin: 0px; }}
+QMenu::indicator {{ margin-left: 0px; border: none; }}
+QMenu::icon {{ position: relative; top: 0px; left: 0px; bottom: 0px; right: 0px; }}
+QTableView::item {{ border: none; }}
+QMenuBar {{ border: none; padding: 0px; }}
+QSpinBox {{ padding-left: 0px; padding-right: 0px; }}
+QAbstractSpinBox::up-arrow, QAbstractSpinBox::down-arrow {{ background: none; border: none; }}
+QScrollBar::add-line, QScrollBar::sub-line {{ border: none; background: none; }}
+QScrollBar::left-arrow, QScrollBar::right-arrow,
+QScrollBar::up-arrow, QScrollBar::down-arrow {{ border: none; width: -1px; height: -1px; }}
+QHeaderView::section {{ height: -1px; }}
+QHeaderView::up-arrow, QHeaderView::down-arrow {{ border: none; }}
+QSlider::horizontal {{ height: -1px; }}
+QSlider::vertical {{ width: -1px; }}
+QSlider::add-page:vertical {{ border: none; background: none; width: -1px; margin: 0px; }}
+QTabWidget, QTabWidget::pane {{ background: none; }}
+QTabBar::tab {{ height: -1px; }}
+QGroupBox {{ padding: 0px; }}
+QGroupBox::title {{ position: relative; left: 0px; }}
+QPushButton::menu-indicator {{ left: 0px; }}
 """
 
 

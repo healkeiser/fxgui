@@ -8,7 +8,7 @@ from webbrowser import open_new_tab
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, QSize, Qt
-from qtpy.QtGui import QAction, QIcon
+from qtpy.QtGui import QAction, QIcon, QStatusTipEvent
 from qtpy.QtWidgets import (
     QActionGroup,
     QApplication,
@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
     QMainWindow,
     QMenu,
     QMenuBar,
+    QPushButton,
     QStatusBar,
     QToolBar,
     QVBoxLayout,
@@ -45,6 +46,64 @@ _MENU_NAMES = {
     "theme_menu": "fxThemeMenu",
     "help_menu": "fxHelpMenu",
 }
+
+
+class FXCommandRow(QToolBar):
+    """A toolbar fixed in place: no handle, no floating, nothing to hide it.
+
+    Its margins and spacing hold through style and theme changes, which
+    otherwise reset a toolbar's layout to the style's own.
+
+    Args:
+        title: The toolbar's window title. Defaults to "Command row".
+        parent: Parent widget. Defaults to `None`.
+        margins: Left, top, right and bottom, in pixels. Defaults to the
+            style's own.
+        spacing: Between controls, in pixels. Defaults to the style's own.
+        icon_size: The side of its tool button icons. Defaults to 17.
+
+    Examples:
+        >>> row = FXCommandRow(margins=(6, 6, 6, 0), spacing=6)
+        >>> window.addToolBar(Qt.TopToolBarArea, row)
+    """
+
+    def __init__(
+        self,
+        title: str = "Command row",
+        parent: Optional[QWidget] = None,
+        margins: Optional[Tuple[int, int, int, int]] = None,
+        spacing: Optional[int] = None,
+        icon_size: int = 17,
+    ):
+        super().__init__(title, parent)
+        self.setObjectName("fxCommandRow")
+        self._margins = margins
+        self._spacing = spacing
+        self.setMovable(False)
+        self.setFloatable(False)
+        # The menu bar's right-click would offer to hide it.
+        self.toggleViewAction().setVisible(False)
+        self.setIconSize(QSize(icon_size, icon_size))
+        self._fit()
+
+    def changeEvent(self, event: QEvent) -> None:
+        """Put the margins back after a style change resets them."""
+        super().changeEvent(event)
+        if event.type() == QEvent.StyleChange:
+            self._fit()
+
+    def _fit(self) -> None:
+        layout = self.layout()
+        if self._margins is not None:
+            left, top, right, bottom = self._margins
+            # A horizontal toolbar's layout reads left as top and top as
+            # left, right as bottom and bottom as right.
+            if self.orientation() == Qt.Horizontal:
+                layout.setContentsMargins(top, left, bottom, right)
+            else:
+                layout.setContentsMargins(left, top, right, bottom)
+        if self._spacing is not None:
+            layout.setSpacing(self._spacing)
 
 
 class FXMainWindow(QMainWindow):
@@ -90,7 +149,9 @@ class FXMainWindow(QMainWindow):
             around its panes. The menu bar, toolbars, status bar and the
             window behind the central widget paint the theme's ``frame``
             color with no lines between them, even for bars set later.
-            Mark bands of your own with `fxstyle.mark_as_frame`.
+            Icon-only push buttons on those bands go flat
+            (``fxRole="flat"``) unless they carry a role already. Mark
+            bands of your own with `fxstyle.mark_as_frame`.
             Defaults to `False`.
 
     Attributes:
@@ -144,7 +205,7 @@ class FXMainWindow(QMainWindow):
         self.window_title: Optional[str] = title
         self.window_size: Optional[Tuple[int, int]] = size
         self.documentation: Optional[str] = documentation
-        self.project: str = project or "Project"
+        self.project: str = project or ""
         self.version: str = version or "0.0.0"
         self.company: str = company or "\u00a9 Company"
         self.ui_file: Optional[str] = ui_file
@@ -474,14 +535,12 @@ class FXMainWindow(QMainWindow):
             This method is intended for internal use only.
         """
 
-        self.toolbar = QToolBar("Toolbar")
-        self.toolbar.setIconSize(QSize(17, 17))
+        self.toolbar = FXCommandRow("Toolbar")
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
         self.toolbar.addAction(self.home_action)
         self.toolbar.addAction(self.previous_action)
         self.toolbar.addAction(self.next_action)
         self.toolbar.addAction(self.refresh_action)
-        self.toolbar.setMovable(True)
 
     def _create_title_corner(self) -> None:
         """Build the icon and name that sit at the menu bar's right end.
@@ -577,18 +636,57 @@ class FXMainWindow(QMainWindow):
         """Do nothing: every window shows its name in the menu bar corner."""
 
     def add_corner_widget(self, widget: QWidget) -> None:
-        """Add `widget` to the menu bar corner, left of the icon and name."""
+        """Add `widget` to the menu bar corner, left of the icon and name.
+
+        The corner is placed again whenever `widget` grows or shrinks.
+        """
         layout = self.title_corner.layout()
         layout.insertWidget(layout.indexOf(self.banner_icon), widget)
+        widget.installEventFilter(self)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Fit the menu bar corner to the bar as the bar resizes."""
-        if (
-            event.type() == QEvent.Resize
-            and watched is self._current_menu_bar()
-        ):
+        """Fit the corner to the bar, re-place it, and flatten framed bands."""
+        kind = event.type()
+        if kind == QEvent.Resize and watched is self._current_menu_bar():
             self._fit_title_corner()
+        elif kind == QEvent.LayoutRequest:
+            if (
+                isinstance(watched, QWidget)
+                and watched.parentWidget() is self.title_corner
+                and self.title_corner.isVisible()
+            ):
+                # QMenuBar places a corner widget only as it shows, so a
+                # tool added later would fall into the overflow menu.
+                self.title_corner.hide()
+                self.title_corner.show()
+            if self._framed and self._is_band(watched):
+                self._flatten_icon_buttons(watched)
         return super().eventFilter(watched, event)
+
+    def _is_band(self, widget: QObject) -> bool:
+        """Return whether `widget` is a bar of this window's frame.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+        return isinstance(widget, (QToolBar, QStatusBar, QMenuBar)) and (
+            widget.parent() is self)
+
+    @staticmethod
+    def _flatten_icon_buttons(band: QWidget) -> None:
+        """Give `band`'s icon-only push buttons without a role the flat one.
+
+        Warning:
+            This method is intended for internal use only.
+        """
+        for button in band.findChildren(QPushButton):
+            if (
+                not button.text()
+                and not button.icon().isNull()
+                and button.property("fxRole") is None
+            ):
+                button.setProperty("fxRole", "flat")
+                fxutils.repolish(button)
 
     def _fit_title_corner(self) -> None:
         """Size the corner as tall as the bar, inset like the first menu.
@@ -798,6 +896,23 @@ class FXMainWindow(QMainWindow):
         super().setMenuBar(menu_bar)
         if menu_bar is not None:
             self._adopt_menu_bar(menu_bar)
+
+    def event(self, event: QEvent) -> bool:
+        """Route status tips after the items; watch a framed window's bands."""
+        if (
+            event.type() == QEvent.ChildPolished
+            and getattr(self, "_framed", False)
+            and self._is_band(event.child())
+        ):
+            band = event.child()
+            band.installEventFilter(self)
+            self._flatten_icon_buttons(band)
+        if isinstance(event, QStatusTipEvent):
+            bar = self.statusBar()
+            if isinstance(bar, FXStatusBar):
+                bar.show_tip(event.tip())
+                return True
+        return super().event(event)
 
     def setWindowTitle(self, title: str) -> None:
         """Set the window title; `None` or empty reads "Window"."""
