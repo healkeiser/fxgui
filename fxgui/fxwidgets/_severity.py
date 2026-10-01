@@ -15,7 +15,7 @@ from fxgui.fxwidgets._constants import (
 )
 
 
-class Severity(NamedTuple):
+class _Severity(NamedTuple):
     """A severity's title, icon name, feedback color key and log level."""
 
     title: str
@@ -25,16 +25,16 @@ class Severity(NamedTuple):
 
 
 SEVERITIES = {
-    CRITICAL: Severity("Critical", "cancel", "error", logging.CRITICAL),
-    ERROR: Severity("Error", "error", "error", logging.ERROR),
-    WARNING: Severity("Warning", "warning", "warning", logging.WARNING),
-    SUCCESS: Severity("Success", "check_circle", "success", logging.INFO),
-    INFO: Severity("Info", "info", "info", logging.INFO),
-    DEBUG: Severity("Debug", "bug_report", "debug", logging.DEBUG),
+    CRITICAL: _Severity("Critical", "cancel", "error", logging.CRITICAL),
+    ERROR: _Severity("Error", "error", "error", logging.ERROR),
+    WARNING: _Severity("Warning", "warning", "warning", logging.WARNING),
+    SUCCESS: _Severity("Success", "check_circle", "success", logging.INFO),
+    INFO: _Severity("Info", "info", "info", logging.INFO),
+    DEBUG: _Severity("Debug", "bug_report", "debug", logging.DEBUG),
 }
 
 
-def severity(level: Optional[int]) -> Severity:
+def severity(level: Optional[int]) -> _Severity:
     """Return `level`'s severity; an unknown one reads as INFO."""
     return SEVERITIES.get(level, SEVERITIES[INFO])
 
