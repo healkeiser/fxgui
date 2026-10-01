@@ -205,6 +205,9 @@ leave `FXThemeAware`.
   method when the receiving widget is deleted (switch after delete, no
   error), since the pull model relies on it.
 - docs/how-to/styling.md 127-132 still documents the banner.
+- CI runs 85 fewer tests than local (1510 vs 1595): install the `docking`
+  extra in tests.yml so fxdocking is tested on Linux, and make the
+  Houdini base.qss tests say "skipped: no Houdini" by name.
 - ruff F841 in tests/test_collapsible_geometry.py and
   tests/test_style_cascade.py; run `ruff check --select F,B,BLE` over the
   whole repo and the suite under pytest-randomly before release.
