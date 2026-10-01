@@ -50,7 +50,7 @@ def test_a_click_on_the_timeline_track_scrubs_to_that_frame(qtbot, qapp):
     track = timeline._track_widget
     x = track.EDGE_PAD + (track.width() - 2 * track.EDGE_PAD) // 2
     QTest.mouseClick(track, Qt.LeftButton, Qt.NoModifier, QPoint(x, 10))
-    assert timeline.current_frame == 50
+    assert timeline.current_frame() == 50
 
 
 def test_range_slider_hover_follows_the_pointer(qtbot, qapp):
