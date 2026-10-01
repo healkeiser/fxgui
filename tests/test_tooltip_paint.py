@@ -61,3 +61,23 @@ def test_tooltip_arrow_polygon_accepts_float_points(qtbot):
     polygon.append(QPointF(1.0, 2.0))
 
     assert polygon.count() == 1
+
+
+def test_the_header_icon_takes_the_accent_of_the_moment(qtbot):
+    from fxgui import fxstyle
+
+    anchor = QWidget()
+    fxstyle.apply_theme("dark")
+    switched = FXTooltip(parent=anchor, title="Probe", icon="info")
+    fxstyle.apply_theme("light")
+    fresh = FXTooltip(parent=anchor, title="Probe", icon="info")
+    try:
+        images = [
+            tooltip._icon_label.grab().toImage() for tooltip in (switched, fresh)
+        ]
+        assert images[0] == images[1]
+    finally:
+        for tooltip in (switched, fresh):
+            tooltip.close()
+            tooltip.deleteLater()
+        anchor.deleteLater()
