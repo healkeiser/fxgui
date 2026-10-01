@@ -70,11 +70,13 @@ class FXRangeSlider(QWidget):
     ):
         super().__init__(parent)
 
-        # Range values
+        # A maximum under the minimum rises to it, as a QSlider's does.
         self._minimum = minimum
-        self._maximum = maximum
-        self._low = low if low is not None else minimum
-        self._high = high if high is not None else maximum
+        self._maximum = max(maximum, minimum)
+        self._low, self._high = self._clamped(
+            minimum if low is None else low,
+            self._maximum if high is None else high,
+        )
         self._show_values = show_values
 
         # UI state
@@ -144,9 +146,7 @@ class FXRangeSlider(QWidget):
             low: The low value.
             high: The high value.
         """
-        low = max(self._minimum, min(low, high))
-        high = max(low, min(high, self._maximum))
-
+        low, high = self._clamped(low, high)
         changed = low != self._low or high != self._high
         self._low = low
         self._high = high
@@ -155,21 +155,24 @@ class FXRangeSlider(QWidget):
             self.low_changed.emit(low)
             self.high_changed.emit(high)
             self.range_changed.emit(low, high)
-            self.update()
+        self.update()
+
+    def _clamped(self, low: int, high: int):
+        """Return `low` and `high` inside the range, low never past high."""
+        low = max(self._minimum, min(low, self._maximum))
+        return low, max(low, min(high, self._maximum))
 
     def set_minimum(self, minimum: int) -> None:
-        """Set the minimum value."""
+        """Set the minimum value; the maximum and the handles follow it."""
         self._minimum = minimum
-        if self._low < minimum:
-            self.set_low(minimum)
-        self.update()
+        self._maximum = max(self._maximum, minimum)
+        self.set_values(self._low, self._high)
 
     def set_maximum(self, maximum: int) -> None:
-        """Set the maximum value."""
+        """Set the maximum value; the minimum and the handles follow it."""
         self._maximum = maximum
-        if self._high > maximum:
-            self.set_high(maximum)
-        self.update()
+        self._minimum = min(self._minimum, maximum)
+        self.set_values(self._low, self._high)
 
     def _value_to_position(self, value: int) -> float:
         """Convert a value to a pixel position."""
