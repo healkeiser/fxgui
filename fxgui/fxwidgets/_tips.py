@@ -137,8 +137,8 @@ def tip(title: str, body: str = "", shortcut: str = "") -> str:
     Args:
         title: What the control is, in a couple of words. Sentence case, no
             trailing period, it is a label and not a sentence.
-        body: What the control does, or why it is unavailable. One sentence.
-            Defaults to `""`.
+        body: What the control does, or why it is unavailable; a newline
+            breaks the line. Defaults to `""`.
         shortcut: A Qt key sequence, such as `"Ctrl+S"`. Defaults to `""`.
 
     Returns:
@@ -182,7 +182,8 @@ def tip(title: str, body: str = "", shortcut: str = "") -> str:
 
     if body:
         muted = fxstyle.colors().text_muted
-        rows.append(f'<span style="color:{muted};">{escape(body)}</span>')
+        lines = escape(body).replace("\n", "<br>")
+        rows.append(f'<span style="color:{muted};">{lines}</span>')
 
     blocks = f"<div>{rows[0]}</div>"
     for row in rows[1:]:

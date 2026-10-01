@@ -194,6 +194,12 @@ def test_keycap_empty_yields_empty_string(qtbot):
     assert _tips.keycap("") == ""
 
 
+def test_a_body_newline_breaks_the_line(qtbot):
+    html = _tips.tip("Shot 0010", "On disk\nDouble-click to open <it>")
+
+    assert "On disk<br>Double-click to open &lt;it&gt;" in html
+
+
 def test_body_only_still_renders(qtbot):
     html = _tips.tip("", "Nothing is selected")
 
