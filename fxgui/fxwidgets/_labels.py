@@ -7,7 +7,7 @@ from typing import Optional
 # Third-party
 from qtpy.QtCore import QEvent, QSize, Qt
 from qtpy.QtGui import QFontMetrics, QIcon, QPainter, QPixmap
-from qtpy.QtWidgets import QLabel, QStyle, QToolTip, QWidget
+from qtpy.QtWidgets import QFormLayout, QLabel, QStyle, QToolTip, QWidget
 
 
 class FXElidedLabel(QLabel):
@@ -281,6 +281,38 @@ class FXIconLabel(QLabel):
         painter = QPainter(self)
         self._icon.paint(painter, rect, Qt.AlignCenter, mode)
         painter.end()
+
+
+def fix_wrapped_heights(widget: QWidget) -> None:
+    """Give every word-wrapped label under `widget` the height its width needs.
+
+    Qt loses a label's height-for-width a few layouts deep and clips its
+    last lines. Call after the labels have their width, and again from the
+    holder's `resizeEvent`.
+    """
+    for label in widget.findChildren(QLabel):
+        if label.wordWrap():
+            label.setFixedHeight(label.heightForWidth(label.width()))
+
+
+def align_labels(*forms: QFormLayout) -> None:
+    """Give the labels of every form in `forms` one right-aligned column.
+
+    Qt shares no label column across form layouts.
+    """
+    labels = []
+    for form in forms:
+        for row in range(form.rowCount()):
+            item = form.itemAt(row, QFormLayout.LabelRole)
+            if item is not None and isinstance(item.widget(), QLabel):
+                labels.append(item.widget())
+    if not labels:
+        return
+    widest = max(label.sizeHint().width() for label in labels)
+    for label in labels:
+        label.setFixedWidth(widest)
+        # `setLabelAlignment` places the label, not its text.
+        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
 
 def example() -> None:
