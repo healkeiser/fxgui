@@ -34,16 +34,9 @@ Already in the language, unchanged: `FXStatusItem` (hover `@state_hover`),
 
 ## Not done, and why
 
-- `FXProgressCard` keeps its own `QProgressBar` rules (6 px, `@surface_sunken`
-  track). Spec 5.9 moves the bar to a flat 4 px pill in the base sheet, which
-  is lang-sheet's file. Once that lands, delete the card's two
-  `QProgressBar` rules and `setFixedHeight(6)` in `_progress_card.py`, so
-  the card takes the one bar look. I asked lang-sheet for the final rule
-  and had no answer when this report was written.
-- The meta (11 px) and badge (10 px / 600) ranks are local to the delegate
-  (`_delegates._smaller`). If lang-sheet ships named roles or spacing
-  constants in `fxstyle`, the delegate, the ramp test and the layouts should
-  read them instead. I asked; no answer yet.
+- The meta and badge sizes stay local to the delegate (`_delegates._smaller`):
+  lang-sheet ships no named ranks or spacing constants, since each would be
+  a second name for a value already there.
 - `FXStatusBar`'s resting accent line along the top (an `@accent_primary`
   to `@accent_secondary` gradient on an unframed bar) is decoration, not a
   progress bar or a hover, and the spec does not name it. Left as is; say if
@@ -65,6 +58,27 @@ Already in the language, unchanged: `FXStatusItem` (hover `@state_hover`),
    "Popups, cards and shadows": the popup frame is `@card_radius`.
 3. `tests/test_toolbutton_hover.py` pins a hovered `QToolButton` on
    `@accent_secondary` (spec 5.2).
+
+## FXProgressCard (after lang-sheet's answer)
+
+`c9a5b156` deletes the card's own `QProgressBar` rules and its
+`setFixedHeight(6)`, so the card takes the base sheet's flat pill
+(`@control_edge` track, `@accent_primary` chunk, 4 px).
+`test_progress_card.py::test_the_bar_is_the_base_sheet_s_flat_pill` pins the
+track as `@control_edge`. It fails on lang-widgets alone, where the base bar
+is still the old one, and passes once lang-sheet is merged.
+`test_widget_language.py::test_the_progress_card_takes_the_one_progress_bar_look`
+pins that the card has no bar rules and no fixed height.
+
+Trial merge of lang-sheet (`68593c4e`) into `c9a5b156`, in a throwaway
+worktree, now removed: one conflict, `tests/test_fxicons.py`, where my
+version of the tool button test is the right one (a hovered tool button
+keeps its normal ink). Full suite on the merge: 17 failed, 2330 passed.
+16 of the failures also fail on lang-sheet alone (`test_chrome.py`,
+`test_delegate_owned_rows.py`, `test_radius_tokens.py`,
+`test_split_button_height.py`). The 17th, `test_host_sheet.py[rules]`,
+passed in two reruns of its file, so it depends on test order.
+`test_progress_card.py` passes on the merge.
 
 ## fxicons (taken on after the first report)
 
