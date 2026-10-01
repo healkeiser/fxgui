@@ -146,7 +146,6 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXTooltipManager` | Replaces every tooltip of the application with an `FXTooltip` |
 | `FXTooltipPosition` | Where an `FXTooltip` sits against its anchor |
 | `FXValidatedLineEdit` | Line edit that shakes and flashes when its validator refuses a key |
-| `FXWidget` | Widget holding an optional Designer file in a padded box layout |
 
 `fxdocking.FXDockArea` docks named panes around a body; it needs the
 `docking` extra (`pip install fxgui[docking]`).

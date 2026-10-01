@@ -25,6 +25,10 @@ class FXSingleInstance(QObject):
     Signals:
         woken: Another start asked for this copy; show the window.
 
+    Raises:
+        RuntimeError: From `claim`, when no copy runs but the name cannot
+            be listened on.
+
     Examples:
         >>> instance = FXSingleInstance(f"my-app-{getpass.getuser()}")
         >>> if not instance.claim():
@@ -52,7 +56,9 @@ class FXSingleInstance(QObject):
         QLocalServer.removeServer(self._name)
         server = QLocalServer(self)
         if not server.listen(self._name):
-            return False
+            # Not "another copy runs": that copy would have answered.
+            raise RuntimeError(
+                f"cannot listen on {self._name!r}: {server.errorString()}")
         server.newConnection.connect(self._on_connection)
         self._server = server
         return True
