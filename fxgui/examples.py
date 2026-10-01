@@ -319,9 +319,7 @@ def _display_page() -> QWidget:
         highlighted.document(), "python"
     )
 
-    spinners = []
-    for style in ("spinner", "dots", "pulse"):
-        spinners.append(fxwidgets.FXLoadingSpinner(size=28, style=style))
+    spinner = fxwidgets.FXLoadingSpinner(size=28)
     covered = QTextEdit("Content under an overlay.")
     covered.setFixedHeight(80)
     overlay = fxwidgets.FXLoadingOverlay(covered, message="Loading...")
@@ -353,7 +351,7 @@ def _display_page() -> QWidget:
         ),
         _section(
             "FXLoadingSpinner / FXLoadingOverlay",
-            _row(*spinners),
+            _row(spinner),
             covered,
             _row(_button("Toggle the overlay", toggle_overlay)),
         ),
@@ -373,8 +371,7 @@ def _display_page() -> QWidget:
         ),
     )
     # start() shows the spinner: on one not yet in a layout, a window.
-    for spinner in spinners:
-        spinner.start()
+    spinner.start()
     return page
 
 
@@ -607,7 +604,6 @@ def _open_framed(gallery: QWidget) -> None:
         title="Framed window",
         project="fxgui",
         version=__version__,
-        toolbar=False,
         framed=True,
     )
     window.setWindowFlag(Qt.Window)
