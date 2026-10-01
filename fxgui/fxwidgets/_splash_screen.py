@@ -4,7 +4,7 @@
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import QPropertyAnimation, QRect, QRectF, Qt
+from qtpy.QtCore import QEvent, QPropertyAnimation, QRect, QRectF, Qt
 from qtpy.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from qtpy.QtWidgets import (
     QFrame,
@@ -249,6 +249,14 @@ class FXSplashScreen(QSplashScreen):
         painter.setClipPath(_rounded(self.rect(), self.corner_radius))
         painter.drawPixmap(self.rect(), self.pixmap())
         painter.end()
+
+    def event(self, event: QEvent) -> bool:
+        """Handle an event, skipping Qt's wait in the Show event."""
+        # Qt 6.6+ waits there for the window to map, which only happens after
+        # the Show event returns: every show paid the full 1 s timeout.
+        if event.type() == QEvent.Show:
+            return QWidget.event(self, event)
+        return super().event(event)
 
     def showEvent(self, event) -> None:
         """Fade in over a second, if asked to."""

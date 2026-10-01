@@ -146,3 +146,18 @@ def test_the_splash_keeps_one_way_to_set_each_thing():
         "_apply_rounded_mask",
     ):
         assert not hasattr(FXSplashScreen, name), name
+
+
+def test_a_show_costs_what_a_widget_show_costs(qtbot):
+    # Qt 6.6+ waits up to 1 s in the Show event for a window it maps after.
+    import time
+
+    splash = FXSplashScreen()
+    qtbot.addWidget(splash)
+
+    start = time.perf_counter()
+    splash.show()
+    elapsed = time.perf_counter() - start
+
+    assert splash.isVisible()
+    assert elapsed < 0.5, elapsed
