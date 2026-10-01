@@ -41,3 +41,34 @@ def test_search_bar_styles_through_the_theme_sheet(qtbot, qapp):
                   bar._search_icon):
         assert child.styleSheet() == ""
     assert 'fx_search_container[focused="true"]' in fxstyle.build_stylesheet()
+
+
+def test_the_bar_is_one_tab_stop_even_with_text_in_it(qtbot, qapp):
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
+
+    window = QWidget()
+    qtbot.addWidget(window)
+    column = QVBoxLayout(window)
+    before, bar, after = QLineEdit(), FXSearchBar(), QLineEdit()
+    for widget in (before, bar, after):
+        column.addWidget(widget)
+    bar.text = "comp"
+    window.show()
+    qtbot.waitExposed(window)
+    window.activateWindow()
+    before.setFocus()
+    qtbot.waitUntil(before.hasFocus, timeout=1000)
+
+    qtbot.keyClick(before, Qt.Key_Tab)
+    assert bar.line_edit().hasFocus()
+    qtbot.keyClick(bar.line_edit(), Qt.Key_Tab)
+    assert after.hasFocus(), "the clear button took no stop"
+
+
+def test_line_edit_is_the_field_typing_goes_to(qtbot, qapp):
+    bar = FXSearchBar()
+    qtbot.addWidget(bar)
+
+    qtbot.keyClicks(bar.line_edit(), "fx")
+
+    assert bar.text == "fx" and isinstance(bar.line_edit(), QLineEdit)
