@@ -5,13 +5,18 @@ import re
 
 # Third-party
 import pytest
-from qtpy.QtCore import QEvent, QPoint
-from qtpy.QtGui import QHelpEvent, QImage, QKeySequence
+from qtpy.QtCore import QEvent, QPoint, QRect
+from qtpy.QtGui import QAction, QHelpEvent, QKeySequence, QTextDocument
 from qtpy.QtWidgets import (
     QApplication,
+    QLabel,
+    QListWidget,
     QListWidgetItem,
     QPushButton,
+    QToolButton,
     QToolTip,
+    QTreeWidget,
+    QTreeWidgetItem,
     QWidget,
 )
 
@@ -46,7 +51,7 @@ def test_title_only(qtbot):
     assert "<b>Back</b>" in html
     # No body row and no keycap when only a title was given.
     assert "margin-top" not in html
-    assert "font-family:monospace" not in html
+    assert "background:" not in html
 
 
 def test_title_and_body(qtbot):
@@ -56,14 +61,14 @@ def test_title_and_body(qtbot):
     assert "Navigate to previous location" in html
     # The body sits in its own block below the title.
     assert "margin-top" in html
-    assert "font-family:monospace" not in html
+    assert "background:" not in html
 
 
 def test_title_and_shortcut(qtbot):
     html = _tips.tip("Save", shortcut="Ctrl+S")
 
     assert "<b>Save</b>" in html
-    assert "font-family:monospace" in html
+    assert "background:" in html
     # Title and keycap share one line, the cap pushed right by a cell.
     assert 'align="right"' in html
     assert "margin-top" not in html
@@ -145,10 +150,12 @@ def test_keycap_is_right_aligned(themed_app, qtbot):
         ]
 
         assert xs, f"no keycap drawn for {args}"
-        # Flush right: the cap reaches the last pixel column.
+        # Flush right: the last cap reaches the last pixel column.
         assert max(xs) >= image.width() - 2, args
-        # And it is a cap, not a full-width band.
-        assert min(xs) > image.width() // 3, args
+        # One cap per key, not one band: the fill breaks between keys.
+        row = sorted(set(xs))
+        runs = 1 + sum(1 for a, b in zip(row, row[1:]) if b - a > 1)
+        assert runs == len(_tips._chords(args[2])[0]), args
 
 
 # ' Escaping
@@ -201,9 +208,33 @@ def test_keycap_uses_native_text(qtbot):
     """A Mac must show the platform glyphs rather than the literal "Ctrl",
     which is what QKeySequence's NativeText format is for."""
     native = QKeySequence("Ctrl+Shift+E").toString(QKeySequence.NativeText)
+
+    names = _tips._chords("Ctrl+Shift+E")[0]
+
+    assert names[-1] == "E"
+    assert all(name in native for name in names)
+    assert "+" not in "".join(names)
+
+
+def test_keycap_names_the_plus_key(qtbot):
+    assert _tips._chords("Ctrl++")[0][-1] == "+"
+
+
+def test_keycap_draws_one_cap_per_key(qtbot):
     html = _tips.keycap("Ctrl+Shift+E")
 
-    assert native in _strip_markup(html).replace("&nbsp;", "")
+    caps = re.findall(r"<span[^>]*>&nbsp;([^<]*)&nbsp;</span>", html)
+
+    assert caps == _tips._chords("Ctrl+Shift+E")[0]
+
+
+def test_keycap_parts_chords_wider_than_keys(qtbot):
+    html = _tips.keycap("Ctrl+K, Ctrl+S")
+
+    gaps = re.findall(r"</span>((?:&nbsp;)+)<span", html)
+
+    assert len(gaps) == 3
+    assert len(gaps[1]) > len(gaps[0]) == len(gaps[2])
 
 
 def test_keycap_falls_back_to_raw_string(qtbot):
@@ -216,48 +247,75 @@ def test_keycap_falls_back_to_raw_string(qtbot):
 # ' Theme awareness
 
 
-def test_tips_name_palette_roles_not_colours(qtbot):
-    html = _tips.tip("Save", "Write the scene to disk", "Ctrl+S")
+def test_a_tip_is_written_in_the_theme_in_force(qtbot):
+    """Qt 6.5 rich text has no name for the placeholder-text role."""
+    for theme in ("dark", "light"):
+        fxstyle.apply_theme(theme)
+        html = _tips.tip("Save", "Write the scene to disk", "Ctrl+S")
 
-    assert "#" not in html
-    assert "palette(placeholder-text)" in html
+        assert f"color:{fxstyle.colors().text_muted};" in html
+        assert f"background:{fxstyle.colors().surface};" in html
+        assert "palette(" not in html
 
 
-def _shown_tip(widget) -> QImage:
+def _visible_tip():
+    return next(
+        (
+            top
+            for top in QApplication.topLevelWidgets()
+            if top.inherits("QTipLabel") and top.isVisible()
+        ),
+        None,
+    )
+
+
+def _tip_ink(widget, text: str) -> str:
+    """Show `widget`'s tooltip; return the ink its label's document gives
+    the fragment `text`."""
     point = QPoint(2, 2)
     QApplication.sendEvent(
         widget, QHelpEvent(QEvent.ToolTip, point, widget.mapToGlobal(point))
     )
-    label = next(
-        top
-        for top in QApplication.topLevelWidgets()
-        if top.inherits("QTipLabel") and top.isVisible()
-    )
-    image = label.grab().toImage()
-    QToolTip.hideText()
-    return image
+    label = _visible_tip()
+    block = label.findChild(QTextDocument).begin()
+    try:
+        while block.isValid():
+            fragments = block.begin()
+            while not fragments.atEnd():
+                fragment = fragments.fragment()
+                if fragment.text() == text:
+                    return fragment.charFormat().foreground().color().name()
+                fragments += 1
+            block = block.next()
+        raise AssertionError(f"{text!r} is not in the tooltip")
+    finally:
+        QToolTip.hideText()
 
 
 def test_a_tip_set_in_one_theme_shows_in_the_theme_of_the_moment(
     themed_app, qtbot
 ):
+    """Read from the label's own document: glyph pixels differ by platform."""
     button = QPushButton("Save")
     qtbot.addWidget(button)
     button.show()
     fxstyle.apply_theme("dark")
-    button.setToolTip(_tips.tip("Save", "Write the scene to disk", "Ctrl+S"))
+    _tips.apply_tip(button, "Save", "Write the scene to disk", "Ctrl+S")
 
-    fxstyle.apply_theme("light")
-    image = _shown_tip(button)
+    for theme in ("light", "dark"):
+        fxstyle.apply_theme(theme)
+        ink = _tip_ink(button, "Write the scene to disk")
+        # Qt reuses a fading label, and its unchanged text is not re-read.
+        qtbot.waitUntil(lambda: not _visible_tip())
 
-    inks = {
-        image.pixelColor(x, y).name()
-        for x in range(image.width())
-        for y in range(image.height())
-    }
-    assert fxstyle.colors().text_muted.lower() in inks
-    fxstyle.apply_theme("dark")
-    assert fxstyle.colors().text_muted.lower() not in inks
+        assert ink == fxstyle.colors().text_muted.lower(), theme
+
+
+def _cap_pixels(host: QWidget, cap: QWidget):
+    """Return the host's render and the cap's rectangle in it."""
+    image = host.grab().toImage()
+    origin = cap.mapTo(host, QPoint(0, 0))
+    return image, QRect(origin, cap.size())
 
 
 def test_a_keycap_follows_a_switch_and_has_round_corners(qtbot):
@@ -265,28 +323,61 @@ def test_a_keycap_follows_a_switch_and_has_round_corners(qtbot):
     qtbot.addWidget(host)
     fxstyle.register_themed_root(host)
     fxstyle.apply_theme("dark")
-    switched = _tips.FXKeycap("Ctrl+S", host)
-    fxstyle.apply_theme("light")
-    fresh = _tips.FXKeycap("Ctrl+S", host)
+    switched = _tips.FXKeycap("S", host)
+    host.resize(120, 80)
     host.show()
+    fxstyle.apply_theme("light")
+    fresh = _tips.FXKeycap("S", host)
+    fresh.move(0, 40)
+    fresh.show()
 
-    images = [cap.grab().toImage() for cap in (switched, fresh)]
+    caps = [cap.findChildren(QLabel)[0] for cap in (switched, fresh)]
+    image, first = _cap_pixels(host, caps[0])
+    _image, second = _cap_pixels(host, caps[1])
+    assert first.size() == second.size()
+    assert image.copy(first) == image.copy(second)
 
-    assert images[0] == images[1]
-    fill = images[1].pixelColor(images[1].width() // 2, 1).name()
-    assert images[1].pixelColor(0, 0).name() != fill
+    fill = image.pixelColor(second.center().x(), second.top() + 1).name()
+    assert fill == fxstyle.colors().state_hover.lower()
+    # The border is drawn and the corner is cut round.
+    edge = image.pixelColor(second.center().x(), second.top()).name()
+    assert edge == fxstyle.colors().border.lower()
+    corner = image.pixelColor(second.topLeft()).name()
+    assert corner not in (fill, edge)
 
 
-def test_fxtooltip_draws_its_shortcut_as_a_keycap(qtbot):
-    from fxgui.fxwidgets import FXTooltip
+def test_fxkeycap_draws_one_cap_per_key(qtbot):
+    cap = _tips.FXKeycap("Ctrl+Shift+E")
+    qtbot.addWidget(cap)
 
-    anchor = QWidget()
-    tooltip = FXTooltip(parent=anchor, title="Save", shortcut="Ctrl+S")
-    try:
-        assert isinstance(tooltip._shortcut_label, _tips.FXKeycap)
-    finally:
-        tooltip.deleteLater()
-        anchor.deleteLater()
+    names = [label.text() for label in cap.findChildren(QLabel)]
+
+    assert names == _tips._chords("Ctrl+Shift+E")[0]
+    assert len(names) == 3
+
+
+def test_fxkeycap_parts_chords_wider_than_keys(qtbot):
+    cap = _tips.FXKeycap("Ctrl+K, Ctrl+S")
+    qtbot.addWidget(cap)
+    cap.show()
+    keys = sorted(cap.findChildren(QLabel), key=lambda label: label.x())
+
+    gaps = [b.x() - a.geometry().right() for a, b in zip(keys, keys[1:])]
+
+    assert len(keys) == 4
+    assert gaps[1] > gaps[0] == gaps[2] > 0
+
+
+def test_fxkeycap_set_keys_rebuilds_the_caps(qtbot):
+    cap = _tips.FXKeycap("Ctrl+S")
+    qtbot.addWidget(cap)
+
+    cap.set_keys("F5")
+
+    assert cap.keys() == "F5"
+    assert [label.text() for label in cap.findChildren(QLabel)] == ["F5"]
+    cap.set_keys("")
+    assert cap.findChildren(QLabel) == []
 
 
 # ' apply_tip
@@ -331,9 +422,23 @@ def test_apply_tip_tolerates_missing_status_tip(qtbot):
     assert "<b>Shot 0010</b>" in target.tooltip
 
 
+def test_apply_tip_covers_every_column_of_a_tree_item(qtbot):
+    tree = QTreeWidget()
+    qtbot.addWidget(tree)
+    tree.setColumnCount(2)
+    item = QTreeWidgetItem(tree, ["sh0010", "Ready"])
+
+    _tips.apply_tip(item, "Shot 0010", "Ready to render")
+
+    assert all("<b>Shot 0010</b>" in item.toolTip(c) for c in (0, 1))
+    assert item.statusTip(1) == "Shot 0010 - Ready to render"
+
+
 def test_apply_tip_works_on_view_items(qtbot):
     """Item classes are annotated the same way as widgets."""
-    item = QListWidgetItem("Shot 0010")
+    view = QListWidget()
+    qtbot.addWidget(view)
+    item = QListWidgetItem("Shot 0010", view)
 
     _tips.apply_tip(item, "Shot 0010", "Ready to render")
 
@@ -341,7 +446,66 @@ def test_apply_tip_works_on_view_items(qtbot):
     assert item.statusTip() == "Shot 0010 - Ready to render"
 
 
-# ' Migrated widgets
+def test_apply_tip_refuses_an_item_in_no_view(qtbot):
+    with pytest.raises(ValueError):
+        _tips.apply_tip(QListWidgetItem("Shot 0010"), "Shot 0010")
+
+
+def test_an_item_tip_is_built_when_it_shows(qtbot):
+    view = QListWidget()
+    qtbot.addWidget(view)
+    item = QListWidgetItem("Shot 0010", view)
+    view.show()
+    fxstyle.apply_theme("dark")
+    _tips.apply_tip(item, "Shot 0010", "Ready to render")
+    fxstyle.apply_theme("light")
+
+    point = view.visualItemRect(item).center()
+    viewport = view.viewport()
+    QApplication.sendEvent(
+        viewport,
+        QHelpEvent(QEvent.ToolTip, point, viewport.mapToGlobal(point)),
+    )
+
+    assert QToolTip.text() == _tips.tip("Shot 0010", "Ready to render")
+    QToolTip.hideText()
+
+
+def test_an_action_tip_is_built_when_it_is_hovered(qtbot):
+    host = QWidget()
+    qtbot.addWidget(host)
+    action = QAction("Refresh", host)
+    button = QToolButton(host)
+    button.setDefaultAction(action)
+    fxstyle.apply_theme("dark")
+    _tips.apply_tip(action, "Refresh", "Reload the list", "F5")
+    _tips.apply_tip(action, "Refresh", "Reload the list", "F5")
+    fxstyle.apply_theme("light")
+
+    action.hover()
+
+    fresh = _tips.tip("Refresh", "Reload the list", "F5")
+    assert action.toolTip() == fresh
+    assert button.toolTip() == fresh
+
+
+def test_a_second_apply_tip_replaces_the_first(qtbot):
+    button = QPushButton()
+    qtbot.addWidget(button)
+    button.show()
+    _tips.apply_tip(button, "Save")
+    _tips.apply_tip(button, "Save as", "Write a copy")
+
+    point = QPoint(2, 2)
+    QApplication.sendEvent(
+        button, QHelpEvent(QEvent.ToolTip, point, button.mapToGlobal(point))
+    )
+
+    assert QToolTip.text() == _tips.tip("Save as", "Write a copy")
+    QToolTip.hideText()
+
+
+# ' Library widgets
 
 
 def _all_tooltips(widget):
@@ -359,9 +523,8 @@ def _all_tooltips(widget):
     return out
 
 
-def test_migrated_widgets_use_native_tooltips(qtbot):
-    """The library's own call sites went native; a missing tooltip here means
-    the migration dropped one."""
+def test_library_widgets_use_native_tooltips(qtbot):
+    """The library's own buttons carry rich native tooltips."""
     from fxgui.fxwidgets import (
         FXBreadcrumb,
         FXFilePathWidget,
@@ -384,49 +547,8 @@ def test_migrated_widgets_use_native_tooltips(qtbot):
     assert "<b>Match Threshold</b>" in search_list._ratio_slider.toolTip()
 
 
-def test_no_widget_owns_both_a_native_and_an_fxtooltip(qtbot):
-    """FXTooltipManager used to suppress the native tooltip on a widget that
-    owned an FXTooltip. Without the manager nothing suppresses it, so a widget
-    carrying both would show two tooltips on one hover."""
-    from qtpy.QtWidgets import QWidget
-
-    from fxgui.fxwidgets import (
-        FXBreadcrumb,
-        FXFilePathWidget,
-        FXFuzzySearchList,
-        FXFuzzySearchTree,
-        FXOutputLogWidget,
-        FXTimelineSlider,
-    )
-
-    roots = [
-        FXBreadcrumb(show_navigation=True),
-        FXFilePathWidget(),
-        FXFuzzySearchList(show_ratio_slider=True),
-        FXFuzzySearchTree(show_ratio_slider=True),
-        FXOutputLogWidget(),
-        FXTimelineSlider(
-            show_controls=True,
-            show_spinbox=True,
-            show_loop_controls=True,
-            show_keyframe_controls=True,
-        ),
-    ]
-    for root in roots:
-        qtbot.addWidget(root)
-
-    doubled = []
-    for root in roots:
-        for child in [root] + root.findChildren(QWidget):
-            if child.property("fx_has_explicit_tooltip") and child.toolTip():
-                doubled.append(f"{type(root).__name__}.{child.objectName()}")
-
-    assert doubled == []
-
-
 def test_timeline_playback_keeps_a_rich_tooltip(qtbot):
-    """play()/stop() used to overwrite the rich tooltip with a bare word,
-    which was invisible while the manager suppressed it."""
+    """play() and stop() keep the rich tooltip, shortcut included."""
     from fxgui.fxwidgets import FXTimelineSlider
 
     timeline = FXTimelineSlider(show_controls=True)
@@ -443,9 +565,8 @@ def test_timeline_playback_keeps_a_rich_tooltip(qtbot):
     assert "Space" in timeline._play_btn.toolTip()
 
 
-def test_every_migrated_tooltip_kept_its_wording(qtbot):
-    """The migration was a mechanism change. Every word that was in an
-    FXTooltip before must still reach the user, on the widget it was on."""
+def test_library_tooltips_carry_their_words(qtbot):
+    """Each library widget's tips carry their title and body words."""
     from fxgui.fxwidgets import (
         FXBreadcrumb,
         FXFilePathWidget,
@@ -455,9 +576,7 @@ def test_every_migrated_tooltip_kept_its_wording(qtbot):
         FXTimelineSlider,
     )
 
-    # (title, body) as they read before the migration. The log widget's
-    # output-area body carried `<br>` and `<code>` markup; the tags became
-    # plain punctuation, every word survived.
+    # (title, body) per widget.
     expected = {
         "FXBreadcrumb": [
             ("Back", "Navigate to previous location"),
@@ -572,7 +691,6 @@ def test_icon_only_buttons_carry_a_name(qtbot):
     assert emoji.accessibleName() == "Insert an emoji"
     assert all(button.accessibleName() for button in picker.buttons())
     assert picker.buttons()[0].accessibleName() != picker.buttons()[0].text()
-
 
 
 def test_apply_tip_shows_the_theme_in_force_when_it_shows(qtbot):
