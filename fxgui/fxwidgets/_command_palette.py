@@ -31,7 +31,7 @@ fxstyle.register_widget_style(
     FXCommandPalette {
         background-color: @surface;
         border: 1px solid @border;
-        border-radius: @button_radius;
+        border-radius: @card_radius;
     }
     FXCommandPalette QLabel#fxPaletteHint {
         color: @text_muted;

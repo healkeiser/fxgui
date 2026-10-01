@@ -86,9 +86,9 @@ def _emoji_name(emoji: str) -> str:
 
 fxstyle.register_widget_style(f"""
 FXEmojiPicker {{
-    background-color: @surface_sunken;
+    background-color: @surface;
     border: 1px solid @border;
-    border-radius: @button_radius;
+    border-radius: @card_radius;
 }}
 FXEmojiPicker QToolButton {{
     border: 1px solid transparent;
