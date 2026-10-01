@@ -315,6 +315,7 @@ def _display_page() -> QWidget:
 
     plain = QPushButton("Native rich tooltip")
     fxwidgets.apply_tip(plain, "Save", "Write the scene to disk", "Ctrl+S")
+    key = fxwidgets.FXKeycap("Ctrl+S")
     rich = QPushButton("FXTooltip")
     fxwidgets.set_tooltip(
         rich,
@@ -352,8 +353,8 @@ def _display_page() -> QWidget:
         _section("FXFlowLayout", flow_box),
         _section("FXThreadLine", _thread()),
         _section(
-            "FXTooltip / set_tooltip / apply_tip / tip / keycap",
-            _row(plain, rich),
+            "FXTooltip / set_tooltip / apply_tip / tip / keycap / FXKeycap",
+            _row(plain, rich, key),
         ),
     )
 

@@ -1,45 +1,33 @@
-"""Rich tooltips built on Qt's own `setToolTip`.
+"""Rich tooltips built on Qt's own `setToolTip`, and the keycap widget.
 
 This is the everyday path for tooltips in fxgui. A bare
 ``setToolTip("Refresh")`` restates the label and teaches nothing; a useful
 tooltip answers three things at once, what the control is, what it does to
 the user's data, and how to reach it without the mouse. Every string goes
 through `tip`, so no call site invents its own layout and the wording stays
-consistent: title in the theme's primary text, body dimmed, shortcut on the
-right as a keycap.
+consistent: title in the primary text, body dimmed, shortcut on the right as
+a keycap.
 
 Reach for `FXTooltip` instead when native tooltips cannot do the job: hosting
 live widgets (images, action buttons), staying up while the pointer is over
 the tooltip itself, or arrow-anchored placement. Everything else belongs here.
 
-Qt renders a tooltip through `QTextDocument`, which supports a small subset
-of HTML: `b`, `span style` (color, background, font), `br` and tables. It has
-no flexbox, no `gap`, and it ignores `border-radius` on inline spans, which is
-why the keycap is a background-tinted span inside a table cell rather than a
-rounded pill. The keycap sits in a right-aligned cell of a full-width table
-because that is the only way Qt's rich text will push part of a line to the
-right edge.
+The HTML names palette roles, never a colour. Qt reads them from the
+application's palette when the tooltip shows, so a tip set in one theme
+shows in the theme of the moment. Rich text draws no rounded background:
+the keycap in a tooltip is square; `FXKeycap`, the widget, is round.
 
-There is deliberately no width cap here. Qt ignores `max-width`, and the one
-width it does honour, a table `width` attribute, it applies as a fixed width
-rather than a maximum, which puts a short tooltip in an oversized box. It is
-not needed either: the tooltip popup word-wraps itself, measured at 192px for
-a short body, 224px for a full sentence, and saturating at 440px however long
-the body gets, so a tooltip never stretches across a monitor on its own.
-
-Rich text takes only literal colours, so `tip` and `keycap` write those of
-the theme in force when called. `apply_tip` builds the tooltip again each
-time it shows, so a widget's tooltip follows a switch. The surface they land
-on is styled by the `QToolTip` rule in `qss/style.qss`, from the same tokens.
+Qt ignores `max-width`, and applies a table `width` as a fixed width, so
+there is no width cap: the tooltip popup word-wraps itself, up to 440px.
 """
 
 # Built-in
 from html import escape
+from typing import Optional
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject
 from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import QToolTip, QWidget
+from qtpy.QtWidgets import QLabel, QWidget
 
 # Internal
 from fxgui import fxstyle
@@ -48,9 +36,33 @@ from fxgui import fxstyle
 # One step down from the 12px body text set by the global stylesheet.
 KEYCAP_FONT_SIZE = 11
 
+# Palette roles the tooltip HTML reads when it shows: the theme's under an
+# FXApplication, the host's inside a DCC, where the host draws the box.
+_MUTED = "palette(placeholder-text)"
+_KEY_FILL = "palette(button)"
+
+fxstyle.register_widget_style(
+    f"""
+    FXKeycap {{
+        background: @surface;
+        color: @text_muted;
+        border: 1px solid @border;
+        border-radius: @button_radius;
+        padding: 0px 5px;
+        font-family: @font_mono;
+        font-size: {KEYCAP_FONT_SIZE}px;
+    }}
+    """
+)
+
+
+def _pretty(keys: str) -> str:
+    """Return `keys` in the platform's own words, or as given."""
+    return QKeySequence(keys).toString(QKeySequence.NativeText) or keys
+
 
 def keycap(keys: str) -> str:
-    """Render one keyboard shortcut as a key.
+    """Render one keyboard shortcut as a key, in rich text.
 
     Args:
         keys: A Qt key sequence, such as `"Ctrl+S"`, `"F5"` or
@@ -63,21 +75,16 @@ def keycap(keys: str) -> str:
         >>> button.setToolTip(f"Save {keycap('Ctrl+S')}")
 
     Note:
-        The sequence is run through `QKeySequence` so a Mac shows the
-        platform glyphs rather than the literal "Ctrl". Sequences Qt cannot
-        parse fall back to the raw string.
+        Rich text in a label reads the palette once, when it is set; a
+        keycap on a window is an `FXKeycap`.
     """
 
     if not keys:
         return ""
-
-    colors = fxstyle.get_theme_colors()
-    pretty = QKeySequence(keys).toString(QKeySequence.NativeText)
     return (
-        f'<span style="background:{colors["state_hover"]};'
-        f' color:{colors["text_muted"]};'
+        f'<span style="background:{_KEY_FILL}; color:{_MUTED};'
         f" font-size:{KEYCAP_FONT_SIZE}px;"
-        f' font-family:monospace;">&nbsp;{escape(pretty or keys)}&nbsp;'
+        f' font-family:monospace;">&nbsp;{escape(_pretty(keys))}&nbsp;'
         "</span>"
     )
 
@@ -112,13 +119,7 @@ def tip(title: str, body: str = "", shortcut: str = "") -> str:
     if not (title or body or shortcut):
         return ""
 
-    colors = fxstyle.get_theme_colors()
-    head = ""
-    if title:
-        head = (
-            f'<span style="color:{colors["text"]};">'
-            f"<b>{escape(title)}</b></span>"
-        )
+    head = f"<b>{escape(title)}</b>" if title else ""
 
     rows = []
     if shortcut:
@@ -134,10 +135,7 @@ def tip(title: str, body: str = "", shortcut: str = "") -> str:
         rows.append(head)
 
     if body:
-        rows.append(
-            f'<span style="color:{colors["text_muted"]};">'
-            f"{escape(body)}</span>"
-        )
+        rows.append(f'<span style="color:{_MUTED};">{escape(body)}</span>')
 
     blocks = f"<div>{rows[0]}</div>"
     for row in rows[1:]:
@@ -145,28 +143,22 @@ def tip(title: str, body: str = "", shortcut: str = "") -> str:
     return blocks
 
 
-class _ShownTip(QObject):
-    """Show its widget's `apply_tip` tooltip built in the theme of the moment."""
+class FXKeycap(QLabel):
+    """One keyboard shortcut drawn as a key, round at the button radius.
 
-    NAME = "fxShownTip"
+    Its look is a registered rule, so it follows every theme switch.
 
-    def __init__(self, widget: QWidget):
-        super().__init__(widget)
-        self.setObjectName(self.NAME)
-        self.parts = ("", "", "")
-        self.html = ""
-        widget.installEventFilter(self)
+    Examples:
+        >>> row.addWidget(FXKeycap("Ctrl+S"))
+    """
 
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Show the tip as `tip` builds it now, unless it was replaced."""
-        if (
-            event.type() == QEvent.ToolTip
-            and self.html
-            and watched.toolTip() == self.html
-        ):
-            QToolTip.showText(event.globalPos(), tip(*self.parts), watched)
-            return True
-        return False
+    def __init__(self, keys: str = "", parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self.setText(keys)
+
+    def setText(self, keys: str) -> None:
+        """Show `keys` in the platform's own words, as `keycap` does."""
+        super().setText(_pretty(keys) if keys else "")
 
 
 def apply_tip(
@@ -198,14 +190,7 @@ def apply_tip(
         without `setStatusTip` only get the tooltip.
     """
 
-    html = tip(title, body, shortcut)
-    widget.setToolTip(html)
-    if isinstance(widget, QWidget):
-        shown = widget.findChild(_ShownTip, _ShownTip.NAME)
-        if shown is None:
-            shown = _ShownTip(widget)
-        shown.parts = (title, body, shortcut)
-        shown.html = html
+    widget.setToolTip(tip(title, body, shortcut))
 
     plain = f"{title} - {body}" if body else title
     if hasattr(widget, "setStatusTip"):

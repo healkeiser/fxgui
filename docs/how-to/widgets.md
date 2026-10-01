@@ -106,6 +106,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXItemDelegate` | Item delegate that switches icons to their hover and selected looks |
 | `FXJoinedGroup` | Widgets side by side in one pill outline, such as a status and a Post button |
 | `FXKeyboardTree` | Tree whose row menus, Enter and typing work from the keyboard |
+| `FXKeycap` | One shortcut drawn as a key, round at the button radius; follows every theme switch |
 | `FXLettersUnderscoreValidator` | Accepts letters and underscores, numbers optional |
 | `FXLoadingOverlay` | Spinner over a widget, dimming it and blocking its input |
 | `FXLoadingSpinner` | Animated loading indicator: spinner, dots or pulse |
@@ -158,7 +159,7 @@ And these functions and constants:
 | `apply_tip` | Sets a rich tooltip and a plain status tip on a widget (see [Tooltips](#tooltips)) |
 | `fix_wrapped_heights` | Gives every word-wrapped label under a widget the height its width needs |
 | `grab_screen_region` | Lets the user drag out a screen region and returns it, or `None` on Escape |
-| `keycap` | Renders one shortcut as a key, for a tooltip |
+| `keycap` | Renders one shortcut as a key in a tooltip's HTML; on a window, use `FXKeycap` |
 | `set_tooltip` | Attaches an `FXTooltip` to a widget or an item |
 | `tip` | Returns the HTML `apply_tip` sets |
 | `theme_manager` | The `FXThemeManager` instance |
@@ -242,9 +243,9 @@ apply_tip(
 )
 ```
 
-The title renders in the theme's primary text, the body dimmed, and the shortcut sits right-aligned as a keycap. Colors are read from the active theme on every call, so tooltips follow a theme switch and a studio's custom theme with no extra wiring. Every string is HTML-escaped, so a path holding `&` or `<` reaches the user as text.
+The title renders in the theme's primary text, the body dimmed, and the shortcut sits right-aligned as a keycap. The HTML names palette roles, not colours, and Qt reads them when the tooltip shows, so a tooltip set in one theme shows in the theme of the moment. Inside a host, those are the host's colours, as the host draws the tooltip box. Qt's rich text draws no rounded background, so the keycap in a tooltip is square. Every string is HTML-escaped, so a path holding `&` or `<` reaches the user as text.
 
-Two lower-level helpers are exported alongside it: `tip()` returns the HTML if you need to set it yourself, and `keycap()` renders one shortcut as a key (through `QKeySequence`, so a Mac shows the platform glyphs rather than the literal "Ctrl").
+Two lower-level helpers are exported alongside it: `tip()` returns the HTML if you need to set it yourself, and `keycap()` renders one shortcut as a key (through `QKeySequence`, so a Mac shows the platform glyphs rather than the literal "Ctrl"). A label reads rich text once, when its text is set, so a keycap on a window is an `FXKeycap` instead: a widget, round at the button radius, that follows every theme switch.
 
 Reach for [`FXTooltip`](../technical/fxgui/fxwidgets/index.md) instead when a native tooltip cannot do the job:
 

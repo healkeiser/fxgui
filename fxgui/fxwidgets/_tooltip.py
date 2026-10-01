@@ -54,6 +54,7 @@ from fxgui import fxicons, fxstyle
 from fxgui._compat import is_valid
 from fxgui.fxwidgets._delegates import FXThumbnailDelegate
 from fxgui.fxwidgets._labels import FXIconLabel
+from fxgui.fxwidgets._tips import FXKeycap
 
 fxstyle.register_widget_style(
     """
@@ -72,14 +73,6 @@ fxstyle.register_widget_style(
     FXTooltip #FXTooltipDescription {
         color: @text_muted;
         font-size: 12px;
-    }
-    FXTooltip #FXTooltipShortcut {
-        background-color: @border;
-        color: @text_muted;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-family: monospace;
     }
     FXTooltip #FXTooltipAction {
         background-color: transparent;
@@ -328,8 +321,7 @@ class FXTooltip(QFrame):
 
             # Shortcut badge
             if self._shortcut:
-                self._shortcut_label = QLabel(self._shortcut)
-                self._shortcut_label.setObjectName("FXTooltipShortcut")
+                self._shortcut_label = FXKeycap(self._shortcut)
                 header_layout.addWidget(self._shortcut_label)
 
             content_layout.addLayout(header_layout)
