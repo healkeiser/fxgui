@@ -47,6 +47,7 @@ from qtpy.QtGui import (
 )
 from qtpy.QtWidgets import (
     QAbstractItemView,
+    QAbstractScrollArea,
     QApplication,
     QProxyStyle,
     QSplitter,
@@ -132,6 +133,8 @@ __all__ = [
     "BUTTON_RADIUS",
     "FONT_SIZE",
     "ROOT_PROPERTY",
+    "THIN_SCROLL_PROPERTY",
+    "THIN_SCROLL_WIDTH",
     "WIDGET_STYLE_PROPERTY",
     # Color configuration
     "colors",
@@ -149,6 +152,8 @@ __all__ = [
     "get_fonts",
     "get_font_family",
     "mark_as_title",
+    "mark_as_frame",
+    "mark_as_thin_scroll",
     # Theme functions
     "get_available_themes",
     "get_theme",
@@ -196,6 +201,13 @@ TITLE_PROPERTY = "fxTitle"
 # Dynamic property painting a widget in the frame colour. Set it through
 # mark_as_frame() rather than by hand.
 FRAME_PROPERTY = "fxFrame"
+
+# Dynamic property drawing a scroll area as a card's thin scroll. Set it
+# through mark_as_thin_scroll() rather than by hand.
+THIN_SCROLL_PROPERTY = "fxThinScroll"
+
+# The width, in pixels, of a thin scroll area's bar: `@thin_scroll` in QSS.
+THIN_SCROLL_WIDTH = 6
 
 # Styles QPushButton through @button_radius; widgets that draw a button
 # shape of their own read it here.
@@ -847,6 +859,29 @@ def mark_as_frame(widget: QWidget, is_frame: bool = True) -> None:
             fxutils.repolish(child)
 
 
+def mark_as_thin_scroll(area: QAbstractScrollArea, is_thin: bool = True) -> None:
+    """Draw a scroll area as part of the card it sits on.
+
+    No fill of its own, and a narrow bar (`THIN_SCROLL_WIDTH`) with a
+    quiet handle and no arrows, where the theme's full bar is too loud.
+
+    Args:
+        area: The scroll area, or any QAbstractScrollArea.
+        is_thin: False gives it the theme's own look back. Defaults to True.
+
+    Examples:
+        >>> fxstyle.mark_as_thin_scroll(runs_area)
+    """
+    area.setProperty(THIN_SCROLL_PROPERTY, bool(is_thin))
+    # Child selectors are matched when the child polishes, not the parent.
+    parts = [area, area.viewport()]
+    for bar in (area.verticalScrollBar(), area.horizontalScrollBar()):
+        parts += [bar, bar.parentWidget()]
+    for part in parts:
+        if part is not None:
+            fxutils.repolish(part)
+
+
 ###### Color Utility Functions
 
 
@@ -1196,6 +1231,8 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         tokens[f"@font_{role}"] = _resolve_font_stack(entries)
 
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
+    tokens["@thin_scroll_radius"] = f"{THIN_SCROLL_WIDTH // 2}px"
+    tokens["@thin_scroll"] = f"{THIN_SCROLL_WIDTH}px"
     # A bare number, for a sheet that writes its own unit: `@radiuspx`.
     tokens["@radius"] = str(BUTTON_RADIUS)
 
