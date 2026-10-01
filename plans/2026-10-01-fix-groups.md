@@ -103,5 +103,6 @@ shows every public widget (its test enforces it).
   first (measured by group d); the empty slider track's 3:1 (if the chrome
   pass leaves it); slider_thumb/slider_thumb_hover tokens are unused.
   On 6.5.3, test_host_sheet has "_Probe already deleted" teardown errors (18, then 20 after 7e5cdf0a; the 2 extra unexplained) and the blended #a7454a item background: fix at the cause.
+  Theme contrast: solarized_light's own @text reads 4.13:1 on @surface (3.64:1 on the tab pill); every bundled theme's text tokens must reach 4.5:1 on the surfaces they sit on. Fix the theme values (or derive text inks as @tab_muted is), with a test over every theme.
 - Group h: test clean-up (duplicates, shared helpers, order hang, flaky
   busy-line test) after everything else lands.
