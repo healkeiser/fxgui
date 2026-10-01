@@ -46,6 +46,12 @@ the next major, and this is it.
   to `fxstyle.theme_changed`.
 - No widget calls `setStyleSheet(load_stylesheet())` on itself.
 
+## Test cost rule (owner, 2026-10-01)
+
+While working, run only the test files that cover the change. The full
+suite runs once per agent, before its final report; CI covers the rest.
+Renders: dark and light only; the parametrized tests cover every theme.
+
 ## Tasks
 
 ### T0 - CI gate and packaging (owner: lead)
