@@ -1,0 +1,134 @@
+"""A tray panel sits off its icon or the pointer, inside the screen, and
+rises into place once."""
+
+# Third-party
+from qtpy.QtCore import QAbstractAnimation, QPoint, QRect, QSize
+from qtpy.QtGui import QGuiApplication
+from qtpy.QtWidgets import QWidget
+
+# Internal
+from fxgui.fxwidgets import FXSeating
+
+
+SCREEN = QRect(0, 0, 1920, 1040)  # availableGeometry: taskbar excluded
+SIZE = QSize(320, 420)
+GAP = FXSeating.EDGE_GAP
+corner = FXSeating.popup_corner
+
+
+def test_a_visible_tray_icon_anchors_the_panel_above_itself():
+    tray = QRect(1600, 1000, 24, 24)
+    at = corner(SIZE, tray, None, SCREEN)
+    assert at.y() == tray.top() - SIZE.height() - GAP
+    assert at.x() == SCREEN.right() - SIZE.width() + 1 - GAP
+
+
+def test_a_tray_icon_at_the_top_puts_the_panel_below_it():
+    tray = QRect(1600, 0, 24, 24)
+    assert corner(SIZE, tray, None, SCREEN).y() == tray.bottom() + 1 + GAP
+
+
+def test_an_empty_tray_rect_anchors_at_the_cursor():
+    at = corner(SIZE, QRect(), QPoint(600, 500), SCREEN)
+    assert at == QPoint(600, 500 - SIZE.height() - GAP)
+
+
+def test_no_tray_and_no_cursor_takes_the_work_area_s_corner():
+    assert corner(SIZE, QRect(), None, SCREEN) == QPoint(
+        SCREEN.right() - SIZE.width() + 1 - GAP,
+        SCREEN.bottom() - SIZE.height() + 1 - GAP,
+    )
+
+
+def test_the_corner_is_always_clamped_inside_the_screen():
+    at = corner(SIZE, QRect(), QPoint(1900, 10), SCREEN)
+    assert SCREEN.adjusted(GAP, GAP, -GAP, -GAP).contains(QRect(at, SIZE))
+
+
+def test_the_anchor_prefers_the_tray_icon_over_the_cursor():
+    tray = QRect(1600, 1000, 24, 24)
+    assert FXSeating.anchor_point(tray, QPoint(600, 500)) == tray.center()
+
+
+def test_the_anchor_falls_from_the_cursor_to_nothing():
+    assert FXSeating.anchor_point(QRect(), QPoint(6, 5)) == QPoint(6, 5)
+    assert FXSeating.anchor_point(QRect(), None) is None
+
+
+def _panel(qtbot):
+    panel = QWidget()
+    qtbot.addWidget(panel)
+    panel.resize(200, 150)
+    return panel, FXSeating(panel)
+
+
+def _entered(qtbot, seating):
+    qtbot.waitUntil(
+        lambda: seating.entrance.state() == QAbstractAnimation.Stopped,
+        timeout=2000,
+    )
+
+
+def test_every_anchor_names_a_screen_and_a_dead_one_still_does(qtbot):
+    panel, seating = _panel(qtbot)
+    screen = QGuiApplication.primaryScreen()
+
+    assert seating.screen_for(QRect(0, 0, 24, 24), None) is screen
+    assert seating.screen_for(QRect(), QPoint(10, 10)) is screen
+    assert seating.screen_for(QRect(), None) is screen
+    far = QRect(-100000, -100000, 24, 24)
+    assert seating.screen_for(far, None) is panel.screen()
+
+
+def test_a_show_slides_the_panel_up_into_its_seat_and_fades_it_in(qtbot):
+    panel, seating = _panel(qtbot)
+    tray = QRect(1600, 1000, 24, 24)
+    area = panel.screen().availableGeometry()
+
+    seating.show_at(tray, None)
+    started = panel.pos()
+    seated = corner(panel.size(), tray, None, area)
+
+    assert started.y() > seated.y() and started.x() == seated.x()
+    assert panel.windowOpacity() < 1.0
+    _entered(qtbot, seating)
+    assert panel.pos() == seated
+    assert panel.windowOpacity() == 1.0
+    assert panel.isVisible()
+
+
+def test_a_panel_already_on_screen_is_not_slid_around(qtbot):
+    panel, seating = _panel(qtbot)
+    tray = QRect(1600, 1000, 24, 24)
+    seating.show_at(tray, None)
+    _entered(qtbot, seating)
+    seated = panel.pos()
+
+    seating.show_at(tray, None)
+
+    assert seating.entrance.state() == QAbstractAnimation.Stopped
+    assert panel.pos() == seated
+
+
+def test_stop_leaves_the_panel_opaque(qtbot):
+    panel, seating = _panel(qtbot)
+    seating.show_at(QRect(1600, 1000, 24, 24), None)
+
+    seating.stop()
+
+    assert seating.entrance.state() == QAbstractAnimation.Stopped
+    assert panel.windowOpacity() == 1.0
+
+
+def test_a_centred_panel_forgets_its_anchor(qtbot):
+    panel, seating = _panel(qtbot)
+    seating.show_at(QRect(1600, 1000, 24, 24), None)
+    _entered(qtbot, seating)
+
+    seating.center()
+    centred = panel.pos()
+    seating.seat()
+
+    area = panel.screen().availableGeometry()
+    assert panel.pos() == centred
+    assert abs(panel.geometry().center().x() - area.center().x()) <= 1

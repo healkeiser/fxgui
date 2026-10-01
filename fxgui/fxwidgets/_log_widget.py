@@ -160,8 +160,8 @@ class FXOutputLogWidget(QWidget):
             is safe.
         hang_indent: A regular expression matching a record's header, such
             as its time, level and logger name. A wrapped record's later
-            lines then start under the end of the match, not at column 0. Nothing is added to the text, so a copy gives the
-            original line.
+            lines then start under the end of the match, not at column 0.
+            Nothing is added to the text, so a copy gives the original.
 
     Signals:
         log_message: Emitted when a log message is received (for thread-safe

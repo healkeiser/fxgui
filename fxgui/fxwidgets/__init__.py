@@ -88,6 +88,7 @@ from fxgui.fxwidgets._command_palette import FXCommand, FXCommandPalette
 from fxgui.fxwidgets._status_dot import FXStatusDot
 from fxgui.fxwidgets._checkable_combo import FXCheckableComboBox
 from fxgui.fxwidgets._labels import align_labels, fix_wrapped_heights
+from fxgui.fxwidgets._seating import FXSeating
 
 
 __all__ = [
@@ -165,4 +166,5 @@ __all__ = [
     "FXCheckableComboBox",
     "align_labels",
     "fix_wrapped_heights",
+    "FXSeating",
 ]

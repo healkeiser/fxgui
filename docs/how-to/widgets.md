@@ -113,6 +113,7 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXRatingWidget` | Star rating input widget |
 | `FXResizedScrollArea` | Smooth-scrolling scroll area |
 | `FXSearchBar` | Search input with filtering |
+| `FXSeating` | Seats a tray panel off its icon or the pointer and slides it in |
 | `FXSplashScreen` | Customizable splash screen |
 | `FXStatusDot` | Small clickable circle in a feedback colour, grey for no state |
 | `FXStatusBar` | Themed status bar |
