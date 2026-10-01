@@ -240,7 +240,10 @@ leave `FXThemeAware`.
   (3) combo, spin box and header sort arrows: the same chevron icons, by
   token; one arrow style everywhere; (4) group boxes: title above a plain
   rounded card, not cut into the border; (5) no alternating row stripes,
-  hover and selection only.
+  hover and selection only; (6) tabs: the active underline is a straight
+  bar (today a bottom border on a rounded box curls up at both ends), one
+  tab look for QtAds tabs (fxdocking.py) and QTabBar (style.qss); test the
+  underline's ends sit on its middle's pixel row.
 - Delegate hover: one look, @accent_secondary as plain lists use.
 - Order hang: `pytest -p no:randomly tests/test_gallery.py
   tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
