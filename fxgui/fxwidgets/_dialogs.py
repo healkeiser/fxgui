@@ -104,7 +104,7 @@ class FXFloatingDialog(QDialog):
         else:
             self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
             # A shadow on a popup leaves artifacts.
-            fxutils.add_shadow(self._container, 24, (0, 4), 100)
+            fxutils.add_shadow(self._container)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.resize(200, 40)
 
