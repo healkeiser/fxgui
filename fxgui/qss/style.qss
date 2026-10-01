@@ -897,11 +897,11 @@ QTabWidget::pane {
     padding: 3px;
 }
 
-/* One tab look for QTabBar and QtAds: bare text, and a straight 2px bar on
-   the side facing the pane, accent on the current tab. Every tab reserves
-   the bar, so selecting one moves nothing; no tab is rounded, so the bar's
-   ends do not curl. The dock tab names its activeTab property to outrank
-   the base QFrame[frameShape] rules. */
+/* One tab look for QTabBar and QtAds: bare @tab_muted text, and the current
+   tab a small rounded pill in @state_hover with @text, edged in
+   @control_edge for 3:1 on the strip. Hover changes the text only. Every
+   tab reserves the pill's 1px edge, so nothing moves. QtAds tabs name
+   activeTab to outrank QFrame[frameShape]. */
 QTabBar
 {
     qproperty-drawBase: 0;
@@ -912,65 +912,53 @@ QTabBar::tab,
 ads--CDockWidgetTab[activeTab="false"],
 ads--CDockWidgetTab[activeTab="true"]
 {
-    color: @text_muted;
+    color: @tab_muted;
     background: transparent;
-    border: none;
-    border-radius: 0px;
+    border: 1px solid transparent;
+    border-radius: @button_radius;
+    margin: 3px 2px;
 }
 
 QTabBar::tab
 {
-    padding: 5px 12px;
+    padding: 3px 10px;
 }
 
-/* The same vertical padding, so both tabs are one height with the bar and
-   the text on the same rows. */
+/* QtAds' own layout pads a tab 8px on the left and keeps a gap for its
+   close button on the right; these make the text sit as a QTabBar's does. */
 ads--CDockWidgetTab[activeTab="false"],
 ads--CDockWidgetTab[activeTab="true"]
 {
-    padding: 5px 6px;
+    padding: 3px 1px 3px 2px;
 }
-
-QTabBar::tab:top,
-ads--CDockWidgetTab[activeTab="false"],
-ads--CDockWidgetTab[activeTab="true"]
-{
-    border-bottom: 2px solid transparent;
-}
-
-QTabBar::tab:bottom { border-top: 2px solid transparent; }
-QTabBar::tab:left { border-right: 2px solid transparent; }
-QTabBar::tab:right { border-left: 2px solid transparent; }
 
 QTabBar::tab:hover,
+ads--CDockWidgetTab[activeTab="false"]:hover
+{
+    color: @text;
+}
+
 QTabBar::tab:selected,
 ads--CDockWidgetTab[activeTab="true"]
 {
     color: @text;
+    background: @state_hover;
+    border-color: @control_edge;
 }
-
-QTabBar::tab:top:selected,
-ads--CDockWidgetTab[activeTab="true"]
-{
-    border-bottom-color: @accent_primary;
-}
-
-QTabBar::tab:bottom:selected { border-top-color: @accent_primary; }
-QTabBar::tab:left:selected { border-right-color: @accent_primary; }
-QTabBar::tab:right:selected { border-left-color: @accent_primary; }
 
 ads--CDockWidgetTab QLabel
 {
     background: transparent;
-    color: @text_muted;
+    color: @tab_muted;
 }
 
-ads--CDockWidgetTab[activeTab="true"] QLabel
+ads--CDockWidgetTab[activeTab="true"] QLabel,
+ads--CDockWidgetTab:hover QLabel
 {
     color: @text;
 }
 
-/* The scroll buttons a crowded bar shows, over the tabs they scroll. */
+/* The scroll buttons sit on the strip as the tabs do. */
 QTabBar QToolButton {
     background-color: @surface;
     border: none;
@@ -1666,11 +1654,8 @@ QSlider[fxFocusVisible="true"]::handle:vertical:focus
     border-color: @text;
 }
 
-/* A tab's bar is the accent already, so focus draws it in @text. */
-QTabBar[fxFocusVisible="true"]::tab:top:focus { border-bottom-color: @text; }
-QTabBar[fxFocusVisible="true"]::tab:bottom:focus { border-top-color: @text; }
-QTabBar[fxFocusVisible="true"]::tab:left:focus { border-right-color: @text; }
-QTabBar[fxFocusVisible="true"]::tab:right:focus { border-left-color: @text; }
+/* A tab's focus recolours the edge it reserves. */
+QTabBar[fxFocusVisible="true"]::tab:focus { border-color: @accent_primary; }
 
 /* A checkbox and a radio button have no border of their own to recolour, so
    both states declare one and only the colour differs. The indicator's own

@@ -1299,6 +1299,12 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         theme_data.get("border_strong", "#808080"),
         CONTROL_CONTRAST,
     )
+    # An inactive tab's text, pushed to 4.5:1 on the surface its strip is.
+    tokens["@tab_muted"] = readable_ink(
+        theme_data.get("surface", "#000000"),
+        theme_data.get("text_muted", "#808080"),
+        4.5,
+    )
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
     tokens["@card_radius"] = f"{CARD_RADIUS}px"
     tokens["@indicator_size"] = f"{INDICATOR_SIZE}px"

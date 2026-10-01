@@ -87,7 +87,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 | Role | Purpose |
 |------|---------|
 | `text` | Primary text for all widgets |
-| `text_muted` | De-emphasized text - inactive tabs, placeholders, secondary labels |
+| `text_muted` | De-emphasized text - placeholders, secondary labels; inactive tabs read it through `@tab_muted` |
 | `text_disabled` | Disabled widget text |
 | `text_on_accent_primary` | *(Optional)* Text on `accent_primary` backgrounds (e.g., selected items). Auto-computed if omitted |
 | `text_on_accent_secondary` | *(Optional)* Text on `accent_secondary` backgrounds (e.g., hovered items). Auto-computed if omitted |
@@ -466,6 +466,8 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 | Part | Token | Rule |
 |------|-------|------|
 | Edge of a switch or a slider handle, and a slider's empty groove | `@control_edge` | `border_strong`, darkened or lightened until it reads at 3:1 on `@surface` |
+| Text of a tab that is not the current one | `@tab_muted` | `text_muted`, darkened or lightened until it reads at 4.5:1 on `@surface` |
+| Current tab | `@control_edge` edge on a `@state_hover` pill | The edge reads at 3:1 on `@surface`; the same look on `QTabBar` and QtAds pane tabs |
 | Filled part of a slider | `@accent_primary` | Reads at 3:1 on `@surface`; told from the groove by its hue and the handle |
 | Thumb of a switch | `@text_muted` off, `@text_on_accent_primary` on | Pushed to 3:1 on the track |
 | Moving part of a spinner | `@accent_primary` | Over a `@border_light` track |

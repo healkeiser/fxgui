@@ -31,6 +31,13 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxstyle, fxutils
 
+# Imported here, not in a test: the suite keeps only the sheet fragments
+# registered before a test starts.
+try:
+    from fxgui import fxdocking
+except ImportError:
+    fxdocking = None
+
 THEMES = pytest.mark.parametrize("theme", fxstyle.get_available_themes())
 
 
@@ -286,73 +293,86 @@ def test_rows_have_no_stripes_even_when_asked(qtbot, theme):
     assert inks == {fxstyle.colors().surface_sunken.lower()}, inks
 
 
-# (6) A tab's bar is straight, in QTabBar and in QtAds alike.
+# (6) A tab is muted text; the current one an edged pill, in QTabBar and
+# QtAds alike.
 
 
-def _bar_rows(image, rect, ink):
-    """Return the rows `ink` covers in each column of `rect`."""
-    columns = {}
-    for x in range(rect.left(), rect.right() + 1):
-        rows = frozenset(
-            y
-            for y in range(rect.top(), rect.bottom() + 1)
-            if image.pixelColor(x, y).name() == ink
-        )
-        columns[x] = rows
-    return columns
+def _pill(image, rect):
+    """Return the current tab's edge rows, its width and its text's rows.
 
-
-def _assert_straight(image, rect, ink):
-    columns = _bar_rows(image, rect, ink)
-    lit = [rows for rows in columns.values() if rows]
-    # The bar spans the tab, 2px thick, its ends on its middle's rows.
-    assert len(lit) >= rect.width() - 2, (len(lit), rect.width())
-    middle = columns[rect.center().x()]
-    assert len(middle) == 2, middle
-    assert set(lit) == {middle}, set(lit)
-    assert max(middle) == rect.bottom()
+    The edge is the @control_edge ring; rows count from the tab's top.
+    """
+    colors = fxstyle.colors()
+    edge = colors.control_edge.lower()
+    text = QColor(colors.text)
+    middle = rect.center().y()
+    columns = [
+        x for x in range(rect.left(), rect.right() + 1)
+        if image.pixelColor(x, middle).name() == edge
+    ]
+    centre = (min(columns) + max(columns)) // 2
+    rows = [
+        y for y in range(rect.top(), rect.bottom() + 1)
+        if image.pixelColor(centre, y).name() == edge
+    ]
+    ink = [
+        y - rect.top()
+        for x in range(min(columns) + 1, max(columns))
+        for y in range(min(rows) + 1, max(rows))
+        if abs(image.pixelColor(x, y).lightness() - text.lightness()) < 30
+    ]
+    return (
+        [y - rect.top() for y in rows],
+        max(columns) - min(columns),
+        (min(ink), max(ink)),
+    )
 
 
 @THEMES
-def test_the_current_tab_wears_a_straight_bar(qtbot, theme):
+def test_the_current_tab_is_an_edged_pill(qtbot, theme):
     tabs = QTabWidget()
     for name in ("Render", "Comp", "Lighting"):
         tabs.addTab(QLabel(name), name)
     window = _shown(qtbot, theme, tabs)
     bar = tabs.tabBar()
     image = window.grab().toImage()
-    accent = fxstyle.colors().accent_primary.lower()
-    rect = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
-    _assert_straight(image, rect, accent)
-    # The other tabs reserve the bar but draw none.
+    colors = fxstyle.colors()
+    current = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
+    rows, width, _ink = _pill(image, current)
+    # A ring: one row at the top and one at the bottom, rounded corners.
+    assert len(rows) == 2, rows
+    corner = QPoint(current.center().x() - width // 2, current.top() + rows[0])
+    assert image.pixelColor(corner).name() != colors.control_edge.lower()
+    inside = QPoint(corner.x() + 3, current.center().y())
+    assert image.pixelColor(inside).name() == colors.state_hover.lower()
+    # The other tabs are bare text on the strip, in the muted tab ink.
     other = bar.tabRect(1).translated(bar.mapTo(window, QPoint()))
-    assert not any(_bar_rows(image, other, accent).values())
+    inks = _pixels(image, other)
+    assert colors.control_edge.lower() not in inks
+    assert colors.state_hover.lower() not in inks
+    assert min(_distance(ink, colors.tab_muted) for ink in inks) <= 24
     assert bar.tabRect(0).height() == bar.tabRect(1).height()
 
 
-@pytest.mark.parametrize("theme", ["dark", "light"])
-def test_a_dock_tab_wears_the_same_bar(qtbot, theme):
-    pytest.importorskip("PySide6QtAds")
-    from fxgui import fxdocking
+@THEMES
+def test_inactive_tab_text_reads_at_4_5_to_1(theme):
+    fxstyle.apply_theme(theme)
+    colors = fxstyle.colors()
+    assert fxstyle.get_contrast_ratio(colors.tab_muted, colors.surface) >= 4.5
+    # The pill's edge is what marks the current tab at 3:1.
+    assert fxstyle.get_contrast_ratio(colors.control_edge, colors.surface) >= 3
 
-    docks = fxdocking.FXDockArea()
-    docks.set_central(QLabel("central"))
-    docks.add_dock("one", "Outliner", QLabel("outliner"), "left")
-    docks.add_dock("two", "Assets", QLabel("assets"), "left")
-    window = _shown(qtbot, theme, docks, (640, 480))
-    for _ in range(3):
-        QApplication.processEvents()
-    tab = next(
-        tab
-        for tab in docks.findChildren(QWidget)
-        if tab.metaObject().className() == "ads::CDockWidgetTab"
-        and tab.property("activeTab")
-    )
-    image = window.grab().toImage()
-    # The tab bar scrolls, so part of a tab can sit out of view.
-    rect = tab.visibleRegion().boundingRect()
-    rect = rect.translated(tab.mapTo(window, QPoint()))
-    _assert_straight(image, rect, fxstyle.colors().accent_primary.lower())
+
+def test_selecting_a_tab_moves_nothing(qtbot):
+    tabs = QTabWidget()
+    for name in ("Render", "Comp", "Lighting"):
+        tabs.addTab(QLabel(name), name)
+    _window = _shown(qtbot, "dark", tabs)
+    bar = tabs.tabBar()
+    before = [bar.tabRect(index) for index in range(3)]
+    tabs.setCurrentIndex(1)
+    QApplication.processEvents()
+    assert [bar.tabRect(index) for index in range(3)] == before
 
 
 # (7) No state moves an item's text.
@@ -532,46 +552,24 @@ def test_every_themed_popup_asks_for_flyout_corners(qtbot, monkeypatch):
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
 def test_a_dock_tab_matches_a_tab_bar_tab(qtbot, theme):
-    pytest.importorskip("PySide6QtAds")
-    from fxgui import fxdocking
+    if fxdocking is None:
+        pytest.skip("needs the docking extra")
 
     holder = QWidget()
     column = QVBoxLayout(holder)
     tabs = QTabWidget()
-    tabs.addTab(QLabel("x"), "Shots")
+    tabs.addTab(QLabel("x"), "Assets")
     tabs.addTab(QLabel("y"), "Log")
     column.addWidget(tabs)
     docks = fxdocking.FXDockArea()
     docks.set_central(QLabel("central"))
     docks.add_dock("shots", "Shots", QLabel("s"), "left")
-    docks.add_dock("log", "Log", QLabel("l"), "bottom")
+    docks.add_dock("assets", "Assets", QLabel("a"), "left")
     column.addWidget(docks)
     window = _shown(qtbot, theme, holder, (800, 600))
     for _ in range(3):
         QApplication.processEvents()
     image = window.grab().toImage()
-    colors = fxstyle.colors()
-    accent = colors.accent_primary.lower()
-    text = colors.text
-
-    def measure(widget, rect):
-        rect = rect.translated(widget.mapTo(window, QPoint()))
-        bar = [
-            y - rect.top()
-            for y in range(rect.top(), rect.bottom() + 1)
-            if image.pixelColor(rect.center().x(), y).name() == accent
-        ]
-        ink = [
-            y - rect.top()
-            for y in range(rect.top(), rect.bottom() + 1)
-            if y - rect.top() not in bar
-            and any(
-                _distance(image.pixelColor(x, y).name(), text) <= 40
-                for x in range(rect.left(), rect.left() + 40)
-            )
-        ]
-        return rect.height(), bar, (min(ink), max(ink))
-
     bar = tabs.tabBar()
     tab = next(
         tab
@@ -580,5 +578,14 @@ def test_a_dock_tab_matches_a_tab_bar_tab(qtbot, theme):
         and tab.property("activeTab")
         and tab.isVisible()
     )
-    # Same height, the bar on the same rows, the same "Shots" ink rows.
-    assert measure(tab, tab.rect()) == measure(bar, bar.tabRect(0))
+    # Same height, the pill's edge and the "Assets" text on the same rows.
+    ours = tab.rect().translated(tab.mapTo(window, QPoint()))
+    theirs = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
+    assert ours.height() == theirs.height()
+    edge, _width, ink = _pill(image, ours)
+    assert (edge, ink) == _pill(image, theirs)[::2]
+    # No title is cut short.
+    assert all(
+        label.text() == label.property("text") or "..." not in label.text()
+        for label in tab.findChildren(QLabel)
+    )

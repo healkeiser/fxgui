@@ -53,7 +53,8 @@ fxstyle.register_widget_style(
     border-radius: @button_radius;
 }
 #fxDocks ads--CDockAreaTitleBar, #fxDocks ads--CDockAreaTabBar,
-#fxDocks ads--CDockAreaTabBar QWidget, #fxDocks ads--CDockWidget,
+#fxDocks ads--CDockAreaTabBar QWidget#qt_scrollarea_viewport,
+#fxDocks ads--CDockAreaTabBar QWidget#tabsContainerWidget, #fxDocks ads--CDockWidget,
 #fxDocks ads--CDockWidget > QWidget { background: transparent; }
 #fxDocks ads--CTitleBarButton::menu-indicator { image: none; width: 0px; }
 /* No taller than a tab, so the tab sets the bar's height, buttons or not. */
@@ -108,6 +109,8 @@ def _configure() -> None:
         "DockAreaHasTabsMenuButton",
         "DockAreaDynamicTabsMenuButtonVisibility",
         "EqualSplitOnInsertion",
+        # A tab keeps its whole title; a crowded bar scrolls instead.
+        "DisableTabTextEliding",
         # A kept-open pane shows no close button at all.
         "DockAreaHideDisabledButtons",
     ):

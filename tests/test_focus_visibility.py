@@ -12,8 +12,7 @@ Three properties are pinned here, and the third is a design constraint rather
 than an accessibility one:
 
 - the indicator is visible, measured as pixels of the theme's accent gained
-  when focus arrives (of `@text` on a slider and a tab, whose edge is the
-  accent),
+  when focus arrives (of `@text` on a slider, whose edge is the accent),
 - the indicator costs nothing, measured as the widget's geometry and size
   hint being identical focused and unfocused. A ring that widens a border
   reflows the layout under the person's cursor, and
@@ -241,9 +240,8 @@ def _focus_target(widget):
 def test_focus_gains_accent_pixels(qtbot, themed, name, factory):
     """Tabbing onto the widget has to change what is on screen."""
 
-    # A slider handle's edge and a tab's bar are already the accent; focus
-    # draws them in text.
-    ink = "text" if name in ("slider", "tabs") else "accent_primary"
+    # A slider handle's edge is already the accent; focus draws it in text.
+    ink = "text" if name == "slider" else "accent_primary"
     accent = QColor(fxstyle.get_theme_colors()[ink])
     widget = factory()
     # The window owns the widget, so it has to outlive the measurement
@@ -569,7 +567,7 @@ def test_ring_paints_on_every_shipped_theme(qtbot, qapp):
 
             # The tab's focus look is checked on every theme too.
             bar, tab_window = _focused_tab_bar(qtbot)
-            assert _bar_rows(bar) == _bar_band(bar), theme_name
+            assert len(_ring_rows(bar)) == 2, theme_name
 
             # Restyling the application walks every live top level, so this
             # theme's windows go before the next stylesheet is installed
@@ -619,41 +617,33 @@ def _focused_tab_bar(qtbot):
     return bar, window
 
 
-def _bar_band(bar) -> set:
-    """Return the two rows of the current tab's bar."""
+def _ring_rows(bar) -> set:
+    """Return the rows where the accent runs most of the current pill."""
 
+    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
     tab = bar.tabRect(bar.currentIndex())
-    return {tab.bottom() - 1, tab.bottom()}
-
-
-def _bar_rows(bar) -> set:
-    """Return the rows where `@text` runs most of the current tab's width."""
-
-    text = QColor(fxstyle.get_theme_colors()["text"])
-    tab = bar.tabRect(bar.currentIndex())
-    image = bar.grab().toImage()
-    rows = _accent_rows(image, text)
+    rows = _accent_rows(bar.grab().toImage(), accent)
     return {
         y
         for y, hits in rows.items()
         if len([x for x in hits if tab.left() <= x <= tab.right()])
-        >= tab.width() * 0.85
+        >= tab.width() * 0.6
     }
 
 
-def test_a_focused_tab_draws_its_bar_in_text(qtbot, themed):
-    """Focus recolours the current tab's bar, and boxes nothing.
+def test_a_focused_tab_draws_its_pill_edge_in_the_accent(qtbot, themed):
+    """Focus recolours the current tab's pill edge, and boxes nothing.
 
-    Qt's focus rectangle drew a box around the label; here the only
-    full-width run of `@text` is the bar, and no accent is left.
+    Qt's focus rectangle drew a box around the label; here the only long
+    runs of accent are the pill's top and bottom edges.
     """
 
-    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
     bar, window = _focused_tab_bar(qtbot)
-    image = bar.grab().toImage()
-    _save(image, "focus_tab_designed.png")
-    assert _bar_rows(bar) == _bar_band(bar)
-    assert not _accent_rows(image, accent)
+    _save(bar.grab().toImage(), "focus_tab_designed.png")
+    rows = _ring_rows(bar)
+    tab = bar.tabRect(bar.currentIndex())
+    assert len(rows) == 2, rows
+    assert all(tab.top() <= y <= tab.bottom() for y in rows), rows
 
 
 def test_qt_focus_rectangle_is_off_for_the_group_box(qtbot, themed):

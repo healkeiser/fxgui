@@ -502,16 +502,16 @@ def test_the_tab_bar_is_inset_off_the_round_corners(qtbot):
             fxstyle.BUTTON_RADIUS), "no tab starts under the corner"
 
 
-def test_the_current_tab_underline_follows_a_theme_change(qtbot):
+def test_the_current_tab_pill_follows_a_theme_change(qtbot):
     window = _window(qtbot)
     tab = window.docks.manager().findDockWidget("side").tabWidget()
 
     for theme in ("dark", "light"):
         fxstyle.apply_theme(theme)
         qtbot.wait(20)
-        accent = QColor(fxstyle.get_theme_colors()["accent_primary"]).name()
-        assert _pixel(window, tab, tab.width() // 2, tab.height() - 1) == (
-            accent), theme
+        fill = QColor(fxstyle.get_theme_colors()["state_hover"]).name()
+        # Inside the pill's edge, left of its text.
+        assert _pixel(window, tab, 5, tab.height() // 2) == fill, theme
 
 
 def test_a_moved_pane_keeps_the_gap(qtbot):
