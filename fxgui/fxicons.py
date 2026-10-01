@@ -1,35 +1,13 @@
-"""Icon management functionality for `fxgui`.
+"""Icons from the bundled libraries, drawn in the theme's colours.
 
-This module provides utilities for loading, caching, and manipulating icons
-from multiple icon libraries including Material Icons, Font Awesome, Simple
-Icons, and custom DCC (Digital Content Creation) icons.
-
-The module supports:
-    - Multiple icon libraries with configurable defaults
-    - Icon color customization
-    - Icons that take the theme's colours when drawn, cached in QPixmapCache
-    - Icon superposition for composite icons
-    - Pixmap and QIcon conversion utilities
-
-Functions:
-    get_icon: Get a QIcon from an icon library.
-    get_pixmap: Get a QPixmap from an icon library.
-    get_icon_path: Get the file path of an icon.
-    clear_icon_cache: Clear the icon LRU cache.
-    set_default_icon_library: Set the default icon library.
-    set_icon_defaults: Configure default icon parameters.
-    add_library: Add a custom icon library.
+Material, Font Awesome, Simple Icons, Beacon and the full-colour DCC marks.
+An icon names theme tokens for its inks; `_ThemedIconEngine` resolves them
+each time Qt draws it and keeps the drawings in `QPixmapCache`.
 
 Examples:
-    Basic icon usage:
-
     >>> from fxgui.fxicons import get_icon
     >>> icon = get_icon("home")
     >>> colored_icon = get_icon("settings", color="#FF5722")
-
-    Using different libraries:
-
-    >>> fa_icon = get_icon("lemon", library="fontawesome")
     >>> dcc_icon = get_icon("houdini", library="dcc")
 """
 
@@ -38,8 +16,6 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 # Built-in
-from functools import lru_cache
-import glob
 from pathlib import Path
 import re
 import traceback
@@ -60,23 +36,17 @@ from qtpy.QtGui import (
 from qtpy.QtCore import Qt, QRect, QRectF, QSize
 
 # Internal
-from fxgui import fxconstants
+from fxgui import _compat, fxconstants
 
 
 # Public API
 __all__ = [
-    "set_default_icon_library",
-    "set_icon_defaults",
     "add_library",
-    "get_available_icons_in_library",
+    "badged",
     "get_icon_path",
     "get_icon",
-    "get_icon_color",
     "get_pixmap",
-    "change_pixmap_color",
-    "superpose_icons",
     "rounded_pixmap",
-    "clear_icon_cache",
     "set_icon",
 ]
 
@@ -91,9 +61,10 @@ _MODES = {
 _DEFAULT_INKS = {
     "active": "icon_on_accent_secondary",
     "selected": "icon_on_accent_primary",
+    "disabled": "text_disabled",
 }
 
-# Opacity of a disabled icon, monochrome or full-colour.
+# Opacity of a disabled full-colour icon.
 _DISABLED_ALPHA = 0.35
 
 # Globals
@@ -154,56 +125,7 @@ _libraries_info = {
         },
     },
 }
-_default_library = "material"
-
-
-def set_default_icon_library(library: str):
-    """Set the default icon library.
-
-    Args:
-        library: The name of the library to set as default.
-
-    Raises:
-        ValueError: If the library does not exist.
-
-    Examples:
-        >>> set_default_icon_library("fontawesome")
-    """
-
-    global _default_library
-    if library not in _libraries_info:
-        raise ValueError(f"Library '{library}' does not exist.")
-    _default_library = library
-
-
-def set_icon_defaults(apply_to: Optional[str] = None, **kwargs: Any) -> None:
-    """Set the default values for the icons.
-
-    Args:
-        apply_to: The library to apply the defaults to. If set to `None`, the
-            defaults will be applied to all libraries. Defaults to `None`.
-        **kwargs (Any): The default values to set.
-
-    Examples:
-        >>> set_icon_defaults(color="red", width=32, height=32)
-        >>> set_icon_defaults(apply_to="material", color="blue")
-    """
-
-    valid_keys = _libraries_info[_default_library]["defaults"].keys()
-    if not all(key in valid_keys for key in kwargs.keys()):
-        raise ValueError(f"Invalid key in {kwargs.keys()}.")
-
-    if apply_to is None:
-        # Apply to all libraries
-        for library_info in _libraries_info.values():
-            for key, value in kwargs.items():
-                library_info["defaults"][key] = value
-    else:
-        # Apply to specific library
-        if apply_to not in _libraries_info:
-            raise ValueError(f"Library '{apply_to}' does not exist.")
-        for key, value in kwargs.items():
-            _libraries_info[apply_to]["defaults"][key] = value
+_DEFAULT_LIBRARY = "material"
 
 
 def add_library(
@@ -245,12 +167,10 @@ def add_library(
         ... )
     """
 
-    # Check for valid keys in `defaults`
-    valid_keys = _libraries_info[_default_library]["defaults"].keys()
+    valid_keys = _libraries_info[_DEFAULT_LIBRARY]["defaults"].keys()
     if not all(key in valid_keys for key in defaults.keys()):
         raise ValueError(f"Invalid key(s) in defaults: {defaults.keys()}")
 
-    # Check for valid placeholders in `pattern`
     valid_placeholders = {
         "{root}",
         "{library}",
@@ -261,61 +181,12 @@ def add_library(
     placeholders = set(re.findall(r"\{[a-zA-Z_]+\}", pattern))
     if not placeholders.issubset(valid_placeholders):
         raise ValueError(f"Invalid placeholder(s) in pattern: {placeholders}")
-    if root is None:
-        root = fxconstants.ICONS_ROOT
-
-    # Add the library
     _libraries_info[library] = {
         "recolor": recolor,
         "pattern": pattern,
         "defaults": defaults,
         "root": root,
     }
-
-
-def get_available_icons_in_library(library: str) -> List[str]:
-    """Get all available icon names in the specified library.
-
-    Args:
-        library (str): The name of the library.
-
-    Returns:
-        List[str]: The available icon names in the library.
-
-    Raises:
-        ValueError: If the library does not exist.
-        FileNotFoundError: If no icons are found in the library.
-
-    Examples:
-        >>> print(get_available_icons_in_library("dcc"))
-        ["3d_equalizer", "adobe_photoshop", "blender", "hiero"]
-    """
-
-    if library not in _libraries_info:
-        raise ValueError(f"Library '{library}' does not exist.")
-    info = _libraries_info[library]
-    defaults = info["defaults"]
-    fields = {
-        "root": str(info.get("root", fxconstants.ICONS_ROOT)),
-        "library": library,
-        "style": defaults.get("style") or "*",
-        "extension": defaults.get("extension") or "*",
-    }
-    template = info["pattern"].format(icon_name="\0", **fields)
-    template = template.replace("\\", "/")
-    name = re.compile(
-        re.escape(template).replace(r"\*", "[^/]*").replace("\0", "([^/]+)")
-    )
-    matches = (
-        name.fullmatch(path.replace("\\", "/"))
-        for path in glob.glob(template.replace("\0", "*"))
-    )
-    icon_names = sorted({match.group(1) for match in matches if match})
-
-    if not icon_names:
-        raise FileNotFoundError(f"No icons found in library '{library}'.")
-
-    return icon_names
 
 
 def get_icon_path(
@@ -333,7 +204,7 @@ def get_icon_path(
         extension: The extension of the icon. Defaults to `None`.
 
     Raises:
-        FileNotFoundError: If verify is `True` and the icon does not exist.
+        FileNotFoundError: If the icon does not exist.
 
     Returns:
         str: The path of the icon.
@@ -343,21 +214,18 @@ def get_icon_path(
         >>> get_icon_path("lemon", library="fontawesome")
     """
 
-    if library is None:
-        library = _default_library
+    info = _libraries_info[library or _DEFAULT_LIBRARY]
     if style is None:
-        style = _libraries_info[library]["defaults"].get("style")
+        style = info["defaults"].get("style")
     if extension is None:
-        extension = _libraries_info[library]["defaults"].get("extension")
+        extension = info["defaults"].get("extension")
 
-    root = _libraries_info[library].get("root", fxconstants.ICONS_ROOT)
-    pattern = _libraries_info[library]["pattern"]
-    path = pattern.format(
+    path = info["pattern"].format(
         icon_name=icon_name,
         style=style,
-        library=library,
+        library=library or _DEFAULT_LIBRARY,
         extension=extension,
-        root=root,
+        root=info.get("root") or fxconstants.ICONS_ROOT,
     ).replace("\\", "/")
 
     if not Path(path).exists():
@@ -366,22 +234,18 @@ def get_icon_path(
     return path
 
 
-def change_pixmap_color(pixmap: QPixmap, color: str) -> QPixmap:
-    """Return a copy of `pixmap` in `color`, its alpha kept.
-
-    Args:
-        pixmap (QPixmap): The pixmap to change the color of.
-        color (str): The color to apply.
-
-    Returns:
-        QPixmap: The pixmap with the new color applied.
-    """
+def _tint(pixmap: QPixmap, color: str) -> QPixmap:
+    """Return a copy of `pixmap` in `color`, its alpha kept."""
     colored = pixmap.copy()
     painter = QPainter(colored)
     painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
     painter.fillRect(colored.rect(), QColor(color))
     painter.end()
     return colored
+
+
+# TODO: shim; delete once _delegates.py:322 stops calling it.
+change_pixmap_color = _tint
 
 
 def _theme_ink(ink: Optional[str]) -> Optional[str]:
@@ -468,31 +332,6 @@ def _render_svg_to_pixmap(path: str, width: int, height: int) -> QPixmap:
     return QPixmap.fromImage(image)
 
 
-def _get_pixmap_internal(
-    icon_name: str,
-    width: int,
-    height: int,
-    color: Optional[str],
-    library: str,
-    style: Optional[str],
-    extension: Optional[str],
-    dpr: float = 1.0,
-) -> QPixmap:
-    """Internal function to get a QPixmap with resolved parameters.
-
-    This is the cached version that takes fully resolved parameters.
-    ``width``/``height`` are logical sizes; the pixmap is rendered at
-    ``dpr`` times that and tagged with the ratio for crisp high-DPI display.
-    """
-    path = get_icon_path(
-        icon_name,
-        library=library,
-        style=style,
-        extension=extension,
-    )
-    return _raster(path, width, height, dpr, color)
-
-
 def _raster(
     path: str, width: int, height: int, dpr: float, color: Optional[str]
 ) -> QPixmap:
@@ -504,13 +343,9 @@ def _raster(
     else:
         qpixmap = QIcon(path).pixmap(physical_width, physical_height)
     if color:
-        qpixmap = change_pixmap_color(qpixmap, color)
+        qpixmap = _tint(qpixmap, color)
     qpixmap.setDevicePixelRatio(dpr)
     return qpixmap
-
-
-# Apply LRU cache to the internal function
-_get_pixmap_cached = lru_cache(maxsize=512)(_get_pixmap_internal)
 
 
 def _resolved(library, width, height, color):
@@ -518,7 +353,7 @@ def _resolved(library, width, height, color):
 
     A full-colour library answers no colour, whatever was asked.
     """
-    library = library or _default_library
+    library = library or _DEFAULT_LIBRARY
     info = _libraries_info[library]
     defaults = info["defaults"]
     if not info["recolor"]:
@@ -566,11 +401,12 @@ def get_pixmap(
         >>> get_pixmap("lemon", library="fontawesome")
     """
 
-    library, width, height, color = _resolved(library, width, height, color)
+    engine = _engine(icon_name, width, height, color, library, style,
+                     extension, None)
     # A copy: one shares the pixels until written, so a caller changing it
     # leaves the cached one alone.
-    return QPixmap(_get_pixmap_cached(
-        icon_name, width, height, _theme_ink(color), library, style, extension,
+    return QPixmap(engine.scaledPixmap(
+        QSize(engine._size), QIcon.Normal, QIcon.Off,
         _screen_dpr() if dpr is None else float(dpr),
     ))
 
@@ -621,10 +457,8 @@ class _ThemedIconEngine(QIconEngine):
         name = next(key for key, value in _MODES.items() if value == mode)
         if name in self._inks:
             return _theme_ink(self._inks[name])
-        if name == "disabled":
-            return _get_disabled_icon_color()
-        # An icon drawn in its file's own colours keeps them in every mode.
-        if not self._inks.get("normal"):
+        # An icon drawn in its file's own colours keeps them, except disabled.
+        if name != "disabled" and not self._inks.get("normal"):
             return None
         return _theme_ink(_DEFAULT_INKS[name])
 
@@ -644,8 +478,8 @@ class _ThemedIconEngine(QIconEngine):
             f"fxicon|{self._path}|{ink}|{mode}|"
             f"{target.width()}x{target.height()}@{scale}"
         )
-        pixmap = QPixmapCache.find(key)
-        if isinstance(pixmap, QPixmap) and not pixmap.isNull():
+        pixmap = _compat.find_pixmap(key)
+        if pixmap is not None:
             return pixmap
         pixmap = _raster(
             self._path, target.width(), target.height(), scale, ink
@@ -674,11 +508,22 @@ class _ThemedIconEngine(QIconEngine):
 _clones: List[QIconEngine] = []
 
 
-@lru_cache(maxsize=512)
-def _get_icon_cached(
-    path: str, width: int, height: int, inks: tuple, recolor: bool,
-) -> QIcon:
-    return QIcon(_ThemedIconEngine(path, QSize(width, height), inks, recolor))
+def _engine(icon_name, width, height, color, library, style, extension,
+            inks) -> _ThemedIconEngine:
+    """Return an engine drawing `icon_name` in the inks asked."""
+    inks = dict(inks or {})
+    unknown = set(inks) - set(_DEFAULT_INKS)
+    if unknown:
+        raise ValueError(f"No icon mode named {sorted(unknown)}.")
+    library, width, height, inks["normal"] = _resolved(
+        library, width, height, color)
+    path = get_icon_path(
+        icon_name, library=library, style=style, extension=extension
+    )
+    return _ThemedIconEngine(
+        path, QSize(width, height), tuple(sorted(inks.items())),
+        _libraries_info[library]["recolor"],
+    )
 
 
 def get_icon(
@@ -706,7 +551,7 @@ def get_icon(
         extension: The extension of the icon. Defaults to `None`.
         inks: Inks for the other modes, keyed "active", "selected" or
             "disabled", each a token or a colour. Unset, Active and
-            Selected take the on-accent tokens and Disabled a muted grey.
+            Selected take the on-accent tokens and Disabled text_disabled.
         fallback: What to answer with when `icon_name` is in no library
             this asked. A name is resolved in the DEFAULT library rather
             than in `library`, which is the point: a curated set is
@@ -714,7 +559,7 @@ def get_icon(
             general-purpose set is where the stand-in lives. A `QIcon`
             is returned as it is, so `QIcon()` asks for a blank rather
             than a picture of something else. Defaults to `None`, which
-            raises as before.
+            raises.
 
     Raises:
         ValueError: If `inks` names a mode other than the three above.
@@ -739,87 +584,17 @@ def get_icon(
         >>> get_icon(whatever_the_tracker_said, fallback=QIcon())
     """
 
-    if library is None:
-        library = _default_library
-
-    if fallback is not None:
-        try:
-            return get_icon(
-                icon_name,
-                width,
-                height,
-                color,
-                library,
-                style,
-                extension,
-                inks,
-            )
-        except FileNotFoundError:
-            if isinstance(fallback, QIcon):
-                return fallback
-            return get_icon(
-                fallback,
-                width,
-                height,
-                color,
-                None,
-                None,
-                None,
-                inks,
-            )
-
-    inks = dict(inks or {})
-    unknown = set(inks) - set(_DEFAULT_INKS) - {"disabled"}
-    if unknown:
-        raise ValueError(f"No icon mode named {sorted(unknown)}.")
-    library, width, height, inks["normal"] = _resolved(
-        library, width, height, color)
-    path = get_icon_path(
-        icon_name, library=library, style=style, extension=extension
-    )
-    # A copy, which shares the engine: a binding that deletes the icon it
-    # is handed (QtAds' icon provider) must not delete the cached one.
-    return QIcon(_get_icon_cached(
-        path, width, height, tuple(sorted(inks.items())),
-        _libraries_info[library]["recolor"],
-    ))
-
-
-def superpose_icons(*icons: QIcon) -> QIcon:
-    """Superpose multiple icons.
-
-    Args:
-        *icons: Icons to superpose. Add the icons in the order you want them
-            to be superposed, from background to foreground.
-
-    Returns:
-        QIcon: The QIcon of the superposed icons.
-
-    Notes:
-        The size of the resulting icon is the size of the first icon.
-
-    Examples:
-        >>> icon_a = get_icon("add")
-        >>> icon_b = get_icon("lemon", library="fontawesome")
-        >>> superposed_icon = superpose_icons(icon_a, icon_b)
-    """
-
-    if not icons:
-        return QIcon()
-
-    # Use the size of the first icon
-    size = icons[0].availableSizes()[0]
-    pixmap = QPixmap(size)
-    pixmap.fill(Qt.transparent)
-
-    painter = QPainter(pixmap)
-    painter.setRenderHint(QPainter.Antialiasing)
-    for icon in icons:
-        icon_pixmap = icon.pixmap(size)
-        painter.drawPixmap(0, 0, icon_pixmap)
-    painter.end()
-
-    return QIcon(pixmap)
+    try:
+        engine = _engine(icon_name, width, height, color, library, style,
+                         extension, inks)
+    except FileNotFoundError:
+        if fallback is None:
+            raise
+        if isinstance(fallback, QIcon):
+            return fallback
+        engine = _engine(fallback, width, height, color, None, None, None,
+                         inks)
+    return QIcon(engine)
 
 
 # Painted at 32: Windows asks a tray 16 at 100% and 32 at 200%, and the
@@ -873,8 +648,8 @@ def rounded_pixmap(
 ) -> Optional[QPixmap]:
     """Return an image cropped to a rounded square, for a thumbnail.
 
-    Scaled to cover the square and centred, so the long edge is cut.
-    Outlined as `FXThumbnailDelegate` outlines its thumbnails.
+    Scaled to cover the square and centred, so the long edge is cut, and
+    outlined in the theme's `border_light`, read now.
 
     Args:
         image: An image file Qt can read, or a pixmap.
@@ -915,7 +690,7 @@ def rounded_pixmap(
     # Unclipped and inset half its width, or the ring is cut at the edge.
     painter.setClipping(False)
     width = ratio
-    painter.setPen(QPen(QColor(255, 255, 255, 127), width))
+    painter.setPen(QPen(QColor(fxstyle.colors().border_light), width))
     painter.setBrush(Qt.NoBrush)
     inside = QRectF(width / 2, width / 2, pixels - width, pixels - width)
     painter.drawRoundedRect(inside, corner, corner)
@@ -924,98 +699,29 @@ def rounded_pixmap(
     return result
 
 
-def clear_icon_cache() -> None:
-    """Clear the icon and pixmap LRU caches.
-
-    A theme switch needs none of this: icons read the theme when drawn.
-
-    Examples:
-        >>> clear_icon_cache()
-    """
-
-    _get_icon_cached.cache_clear()
-    _get_pixmap_cached.cache_clear()
-
-
-def get_icon_color() -> str:
-    """Get the current default icon color.
-
-    Returns the icon color from the current theme. This is the canonical
-    source for icon color and is synchronized with the theme.
-
-    Returns:
-        The current default icon color as a hex string.
-
-    Examples:
-        >>> color = get_icon_color()
-        >>> print(color)  # "#b4b4b4" for dark theme
-    """
-    # Import here to avoid circular imports
-    from fxgui import fxstyle
-
-    return fxstyle.get_icon_color()
-
-
-def _get_disabled_icon_color(icon_color: Optional[str] = None) -> str:
-    """Get the disabled icon color derived from the main icon color.
-
-    Creates a muted version of the icon color by significantly reducing
-    opacity and shifting toward neutral gray for clear visual distinction.
-
-    Args:
-        icon_color: The icon color to mute. Defaults to the theme's.
-
-    Returns:
-        The disabled icon color as a hex string (with alpha).
-    """
-    if icon_color is None:
-        icon_color = get_icon_color()
-    if not icon_color:
-        return "#80808060"
-
-    # Parse the color
-    color = QColor(icon_color)
-    h, s, l, a = color.getHslF()
-
-    # Completely desaturate and move toward middle gray
-    # This ensures disabled icons are clearly distinguishable regardless
-    # of the original icon color
-    new_s = 0  # Fully desaturated (grayscale)
-    new_l = 0.5  # Middle gray lightness
-
-    color.setHslF(h, new_s, new_l, _DISABLED_ALPHA)
-    return color.name(QColor.HexArgb)
-
-
-def set_icon(
-    widget: Any, icon_name: str, theme_color: bool = True, **kwargs: Any
-) -> QIcon:
+def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
     """Set an icon on a widget; it takes its theme inks when drawn.
 
     A push button's Active ink is its normal one (see `_icon_for_widget`).
 
     Args:
-        widget (Any): The widget to set the icon on (QAction, QPushButton, etc.).
-        icon_name (str): The name of the icon.
-        theme_color (bool): Ignored: a token `color` follows the theme and
-            a fixed colour keeps it.
-        **kwargs (Any): Passed to `get_icon` (width, height, color, inks,
+        widget: Anything with `setIcon` (QAction, QPushButton, etc.).
+        icon_name: The name of the icon.
+        **kwargs: Passed to `get_icon` (width, height, color, inks,
             library, style, extension).
 
     Returns:
         The QIcon that was set on the widget.
 
+    Raises:
+        AttributeError: If `widget` has no `setIcon`.
+
     Examples:
-        >>> from fxgui import fxicons
-        >>> # Icon follows theme color
         >>> fxicons.set_icon(my_button, "save")
-        >>> # Icon keeps explicit color across theme changes
-        >>> fxicons.set_icon(indicator, "check", theme_color=False, color="#00ff00")
+        >>> fxicons.set_icon(indicator, "check", color="#00ff00")
     """
     icon = _icon_for_widget(widget, icon_name, kwargs)
-
-    if hasattr(widget, "setIcon"):
-        widget.setIcon(icon)
+    widget.setIcon(icon)
     return icon
 
 

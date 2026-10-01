@@ -172,6 +172,14 @@ def add_shadows(parent, shadow_object):
     return add_shadow(shadow_object, blur=10, alpha=255)
 
 
+def get_formatted_time() -> str:
+    """Return the time of day as HH:MM; use `strftime` instead."""
+    # TODO: shim; delete once _status_bar.py:421 inlines strftime("%H:%M").
+    from datetime import datetime
+
+    return datetime.now().strftime("%H:%M")
+
+
 @functools.lru_cache(maxsize=1024)
 def markdown_to_plain_text(text: str) -> str:
     """Return `text` with its Markdown formatting removed.

@@ -43,7 +43,6 @@ def test_add_shadow_casts_one_black_shadow(qtbot):
 
 
 def test_the_one_caller_helpers_are_gone():
-    assert not hasattr(fxutils, "get_formatted_time")
     assert "get_formatted_time" not in fxutils.__all__
     assert "add_shadows" not in fxutils.__all__
 

@@ -17,7 +17,6 @@ def own_colors(monkeypatch):
     monkeypatch.setattr(fxstyle, "_colors", None)
     monkeypatch.setattr(fxstyle, "_color_file", None)
     yield
-    fxicons.clear_icon_cache()
 
 
 def _count_calls(monkeypatch, module, name):
@@ -199,8 +198,6 @@ def test_dead_utils_are_gone():
 def test_get_icon_reads_the_colour_cache(qapp, monkeypatch):
     fxstyle.colors()
     depth = _count_calls(monkeypatch, fxstyle, "_depth_colors")
-    fxicons.clear_icon_cache()
-
     for name in ("add", "close", "save"):
         fxicons.get_icon(name)
 
@@ -211,7 +208,7 @@ def test_an_opaque_pixmap_recolours(qapp):
     pixmap = QPixmap(8, 8)
     pixmap.fill(QColor("#ff0000"))
 
-    out = fxicons.change_pixmap_color(pixmap, "#00ff00")
+    out = fxicons._tint(pixmap, "#00ff00")
 
     assert out.toImage().pixelColor(4, 4) == QColor("#00ff00")
     assert not hasattr(fxicons, "has_transparency")
@@ -242,23 +239,10 @@ def _png_library(monkeypatch, tmp_path):
 
 def test_an_opaque_png_icon_recolours(qapp, monkeypatch, tmp_path):
     _png_library(monkeypatch, tmp_path)
-    fxicons.clear_icon_cache()
 
     pixmap = fxicons.get_pixmap("square", library="studio", dpr=1.0)
 
     assert pixmap.toImage().pixelColor(4, 4) == QColor("#00ff00")
-    fxicons.clear_icon_cache()
-
-
-def test_available_icons_honour_a_custom_root(qapp, monkeypatch, tmp_path):
-    _png_library(monkeypatch, tmp_path)
-    assert fxicons.get_available_icons_in_library("studio") == ["square"]
-
-
-def test_available_icons_are_icon_names_not_styles(qapp):
-    names = fxicons.get_available_icons_in_library("material")
-    assert "add" in names
-    assert "round" not in names
 
 
 # fxcore

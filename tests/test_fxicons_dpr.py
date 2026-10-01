@@ -6,6 +6,7 @@ so icons rendered blurry on scaled displays (the norm on 4K monitors).
 
 # Third-party
 import pytest
+from qtpy.QtGui import QPixmapCache
 
 # Internal
 from fxgui import fxicons
@@ -13,9 +14,9 @@ from fxgui import fxicons
 
 @pytest.fixture(autouse=True)
 def _clean_icon_cache():
-    fxicons.clear_icon_cache()
+    QPixmapCache.clear()
     yield
-    fxicons.clear_icon_cache()
+    QPixmapCache.clear()
 
 
 def test_pixmap_rendered_at_device_pixel_ratio(qapp, monkeypatch):

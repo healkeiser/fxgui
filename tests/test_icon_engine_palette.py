@@ -103,7 +103,7 @@ def test_a_disabled_button_icon_wears_the_disabled_colour(qtbot):
     button.setEnabled(False)
 
     pixmap = button.icon().pixmap(_SIZE, QIcon.Disabled)
-    expected = QColor(fxicons._get_disabled_icon_color(fxstyle.colors().icon))
+    expected = QColor(fxstyle.colors().text_disabled)
     image = pixmap.toImage()
     # Premultiplied storage rounds each channel by one step.
     assert any(
@@ -130,18 +130,21 @@ def test_an_icon_copy_that_detaches_still_draws(qapp):
     """QIcon.addPixmap on a shared icon clones the engine Qt must keep."""
     import gc
 
+    # A copy detaches, and clones, only while the original is held.
+    originals = [fxicons.get_icon("check") for _ in range(50)]
     icons = []
-    for _ in range(50):
-        icon = QIcon(fxicons.get_icon("check"))
+    for original in originals:
+        icon = QIcon(original)
         icon.addPixmap(QPixmap(4, 4), QIcon.Normal, QIcon.On)
         icons.append(icon)
     gc.collect()
 
     assert all(not icon.pixmap(_SIZE).isNull() for icon in icons)
     assert len(fxicons._clones) >= 50  # the only owner of each clone
-    del icons, icon
+    del icons, icon, originals, original
     gc.collect()
-    last = QIcon(fxicons.get_icon("check"))
+    held = fxicons.get_icon("check")
+    last = QIcon(held)
     last.addPixmap(QPixmap(4, 4), QIcon.Normal, QIcon.On)
     assert len(fxicons._clones) == 1  # dead clones dropped on the next one
 
@@ -213,7 +216,7 @@ def test_recolouring_scans_no_pixels(qapp):
     pixmap = QPixmap(512, 512)
     pixmap.fill(QColor("#ff0000"))
     start = time.perf_counter()
-    fxicons.change_pixmap_color(pixmap, "#00ff00")
+    fxicons._tint(pixmap, "#00ff00")
     assert time.perf_counter() - start < 0.05
     assert not hasattr(fxicons, "has_transparency")
 
@@ -242,9 +245,10 @@ def test_cloned_icons_alive_at_exit_do_not_crash_the_interpreter():
         "from qtpy.QtWidgets import QApplication, QPushButton;"
         "app=QApplication([]);"
         "from fxgui import fxicons;"
-        "icons=[];buttons=[];\n"
+        "icons=[];buttons=[];held=[];\n"
         "for _ in range(20):\n"
-        "    icon=QIcon(fxicons.get_icon('check'))\n"
+        "    held.append(fxicons.get_icon('check'))\n"
+        "    icon=QIcon(held[-1])\n"
         "    icon.addPixmap(QPixmap(4,4),QIcon.Normal,QIcon.On)\n"
         "    icons.append(icon)\n"
         "    button=QPushButton()\n"
