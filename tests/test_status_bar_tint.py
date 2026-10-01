@@ -41,3 +41,15 @@ def test_a_light_custom_tint_turns_the_ink_dark(qtbot, ground):
     ink, painted = _ink_and_ground(bar)
     assert painted.lower() == ground
     assert fxstyle.get_contrast_ratio(ink, ground) >= 4.5, ink
+
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_the_tint_is_the_themes_own_feedback_colour(qtbot, theme):
+    fxstyle.apply_theme(theme)
+    bar = FXStatusBar()
+    qtbot.addWidget(bar)
+
+    bar.showMessage("something happened", INFO, duration=30)
+
+    expected = fxstyle.get_feedback_colors()["info"]["background"]
+    assert bar.tint() == expected.lower()

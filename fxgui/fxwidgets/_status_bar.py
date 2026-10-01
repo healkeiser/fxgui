@@ -409,7 +409,7 @@ class FXStatusBar(QStatusBar):
         self.message_label.setVisible(True)
 
         kind = severity(severity_type)
-        feedback = fxstyle.get_colors()["feedback"][kind.feedback]
+        feedback = fxstyle.get_feedback_colors()[kind.feedback]
         severity_prefix = kind.title
         severity_icon = QIcon(pixmap) if pixmap else fxicons.get_icon(
             kind.icon, color=f"feedback_{kind.feedback}_foreground")
