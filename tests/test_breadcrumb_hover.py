@@ -15,7 +15,7 @@ a path they had already left.
 
 # Third-party
 from qtpy.QtCore import QEvent, QPointF, Qt
-from qtpy.QtGui import QEnterEvent, QMouseEvent
+from qtpy.QtGui import QColor, QEnterEvent, QMouseEvent
 from qtpy.QtWidgets import (
     QApplication,
     QLabel,
@@ -33,12 +33,8 @@ PATH = ["Projects", "MyShow", "Assets", "Hero"]
 
 
 def _crumb(qtbot, path=PATH):
-    """A breadcrumb on screen with a path in it.
-
-    On screen because the segments are laid out when the widget is, and
-    the strip's fill is read back off a real stylesheet.
-    """
-    crumb = FXBreadcrumb()
+    """A breadcrumb on screen with a path in it, its segments laid out."""
+    crumb = FXBreadcrumb(home_icon="")
     qtbot.addWidget(crumb)
     crumb.resize(400, 32)
     crumb.set_path(path)
@@ -63,15 +59,41 @@ def _segments(crumb):
     return drawn
 
 
+def _corner(segment, hovered):
+    """The colour a segment paints at its left edge, over its strip."""
+    segment.setAttribute(Qt.WA_UnderMouse, hovered)
+    image = segment.parentWidget().grab().toImage()
+    segment.setAttribute(Qt.WA_UnderMouse, False)
+    box = segment.geometry()
+    return image.pixelColor(box.left() + 3, box.center().y())
+
+
+def _tinted(ground, token, alpha):
+    """`token`'s colour laid over `ground` at `alpha` out of 255."""
+    over, under = QColor(token), QColor(ground)
+    mix = lambda a, b: round(b + (a - b) * alpha / 255)  # noqa: E731
+    return (
+        mix(over.red(), under.red()),
+        mix(over.green(), under.green()),
+        mix(over.blue(), under.blue()),
+    )
+
+
+def _close(color, rgb):
+    return all(
+        abs(a - b) <= 2
+        for a, b in zip((color.red(), color.green(), color.blue()), rgb)
+    )
+
+
 def test_a_clickable_segment_says_so_under_the_pointer(qtbot, qapp):
-    """Every segment but the last carries a hover tint of its own."""
+    """Every segment but the last paints a tint under the pointer."""
     crumb = _crumb(qtbot)
 
     for segment in _segments(crumb)[:-1]:
-        assert "QPushButton:hover" in segment.styleSheet(), (
+        assert _corner(segment, True) != _corner(segment, False), (
             f"{segment.text()} answers a hover"
         )
-        assert "rgba(" in segment.styleSheet(), "with a tint, not a border"
 
 
 def test_a_clickable_segment_says_so_with_its_cursor(qtbot, qapp):
@@ -88,23 +110,22 @@ def test_a_clickable_segment_says_so_with_its_cursor(qtbot, qapp):
 def test_the_segment_the_path_is_already_at_promises_nothing(qtbot, qapp):
     """The last segment is connected to nothing, so a tint on it would
     offer a click that does nothing at all."""
-    crumb = _crumb(qtbot)
+    last = _segments(_crumb(qtbot))[-1]
 
-    assert "QPushButton:hover" not in _segments(crumb)[-1].styleSheet()
+    assert _corner(last, True) == _corner(last, False)
 
 
 def test_the_tint_is_the_themes_accent_rather_than_a_hex(qtbot, qapp):
-    """A studio theme governs what a hovered segment looks like, which
-    is the whole reason the tint is named as a token."""
+    """A studio theme governs what a hovered segment looks like."""
     crumb = _crumb(qtbot)
-    accent = fxstyle.get_theme_colors()[FXBreadcrumb.SEGMENT_HOVER_TOKEN]
-    red = int(accent[1:3], 16)
-    green = int(accent[3:5], 16)
-    blue = int(accent[5:7], 16)
+    colors = fxstyle.get_theme_colors()
+    expected = _tinted(
+        crumb._colors()[0],
+        colors[FXBreadcrumb.SEGMENT_HOVER_TOKEN],
+        FXBreadcrumb.SEGMENT_HOVER_ALPHA,
+    )
 
-    rule = _segments(crumb)[0].styleSheet()
-
-    assert f"rgba({red}, {green}, {blue}, {crumb.SEGMENT_HOVER_ALPHA})" in rule
+    assert _close(_corner(_segments(crumb)[0], True), expected)
 
 
 def test_a_subclass_can_name_its_own_tokens(qtbot, qapp):
@@ -116,28 +137,17 @@ def test_a_subclass_can_name_its_own_tokens(qtbot, qapp):
         SEGMENT_HOVER_TOKEN = "accent_secondary"
         SEGMENT_HOVER_ALPHA = 120
 
-    crumb = HouseCrumb()
+    crumb = HouseCrumb(home_icon="")
     qtbot.addWidget(crumb)
+    crumb.resize(400, 32)
     crumb.set_path(PATH)
+    crumb.show()
+    qtbot.waitExposed(crumb)
     colors = fxstyle.get_theme_colors()
 
-    assert colors["surface_alt"] in crumb._container.styleSheet()
-    secondary = colors["accent_secondary"]
-    expected = (
-        f"rgba({int(secondary[1:3], 16)}, {int(secondary[3:5], 16)},"
-        f" {int(secondary[5:7], 16)}, 120)"
-    )
-    assert expected in crumb._container.findChildren(QPushButton)[0].styleSheet()
-
-
-def test_the_strip_is_drawn_before_any_event_loop_pass(qtbot, qapp):
-    """A widget constructed and asserted on in the same breath is
-    already right: the theme's own application runs on a
-    `singleShot(0)`, which is one pass away."""
-    crumb = FXBreadcrumb()
-    qtbot.addWidget(crumb)
-
-    assert "background-color" in crumb._container.styleSheet()
+    assert crumb._colors()[0] == colors["surface_alt"]
+    expected = _tinted(colors["surface_alt"], colors["accent_secondary"], 120)
+    assert _close(_corner(_segments(crumb)[0], True), expected)
 
 
 def test_the_strip_is_never_the_window_s_own_colour(qtbot, qapp):
@@ -155,51 +165,54 @@ def _enter_event(widget):
     return QEnterEvent(inside, inside, inside)
 
 
+def _strip_fill(crumb):
+    image = crumb._container.grab().toImage()
+    return image.pixelColor(image.width() - 6, image.height() // 2).name()
+
+
 def test_the_strip_lights_on_enter_and_drops_on_leave(qtbot, qapp):
     """A `:hover` rule on the container cannot do this: once the path is
     drawn, the widget the pointer is directly over is a segment."""
     crumb = _crumb(qtbot)
-    colors = fxstyle.get_theme_colors()
-    resting = colors[FXBreadcrumb.STRIP_RESTING_TOKEN]
-    lit = colors[FXBreadcrumb.STRIP_HOVERED_TOKEN]
+    resting, lit = (QColor(c).name() for c in crumb._colors()[:2])
 
-    assert resting in crumb._container.styleSheet()
+    assert _strip_fill(crumb) == resting
 
     QApplication.sendEvent(crumb, _enter_event(crumb))
-    assert lit in crumb._container.styleSheet(), "lit while pointed at"
+    assert _strip_fill(crumb) == lit, "lit while pointed at"
 
     QApplication.sendEvent(crumb, QEvent(QEvent.Type.Leave))
-    assert resting in crumb._container.styleSheet(), "and back on leaving"
+    assert _strip_fill(crumb) == resting, "and back on leaving"
 
 
-def test_the_marks_survive_a_theme_change(qtbot, qapp):
-    """A theme change rebuilds the segments to restyle them, so a mark
-    applied after `set_path` is on a button that no longer exists.
-    Measured: such marks were still there and gone one pass later."""
+def test_a_theme_change_keeps_the_segments_and_their_tint(qtbot, qapp):
+    """Nothing is rebuilt: the same segments paint the new theme."""
     crumb = _crumb(qtbot)
+    before = _segments(crumb)
 
     fxstyle.apply_theme("light")
 
-    colors = fxstyle.get_theme_colors()
-    assert colors[FXBreadcrumb.STRIP_RESTING_TOKEN] in (
-        crumb._container.styleSheet()
-    ), "the strip is re-read from the new theme"
-    for segment in _segments(crumb)[:-1]:
-        assert "QPushButton:hover" in segment.styleSheet()
+    assert _segments(crumb) == before
+    assert _strip_fill(crumb) == QColor(crumb._colors()[0]).name()
+    first = before[0]
+    assert _corner(first, True) != _corner(first, False)
 
 
-def test_the_marks_survive_a_new_path(qtbot, qapp):
-    crumb = _crumb(qtbot)
+def test_a_new_path_bolds_only_its_last_segment(qtbot, qapp):
+    crumb = FXBreadcrumb()
+    qtbot.addWidget(crumb)
+    crumb.set_path(PATH)
 
     crumb.set_path(["Somewhere", "Else", "Entirely"])
 
     drawn = _segments(crumb)
-    # From the second: with a `home_icon` set, which is the default, the
-    # first segment is drawn as that icon with its text as a tooltip.
+    # With a `home_icon` set, which is the default, the first segment is
+    # drawn as that icon with its text as a tooltip.
     assert [segment.text() for segment in drawn[1:]] == ["Else", "Entirely"]
     assert drawn[0].toolTip() == "Somewhere"
-    for segment in drawn[:-1]:
-        assert "QPushButton:hover" in segment.styleSheet()
+    assert [segment.font().bold() for segment in drawn] == [
+        False, False, True
+    ]
 
 
 def _press_on(widget):

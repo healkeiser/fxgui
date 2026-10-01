@@ -4,17 +4,22 @@
 from typing import List, Optional
 
 # Third-party
-from qtpy.QtCore import QEvent, Qt, Signal
-from qtpy.QtGui import QColor
+from qtpy.QtCore import QEvent, QRect, QRectF, Qt, Signal
+from qtpy.QtGui import QColor, QPainter, QPen
 from qtpy.QtWidgets import (
     QApplication,
     QFrame,
     QHBoxLayout,
     QLineEdit,
+    QMainWindow,
     QPushButton,
     QScrollArea,
     QSizePolicy,
     QStackedWidget,
+    QStyle,
+    QStyleOptionButton,
+    QStylePainter,
+    QToolBar,
     QWidget,
 )
 
@@ -22,6 +27,129 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._tips import apply_tip
+
+
+fxstyle.register_widget_style(
+    """
+    QPushButton#fxBreadcrumbSegment,
+    QPushButton#fxBreadcrumbSegment:hover,
+    QPushButton#fxBreadcrumbSegment:pressed
+    {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        padding: 3px 5px;
+    }
+    QPushButton#fxBreadcrumbSegment:focus
+    {
+        border-color: @accent_primary;
+    }
+    """
+)
+
+
+def _ground(widget: QWidget) -> str:
+    """Return the token of the colour `widget` sits on: frame or surface."""
+    parent = widget.parentWidget()
+    while parent is not None:
+        if parent.property(fxstyle.FRAME_PROPERTY):
+            return "frame"
+        outer = parent.parentWidget()
+        if isinstance(outer, QMainWindow):
+            framed = bool(outer.property(fxstyle.FRAME_PROPERTY))
+            on_bar = isinstance(parent, QToolBar)
+            return "frame" if framed and on_bar else "surface"
+        parent = outer
+    return "surface"
+
+
+def _strip_colors(colors: dict, ground: str, resting: str, hovered: str):
+    """Return the strip's rest fill, hover fill, edge and ink on `ground`.
+
+    The rest fill is `resting` or `surface`, whichever stands out more from
+    the ground. The ink is `text` stepped until it reads at 4.5:1 on both
+    fills, the edge `pane_border` stepped until it shows at
+    `PANE_BORDER_MIN_CONTRAST` against the ground and both fills.
+    """
+    under = colors[ground]
+    rest = max(
+        (colors[resting], colors["surface"]),
+        key=lambda fill: fxstyle.get_contrast_ratio(fill, under),
+    )
+    hover = colors[hovered]
+    ink = colors["text"]
+    for fill in (rest, hover):
+        ink = fxstyle.readable_ink(fill, ink)
+    edge = colors["pane_border"]
+    for other in (under, rest, hover):
+        edge = fxstyle.readable_ink(
+            other, edge, fxstyle.PANE_BORDER_MIN_CONTRAST
+        )
+    return rest, hover, edge, ink
+
+
+class _Strip(QWidget):
+    """The field behind the segments, painted from the theme each time."""
+
+    def __init__(self, crumb: "FXBreadcrumb"):
+        super().__init__()
+        self._crumb = crumb
+
+    def paintEvent(self, event) -> None:
+        """Paint the strip's fill and edge."""
+        rest, hover, edge, _ink = self._crumb._colors()
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(QPen(QColor(edge), 1))
+        painter.setBrush(QColor(hover if self._crumb._lit else rest))
+        radius = self._crumb.RADIUS
+        painter.drawRoundedRect(
+            QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5), radius, radius
+        )
+
+
+class _Segment(QPushButton):
+    """One path segment, its text in the strip's ink."""
+
+    def __init__(self, crumb: "FXBreadcrumb", current: bool):
+        super().__init__()
+        self.setObjectName("fxBreadcrumbSegment")
+        self.setFlat(True)
+        self._crumb = crumb
+        self._current = current
+        if current:
+            font = self.font()
+            font.setBold(True)
+            self.setFont(font)
+
+    def paintEvent(self, event) -> None:
+        """Paint the hover tint, the style's box, and the label in ink."""
+        crumb = self._crumb
+        painter = QStylePainter(self)
+        if not self._current and self.underMouse():
+            tint = QColor(
+                fxstyle.get_theme_colors()[crumb.SEGMENT_HOVER_TOKEN]
+            )
+            tint.setAlpha(crumb.SEGMENT_HOVER_ALPHA)
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(tint)
+            painter.drawRoundedRect(
+                QRectF(self.rect()), crumb.RADIUS, crumb.RADIUS
+            )
+        option = QStyleOptionButton()
+        self.initStyleOption(option)
+        painter.drawControl(QStyle.CE_PushButtonBevel, option)
+        contents = self.style().subElementRect(
+            QStyle.SE_PushButtonContents, option, self
+        )
+        if self.icon().isNull():
+            painter.setPen(QColor(crumb._colors()[3]))
+            painter.drawText(contents, Qt.AlignCenter, self.text())
+        else:
+            box = QRect(contents.topLeft(), self.iconSize())
+            box.moveCenter(contents.center())
+            self.icon().paint(painter, box)
 
 
 class FXBreadcrumb(QWidget):
@@ -39,6 +167,9 @@ class FXBreadcrumb(QWidget):
         path_separator: Character used to join path segments in edit mode.
         home_path: Path segments to navigate to when home is clicked.
             If None, navigates to the first segment only.
+        segments_focusable: Whether each segment takes a Tab stop. False
+            leaves the path to the mouse; the back and forward buttons and
+            the path editor keep theirs.
 
     Signals:
         segment_clicked: Emitted when a segment is clicked (index, path list).
@@ -62,22 +193,15 @@ class FXBreadcrumb(QWidget):
     navigated_back = Signal(list)
     navigated_forward = Signal(list)
 
-    # Which theme colors the strip and the segments are drawn in, named
-    # as tokens rather than hexes so a theme governs them, and named as
-    # class attributes so a subclass with a house style of its own can
-    # say which tokens without reimplementing any of the drawing.
-    #
-    # `STRIP_RESTING_TOKEN` must not be `surface`: in every theme fxgui
-    # ships that is the window's own colour to the byte, so a strip
-    # painted in it is a strip nobody can see.
+    # The theme tokens the strip and a hovered segment start from; a
+    # subclass names its own. Not `surface` for the strip: in every theme
+    # fxgui ships that is the window's own colour.
     STRIP_RESTING_TOKEN = "state_hover"
     STRIP_HOVERED_TOKEN = "border_light"
     SEGMENT_HOVER_TOKEN = "accent_primary"
 
-    # How much of that accent a hovered segment carries, 0-255. A tint
-    # rather than a border or a bolder weight, because both of those
-    # change the segment's own size and shift the text beside it on
-    # hover, where a tint costs the layout nothing.
+    # A hovered segment's accent opacity, 0-255: a tint, which unlike a
+    # border or a bolder weight shifts nothing beside it.
     SEGMENT_HOVER_ALPHA = 80
 
     # The corner the strip and a hovered segment are rounded by.
@@ -91,8 +215,11 @@ class FXBreadcrumb(QWidget):
         show_navigation: bool = False,
         path_separator: str = "/",
         home_path: Optional[List[str]] = None,
+        segments_focusable: bool = True,
     ):
         super().__init__(parent)
+        self._segments_focusable = segments_focusable
+        self._lit = False
 
         self._path: List[str] = []
         self._separator = separator
@@ -147,9 +274,11 @@ class FXBreadcrumb(QWidget):
         self._scroll_area.setFrameShape(QFrame.NoFrame)
         self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # It never scrolls, so a Tab stop on it lands on nothing.
+        self._scroll_area.setFocusPolicy(Qt.NoFocus)
 
         # Container widget for breadcrumb segments
-        self._container = QWidget()
+        self._container = _Strip(self)
         self._layout = QHBoxLayout(self._container)
         self._layout.setContentsMargins(4, 0, 4, 0)
         self._layout.setSpacing(2)
@@ -175,71 +304,37 @@ class FXBreadcrumb(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setFixedHeight(32)
 
-        self._fill_strip(False)
-        # Segment hover tints are baked from the theme.
-        fxstyle.theme_changed.connect(self._on_theme_changed)
-
         if self._show_navigation:
             self._update_nav_buttons()
 
-    def _on_theme_changed(self, _theme_name: str = None) -> None:
-        """Rebuild the segments in the new theme's colours."""
-        self._rebuild_breadcrumb()
-
-    def _fill_strip(self, lit: bool) -> None:
-        """Draw the strip as the field a double-click opens there.
-
-        Always drawn, in one of two fills. There is no unfilled state:
-        `__init__` paints the resting one, so a breadcrumb shows a filled
-        pill from the moment it exists and a hover only brightens it.
-
-        What a double-click opens is a line edit as wide as this whole
-        widget, so what says where to double-click is that whole width
-        filled: a surface, since it stands for a field about to appear
-        rather than for one segment being pointed at.
-
-        Painted on the container rather than on this widget, which is
-        measured rather than chosen: the container covers the whole of
-        this widget's own area, so a fill on the widget itself is
-        painted and then painted over.
-
-        Args:
-            lit: Whether the pointer is over the widget, which is the
-                brighter of the two fills.
-        """
-        colors = fxstyle.get_theme_colors()
-        token = (
-            self.STRIP_HOVERED_TOKEN if lit else self.STRIP_RESTING_TOKEN
+    def _colors(self):
+        """Return the strip's rest fill, hover fill, edge and ink, now."""
+        return _strip_colors(
+            fxstyle.get_theme_colors(),
+            _ground(self),
+            self.STRIP_RESTING_TOKEN,
+            self.STRIP_HOVERED_TOKEN,
         )
-        self._container.setStyleSheet(
-            f"background-color: {colors[token]};"
-            f" border-radius: {self.RADIUS}px;"
-        )
+
+    def set_edit_placeholder(self, text: str) -> None:
+        """Set the hint the path editor shows while it is empty."""
+        self._line_edit.setPlaceholderText(text)
 
     def enterEvent(self, event) -> None:
-        """Brighten the strip: the pointer is somewhere over the path.
+        """Brighten the strip while the pointer is anywhere over the path.
 
-        Brighten rather than fill. The strip carries
-        `STRIP_RESTING_TOKEN` at all times, from construction onward, so
-        what a hover changes is which of two fills it wears -- it is
-        never bare.
-
-        Answered here rather than by a `:hover` rule in the style,
-        because such a rule can only ever light the widget the pointer
-        is DIRECTLY over -- which, once the path is drawn, is a segment
-        and never the container. Measured: this widget keeps the pointer
-        through a move onto one of its own segments and reports it lost
-        only when it leaves for good, which is exactly when the fill
-        should drop.
+        Not a `:hover` rule: once the path is drawn, the widget directly
+        under the pointer is a segment, never the strip.
         """
         super().enterEvent(event)
-        self._fill_strip(True)
+        self._lit = True
+        self._container.update()
 
     def leaveEvent(self, event) -> None:
-        """Return the strip to its resting fill: the pointer has left
-        for good. The fill is not removed, only dimmed."""
+        """Return the strip to its resting fill."""
         super().leaveEvent(event)
-        self._fill_strip(False)
+        self._lit = False
+        self._container.update()
 
     def eventFilter(self, obj, event):
         """Handle escape key and focus loss to exit edit mode.
@@ -437,20 +532,7 @@ class FXBreadcrumb(QWidget):
         return self._stacked.currentIndex() == 1
 
     def _rebuild_breadcrumb(self) -> None:
-        """Rebuild the breadcrumb UI.
-
-        The one hook every rebuild goes through, and the reason the
-        segments' own marks are applied by `_add_segment` rather than
-        after `set_path`: a path change is not the only thing that
-        replaces those buttons -- a theme change rebuilds them too, to
-        restyle them. Measured: marks applied after `set_path` were
-        still on the button and gone one event loop pass later, the
-        buttons having been replaced underneath.
-        """
-        # The container survives a rebuild, but the theme it was filled
-        # from may not have, and a theme change arrives here.
-        self._fill_strip(self.underMouse())
-
+        """Rebuild the segments for the current path."""
         # Clear existing widgets
         while self._layout.count() > 1:  # Keep stretch
             item = self._layout.takeAt(0)
@@ -472,45 +554,19 @@ class FXBreadcrumb(QWidget):
     def _add_segment(
         self, text: str, index: int, is_home: bool, is_last: bool
     ) -> None:
-        """Add a segment button."""
-        button = QPushButton()
+        """Add a segment button; the last one is where the path already is."""
+        button = _Segment(self, current=is_last)
         button.setCursor(
             Qt.PointingHandCursor if not is_last else Qt.ArrowCursor
         )
-        button.setFlat(True)
+        if not self._segments_focusable:
+            button.setFocusPolicy(Qt.NoFocus)
 
         if is_home and self._home_icon:
             fxicons.set_icon(button, self._home_icon)
             button.setToolTip(text)
         else:
             button.setText(text)
-
-        # Minimal styling for flat segment buttons, plus the hover tint
-        # that says a segment is the button it is. Every segment is a
-        # `QPushButton` and none of them said so: flat text on the
-        # window's own background, no cursor change, nothing under the
-        # pointer, so the one control that walks the hierarchy read as a
-        # label and an artist had no reason to try it.
-        #
-        # Declared in the segment's OWN stylesheet rather than in a rule
-        # above it, because a widget that carries a style of its own
-        # beats anything an ancestor writes for it.
-        #
-        # The last segment is where the path already is: it is not
-        # connected to anything, so tinting it would promise a click
-        # that does nothing.
-        font_weight = "bold" if is_last else "normal"
-        button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background: transparent;
-                border: none;
-                padding: 4px 6px;
-                font-weight: {font_weight};
-            }}
-            {"" if is_last else self._segment_hover_rule()}
-        """
-        )
 
         if not is_last:
             if is_home:
@@ -526,31 +582,10 @@ class FXBreadcrumb(QWidget):
         # Insert before stretch
         self._layout.insertWidget(self._layout.count() - 1, button)
 
-    def _segment_hover_rule(self) -> str:
-        """The QSS rule that tints a clickable segment under the pointer.
-
-        Read from the theme on every call rather than cached, since the
-        running theme can change under a window and every rebuild comes
-        back through here.
-
-        Returns:
-            str: A `QPushButton:hover` rule, ready to append to a
-            segment's own stylesheet.
-        """
-        tint = QColor(fxstyle.get_theme_colors()[self.SEGMENT_HOVER_TOKEN])
-        tint.setAlpha(self.SEGMENT_HOVER_ALPHA)
-        return (
-            "QPushButton:hover {"
-            f" background-color: rgba({tint.red()}, {tint.green()},"
-            f" {tint.blue()}, {tint.alpha()});"
-            f" border-radius: {self.RADIUS}px; }}"
-        )
-
     def _add_separator(self) -> None:
         """Add a separator icon."""
         label = FXIconLabel(
             fxicons.get_icon(self._separator, color="text_muted"), size=12)
-        label.setStyleSheet("background: transparent;")
         label.setFixedSize(16, 16)
         label.setAlignment(Qt.AlignCenter)
         label.installEventFilter(self)
