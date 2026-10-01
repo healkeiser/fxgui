@@ -143,10 +143,13 @@ def _recross(docks: "ads.CDockManager") -> None:
 
 
 def _inset(area: "ads.CDockAreaWidget") -> None:
-    """Inset `area`'s tab bar off its round corners."""
+    """Inset `area`'s buttons off its round right corner.
+
+    The tabs start at the pane's edge, as a tab bar's do at its own: a
+    tab's margin already clears the corner.
+    """
     bar = area.titleBar()
-    inset = fxstyle.BUTTON_RADIUS
-    bar.layout().setContentsMargins(inset, 0, inset, 0)
+    bar.layout().setContentsMargins(0, 0, fxstyle.BUTTON_RADIUS, 0)
 
 
 def _bare(tab: "ads.CDockWidgetTab") -> None:

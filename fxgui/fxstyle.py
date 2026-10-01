@@ -1549,6 +1549,16 @@ class FXProxyStyle(QProxyStyle):
             return icon
         return super().standardIcon(standardIcon, option, widget)
 
+    def drawPrimitive(self, element, option, painter, widget=None):
+        """Draw `element`, except Qt's focus rectangle.
+
+        PySide6 6.5's Fusion and Windows 11 draw it on an item view's current
+        cell whatever the sheet's ``outline`` says, tinting its
+        BackgroundRole; every fxgui control shows focus in its own edge.
+        """
+        if element != QStyle.PE_FrameFocusRect:
+            super().drawPrimitive(element, option, painter, widget)
+
     def polish(self, widget):
         """Lay an item view's rows out again once the sheet has styled them."""
         super().polish(widget)
@@ -1719,38 +1729,10 @@ _KEYBOARD_REASONS = (
 )
 
 
-class _NoFocusRect(QProxyStyle):
-    """Draw everything but Qt's focus rectangle, which fxgui never shows.
-
-    PySide6 6.5's Fusion and Windows 11 draw it on an item view's current
-    cell whatever the sheet's ``outline`` says, tinting its BackgroundRole.
-    """
-
-    def drawPrimitive(self, element, option, painter, widget=None):
-        """Draw `element` unless it is the focus rectangle."""
-        if element != QStyle.PE_FrameFocusRect:
-            super().drawPrimitive(element, option, painter, widget)
-
-
-def _drop_focus_rect(view: QAbstractItemView) -> None:
-    """Give a themed view a style without the focus rectangle, once."""
-    # Any proxy already on the view (a delegate's) has its own say.
-    if not _is_themed(view) or view.findChild(
-        QProxyStyle, "", Qt.FindDirectChildrenOnly
-    ) is not None:
-        return
-    # No base: it takes the application's style. Parented, since a style
-    # freed before its view crashes.
-    style = _NoFocusRect()
-    style.setParent(view)
-    view.setStyle(style)
-
-
 class _FocusVisibility(QObject):
     """Mark a themed widget's focus visible when it came by keyboard.
 
-    It also gives every themed popup, Qt's own included, flyout corners,
-    and every themed item view a style without Qt's focus rectangle.
+    It also gives every themed popup, Qt's own included, flyout corners.
     """
 
     def __init__(self, parent: QObject):
@@ -1774,8 +1756,6 @@ class _FocusVisibility(QObject):
             and watched.windowType() == Qt.Popup
         ):
             self._dress_popup(watched)
-        elif kind == QEvent.Polish and isinstance(watched, QAbstractItemView):
-            _drop_focus_rect(watched)
         return False
 
     @staticmethod

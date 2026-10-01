@@ -697,3 +697,51 @@ def test_no_dock_tab_in_the_gallery_is_elided(qtbot):
     window.close()
     window.deleteLater()
     QApplication.processEvents()
+
+
+def _first_edge(image, y, start, stop):
+    """Return how far right of `start` the first @control_edge pixel is."""
+    edge = fxstyle.colors().control_edge.lower()
+    return next(
+        x - start for x in range(start, stop)
+        if image.pixelColor(x, y).name() == edge
+    )
+
+
+def test_a_dock_tab_starts_as_far_in_as_a_tab_bar_tab(qtbot):
+    """Measured from the strip's own start: a pane's starts inside its edge."""
+    if fxdocking is None:
+        pytest.skip("needs the docking extra")
+    from fxgui import examples
+
+    fxstyle.apply_theme("dark")
+    window = examples.build()
+    pages = window.centralWidget()
+    window.show()
+    qtbot.waitExposed(window)
+    QApplication.processEvents()
+    bar = pages.tabBar()
+    image = window.grab().toImage()
+    first = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
+    left = bar.mapTo(window, QPoint()).x()
+    ours = _first_edge(image, first.center().y(), left, first.right())
+
+    pages.setCurrentIndex(pages.count() - 1)
+    QApplication.processEvents()
+    image = window.grab().toImage()
+    tabs = [
+        widget for widget in window.findChildren(QWidget)
+        if widget.metaObject().className() == "ads::CDockWidgetTab"
+        and widget.isVisible()
+    ]
+    assert tabs
+    border = 1
+    for tab in tabs:
+        area = tab.dockAreaWidget()
+        start = area.mapTo(window, QPoint()).x() + border
+        rect = tab.rect().translated(tab.mapTo(window, QPoint()))
+        assert _first_edge(image, rect.center().y(), start, rect.right()) == (
+            ours), tab.dockWidget().windowTitle()
+    window.close()
+    window.deleteLater()
+    QApplication.processEvents()

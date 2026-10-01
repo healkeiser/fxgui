@@ -490,16 +490,13 @@ def test_one_gap_across_down_and_at_the_edges(qtbot, theme):
     assert across and down
 
 
-def test_the_tab_bar_is_inset_off_the_round_corners(qtbot):
+def test_the_buttons_are_inset_off_the_round_corner(qtbot):
     window = _three(qtbot)
 
     for area in _areas(window):
         margins = area.titleBar().layout().contentsMargins()
-        assert margins.left() == fxstyle.BUTTON_RADIUS
+        assert margins.left() == 0
         assert margins.right() == fxstyle.BUTTON_RADIUS
-        tab = area.currentDockWidget().tabWidget()
-        assert tab.mapTo(area, tab.rect().topLeft()).x() >= (
-            fxstyle.BUTTON_RADIUS), "no tab starts under the corner"
 
 
 def test_the_current_tab_pill_follows_a_theme_change(qtbot):
@@ -576,7 +573,7 @@ def test_a_restored_layout_keeps_the_gap_the_mark_and_the_inset(qtbot):
         assert splitter.handleWidth() == GAP
     for area in _areas(window):
         margins = area.titleBar().layout().contentsMargins()
-        assert margins.left() == fxstyle.BUTTON_RADIUS
+        assert margins.right() == fxstyle.BUTTON_RADIUS
 
 
 def test_the_mark_and_the_frame_follow_a_theme_switch(qtbot):
