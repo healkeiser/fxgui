@@ -408,8 +408,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     Note:
         Store data in items using the following roles:
-        - `Qt.BackgroundRole` (`QColor/QBrush`): Custom background color
-          with rounded corners and border.
+        - `Qt.BackgroundRole` (`QColor`, `QBrush` or token name): The
+          row's card fill, drawn rounded with a ``border_light`` edge.
         - `Qt.DecorationRole` (`QIcon`): Icon for items without thumbnails.
         - `Qt.UserRole + 1` (`bool`): Whether to show the thumbnail.
         - `Qt.UserRole + 2` (`str`): Path to the thumbnail image.
@@ -1587,6 +1587,22 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             rect_f, radius, is_first_column, is_last_column
         ).intersected(cell)
 
+    def _edge_path(
+        self,
+        rect_f: QRectF,
+        radius: float,
+        is_first_column: bool,
+        is_last_column: bool,
+    ) -> QPainterPath:
+        """Return the cell's outline half a pixel in, for a crisp 1 px pen."""
+        # A 1 px pen on a whole-pixel edge straddles two rows at half tone.
+        return self._create_rounded_path(
+            rect_f.adjusted(0.5, 0.5, -0.5, -0.5),
+            radius,
+            is_first_column,
+            is_last_column,
+        )
+
     def _get_custom_background(
         self, index: QModelIndex, col0_index: Optional[QModelIndex] = None
     ) -> tuple:
@@ -1612,9 +1628,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                 bg_color = background_data.color()
                 if bg_color.isValid() and bg_color.alpha() > 0:
                     return True, bg_color
-            elif isinstance(background_data, QColor):
-                if background_data.isValid() and background_data.alpha() > 0:
-                    return True, background_data
+            else:
+                # A QColor, or a token name read now so the card follows
+                # every theme switch.
+                bg_color = self._as_color(background_data)
+                if bg_color.isValid() and bg_color.alpha() > 0:
+                    return True, bg_color
         return False, None
 
     def _has_thumbnail(
@@ -1690,10 +1709,11 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         # Fill background
         painter.fillPath(path, QBrush(bg_color))
 
-        # Draw border
-        border_color = bg_color.lighter(160)
-        painter.setPen(QPen(border_color, 1))
-        painter.drawPath(path)
+        # A button's edge: a lighter fill turns white on a light theme.
+        painter.setPen(QPen(QColor(fxstyle.colors().border_light), 1))
+        painter.drawPath(
+            self._edge_path(rect_f, radius, is_first_column, is_last_column)
+        )
 
         painter.restore()
 
@@ -1750,10 +1770,11 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         )
 
         painter.fillPath(path, QBrush(fill_color))
-        # Stroke too, 2px wide: a 1px pen straddles the path and leaves the
-        # row's own border showing through as a blend
-        painter.setPen(QPen(fill_color, 2))
-        painter.drawPath(path)
+        # Over the row's own edge, pixel for pixel, so none shows through.
+        painter.setPen(QPen(fill_color, 1))
+        painter.drawPath(
+            self._edge_path(rect_f, radius, is_first_column, is_last_column)
+        )
         painter.restore()
 
     def has_focus_ring(

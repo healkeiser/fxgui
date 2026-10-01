@@ -414,6 +414,8 @@ def _thumbnail_tree() -> QTreeWidget:
         top.setIcon(0, get_icon("movie"))
         top.setData(0, delegate.DESCRIPTION_ROLE, "Episode")
         top.setData(0, delegate.STARRED_ROLE, episode == "ep101")
+        # A token name, so each card follows every theme switch.
+        top.setData(0, Qt.BackgroundRole, "surface")
         for shot, status, key in (
             ("sh0010", "WIP", "warning"),
             ("sh0020", "Approved", "success"),
@@ -421,6 +423,7 @@ def _thumbnail_tree() -> QTreeWidget:
             item = QTreeWidgetItem(top, [shot, "1001-1100", status])
             item.setIcon(0, get_icon("image"))
             item.setData(0, delegate.DESCRIPTION_ROLE, f"{episode}_{shot}")
+            item.setData(0, Qt.BackgroundRole, "surface_alt")
             item.setData(0, delegate.THUMBNAIL_VISIBLE_ROLE, True)
             item.setData(0, delegate.THUMBNAIL_PATH_ROLE, thumbnail)
             item.setData(0, delegate.STATUS_LABEL_TEXT_ROLE, status)
