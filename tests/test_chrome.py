@@ -528,3 +528,57 @@ def test_every_themed_popup_asks_for_flyout_corners(qtbot, monkeypatch):
     assert popup in rounded
     assert menu in rounded
     assert window not in rounded
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_dock_tab_matches_a_tab_bar_tab(qtbot, theme):
+    pytest.importorskip("PySide6QtAds")
+    from fxgui import fxdocking
+
+    holder = QWidget()
+    column = QVBoxLayout(holder)
+    tabs = QTabWidget()
+    tabs.addTab(QLabel("x"), "Shots")
+    tabs.addTab(QLabel("y"), "Log")
+    column.addWidget(tabs)
+    docks = fxdocking.FXDockArea()
+    docks.set_central(QLabel("central"))
+    docks.add_dock("shots", "Shots", QLabel("s"), "left")
+    docks.add_dock("log", "Log", QLabel("l"), "bottom")
+    column.addWidget(docks)
+    window = _shown(qtbot, theme, holder, (800, 600))
+    for _ in range(3):
+        QApplication.processEvents()
+    image = window.grab().toImage()
+    colors = fxstyle.colors()
+    accent = colors.accent_primary.lower()
+    text = colors.text
+
+    def measure(widget, rect):
+        rect = rect.translated(widget.mapTo(window, QPoint()))
+        bar = [
+            y - rect.top()
+            for y in range(rect.top(), rect.bottom() + 1)
+            if image.pixelColor(rect.center().x(), y).name() == accent
+        ]
+        ink = [
+            y - rect.top()
+            for y in range(rect.top(), rect.bottom() + 1)
+            if y - rect.top() not in bar
+            and any(
+                _distance(image.pixelColor(x, y).name(), text) <= 40
+                for x in range(rect.left(), rect.left() + 40)
+            )
+        ]
+        return rect.height(), bar, (min(ink), max(ink))
+
+    bar = tabs.tabBar()
+    tab = next(
+        tab
+        for tab in docks.findChildren(QWidget)
+        if tab.metaObject().className() == "ads::CDockWidgetTab"
+        and tab.property("activeTab")
+        and tab.isVisible()
+    )
+    # Same height, the bar on the same rows, the same "Shots" ink rows.
+    assert measure(tab, tab.rect()) == measure(bar, bar.tabRect(0))

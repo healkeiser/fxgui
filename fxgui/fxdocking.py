@@ -56,6 +56,8 @@ fxstyle.register_widget_style(
 #fxDocks ads--CDockAreaTabBar QWidget, #fxDocks ads--CDockWidget,
 #fxDocks ads--CDockWidget > QWidget { background: transparent; }
 #fxDocks ads--CTitleBarButton::menu-indicator { image: none; width: 0px; }
+/* No taller than a tab, so the tab sets the bar's height, buttons or not. */
+#fxDocks ads--CTitleBarButton { margin: 0px; padding: 0px; }
 #fxDocks ads--CDockAreaWidget QAbstractItemView,
 #fxDocks ads--CDockAreaWidget QPlainTextEdit,
 #fxDocks ads--CDockAreaWidget QTextEdit { background-color: @well; }
@@ -144,16 +146,8 @@ def _recross(docks: "ads.CDockManager") -> None:
 
 
 def _inset(area: "ads.CDockAreaWidget") -> None:
-    """Inset `area`'s tab bar off its round corners, as tall as its buttons.
-
-    A floating window hides the buttons, and the bar took its height from
-    them.
-    """
+    """Inset `area`'s tab bar off its round corners."""
     bar = area.titleBar()
-    buttons = bar.findChildren(ads.CTitleBarButton)
-    bar.setMinimumHeight(
-        max((button.sizeHint().height() for button in buttons), default=0)
-    )
     inset = fxstyle.BUTTON_RADIUS
     bar.layout().setContentsMargins(inset, 0, inset, 0)
 

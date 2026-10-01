@@ -923,10 +923,12 @@ QTabBar::tab
     padding: 5px 12px;
 }
 
+/* The same vertical padding, so both tabs are one height with the bar and
+   the text on the same rows. */
 ads--CDockWidgetTab[activeTab="false"],
 ads--CDockWidgetTab[activeTab="true"]
 {
-    padding: 0px 6px;
+    padding: 5px 6px;
 }
 
 QTabBar::tab:top,
