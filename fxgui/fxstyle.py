@@ -238,6 +238,9 @@ STATE_MIN_CONTRAST = 1.2
 # WCAG AA for body text: every text ink reaches it on each ground it sits on.
 TEXT_CONTRAST = 4.5
 
+# Least contrast between text and muted text, so the two read as two ranks.
+MUTED_STEP = 1.5
+
 # A spin box's padding that makes it a line edit's height: PySide6 6.5 sizes
 # one 3 px shorter than later Qt for the same padding.
 # ponytail: measured on 6.5.3 and 6.11.2 only; move the bound if a version
@@ -1071,6 +1074,9 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
       fills included.
     - ``text_muted``: the same on every ground but a pressed fill, which
       carries ``text``.
+    - ``text`` then steps on until it stands `MUTED_STEP` off ``text_muted``;
+      a ``text`` already at black or white leaves ``text_muted`` to step
+      back toward ``surface`` instead, as far as it still reads.
     """
     surface = theme_data["surface"]
     pole = _pole_from(surface)
@@ -1091,11 +1097,21 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
             get_contrast_ratio(color, ground) >= TEXT_CONTRAST
             for ground in on))
 
+    muted = reading(theme_data["text_muted"], grounds)
+    text = reading(theme_data["text"], grounds + [pressed])
+    # Then on, until muted text reads as a step below it; where text meets
+    # the pole first, muted steps back toward the surface while it reads.
+    text = step_toward(text, pole, _reads(muted, MUTED_STEP))
+    if not _reads(muted, MUTED_STEP)(text):
+        quieter = step_toward(muted, surface, _reads(text, MUTED_STEP))
+        if all(get_contrast_ratio(quieter, ground) >= TEXT_CONTRAST
+               for ground in grounds):
+            muted = quieter
     return {
         "state_hover": hover,
         "state_pressed": pressed,
-        "text": reading(theme_data["text"], grounds + [pressed]),
-        "text_muted": reading(theme_data["text_muted"], grounds),
+        "text": text,
+        "text_muted": muted,
     }
 
 

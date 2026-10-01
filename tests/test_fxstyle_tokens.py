@@ -93,3 +93,11 @@ def test_a_pressed_fill_stands_off_the_hover_fill(qapp, theme):
     assert fxstyle.get_contrast_ratio(
         colors["state_pressed"], colors["state_hover"]
     ) >= fxstyle.STATE_MIN_CONTRAST
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+def test_muted_text_stays_a_visible_step_from_text(qapp, theme):
+    colors = fxstyle._colour_tokens(theme)
+    assert fxstyle.get_contrast_ratio(
+        colors["text"], colors["text_muted"]
+    ) >= fxstyle.MUTED_STEP
