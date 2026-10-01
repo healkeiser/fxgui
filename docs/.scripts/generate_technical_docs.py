@@ -18,14 +18,8 @@ src = root / "fxgui"
 log.info("gen-files: Generating technical documentation...")
 
 file_count = 0
-skipped_count = 0
 
 for path in sorted(src.rglob("*.py")):
-    # Skip non-package directories (no __init__.py)
-    if "ui" in path.parts:
-        skipped_count += 1
-        continue
-
     module_path = path.relative_to(root)
     doc_path = path.relative_to(src).with_suffix(".md")
     full_doc_path = Path("technical", doc_path)
@@ -60,7 +54,3 @@ with mkdocs_gen_files.open("technical/SUMMARY.md", "w") as nav_file:
     nav_file.writelines(nav.build_literate_nav())
 
 log.info(f"gen-files: Generated {file_count} documentation pages")
-if skipped_count:
-    log.debug(
-        f"gen-files: Skipped {skipped_count} files (non-package directories)"
-    )

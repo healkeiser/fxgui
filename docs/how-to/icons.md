@@ -219,7 +219,7 @@ save_action = fxutils.create_action(
 
 ## QtAwesome (Optional)
 
-[QtAwesome](https://qtawesome.readthedocs.io/en/latest/index.html) is no longer bundled with fxgui, but you can install it separately if you want its features like animated icons. First, install it:
+[QtAwesome](https://qtawesome.readthedocs.io/en/latest/index.html) is not bundled with fxgui; install it separately for features such as animated icons. First, install it:
 
 ```bash
 pip install qtawesome

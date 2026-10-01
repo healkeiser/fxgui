@@ -45,6 +45,7 @@ app.exec_()
 | [fxconfig](technical/fxconfig.md) | Configuration and settings management |
 | [fxcore](technical/fxcore.md) | Core functionality (fuzzy filtering proxy model) |
 | [fxdcc](technical/fxdcc.md) | DCC-specific utilities (Houdini, Maya, Nuke) |
+| [fxdocking](technical/fxdocking.md) | Docked panes around a body (needs the `docking` extra) |
 | [fxicons](technical/fxicons.md) | Icon management with multiple libraries |
 | [fxstyle](technical/fxstyle.md) | Theming, stylesheets, and color management |
 | [fxutils](technical/fxutils.md) | General utility functions |

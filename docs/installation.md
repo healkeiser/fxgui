@@ -26,6 +26,16 @@ pip install -r requirements.txt
 
 ## Optional Dependencies
 
+### Docking
+
+`fxdocking.FXDockArea` docks panes with Qt Advanced Docking System:
+
+``` shell
+pip install "fxgui[docking]"
+```
+
+Nothing else in fxgui imports it.
+
 ### MkDocs Documentation
 
 For building documentation with MkDocs:

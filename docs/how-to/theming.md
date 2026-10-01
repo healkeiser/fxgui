@@ -129,7 +129,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 
 ## Feedback Colors Reference
 
-Used by `FXNotificationBanner`, `FXLogWidget`, and other status/feedback widgets:
+Used by `FXNotificationBanner`, `FXOutputLogWidget`, and other status/feedback widgets:
 
 | Level | Property | Usage |
 |-------|----------|-------|

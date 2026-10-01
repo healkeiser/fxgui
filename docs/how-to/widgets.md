@@ -72,56 +72,101 @@ The Docking page needs the `docking` extra (`pip install fxgui[docking]`).
 
 ## Available Widgets
 
-The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled widgets:
+The [fxwidgets](../technical/fxwidgets/index.md) module holds these classes:
 
-| Widget | Description |
-|--------|-------------|
-| `FXAccordion` | Accordion container with expandable sections |
-| `FXApplication` | Application with automatic theming and style |
+| Class | What it is |
+|-------|------------|
+| `FXAccordion` | Collapsible sections stacked; one open at a time unless `exclusive=False` |
+| `FXApplication` | The `QApplication` that themes every window it owns |
 | `FXAvatar` | Round avatar: a photo, or initials on a disc coloured by the name |
-| `FXBreadcrumb` | Clickable breadcrumb trail for hierarchical navigation |
+| `FXBreadcrumb` | Clickable breadcrumb trail; double-click it to type a path |
+| `FXCamelCaseValidator` | Accepts camelCase letters only |
+| `FXCapitalizedLetterValidator` | Accepts a name starting with a capital letter |
 | `FXCheckableComboBox` | Combo box whose popup stays open while several rows are ticked |
-| `FXCollapsibleWidget` | Expandable/collapsible container |
-| `FXCommandPalette` | Popup search over a window's commands (`FXCommand` rows) or rows to go to |
-| `FXColorLabelDelegate` | Delegate for color label rendering in views |
+| `FXCodeBlock` | Read-only code with syntax highlighting |
+| `FXCollapsibleWidget` | A titled section that opens and shuts its content |
+| `FXColorLabelDelegate` | Item delegate drawing each row as a coloured label chosen by its text |
+| `FXCommand` | One row of an `FXCommandPalette`: a label, a callable, keys, a section |
+| `FXCommandPalette` | Popup search over a window's commands, or over rows to go to |
+| `FXCommandRow` | A toolbar fixed in place, whose margins survive style changes |
 | `FXConfirmDeleteDialog` | Asks for a name typed exactly before an act with no undo; Enter never deletes |
-| `FXElidedLabel` | Label with automatic text elision |
-| `FXEmojiButton` | Round icon button that opens an emoji picker and can insert into an editor |
+| `FXDropZone` | Drop target for files or folders, with a browse button and a file list |
+| `FXElidedLabel` | Label that cuts its text with "..." when it does not fit |
+| `FXEmojiButton` | Round icon button that opens an `FXEmojiPicker` and can insert into an editor |
 | `FXEmojiPicker` | Popup grid of emoji, keyboard navigable |
-| `FXFilePathWidget` | File/folder path input with browse button |
+| `FXFilePathWidget` | File or folder path field with a browse button |
+| `FXFilteredTree` | An `FXKeyboardTree` under a filter bar, with expand-all and collapse-all |
+| `FXFloatingDialog` | Dialog that opens at the pointer |
 | `FXFlowLayout` | Layout that wraps its widgets onto new lines, like words |
-| `FXFloatingDialog` | Styled floating dialog |
+| `FXFuzzySearchList` | List with a search field that matches loosely |
+| `FXFuzzySearchTree` | Tree with a search field that matches loosely |
 | `FXIconButton` | Round icon button; checkable, filled with the accent when checked |
-| `FXIconLineEdit` | Line edit with icon support |
+| `FXIconLabel` | Label that draws an icon in the theme's colours at paint time |
+| `FXIconLineEdit` | Line edit with an icon on the left or right |
+| `FXItemDelegate` | Item delegate that switches icons to their hover and selected looks |
 | `FXJoinedGroup` | Widgets side by side in one pill outline, such as a status and a Post button |
-| `FXLoadingSpinner` | Animated loading spinner |
-| `FXLoadingOverlay` | Loading overlay for widgets |
-| `FXMainWindow` | Main window with toolbar, status bar, and theme toggle |
+| `FXKeyboardTree` | Tree whose row menus, Enter and typing work from the keyboard |
+| `FXLettersUnderscoreValidator` | Accepts letters and underscores, numbers optional |
+| `FXLoadingOverlay` | Spinner over a widget, dimming it and blocking its input |
+| `FXLoadingSpinner` | Animated loading indicator: spinner, dots or pulse |
+| `FXLowerCaseValidator` | Accepts lowercase letters, numbers and underscores optional |
+| `FXMainWindow` | Main window with menus, toolbar, status bar and a theme menu |
 | `FXMentionEdit` | Text box that offers people by name after an @ and lists who it names |
-| `FXNotificationBanner` | Notification banner for messages |
-| `FXOutputLogWidget` | Log display with level filtering |
-| `FXPasswordLineEdit` | Password input with visibility toggle |
+| `FXNotificationBanner` | Card with a message that slides in from a window's right edge |
+| `FXOutputLogHandler` | Logging handler that writes records into an `FXOutputLogWidget` |
+| `FXOutputLogWidget` | Read-only log display with search |
+| `FXPasswordLineEdit` | Password field with a show/hide button |
 | `FXPrimaryButton` | The main action of a form, on the theme's accent |
-| `FXProgressCard` | Progress indicator card |
-| `FXRangeSlider` | Dual-handle range slider |
-| `FXRatingWidget` | Star rating input widget |
-| `FXResizedScrollArea` | Smooth-scrolling scroll area |
-| `FXSearchBar` | Search input with filtering |
+| `FXProgressCard` | Card showing a task's progress and status |
+| `FXPygmentsHighlighter` | Pygments syntax highlighter for any `QTextDocument` |
+| `FXRangeSlider` | Slider with two handles for a low and a high value |
+| `FXRatingWidget` | Star rating input, halves optional |
+| `FXResizedScrollArea` | Scroll area that says when it is resized and can fit its content |
+| `FXSearchBar` | Search field with an optional filter dropdown |
 | `FXSeating` | Seats a tray panel off its icon or the pointer and slides it in |
-| `FXSplashScreen` | Customizable splash screen |
+| `FXSingleInstance` | Lock on a local socket name; a second start wakes the first |
+| `FXSingleton` | Metaclass for Qt classes that have one instance |
+| `FXSortedTreeWidgetItem` | Tree row that sorts numbers in text naturally (v2 before v10) |
+| `FXSplashScreen` | Splash screen with a title, a text and a progress bar |
+| `FXSplitButton` | Split button whose click and dropdown both have keys |
+| `FXStatusBar` | Status bar with an accent line, messages, items and a busy line |
 | `FXStatusDot` | Small clickable circle in a feedback colour, grey for no state |
-| `FXStatusBar` | Themed status bar |
-| `FXSystemTray` | System tray icon with menu |
-| `FXTagInput` | Tag/chip input widget |
-| `FXThumbnailDelegate` | Delegate for thumbnail rendering in views |
+| `FXStatusItem` | Icon and word on a status bar, lit when clickable |
+| `FXSystemTray` | System tray icon with a menu |
+| `FXTagChip` | One tag, removable or not |
+| `FXTagInput` | Field that turns what you type into `FXTagChip`s |
+| `FXThemeColors` | The theme's colours by dot name, as `fxstyle.colors()` returns them |
+| `FXThemeManager` | Holds the `theme_changed` signal; `theme_manager` is its one instance |
 | `FXThreadLine` | Line over a comment thread, from the comment's face into each reply's |
-| `FXTimelineSlider` | Timeline slider for media/animation |
-| `FXToggleSwitch` | iOS-style toggle switch |
+| `FXThumbnailDelegate` | Item delegate with thumbnails, status dots, labels and stars |
+| `FXTimelineSlider` | Timeline with playback, keyframes, markers and a loop region |
+| `FXToggleSwitch` | On/off switch that slides |
 | `FXTooltip` | Widget-hosting tooltip, for what native tooltips cannot do |
-| `FXWidget` | Base widget with optional UI file loading |
+| `FXTooltipManager` | Replaces every tooltip of the application with an `FXTooltip` |
+| `FXTooltipPosition` | Where an `FXTooltip` sits against its anchor |
+| `FXValidatedLineEdit` | Line edit that shakes and flashes when its validator refuses a key |
+| `FXWidget` | Widget holding an optional Designer file in a padded box layout |
+
+`fxdocking.FXDockArea` docks named panes around a body; it needs the
+`docking` extra (`pip install fxgui[docking]`).
+
+And these functions and constants:
+
+| Name | What it does |
+|------|--------------|
+| `align_labels` | Gives the labels of several forms one right-aligned column |
+| `apply_tip` | Sets a rich tooltip and a plain status tip on a widget (see [Tooltips](#tooltips)) |
+| `fix_wrapped_heights` | Gives every word-wrapped label under a widget the height its width needs |
+| `grab_screen_region` | Lets the user drag out a screen region and returns it, or `None` on Escape |
+| `keycap` | Renders one shortcut as a key, for a tooltip |
+| `set_tooltip` | Attaches an `FXTooltip` to a widget or an item |
+| `tip` | Returns the HTML `apply_tip` sets |
+| `theme_manager` | The `FXThemeManager` instance |
+| `DEFAULT_EMOJIS` | The emoji an `FXEmojiPicker` offers by default |
+| `CRITICAL`, `ERROR`, `WARNING`, `SUCCESS`, `INFO`, `DEBUG` | Severities for messages, banners and progress cards |
 
 !!! tip
-    All widgets automatically inherit the current theme and update when the theme changes.
+    Every widget follows a theme switch with no call of its own.
 
 ## Breadcrumbs
 
@@ -162,11 +207,9 @@ disappears.
 
 ## Your Own Item-Data Roles
 
-`FXThumbnailDelegate` reads its own item-data roles off the items it
-paints, and it claims `Qt.UserRole + 1` through `Qt.UserRole + 14`. A
-view that stamps roles of its own on the same items must derive them from
-the delegate's published ceiling rather than guess a margin past that
-range:
+`FXThumbnailDelegate` reads item-data roles of its own off the items it
+paints, from `Qt.UserRole + 1` up to `FIRST_FREE_ROLE`. A view that puts
+roles of its own on the same items derives them from `FIRST_FREE_ROLE`:
 
 ``` python
 from fxgui.fxwidgets import FXThumbnailDelegate
@@ -176,13 +219,12 @@ ROW_COLOR_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 1
 ```
 
 !!! warning
-    Guessing here has already cost real time. A studio view picked
-    `Qt.UserRole + 10` as its own and met `CHILD_COUNT_VISIBLE_ROLE`,
-    which showed up as a child count on rows that had no children --
-    a bug with no obvious connection to the role that caused it.
+    Do not guess a margin instead. `Qt.UserRole + 10` is
+    `CHILD_COUNT_VISIBLE_ROLE`: a view storing its own value there gets a
+    child count drawn on rows with no children.
 
-Roles added to the delegate move `FIRST_FREE_ROLE` up, and anything
-derived from it moves with them.
+A role added to the delegate moves `FIRST_FREE_ROLE` up, and every role
+derived from it moves too.
 
 ## Tooltips
 
@@ -219,14 +261,12 @@ Reach for [`FXTooltip`](../technical/fxwidgets/index.md) instead when a native t
 window = fxwidgets.FXMainWindow(rich_tooltips=True)
 ```
 
-!!! warning "Changed in 12.0.0"
-    Constructing an `FXMainWindow` under an `FXApplication` used to install the manager automatically. It no longer does, so tooltips are Qt's own unless you pass `rich_tooltips=True`. If your application relied on the manager without asking for it, you lose the following until you opt in:
+Without `rich_tooltips=True`, tooltips are Qt's own. The manager adds:
 
-    - **Tooltips that survive the pointer.** The manager's tooltips are persistent and hide on a delay, so a user can move onto one to finish reading. Native tooltips vanish on the first mouse move.
-    - **Automatic item-view tooltips.** With the manager, hovering a row in any item view builds a tooltip from `FXThumbnailDelegate` roles: a 200px thumbnail preview, `name (type)`, and the description. Native tooltips show `Qt.ToolTipRole` only, and nothing sets it for you.
-    - **Configurable delays.** `FXTooltipManager.install(show_delay=..., hide_delay=...)` controls appearance timing application-wide. Native tooltips use the platform style's delay, which the application cannot override per widget.
-    - **The arrow and anchored placement.** Manager tooltips are positioned against the widget or item rectangle with an arrow pointing at it. Native tooltips appear at the cursor.
-    - **Icons and images inside a tooltip**, fade animations, and the drop shadow.
-    - **`set_tooltip()` return value.** With the manager it returns `None` and stores rich fields as dynamic properties; without it, it falls back to creating a per-widget `FXTooltip` and returns that instance. The tooltip still renders; only the return value and the delay source change.
+- **Tooltips that stay while the pointer is on them.** They hide on a delay, so a user can move onto one to finish reading. Native tooltips vanish on the first mouse move.
+- **Item-view tooltips with no code.** Hovering a row in any item view builds a tooltip from the `FXThumbnailDelegate` roles: a 200 px thumbnail, `name (type)` and the description. Native tooltips show `Qt.ToolTipRole` only.
+- **Delays of your own.** `FXTooltipManager.install(show_delay=..., hide_delay=...)` sets them for the whole application. Native tooltips use the platform style's delay.
+- **An arrow and anchored placement.** The tooltip sits against the widget or item with an arrow pointing at it. Native tooltips appear at the pointer.
+- **Icons and images inside a tooltip**, fade animations and a drop shadow.
 
-    Nothing was removed: `FXTooltip`, `FXTooltipManager` and `set_tooltip` behave exactly as before once `rich_tooltips=True`.
+`set_tooltip()` returns `None` while the manager is installed, and stores the rich fields on the widget for it. Without the manager it creates an `FXTooltip` for the widget and returns it.
