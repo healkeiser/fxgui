@@ -102,5 +102,6 @@ shows every public widget (its test enforces it).
   child switched before its first show shows the old theme: set the sheet
   first (measured by group d); the empty slider track's 3:1 (if the chrome
   pass leaves it); slider_thumb/slider_thumb_hover tokens are unused.
+  On 6.5.3, test_host_sheet has "_Probe already deleted" teardown errors (18, then 20 after 7e5cdf0a; the 2 extra unexplained) and the blended #a7454a item background: fix at the cause.
 - Group h: test clean-up (duplicates, shared helpers, order hang, flaky
   busy-line test) after everything else lands.
