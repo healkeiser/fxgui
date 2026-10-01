@@ -5,7 +5,7 @@ import logging
 from typing import List, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QEvent, QRectF, QSize, Qt, Slot
+from qtpy.QtCore import QEvent, QRectF, QSize, Qt, QTimer, Slot
 from qtpy.QtGui import (
     QColor,
     QIcon,
@@ -52,6 +52,12 @@ _ICON_CONTRAST = 3.0
 
 # Between the window's left edge and the first item or message.
 _LEFT_MARGIN = 6
+
+# The busy line: a run a third of the bar wide, crossing it in about a
+# second and a half at 30 frames a second.
+_BUSY_SPAN = 1 / 3
+_BUSY_FRAME_MS = 33
+_BUSY_FRAMES = 45
 
 
 class FXStatusItem(QToolButton):
@@ -219,7 +225,8 @@ class FXStatusBar(QStatusBar):
     except on the frame (`fxstyle.mark_as_frame`) or after
     `hide_status_line`. `add_item` puts `FXStatusItem`s on the left,
     before the message, which never hides them, or on the right, before
-    the company.
+    the company. `set_busy(True)` runs a line along the same top band,
+    framed or not, so waiting moves no layout.
 
     Args:
         parent (QWidget, optional): Parent widget. Defaults to `None`.
@@ -257,6 +264,11 @@ class FXStatusBar(QStatusBar):
         self._tint_border: Optional[str] = None
         self._message = ""
         self._right_items = 0
+        self._busy = False
+        self._busy_frame = 0
+        self._busy_timer = QTimer(self)
+        self._busy_timer.setInterval(_BUSY_FRAME_MS)
+        self._busy_timer.timeout.connect(self._step_busy)
 
         # Attributes
         self.project = project or ""
@@ -491,9 +503,43 @@ class FXStatusBar(QStatusBar):
         self._line_wanted = True
         self.update()
 
+    def set_busy(self, busy: bool) -> None:
+        """Run the busy line along the top edge, or stop it."""
+        self._busy = bool(busy)
+        self._busy_frame = 0
+        self._run_busy_timer()
+        self.update(0, 0, self.width(), STATUS_LINE_HEIGHT)
+
+    def is_busy(self) -> bool:
+        """Return whether the busy line runs."""
+        return self._busy
+
+    def _run_busy_timer(self) -> None:
+        if self._busy and self.isVisible():
+            self._busy_timer.start()
+        else:
+            self._busy_timer.stop()
+
+    def _step_busy(self) -> None:
+        self._busy_frame = (self._busy_frame + 1) % _BUSY_FRAMES
+        self.update(0, 0, self.width(), STATUS_LINE_HEIGHT)
+
+    def showEvent(self, event) -> None:
+        """Run the busy line again, if it ran when the bar hid."""
+        super().showEvent(event)
+        self._run_busy_timer()
+
+    def hideEvent(self, event) -> None:
+        """Stop the busy line's timer while nobody can see it."""
+        super().hideEvent(event)
+        self._run_busy_timer()
+
     def paintEvent(self, event) -> None:
-        """Paint the bar, then its accent line and the border under it."""
+        """Paint the bar, then its accent line or busy line along the top."""
         super().paintEvent(event)
+        if self._busy:
+            self._paint_busy()
+            return
         # On the frame the bar joins the chrome, so it draws no line on top.
         if not self._line_wanted or self.property(fxstyle.FRAME_PROPERTY):
             return
@@ -514,6 +560,21 @@ class FXStatusBar(QStatusBar):
             1,
             QColor(self._tint_border or theme.border),
         )
+        painter.end()
+
+    def _paint_busy(self) -> None:
+        """Paint a run of the accent gradient across the bar's top band."""
+        theme = fxstyle.colors()
+        span = int(self.width() * _BUSY_SPAN)
+        # From fully off the left edge to fully off the right one.
+        left = -span + (self.width() + span) * self._busy_frame // _BUSY_FRAMES
+        gradient = QLinearGradient(left, 0, left + span, 0)
+        gradient.setColorAt(0, QColor(theme.accent_secondary))
+        gradient.setColorAt(1, QColor(theme.accent_primary))
+        painter = QPainter(self)
+        painter.fillRect(
+            0, 0, self.width(), STATUS_LINE_HEIGHT, QColor(self.ground()))
+        painter.fillRect(left, 0, span, STATUS_LINE_HEIGHT, gradient)
         painter.end()
 
     def event(self, event: QEvent) -> bool:
