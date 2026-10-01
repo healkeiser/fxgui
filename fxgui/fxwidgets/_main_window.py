@@ -160,7 +160,7 @@ class FXMainWindow(QMainWindow):
         self._framed: bool = framed
         self._fit_to_contents: bool = fit_to_contents
         self._fitted: bool = False
-        self.documentation: Optional[str] = documentation
+        self._documentation: Optional[str] = None
         self.ui: Optional[QWidget] = None
         self.theme_actions: Dict[str, QAction] = {}
 
@@ -181,8 +181,7 @@ class FXMainWindow(QMainWindow):
                 company=company,
             )
         )
-        self.open_documentation_action.setEnabled(
-            _is_valid_url(documentation))
+        self.set_documentation(documentation)
         if framed:
             fxstyle.mark_as_frame(self)
 
@@ -279,7 +278,7 @@ class FXMainWindow(QMainWindow):
         self.open_documentation_action = fxutils.create_action(
             self,
             "Documentation",
-            trigger=lambda _=False: open_new_tab(self.documentation),
+            trigger=self._open_documentation,
             icon_name="menu_book",
         )
         self.refresh_action = fxutils.create_action(
@@ -494,6 +493,9 @@ class FXMainWindow(QMainWindow):
         """
         QMessageBox.about(self, "About", self._about_text())
 
+    def _open_documentation(self, _=False) -> None:
+        open_new_tab(self._documentation)
+
     def _toggle_window_on_top(self) -> None:
         """Keep the window above the others while the action is checked.
 
@@ -517,6 +519,15 @@ class FXMainWindow(QMainWindow):
             action.setChecked(True)
 
     # Public methods
+    def documentation(self) -> Optional[str]:
+        """Return the URL Help > Documentation opens, or `None`."""
+        return self._documentation
+
+    def set_documentation(self, url: Optional[str]) -> None:
+        """Set the URL Help > Documentation opens; no valid URL disables it."""
+        self._documentation = url
+        self.open_documentation_action.setEnabled(_is_valid_url(url))
+
     def toggle_theme(self) -> str:
         """Switch every fxgui window to the next available theme.
 

@@ -215,6 +215,22 @@ def test_documentation_is_enabled_only_for_a_url(qtbot, url, valid):
     assert window.open_documentation_action.isEnabled() is valid
 
 
+def test_documentation_set_later_enables_the_entry(qtbot, monkeypatch):
+    from fxgui.fxwidgets import _main_window
+
+    opened = []
+    monkeypatch.setattr(_main_window, "open_new_tab", opened.append)
+    window = _window(qtbot)
+
+    window.set_documentation("https://example.com/docs")
+    window.open_documentation_action.trigger()
+
+    assert window.documentation() == "https://example.com/docs"
+    assert opened == ["https://example.com/docs"]
+    window.set_documentation(None)
+    assert not window.open_documentation_action.isEnabled()
+
+
 def test_the_theme_actions_follow_a_switch_without_the_mixin(qtbot):
     window = _window(qtbot)
 

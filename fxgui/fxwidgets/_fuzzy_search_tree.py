@@ -143,9 +143,7 @@ class FXFuzzySearchTree(QWidget):
 
         self._search_bar.search_changed.connect(self._on_search_changed)
         self._search_bar.search_submitted.connect(self._on_search_submitted)
-        self._ratio_slider.valueChanged.connect(
-            lambda value: self.set_ratio(value / 100.0)
-        )
+        self._ratio_slider.valueChanged.connect(self._on_ratio_slid)
         self._view.clicked.connect(self._emitter(self.item_selected))
         self._view.doubleClicked.connect(
             self._emitter(self.item_double_clicked)
@@ -154,7 +152,7 @@ class FXFuzzySearchTree(QWidget):
         self._view.expanded.connect(self._emitter(self.item_expanded))
         self._view.collapsed.connect(self._emitter(self.item_collapsed))
         self._view.selectionModel().selectionChanged.connect(
-            lambda *_: self.selection_changed.emit(self.selected_items())
+            self._on_selection_changed
         )
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -176,6 +174,12 @@ class FXFuzzySearchTree(QWidget):
         self._proxy_model.set_filter_text(text)
         if text:
             self._view.expandAll()
+
+    def _on_ratio_slid(self, value: int) -> None:
+        self.set_ratio(value / 100.0)
+
+    def _on_selection_changed(self, *_) -> None:
+        self.selection_changed.emit(self.selected_items())
 
     @Slot(str)
     def _on_search_submitted(self, _text: str) -> None:
