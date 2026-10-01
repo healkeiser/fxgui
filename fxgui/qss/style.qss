@@ -1086,9 +1086,19 @@ QTreeView::item:selected {
     border-radius: @button_radius;
 }
 
+/* A completer's list is a popup card, as a menu is. */
+QAbstractItemView[fxPopup="true"] {
+    background-color: @surface;
+    border: 1px solid @border;
+    border-radius: @card_radius;
+    padding: 4px;
+}
+
 /* Drawn as a menu's items: the pointer moves the selection. */
 QComboBox QAbstractItemView::item:hover,
-QComboBox QAbstractItemView::item:selected {
+QComboBox QAbstractItemView::item:selected,
+QAbstractItemView[fxPopup="true"]::item:hover,
+QAbstractItemView[fxPopup="true"]::item:selected {
     color: @text_on_accent_primary;
     background: @accent_primary;
 }

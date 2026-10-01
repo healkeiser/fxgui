@@ -1718,6 +1718,10 @@ def _host_rules(theme: Optional[str] = None) -> str:
     return resolve(_HOST_RULES.replace("@weight", extra), theme)
 
 
+# Set on a parentless list Qt shows as a popup (a completer's), which no
+# type selector tells from a view in a window.
+POPUP_PROPERTY = "fxPopup"
+
 # Set on the focused widget while its focus came by keyboard, as a
 # browser's :focus-visible; every focus look in fxgui keys off it.
 FOCUS_VISIBLE_PROPERTY = "fxFocusVisible"
@@ -1765,6 +1769,9 @@ class _FocusVisibility(QObject):
             # A completer's list has no parent; it belongs to the focus.
             focus = QApplication.focusWidget()
             if focus is not None and _is_themed(focus):
+                if isinstance(popup, QAbstractItemView):
+                    popup.setProperty(POPUP_PROPERTY, True)
+                    fxutils.repolish(popup)
                 register_themed_root(popup)
         if not _is_themed(popup):
             return

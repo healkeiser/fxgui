@@ -556,6 +556,33 @@ def test_a_menu_wears_the_same_popup_look(qtbot, theme):
     assert image.pixelColor(2, middle).name() == colors.surface.lower()
 
 
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_completer_list_wears_the_popup_look(qtbot, theme):
+    from qtpy.QtWidgets import QCompleter, QLineEdit
+
+    line = QLineEdit()
+    window = _shown(qtbot, theme, line)
+    completer = QCompleter(["", "", ""], line)
+    line.setCompleter(completer)
+    line.setFocus()
+    completer.complete()
+    popup = completer.popup()
+    qtbot.waitUntil(popup.isVisible)
+    popup.setCurrentIndex(completer.completionModel().index(1, 0))
+    QApplication.processEvents()
+    image = popup.grab().toImage()
+    popup.hide()
+    colors = fxstyle.colors()
+    middle = image.height() // 2
+    assert image.pixelColor(0, middle).name() == colors.border.lower()
+    assert image.pixelColor(2, middle).name() == colors.surface.lower()
+    # The current row is the accent, as a combo box's is.
+    assert colors.accent_primary.lower() in _pixels(image, image.rect())
+    # Marked for the card look, which an application's sheet carries too.
+    assert popup.property(fxstyle.POPUP_PROPERTY) is True
+    assert window
+
+
 def test_every_themed_popup_asks_for_flyout_corners(qtbot, monkeypatch):
     rounded = []
     monkeypatch.setattr(fxutils, "round_window_corners", rounded.append)
