@@ -92,6 +92,7 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXCollapsibleWidget` | Expandable/collapsible container |
 | `FXCommandPalette` | Popup search over a window's commands (`FXCommand` rows) or rows to go to |
 | `FXColorLabelDelegate` | Delegate for color label rendering in views |
+| `FXConfirmDeleteDialog` | Asks for a name typed exactly before an act with no undo; Enter never deletes |
 | `FXElidedLabel` | Label with automatic text elision |
 | `FXEmojiButton` | Round icon button that opens an emoji picker and can insert into an editor |
 | `FXEmojiPicker` | Popup grid of emoji, keyboard navigable |

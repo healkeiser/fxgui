@@ -92,6 +92,7 @@ from fxgui.fxwidgets._seating import FXSeating
 from fxgui.fxwidgets._screen_grab import grab_screen_region
 from fxgui.fxwidgets._single_instance import FXSingleInstance
 from fxgui.fxwidgets._comments import FXMentionEdit, FXThreadLine
+from fxgui.fxwidgets._confirm_delete import FXConfirmDeleteDialog
 
 
 __all__ = [
@@ -174,4 +175,5 @@ __all__ = [
     "FXSingleInstance",
     "FXMentionEdit",
     "FXThreadLine",
+    "FXConfirmDeleteDialog",
 ]
