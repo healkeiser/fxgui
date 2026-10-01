@@ -5,9 +5,9 @@ import warnings
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import QSize, Qt
+from qtpy.QtCore import QEvent, QSize, Qt
 from qtpy.QtGui import QFontMetrics, QIcon, QPainter, QPixmap
-from qtpy.QtWidgets import QLabel, QStyle, QWidget
+from qtpy.QtWidgets import QLabel, QStyle, QToolTip, QWidget
 
 
 class FXElidedLabel(QLabel):
@@ -131,6 +131,17 @@ class FXElidedLabel(QLabel):
     def elided_text(self) -> str:
         """Return the text as painted, shortened to fit the label."""
         return super().text()
+
+    def event(self, event: QEvent) -> bool:
+        """Show the whole text as the tip of a cut label with no tip set."""
+        if (
+            event.type() == QEvent.ToolTip
+            and not self.toolTip()
+            and super().text() != self._full_text
+        ):
+            QToolTip.showText(event.globalPos(), self._full_text, self)
+            return True
+        return super().event(event)
 
     def sizeHint(self) -> QSize:
         """Ask for the room the whole text needs, on one line."""

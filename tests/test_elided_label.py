@@ -261,3 +261,48 @@ def test_a_wrapped_label_still_elides_from_the_right(qtbot, qapp):
 
     assert painted.startswith("word"), "the head survives"
     assert painted.endswith("..."), "and the cut is at the end"
+
+
+def _hover_tip(label, qapp):
+    """Send `label` the tooltip event a hover sends; return the tip shown."""
+    from qtpy.QtCore import QEvent, QPoint
+    from qtpy.QtGui import QHelpEvent
+    from qtpy.QtWidgets import QToolTip
+
+    QToolTip.hideText()
+    centre = QPoint(label.width() // 2, label.height() // 2)
+    event = QHelpEvent(QEvent.ToolTip, centre, label.mapToGlobal(centre))
+    qapp.sendEvent(label, event)
+    return QToolTip.text() if QToolTip.isVisible() else ""
+
+
+def test_a_cut_label_shows_its_whole_text_on_hover(qtbot, qapp):
+    label = FXElidedLabel(IDENTITY, mode=Qt.ElideMiddle)
+    qtbot.addWidget(label)
+    label.setFixedWidth(80)
+    label.show()
+    qtbot.waitExposed(label)
+
+    assert label.elided_text() != IDENTITY
+    assert _hover_tip(label, qapp) == IDENTITY
+
+
+def test_a_label_that_fits_shows_no_tip(qtbot, qapp):
+    label = FXElidedLabel("short")
+    qtbot.addWidget(label)
+    label.setFixedWidth(300)
+    label.show()
+    qtbot.waitExposed(label)
+
+    assert _hover_tip(label, qapp) == ""
+
+
+def test_a_tip_the_caller_set_wins(qtbot, qapp):
+    label = FXElidedLabel(IDENTITY)
+    label.setToolTip("Signed in")
+    qtbot.addWidget(label)
+    label.setFixedWidth(80)
+    label.show()
+    qtbot.waitExposed(label)
+
+    assert _hover_tip(label, qapp) == "Signed in"
