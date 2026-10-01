@@ -1,4 +1,4 @@
-"""Fuzzy search tree widget with relevance-based filtering and sorting."""
+"""A search bar over a tree (or a flat list) that matches loosely."""
 
 # Metadata
 __author__ = "Valentin Beaumont"
@@ -8,26 +8,35 @@ __email__ = "valentin.onze@gmail.com"
 from typing import Dict, Iterator, List, Optional, Union
 
 # Third-party
-from qtpy.QtCore import Qt, Signal, Slot, QModelIndex
-from qtpy.QtGui import QStandardItem
-from qtpy.QtWidgets import QTreeView
+from qtpy.QtCore import QModelIndex, Qt, Signal, Slot
+from qtpy.QtGui import QStandardItem, QStandardItemModel
+from qtpy.QtWidgets import (
+    QAbstractItemView,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QSlider,
+    QTreeView,
+    QVBoxLayout,
+    QWidget,
+)
 
 # Internal
-from fxgui.fxwidgets._fuzzy_search_list import _FXFuzzySearchBase
+from fxgui import fxicons
+from fxgui.fxcore import FXSortFilterProxyModel
+from fxgui.fxwidgets._labels import FXIconLabel
+from fxgui.fxwidgets._search_bar import FXSearchBar
+from fxgui.fxwidgets._tips import apply_tip
 
 
-class FXFuzzySearchTree(_FXFuzzySearchBase):
-    """A searchable tree widget with fuzzy matching capabilities.
+class FXFuzzySearchTree(QWidget):
+    """A search bar, an optional ratio slider and a fuzzy-filtered tree.
 
-    This widget combines a search bar with a tree view that uses fuzzy matching
-    to filter and sort items by relevance. Items are colored based on their
-    match quality.
-
-    The tree supports hierarchical data with parent-child relationships.
-    When filtering, parent items remain visible if any of their descendants
-    match. Items are looked up by text: with duplicate texts the first one
-    in tree order is used, and passing a `QStandardItem` as `parent` picks
-    a specific one.
+    Rows are ranked and coloured by how well they match. A parent stays
+    visible while one of its descendants matches. Given only top-level
+    items it is a flat list: the tree draws no branch column until an item
+    has a parent. Items are looked up by text, the first in tree order;
+    pass a `QStandardItem` as `parent` to pick a specific one.
 
     Args:
         parent: Parent widget.
@@ -37,74 +46,144 @@ class FXFuzzySearchTree(_FXFuzzySearchBase):
         color_match: Whether to color items based on match quality.
 
     Signals:
-        item_selected: Emitted when an item is clicked. Passes the item text.
-        item_double_clicked: Emitted when an item is double-clicked.
-            Passes the item text.
-        item_activated: Emitted when Enter is pressed on an item.
-            Passes the item text.
-        selection_changed: Emitted when the selection changes.
-            Passes a list of selected item texts.
-        item_expanded: Emitted when an item is expanded. Passes the item text.
-        item_collapsed: Emitted when an item is collapsed. Passes the item text.
+        item_selected: An item was clicked; its text.
+        item_double_clicked: An item was double-clicked; its text.
+        item_activated: Enter was pressed on an item; its text.
+        selection_changed: The selection changed; the selected texts.
+        item_expanded: An item was expanded; its text.
+        item_collapsed: An item was collapsed; its text.
 
     Examples:
-        Basic usage with hierarchical data:
-
-        >>> fuzzy_tree = FXFuzzySearchTree(placeholder="Search assets...")
-        >>> fuzzy_tree.add_item("Characters")
-        >>> fuzzy_tree.add_item("Hero", parent="Characters")
-        >>> fuzzy_tree.add_item("Villain", parent="Characters")
-        >>> fuzzy_tree.item_selected.connect(lambda text: print(f"Selected: {text}"))
-
-        With ratio slider for user adjustment:
-
-        >>> fuzzy_tree = FXFuzzySearchTree(show_ratio_slider=True, ratio=0.6)
-        >>> fuzzy_tree.set_items({
-        ...     "Props": ["sword", "shield", "chair"],
-        ...     "Vehicles": ["car", "truck", "motorcycle"],
-        ... })
+        >>> fuzzy = FXFuzzySearchTree(placeholder="Search fruits...")
+        >>> fuzzy.set_items(["apple", "apricot", "banana"])
+        >>> fuzzy.item_selected.connect(print)
+        >>> fuzzy.set_items({"Props": ["sword", "shield"]})
     """
 
     #: The role `add_item` stores its `data` dictionary under.
     DATA_ROLE = Qt.UserRole
 
+    item_selected = Signal(str)
+    item_double_clicked = Signal(str)
+    item_activated = Signal(str)
+    selection_changed = Signal(list)
     item_expanded = Signal(str)
     item_collapsed = Signal(str)
 
-    def _make_view(self) -> QTreeView:
-        """Return the tree view, with a proxy that keeps matches' parents."""
-        self._proxy_model.setRecursiveFilteringEnabled(True)
-        view = QTreeView()
-        view.setHeaderHidden(True)
-        view.setAnimated(True)
-        return view
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        placeholder: str = "Search...",
+        ratio: float = 0.5,
+        show_ratio_slider: bool = False,
+        color_match: bool = True,
+    ):
+        super().__init__(parent)
 
-    def _connect_signals(self) -> None:
-        """Connect internal signals."""
-        super()._connect_signals()
-        self._view.expanded.connect(self._on_item_expanded)
-        self._view.collapsed.connect(self._on_item_collapsed)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+
+        self._search_bar = FXSearchBar(
+            parent=self, placeholder=placeholder, debounce_ms=150
+        )
+        layout.addWidget(self._search_bar)
+        self.setFocusProxy(self._search_bar)
+
+        # Parented first: a parentless widget shown is its own window.
+        self._slider_container = QWidget(self)
+        slider_layout = QHBoxLayout(self._slider_container)
+        slider_layout.setContentsMargins(0, 0, 0, 0)
+        slider_layout.setSpacing(8)
+
+        self._ratio_icon = FXIconLabel()
+        fxicons.set_icon(self._ratio_icon, "tune")
+        apply_tip(
+            self._ratio_icon, "Sensitivity", "Adjust fuzzy matching sensitivity"
+        )
+        slider_layout.addWidget(self._ratio_icon)
+
+        self._ratio_slider = QSlider(Qt.Horizontal)
+        self._ratio_slider.setRange(0, 100)
+        apply_tip(
+            self._ratio_slider,
+            "Match Threshold",
+            "Lower = more results (looser match), Higher = fewer results "
+            "(stricter match)",
+        )
+        slider_layout.addWidget(self._ratio_slider, 1)
+
+        self._ratio_label = QLabel()
+        self._ratio_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self._ratio_label.setMinimumWidth(
+            self._ratio_label.fontMetrics().horizontalAdvance("100%")
+        )
+        slider_layout.addWidget(self._ratio_label)
+
+        self._slider_container.setVisible(show_ratio_slider)
+        layout.addWidget(self._slider_container)
+
+        self._source_model = QStandardItemModel(self)
+        self._proxy_model = FXSortFilterProxyModel(
+            ratio=ratio, color_match=color_match, parent=self
+        )
+        self._proxy_model.setRecursiveFilteringEnabled(True)
+        self._proxy_model.setSourceModel(self._source_model)
+        self.set_ratio(ratio)
+
+        self._view = QTreeView()
+        self._view.setHeaderHidden(True)
+        self._view.setAnimated(True)
+        self._view.setRootIsDecorated(False)
+        self._view.setModel(self._proxy_model)
+        self._view.setAlternatingRowColors(True)
+        self._view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self._view.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        layout.addWidget(self._view, 1)
+
+        self._search_bar.search_changed.connect(self._on_search_changed)
+        self._search_bar.search_submitted.connect(self._on_search_submitted)
+        self._ratio_slider.valueChanged.connect(
+            lambda value: self.set_ratio(value / 100.0)
+        )
+        self._view.clicked.connect(self._emitter(self.item_selected))
+        self._view.doubleClicked.connect(
+            self._emitter(self.item_double_clicked)
+        )
+        self._view.activated.connect(self._emitter(self.item_activated))
+        self._view.expanded.connect(self._emitter(self.item_expanded))
+        self._view.collapsed.connect(self._emitter(self.item_collapsed))
+        self._view.selectionModel().selectionChanged.connect(
+            lambda *_: self.selection_changed.emit(self.selected_items())
+        )
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+    @staticmethod
+    def _emitter(signal):
+        """Return a slot that emits `signal` with an index's text, if any."""
+
+        def emit(index: QModelIndex) -> None:
+            text = index.data(Qt.DisplayRole)
+            if text:
+                signal.emit(text)
+
+        return emit
 
     @Slot(str)
     def _on_search_changed(self, text: str) -> None:
         """Filter the tree, expanding it so matches show."""
-        super()._on_search_changed(text)
+        self._proxy_model.set_filter_text(text)
         if text:
             self._view.expandAll()
 
-    @Slot(QModelIndex)
-    def _on_item_expanded(self, index: QModelIndex) -> None:
-        """Handle item expansion."""
-        text = index.data(Qt.DisplayRole)
-        if text:
-            self.item_expanded.emit(text)
-
-    @Slot(QModelIndex)
-    def _on_item_collapsed(self, index: QModelIndex) -> None:
-        """Handle item collapse."""
-        text = index.data(Qt.DisplayRole)
-        if text:
-            self.item_collapsed.emit(text)
+    @Slot(str)
+    def _on_search_submitted(self, _text: str) -> None:
+        """Make the first row current and activate it."""
+        if self._proxy_model.rowCount() > 0:
+            first = self._proxy_model.index(0, 0)
+            self._view.setCurrentIndex(first)
+            self.item_activated.emit(first.data(Qt.DisplayRole))
 
     def _walk(self) -> Iterator[QStandardItem]:
         """Yield every item, depth first, in tree order."""
@@ -128,14 +207,25 @@ class FXFuzzySearchTree(_FXFuzzySearchBase):
 
     # Public API
 
-    def set_items(self, items: Union[List[str], Dict[str, List[str]]]) -> None:
-        """Set the tree items from a list or dictionary.
+    def view(self) -> QTreeView:
+        """Return the tree view."""
+        return self._view
 
-        Args:
-            items: Either a flat list of strings (creates top-level items),
-                or a dictionary where keys are parent items and values are
-                lists of child items.
-        """
+    def source_model(self) -> QStandardItemModel:
+        """Return the model the items live in."""
+        return self._source_model
+
+    def proxy_model(self) -> FXSortFilterProxyModel:
+        """Return the filtering proxy the view shows."""
+        return self._proxy_model
+
+    def clear(self) -> None:
+        """Remove every item."""
+        self._source_model.clear()
+        self._view.setRootIsDecorated(False)
+
+    def set_items(self, items: Union[List[str], Dict[str, List[str]]]) -> None:
+        """Replace the items with a flat list, or parents mapped to children."""
         self.clear()
         if isinstance(items, dict):
             for parent_text, children in items.items():
@@ -152,34 +242,31 @@ class FXFuzzySearchTree(_FXFuzzySearchBase):
         parent: Optional[Union[str, QStandardItem]] = None,
         data: Optional[dict] = None,
     ) -> QStandardItem:
-        """Add a single item to the tree.
+        """Add one item and return it.
 
         Args:
-            text: The item text to add.
+            text: The item text.
             parent: The parent item, or its text. Top level when None or
                 when no item has that text.
-            data: Optional dictionary stored under `DATA_ROLE`.
-
-        Returns:
-            The created QStandardItem.
+            data: A dictionary stored under `DATA_ROLE`.
         """
         item = QStandardItem(text)
         if data:
             item.setData(dict(data), self.DATA_ROLE)
-
         if isinstance(parent, str):
             parent = self.get_item(parent)
         if parent is not None:
             parent.appendRow(item)
+            self._view.setRootIsDecorated(True)
         else:
             self._source_model.appendRow(item)
         return item
 
     def remove_item(self, text: str) -> bool:
-        """Remove the first item with this text, and its children.
+        """Remove the first item with this text and its children.
 
         Returns:
-            True if the item was found and removed, False otherwise.
+            True if an item was found and removed.
         """
         item = self.get_item(text)
         if item is None:
@@ -194,25 +281,25 @@ class FXFuzzySearchTree(_FXFuzzySearchBase):
             (item for item in self._walk() if item.text() == text), None
         )
 
-    @property
     def items(self) -> List[str]:
         """Return every item text, nested ones included, in tree order."""
         return [item.text() for item in self._walk()]
 
-    @property
-    def top_level_items(self) -> List[str]:
-        """Return the top-level item texts."""
-        return [
-            self._source_model.item(row).text()
-            for row in range(self._source_model.rowCount())
-            if self._source_model.item(row)
-        ]
+    def selected_items(self) -> List[str]:
+        """Return the texts of the selected items."""
+        selection = self._view.selectionModel().selectedIndexes()
+        return [index.data(Qt.DisplayRole) for index in selection if index.data()]
+
+    def current_item(self) -> Optional[str]:
+        """Return the current item's text, or None."""
+        index = self._view.currentIndex()
+        return index.data(Qt.DisplayRole) if index.isValid() else None
 
     def select_item(self, text: str) -> bool:
         """Make the first item with this text current.
 
         Returns:
-            True if the item was found and visible, False otherwise.
+            True if the item was found and is visible.
         """
         index = self._proxy_index(text)
         if index.isValid():
@@ -221,11 +308,7 @@ class FXFuzzySearchTree(_FXFuzzySearchBase):
         return False
 
     def expand_item(self, text: str) -> bool:
-        """Expand the first item with this text.
-
-        Returns:
-            True if the item was found and visible, False otherwise.
-        """
+        """Expand the first item with this text; False if not shown."""
         index = self._proxy_index(text)
         if index.isValid():
             self._view.expand(index)
@@ -233,11 +316,7 @@ class FXFuzzySearchTree(_FXFuzzySearchBase):
         return False
 
     def collapse_item(self, text: str) -> bool:
-        """Collapse the first item with this text.
-
-        Returns:
-            True if the item was found and visible, False otherwise.
-        """
+        """Collapse the first item with this text; False if not shown."""
         index = self._proxy_index(text)
         if index.isValid():
             self._view.collapse(index)
@@ -245,14 +324,34 @@ class FXFuzzySearchTree(_FXFuzzySearchBase):
         return False
 
     def expand_all(self) -> None:
-        """Expand all items in the tree."""
+        """Expand every item."""
         self._view.expandAll()
 
     def collapse_all(self) -> None:
-        """Collapse all items in the tree."""
+        """Collapse every item."""
         self._view.collapseAll()
 
-    @property
-    def tree_view(self) -> QTreeView:
-        """Return the underlying QTreeView."""
-        return self._view
+    def search_text(self) -> str:
+        """Return the search text."""
+        return self._search_bar.text()
+
+    def set_search_text(self, text: str) -> None:
+        """Set the search text."""
+        self._search_bar.setText(text)
+
+    def ratio(self) -> float:
+        """Return the similarity threshold, 0.0 to 1.0."""
+        return self._proxy_model.ratio()
+
+    def set_ratio(self, ratio: float) -> None:
+        """Set the similarity threshold, clamped to 0.0 to 1.0."""
+        ratio = max(0.0, min(1.0, ratio))
+        blocked = self._ratio_slider.blockSignals(True)
+        self._ratio_slider.setValue(round(ratio * 100))
+        self._ratio_slider.blockSignals(blocked)
+        self._ratio_label.setText(f"{round(ratio * 100)}%")
+        self._proxy_model.set_ratio(ratio)
+
+    def show_ratio_slider(self, visible: bool = True) -> None:
+        """Show or hide the ratio slider."""
+        self._slider_container.setVisible(visible)

@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXFuzzySearchList, FXFuzzySearchTree
+from fxgui.fxwidgets import FXFuzzySearchTree
 
 
 def _plain(orientation=Qt.Horizontal):
@@ -140,10 +140,9 @@ ORIENTATIONS = pytest.mark.parametrize(
     [
         _plain(Qt.Horizontal),
         _plain(Qt.Vertical),
-        _in(FXFuzzySearchList),
         _in(FXFuzzySearchTree),
     ],
-    ids=["horizontal", "vertical", "FXFuzzySearchList", "FXFuzzySearchTree"],
+    ids=["horizontal", "vertical", "FXFuzzySearchTree"],
 )
 def test_a_slider_reads_in_every_theme(qtbot, theme, make):
     parts = _parts(qtbot, theme, make=make)

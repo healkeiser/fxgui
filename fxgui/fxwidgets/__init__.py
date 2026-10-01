@@ -33,7 +33,6 @@ from fxgui.fxwidgets._constants import (
     WARNING,
 )
 from fxgui.fxwidgets._delegates import (
-    FXColorLabelDelegate,
     FXItemDelegate,
     FXThumbnailDelegate,
 )
@@ -46,7 +45,6 @@ from fxgui.fxwidgets._emoji_picker import (
 )
 from fxgui.fxwidgets._file_path_widget import FXFilePathWidget
 from fxgui.fxwidgets._flow_layout import FXFlowLayout
-from fxgui.fxwidgets._fuzzy_search_list import FXFuzzySearchList
 from fxgui.fxwidgets._fuzzy_search_tree import FXFuzzySearchTree
 from fxgui.fxwidgets._inputs import (
     FXIconLineEdit,
@@ -121,7 +119,6 @@ __all__ = [
     "FXCheckableComboBox",
     "FXCodeBlock",
     "FXCollapsibleWidget",
-    "FXColorLabelDelegate",
     "FXCommand",
     "FXCommandPalette",
     "FXCommandRow",
@@ -134,7 +131,6 @@ __all__ = [
     "FXFilteredTree",
     "FXFloatingDialog",
     "FXFlowLayout",
-    "FXFuzzySearchList",
     "FXFuzzySearchTree",
     "FXIconButton",
     "FXIconLabel",
