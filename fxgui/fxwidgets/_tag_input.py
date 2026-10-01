@@ -71,7 +71,6 @@ class FXTagChip(QFrame):
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-    @property
     def text(self) -> str:
         """Return the tag text."""
         return self._text
@@ -119,7 +118,8 @@ class FXTagInput(QWidget):
     ):
         super().__init__(parent)
 
-        self._tags: List[str] = []
+        # The chips are the one record of the tags, in order.
+        self._chips: List[FXTagChip] = []
         self._max_tags = max_tags
         self._allow_duplicates = allow_duplicates
 
@@ -143,10 +143,9 @@ class FXTagInput(QWidget):
 
         self._tags_container.setVisible(False)
 
-    @property
     def tags(self) -> List[str]:
-        """Return the list of current tags."""
-        return self._tags.copy()
+        """Return the current tags, in order."""
+        return [chip.text() for chip in self._chips]
 
     def add_tag(self, tag: str) -> bool:
         """Add a tag to the input.
@@ -157,77 +156,72 @@ class FXTagInput(QWidget):
         Returns:
             True if the tag was added, False otherwise.
         """
-        tag = tag.strip()
-        if not tag:
+        if not self._add(tag):
             return False
-
-        if not self._allow_duplicates and tag in self._tags:
-            return False
-
-        if self._max_tags > 0 and len(self._tags) >= self._max_tags:
-            return False
-
-        self._tags.append(tag)
-
-        # Create chip
-        chip = FXTagChip(tag, self._tags_container)
-        chip.removed.connect(self.remove_tag)
-
-        self._tags_layout.addWidget(chip)
-        self._tags_container.setVisible(True)
-
-        # Emit signals
-        self.tag_added.emit(tag)
-        self.tags_changed.emit(self.tags)
-
+        self.tags_changed.emit(self.tags())
         return True
 
     def remove_tag(self, tag: str) -> bool:
-        """Remove a tag from the input.
-
-        Args:
-            tag: The tag text to remove.
+        """Remove the first chip that reads `tag`.
 
         Returns:
             True if the tag was removed, False otherwise.
         """
-        if tag not in self._tags:
-            return False
-
-        self._tags.remove(tag)
-
-        # Find and remove the chip
-        for i in range(self._tags_layout.count()):
-            item = self._tags_layout.itemAt(i)
-            if item and item.widget():
-                widget = item.widget()
-                if isinstance(widget, FXTagChip) and widget.text == tag:
-                    widget.deleteLater()
-                    break
-
-        if not self._tags:
-            self._tags_container.setVisible(False)
-
-        # Emit signals
-        self.tag_removed.emit(tag)
-        self.tags_changed.emit(self.tags)
-
-        return True
+        for chip in self._chips:
+            if chip.text() == tag:
+                self._drop(chip)
+                self.tags_changed.emit(self.tags())
+                return True
+        return False
 
     def clear_tags(self) -> None:
         """Remove all tags."""
-        for tag in self._tags.copy():
-            self.remove_tag(tag)
+        self.set_tags([])
 
     def set_tags(self, tags: List[str]) -> None:
-        """Set the tags, replacing any existing tags.
+        """Replace the tags, saying `tags_changed` once.
 
         Args:
             tags: List of tag strings to set.
         """
-        self.clear_tags()
+        before = self.tags()
+        for chip in list(self._chips):
+            self._drop(chip)
         for tag in tags:
-            self.add_tag(tag)
+            self._add(tag)
+        if self.tags() != before:
+            self.tags_changed.emit(self.tags())
+
+    def _add(self, tag: str) -> bool:
+        """Add a chip for `tag` if it is allowed, and say `tag_added`."""
+        tag = tag.strip()
+        tags = self.tags()
+        if (
+            not tag
+            or (not self._allow_duplicates and tag in tags)
+            or (self._max_tags > 0 and len(tags) >= self._max_tags)
+        ):
+            return False
+        chip = FXTagChip(tag, self._tags_container)
+        chip.removed.connect(self._on_chip_removed)
+        self._chips.append(chip)
+        self._tags_layout.addWidget(chip)
+        self._tags_container.setVisible(True)
+        self.tag_added.emit(tag)
+        return True
+
+    def _drop(self, chip: FXTagChip) -> None:
+        """Take `chip` out of the layout and delete it; say `tag_removed`."""
+        self._chips.remove(chip)
+        self._tags_layout.removeWidget(chip)
+        chip.deleteLater()
+        self._tags_container.setVisible(bool(self._chips))
+        self.tag_removed.emit(chip.text())
+
+    def _on_chip_removed(self, _tag: str) -> None:
+        """Remove the chip whose button was clicked."""
+        self._drop(self.sender())
+        self.tags_changed.emit(self.tags())
 
     def _on_return_pressed(self) -> None:
         """Handle Enter key press in input field."""
@@ -248,7 +242,6 @@ FXTagChip {
 FXTagChip QLabel {
     color: @text_on_accent_primary;
     background: transparent;
-    font-size: 11px;
 }
 FXTagChip QPushButton {
     background: transparent;
