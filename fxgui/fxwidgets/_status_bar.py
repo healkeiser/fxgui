@@ -334,13 +334,8 @@ class FXStatusBar(QStatusBar):
 
     def ground(self) -> str:
         """Return the colour the bar is painted now: a tint, or its own."""
-        tint = self.tint()
-        if tint:
-            return tint
-        theme = fxstyle.colors()
-        if self.property(fxstyle.FRAME_PROPERTY):
-            return theme.frame
-        return theme.surface_sunken
+        # The sheet's fill, tint and frame included, as the palette holds it.
+        return self.palette().color(self.backgroundRole()).name()
 
     def show_tip(self, tip: str) -> None:
         """Write a hover tip where messages go, after the items.
