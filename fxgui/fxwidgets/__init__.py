@@ -91,6 +91,7 @@ from fxgui.fxwidgets._labels import align_labels, fix_wrapped_heights
 from fxgui.fxwidgets._seating import FXSeating
 from fxgui.fxwidgets._screen_grab import grab_screen_region
 from fxgui.fxwidgets._single_instance import FXSingleInstance
+from fxgui.fxwidgets._comments import FXMentionEdit, FXThreadLine
 
 
 __all__ = [
@@ -171,4 +172,6 @@ __all__ = [
     "FXSeating",
     "grab_screen_region",
     "FXSingleInstance",
+    "FXMentionEdit",
+    "FXThreadLine",
 ]

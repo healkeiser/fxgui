@@ -104,6 +104,7 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXLoadingSpinner` | Animated loading spinner |
 | `FXLoadingOverlay` | Loading overlay for widgets |
 | `FXMainWindow` | Main window with toolbar, status bar, and theme toggle |
+| `FXMentionEdit` | Text box that offers people by name after an @ and lists who it names |
 | `FXNotificationBanner` | Notification banner for messages |
 | `FXOutputLogWidget` | Log display with level filtering |
 | `FXPasswordLineEdit` | Password input with visibility toggle |
@@ -120,6 +121,7 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXSystemTray` | System tray icon with menu |
 | `FXTagInput` | Tag/chip input widget |
 | `FXThumbnailDelegate` | Delegate for thumbnail rendering in views |
+| `FXThreadLine` | Line over a comment thread, from the comment's face into each reply's |
 | `FXTimelineSlider` | Timeline slider for media/animation |
 | `FXToggleSwitch` | iOS-style toggle switch |
 | `FXTooltip` | Widget-hosting tooltip, for what native tooltips cannot do |
