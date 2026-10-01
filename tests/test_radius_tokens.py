@@ -17,6 +17,8 @@ def _literal_radii(qss: str) -> list:
     # are pills.
     qss = re.sub(r"(QSlider|QScrollBar)::[^{]*\{[^}]*\}", "", qss)
     qss = re.sub(r"QProgressBar[^{]*\{[^}]*\}", "", qss)
+    # An icon button is a circle: its radius follows its side.
+    qss = re.sub(r"FXIconButton\[fxSize[^{]*\{[^}]*\}", "", qss)
     return [m for m in re.findall(r"radius:\s*(\d+)px", qss) if m in _SIZES]
 
 
