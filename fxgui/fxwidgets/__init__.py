@@ -84,6 +84,7 @@ from fxgui.fxwidgets._validators import (
 )
 from fxgui.fxwidgets._widget import FXWidget
 from fxgui.fxwidgets._flow_layout import FXFlowLayout
+from fxgui.fxwidgets._command_palette import FXCommand, FXCommandPalette
 
 
 __all__ = [
@@ -155,4 +156,6 @@ __all__ = [
     "FXWidget",
     "theme_manager",
     "FXFlowLayout",
+    "FXCommand",
+    "FXCommandPalette",
 ]

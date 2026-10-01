@@ -89,6 +89,7 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXAvatar` | Round avatar: a photo, or initials on a disc coloured by the name |
 | `FXBreadcrumb` | Clickable breadcrumb trail for hierarchical navigation |
 | `FXCollapsibleWidget` | Expandable/collapsible container |
+| `FXCommandPalette` | Popup search over a window's commands (`FXCommand` rows) or rows to go to |
 | `FXColorLabelDelegate` | Delegate for color label rendering in views |
 | `FXElidedLabel` | Label with automatic text elision |
 | `FXEmojiButton` | Tool button that opens an emoji picker and can insert into an editor |
