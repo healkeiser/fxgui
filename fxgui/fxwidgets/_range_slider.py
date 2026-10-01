@@ -9,10 +9,8 @@ from qtpy.QtGui import (
     QColor,
     QFontMetrics,
     QKeyEvent,
-    QLinearGradient,
     QMouseEvent,
     QPainter,
-    QPainterPath,
     QPen,
 )
 from qtpy.QtWidgets import QSizePolicy, QWidget
@@ -82,8 +80,9 @@ class FXRangeSlider(QWidget):
         # Handle addressed by keyboard input (arrow keys); Tab toggles it
         # while the widget has focus.
         self._active_handle = self.HANDLE_LOW
-        self._handle_radius = 8
-        self._track_height = 4
+        # A QSlider's 14 px handle on its 6 px groove.
+        self._handle_radius = 7
+        self._track_height = 6
 
         # Setup widget
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -212,112 +211,79 @@ class FXRangeSlider(QWidget):
 
         return self.HANDLE_NONE
 
+    def _handle_inks(self, handle: int):
+        """Return a handle's fill and edge, as a QSlider's handle wears them."""
+        theme = fxstyle.colors()
+        if not self.isEnabled():
+            return theme.surface, theme.border
+        if self.hasFocus() and self._active_handle == handle:
+            return theme.text_on_accent_primary, theme.accent_primary
+        if handle in (self._hover_handle, self._pressed_handle):
+            return theme.slider_thumb_hover, theme.control_edge
+        return theme.slider_thumb, theme.control_edge
+
     def paintEvent(self, event) -> None:
-        """Paint the range slider."""
+        """Paint the groove, the span between the handles, and the values."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-
         theme = fxstyle.colors()
-        track_color = QColor(theme.surface_sunken)
-        handle_color = QColor(theme.slider_thumb)
-        hover_color = QColor(theme.slider_thumb_hover)
-        handle_border_color = QColor(theme.accent_primary)
+        enabled = self.isEnabled()
 
-        # Calculate positions
         margin = self._handle_radius
-        track_y = self.height() // 2
+        middle = self.height() // 2
         low_x = self._value_to_position(self._low)
         high_x = self._value_to_position(self._high)
-
-        # Draw background track
-        track_path = QPainterPath()
-        track_path.addRoundedRect(
-            margin,
-            track_y - self._track_height // 2,
-            self.width() - margin * 2,
-            self._track_height,
-            self._track_height // 2,
-            self._track_height // 2,
+        track = self._track_height
+        top = middle - track // 2
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor(theme.surface_sunken))
+        painter.drawRoundedRect(
+            QRectF(margin, top, self.width() - margin * 2, track),
+            track / 2,
+            track / 2,
         )
-        painter.fillPath(track_path, track_color)
-
-        # Draw range (selected area) with gradient
-        range_path = QPainterPath()
-        range_path.addRoundedRect(
-            low_x,
-            track_y - self._track_height // 2,
-            high_x - low_x,
-            self._track_height,
-            self._track_height // 2,
-            self._track_height // 2,
+        painter.setBrush(
+            QColor(theme.accent_primary if enabled else theme.border_strong)
         )
-        range_gradient = QLinearGradient(low_x, 0, high_x, 0)
-        range_gradient.setColorAt(0, QColor(theme.accent_primary))
-        range_gradient.setColorAt(1, QColor(theme.accent_secondary))
-        painter.fillPath(range_path, range_gradient)
+        painter.drawRoundedRect(
+            QRectF(low_x, top, high_x - low_x, track), track / 2, track / 2
+        )
 
-        # Draw handles
-        for handle_type, x_pos in [
-            (self.HANDLE_LOW, low_x),
-            (self.HANDLE_HIGH, high_x),
-        ]:
-            is_hovered = self._hover_handle == handle_type
-            is_pressed = self._pressed_handle == handle_type
-
-            # Handle shadow
-            painter.setBrush(QColor(0, 0, 0, 30))
-            painter.setPen(Qt.NoPen)
-            painter.drawEllipse(
-                int(x_pos - self._handle_radius + 1),
-                int(track_y - self._handle_radius + 1),
-                self._handle_radius * 2,
-                self._handle_radius * 2,
+        side = self._handle_radius * 2
+        radius = fxstyle.BUTTON_RADIUS
+        for handle, x in ((self.HANDLE_LOW, low_x), (self.HANDLE_HIGH, high_x)):
+            fill, edge = self._handle_inks(handle)
+            painter.setBrush(QColor(fill))
+            painter.setPen(QPen(QColor(edge), 1))
+            # Half a pixel in, so the whole 1 px edge is drawn.
+            painter.drawRoundedRect(
+                QRectF(
+                    round(x) - self._handle_radius + 0.5,
+                    middle - self._handle_radius + 0.5,
+                    side - 1,
+                    side - 1,
+                ),
+                radius,
+                radius,
             )
 
-            # Handle fill
-            current_handle_color = handle_color
-            if is_pressed or is_hovered:
-                current_handle_color = hover_color
-
-            painter.setBrush(current_handle_color)
-            # Focus indicator: the keyboard-active handle gets a thicker
-            # accent border while the widget has focus.
-            is_active = (
-                self.hasFocus() and self._active_handle == handle_type
-            )
-            pen = QPen(handle_border_color)
-            pen.setWidth(3 if is_active else 1)
-            painter.setPen(pen)
-            painter.drawEllipse(
-                int(x_pos - self._handle_radius),
-                int(track_y - self._handle_radius),
-                self._handle_radius * 2,
-                self._handle_radius * 2,
-            )
-
-        # Draw value labels
         if self._show_values:
-            font = painter.font()
-            font.setPointSize(8)
-            painter.setFont(font)
-            text_color = QColor(theme.text)
-            bg_color = QColor(theme.surface)
-            bg_color.setAlpha(200)
-            fm = QFontMetrics(font)
-            height = fm.height() + 4
+            metrics = QFontMetrics(self.font())
+            painter.setPen(QColor(theme.text if enabled else theme.text_disabled))
+            gap = 4
             # Low label above its handle, high label below its own.
-            for value, x_pos, top in (
-                (self._low, low_x, track_y - self._handle_radius - height - 4),
-                (self._high, high_x, track_y + self._handle_radius + 4),
+            for value, x, y in (
+                (self._low, low_x, middle - self._handle_radius - gap
+                 - metrics.height()),
+                (self._high, high_x, middle + self._handle_radius + gap),
             ):
                 text = str(value)
-                width = fm.horizontalAdvance(text) + 8
-                rect = QRectF(x_pos - width / 2, top, width, height)
-                painter.setBrush(bg_color)
-                painter.setPen(Qt.NoPen)
-                painter.drawRoundedRect(rect, 3, 3)
-                painter.setPen(text_color)
-                painter.drawText(rect, Qt.AlignCenter, text)
+                width = metrics.horizontalAdvance(text)
+                painter.drawText(
+                    QRectF(x - width / 2, y, width, metrics.height()),
+                    Qt.AlignCenter,
+                    text,
+                )
 
         painter.end()
 
