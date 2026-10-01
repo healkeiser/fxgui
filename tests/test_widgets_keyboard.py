@@ -36,20 +36,20 @@ def test_rating_widget_keyboard(qtbot):
     assert rating.focusPolicy() == Qt.StrongFocus
 
     qtbot.keyClick(rating, Qt.Key_Right)
-    assert rating.rating == 1
+    assert rating.rating() == 1
 
     qtbot.keyClick(rating, Qt.Key_3)
-    assert rating.rating == 3
+    assert rating.rating() == 3
 
     qtbot.keyClick(rating, Qt.Key_Left)
-    assert rating.rating == 2
+    assert rating.rating() == 2
 
     with qtbot.waitSignal(rating.rating_changed):
         qtbot.keyClick(rating, Qt.Key_End)
-    assert rating.rating == 5
+    assert rating.rating() == 5
 
     qtbot.keyClick(rating, Qt.Key_Delete)
-    assert rating.rating == 0
+    assert rating.rating() == 0
 
 
 def test_rating_widget_half_star_step(qtbot):
@@ -59,7 +59,7 @@ def test_rating_widget_half_star_step(qtbot):
     rating.setFocus()
 
     qtbot.keyClick(rating, Qt.Key_Right)
-    assert rating.rating == 0.5
+    assert rating.rating() == 0.5
 
 
 def test_range_slider_keyboard(qtbot):
