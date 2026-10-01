@@ -298,6 +298,22 @@ def test_the_icon_button_round_comes_from_the_theme_not_its_own_sheet(
     assert near(pixel(window, button, 2, 2), tokens["@surface"])
 
 
+def test_a_new_icon_button_size_restyles_no_root(qtbot, window, monkeypatch):
+    calls = []
+    monkeypatch.setattr(fxstyle, "_reapply_to_roots", lambda: calls.append(1))
+    for size in (23, 37, 51):
+        FXIconButton("mood", window, size=size)
+    assert calls == []
+
+
+def test_an_odd_size_icon_button_is_round(qtbot, window):
+    button = _show(qtbot, window, FXIconButton("mood", window, size=37))
+    tokens = fxstyle._token_map("dark")
+    hover(qtbot, button)
+    assert near(pixel(window, button, 18, 3), tokens["@state_hover"])
+    assert near(pixel(window, button, 2, 2), tokens["@surface"])
+
+
 def test_a_deleted_child_leaves_the_group_at_once(qtbot, window):
     from qtpy import shiboken
 

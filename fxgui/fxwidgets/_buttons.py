@@ -113,6 +113,16 @@ FXIconButton[fxFocusVisible="true"]:checked:focus {
 }
 """)
 
+# The radius follows the side, so every size gets its rule at import: one
+# registered later would re-sheet every root. Under half the side, since Qt
+# draws square corners for exactly half.
+# ponytail: a side outside this range takes the nearest end's radius.
+_SIZES = range(8, 97)
+fxstyle.register_widget_style("".join(
+    f'FXIconButton[fxSize="{side}"] {{ border-radius: {side // 2 - 1}px; }}\n'
+    for side in _SIZES
+))
+
 
 class FXIconButton(QToolButton):
     """A round, flat icon button, filled with the accent when checked.
@@ -148,13 +158,7 @@ class FXIconButton(QToolButton):
         self.setFixedSize(size, size)
         glyph = round(size * 0.57)
         self.setIconSize(QSize(glyph, glyph))
-        # One rule per size, since the radius follows it. Under half the
-        # side: Qt draws square corners for a radius of exactly half.
-        self.setProperty("fxSize", size)
-        fxstyle.register_widget_style(
-            f'FXIconButton[fxSize="{size}"] '
-            f"{{ border-radius: {size // 2 - 1}px; }}"
-        )
+        self.setProperty("fxSize", min(max(size, _SIZES[0]), _SIZES[-1]))
         if tip:
             apply_tip(self, tip)
         # Active is a hovered tool button: unchecked on state_hover, so the
