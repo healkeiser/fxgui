@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
     QGroupBox,
     QLabel,
     QListWidget,
+    QMenu,
     QSpinBox,
     QStyle,
     QStyleOptionComboBox,
@@ -43,6 +44,9 @@ def _shown(qtbot, theme, widget, size=(320, 240)):
     qtbot.addWidget(window)
     window.show()
     qtbot.waitExposed(window)
+    # The window holds focus, so no widget wears its focus look.
+    window.setFocusPolicy(Qt.StrongFocus)
+    window.setFocus()
     QApplication.processEvents()
     return window
 
@@ -349,3 +353,85 @@ def test_a_dock_tab_wears_the_same_bar(qtbot, theme):
     rect = tab.visibleRegion().boundingRect()
     rect = rect.translated(tab.mapTo(window, QPoint()))
     _assert_straight(image, rect, fxstyle.colors().accent_primary.lower())
+
+
+# (7) No state moves an item's text.
+
+
+def _text_start(image, rect):
+    """Return the first column of `rect` whose ink is not the row's fill."""
+    middle = rect.center().y()
+    fill = image.pixelColor(rect.left() + 2, middle).name()
+    for x in range(rect.left() + 2, rect.right()):
+        for y in range(rect.top() + 2, rect.bottom() - 1):
+            if _distance(image.pixelColor(x, y).name(), fill) > 30:
+                return x
+    raise AssertionError(f"no text in {rect}")
+
+
+def _starts(image, rects):
+    return [_text_start(image, rect) for rect in rects]
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_combo_popup_row_keeps_its_text_still(qtbot, theme):
+    combo = QComboBox()
+    combo.addItems(["Same"] * 3)
+    combo.setCurrentIndex(1)
+    window = _shown(qtbot, theme, combo)
+    combo.showPopup()
+    qtbot.waitUntil(lambda: combo.view().isVisible())
+    view = combo.view()
+    popup = view.window()
+    rows = [
+        view.visualRect(view.model().index(row, 0)).translated(
+            view.viewport().mapTo(popup, QPoint())
+        )
+        for row in range(3)
+    ]
+    # Row 1 is current and selected; 0 and 2 rest.
+    starts = _starts(popup.grab().toImage(), rows)
+    combo.hidePopup()
+    assert len(set(starts)) == 1, starts
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_menu_row_keeps_its_text_still(qtbot, theme):
+    holder = QWidget()
+    window = _shown(qtbot, theme, holder)
+    menu = QMenu(window)
+    actions = [menu.addAction("Same") for _ in range(3)]
+    menu.popup(holder.mapToGlobal(QPoint(10, 10)))
+    qtbot.waitExposed(menu)
+    menu.setActiveAction(actions[1])
+    QApplication.processEvents()
+    starts = _starts(
+        menu.grab().toImage(),
+        [menu.actionGeometry(action) for action in actions],
+    )
+    menu.close()
+    assert len(set(starts)) == 1, starts
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+@pytest.mark.parametrize("kind", ["list", "tree"])
+def test_a_view_row_keeps_its_text_still(qtbot, theme, kind):
+    if kind == "list":
+        view = QListWidget()
+        view.addItems(["Same"] * 3)
+        items = [view.item(row) for row in range(3)]
+    else:
+        view = QTreeWidget()
+        view.setHeaderHidden(True)
+        items = [QTreeWidgetItem(view, ["Same"]) for _ in range(3)]
+    window = _shown(qtbot, theme, view)
+    items[1].setSelected(True)
+    rows = [view.visualItemRect(item) for item in items]
+    _hover(view.viewport(), rows[2].center())
+    image = view.viewport().grab().toImage()
+    # Row 0 rests, 1 is selected, 2 is hovered.
+    assert image.pixelColor(rows[2].center()).name() != image.pixelColor(
+        rows[0].center()
+    ).name()
+    starts = _starts(image, rows)
+    assert len(set(starts)) == 1, starts

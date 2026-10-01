@@ -677,6 +677,8 @@ QComboBox
     border-radius: @button_radius;
     padding: 4px 6px;
     min-width: 75px;
+    /* A list popup: the menu-style one ticks and indents the current row. */
+    combobox-popup: 0;
 }
 
 QPushButton:checked{
@@ -709,14 +711,6 @@ QPushButton:hover
 }
 
 
-QComboBox:on
-{
-    /* background-color: #626873; */
-    padding-top: 3px;
-    padding-left: 4px;
-    /* selection-background-color: #4a4a4a; */
-}
-
 QComboBox QAbstractItemView
 {
     background-color: @surface_sunken;
@@ -734,19 +728,6 @@ QComboBox QFrame
     border-radius: 0px;
     padding: 0px;
     margin: 0px;
-}
-
-QComboBox QAbstractItemView::item
-{
-    background-color: @surface_sunken;
-    padding: 4px;
-    margin: 0px;
-    min-height: 20px;
-}
-
-QComboBox QAbstractItemView::item:selected
-{
-    background-color: @accent_primary;
 }
 
 /* Every arrow is the accordion's chevron in @icon: here, on a spin box,
@@ -1099,6 +1080,19 @@ QTreeView::item:hover,
 QListView::item:selected,
 QTreeView::item:selected {
     border-radius: @button_radius;
+}
+
+/* A list insets a resting row's text 1px inside Qt's own frame, which a
+   highlighted row (no longer native) loses: 1px more keeps the text still.
+   A combo box's list has no such inset. */
+QListView::item:hover,
+QListView::item:selected {
+    padding: 5px 9px;
+}
+
+QComboBox QAbstractItemView::item:hover,
+QComboBox QAbstractItemView::item:selected {
+    padding: 4px 8px;
 }
 
 QListView::item:!selected:hover,
