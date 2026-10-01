@@ -36,7 +36,7 @@ from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 # Third-party
 import yaml
-from qtpy.QtCore import QEvent, QObject, QRectF, Qt, Signal
+from qtpy.QtCore import QEvent, QObject, QRectF, QSize, Qt, Signal
 from qtpy.QtGui import (
     QColor,
     QFont,
@@ -1815,6 +1815,10 @@ class _FocusVisibility(QObject):
             return
         popup.setProperty(POPUP_PROPERTY, True)
         if isinstance(popup, QAbstractItemView):
+            # A host's style gives a list 24 px icons; a size set stays.
+            if not popup.iconSize().isValid():
+                side = popup.style().pixelMetric(QStyle.PM_SmallIconSize)
+                popup.setIconSize(QSize(side, side))
             fxutils.repolish(popup)
         register_themed_root(popup)
 

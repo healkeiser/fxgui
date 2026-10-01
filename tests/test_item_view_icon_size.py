@@ -88,3 +88,20 @@ def test_a_branch_chevron_is_drawn_in_the_16_px_box(qtbot, theme, delegate):
 
     assert _same_box(drawn, glyph), (drawn, glyph)
     window.close()
+
+
+def test_a_completer_list_in_a_host_window_takes_the_16_px_box(qtbot, host_root):
+    from qtpy.QtWidgets import QCompleter, QLineEdit
+
+    field = QLineEdit(host_root)
+    host_root.layout().addWidget(field)
+    completer = QCompleter(["sh0010", "sh0020"], field)
+    field.setCompleter(completer)
+    host_root.show()
+    qtbot.waitExposed(host_root)
+    field.setFocus()
+    completer.complete()
+    popup = completer.popup()
+    qtbot.waitUntil(popup.isVisible)
+    assert popup.iconSize() == QSize(_BOX, _BOX)
+    popup.hide()
