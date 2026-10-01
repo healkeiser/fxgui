@@ -289,6 +289,11 @@ The base rule for every widget carries no fill and no font. So:
 - `label.setFont(...)` keeps the size and family you gave it.
 - A plain `QLabel` on a coloured card shows the card, not a box of its own.
 - `item.setBackground(...)` on a list or tree item shows.
+- Every list, tree and table scrolls by the pixel, in an app or inside a
+  host. The sheet sets this each time it styles the view, so a
+  `setVerticalScrollMode` call holds only until the next restyle. A view that wants to scroll by the
+  row says so in a rule of its own, by objectName:
+  `QTreeView#shots { qproperty-verticalScrollMode: ScrollPerItem; }`.
 
 !!! warning "Inside a host application"
     Inside Houdini, Maya or Nuke, fxgui themes its own windows, never the
