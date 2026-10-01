@@ -28,6 +28,9 @@ def _plain(orientation=Qt.Horizontal):
     return make
 
 
+_HORIZONTAL = _plain()
+
+
 def _in(kind):
     def make():
         widget = kind(show_ratio_slider=True)
@@ -58,7 +61,7 @@ def _hover(slider):
     )
 
 
-def _slider(qtbot, theme, state="", make=_plain()):
+def _slider(qtbot, theme, state="", make=_HORIZONTAL):
     fxstyle.apply_theme(theme)
     window = QWidget()
     fxstyle.register_themed_root(window)
@@ -93,7 +96,7 @@ def _slider(qtbot, theme, state="", make=_plain()):
     return slider
 
 
-def _parts(qtbot, theme, state="", make=_plain()):
+def _parts(qtbot, theme, state="", make=_HORIZONTAL):
     """Return the handle's edge, centre and corners, the span and groove."""
     slider = _slider(qtbot, theme, state, make)
     handle = _rect(slider, QStyle.SC_SliderHandle)
