@@ -8,7 +8,7 @@ PyQt6 raises, so liveness checks live here.
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
-__all__ = ["created_by_python", "find_pixmap", "is_valid"]
+__all__ = ["created_by_python", "find_pixmap", "is_valid", "parent_widget"]
 
 # Built-in
 from typing import Optional
@@ -42,3 +42,25 @@ def find_pixmap(key: str) -> Optional[QPixmap]:
     found = QPixmapCache.find(key)
     return found if found is not None and not found.isNull() else None
 
+
+# A parentless widget C++ made, held until C++ frees it; see parent_widget.
+_held = {}
+
+
+def parent_widget(widget):
+    """Return `widget.parentWidget()`, leaving a widget C++ made to C++.
+
+    PySide6 6.5 hands a parentless widget C++ made, a completer's list say,
+    to Python when asked its parent, and frees it with the wrapper.
+    """
+    parent = widget.parentWidget()
+    if (
+        parent is None
+        and created_by_python is not None
+        and not created_by_python(widget)
+        and id(widget) not in _held
+    ):
+        key = id(widget)
+        _held[key] = widget
+        widget.destroyed.connect(lambda _=None, key=key: _held.pop(key, None))
+    return parent

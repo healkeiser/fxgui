@@ -31,7 +31,7 @@ from qtpy.QtGui import QAction, QColor, QIcon, QShortcut
 from qtpy.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import _compat, fxicons, fxstyle
 from fxgui.fxutils import focus_step, later, rehome
 
 _AREAS = {
@@ -242,7 +242,7 @@ def banner_host(widget: QWidget) -> QWidget:
     while found is not None:
         if isinstance(found, FXDockArea):
             return found
-        found = rehome(found.parentWidget())
+        found = rehome(_compat.parent_widget(found))
     return widget.window()
 
 

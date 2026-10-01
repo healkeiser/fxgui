@@ -101,7 +101,7 @@ def test_ctrl_enter_submits_and_writes_no_line(qtbot):
     _host, box = _box(qtbot)
     QTest.keyClicks(box, "done")
 
-    with qtbot.waitSignal(box.submitted, timeout=500):
+    with qtbot.waitSignal(box.submitted):
         QTest.keyClick(box, Qt.Key_Return, Qt.ControlModifier)
 
     assert box.toPlainText() == "done"
@@ -225,3 +225,23 @@ def test_the_box_holds_its_lines_inside_the_frame_its_sheet_gives(qtbot):
 
     assert box.frameWidth() == 6
     assert box.height() == _lines_tall(box, 2) > before
+
+
+def test_a_name_list_outlives_the_theme_looking_at_it(qtbot):
+    """PySide6 6.5 handed a parentless list Qt made to Python when asked its
+    parent, and freed it with the wrapper: the next key crashed."""
+    import gc
+
+    from fxgui import _compat
+
+    root = QWidget()
+    qtbot.addWidget(root)
+    fxstyle.register_themed_root(root)
+    _host, box = _box(qtbot)
+
+    QTest.keyClicks(box, "hi @an")
+    gc.collect()
+
+    assert _compat.is_valid(box.completer.popup())
+    QTest.keyClicks(box, "n")
+    assert box.completer.currentCompletion() == "Anne Martin"

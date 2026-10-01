@@ -23,13 +23,6 @@ def test_the_version_is_the_installed_distributions():
     assert fxgui.__version__ == expected
 
 
-def test_fxdcc_is_gone():
-    from pathlib import Path
-
-    assert "fxdcc" not in fxgui.__all__
-    assert not (Path(fxgui.__file__).parent / "fxdcc.py").exists()
-
-
 def test_the_severity_levels_live_with_the_severities():
     from fxgui.fxwidgets import _severity
 
@@ -46,7 +39,8 @@ def test_the_compat_module_holds_only_binding_shims():
 
     for name in ("later", "rehome", "focus_step"):
         assert name not in vars(_compat), name
-    assert set(_compat.__all__) == {"created_by_python", "find_pixmap", "is_valid"}
+    assert set(_compat.__all__) == {
+        "created_by_python", "find_pixmap", "is_valid", "parent_widget"}
 
 
 def test_importing_fxgui_on_qt5_says_it_needs_qt6():

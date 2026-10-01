@@ -37,7 +37,7 @@ from qtpy.QtGui import QColor, QKeySequence
 from qtpy.QtCore import QModelIndex, QPoint, QTimer
 
 # Internal
-from fxgui._compat import created_by_python
+from fxgui._compat import created_by_python, parent_widget
 
 try:
     import markdown as _markdown
@@ -508,7 +508,7 @@ def rehome(widget):
 
 def _file_back(widget) -> bool:
     """File `widget` under its parent's lasting wrapper; say if one lasts."""
-    parent = widget.parentWidget()
+    parent = parent_widget(widget)
     if parent is None:
         if not created_by_python(widget):
             # Python taking a host's window would delete it with the name.

@@ -1815,7 +1815,7 @@ class _FocusVisibility(QObject):
     @staticmethod
     def _dress_popup(popup: QWidget) -> None:
         """Theme a popup Qt shows: frame a combo list, round every corner."""
-        if popup.parentWidget() is None:
+        if _compat.parent_widget(popup) is None:
             # A completer's list has no parent; it belongs to the focus.
             focus = QApplication.focusWidget()
             if focus is not None and _is_themed(focus):
@@ -1825,7 +1825,7 @@ class _FocusVisibility(QObject):
                 register_themed_root(popup)
         if not _is_themed(popup):
             return
-        if isinstance(popup.parentWidget(), QComboBox):
+        if isinstance(_compat.parent_widget(popup), QComboBox):
             _frame_combo_popup(popup)
         fxutils.round_window_corners(popup)
 
@@ -1895,7 +1895,7 @@ def _is_themed(widget: QWidget) -> bool:
     while widget is not None:
         if widget.property(ROOT_PROPERTY):
             return True
-        widget = widget.parentWidget()
+        widget = _compat.parent_widget(widget)
     return False
 
 
