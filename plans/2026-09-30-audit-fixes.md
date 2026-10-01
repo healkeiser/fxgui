@@ -214,8 +214,7 @@ leave `FXThemeAware`.
 - hython proofs for fxdocking (from move-c): houdini_qtads enum/flag
   names, iconProvider copy, updateOverlayIcons on float/redock/restore,
   findChildren(QShortcut, options=...) on 6.5, createdByPython/rehome,
-  Tab walk and closing a focused pane, 150% render; in H21, a floating
-  pane stays above the Houdini window (proven in H22 only). Houdini runs
+  Tab walk and closing a focused pane, 150% render. Houdini runs
   only through the rez-built `lsp`, once per version per proof; drive Qt
   with QTest, never real input; ignore shelf warnings; keep the
   setParent(hou.qt.mainWindow(), flags) parenting.
