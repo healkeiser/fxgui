@@ -228,6 +228,9 @@ leave `FXThemeAware`.
   ~1,600 leftover widgets per gallery; 23b68dfa fixed its own file with
   sendPostedEvents(None, QEvent.DeferredDelete)). conftest should flush
   deferred deletes after every test.
+- Flaky: test_status_bar_busy::test_busy_shows_over_a_hidden_status_line
+  (50 ms wait) failed once in a full run; make it wait on the event, not
+  a timer.
 - ruff F841 in tests/test_collapsible_geometry.py and
   tests/test_style_cascade.py; run `ruff check --select F,B,BLE` over the
   whole repo and the suite under pytest-randomly before release.
