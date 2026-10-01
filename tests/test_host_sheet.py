@@ -6,6 +6,7 @@ parent's sheet for every property its own sheet leaves open.
 
 # Built-in
 import re
+import sys
 from pathlib import Path
 
 # Third-party
@@ -65,7 +66,18 @@ def _houdini_sheets():
         text = re.sub(r"@(\d+px)@", r"\1", path.read_text(encoding="utf-8"))
         text = re.sub(r"@[^@\s]+@", "128, 128, 128", text)
         sheets.append(pytest.param(text, id=path.parts[-5]))
+    if len(sheets) == 1:
+        skip = pytest.mark.skip(reason="no Houdini install")
+        sheets.append(pytest.param("", id="houdini", marks=skip))
     return sheets
+
+
+def test_a_machine_without_houdini_skips_its_sheets_by_name(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(sys.modules[__name__], "_SIDEFX", tmp_path)
+    marks = [mark for sheet in _houdini_sheets() for mark in sheet.marks]
+    assert [mark.kwargs.get("reason") for mark in marks] == ["no Houdini install"]
 
 
 def _host(qtbot, sheet):
