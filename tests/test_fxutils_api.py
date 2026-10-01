@@ -5,10 +5,11 @@ import inspect
 
 # Third-party
 import pytest
+from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QGraphicsDropShadowEffect, QWidget
 
 # Internal
-from fxgui import fxutils
+from fxgui import fxstyle, fxutils
 
 
 def test_create_action_takes_only_the_arguments_callers_pass(qtbot):
@@ -31,16 +32,40 @@ def test_create_action_takes_only_the_arguments_callers_pass(qtbot):
     assert action.parent() is owner
 
 
-def test_add_shadow_casts_one_black_shadow(qtbot):
+def test_add_shadow_casts_the_themes_shadow(qtbot):
     widget = QWidget()
     qtbot.addWidget(widget)
-    shadow = fxutils.add_shadow(widget, blur=24, offset=(0, 4), alpha=100)
+    shadow = fxutils.add_shadow(widget, offset=(0, 4))
 
     assert isinstance(shadow, QGraphicsDropShadowEffect)
     assert widget.graphicsEffect() is shadow
-    assert shadow.blurRadius() == 24
+    assert shadow.parent() is widget
     assert (shadow.xOffset(), shadow.yOffset()) == (0, 4)
-    assert shadow.color().getRgb() == (0, 0, 0, 100)
+    theme = fxstyle.colors()
+    assert shadow.color() == QColor(theme.shadow)
+    assert shadow.blurRadius() == float(theme.shadow_blur)
+
+
+def test_a_shadow_follows_a_theme_switch_when_it_draws(qtbot, tmp_path):
+    path = tmp_path / "shadow.yaml"
+    path.write_text(
+        "themes:\n  light:\n    shadow: '#40102030'\n    shadow_blur: 9\n",
+        encoding="utf-8")
+    fxstyle.overlay_color_file(path)
+    holder = QWidget()
+    qtbot.addWidget(holder)
+    card = QWidget(holder)
+    card.setGeometry(20, 20, 40, 40)
+    shadow = fxutils.add_shadow(card)
+    holder.resize(100, 100)
+    holder.show()
+    qtbot.waitExposed(holder)
+
+    fxstyle.apply_theme("light")
+    holder.grab()
+
+    assert shadow.color() == QColor("#40102030")
+    assert shadow.blurRadius() == 9
 
 
 def test_the_one_caller_helpers_are_gone():

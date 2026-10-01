@@ -140,33 +140,41 @@ def create_action(
     return action
 
 
-def add_shadow(
-    widget: QWidget,
-    blur: float = 20,
-    offset: Tuple[float, float] = (0, 0),
-    alpha: int = 80,
-) -> QGraphicsDropShadowEffect:
-    """Cast a black drop shadow of `alpha` opacity (0-255) under `widget`.
+class _ThemedShadow(QGraphicsDropShadowEffect):
+    """A drop shadow in the theme's `shadow` and `shadow_blur`, read as it draws."""
 
-    Black in every theme: a themed colour baked here would go stale on a
-    theme switch.
+    def refresh(self) -> None:
+        """Take the current theme's shadow colour and blur."""
+        from fxgui import fxstyle
+
+        theme = fxstyle.colors()
+        color, blur = QColor(theme.shadow), float(theme.shadow_blur)
+        # Only on a change: each setter schedules another draw.
+        if self.color() != color:
+            self.setColor(color)
+        if self.blurRadius() != blur:
+            self.setBlurRadius(blur)
+
+    def draw(self, painter) -> None:
+        """Draw the shadow in the theme in force."""
+        self.refresh()
+        super().draw(painter)
+
+
+def add_shadow(
+    widget: QWidget, offset: Tuple[float, float] = (0, 0)
+) -> QGraphicsDropShadowEffect:
+    """Cast the theme's drop shadow under `widget`; it follows every switch.
 
     Examples:
-        >>> fxutils.add_shadow(card, blur=24, offset=(0, 4), alpha=100)
+        >>> fxutils.add_shadow(card, offset=(0, 4))
     """
     # Parented, so Qt owns it once the caller drops its reference.
-    shadow = QGraphicsDropShadowEffect(widget)
-    shadow.setBlurRadius(blur)
+    shadow = _ThemedShadow(widget)
     shadow.setOffset(*offset)
-    shadow.setColor(QColor(0, 0, 0, alpha))
+    shadow.refresh()
     widget.setGraphicsEffect(shadow)
     return shadow
-
-
-def add_shadows(parent, shadow_object):
-    """Cast the floating-card shadow; use `add_shadow` instead."""
-    # TODO: shim; delete with _tooltip.py, its last caller.
-    return add_shadow(shadow_object)
 
 
 @functools.lru_cache(maxsize=1024)

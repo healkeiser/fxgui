@@ -167,8 +167,9 @@ def test_the_buttons_are_the_theme_s_push_buttons(qtbot, theme):
     assert image.pixelColor(4, button.height() // 2).name() == (
         QColor(colors.state_hover).name()
     )
+    # Hover is a fill only: the edge stays the button's own.
     assert image.pixelColor(button.width() // 2, 0).name() == (
-        QColor(colors.accent_primary).name()
+        QColor(colors.border_light).name()
     )
 
 
