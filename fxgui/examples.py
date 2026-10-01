@@ -28,6 +28,7 @@ from qtpy.QtWidgets import (
     QListWidgetItem,
     QMenu,
     QPlainTextEdit,
+    QProgressBar,
     QPushButton,
     QRadioButton,
     QScrollArea,
@@ -338,6 +339,9 @@ def _display_page() -> QWidget:
     plain = QPushButton("Native rich tooltip")
     fxwidgets.apply_tip(plain, "Save", "Write the scene to disk", "Ctrl+S")
     key = fxwidgets.FXKeycap("Ctrl+S")
+    bar = QProgressBar()
+    bar.setValue(64)
+    bar.setTextVisible(False)
 
     page = _page(
         _section("FXAvatar", _row(*avatars)),
@@ -356,13 +360,14 @@ def _display_page() -> QWidget:
             _row(_button("Toggle the overlay", toggle_overlay)),
         ),
         _section(
-            "FXProgressCard",
+            "FXProgressCard / QProgressBar",
             fxwidgets.FXProgressCard(
                 title="Rendering sh0010",
                 description="Frame 42 of 100",
                 progress=42,
                 icon="movie",
             ),
+            bar,
         ),
         _section("FXFlowLayout", flow_box),
         _section("FXThreadLine", _thread()),
@@ -484,7 +489,6 @@ def _lists_page() -> QWidget:
     sorted_tree.setFixedHeight(190)
 
     icon_list = QListWidget()
-    icon_list.setItemDelegate(fxwidgets.FXItemDelegate(icon_list))
     for text, icon_name in (
         ("Documents", "folder"),
         ("Images", "image"),
@@ -498,7 +502,7 @@ def _lists_page() -> QWidget:
         _section("FXFilteredTree / FXKeyboardTree", filtered),
         _section("FXSortedTreeWidgetItem", sorted_tree),
         _section("FXThumbnailDelegate", _thumbnail_tree()),
-        _section("FXItemDelegate", icon_list),
+        _section("QListWidget", icon_list),
     )
 
 

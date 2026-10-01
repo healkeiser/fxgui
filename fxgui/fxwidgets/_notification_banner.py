@@ -66,8 +66,9 @@ fxstyle.register_widget_style(
         border: none;
         border-radius: @button_radius;
     }
-    FXNotificationBanner QPushButton#fxBannerClose:hover {
-        background: @surface_alt;
+    FXNotificationBanner QPushButton#fxBannerClose:hover,
+    FXNotificationBanner QPushButton#fxBannerAction:hover {
+        background: @state_hover;
     }
     FXNotificationBanner QPushButton#fxBannerAction {
         background: transparent;
@@ -75,19 +76,29 @@ fxstyle.register_widget_style(
         border: 1px solid @border;
         border-radius: @button_radius;
         padding: 6px 16px;
-        font-weight: bold;
+        font-weight: 600;
     }
-    FXNotificationBanner QPushButton#fxBannerAction:hover {
-        background: @surface_alt;
+    FXNotificationBanner QPushButton#fxBannerAction[fxFocusVisible="true"]:focus {
+        border-color: @accent_primary;
     }
     FXNotificationBanner QPushButton#fxBannerAction[primary="true"] {
-        background: @accent_primary;
+        background: @primary_button;
         color: @text_on_accent_primary;
-        border: none;
+        border: 1px solid @primary_button;
     }
     FXNotificationBanner QPushButton#fxBannerAction[primary="true"]:hover {
-        background: @accent_secondary;
+        background: @primary_button_hover;
         color: @text_on_accent_secondary;
+        border-color: @primary_button_hover;
+    }
+    FXNotificationBanner QPushButton#fxBannerAction[primary="true"]:pressed {
+        background: @primary_button_pressed;
+        color: @text_on_accent_primary;
+        border-color: @primary_button_pressed;
+    }
+    FXNotificationBanner
+    QPushButton#fxBannerAction[primary="true"][fxFocusVisible="true"]:focus {
+        border-color: @text;
     }
     """
 )

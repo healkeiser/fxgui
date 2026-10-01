@@ -182,6 +182,25 @@ def test_the_icons_qtads_draws_leave_fxgui_s_cached_icons_alive(qtbot):
         assert Shiboken.ownedByPython(cached), name
 
 
+
+def test_a_hovered_pane_button_keeps_its_icon_ink(qtbot):
+    """A hovered title-bar button sits on the neutral hover fill, so Qt's
+    Active icon is drawn in the same ink as at rest."""
+    from qtpy.QtCore import QSize
+    from qtpy.QtGui import QIcon
+
+    _window(qtbot)
+    icon_ink = QColor(fxstyle.colors().icon).name()
+    provider = ads.CDockManager.iconProvider()
+    for slot, _name in fxdocking._BUTTONS.values():
+        image = provider.customIcon(slot).pixmap(
+            QSize(32, 32), QIcon.Active).toImage()
+        inks = {
+            image.pixelColor(x, y).name()
+            for x in range(image.width()) for y in range(image.height())
+            if image.pixelColor(x, y).alpha() == 255
+        }
+        assert inks == {icon_ink}, slot
 def test_a_second_window_opens_after_the_first_is_gone(qtbot):
     first = _window(qtbot)
     first.close()

@@ -54,7 +54,7 @@ def test_the_card_carries_no_sheet_and_follows_a_theme_switch(qtbot):
         fxstyle.colors().surface).name()
 
 
-def test_the_bar_keeps_its_own_flat_fill_over_the_base_sheet(qtbot):
+def test_the_bar_is_the_base_sheet_s_flat_pill(qtbot):
     host, card = _card(qtbot, title="Render", progress=50)
     bar = card._progress_bar
     image = host.grab().toImage()
@@ -65,7 +65,7 @@ def test_the_bar_keeps_its_own_flat_fill_over_the_base_sheet(qtbot):
     assert image.pixelColor(filled).name() == QColor(
         fxstyle.colors().accent_primary).name()
     assert image.pixelColor(empty).name() == QColor(
-        fxstyle.colors().surface_sunken).name()
+        fxstyle.colors().control_edge).name()
 
 
 def test_the_task_icon_wears_the_icon_token(qtbot):

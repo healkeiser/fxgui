@@ -58,8 +58,9 @@ _MODES = {
     "selected": QIcon.Selected,
     "disabled": QIcon.Disabled,
 }
+# Active is a current menu or combo row, the one hover on the accent.
 _DEFAULT_INKS = {
-    "active": "icon_on_accent_secondary",
+    "active": "icon_on_accent_primary",
     "selected": "icon_on_accent_primary",
     "disabled": "text_disabled",
 }
@@ -714,7 +715,7 @@ def rounded_pixmap(
 def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
     """Set an icon on a widget; it takes its theme inks when drawn.
 
-    A push button's Active ink is its normal one (see `_icon_for_widget`).
+    A button's Active ink is its normal one (see `_icon_for_widget`).
 
     Args:
         widget: Anything with `setIcon` (QAction, QPushButton, etc.).
@@ -738,17 +739,14 @@ def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
 
 
 def _icon_for_widget(widget: Any, icon_name: str, kwargs: Dict) -> QIcon:
-    """Build the icon for a widget; a push button's Active ink is its normal.
+    """Build the icon for a widget; a button's Active ink is its normal.
 
-    Qt draws a focused QPushButton's icon in Active mode on no accent
-    fill, so the on-accent Active ink would clash there. A hovered
-    QToolButton, a menu row and an item-view row sit on the accent.
+    Qt draws a hovered or focused button's icon in Active mode, on the
+    neutral hover fill or the resting one, never on the accent.
     """
-    from qtpy.QtWidgets import QAbstractButton, QToolButton
+    from qtpy.QtWidgets import QAbstractButton
 
-    if isinstance(widget, QAbstractButton) and not isinstance(
-        widget, QToolButton
-    ):
+    if isinstance(widget, QAbstractButton):
         inks = dict(kwargs.pop("inks", None) or {})
         library = kwargs.get("library")
         inks.setdefault(

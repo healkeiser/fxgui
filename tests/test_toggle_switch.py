@@ -121,6 +121,18 @@ def test_hover_and_focus_change_the_switch(qtbot, theme, checked):
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_hovered_switch_is_not_dressed_as_focused(qtbot, theme):
+    """Hover fills the off track with the hover fill and keeps its edge;
+    only keyboard focus recolours the edge."""
+    rest = _grab(qtbot, theme, False)
+    hover = _grab(qtbot, theme, False, "hover")
+    focus = _grab(qtbot, theme, False, "focus")
+    assert hover[1] == fxstyle.colors().state_hover.lower()
+    assert hover[2] == rest[2]
+    assert hover[2] != focus[2]
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
 @pytest.mark.parametrize("checked", [False, True])
 def test_a_disabled_switch_wears_the_disabled_button_tokens(
     qtbot, theme, checked

@@ -131,7 +131,7 @@ class FXFloatingDialog(QDialog):
 
         self.title_layout = QHBoxLayout(self.title_widget)
         self.title_layout.setContentsMargins(_GUTTER, 8, _GUTTER, 8)
-        self.title_layout.setSpacing(10)
+        self.title_layout.setSpacing(8)
         self.title_layout.addWidget(self._icon_label)
         self.title_layout.addWidget(self.title_label)
         self.title_layout.addStretch()

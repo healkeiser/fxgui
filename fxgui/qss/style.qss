@@ -1312,7 +1312,6 @@ QTreeView::item:pressed  {
 QTableView::item:selected:active,
 QTreeView::item:selected:active,
 QListView::item:selected:active  {
-    border-color: @accent_secondary;
     background: @accent_primary;
     color: @text_on_accent_primary;
 }

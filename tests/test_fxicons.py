@@ -66,17 +66,13 @@ def test_button_icon_drops_active_recolor(qtbot):
     assert _active_matches_normal(icon)
 
 
-def test_toolbutton_icon_keeps_the_accent_recolor(qtbot):
-    """A QToolButton hovers on the secondary accent, like a highlighted menu
-    item, so its hovered icon wears the colour made for that accent."""
-    from fxgui import fxstyle
-
+def test_a_hovered_tool_button_icon_keeps_its_normal_ink(qtbot):
+    """A QToolButton hovers on the neutral hover fill, so Qt's Active icon
+    is drawn in the ink it has at rest."""
     button = QToolButton()
     qtbot.addWidget(button)
     fxicons.set_icon(button, "check", width=48, height=48)
-    assert not _active_matches_normal(button.icon())
-    assert _ink(button.icon(), QIcon.Active) == (
-        fxstyle.colors().icon_on_accent_secondary.lower())
+    assert _active_matches_normal(button.icon())
 
 
 def _ink(icon: QIcon, mode) -> str:
@@ -89,12 +85,39 @@ def _ink(icon: QIcon, mode) -> str:
     return ""
 
 
-def test_menu_action_keeps_active_recolor(qapp):
-    """A QAction (menu item) is not a button: its highlighted icon must keep
-    the accent recolor so it stays readable on the accent background."""
+def test_menu_action_keeps_active_recolor(qapp, monkeypatch):
+    """A QAction (menu item) is not a button: a current menu row is filled
+    with the primary accent, so its icon takes the ink made for it. A theme
+    whose two on-accent inks differ tells them apart."""
+    from fxgui import fxstyle
+
+    colors = fxstyle.get_colors()
+    split = dict(colors["themes"]["dark"])
+    split.update({
+        "icon_on_accent_primary": "#ffffff",
+        "icon_on_accent_secondary": "#000000",
+    })
+    patched = dict(colors, themes={**colors["themes"], "split": split})
+    monkeypatch.setattr(fxstyle, "get_colors", lambda: patched)
+    fxstyle.apply_theme("split")
     action = QAction("Open")
     fxicons.set_icon(action, "check", width=48, height=48)
     assert not _active_matches_normal(action.icon())
+    assert _ink(action.icon(), QIcon.Active) == (
+        fxstyle.colors().icon_on_accent_primary.lower())
+
+
+@pytest.mark.parametrize("theme", __import__("fxgui.fxstyle").fxstyle
+                         .get_available_themes())
+def test_a_current_menu_row_icon_reads_on_the_accent(qapp, theme):
+    """WCAG's 3:1 for a control's part, in every bundled theme."""
+    from fxgui import fxstyle
+
+    fxstyle.apply_theme(theme)
+    icon = fxicons.get_icon("check", width=48, height=48)
+    ink = _ink(icon, QIcon.Active)
+    assert fxstyle.get_contrast_ratio(
+        ink, fxstyle.colors().accent_primary) >= 3.0, ink
 
 
 def test_a_disabled_icon_wears_the_text_disabled_token(qapp):

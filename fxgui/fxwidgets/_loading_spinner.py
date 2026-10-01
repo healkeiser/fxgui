@@ -16,7 +16,6 @@ fxstyle.register_widget_style(
     """
     FXLoadingOverlay QLabel {
         color: @text;
-        font-size: 14px;
         margin-top: 12px;
     }
     """
