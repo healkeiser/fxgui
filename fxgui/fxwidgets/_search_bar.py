@@ -215,8 +215,9 @@ fxstyle.register_widget_style("""
 FXSearchBar QWidget#fx_search_container {
     background-color: @surface_sunken;
     border: 1px solid @border;
-    border-radius: 4px;
+    border-radius: @button_radius;
 }
+FXSearchBar QWidget#fx_search_container:hover,
 FXSearchBar QWidget#fx_search_container[focused="true"] {
     border-color: @accent_primary;
 }
@@ -227,7 +228,8 @@ FXSearchBar QPushButton#fx_search_icon {
 FXSearchBar QLineEdit#fx_search_input {
     background: transparent;
     border: none;
-    padding: 6px 0;
+    /* With the container's 1 px border, a line edit's height. */
+    padding: 5px 0;
 }
 FXSearchBar QPushButton#fx_search_clear {
     background: transparent;
@@ -235,6 +237,6 @@ FXSearchBar QPushButton#fx_search_clear {
     border-radius: 10px;
 }
 FXSearchBar QPushButton#fx_search_clear:hover {
-    background: rgba(128, 128, 128, 0.2);
+    background: @state_hover;
 }
 """)
