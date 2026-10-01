@@ -24,10 +24,10 @@ def test_the_version_is_the_installed_distributions():
 
 
 def test_fxdcc_is_gone():
-    import importlib.util
+    from pathlib import Path
 
     assert "fxdcc" not in fxgui.__all__
-    assert importlib.util.find_spec("fxgui.fxdcc") is None
+    assert not (Path(fxgui.__file__).parent / "fxdcc.py").exists()
 
 
 def test_the_severity_levels_live_with_the_severities():

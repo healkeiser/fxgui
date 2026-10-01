@@ -215,17 +215,16 @@ def test_the_system_tray_takes_a_qicon_too(qtbot):
     icon = _an_icon("#123456")
     tray = FXSystemTray(icon=icon)
 
-    assert not tray.tray_icon.icon().isNull()
-    assert tray.tray_icon.icon().cacheKey() == icon.cacheKey()
+    assert not tray.icon().isNull()
+    assert tray.icon().cacheKey() == icon.cacheKey()
 
 
-def test_the_system_tray_still_takes_a_path(qtbot):
+def test_the_system_tray_defaults_to_fxguis_logo(qtbot):
     from fxgui.fxwidgets import FXSystemTray
 
     tray = FXSystemTray()
 
-    assert isinstance(tray.icon, str), "fxgui's own logo, as a path"
-    assert not tray.tray_icon.icon().isNull()
+    assert not tray.icon().isNull(), "fxgui's own logo"
 
 
 def test_the_fit_is_still_bounded_by_the_screen(qtbot):
