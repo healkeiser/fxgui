@@ -739,14 +739,15 @@ def get_contrast_ratio(one_hex: str, two_hex: str) -> float:
     return (high + 0.05) / (low + 0.05)
 
 
-@lru_cache(maxsize=512)
 def readable_ink(
-    background: str, preferred: Optional[str] = None, floor: float = 4.5
+    background: Union[str, QColor],
+    preferred: Union[str, QColor, None] = None,
+    floor: float = 4.5,
 ) -> str:
     """Return an ink that reads on `background` at `floor`:1 or better.
 
     Args:
-        background: The color the ink is drawn on.
+        background: The color the ink is drawn on, anything QColor reads.
         preferred: The ink to keep if it reads. Defaults to white.
         floor: The minimum WCAG contrast ratio.
 
@@ -755,8 +756,14 @@ def readable_ink(
         black or white, whichever stands further from `background`, that
         does. The pole itself when none does.
     """
-    ground = QColor(background).name()
-    start = QColor(preferred or "#ffffff").name()
+    return _readable_ink(
+        QColor(background).name(), QColor(preferred or "#ffffff").name(),
+        floor)
+
+
+# Keyed on names: a QColor is unhashable.
+@lru_cache(maxsize=512)
+def _readable_ink(ground: str, start: str, floor: float) -> str:
     return step_toward(start, _pole_from(ground), _reads(ground, floor))
 
 
