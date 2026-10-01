@@ -189,7 +189,7 @@ jobs:
   publish-pypi:
     name: Publish to PyPI
     needs: [create-release, tests]
-    if: ${{ always() && !cancelled() && needs.tests.result == 'success' && inputs.skip-pypi != true && startsWith(github.ref, 'refs/tags/v') }}
+    if: ${{ always() && !cancelled() && needs.create-release.result == 'success' && needs.tests.result == 'success' && inputs.skip-pypi != true && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
