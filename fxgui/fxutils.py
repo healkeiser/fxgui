@@ -158,7 +158,8 @@ def add_shadow(
     Examples:
         >>> fxutils.add_shadow(card, blur=24, offset=(0, 4), alpha=100)
     """
-    shadow = QGraphicsDropShadowEffect()
+    # Parented, so Qt owns it once the caller drops its reference.
+    shadow = QGraphicsDropShadowEffect(widget)
     shadow.setBlurRadius(blur)
     shadow.setOffset(*offset)
     shadow.setColor(QColor(0, 0, 0, alpha))
