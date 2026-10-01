@@ -834,3 +834,94 @@ def test_a_hovered_dock_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
     assert colors.control_edge.lower() not in inks
     assert colors.text_muted.lower() in inks
     assert colors.text.lower() not in inks
+
+
+def _vertical_gaps(image, x, top, bottom):
+    """Return the strip rows above and below the pill's edge at column `x`.
+
+    Above runs from `top` to the edge; below, from the edge to the first row
+    that is neither the strip nor the pill: the pane's or content's edge.
+    """
+    colors = fxstyle.colors()
+    edge, strip = colors.control_edge.lower(), colors.surface.lower()
+    rows = [image.pixelColor(x, y).name() for y in range(top, bottom)]
+    first = rows.index(edge)
+    last = len(rows) - 1 - rows[::-1].index(edge)
+    below = 0
+    while rows[last + 1 + below] == strip:
+        below += 1
+    return first, below
+
+
+def _gap_between(image, y, start, stop):
+    """Return the strip columns between the edged pill and the hovered one."""
+    colors = fxstyle.colors()
+    edge, strip = colors.control_edge.lower(), colors.surface.lower()
+    cols = [image.pixelColor(x, y).name() for x in range(start, stop)]
+    right = max(i for i, c in enumerate(cols) if c == edge)
+    nxt = next(i for i in range(right + 1, len(cols)) if cols[i] != strip)
+    return nxt - right - 1
+
+
+def test_the_gaps_around_and_between_tab_pills_are_one_size(qtbot):
+    if fxdocking is None:
+        pytest.skip("needs the docking extra")
+    from fxgui import examples
+
+    fxstyle.apply_theme("dark")
+    window = examples.build()
+    pages = window.centralWidget()
+    window.show()
+    qtbot.waitExposed(window)
+    QApplication.processEvents()
+    bar = pages.tabBar()
+    _hover(bar, bar.tabRect(1).center())
+    image = window.grab().toImage()
+    origin = bar.mapTo(window, QPoint())
+    first = bar.tabRect(0).translated(origin)
+    above, below = _vertical_gaps(
+        image, first.center().x(), origin.y(), first.bottom() + 8)
+    between = _gap_between(
+        image, first.center().y(), first.left(), bar.tabRect(1).right())
+    gaps = {"above": above, "below": below, "between": between}
+    height = bar.tabRect(0).height()
+
+    pages.setCurrentIndex(pages.count() - 1)
+    QApplication.processEvents()
+    image = window.grab().toImage()
+    tab = next(
+        widget for widget in window.findChildren(QWidget)
+        if widget.metaObject().className() == "ads::CDockWidgetTab"
+        and widget.isVisible()
+    )
+    area = tab.dockAreaWidget()
+    rect = tab.rect().translated(tab.mapTo(window, QPoint()))
+    # Inside the pane's 1 px border.
+    top = area.mapTo(window, QPoint()).y() + 1
+    dock_above, dock_below = _vertical_gaps(
+        image, rect.center().x(), top, rect.bottom() + 8)
+    window.close()
+    window.deleteLater()
+    QApplication.processEvents()
+
+    docks = fxdocking.FXDockArea()
+    docks.set_central(QLabel("central"))
+    docks.add_dock("one", "Render", QLabel("one"), "left")
+    docks.add_dock("two", "Comp", QLabel("two"), "left")
+    holder = _shown(qtbot, "dark", docks, (600, 400))
+    manager = docks.manager()
+    manager.findDockWidget("one").setAsCurrentTab()
+    QApplication.processEvents()
+    one = manager.findDockWidget("one").tabWidget()
+    two = manager.findDockWidget("two").tabWidget()
+    _hover(two, two.rect().center())
+    image = holder.grab().toImage()
+    left = one.rect().translated(one.mapTo(holder, QPoint()))
+    right = two.rect().translated(two.mapTo(holder, QPoint()))
+    dock_between = _gap_between(
+        image, left.center().y(), left.left(), right.right())
+
+    gaps.update(dock_above=dock_above, dock_below=dock_below,
+                dock_between=dock_between)
+    assert len(set(gaps.values())) == 1, gaps
+    assert one.height() == height

@@ -380,6 +380,7 @@ reuses them, so it looks like it belongs.
 | Corner radius of a popup or a floating card (menu, combo list, completer list, banner, progress card, drop zone, `FXFloatingDialog`) | 8 px | `fxstyle.CARD_RADIUS`, `@card_radius` |
 | Menu row | 24 px at the 12 px body font | `QMenu::item` padding |
 | Tool button | a 22 px box around a 16 px icon | `QToolButton` margin 2 px, padding 2 px, a reserved 1 px edge |
+| Tab | one 4 px gap above, below and between pills | tab margin `4px 2px`, the same for `QTabBar` and QtAds tabs |
 | Border | 1 px, solid | Every control |
 
 No rule names a 2, 4 or 8 px radius in pixels. Two shapes do keep pixels:

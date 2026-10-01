@@ -872,7 +872,7 @@ QTabWidget{
 
 /* A tab widget's page is a pane card, as a dock pane is. */
 QTabWidget::pane {
-    top: -1px;
+    top: 0px;
     background: @surface;
     border: 1px solid @pane_border;
     border-radius: @button_radius;
@@ -903,7 +903,8 @@ ads--CDockWidgetTab[activeTab="true"]
     background: transparent;
     border: 1px solid transparent;
     border-radius: @button_radius;
-    margin: 3px 2px;
+    /* One 4 px gap above, below and between pills: twice the side margin. */
+    margin: 4px 2px;
     padding: 3px 10px;
 }
 
