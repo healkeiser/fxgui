@@ -7,24 +7,6 @@ fxgui uses a YAML configuration file to define all theme colors. YAML supports *
 The default `style.yaml` file contains several sections:
 
 ```yaml
-# Feedback colors for status messages
-feedback:
-  debug:
-    foreground: "#26C6DA"
-    background: "#006064"
-  info:
-    foreground: "#7661f6"
-    background: "#372d75"
-  success:
-    foreground: "#8ac549"
-    background: "#466425"
-  warning:
-    foreground: "#ffbb33"
-    background: "#7b5918"
-  error:
-    foreground: "#ff4444"
-    background: "#7b2323"
-
 # DCC branding colors
 dcc:
   houdini: "#ff6600"
@@ -36,6 +18,10 @@ themes:
   dark: &dark  # Define anchor for inheritance
     accent_primary: "#2196F3"
     # ... all colors ...
+    feedback:  # status colours: debug, info, success, warning, error
+      error:
+        foreground: "#ff4444"
+        background: "#7b2323"
 
   dracula:
     <<: *dark  # Inherit from dark theme
@@ -50,8 +36,8 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 
 | Role | Purpose |
 |------|---------|
-| `accent_primary` | Primary interactive color - hover borders, selections, progress/slider gradient end, menu selections |
-| `accent_secondary` | Secondary interactive color - gradient starts, item hover backgrounds, menu pressed states |
+| `accent_primary` | Selection, keyboard focus, the current menu item, a filled span, the primary action |
+| `accent_secondary` | A primary button's hover fill and a pressed menu item; never a hover fill |
 
 ### Surface Colors (Backgrounds)
 
@@ -87,39 +73,42 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 | Role | Purpose |
 |------|---------|
 | `text` | Primary text for all widgets |
-| `text_muted` | De-emphasized text - placeholders, secondary labels; inactive tabs read it through `@tab_muted` |
+| `text_muted` | Secondary text: placeholders, secondary labels, headers, the tabs that are not current |
 | `text_disabled` | Disabled widget text |
 | `text_on_accent_primary` | *(Optional)* Text on `accent_primary` backgrounds (e.g., selected items). Auto-computed if omitted |
-| `text_on_accent_secondary` | *(Optional)* Text on `accent_secondary` backgrounds (e.g., hovered items). Auto-computed if omitted |
+| `text_on_accent_secondary` | *(Optional)* Text on `accent_secondary` backgrounds (a hovered primary button). Auto-computed if omitted |
+
+`text` and `text_muted` are held to 4.5:1 (`fxstyle.TEXT_CONTRAST`, WCAG AA) on every surface they sit on: `surface`, `surface_sunken`, `surface_alt`, `well`, `frame`, `tooltip` and `state_hover`, and `text` on `state_pressed` too. A theme's value that misses it is darkened or lightened until it reads, so `fxstyle.colors().text` can differ from the file. `catppuccin_latte` and `solarized_light` move furthest: there `text_muted` ends close to `text`.
+
+An omitted `text_on_accent_*` is black or white, whichever reads better on the accent.
 
 ### Interactive State Colors
 
 | Role | Purpose |
 |------|---------|
-| `state_hover` | Hover state backgrounds - buttons, dock widgets |
-| `state_pressed` | Pressed/checked/active backgrounds - buttons, tabs, tool buttons |
+| `state_hover` | Every hover fill: rows, buttons, tool buttons, menu bar items; the current tab's pill |
+| `state_pressed` | Pressed and checked fills, an open menu bar item. Pushed to 1.2:1 off `state_hover` (`fxstyle.STATE_MIN_CONTRAST`) when a theme sets the two closer |
 
 ### Scrollbar Colors
 
 | Role | Purpose |
 |------|---------|
 | `scrollbar_track` | Menu bar and status bar borders; a scroll bar has no track |
-| `scrollbar_thumb` | Draggable thumb, also used for checked header backgrounds |
+| `scrollbar_thumb` | Draggable thumb |
 | `scrollbar_thumb_hover` | Thumb hover state |
 
 ### Layout Colors
 
 | Role | Purpose |
 |------|---------|
-| `grid` | Table gridlines, header section borders |
-| `separator` | Separator/splitter hover backgrounds |
+| `grid` | Table gridlines, a checked push button's edge |
 
-### Slider Colors
+### Shadow
 
 | Role | Purpose |
 |------|---------|
-| `slider_thumb` | Slider handle/knob color |
-| `slider_thumb_hover` | Slider handle hover and pressed states |
+| `shadow` | Colour of a floating card's drop shadow, `#AARRGGBB` (dark `#50000000`, light `#28000000`) |
+| `shadow_blur` | Its blur radius in pixels (20) |
 
 ### Icon Color
 
@@ -129,7 +118,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 
 ## Feedback Colors Reference
 
-Used by `FXNotificationBanner`, `FXOutputLogWidget`, and other status/feedback widgets:
+Each theme has a `feedback:` block; a theme without one takes `dark`'s. Used by `FXNotificationBanner`, `FXLogWidget`, and other status widgets. `fxstyle.get_feedback_colors()` returns the current theme's block; one colour is `fxstyle.colors().feedback_error_foreground`.
 
 | Level | Property | Usage |
 |-------|----------|-------|
@@ -214,10 +203,6 @@ themes:
     scrollbar_thumb_hover: "#75715e"
 
     grid: "#49483e"
-    separator: "#75715e"
-
-    slider_thumb: "#f8f8f2"
-    slider_thumb_hover: "#ffffff"
 
     icon: "#f8f8f2"
 ```
@@ -280,7 +265,7 @@ A themed root (see below) gets three things, and each has one job:
 
 | Part | Where it comes from | What it carries |
 |------|---------------------|-----------------|
-| Stylesheet | `fxstyle.build_stylesheet()`: `style.qss` plus every registered fragment, `@tokens` resolved | Shapes, borders, radii, states (hover, pressed, focus) and each widget's own look. The text colour. |
+| Stylesheet | `style.qss` plus every registered fragment, `@tokens` resolved | Shapes, borders, radii, states (hover, pressed, focus) and each widget's own look. The text colour. |
 | Palette | `fxstyle.palette()` | Default fills: a window's `Window`, an item view's `Base`, `Highlight`, and the rest |
 | Font | `fxstyle.font()` | The body family of the theme at `fxstyle.FONT_SIZE` (12 px) |
 
@@ -321,9 +306,9 @@ def paintEvent(self, event):
 
 `fxstyle.colors()` returns the current theme as a namespace of colour
 names. It is cached per theme, so reading it in every `paintEvent` costs
-one attribute lookup. `fxstyle.get_theme_colors()` returns the same
-colours as a plain dict. An unknown name raises `AttributeError` listing
-the names that exist.
+one attribute lookup. It is the one way to read a colour; for a name held
+in a variable, `getattr(fxstyle.colors(), name)`. An unknown name raises
+`AttributeError` listing the names that exist.
 
 ## Registering Themed Roots
 
@@ -391,8 +376,10 @@ reuses them, so it looks like it belongs.
 | Part | Value | Where it comes from |
 |------|-------|---------------------|
 | Height | 28 px at the 12 px body font | `fxstyle.control_height(widget)`: the font's line plus 5 px of padding and a 1 px border on each side |
-| Corner radius of a control or a menu | 4 px | `fxstyle.BUTTON_RADIUS`, `@button_radius` in QSS |
-| Corner radius of a floating card (tooltip, banner, progress card, drop zone, `FXFloatingDialog`) | 8 px | `fxstyle.CARD_RADIUS`, `@card_radius` |
+| Corner radius of a control, a row, a tab, a pane or a tooltip | 4 px | `fxstyle.BUTTON_RADIUS`, `@button_radius` in QSS |
+| Corner radius of a popup or a floating card (menu, combo list, completer list, banner, progress card, drop zone, `FXFloatingDialog`) | 8 px | `fxstyle.CARD_RADIUS`, `@card_radius` |
+| Menu row | 24 px at the 12 px body font | `QMenu::item` padding |
+| Tool button | a 22 px box around a 16 px icon | `QToolButton` margin 2 px, padding 2 px, a reserved 1 px edge |
 | Border | 1 px, solid | Every control |
 
 No rule names a 2, 4 or 8 px radius in pixels. Two shapes do keep pixels:
@@ -415,18 +402,36 @@ the same. A control that sizes itself returns these from `sizeHint()`.
 A plain icon `QToolButton` in a toolbar sizes to its icon. The Buttons
 page of the gallery shows one row of every control.
 
+A spin box reaches a line edit's height by its padding, which differs by
+Qt version: PySide6 6.5 sizes a spin box 3 px shorter than later Qt for
+the same padding, so fxstyle picks the padding when it builds the sheet.
+
 ### Fills and edges by state
 
-| State | Button (`QPushButton`, `FXSplitButton`) | Input (line edit, combo box, `FXSearchBar`) | Primary (`FXPrimaryButton`) |
-|-------|------|-------|---------|
-| Rest | fill `@surface`, edge `@border_light` | fill `@surface_sunken`, edge `@border` | fill and edge `@primary_button` |
-| Hover | fill `@state_hover`, edge `@accent_primary` | edge `@accent_primary` | fill `@primary_button_hover` |
-| Pressed or checked | fill `@state_pressed` | | fill `@primary_button_pressed` |
-| Focus | edge `@accent_primary` | edge `@accent_primary` | edge `@text` |
-| Disabled | fill `@surface`, edge `@border`, text `@border_strong` | | fill `@surface_alt`, edge `@border`, text `@text_disabled` |
+One rule under every row of the table: **the accent marks keyboard
+focus, a selection, the current item and the primary action. Hover is
+never the accent.** Hover is a neutral fill, so a hovered control never
+looks like the focused one.
+
+| State | Push button, `FXSplitButton` | Tool button (flat) | Input (line edit, combo box, spin box) | Row in a list, tree or table | Menu item, combo or completer row | Tab |
+|-------|------|------|------|------|------|------|
+| Rest | fill `@surface`, edge `@border_light` | no fill | fill `@surface_sunken`, edge `@border` | no fill | no fill | text `@text_muted` |
+| Hover | fill `@state_hover`, edge kept | fill `@state_hover`, no edge | edge `@border_light` | fill `@state_hover`, text kept | fill `@accent_primary`, text `@text_on_accent_primary` | text `@text` |
+| Pressed | fill `@state_pressed` | fill `@state_pressed` | | fill `@accent_primary` | fill `@accent_secondary` | |
+| Checked or current | fill `@state_pressed`, edge `@grid` | fill `@state_pressed`, edge `@accent_primary` | | selected: fill `@accent_primary`, focused view or not | check mark | pill `@state_hover`, edge `@control_edge` |
+| Keyboard focus | edge `@accent_primary` | edge `@accent_primary` | edge `@accent_primary` | the delegate's ring | | edge `@accent_primary` |
+| Disabled | fill `@surface`, edge `@border`, text `@text_disabled` | no fill | text `@text_disabled` | | text `@text_disabled` | |
+
+A primary button (`FXPrimaryButton`) is filled `@primary_button`, hovers
+`@primary_button_hover` and presses `@primary_button_pressed`; its focus
+edge is `@text`, and disabled it is `@surface_alt` with `@text_disabled`.
+Text edits and views do not change on hover. A menu is the one place the
+pointer moves the current item, so there alone hover is the accent.
 
 Focus never draws a box around a control. It recolours the edge the
-control already has, so nothing moves.
+control already has, so nothing moves. Qt's own focus rectangle is off:
+`FXProxyStyle` (which `FXApplication` installs) never draws it, so a
+focused current cell keeps its `BackgroundRole` on PySide6 6.5 as well.
 
 ### Focus shows only after the keyboard
 
@@ -466,7 +471,7 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 | Part | Token | Rule |
 |------|-------|------|
 | Edge of a switch or a slider handle, and a slider's empty groove | `@control_edge` | `border_strong`, darkened or lightened until it reads at 3:1 on `@surface` |
-| Text of a tab that is not the current one | `@tab_muted` | `text_muted`, darkened or lightened until it reads at 4.5:1 on `@surface` |
+| Text of a tab that is not the current one | `@text_muted` | 4.5:1 on `@surface`, as every text ink is |
 | Current tab | `@control_edge` edge on a `@state_hover` pill | The edge reads at 3:1 on `@surface`; the same look on `QTabBar` and QtAds pane tabs |
 | Filled part of a slider | `@accent_primary` | Reads at 3:1 on `@surface`; told from the groove by its hue and the handle |
 | Thumb of a switch | `@text_muted` off, `@text_on_accent_primary` on | Pushed to 3:1 on the track |
@@ -484,27 +489,45 @@ two apart.
 ### Accent, text and icons
 
 - The accent marks the one thing to look at: the main action, a
-  selection, a filled span, a hovered or focused edge.
+  selection, the current item, a filled span, a keyboard-focused edge.
 - Text is `@text`. Secondary text and placeholders are `@text_muted`.
   Text on an accent fill is `@text_on_accent_primary`.
 - Icons take `color="icon"`; on an accent fill, `icon_on_accent_primary`.
-- A popup (a menu, a combo box's list, `FXCommandPalette`) is `@surface`
-  with a 1 px `@border`, its rows inset 4 px. A hovered menu item or combo
-  row is `@accent_primary` with `@text_on_accent_primary` text. No state
-  moves a row's text.
+- A popup (a menu, a combo box's list, a completer's list,
+  `FXCommandPalette`) is `@surface` with a 1 px `@border` at
+  `@card_radius`, its rows inset 4 px. A menu row is 24 px tall and a
+  separator runs the menu's full width. A hovered menu item, combo row or
+  completer row is `@accent_primary` with `@text_on_accent_primary` text.
+  No state moves a row's text.
 - A menu bar item keeps one box, at the button radius, in every state.
   At rest it is bare; hovered, `@state_hover`; with its menu open,
-  `@accent_primary` with `@text_on_accent_primary` text.
+  `@state_pressed` with `@text`.
+- A table or tree header is flat `@text_muted` text over one 1 px
+  `@border` rule, with no box around a section.
+- A splitter handle and the gap between dock widgets show nothing until
+  the pointer finds them, then fill with `@accent_primary`. A splitter
+  marked with `mark_as_frame` keeps its painted dots.
+- A progress bar is a 4 px pill: a `@control_edge` track and an
+  `@accent_primary` chunk, no text unless you turn it on with
+  `setTextVisible(True)`. It is the slider's groove.
+- A tab widget's page is a pane card (`@surface`, a 1 px `@pane_border`),
+  as a dock pane is. A `QToolBox` section is a flat 28 px header with a
+  chevron, a hover fill and the open one at weight 600. A plain
+  `QDockWidget` title is flat `@surface` with `@text`.
+- A tab bar too full for its tabs scrolls. Its two scroll buttons are
+  opaque in the strip's colour, with a 4 px gap off the last tab's cut
+  text.
 
 ### Popups, cards and shadows
 
 | Kind | Examples | Frame | Shadow |
 |------|----------|-------|--------|
-| Popup: a window that closes when you click away | `QMenu`, a combo box list, `FXCommandPalette`, a completer or calendar popup | `@border`, `@button_radius` | The platform's own. Windows draws one under every popup window. Every popup under a themed root asks Windows 11 for flyout corners (`fxutils.round_window_corners`) when it shows. fxgui paints none. |
-| Floating card: a panel over the window that stays until it is done | `FXNotificationBanner`, `FXProgressCard`, `FXFloatingDialog` | `@border`, `@card_radius` | One painted shadow: `fxutils.add_shadows(parent, card)` with its defaults, black at 80 of 255, 20 px blur, no offset |
+| Popup: a window that closes when you click away | `QMenu`, a combo box list, `FXCommandPalette`, a completer or calendar popup | `@border`, `@card_radius` | The platform's own. Windows draws one under every popup window. Every popup under a themed root asks Windows 11 for flyout corners (`fxutils.round_window_corners`) when it shows, which is the 8 px flyout radius. fxgui paints none. |
+| Floating card: a panel over the window that stays until it is done | `FXNotificationBanner`, `FXProgressCard`, `FXFloatingDialog` | `@border`, `@card_radius` | One painted shadow: `fxutils.add_shadow(card)`, in the theme's `@shadow` and `@shadow_blur`, no offset unless you pass one |
 
-A shadow has no theme token. It is black at low opacity in every theme,
-as the platform's own popup shadow is.
+A shadow reads its colour and blur from the theme each time it draws, so
+it follows a switch with no call. A tooltip is no popup: the compositor
+does not round its window, so it keeps `@button_radius`.
 
 `FXCommandPalette` opens centred across its window. `position` puts it
 at `"top"` (under the menu bar and the command rows), `"center"` (the
@@ -515,9 +538,9 @@ too small for it. Anything else raises `ValueError`.
 
 | Control | Rest | Hover | Focus | Disabled |
 |---------|------|-------|-------|----------|
-| `QSlider`, `FXRangeSlider` handle | fill `@slider_thumb`, edge `@control_edge` | fill `@slider_thumb_hover` | fill `@text_on_accent_primary`, edge `@accent_primary` | fill `@surface`, edge `@border` |
+| `QSlider` handle | fill `@surface`, edge `@accent_primary` | a thicker edge | edge `@text` | fill `@surface`, edge `@border` |
 | `QSlider`, `FXRangeSlider` groove and span | groove `@control_edge`, span `@accent_primary` | | | span `@border_strong` |
-| `FXToggleSwitch` off | fill `@surface_sunken`, edge `@control_edge` | edge `@accent_primary` | edge `@accent_primary` | fill `@surface`, edge `@border` |
+| `FXToggleSwitch` off | fill `@surface_sunken`, edge `@control_edge` | fill `@state_hover`, edge kept | edge `@accent_primary` | fill `@surface`, edge `@border` |
 | `FXToggleSwitch` on | fill `@accent_primary` | fill `@primary_button_hover` | edge `@text` | fill `@surface_alt`, edge `@border` |
 
 The switch's fills are pushed to 3:1 on `@surface` when a theme's own
@@ -539,8 +562,8 @@ item.setData(0, Qt.BackgroundRole, "surface")
 The card's edge is `@border_light`. A selected card is filled and edged
 with `@accent_primary`. A row with no background has no card.
 
-A hovered row is filled with `@accent_secondary` and its text is
-`@text_on_accent_secondary`, as in a plain list. Call
+A hovered row is filled with `@state_hover` and keeps its own text
+colour, as in a plain list. Call
 `FXThumbnailDelegate.apply_transparent_selection(view)` on the view so
 Qt's own highlight does not show under the delegate's.
 
@@ -570,10 +593,10 @@ Fragments come after the base stylesheet and are resolved again on every
 switch. Registering after themed roots exist re-applies the sheet to them
 at once, so import order does not matter.
 
-`fxstyle.build_stylesheet(theme=None)` returns the whole sheet: the base,
-every fragment, tokens resolved. `fxstyle.load_stylesheet()` returns the
-same sheet with the rules a window inside a host needs in front. Neither
-changes anything; they only build the text.
+To style a window inside a DCC, register it with
+`fxstyle.register_themed_root(window)`: it gets the sheet, the rules a
+window inside a host needs, the palette and the font, and again on every
+switch. `fxstyle.resolve(qss)` resolves the tokens of a sheet of your own.
 
 ## Repolishing After a Property Change
 
@@ -632,7 +655,7 @@ class MyStatusChip(QWidget):
 Every role in the tables at the top of this page is a token: `@surface`
 in QSS, `fxstyle.colors().surface` in code. So are the computed ones:
 `@text_on_accent_primary`, `@icon_on_accent_primary`, `@primary_button`,
-`@control_edge`, `@card_radius`,
+`@control_edge`, `@card_radius`, `@shadow`, `@shadow_blur`,
 the flattened feedback colours (`@feedback_error_foreground`,
-`@feedback_info_background`, ...), `@radius`, `@button_radius` and the
+`@feedback_info_background`, ...), `@button_radius` and the
 font roles (`@font_body`, `@font_title`, `@font_mono`).

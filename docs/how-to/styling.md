@@ -34,20 +34,8 @@ fxstyle.register_themed_root(window)
 restyled. While the `QApplication` is a themed root, registering a widget
 does nothing: the application's sheet already reaches it.
 
-### A stylesheet by hand
-
-`fxstyle.load_stylesheet()` returns the theme's stylesheet as text and
-changes nothing. It is a snapshot: a later theme switch does not reach
-it. A window styled with it also needs the palette and the font:
-
-```python
-window.setStyleSheet(fxstyle.load_stylesheet())
-window.setPalette(fxstyle.palette())
-window.setFont(fxstyle.font())
-```
-
-Prefer `register_themed_root()` whenever the window should follow theme
-switches. See [Theming](theming.md) for what the stylesheet, the palette
+There is no stylesheet to copy by hand: `register_themed_root()` is the
+one way to theme a window, and it follows every switch. See [Theming](theming.md) for what the stylesheet, the palette
 and the font each carry, reading colours (`fxstyle.colors()`), and
 registering your own widget styles (`register_widget_style()`).
 
@@ -151,7 +139,7 @@ Call `fxstyle.mark_as_frame(widget, False)` to remove the mark. A plain label ha
 !!! note
     The mark is painted, not loaded from an image: it follows theme switches, stays the same size on screen at 100 %, 150 % and 200 % scaling (each dot is two logical pixels, rounded to whole screen pixels), and reaches handles the splitter creates after it was marked. Set the handle width before or after marking; either order works.
 
-For the 1 px edge of a pane sitting on the frame, use the `@pane_border` token (or `get_theme_colors()["pane_border"]`) rather than `@border`: in some themes `border` is nearly the frame's own color.
+For the 1 px edge of a pane sitting on the frame, use the `@pane_border` token (or `fxstyle.colors().pane_border`) rather than `@border`: in some themes `border` is nearly the frame's own color.
 
 ## Flat Icon Buttons
 
