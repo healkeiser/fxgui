@@ -26,13 +26,15 @@ QProgressBar::chunk
     background-color: @accent_primary;
 }
 
+/* A tooltip keeps the small radius: it is no popup, so the compositor does
+   not round its window, and a card radius would show square corners. */
 QToolTip
 {
     border: 1px solid @border_light;
     background-color: @surface_sunken;
     color: @text;
     padding: 4px 8px;
-    border-radius: @card_radius;
+    border-radius: @button_radius;
 }
 
 QWidget
