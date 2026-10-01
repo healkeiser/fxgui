@@ -66,3 +66,28 @@ def test_the_bar_keeps_its_own_flat_fill_over_the_base_sheet(qtbot):
         fxstyle.colors().accent_primary).name()
     assert image.pixelColor(empty).name() == QColor(
         fxstyle.colors().surface_sunken).name()
+
+
+def test_the_task_icon_wears_the_icon_token(qtbot):
+    from fxgui import fxicons
+    from fxgui.fxwidgets import FXIconLabel
+
+    _host, card = _card(qtbot, title="Render", icon="movie")
+    task_icon = card.findChildren(FXIconLabel)[0]
+
+    expected = fxicons.get_icon("movie", color="icon").pixmap(18, 18)
+    assert task_icon.pixmap().toImage() == expected.toImage()
+    assert card._title_label.property(fxstyle.TITLE_PROPERTY) == "section"
+
+
+def test_a_card_without_an_icon_builds_none(qtbot):
+    from fxgui.fxwidgets import FXIconLabel
+
+    _host, card = _card(qtbot, title="Render")
+
+    assert card.findChildren(FXIconLabel) == [card._status_icon]
+
+
+def test_the_card_keeps_one_way_to_set_its_progress():
+    for name in ("progress", "increment", "reset", "STATUS_ICONS"):
+        assert not hasattr(FXProgressCard, name), name

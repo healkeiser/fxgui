@@ -63,7 +63,7 @@ def test_the_banner_names_and_logs_a_severity(qtbot, caplog, logger, level):
 
     assert banner._title_label.text() == title
     assert [record.levelno for record in caplog.records] == [log_level]
-    assert banner.SEVERITY_TITLES[level] == title
+    assert not hasattr(banner, "SEVERITY_TITLES")
 
 
 @pytest.mark.parametrize("level", sorted(_EXPECTED))

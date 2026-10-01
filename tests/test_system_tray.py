@@ -15,7 +15,7 @@ def test_the_menu_follows_a_theme_switch(qtbot):
 
     fxstyle.apply_theme("github_light")
 
-    assert tray.tray_menu.styleSheet() == fxstyle.load_stylesheet()
+    assert tray.contextMenu().styleSheet() == fxstyle.load_stylesheet()
 
 
 def test_quit_leaves_a_host_application_running(qtbot, monkeypatch):
@@ -39,9 +39,29 @@ def test_a_left_click_opens_the_menu_at_the_cursor(qtbot, monkeypatch):
     monkeypatch.setattr(_system_tray, "QCursor", _Cursor)
     tray = FXSystemTray()
     opened = []
-    monkeypatch.setattr(tray.tray_menu, "exec_", opened.append)
+    monkeypatch.setattr(tray.contextMenu(), "exec_", opened.append)
 
     tray._on_tray_icon_activated(QSystemTrayIcon.Context)
     assert opened == []
     tray._on_tray_icon_activated(QSystemTrayIcon.Trigger)
     assert opened == [QPoint(321, 123)]
+
+
+def test_quit_quits_an_fxapplication(qtbot, monkeypatch):
+    from fxgui.fxwidgets import _system_tray
+
+    quits = []
+    monkeypatch.setattr(_system_tray, "FXApplication", QApplication)
+    monkeypatch.setattr(QApplication, "quit", lambda *args: quits.append(1))
+    tray = FXSystemTray()
+
+    tray.quit_action.trigger()
+
+    assert quits == [1]
+
+
+def test_the_tray_is_qts_own_icon_with_no_wrappers():
+    assert issubclass(FXSystemTray, QSystemTrayIcon)
+    for name in ("tray_icon", "tray_menu", "add_action", "set_icon",
+                 "closeEvent"):
+        assert not hasattr(FXSystemTray, name), name

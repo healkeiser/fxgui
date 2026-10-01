@@ -11,7 +11,10 @@ class FXSingleton(type(QObject)):
     """Metaclass for Qt classes that are singletons.
 
     A call returns the live instance, shown and raised, or builds one when
-    there is none or Qt has deleted it. Each subclass gets its own.
+    there is none or Qt has deleted it. Each subclass gets its own. A call
+    that finds a live instance ignores its arguments, so a menu entry can
+    call `MyWindow(parent=host)` every time; `reset_instance` first to
+    build with new ones.
 
     Examples:
         >>> from fxgui import fxwidgets

@@ -166,10 +166,9 @@ def _inks(spinner):
 
 
 @pytest.mark.parametrize("theme", fxstyle.get_available_themes())
-@pytest.mark.parametrize("style", ["spinner", "dots", "pulse"])
-def test_the_spinner_moves_in_the_accent_over_a_muted_track(qtbot, theme, style):
+def test_the_spinner_moves_in_the_accent_over_a_muted_track(qtbot, theme):
     fxstyle.apply_theme(theme)
-    spinner = FXLoadingSpinner(style=style)
+    spinner = FXLoadingSpinner()
     qtbot.addWidget(spinner)
     inks = _inks(spinner)
     colors = fxstyle.colors()
@@ -185,3 +184,28 @@ def test_the_spinner_is_as_tall_as_a_button_by_default(qtbot):
     qtbot.addWidget(spinner)
     qtbot.addWidget(button)
     assert spinner.height() == fxstyle.control_height(button)
+
+
+def test_a_token_colour_follows_a_switch(qtbot):
+    fxstyle.apply_theme("dark")
+    spinner = FXLoadingSpinner(color="feedback_error_foreground")
+    qtbot.addWidget(spinner)
+    fxstyle.apply_theme("github_light")
+
+    ink = fxstyle.colors().feedback_error_foreground.lower()
+    assert _inks(spinner).get(ink, 0) > 0
+
+
+def test_a_plain_colour_still_paints(qtbot):
+    spinner = FXLoadingSpinner(color="#ff0000")
+    qtbot.addWidget(spinner)
+
+    assert _inks(spinner).get("#ff0000", 0) > 0
+
+
+def test_the_spinner_has_one_look():
+    import inspect
+
+    assert "style" not in inspect.signature(FXLoadingSpinner).parameters
+    for name in ("set_style", "_paint_dots", "_paint_pulse"):
+        assert not hasattr(FXLoadingSpinner, name), name

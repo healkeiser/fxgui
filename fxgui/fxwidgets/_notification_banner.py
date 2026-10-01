@@ -26,9 +26,8 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
-from fxgui.fxwidgets._constants import CRITICAL, ERROR
 from fxgui.fxwidgets._labels import FXIconLabel
-from fxgui.fxwidgets._severity import SEVERITIES, log, severity
+from fxgui.fxwidgets._severity import CRITICAL, ERROR, SEVERITIES, log, severity
 
 
 fxstyle.register_widget_style(
@@ -43,8 +42,6 @@ fxstyle.register_widget_style(
     }
     FXNotificationBanner QLabel#fxBannerTitle {
         color: @text;
-        font-weight: bold;
-        font-size: 14px;
     }
     FXNotificationBanner[severity="error"] QLabel#fxBannerTitle {
         color: @feedback_error_foreground;
@@ -67,7 +64,7 @@ fxstyle.register_widget_style(
     FXNotificationBanner QPushButton#fxBannerClose {
         background: transparent;
         border: none;
-        border-radius: 10px;
+        border-radius: @button_radius;
     }
     FXNotificationBanner QPushButton#fxBannerClose:hover {
         background: @surface_alt;
@@ -79,7 +76,6 @@ fxstyle.register_widget_style(
         border-radius: @button_radius;
         padding: 6px 16px;
         font-weight: bold;
-        font-size: 12px;
     }
     FXNotificationBanner QPushButton#fxBannerAction:hover {
         background: @surface_alt;
@@ -123,8 +119,6 @@ class FXNotificationBanner(QFrame):
         timeout: Auto-dismiss timeout in milliseconds (0 = no auto-dismiss).
             Defaults to 5000, and to 0 for ERROR and CRITICAL: an error
             waits for the artist to read it.
-        action_text: Text for a single action button. Sugar for a one-entry
-            `actions` whose callback emits `action_clicked`.
         actions: Buttons to put on the banner, as `{label: callback}`, left to
             right. The first one is styled as the primary. A banner with
             actions never auto-dismisses, and clicking one runs its callback
@@ -135,12 +129,13 @@ class FXNotificationBanner(QFrame):
             level is mapped to the appropriate logging level.
         title: Custom title for the notification. Overrides severity-based title.
         icon: Custom icon name for the notification. Overrides severity-based icon.
-        margin: Margin from the edges of the parent widget (default 16).
+        margin: From the parent's right edge (default 16).
+        top: From the parent's top to the first banner. Defaults to
+            `margin`.
         spacing: Spacing between stacked notifications (default 8).
 
     Signals:
         closed: Emitted when the banner is closed.
-        action_clicked: Emitted when the `action_text` button is clicked.
 
     Examples:
         >>> # Simple notification - auto-positions and stacks
@@ -171,12 +166,6 @@ class FXNotificationBanner(QFrame):
     """
 
     closed = Signal()
-    action_clicked = Signal()
-
-    SEVERITY_ICONS = {level: kind.icon for level, kind in SEVERITIES.items()}
-    SEVERITY_TITLES = {
-        level: kind.title for level, kind in SEVERITIES.items()
-    }
 
     def __init__(
         self,
@@ -184,7 +173,6 @@ class FXNotificationBanner(QFrame):
         message: str = "",
         severity_type: Optional[int] = None,
         timeout: Optional[int] = None,
-        action_text: Optional[str] = None,
         actions: Optional[Mapping[str, Callable[[], None]]] = None,
         closable: bool = True,
         width: int = 320,
@@ -192,6 +180,7 @@ class FXNotificationBanner(QFrame):
         title: Optional[str] = None,
         icon: Optional[str] = None,
         margin: int = 16,
+        top: Optional[int] = None,
         spacing: int = 8,
     ):
         super().__init__(parent)
@@ -201,13 +190,11 @@ class FXNotificationBanner(QFrame):
         if timeout is None:
             timeout = 0 if severity_type in (ERROR, CRITICAL) else 5000
         self._timeout = timeout
-        self._action_text = action_text
         self._closable = closable
-        self._notification_width = width
         self._logger = logger
-        self._custom_title = title
         self._custom_icon = icon
         self._margin = margin
+        self._top = margin if top is None else top
         self._spacing = spacing
 
         # Fixed width for pop notification style
@@ -236,13 +223,14 @@ class FXNotificationBanner(QFrame):
         header_layout.addWidget(self._icon_label)
 
         # Title (custom title, severity name, or default)
-        display_title = (
-            title
-            if title is not None
-            else self.SEVERITY_TITLES.get(severity_type, "Notification")
-        )
-        self._title_label = QLabel(display_title)
+        if title is None:
+            title = (
+                severity(severity_type).title
+                if severity_type in SEVERITIES else "Notification"
+            )
+        self._title_label = QLabel(title)
         self._title_label.setObjectName("fxBannerTitle")
+        fxstyle.mark_as_title(self._title_label, rank="section")
         header_layout.addWidget(self._title_label)
 
         header_layout.addStretch()
@@ -284,8 +272,7 @@ class FXNotificationBanner(QFrame):
         self._dismissing = False
         self._slide_handler = None
 
-        # Setup drop shadow effect
-        self._shadow_effect = fxutils.add_shadows(self, self)
+        fxutils.add_shadow(self)
 
         # Auto-dismiss timer
         self._dismiss_timer = QTimer(self)
@@ -297,8 +284,6 @@ class FXNotificationBanner(QFrame):
 
         self._update_icons()
 
-        if action_text:
-            self.add_action(action_text, self.action_clicked.emit)
         for label, callback in (actions or {}).items():
             self.add_action(label, callback)
 
@@ -319,7 +304,7 @@ class FXNotificationBanner(QFrame):
         """The x the banner sits at once it has finished sliding in."""
         parent = self.parent()
         parent_width = parent.width() if parent else 0
-        return parent_width - self._notification_width - self._margin
+        return parent_width - self.width() - self._margin
 
     def _animate_to(self, target: QPoint, on_finished=None) -> None:
         """Slide to `target`, replacing whatever the banner was doing.
@@ -407,7 +392,7 @@ class FXNotificationBanner(QFrame):
                     for n in _staying(parent)
                     if n is not self
                 ),
-                default=self._margin,
+                default=self._top,
             )
             self._dismissing = False
             self.move(parent.width(), y_offset)  # Off-screen, to the right
@@ -455,7 +440,9 @@ class FXNotificationBanner(QFrame):
         """
         # Sort by where each banner is headed, not by its transient position
         staying = sorted(_staying(parent), key=lambda n: n._target_pos.y())
-        y_offset = staying[0]._margin if staying else 16
+        if not staying:
+            return
+        y_offset = staying[0]._top
 
         for notification in staying:
             target = QPoint(notification._resting_x(), y_offset)
@@ -497,7 +484,8 @@ class FXNotificationBanner(QFrame):
         # The first one leads; the rest step back.
         button.setProperty("primary", not self._action_buttons)
         button.setCursor(Qt.PointingHandCursor)
-        button.clicked.connect(lambda: self._run_action(callback))
+        button.clicked.connect(
+            lambda _=False: self._run_action(callback))
         self._actions_layout.addWidget(button)
         self._action_buttons.append(button)
 
@@ -536,9 +524,16 @@ class FXNotificationBanner(QFrame):
         self._message_label.setText(message)
 
     def set_timeout(self, timeout: int) -> None:
-        """Set the auto-dismiss timeout.
+        """Set the auto-dismiss timeout; a shown banner counts from now.
 
         Args:
             timeout: Timeout in milliseconds (0 = no auto-dismiss).
         """
         self._timeout = timeout
+        self._dismiss_timer.stop()
+        if timeout > 0 and not self.isHidden() and not self._dismissing:
+            self._dismiss_timer.start(timeout)
+
+    def set_top(self, top: int) -> None:
+        """Set the first banner's distance from the parent's top."""
+        self._top = top

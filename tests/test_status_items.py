@@ -21,7 +21,7 @@ def any_theme(request):
 
 
 def _window(qtbot, framed=True):
-    window = FXMainWindow(framed=framed, toolbar=False)
+    window = FXMainWindow(framed=framed, version="1.0", company="Studio")
     qtbot.addWidget(window)
     bar = window.statusBar()
     bar.warnings = FXStatusItem()
@@ -76,7 +76,7 @@ def test_an_item_with_no_text_hides(qtbot):
 
 
 def test_a_message_keeps_a_gap_from_the_window_s_left_edge(qtbot):
-    window = FXMainWindow(toolbar=False)
+    window = FXMainWindow()
     qtbot.addWidget(window)
     window.show()
     qtbot.waitExposed(window)
@@ -259,7 +259,35 @@ def test_the_version_and_company_are_plain_items(qtbot):
 
     assert isinstance(bar.version_label, FXStatusItem)
     assert isinstance(bar.company_label, FXStatusItem)
-    assert bar.version_label.text() == "0.0.0"
+    assert bar.version_label.text() == "1.0"
     order = [bar.project_label, bar.version_label, bar.refreshed,
              bar.company_label]
     assert [item.x() for item in order] == sorted(item.x() for item in order)
+
+
+def test_a_right_item_after_one_went_still_sits_before_the_company(qtbot):
+    window = _window(qtbot)
+    bar = window.statusBar()
+    bar.removeWidget(bar.refreshed)
+    bar.refreshed.deleteLater()
+    qtbot.wait(10)
+
+    later = FXStatusItem("Synced")
+    bar.add_item(later, side="right")
+    qtbot.wait(10)
+
+    assert bar.version_label.x() < later.x() < bar.company_label.x()
+    assert bar.company_label.isVisible()
+
+
+@pytest.mark.parametrize("side", ["left", "right"])
+def test_an_item_added_to_a_shown_bar_sits_in_it(qtbot, side):
+    window = _window(qtbot)
+    bar = window.statusBar()
+
+    item = FXStatusItem("Late")
+    bar.add_item(item, side=side)
+    qtbot.wait(10)
+
+    assert not item.isWindow()
+    assert bar.rect().contains(item.mapTo(bar, item.rect().center()))

@@ -2,7 +2,7 @@
 
 # Built-in
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 from urllib.parse import urlparse
 from webbrowser import open_new_tab
 
@@ -12,36 +12,25 @@ from qtpy.QtGui import QAction, QIcon, QStatusTipEvent
 from qtpy.QtWidgets import (
     QActionGroup,
     QApplication,
-    QDialog,
     QHBoxLayout,
     QLabel,
     QMainWindow,
     QMenu,
     QMenuBar,
+    QMessageBox,
     QPushButton,
     QStatusBar,
     QToolBar,
-    QVBoxLayout,
     QWidget,
 )
 
-from fxgui import fxicons, fxstyle, fxutils
-from fxgui.fxwidgets._tooltip import FXTooltipManager
-from fxgui.fxwidgets._constants import (
-    CRITICAL,
-    ERROR,
-    WARNING,
-    SUCCESS,
-    INFO,
-    DEBUG,
-)
+from fxgui import fxconstants, fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._status_bar import FXStatusBar
 from fxgui.fxwidgets._labels import FXIconLabel
 
 # fxgui's menus, found on whichever menu bar the window has by these names.
 _MENU_NAMES = {
     "main_menu": "fxMainMenu",
-    "edit_menu": "fxEditMenu",
     "window_menu": "fxWindowMenu",
     "theme_menu": "fxThemeMenu",
     "help_menu": "fxHelpMenu",
@@ -96,12 +85,15 @@ class FXCommandRow(QToolBar):
         layout = self.layout()
         if self._margins is not None:
             left, top, right, bottom = self._margins
-            # A horizontal toolbar's layout reads left as top and top as
-            # left, right as bottom and bottom as right.
-            if self.orientation() == Qt.Horizontal:
-                layout.setContentsMargins(top, left, bottom, right)
-            else:
-                layout.setContentsMargins(left, top, right, bottom)
+            # Qt's toolbar layout places the first control at (its top
+            # margin, its left margin) but sizes by left + right and top +
+            # bottom, in either orientation. A side short of 0 stays at 0.
+            layout.setContentsMargins(
+                top,
+                left,
+                max(left + right - top, 0),
+                max(top + bottom - left, 0),
+            )
         if self._spacing is not None:
             layout.setSpacing(self._spacing)
 
@@ -111,63 +103,44 @@ class FXMainWindow(QMainWindow):
 
     The window's icon and name sit at the menu bar's right end, in
     `title_corner`; `set_banner_text` and `set_banner_icon` change them.
-    `setCentralWidget` and `centralWidget` are Qt's own.
+    The project, version and company live on the status bar's items, which
+    the About dialog reads.
 
     Args:
-        parent (QWidget, optional): Parent widget. Defaults to `hou.qt.mainWindow()`.
-        icon (str or QIcon, optional): The window's icon: a path to an
-            image, or a `QIcon`. With neither, an icon already set on the
-            running `QApplication` is left in place and fxgui's own logo is
-            used only if there is none. Defaults to `None`.
-        title (str, optional): Title of the window, and the name in the
-            menu bar corner. Defaults to `None`.
-        size (Tuple[int, int], optional): Window size as width and height.
+        parent: Parent widget. Defaults to `None`.
+        icon: The window's icon: a path to an image, or a `QIcon`. With
+            neither, an icon already set on the running `QApplication` is
+            left in place and fxgui's own logo is used only if there is
+            none. Defaults to `None`.
+        title: Title of the window, and the name in the menu bar corner.
             Defaults to `None`.
-        documentation (str, optional): URL to the tool's documentation.
-            Defaults to `None`.
-        version (str, optional): Version label for the window.
-            Defaults to `None`.
-        company (str, optional): Company name for the window.
-            Defaults to `Company`.
-        ui_file (str, optional): Path to the UI file for loading.
-            Defaults to `None`.
-        set_stylesheet (bool, optional): Whether to set the default stylesheet.
-            Defaults to `True`.
-        rich_tooltips (bool, optional): Whether to install the global
-            FXTooltipManager, which replaces Qt tooltips application-wide
-            with FXTooltip. `None` (default) and `False` both leave Qt's
-            own tooltips, styled by the `QToolTip` rule and formatted by
-            `fxwidgets.apply_tip`. Defaults to `None`.
-        toolbar (bool, optional): Whether to build the window's toolbar.
-            `False` leaves `self.toolbar` as `None`; a hidden toolbar would
-            come back through the menu bar's right-click "Toolbars" entry.
-            Defaults to `True`.
-        fit_to_contents (bool, optional): Whether to grow to the
-            layout's own `sizeHint` on first show, grow-only and
-            bounded by the screen. Defaults to `False`.
-        framed (bool, optional): Whether to draw the window as a frame
-            around its panes. The menu bar, toolbars, status bar and the
-            window behind the central widget paint the theme's ``frame``
-            color with no lines between them, even for bars set later.
-            Icon-only push buttons on those bands go flat
-            (``fxRole="flat"``) unless they carry a role already. Mark
-            bands of your own with `fxstyle.mark_as_frame`.
-            Defaults to `False`.
+        size: Window size as width and height. Defaults to 500 x 600.
+        documentation: URL the Help menu's Documentation opens; the entry
+            is disabled without a valid one. Defaults to `None`.
+        project: The status bar's project. Defaults to `None`, hidden.
+        version: The status bar's version. Defaults to `None`, hidden.
+        company: The status bar's company. Defaults to `None`, hidden.
+        ui_file: A Designer file loaded as the central widget, kept as
+            `ui`. Defaults to `None`.
+        fit_to_contents: Whether to grow to the layout's own `sizeHint`
+            on first show, grow-only and bounded by the screen. Defaults
+            to `False`.
+        framed: Whether to draw the window as a frame around its panes.
+            The menu bar, toolbars, status bar and the window behind the
+            central widget paint the theme's ``frame`` color with no lines
+            between them, even for bars set later. Icon-only push buttons
+            on those bands go flat (``fxRole="flat"``) unless they carry a
+            role already. Mark bands of your own with
+            `fxstyle.mark_as_frame`. Defaults to `False`.
 
     Attributes:
         title_corner (QWidget): The widget at the menu bar's right end
             holding `banner_icon` and `banner_label`.
-        main_menu, edit_menu, window_menu, theme_menu, help_menu (QMenu):
-            fxgui's menus on the current menu bar, or `None` with none.
+        main_menu, window_menu, theme_menu, help_menu (QMenu): fxgui's
+            menus on the current menu bar, or `None` with none.
+        refresh_action (QAction): Ctrl+Alt+R, on no menu; an application
+            adds it where its refresh belongs.
     """
-
-    # Class-level severity constants for convenience
-    CRITICAL: int = CRITICAL
-    ERROR: int = ERROR
-    WARNING: int = WARNING
-    SUCCESS: int = SUCCESS
-    INFO: int = INFO
-    DEBUG: int = DEBUG
 
     def __init__(
         self,
@@ -180,133 +153,76 @@ class FXMainWindow(QMainWindow):
         version: Optional[str] = None,
         company: Optional[str] = None,
         ui_file: Optional[str] = None,
-        set_stylesheet: bool = True,
-        rich_tooltips: Optional[bool] = None,
-        toolbar: bool = True,
         fit_to_contents: bool = False,
         framed: bool = False,
     ):
         super().__init__(parent)
         self._framed: bool = framed
-
-        # Private attributes
-        self._default_icon_path: str = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            "images",
-            "fxgui_logo_background_dark.svg",
-        )
-        self._set_stylesheet: bool = set_stylesheet
-
         self._fit_to_contents: bool = fit_to_contents
         self._fitted: bool = False
-
-        # Public attributes
-        self.window_icon: Optional[Union[str, QIcon]] = icon
-        self.window_title: Optional[str] = title
-        self.window_size: Optional[Tuple[int, int]] = size
         self.documentation: Optional[str] = documentation
-        self.project: str = project or ""
-        self.version: str = version or "0.0.0"
-        self.company: str = company or "\u00a9 Company"
-        self.ui_file: Optional[str] = ui_file
         self.ui: Optional[QWidget] = None
-
-        # Theme action storage
         self.theme_actions: Dict[str, QAction] = {}
-        self.theme_action_group: Optional[QActionGroup] = None
 
-        # Banner icon storage for theme-aware updates
-
-        # Initialize UI components
         self._create_actions()
-        self._create_title_corner()
-        self._load_ui()
-        self.setWindowTitle(self.window_title)
-        self._set_window_icon()
-        self._set_window_size()
+        self._create_title_corner(title)
+        if ui_file is not None:
+            self.ui = fxutils.load_ui(self, ui_file)
+            self.setCentralWidget(self.ui)
+        self.setWindowTitle(title)
+        self._set_window_icon(icon)
+        self.resize(QSize(*size) if size else QSize(500, 600))
         self._adopt_menu_bar(self.menuBar())
-        if toolbar:
-            self._create_toolbars()
-        else:
-            self.toolbar = None
         self.setStatusBar(
             FXStatusBar(
                 parent=self,
-                project=self.project,
-                version=self.version,
-                company=self.company,
+                project=project,
+                version=version,
+                company=company,
             )
         )
-        self._check_documentation()
+        self.open_documentation_action.setEnabled(
+            _is_valid_url(documentation))
         if framed:
             fxstyle.mark_as_frame(self)
 
-        # A themed root, standalone or inside a DCC host.
-        if self._set_stylesheet:
-            fxstyle.register_themed_root(self)
-        fxstyle.theme_changed.connect(self._theme_switched)
-
-        # Opt-in: the manager filters every tooltip in the application,
-        # a DCC host's included.
-        if rich_tooltips:
-            FXTooltipManager.install()
+        # A themed root; fxstyle skips it under a themed application.
+        fxstyle.register_themed_root(self)
+        fxstyle.theme_changed.connect(self._on_theme_changed)
 
     # Private methods
-    def _load_ui(self) -> None:
-        """Load the UI file, if any, as the central widget.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-        if self.ui_file is not None:
-            self.ui = fxutils.load_ui(self, self.ui_file)
-            self.setCentralWidget(self.ui)
-
-    def _set_window_icon(self) -> None:
+    def _set_window_icon(self, icon: Optional[Union[str, QIcon]]) -> None:
         """Set the window icon: a `QIcon`, a path, the app's, or fxgui's logo.
 
         Warning:
             This method is intended for internal use only.
         """
-        if isinstance(self.window_icon, QIcon):
-            self.setWindowIcon(self.window_icon)
+        if isinstance(icon, QIcon):
+            self.setWindowIcon(icon)
             return
-        if self.window_icon and os.path.isfile(self.window_icon):
-            self.setWindowIcon(QIcon(self.window_icon))
+        if icon and os.path.isfile(icon):
+            self.setWindowIcon(QIcon(icon))
             return
         # The application's own mark wins over fxgui's logo.
         application = QApplication.instance()
         if application is not None and not application.windowIcon().isNull():
             return
-        self.setWindowIcon(QIcon(self._default_icon_path))
-
-    def _set_window_size(self) -> None:
-        """Set the window size from the specified size.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-        default_size = QSize(500, 600)
-        if self.window_size and len(self.window_size) >= 2:
-            self.resize(QSize(*self.window_size))
-        else:
-            self.resize(default_size)
+        self.setWindowIcon(QIcon(str(
+            fxconstants.IMAGES_ROOT / "fxgui_logo_background_dark.svg")))
 
     def showEvent(self, event) -> None:
         """Grow once to the layout's own size, if this window asked to.
 
         Grow-only, so a larger requested size stays, and once, so a window
         dragged smaller is not pushed back out. Bounded by the screen the
-        window is on, read from its `QWindow`, which every Qt 5 and 6 has;
-        `QWidget.screen()` needs Qt 5.14.
+        window is on.
         """
         super().showEvent(event)
         if not self._fit_to_contents or self._fitted:
             return
         self._fitted = True
-        handle = self.windowHandle()
-        screen = handle.screen() if handle else QApplication.primaryScreen()
-        wanted = self.sizeHint().boundedTo(screen.availableGeometry().size())
+        wanted = self.sizeHint().boundedTo(
+            self.screen().availableGeometry().size())
         self.resize(self.size().expandedTo(wanted))
 
     def _create_actions(self) -> None:
@@ -315,176 +231,62 @@ class FXMainWindow(QMainWindow):
         Warning:
             This method is intended for internal use only.
         """
-        # Main menu
         self.about_action = fxutils.create_action(
-            self,
-            "About",
-            trigger=self._show_about_dialog,
-            enable=True,
-            visible=True,
-            icon_name="help",
-        )
-
-        self.check_updates_action = fxutils.create_action(
-            self,
-            "Check for Updates...",
-            trigger=None,
-            enable=False,
-            visible=True,
-            icon_name="update",
-        )
-
-        self.hide_action = fxutils.create_action(
-            self,
-            "Hide",
-            trigger=self.hide,
-            enable=False,
-            visible=True,
-            shortcut="Ctrl+Alt+h",
-            icon_name="visibility_off",
-        )
-
-        self.hide_others_action = fxutils.create_action(
-            self,
-            "Hide Others",
-            trigger=None,
-            enable=False,
-            visible=True,
-            icon_name="disabled_visible",
-        )
-
+            self, "About", trigger=self._show_about_dialog, icon_name="help")
         self.close_action = fxutils.create_action(
             self,
             "Close",
             trigger=self.close,
-            enable=True,
-            visible=True,
             shortcut="Ctrl+Alt+q",
             icon_name="close",
         )
-
-        # Edit menu
-        self.settings_action = fxutils.create_action(
-            self,
-            "Settings",
-            trigger=None,
-            enable=False,
-            visible=True,
-            shortcut="Ctrl+Alt+s",
-            icon_name="settings",
-        )
-
-        # Window menu
         self.window_on_top_action = fxutils.create_action(
             self,
-            "Always On Top",
+            "Always on Top",
             trigger=self._toggle_window_on_top,
-            enable=True,
-            visible=True,
             shortcut="Ctrl+Shift+t",
+            checkable=True,
             icon_name="hdr_strong",
         )
-
         self.minimize_window_action = fxutils.create_action(
             self,
             "Minimize",
             trigger=self.showMinimized,
-            enable=True,
-            visible=True,
             shortcut="Ctrl+Alt+m",
             icon_name="minimize",
         )
-
         self.maximize_window_action = fxutils.create_action(
             self,
             "Maximize",
             trigger=self.showMaximized,
-            enable=True,
-            visible=True,
             shortcut="Ctrl+Alt+f",
             icon_name="maximize",
         )
 
-        self.toggle_theme_action = fxutils.create_action(
-            self,
-            "Toggle Theme",
-            trigger=self.toggle_theme,
-            enable=True,
-            visible=True,
-            shortcut="Ctrl+Alt+t",
-            icon_name="brightness_4",
-        )
-
-        # Theme selection actions (populated dynamically from available themes)
-        self.theme_action_group = QActionGroup(self)
-        self.theme_action_group.setExclusive(True)
+        group = QActionGroup(self)
+        group.setExclusive(True)
         for theme_name in fxstyle.get_available_themes():
             action = fxutils.create_action(
                 self,
                 theme_name.title().replace("_", " "),
-                None,
-                lambda checked, t=theme_name: self.set_theme(t),
-                enable=True,
-                visible=True,
+                trigger=lambda _=False, t=theme_name: fxstyle.apply_theme(t),
                 checkable=True,
             )
-            # Check the current theme
-            if theme_name == fxstyle.get_theme():
-                action.setChecked(True)
-            self.theme_action_group.addAction(action)
+            action.setChecked(theme_name == fxstyle.get_theme())
+            group.addAction(action)
             self.theme_actions[theme_name] = action
 
-        # Help menu
         self.open_documentation_action = fxutils.create_action(
             self,
             "Documentation",
-            trigger=lambda: open_new_tab(self.documentation),
-            enable=True,
-            visible=True,
+            trigger=lambda _=False: open_new_tab(self.documentation),
             icon_name="menu_book",
         )
-
-        # Toolbar
-        self.home_action = fxutils.create_action(
-            self,
-            "Home",
-            trigger=None,
-            enable=False,
-            visible=True,
-            icon_name="home",
-        )
-
-        self.previous_action = fxutils.create_action(
-            self,
-            "Previous",
-            trigger=None,
-            enable=False,
-            visible=True,
-            icon_name="arrow_back",
-        )
-
-        self.next_action = fxutils.create_action(
-            self,
-            "Next",
-            trigger=None,
-            enable=False,
-            visible=True,
-            icon_name="arrow_forward",
-        )
-
         self.refresh_action = fxutils.create_action(
-            self,
-            "Refresh",
-            trigger=None,
-            enable=True,
-            visible=True,
-            shortcut="Ctrl+Alt+r",
-            icon_name="refresh",
-        )
-
+            self, "Refresh", shortcut="Ctrl+Alt+r", icon_name="refresh")
 
     def _create_menus(self, bar: QMenuBar) -> None:
-        """Build fxgui's File, Edit, Window and Help menus on `bar`.
+        """Build fxgui's File, Window and Help menus on `bar`.
 
         Warning:
             This method is intended for internal use only.
@@ -499,17 +301,8 @@ class FXMainWindow(QMainWindow):
         main_menu = menu("File", _MENU_NAMES["main_menu"], bar)
         main_menu.addAction(self.about_action)
         main_menu.addSeparator()
-        main_menu.addAction(self.check_updates_action)
-        main_menu.addSeparator()
-        main_menu.addAction(self.hide_action)
-        main_menu.addAction(self.hide_others_action)
-        main_menu.addSeparator()
         main_menu.addAction(self.close_action)
         bar.addMenu(main_menu)
-
-        edit_menu = menu("Edit", _MENU_NAMES["edit_menu"], bar)
-        edit_menu.addAction(self.settings_action)
-        bar.addMenu(edit_menu)
 
         window_menu = menu("Window", _MENU_NAMES["window_menu"], bar)
         window_menu.addAction(self.minimize_window_action)
@@ -528,21 +321,7 @@ class FXMainWindow(QMainWindow):
         help_menu.addAction(self.open_documentation_action)
         bar.addMenu(help_menu)
 
-    def _create_toolbars(self) -> None:
-        """Creates the toolbar for the window.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        self.toolbar = FXCommandRow("Toolbar")
-        self.addToolBar(Qt.TopToolBarArea, self.toolbar)
-        self.toolbar.addAction(self.home_action)
-        self.toolbar.addAction(self.previous_action)
-        self.toolbar.addAction(self.next_action)
-        self.toolbar.addAction(self.refresh_action)
-
-    def _create_title_corner(self) -> None:
+    def _create_title_corner(self, title: Optional[str]) -> None:
         """Build the icon and name that sit at the menu bar's right end.
 
         Warning:
@@ -557,7 +336,7 @@ class FXMainWindow(QMainWindow):
         self.banner_icon.setFixedSize(16, 16)
         self.banner_icon.hide()
         # Takes the menu bar's own font and color from the theme sheet.
-        self.banner_label = QLabel(self.window_title or "", self.title_corner)
+        self.banner_label = QLabel(title or "", self.title_corner)
         self.banner_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         layout.addWidget(self.banner_icon)
         layout.addWidget(self.banner_label)
@@ -603,11 +382,6 @@ class FXMainWindow(QMainWindow):
         return self._menu("main_menu")
 
     @property
-    def edit_menu(self) -> Optional[QMenu]:
-        """The Edit menu on the current menu bar."""
-        return self._menu("edit_menu")
-
-    @property
     def window_menu(self) -> Optional[QMenu]:
         """The Window menu on the current menu bar."""
         return self._menu("window_menu")
@@ -621,19 +395,6 @@ class FXMainWindow(QMainWindow):
     def help_menu(self) -> Optional[QMenu]:
         """The Help menu on the current menu bar."""
         return self._menu("help_menu")
-
-    @property
-    def menu_bar(self) -> QMenuBar:
-        """The window's menu bar, as `menuBar()` returns it."""
-        return self.menuBar()
-
-    @property
-    def status_bar(self) -> QStatusBar:
-        """The window's status bar, as `statusBar()` returns it."""
-        return self.statusBar()
-
-    def use_corner_title(self) -> None:
-        """Do nothing: every window shows its name in the menu bar corner."""
 
     def add_corner_widget(self, widget: QWidget) -> None:
         """Add `widget` to the menu bar corner, left of the icon and name.
@@ -709,116 +470,53 @@ class FXMainWindow(QMainWindow):
             item.width() - bar.fontMetrics().horizontalAdvance(title)) // 2
         self.title_corner.layout().setContentsMargins(0, 0, max(inset, 0), 0)
 
-    def _show_about_dialog(self) -> None:
-        """Shows the "About" dialog.
+    def _about_text(self) -> str:
+        """Return the About dialog's lines: the title, then the bar's items.
 
         Warning:
             This method is intended for internal use only.
         """
+        lines = [self.windowTitle()]
+        bar = self.statusBar()
+        if isinstance(bar, FXStatusBar):
+            lines += [
+                item.text()
+                for item in (
+                    bar.project_label, bar.version_label, bar.company_label)
+            ]
+        return "\n".join(line for line in lines if line)
 
-        # If the dialog already exists and is open, close it
-        if getattr(self, "about_dialog", None) is not None:
-            self.about_dialog.close()
+    def _show_about_dialog(self) -> None:
+        """Show the About dialog.
 
-        self.about_dialog = QDialog(self)
-        self.about_dialog.setWindowTitle("About")
-
-        layout = QVBoxLayout()
-        layout.addStretch()
-        for text in (self.project, self.version, self.company):
-            label = QLabel(text)
-            label.setAlignment(Qt.AlignCenter)
-            layout.addWidget(label)
-        layout.addStretch()
-
-        self.about_dialog.setFixedSize(200, 150)
-        self.about_dialog.setLayout(layout)
-        self.about_dialog.exec_()
+        Warning:
+            This method is intended for internal use only.
+        """
+        QMessageBox.about(self, "About", self._about_text())
 
     def _toggle_window_on_top(self) -> None:
-        """Sets the window on top of all other windows or not.
+        """Keep the window above the others while the action is checked.
 
         Warning:
             This method is intended for internal use only.
         """
-
-        flags = self.windowFlags()
-        stays_on_top = bool(flags & Qt.WindowStaysOnTopHint)
-        flags ^= Qt.WindowStaysOnTopHint
-
-        if stays_on_top:
-            self.window_on_top_action.setText("Always on Top")
-            fxicons.set_icon(self.window_on_top_action, "hdr_strong")
-        else:
-            self.window_on_top_action.setText("Regular Position")
-            fxicons.set_icon(self.window_on_top_action, "hdr_weak")
-
-        self.setWindowFlags(flags)
+        self.setWindowFlag(
+            Qt.WindowStaysOnTopHint, self.window_on_top_action.isChecked())
         self.show()
 
-    def _is_valid_url(self, url: str) -> bool:
-        """Checks if the specified URL is valid.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        if not url:
-            return False
-        try:
-            result = urlparse(url)
-            return all([result.scheme, result.netloc])
-        except (ValueError, AttributeError):
-            return False
-
-    def _check_documentation(self):
-        """Enable the documentation action only for a valid URL.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        self.open_documentation_action.setEnabled(
-            self._is_valid_url(self.documentation)
-        )
-
-    def _theme_switched(self, _theme_name: str) -> None:
-        """Call `_on_theme_changed` without the theme name."""
-        self._on_theme_changed()
-
-    def _on_theme_changed(self, _theme_name: Optional[str] = None) -> None:
-        """Re-render theme-colored pixmaps; override to extend.
+    def _on_theme_changed(self) -> None:
+        """Refit the corner and check the theme in force; override to extend.
 
         Warning:
             This method is intended for internal use only.
         """
         # A theme may change the menu font, and with it the first title.
         self._fit_title_corner()
-        bar = self._current_menu_bar()
-        if bar is not None:
-            bar.update()
-        current_theme = fxstyle.get_theme()
-        if current_theme in self.theme_actions:
-            self.theme_actions[current_theme].setChecked(True)
+        action = self.theme_actions.get(fxstyle.get_theme())
+        if action is not None:
+            action.setChecked(True)
 
     # Public methods
-    def set_theme(self, theme: str) -> str:
-        """Set the theme of every fxgui window, standalone or in a DCC.
-
-        Args:
-            theme: The theme name to apply (e.g., "dark", "light", or custom).
-
-        Returns:
-            str: The theme that was applied.
-
-        Examples:
-            >>> window = FXMainWindow()
-            >>> window.show()
-            >>> window.set_theme("light")
-            >>> window.set_theme("dark")
-        """
-        return fxstyle.apply_theme(theme)
-
     def toggle_theme(self) -> str:
         """Switch every fxgui window to the next available theme.
 
@@ -835,19 +533,6 @@ class FXMainWindow(QMainWindow):
         current = fxstyle.get_theme()
         index = themes.index(current) + 1 if current in themes else 0
         return fxstyle.apply_theme(themes[index % len(themes)])
-
-    def get_available_themes(self) -> List[str]:
-        """Get a list of all available theme names.
-
-        Returns:
-            List[str]: List of theme names (e.g., ["dark", "light"]).
-
-        Examples:
-            >>> window = FXMainWindow()
-            >>> themes = window.get_available_themes()
-            >>> print(themes)  # ['dark', 'light']
-        """
-        return fxstyle.get_available_themes()
 
     def center_on_screen(self) -> None:
         """Center the window on the primary screen's available area.
@@ -940,77 +625,14 @@ class FXMainWindow(QMainWindow):
         self.banner_icon.setIcon(icon)
         self.banner_icon.show()
 
-    # Status bar methods
-    def _fx_status_bar(self) -> FXStatusBar:
-        """Return the status bar, refusing one that is not an FXStatusBar.
 
-        Raises:
-            TypeError: The window's status bar is not an FXStatusBar.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-        bar = self.statusBar()
-        if not isinstance(bar, FXStatusBar):
-            raise TypeError(
-                f"the status bar is a {type(bar).__name__}, not an "
-                "FXStatusBar; set one with setStatusBar()"
-            )
-        return bar
-
-    def set_status_line_colors(self, color_a: str, color_b: str) -> None:
-        """Paint the status line as a gradient from `color_a` to `color_b`.
-
-        Raises:
-            TypeError: The window's status bar is not an FXStatusBar.
-        """
-        self._fx_status_bar().set_status_line_colors(color_a, color_b)
-
-    def hide_status_line(self) -> None:
-        """Hide the status line; a plain QStatusBar has none to hide."""
-        bar = self.statusBar()
-        if isinstance(bar, FXStatusBar):
-            bar.hide_status_line()
-
-    def show_status_line(self) -> None:
-        """Show the status line.
-
-        Raises:
-            TypeError: The window's status bar is not an FXStatusBar.
-        """
-        self._fx_status_bar().show_status_line()
-
-    # UI file methods
-    def set_ui_file(self, ui_file: str) -> None:
-        """Sets the UI file and loads the UI.
-
-        Args:
-            ui_file: Path to the UI file to load.
-        """
-        self.ui_file = ui_file
-        self._load_ui()
-
-    # Status bar label methods
-    def set_project_label(self, project: str) -> None:
-        """Set the project label in the status bar.
-
-        Raises:
-            TypeError: The window's status bar is not an FXStatusBar.
-        """
-        self._fx_status_bar().project_label.setText(project)
-
-    def set_company_label(self, company: str) -> None:
-        """Set the company label in the status bar.
-
-        Raises:
-            TypeError: The window's status bar is not an FXStatusBar.
-        """
-        self._fx_status_bar().company_label.setText(company)
-
-    def set_version_label(self, version: str) -> None:
-        """Set the version label in the status bar.
-
-        Raises:
-            TypeError: The window's status bar is not an FXStatusBar.
-        """
-        self._fx_status_bar().version_label.setText(version)
+def _is_valid_url(url: Optional[str]) -> bool:
+    """Return whether `url` has a scheme and a host."""
+    if not url:
+        return False
+    try:
+        result = urlparse(url)
+    except ValueError:
+        # An unclosed IPv6 bracket, such as "http://[".
+        return False
+    return bool(result.scheme and result.netloc)

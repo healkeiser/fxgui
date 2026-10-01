@@ -42,10 +42,7 @@ class MyWidget(QWidget):
 
 class MyWindow(fxwidgets.FXMainWindow):
     def __init__(self, parent=None):
-        # `toolbar=False` rather than hiding it afterwards: a hidden
-        # toolbar is still in the layout's own bookkeeping, so the menu
-        # bar's right-click "Toolbars" entry offers it straight back.
-        super().__init__(parent, toolbar=False)
+        super().__init__(parent)
 
         self.setCentralWidget(MyWidget(parent=self))
         self.adjustSize()
@@ -139,7 +136,6 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXTimelineSlider` | Timeline with playback, keyframes, markers and a loop region |
 | `FXToggleSwitch` | On/off switch that slides |
 | `FXValidatedLineEdit` | Line edit that shakes and flashes when its validator refuses a key |
-| `FXWidget` | Widget holding an optional Designer file in a padded box layout |
 
 `fxdocking.FXDockArea` docks named panes around a body; it needs the
 `docking` extra (`pip install fxgui[docking]`).

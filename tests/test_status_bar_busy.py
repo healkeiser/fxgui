@@ -10,7 +10,7 @@ from fxgui.fxwidgets._status_bar import STATUS_LINE_HEIGHT
 
 
 def _window(qtbot, framed=True):
-    window = FXMainWindow(framed=framed, toolbar=False)
+    window = FXMainWindow(framed=framed)
     window.setCentralWidget(QLabel("body"))
     qtbot.addWidget(window)
     window.resize(600, 300)

@@ -36,22 +36,10 @@ def _an_icon(color="#ff0000"):
     return QIcon(pixmap)
 
 
-def test_a_window_can_decline_the_toolbar(qtbot):
-    window = FXMainWindow(title="probe", toolbar=False)
-    qtbot.addWidget(window)
-
-    assert window.toolbar is None
-
-
-def test_a_declined_toolbar_cannot_come_back_through_the_menu(qtbot):
-    """Not built rather than built and hidden, which is the measured
-    part: a hidden toolbar is still in the layout's own bookkeeping, so
-    the menu bar's right-click "Toolbars" entry offers it back.
-
-    With nothing left to offer, `createPopupMenu` answers with no menu
-    at all rather than an empty one, so either is the pass here.
-    """
-    window = FXMainWindow(title="probe", toolbar=False)
+def test_no_toolbar_comes_through_the_menu(qtbot):
+    """With nothing to offer, `createPopupMenu` answers with no menu
+    at all rather than an empty one, so either is the pass here."""
+    window = FXMainWindow(title="probe")
     qtbot.addWidget(window)
 
     offered_menu = window.createPopupMenu()
@@ -62,16 +50,6 @@ def test_a_declined_toolbar_cannot_come_back_through_the_menu(qtbot):
     )
 
     assert "Toolbar" not in offered
-
-
-def test_the_toolbar_is_still_the_default(qtbot):
-    window = FXMainWindow(title="probe")
-    qtbot.addWidget(window)
-
-    assert window.toolbar is not None
-    assert "Toolbar" in [
-        action.text() for action in window.createPopupMenu().actions()
-    ]
 
 
 def test_a_window_opens_at_the_constants_size_by_default(qtbot):
@@ -237,32 +215,16 @@ def test_the_system_tray_takes_a_qicon_too(qtbot):
     icon = _an_icon("#123456")
     tray = FXSystemTray(icon=icon)
 
-    assert not tray.tray_icon.icon().isNull()
-    assert tray.tray_icon.icon().cacheKey() == icon.cacheKey()
+    assert not tray.icon().isNull()
+    assert tray.icon().cacheKey() == icon.cacheKey()
 
 
-def test_the_system_tray_still_takes_a_path(qtbot):
+def test_the_system_tray_defaults_to_fxguis_logo(qtbot):
     from fxgui.fxwidgets import FXSystemTray
 
     tray = FXSystemTray()
 
-    assert isinstance(tray.icon, str), "fxgui's own logo, as a path"
-    assert not tray.tray_icon.icon().isNull()
-
-
-def test_the_fit_asks_the_window_handle_for_its_screen():
-    """`QWidget.screen()` needs Qt 5.14; `QWindow.screen()` is in every Qt
-    5 and 6, so no version guard is needed. Asserted by reading the source:
-    only one Qt major version can be imported per process."""
-    import inspect
-
-    from fxgui.fxwidgets import _main_window
-
-    source = inspect.getsource(_main_window.FXMainWindow.showEvent)
-
-    assert "self.screen()" not in source
-    assert "windowHandle()" in source
-    assert "QDesktopWidget" not in inspect.getsource(_main_window)
+    assert not tray.icon().isNull(), "fxgui's own logo"
 
 
 def test_the_fit_is_still_bounded_by_the_screen(qtbot):

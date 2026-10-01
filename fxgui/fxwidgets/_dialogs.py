@@ -23,7 +23,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxdcc, fxicons, fxstyle, fxutils
+from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXIconLabel
 
 # Title, body and buttons start on one left edge.
@@ -58,17 +58,6 @@ fxstyle.register_widget_style(
     #fxFloatingDialogButtons {
         background: transparent;
     }
-    #FXFloatingDialogContainer[houdini="true"] {
-        border-radius: 0px;
-        border-top: 1px solid @border_light;
-        border-left: 1px solid @border_light;
-        border-bottom: 1px solid @surface;
-        border-right: 1px solid @surface;
-    }
-    #FXFloatingDialogContainer[houdini="true"] #fxFloatingDialogTitle {
-        background-color: @surface_alt;
-        border-radius: 0px;
-    }
     """
     # The title sits 1 px inside the frame's border.
     % {"inner": fxstyle.CARD_RADIUS - 1}
@@ -77,18 +66,17 @@ fxstyle.register_widget_style(
 
 class FXFloatingDialog(QDialog):
     """A floating dialog that appears at the cursor's position.
-    It closes when any mouse button except the right one is pressed.
+
+    It closes when any mouse button except the right one is pressed, and
+    is deleted once closed.
 
     Args:
-        parent (QtWidget, optional): Parent widget. Defaults to `hou.qt.mainWindow()`.
-        icon (QPixmap): The QPixmap icon. Defaults to a home icon in the
-            theme's icon color.
-        title (str): The dialog title.
-
-    Attributes:
-        dialog_icon (QPixmap): The icon of the dialog.
-        dialog_title (str): The title of the dialog.
-        parent_package (int): Whether the dialog is standalone application, or belongs to a DCC parent.
+        parent: Parent widget. Defaults to `None`.
+        icon: The title's icon. Defaults to a home icon in the theme's
+            icon color.
+        title: The dialog title. Defaults to "Floating Dialog".
+        popup: Whether it closes on a click outside, as a menu does.
+            A popup casts no painted shadow. Defaults to `False`.
     """
 
     def __init__(
@@ -96,23 +84,16 @@ class FXFloatingDialog(QDialog):
         parent: Optional[QWidget] = None,
         icon: Optional[QPixmap] = None,
         title: Optional[str] = None,
-        parent_package: Optional[int] = None,
         popup: bool = False,
     ):
         super().__init__(parent)
 
-        # Attributes
-        self.dialog_icon: QPixmap = icon
-        self.dialog_title: str = title
-        self.parent_package = parent_package
-
-        # Methods
         self._setup_title()
         self._setup_main_widget()
         self._setup_buttons()
         self._setup_layout()
-        self.set_dialog_icon(self.dialog_icon)
-        self.set_dialog_title(self.dialog_title)
+        self.set_dialog_icon(icon)
+        self.set_dialog_title(title)
 
         # Window - frameless with transparent background for rounded corners
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -123,7 +104,7 @@ class FXFloatingDialog(QDialog):
         else:
             self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
             # A shadow on a popup leaves artifacts.
-            fxutils.add_shadows(self._container, self._container)
+            fxutils.add_shadow(self._container)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.resize(200, 40)
 
@@ -192,9 +173,6 @@ class FXFloatingDialog(QDialog):
         # Container frame for opaque background with rounded corners
         self._container = QFrame(self)
         self._container.setObjectName("FXFloatingDialogContainer")
-        self._container.setProperty(
-            "houdini", self.parent_package == fxdcc.HOUDINI
-        )
 
         # Container layout
         container_layout = QVBoxLayout(self._container)
@@ -219,7 +197,6 @@ class FXFloatingDialog(QDialog):
 
         self._icon_label.setIcon(
             QIcon(icon) if icon else fxicons.get_icon("home"))
-        self.dialog_icon = icon or self._icon_label.pixmap()
 
     def set_dialog_title(self, title: str = None) -> None:
         """Sets the dialog's title.
@@ -234,15 +211,14 @@ class FXFloatingDialog(QDialog):
         """Centre the dialog on the cursor at its final size and run it.
 
         Returns:
-            int: The result of the `QDialog exec_()` method, which is an integer.
-                It returns a `DialogCode` that can be `Accepted` or `Rejected`.
+            int: `exec()`'s `DialogCode`, `Accepted` or `Rejected`.
         """
 
         self.adjustSize()
         geometry = self.frameGeometry()
         geometry.moveCenter(QCursor.pos())
         self.move(geometry.topLeft())
-        return self.exec_()
+        return self.exec()
 
     # Events
     def mousePressEvent(self, event: QMouseEvent) -> None:

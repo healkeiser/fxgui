@@ -42,11 +42,3 @@ def find_pixmap(key: str) -> Optional[QPixmap]:
     found = QPixmapCache.find(key)
     return found if found is not None and not found.isNull() else None
 
-
-def __getattr__(name):
-    # TODO: shim; delete once fxdocking.py:35 imports these from fxutils.
-    if name in ("focus_step", "later", "rehome"):
-        from fxgui import fxutils
-
-        return getattr(fxutils, name)
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

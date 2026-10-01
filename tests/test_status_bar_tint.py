@@ -1,5 +1,7 @@
 """A tinted status bar writes its labels in an ink that reads on the tint."""
 
+import inspect
+
 import pytest
 from qtpy.QtWidgets import QWidget
 
@@ -40,15 +42,11 @@ def test_the_labels_read_on_every_tint(qtbot, theme, severity):
     assert fxstyle.get_contrast_ratio(ink, ground) >= 4.5, (theme, severity)
 
 
-@pytest.mark.parametrize("ground", ["#ffe08a", "#f5f5f5", "#7fbf7f"])
-def test_a_light_custom_tint_turns_the_ink_dark(qtbot, ground):
-    bar = _bar(qtbot)
+def test_a_message_takes_no_colour_or_pixmap_of_its_own():
+    parameters = inspect.signature(FXStatusBar.showMessage).parameters
 
-    bar.showMessage("light", INFO, duration=30, background_color=ground)
-
-    ink, painted = _ink_and_ground(bar)
-    assert painted.lower() == ground
-    assert fxstyle.get_contrast_ratio(ink, ground) >= 4.5, ink
+    assert "background_color" not in parameters
+    assert "pixmap" not in parameters
 
 
 @pytest.mark.parametrize("theme", ["light", "dark"])

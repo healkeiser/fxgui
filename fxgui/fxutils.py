@@ -104,13 +104,11 @@ def load_ui(parent: QWidget, ui_file: str) -> QWidget:
 def create_action(
     parent: QWidget,
     name: str,
-    *_legacy,
     trigger: Optional[Callable] = None,
     enable: bool = True,
     shortcut: Optional[str] = None,
     checkable: bool = False,
     icon_name: Optional[str] = None,
-    **_retired,
 ) -> QAction:
     """Create a QAction owned by `parent`.
 
@@ -128,18 +126,11 @@ def create_action(
         ...     window, "Save", trigger=save, shortcut="Ctrl+S",
         ...     icon_name="save")
     """
-    # TODO: shim; drop `_legacy` (icon, trigger) and `_retired` (visible)
-    # once _system_tray.py:92 and _main_window.py:319-480 stop passing them.
-    legacy_icon = _legacy[0] if _legacy else None
-    if len(_legacy) > 1:
-        trigger = _legacy[1]
     action = QAction(name, parent)
     if icon_name is not None:
         from fxgui import fxicons
 
         fxicons.set_icon(action, icon_name)
-    elif legacy_icon is not None:
-        action.setIcon(legacy_icon)
     if trigger is not None:
         action.triggered.connect(trigger)
     action.setEnabled(enable)
@@ -174,17 +165,8 @@ def add_shadow(
 
 def add_shadows(parent, shadow_object):
     """Cast the floating-card shadow; use `add_shadow` instead."""
-    # TODO: shim; delete once _dialogs, _notification_banner, _progress_card,
-    # _splash_screen and _tooltip call add_shadow.
+    # TODO: shim; delete with _tooltip.py, its last caller.
     return add_shadow(shadow_object)
-
-
-def get_formatted_time() -> str:
-    """Return the time of day as HH:MM; use `strftime` instead."""
-    # TODO: shim; delete once _status_bar.py:421 inlines strftime("%H:%M").
-    from datetime import datetime
-
-    return datetime.now().strftime("%H:%M")
 
 
 @functools.lru_cache(maxsize=1024)

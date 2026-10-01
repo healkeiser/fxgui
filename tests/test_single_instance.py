@@ -3,6 +3,9 @@
 # Built-in
 import os
 
+# Third-party
+import pytest
+
 # Internal
 from fxgui.fxwidgets import FXSingleInstance
 
@@ -33,3 +36,12 @@ def test_a_released_name_can_be_claimed_again(qtbot):
     qtbot.wait(50)
 
     assert FXSingleInstance(_name("again")).claim()
+
+
+def test_a_name_that_cannot_be_listened_on_raises(qtbot, monkeypatch):
+    from qtpy.QtNetwork import QLocalServer
+
+    monkeypatch.setattr(QLocalServer, "listen", lambda self, name: False)
+
+    with pytest.raises(RuntimeError, match="cannot listen"):
+        FXSingleInstance(_name("refused")).claim()

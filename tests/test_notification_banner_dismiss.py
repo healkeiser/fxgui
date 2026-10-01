@@ -21,7 +21,7 @@ from qtpy.QtWidgets import QWidget
 # Internal
 from fxgui import _compat
 from fxgui.fxwidgets import FXNotificationBanner
-from fxgui.fxwidgets._constants import INFO
+from fxgui.fxwidgets._severity import INFO
 
 
 def _host(qtbot):

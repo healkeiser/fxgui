@@ -32,7 +32,7 @@ from qtpy.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
 # Internal
 from fxgui import fxicons, fxstyle
-from fxgui._compat import focus_step, later, rehome
+from fxgui.fxutils import focus_step, later, rehome
 
 _AREAS = {
     "left": ads.LeftDockWidgetArea,
@@ -50,7 +50,7 @@ fxstyle.register_widget_style(
 #fxDocks ads--CFloatingDockContainer { background: @frame; }
 #fxDocks ads--CDockAreaWidget {
     background: @surface; border: 1px solid @pane_border;
-    border-radius: @radiuspx;
+    border-radius: @button_radius;
 }
 #fxDocks ads--CDockAreaTitleBar, #fxDocks ads--CDockAreaTabBar,
 #fxDocks ads--CDockAreaTabBar QWidget, #fxDocks ads--CDockWidget,
@@ -136,18 +136,18 @@ def _recross(docks: "ads.CDockManager") -> None:
     QtAds rebuilds them on their next show once a color is set;
     `updateOverlayIcons` crashes on a cross never shown.
     """
-    colors = fxstyle.get_theme_colors()
-    accent = QColor(colors["accent_primary"])
+    colors = fxstyle.colors()
+    accent = QColor(colors.accent_primary)
     overlay = QColor(accent)
     overlay.setAlpha(64)
     part = ads.CDockOverlayCross.eIconColor
     for cross in docks.findChildren(ads.CDockOverlayCross):
         cross.setIconColor(part.FrameColor, accent)
         cross.setIconColor(
-            part.WindowBackgroundColor, QColor(colors["surface_alt"])
-        )
+            part.WindowBackgroundColor, QColor(colors.surface_alt))
         cross.setIconColor(part.OverlayColor, overlay)
-        cross.setIconColor(part.ArrowColor, QColor(colors["text"]))
+        cross.setIconColor(part.ArrowColor, QColor(colors.text))
+        # QtAds paints this one under its cross icons; black, as a shadow is.
         cross.setIconColor(part.ShadowColor, QColor(0, 0, 0, 64))
 
 
@@ -270,6 +270,7 @@ class FXDockArea(QWidget):
         self._placeholder = True
         self._built: Optional[bytes] = None
         self._pending: Optional[bytes] = None
+        self._sweep_queued = False
         self._docks = ads.CDockManager(self)
         self._docks.setObjectName("fxDocks")
         # Its own sheet paints tabs light; the theme's registered rules win.
@@ -571,7 +572,14 @@ class FXDockArea(QWidget):
         docks.floatingWidgetCreated.connect(self._follow)
 
     def _resweep(self, *_args) -> None:
-        later(0, self, self._sweep)
+        """Sweep once after the burst of signals one change sends."""
+        if not self._sweep_queued:
+            self._sweep_queued = True
+            later(0, self, self._queued_sweep)
+
+    def _queued_sweep(self) -> None:
+        self._sweep_queued = False
+        self._sweep()
 
     def _follow(self, floating: "ads.CFloatingDockContainer") -> None:
         """Sweep again as a floating window's own tree changes."""

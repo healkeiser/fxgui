@@ -286,13 +286,7 @@ def test_match_colour_reads_the_cache(qapp, monkeypatch):
 # FXWidget
 
 
-def test_fx_widget_sets_no_sheet_and_keeps_layout(qtbot):
-    from fxgui.fxwidgets import FXWidget
+def test_fx_widget_is_gone():
+    from fxgui import fxwidgets
 
-    widget = FXWidget()
-    qtbot.addWidget(widget)
-    fxstyle.apply_theme("light")
-    qtbot.wait(5)
-
-    assert widget.styleSheet() == ""
-    assert widget.layout() is widget.main_layout
+    assert not hasattr(fxwidgets, "FXWidget")

@@ -2,12 +2,12 @@
 
 # Third-party
 import pytest
-from qtpy.QtCore import QPoint
+from qtpy.QtCore import QEvent, QPoint
 from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QLabel, QWidget
+from qtpy.QtWidgets import QApplication, QLabel, QWidget
 
 # Internal
-from fxgui import fxdcc, fxstyle
+from fxgui import fxstyle
 from fxgui.fxwidgets import _dialogs
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
 
@@ -33,7 +33,7 @@ def test_it_opens_centred_on_the_cursor_at_its_final_size(qtbot, monkeypatch):
     dialog = _dialog(qtbot, title="Probe")
     dialog.main_layout.addWidget(QLabel("A longer line of text\n" * 6))
     monkeypatch.setattr(_dialogs, "QCursor", _Cursor)
-    monkeypatch.setattr(dialog, "exec_", lambda: 0)
+    monkeypatch.setattr(dialog, "exec", lambda: 0)
 
     dialog.show_under_cursor()
 
@@ -58,9 +58,8 @@ def test_layout_is_qts_method(qtbot):
     assert dialog.layout() is not None
 
 
-@pytest.mark.parametrize("package", [None, fxdcc.HOUDINI])
-def test_the_body_is_opaque_in_the_theme_surface(qtbot, package):
-    dialog = _dialog(qtbot, parent_package=package)
+def test_the_body_is_opaque_in_the_theme_surface(qtbot):
+    dialog = _dialog(qtbot)
     dialog.resize(240, 160)
     dialog.show()
     qtbot.waitExposed(dialog)
@@ -105,8 +104,19 @@ def test_the_close_button_rejects_and_deletes_the_dialog(qtbot):
 
     with qtbot.waitSignal(dialog.rejected, timeout=1000):
         dialog.button_close.click()
+    # PySide6 6.5 runs a deleteLater only once control is back in the loop
+    # it was posted from; delivering it here proves one was posted.
+    QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
 
-    qtbot.waitUntil(lambda: not _compat.is_valid(dialog), timeout=1000)
+    assert not _compat.is_valid(dialog)
+
+
+def test_the_dialog_keeps_no_dead_state_and_no_host_look(qtbot):
+    dialog = _dialog(qtbot, popup=False)
+
+    for name in ("dialog_icon", "dialog_title", "parent_package"):
+        assert not hasattr(dialog, name), name
+    assert "houdini" not in fxstyle.build_stylesheet()
 
 
 def _shown(qtbot, theme):
