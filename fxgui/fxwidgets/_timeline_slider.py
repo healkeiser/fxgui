@@ -280,9 +280,6 @@ class FXTimelineSlider(QWidget):
             + (marks if show_controls and show_loop_controls else [])
             + ([self._spinbox] if show_spinbox else [])
         )
-        for widget in transport + keys + marks + [self._spinbox]:
-            widget.setVisible(widget in shown)
-
         self._extra_controls_layout = QHBoxLayout()
         self._extra_controls_layout.setSpacing(8)
 
@@ -345,6 +342,10 @@ class FXTimelineSlider(QWidget):
             main_layout.addWidget(self._fps_spinbox)
             main_layout.addLayout(self._extra_controls_layout)
 
+        # After the layouts parent them: shown unparented, a button would
+        # flash up as a window of its own.
+        for widget in transport + keys + marks + [self._spinbox]:
+            widget.setVisible(widget in shown)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
     def _spinbox_for(self, value: int, title: str, body: str) -> QSpinBox:
@@ -366,9 +367,7 @@ class FXTimelineSlider(QWidget):
         flat: bool = True,
     ) -> QPushButton:
         """Return a square transport button a push button's height."""
-        # Unparented: the layout parents it. One made under `self` and given
-        # an fxicons icon crashed when Python deleted a shown timeline.
-        button = QPushButton()
+        button = QPushButton(self)
         fxicons.set_icon(button, icon)
         side = fxstyle.control_height(self)
         button.setFixedSize(side, side)
@@ -760,7 +759,6 @@ class _TimelineTrack(QWidget):
 
     def __init__(self, timeline: FXTimelineSlider):
         super().__init__(timeline)
-        self._timeline = timeline
         self.setMouseTracking(True)
         self.setCursor(Qt.PointingHandCursor)
         # Middle-mouse pan state (fractional shift accumulator so slow
@@ -769,6 +767,15 @@ class _TimelineTrack(QWidget):
         self._pan_accum = 0.0
         # Hovered frame (crosshair-style indicator), None when outside.
         self._hover_frame: Optional[int] = None
+
+    @property
+    def _timeline(self) -> FXTimelineSlider:
+        """The timeline this track draws, read off the parent.
+
+        Not stored: a reference back to the parent is a cycle, and Python's
+        collector then deletes a shown timeline in the middle of an event.
+        """
+        return self.parentWidget()
 
     def paintEvent(self, event) -> None:
         """Paint the timeline track."""

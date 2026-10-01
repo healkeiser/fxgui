@@ -1,6 +1,7 @@
 """Navigation breadcrumb widget."""
 
 # Built-in
+import weakref
 from functools import lru_cache
 from typing import List, Optional
 
@@ -107,7 +108,8 @@ class _Strip(QWidget):
 
     def __init__(self, crumb: "FXBreadcrumb"):
         super().__init__()
-        self._crumb = crumb
+        # A proxy: a strong reference to the parent is a cycle.
+        self._crumb = weakref.proxy(crumb)
 
     def paintEvent(self, event) -> None:
         """Paint the strip's fill and edge."""
@@ -129,7 +131,8 @@ class _Segment(QPushButton):
         super().__init__()
         self.setObjectName("fxBreadcrumbSegment")
         self.setFlat(True)
-        self._crumb = crumb
+        # A proxy: a strong reference to the parent is a cycle.
+        self._crumb = weakref.proxy(crumb)
         self._current = current
         if current:
             font = self.font()
