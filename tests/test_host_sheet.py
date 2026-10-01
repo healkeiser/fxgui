@@ -1,0 +1,245 @@
+"""A host's sheet on the window an FXMainWindow is parented to changes nothing.
+
+Houdini sets its base.qss on its main window, and a Qt child inherits its
+parent's sheet for every property its own sheet leaves open.
+"""
+
+# Built-in
+import re
+from pathlib import Path
+
+# Third-party
+import pytest
+from qtpy.QtCore import QPoint, Qt
+from qtpy.QtGui import QActionGroup
+from qtpy.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QGridLayout,
+    QGroupBox,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QMainWindow,
+    QMenu,
+    QPlainTextEdit,
+    QProgressBar,
+    QPushButton,
+    QRadioButton,
+    QSlider,
+    QSpinBox,
+    QSplitter,
+    QTableWidget,
+    QTabWidget,
+    QTextEdit,
+    QToolButton,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+
+# Internal
+from fxgui import fxicons
+from fxgui.fxwidgets import FXMainWindow, FXStatusItem
+
+_SIDEFX = Path("C:/Program Files/Side Effects Software")
+
+
+def _houdini_sheets():
+    """Return Houdini's own sheets: rules from base.qss, and each install's."""
+    # The rules of Houdini 21's base.qss that fxgui's sheet leaves open.
+    rules = ("QToolButton { width: 17px; height: 17px; margin: 1px; }"
+             " QMenu::separator { margin: 4px 0px 4px 0px; }"
+             " QMenu::indicator { margin-left: 7px; }"
+             " QMenu::indicator:unchecked { border: 1px solid black; }"
+             " QMenuBar { border: 1px solid black; padding: 0px 1px; }"
+             " QLabel { color: #ff0000; }")
+    sheets = [pytest.param(rules, id="rules")]
+    for path in sorted(_SIDEFX.glob("Houdini */houdini/config/Styles/base.qss")):
+        # Houdini fills its @tokens@ in; any colour stands in for one.
+        text = re.sub(r"@(\d+px)@", r"\1", path.read_text(encoding="utf-8"))
+        text = re.sub(r"@[^@\s]+@", "128, 128, 128", text)
+        sheets.append(pytest.param(text, id=path.parts[-5]))
+    return sheets
+
+
+def _host(qtbot, sheet):
+    host = QMainWindow()
+    qtbot.addWidget(host)
+    host.setStyleSheet(sheet)
+    host.show()
+    qtbot.waitExposed(host)
+    return host
+
+
+def _shown(qtbot, window, size=(1100, 800)):
+    qtbot.addWidget(window)
+    window.resize(*size)
+    window.show()
+    qtbot.waitExposed(window)
+    qtbot.wait(20)
+    return window
+
+
+class _Probe(FXMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent, framed=True, project="Show")
+        self.setCentralWidget(QLabel("body"))
+        item = FXStatusItem()
+        self.statusBar().add_item(item)
+        item.show_state("Valentin Beaumont", "cloud_done")
+
+
+@pytest.mark.parametrize("sheet", _houdini_sheets())
+def test_a_host_s_sheet_stays_out_of_a_window_it_owns(qtbot, sheet):
+    host = _host(qtbot, sheet)
+    free = _shown(qtbot, _Probe())
+    held = _shown(qtbot, _Probe(parent=host))
+
+    def looks(window):
+        label = window.statusBar().message_label
+        label.ensurePolished()
+        widgets = [*window.findChildren(QToolButton),
+                   *window.findChildren(QMenu), window.menuBar()]
+        return [label.palette().color(label.foregroundRole()),
+                *[(type(w).__name__, w.sizeHint()) for w in widgets]]
+
+    assert held.parent() is host
+    assert looks(held) == looks(free)
+
+
+def _gallery():
+    """Return one of each control a window holds, by name."""
+    spin = QSpinBox()
+    spin.setValue(25)
+    combo = QComboBox()
+    combo.addItems(["one", "two"])
+    menu_push = QPushButton("Menu")
+    menu_push.setMenu(QMenu(menu_push))
+    split = QToolButton()
+    split.setText("Split")
+    split.setMenu(QMenu(split))
+    split.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+    check = QCheckBox("Check")
+    check.setChecked(True)
+    radio = QRadioButton("Radio")
+    radio.setChecked(True)
+    slider = QSlider(Qt.Orientation.Horizontal)
+    slider.setValue(30)
+    upright = QSlider(Qt.Orientation.Vertical)
+    upright.setValue(30)
+    group = QGroupBox("Group")
+    QVBoxLayout(group).addWidget(QLabel("inside"))
+    progress = QProgressBar()
+    progress.setValue(40)
+    tree = QTreeWidget()
+    tree.setColumnCount(6)
+    tree.setHeaderLabels([f"Column {n}" for n in range(6)])
+    items = [QTreeWidgetItem([f"row {n}"] * 6) for n in range(40)]
+    tree.addTopLevelItems(items)
+    items[0].addChildren([QTreeWidgetItem(["child"]) for _ in range(2)])
+    tree.expandAll()
+    tree.setSortingEnabled(True)
+    tree.sortByColumn(0, Qt.SortOrder.AscendingOrder)
+    table = QTableWidget(20, 6)
+    table.setAlternatingRowColors(True)
+    listed = QListWidget()
+    listed.addItems([f"item {n}" for n in range(30)])
+    listed.setAlternatingRowColors(True)
+    editable = QComboBox()
+    editable.setEditable(True)
+    editable.addItems(["typed"])
+    # A selected row too: the host styles selection its own way.
+    tree.setCurrentItem(items[1])
+    table.selectRow(1)
+    listed.setCurrentRow(1)
+    tabs = QTabWidget()
+    tabs.addTab(QLabel("first"), "First")
+    tabs.addTab(QLabel("second"), "Second")
+    splitter = QSplitter()
+    splitter.addWidget(QLabel("left"))
+    splitter.addWidget(QLabel("right"))
+    return {
+        "spin": spin, "double": QDoubleSpinBox(), "combo": combo,
+        "edit": QLineEdit("text"), "push": QPushButton("Push"),
+        "menu_push": menu_push, "split": split, "check": check,
+        "radio": radio, "slider": slider, "progress": progress,
+        "tree": tree, "tabs": tabs, "group": group, "upright": upright,
+        "text": QPlainTextEdit("line\n" * 60), "splitter": splitter,
+        "label": QLabel("Label"), "table": table, "list": listed,
+        "editable": editable, "rich": QTextEdit("rich\n" * 60),
+    }
+
+
+def _menu(parent):
+    """Return a menu with every kind of entry: icon, ticks, rule, submenu."""
+    menu = QMenu(parent)
+    menu.addAction(fxicons.get_icon("refresh"), "With an icon")
+    ticked = menu.addAction("Ticked")
+    ticked.setCheckable(True)
+    ticked.setChecked(True)
+    menu.addAction("Unticked").setCheckable(True)
+    group = QActionGroup(menu)
+    for text in ("One of two", "Two of two"):
+        choice = menu.addAction(text)
+        choice.setCheckable(True)
+        group.addAction(choice)
+    menu.addSeparator()
+    menu.addMenu(QMenu("More", menu))
+    return menu
+
+
+class _Gallery(_Probe):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        body = QWidget()
+        grid = QGridLayout(body)
+        self.gallery = _gallery()
+        for index, widget in enumerate(self.gallery.values()):
+            # No focus ring on one window and not the other.
+            widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            grid.addWidget(widget, index // 3, index % 3)
+        for name in ("tree", "text", "table", "list", "rich"):
+            self.gallery[name].setFixedSize(260, 120)
+        self.setCentralWidget(body)
+        self.menu = _menu(self)
+
+
+@pytest.mark.parametrize("sheet", _houdini_sheets())
+def test_a_host_s_sheet_changes_no_pixel_of_a_control(qtbot, sheet):
+    host = _host(qtbot, sheet)
+    free = _shown(qtbot, _Gallery(), (1200, 900))
+    held = _shown(qtbot, _Gallery(parent=host), (1200, 900))
+    qtbot.wait(50)
+
+    def looks(window):
+        window.menu.popup(window.mapToGlobal(QPoint(0, 0)))
+        qtbot.waitExposed(window.menu)
+        shown = {name: widget.grab().toImage()
+                 for name, widget in window.gallery.items()}
+        shown.update({"menu": window.menu.grab().toImage(),
+                      "menu_bar": window.menuBar().grab().toImage(),
+                      "status_bar": window.statusBar().grab().toImage()})
+        window.menu.close()
+        return shown
+
+    before, after = looks(free), looks(held)
+
+    changed = [name for name in before if before[name] != after[name]]
+    assert not changed, f"the host's sheet changed the pixels of {changed}"
+
+
+def test_a_window_reparented_into_a_host_takes_the_reset(qtbot):
+    host = _host(qtbot, _houdini_sheets()[0].values[0])
+    free = _shown(qtbot, _Probe())
+    moved = _Probe()
+    moved.setParent(host, moved.windowFlags())
+    _shown(qtbot, moved)
+
+    button = [b for b in moved.findChildren(QToolButton) if b.isVisible()][0]
+    twin = [b for b in free.findChildren(QToolButton) if b.isVisible()][0]
+    assert button.sizeHint() == twin.sizeHint()
+    assert QApplication.instance() is not None
