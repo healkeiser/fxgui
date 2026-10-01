@@ -173,3 +173,20 @@ def test_fit_columns_measures_collapsed_rows_and_never_narrows(qtbot):
     header.resizeSection(0, 2000)
     fxutils.fit_columns(tree)
     assert header.sectionSize(0) == 2000
+
+
+def test_fit_columns_counts_the_views_icon_size(qtbot):
+    from qtpy.QtCore import QSize
+
+    from fxgui import fxicons
+
+    tree = _tree(qtbot, columns=2)
+    tree.setIconSize(QSize(48, 48))
+    item = _row(tree, "beauty", "x")
+    item.setIcon(0, fxicons.get_icon("check"))
+    header = tree.header()
+    header.resizeSection(0, 10)
+    fxutils.fit_columns(tree)
+    fitted = header.sectionSize(0)
+    tree.resizeColumnToContents(0)
+    assert fitted >= header.sectionSize(0)

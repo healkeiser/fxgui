@@ -2,6 +2,7 @@
 
 # Built-in
 import inspect
+from pathlib import Path
 
 # Internal
 from fxgui import fxconfig, fxicons, fxstyle
@@ -94,4 +95,4 @@ def test_unused_icon_and_config_helpers_are_gone():
 def test_settings_still_round_trip(qapp):
     fxconfig.set_value("probe/key", "value")
     assert fxconfig.get_value("probe/key") == "value"
-    assert fxconfig.SETTINGS_FILE.exists()
+    assert Path(fxconfig._settings().fileName()).exists()

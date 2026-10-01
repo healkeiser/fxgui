@@ -4,15 +4,12 @@
 import logging
 from typing import NamedTuple, Optional
 
-# Internal
-from fxgui.fxwidgets._constants import (
-    CRITICAL,
-    DEBUG,
-    ERROR,
-    INFO,
-    SUCCESS,
-    WARNING,
-)
+CRITICAL = 0
+ERROR = 1
+WARNING = 2
+SUCCESS = 3
+INFO = 4
+DEBUG = 5
 
 
 class _Severity(NamedTuple):

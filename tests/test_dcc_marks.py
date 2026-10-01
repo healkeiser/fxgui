@@ -25,8 +25,9 @@ def test_each_mark_draws_in_colour(qapp, name):
     assert centre.alpha() > 0
 
 
-def test_the_library_lists_every_mark(qapp):
-    assert set(MARKS) <= set(fxicons.get_available_icons_in_library("dcc"))
+@pytest.mark.parametrize("name", MARKS)
+def test_the_library_holds_every_mark(name):
+    assert fxicons.get_icon_path(name, library="dcc")
 
 
 @pytest.mark.parametrize("name", ["alembic", "deadline", "kitsu", "python"])

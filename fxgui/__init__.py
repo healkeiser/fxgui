@@ -1,13 +1,11 @@
 """FxGui - A modern Qt-based GUI framework for DCC applications.
 
-This package provides customized Qt widgets and utilities for building
-consistent user interfaces across different Digital Content Creation (DCC)
-applications like Houdini, Maya, and Nuke.
+Customized Qt widgets and utilities for consistent user interfaces in
+Digital Content Creation (DCC) applications and standalone tools.
 
 Modules:
     fxconfig: Configuration and settings management.
     fxcore: Core functionality and custom Qt classes.
-    fxdcc: DCC-specific utility functions.
     fxicons: Icon management and utilities.
     fxstyle: Styling, themes, and color management.
     fxutils: General utility functions.
@@ -21,18 +19,26 @@ Examples:
     >>> app = fxwidgets.FXApplication()
     >>> window = fxwidgets.FXMainWindow(title="My App")
     >>> window.show()
-    >>> app.exec_()
+    >>> app.exec()
 """
 
 # Built-in
 from importlib.metadata import version, PackageNotFoundError
+
+# Third-party
+import qtpy
+
+if not qtpy.QT6:
+    raise ImportError(
+        f"fxgui needs Qt 6 (PySide6 6.5 or newer, or PyQt6); qtpy found "
+        f"{qtpy.API_NAME}."
+    )
 
 # Internal
 from fxgui import (
     fxconfig,
     fxconstants,
     fxcore,
-    fxdcc,
     fxicons,
     fxstyle,
     fxutils,
@@ -43,7 +49,6 @@ __all__ = [
     "fxconfig",
     "fxconstants",
     "fxcore",
-    "fxdcc",
     "fxicons",
     "fxstyle",
     "fxutils",
@@ -53,7 +58,7 @@ __all__ = [
 try:
     __version__ = version("fxgui")
 except PackageNotFoundError:
-    # Package is not installed (running from source)
+    # Running from a source tree that was never installed.
     __version__ = "0.0.0.dev"
 
 __author__ = "Valentin Beaumont"

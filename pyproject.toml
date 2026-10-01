@@ -15,7 +15,7 @@ authors = [
 maintainers = [
     { name = "Valentin Beaumont", email = "valentin.onze@gmail.com" }
 ]
-keywords = ["Qt", "PySide2", "PySide6", "PyQt5", "PyQt6", "VFX", "DCC", "UI"]
+keywords = ["Qt", "Qt6", "PySide6", "PyQt6", "VFX", "DCC", "UI"]
 classifiers = [
     # How mature is this project? Common values are
     # 3 - Alpha
@@ -27,6 +27,7 @@ classifiers = [
     # Indicate who your project is intended for
     "Operating System :: OS Independent",
     "Topic :: Software Development :: User Interfaces",
+    "Environment :: X11 Applications :: Qt",
 
     # Specify the Python versions you support here
     "Programming Language :: Python :: 3",
@@ -36,6 +37,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 requires-python = ">=3.9"
+# A Qt 6 binding is required but not listed: a DCC ships its own PySide6,
+# and a second one installed beside it breaks the host.
 dependencies = [
     "QtPy>=2.4.2",
     "PyYAML>=6.0",
@@ -57,8 +60,8 @@ test = [
     "pytest-qt>=4.2",
     # Every run shuffles the order, so a test leaning on another fails.
     "pytest-randomly>=3.0",
-    # A Qt binding is needed to run the tests; PySide6 is the default target.
-    "PySide6",
+    # The oldest PySide6 fxgui supports is Houdini 21's 6.5.3.
+    "PySide6>=6.5",
 ]
 
 [project.urls]
@@ -99,7 +102,6 @@ include = ["fxgui*"]
 ]
 
 [tool.setuptools_scm]
-version_file = "fxgui/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

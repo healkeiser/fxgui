@@ -2,7 +2,7 @@
 
 from qtpy.QtGui import QColor, QImage, QPainter, QPixmap
 
-from fxgui import fxicons
+from fxgui import fxicons, fxstyle
 
 
 def _wide(tmp_path):
@@ -29,7 +29,8 @@ def test_the_corners_are_cut_and_the_edge_is_outlined(qapp, tmp_path):
     image = fxicons.rounded_pixmap(_wide(tmp_path), 32, ratio=1.0).toImage()
     assert image.pixelColor(0, 0).alpha() == 0
     edge = image.pixelColor(16, 0)
-    assert edge.alpha() > 0 and edge.red() > 100, "a light ring over green"
+    assert edge.alpha() > 0
+    assert edge.name() == QColor(fxstyle.colors().border_light).name()
 
 
 def test_it_takes_a_pixmap(qapp, tmp_path):

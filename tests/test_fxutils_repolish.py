@@ -35,3 +35,11 @@ def test_repolish_applies_dynamic_property_selector(qtbot):
     qtbot.wait(20)
 
     assert box.grab().toImage().pixelColor(center) == QColor("#ff0000")
+
+
+def test_repolish_takes_an_item_view(qtbot):
+    from qtpy.QtWidgets import QTreeWidget
+
+    tree = QTreeWidget()
+    qtbot.addWidget(tree)
+    fxutils.repolish(tree)

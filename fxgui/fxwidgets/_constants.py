@@ -1,9 +1,12 @@
-"""Severity level constants for the fxwidgets module."""
+"""Private shim: the severity levels now live in `_severity`."""
 
-# Severity constants
-CRITICAL = 0
-ERROR = 1
-WARNING = 2
-SUCCESS = 3
-INFO = 4
-DEBUG = 5
+# TODO: delete once _main_window.py, _notification_banner.py, _status_bar.py
+# and fxwidgets/__init__.py import the levels from _severity.
+from fxgui.fxwidgets._severity import (  # noqa: F401
+    CRITICAL,
+    DEBUG,
+    ERROR,
+    INFO,
+    SUCCESS,
+    WARNING,
+)

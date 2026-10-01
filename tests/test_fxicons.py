@@ -13,9 +13,12 @@ behind it, so `set_icon` strips Active for push buttons. A hovered tool
 button sits on the secondary accent and keeps it.
 """
 
-from qtpy.QtGui import QIcon
+import inspect
+
+import pytest
+from qtpy.QtGui import QColor, QIcon, QPixmapCache
 from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QPushButton, QToolButton, QAction
+from qtpy.QtWidgets import QAction, QLabel, QPushButton, QToolButton
 
 from fxgui import fxicons
 
@@ -92,3 +95,63 @@ def test_menu_action_keeps_active_recolor(qapp):
     action = QAction("Open")
     fxicons.set_icon(action, "check", width=48, height=48)
     assert not _active_matches_normal(action.icon())
+
+
+def test_a_disabled_icon_wears_the_text_disabled_token(qapp):
+    from fxgui import fxstyle
+
+    for theme in ("dark", "light"):
+        fxstyle.apply_theme(theme)
+        icon = fxicons.get_icon("check")
+        assert _ink(icon, QIcon.Disabled) == (
+            QColor(fxstyle.colors().text_disabled).name()), theme
+
+
+def test_set_icon_raises_on_a_widget_without_set_icon(qtbot):
+    label = QLabel()
+    qtbot.addWidget(label)
+    with pytest.raises(AttributeError):
+        fxicons.set_icon(label, "check")
+
+
+def test_set_icon_takes_no_theme_color():
+    assert "theme_color" not in inspect.signature(fxicons.set_icon).parameters
+
+
+def test_one_icon_cache_remains():
+    for name in (
+        "_get_icon_cached",
+        "_get_pixmap_cached",
+        "_get_pixmap_internal",
+        "clear_icon_cache",
+    ):
+        assert not hasattr(fxicons, name), name
+
+
+def test_get_pixmap_is_the_engines_drawing(qapp):
+    QPixmapCache.clear()
+    pixmap = fxicons.get_pixmap("check", 16, 16, dpr=1.0)
+    drawn = fxicons.get_icon("check", 16, 16).pixmap(QSize(16, 16))
+    assert pixmap.toImage() == drawn.toImage()
+
+
+def test_the_dead_icon_api_is_gone():
+    for name in (
+        "set_default_icon_library",
+        "set_icon_defaults",
+        "get_available_icons_in_library",
+        "get_icon_color",
+        "superpose_icons",
+    ):
+        assert not hasattr(fxicons, name), name
+        assert name not in fxicons.__all__, name
+    assert "change_pixmap_color" not in fxicons.__all__
+    assert "badged" in fxicons.__all__
+
+
+def test_a_fallback_name_keeps_the_size_and_colour_asked(qapp):
+    icon = fxicons.get_icon(
+        "no_such_mark", 20, 20, color="#00ff00", library="dcc",
+        fallback="check")
+    assert icon.actualSize(QSize(64, 64)) == QSize(20, 20)
+    assert _ink(icon, QIcon.Normal) == "#00ff00"

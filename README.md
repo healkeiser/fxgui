@@ -68,6 +68,19 @@ The package is available on [PyPI](https://pypi.org/project/fxgui):
 pip install fxgui
 ```
 
+### Qt Binding
+
+A Qt 6 binding is required and not installed with fxgui: PySide6 6.5 or
+newer, or PyQt6. A DCC such as Houdini ships its own PySide6; outside one,
+install it yourself:
+
+``` shell
+pip install fxgui "PySide6>=6.5"
+```
+
+Qt 5 (PySide2, PyQt5) is not supported: `import fxgui` raises an
+`ImportError` that names the binding it found.
+
 ### From Source
 
 Clone the repository with submodules:
