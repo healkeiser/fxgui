@@ -249,29 +249,28 @@ QMenuBar
     border-bottom: 1px solid @scrollbar_track;
 }
 
+/* One box in every state, so an item never changes shape: hover is the
+   hover fill, and only an open menu wears the accent. `:enabled` lifts
+   these over the `QWidget:item:selected` rule above. */
 QMenuBar::item
 {
     background: transparent;
-    padding: 10px;
+    margin: 5px;
+    padding: 5px;
+    border-radius: @button_radius;
 }
 
-QMenuBar::item:selected
+QMenuBar::item:selected:enabled,
+QMenuBar::item:hover:enabled
+{
+    color: @text;
+    background-color: @state_hover;
+}
+
+QMenuBar::item:pressed:enabled
 {
     color: @text_on_accent_primary;
     background-color: @accent_primary;
-    border-radius: 2px;
-    margin: 5px;
-    /* background: transparent; */
-    /* border: 1px solid @border; */
-}
-
-/* The selected shape, so a release does not flash edge to edge. */
-QMenuBar::item:pressed
-{
-    background-color: @accent_secondary;
-    color: @text_on_accent_secondary;
-    border-radius: 2px;
-    margin: 5px;
 }
 
 QMenu
@@ -303,7 +302,7 @@ QMenu::icon:checked
 QMenu::item
 {
     background-color: @surface_sunken;
-    border-radius: 2px;
+    border-radius: @button_radius;
     padding: 5px 25px 5px 25px;
     border: 3px transparent;
 }
@@ -311,6 +310,7 @@ QMenu::item
 QMenu::item:selected
 {
     color: @text_on_accent_primary;
+    background-color: @accent_primary;
 }
 
 QMenu::item:pressed

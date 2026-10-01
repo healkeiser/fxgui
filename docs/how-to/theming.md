@@ -467,6 +467,9 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 - Icons take `color="icon"`; on an accent fill, `icon_on_accent_primary`.
 - A menu is `@surface_sunken` with a 1 px `@border`. Its hovered item is
   `@accent_primary` with `@text_on_accent_primary` text.
+- A menu bar item keeps one box, at the button radius, in every state.
+  At rest it is bare; hovered, `@state_hover`; with its menu open,
+  `@accent_primary` with `@text_on_accent_primary` text.
 
 ### Sliders and switches
 
