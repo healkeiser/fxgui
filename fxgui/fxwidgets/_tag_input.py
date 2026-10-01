@@ -258,13 +258,4 @@ FXTagChip QPushButton {
 FXTagChip QPushButton:hover {
     background: @primary_button_hover;
 }
-FXTagInput QLineEdit#fx_tag_input_field {
-    background-color: @surface_sunken;
-    border: 1px solid @border;
-    border-radius: 4px;
-    padding: 6px 8px;
-}
-FXTagInput QLineEdit#fx_tag_input_field[fxFocusVisible="true"]:focus {
-    border-color: @accent_primary;
-}
 """)

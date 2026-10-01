@@ -13,13 +13,15 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXSearchBar
+from fxgui.fxwidgets import FXSearchBar, FXTagInput
 
 # A line edit and a push button come to the same height with the theme's
 # font installed; under a test's fontless offscreen platform they differ.
 _INPUTS = {
     "QSpinBox": QSpinBox,
     "FXSearchBar": FXSearchBar,
+    # Its field is the whole widget until a tag is added.
+    "FXTagInput": FXTagInput,
     "QDoubleSpinBox": QDoubleSpinBox,
 }
 
