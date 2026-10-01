@@ -484,7 +484,6 @@ def _lists_page() -> QWidget:
     sorted_tree.setFixedHeight(190)
 
     icon_list = QListWidget()
-    icon_list.setItemDelegate(fxwidgets.FXItemDelegate(icon_list))
     for text, icon_name in (
         ("Documents", "folder"),
         ("Images", "image"),
@@ -498,7 +497,7 @@ def _lists_page() -> QWidget:
         _section("FXFilteredTree / FXKeyboardTree", filtered),
         _section("FXSortedTreeWidgetItem", sorted_tree),
         _section("FXThumbnailDelegate", _thumbnail_tree()),
-        _section("FXItemDelegate", icon_list),
+        _section("QListWidget", icon_list),
     )
 
 

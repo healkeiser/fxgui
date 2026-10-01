@@ -25,7 +25,6 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
-from fxgui.fxwidgets._delegates import FXItemDelegate
 from fxgui.fxwidgets._labels import FXIconLabel
 
 
@@ -191,7 +190,6 @@ class FXDropZone(QWidget):
             header.setSectionResizeMode(0, QHeaderView.Stretch)
             header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-            self._file_tree.setItemDelegate(FXItemDelegate(self._file_tree))
             self._file_tree.setVisible(False)
             self._file_tree.setContextMenuPolicy(Qt.CustomContextMenu)
             self._file_tree.customContextMenuRequested.connect(

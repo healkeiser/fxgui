@@ -93,11 +93,12 @@ def _style(widget: Optional[QWidget]) -> QStyle:
 def _paint_icon(
     painter: QPainter, icon: QIcon, rect: QRect, state
 ) -> None:
-    """Paint an icon in the mode its row's selection or hover asks for."""
+    """Paint an icon in Selected mode on a selected row, else Normal.
+
+    A hovered row keeps its Normal ink: its fill is neutral, not an accent.
+    """
     if state & QStyle.State_Selected:
         icon.paint(painter, rect, Qt.AlignCenter, QIcon.Selected, QIcon.On)
-    elif state & QStyle.State_MouseOver:
-        icon.paint(painter, rect, Qt.AlignCenter, QIcon.Active, QIcon.On)
     else:
         icon.paint(painter, rect)
 
@@ -125,43 +126,6 @@ def _fallback_source() -> QPixmap:
 def _mark(name: str, token: str) -> QIcon:
     """Return a check box mark; its token is read each time it is drawn."""
     return fxicons.get_icon(name, color=token)
-
-
-class FXItemDelegate(QStyledItemDelegate):
-    """A drop-in item delegate whose icons switch to Active on hover.
-
-    Qt's own painting only uses `QIcon.Selected`, for selected items.
-
-    Examples:
-        >>> list_widget = QListWidget()
-        >>> list_widget.setItemDelegate(fxwidgets.FXItemDelegate())
-    """
-
-    def paint(
-        self,
-        painter: QPainter,
-        option: QStyleOptionViewItem,
-        index: QModelIndex,
-    ) -> None:
-        icon = index.data(Qt.DecorationRole)
-        if (
-            icon is None
-            or icon.isNull()
-            or not option.state & (QStyle.State_Selected | QStyle.State_MouseOver)
-        ):
-            super().paint(painter, option, index)
-            return
-
-        opt = QStyleOptionViewItem(option)
-        self.initStyleOption(opt, index)
-        style = _style(opt.widget)
-        # Everything but the icon, which is painted below in its mode.
-        opt.icon = QIcon()
-        style.drawControl(QStyle.CE_ItemViewItem, opt, painter, opt.widget)
-        icon_rect = style.subElementRect(
-            QStyle.SE_ItemViewItemDecoration, opt, opt.widget
-        )
-        _paint_icon(painter, icon, icon_rect, option.state)
 
 
 class _DelegateOwnsTheRow(QProxyStyle):
@@ -542,11 +506,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     @staticmethod
     def _text_color(option: QStyleOptionViewItem) -> QColor:
-        """Return the text colour for the row's selection or hover."""
+        """Return the text colour for the row's selection; hover keeps it."""
         if option.state & QStyle.State_Selected:
             return option.palette.highlightedText().color()
-        if option.state & QStyle.State_MouseOver:
-            return QColor(fxstyle.colors().text_on_accent_secondary)
         return option.palette.text().color()
 
     @staticmethod
@@ -994,11 +956,11 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         ends: Tuple[bool, bool],
     ) -> None:
         """Fill a selected cell with `accent_primary`, a hovered one with
-        `accent_secondary`, as the stylesheet does for plain item views."""
+        `state_hover`, as the stylesheet does for plain item views."""
         if option.state & QStyle.State_Selected:
             fill = QColor(fxstyle.colors().accent_primary)
         elif option.state & QStyle.State_MouseOver:
-            fill = QColor(fxstyle.colors().accent_secondary)
+            fill = QColor(fxstyle.colors().state_hover)
         else:
             return
         rect_f = QRectF(rect)
