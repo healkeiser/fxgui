@@ -94,7 +94,6 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXFilteredTree` | An `FXKeyboardTree` under a filter bar, with expand-all and collapse-all |
 | `FXFloatingDialog` | Dialog that opens at the pointer |
 | `FXFlowLayout` | Layout that wraps its widgets onto new lines, like words |
-| `FXFuzzySearchTree` | Tree, or flat list, with a search field that matches loosely |
 | `FXIconButton` | Round icon button; checkable, filled with the accent when checked |
 | `FXIconLabel` | Label that draws an icon in the theme's colours at paint time |
 | `FXIconLineEdit` | Line edit with an icon on the left or right |

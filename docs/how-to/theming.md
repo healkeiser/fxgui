@@ -560,8 +560,7 @@ too small for it. Anything else raises `ValueError`.
 The switch's fills are pushed to 3:1 on `@surface` when a theme's own
 accent misses it.
 
-Every `QSlider` gets these rules from the base sheet, the threshold
-slider of `FXFuzzySearchTree` included.
+Every `QSlider` gets these rules from the base sheet.
 
 ### Cards in item views
 

@@ -106,8 +106,8 @@ class FXLoadingSpinner(QWidget):
         self._angle = (self._angle + 6) % 360
         self.update()
 
-    def _pen(self, color: str) -> QPen:
-        pen = QPen(QColor(color))
+    def _pen(self, color) -> QPen:
+        pen = QPen(fxstyle.qcolor(color))
         pen.setWidth(self._line_width)
         pen.setCapStyle(Qt.RoundCap)
         return pen
@@ -121,7 +121,7 @@ class FXLoadingSpinner(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(self._pen(colors.border_light))
         painter.drawEllipse(ring)
-        painter.setPen(self._pen(vars(colors).get(self._color, self._color)))
+        painter.setPen(self._pen(self._color))
         painter.drawArc(ring, -self._angle * 16, 90 * 16)
         painter.end()
 
