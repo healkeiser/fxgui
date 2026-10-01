@@ -306,12 +306,13 @@ def test_showing_a_floating_pane_raises_its_window(qtbot, monkeypatch):
     asked = []
     # Whether the window then turns active is the platform's call: under
     # offscreen Linux a floating pane is a QDockWidget that stays inactive.
-    monkeypatch.setattr(floating, "raise_", lambda: asked.append("raise"))
-    monkeypatch.setattr(
-        floating, "activateWindow", lambda: asked.append("activate")
-    )
-
-    window.docks.show_dock("side")
+    # The patches go before teardown closes and frees the floating window.
+    with monkeypatch.context() as patch:
+        patch.setattr(floating, "raise_", lambda: asked.append("raise"))
+        patch.setattr(
+            floating, "activateWindow", lambda: asked.append("activate")
+        )
+        window.docks.show_dock("side")
 
     assert asked == ["raise", "activate"]
 
