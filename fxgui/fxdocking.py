@@ -56,14 +56,6 @@ fxstyle.register_widget_style(
 #fxDocks ads--CDockAreaTabBar QWidget, #fxDocks ads--CDockWidget,
 #fxDocks ads--CDockWidget > QWidget { background: transparent; }
 #fxDocks ads--CTitleBarButton::menu-indicator { image: none; width: 0px; }
-#fxDocks ads--CDockWidgetTab {
-    background: transparent; padding: 0px 6px;
-    border: none; border-bottom: 2px solid transparent;
-}
-#fxDocks ads--CDockWidgetTab QLabel { background: transparent; }
-#fxDocks ads--CDockWidgetTab[activeTab="true"] {
-    border-bottom: 2px solid @accent_primary;
-}
 #fxDocks ads--CDockAreaWidget QAbstractItemView,
 #fxDocks ads--CDockAreaWidget QPlainTextEdit,
 #fxDocks ads--CDockAreaWidget QTextEdit { background-color: @well; }
@@ -94,7 +86,7 @@ _BUTTONS = {
     "tabCloseButton": (ads.TabCloseIcon, "close"),
     "dockAreaCloseButton": (ads.DockAreaCloseIcon, "close"),
     "detachGroupButton": (ads.DockAreaUndockIcon, "open_in_new"),
-    "tabsMenuButton": (ads.DockAreaMenuIcon, "arrow_drop_down"),
+    "tabsMenuButton": (ads.DockAreaMenuIcon, "expand_more"),
 }
 
 _configured = False

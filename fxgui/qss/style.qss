@@ -31,13 +31,9 @@ QWidget
     selection-color: @text_on_accent_primary;
     background-clip: border;
     border-image: none;
-    /* This is Qt's focus rectangle, and it is the wrong tool for the job: it
-       lands as a hard box around a widget's label, ignoring whatever shape
-       the widget actually has. Measured on the dark theme, it drew on exactly
-       two classes, a tab and a checkable group box, and on a tab it boxed the
-       text inside the tab's own rounded lip. Both now carry a focus indicator
-       drawn in their own language instead, so the rectangle is off. See
-       KEYBOARD FOCUS at the end of the file. */
+    /* Qt's focus rectangle boxes a label whatever the widget's shape; each
+       class shows focus in its own shape instead. See KEYBOARD FOCUS at the
+       end of the file. */
     outline: none;
 }
 
@@ -877,43 +873,95 @@ QTabWidget{
 }
 
 QTabWidget::pane {
-    top:-1px;
+    top: -1px;
     border: 1px solid @border_light;
     border-radius: @button_radius;
     padding: 3px;
 }
 
+/* One tab look for QTabBar and QtAds: bare text, and a straight 2px bar on
+   the side facing the pane, accent on the current tab. Every tab reserves
+   the bar, so selecting one moves nothing; no tab is rounded, so the bar's
+   ends do not curl. The dock tab names its activeTab property to outrank
+   the base QFrame[frameShape] rules. */
 QTabBar
 {
     qproperty-drawBase: 0;
-    left: 5px; /* Move to the right by 5px */
-    background-color: @surface_sunken;
-    border-top-left-radius: @button_radius;
-    border-top-right-radius: @button_radius;
-    margin-top: 3px;
+    background: transparent;
 }
 
-QTabBar:focus
+QTabBar::tab,
+ads--CDockWidgetTab[activeTab="false"],
+ads--CDockWidgetTab[activeTab="true"]
 {
-    border: 0px transparent;
+    color: @text_muted;
+    background: transparent;
+    border: none;
+    border-radius: 0px;
 }
 
+QTabBar::tab
+{
+    padding: 5px 12px;
+}
+
+ads--CDockWidgetTab[activeTab="false"],
+ads--CDockWidgetTab[activeTab="true"]
+{
+    padding: 0px 6px;
+}
+
+QTabBar::tab:top,
+ads--CDockWidgetTab[activeTab="false"],
+ads--CDockWidgetTab[activeTab="true"]
+{
+    border-bottom: 2px solid transparent;
+}
+
+QTabBar::tab:bottom { border-top: 2px solid transparent; }
+QTabBar::tab:left { border-right: 2px solid transparent; }
+QTabBar::tab:right { border-left: 2px solid transparent; }
+
+QTabBar::tab:hover,
+QTabBar::tab:selected,
+ads--CDockWidgetTab[activeTab="true"]
+{
+    color: @text;
+}
+
+QTabBar::tab:top:selected,
+ads--CDockWidgetTab[activeTab="true"]
+{
+    border-bottom-color: @accent_primary;
+}
+
+QTabBar::tab:bottom:selected { border-top-color: @accent_primary; }
+QTabBar::tab:left:selected { border-right-color: @accent_primary; }
+QTabBar::tab:right:selected { border-left-color: @accent_primary; }
+
+ads--CDockWidgetTab QLabel
+{
+    background: transparent;
+    color: @text_muted;
+}
+
+ads--CDockWidgetTab[activeTab="true"] QLabel
+{
+    color: @text;
+}
+
+/* The scroll buttons a crowded bar shows, over the tabs they scroll. */
 QTabBar QToolButton {
-    background-color: @surface_sunken;
-    border: 1px solid @border_light;
-    border-bottom: 1px solid @border_light;
+    background-color: @surface;
+    border: none;
     border-radius: @button_radius;
     margin: 0px;
-    margin-top: 3px;
-    padding: 4px 6px;
+    padding: 0px;
 }
 
-QTabBar QToolButton:hover {
-    background-color: @state_pressed;
-}
-
+QTabBar QToolButton:hover,
 QTabBar QToolButton:pressed {
-    background-color: @state_pressed;
+    background-color: @state_hover;
 }
 
 QTabBar QToolButton::right-arrow,
@@ -952,178 +1000,6 @@ QTabBar::close-button:hover
 QTabBar::close-button:pressed {
     image: url(~icons/close_pressed.svg);
     background: transparent;
-}
-
-QTabBar::close-button:!selected {
-    border: 1px transparent;
-    border-bottom: 1px transparent;
-    border-top-left-radius: @button_radius;
-    border-top-right-radius: @button_radius;
-    margin-top: 3px;
-}
-
-/* TOP TABS */
-QTabBar::tab:top {
-    color: @text;
-    border: 1px solid @border_light;
-    border-bottom: 1px transparent;
-    background-color: @surface;
-    padding: 5px 20px;
-    border-top-left-radius: @button_radius;
-    border-top-right-radius: @button_radius;
-    min-width: 75px;
-}
-
-QTabBar::tab:top:selected {
-    color: @text;
-    background-color: @surface;
-    border-bottom: 1px solid @surface;
-}
-
-QTabBar::tab:top:!selected {
-    color: @text_muted;
-    background-color: @surface_sunken;
-    border: 1px transparent @border_light;
-    border-bottom: 1px solid @border_light;
-    border-top-left-radius: 0px;
-    border-top-right-radius: 0px;
-    margin-top: 3px;
-}
-
-QTabBar::tab:top:!selected:hover {
-    color: @text;
-    background-color: @state_pressed;
-}
-
-QTabBar::tab:top:first:!selected {
-    border-top-left-radius: @button_radius;
-}
-
-QTabBar::tab:top:last:!selected {
-    border-top-right-radius: @button_radius;
-}
-
-/* LEFT TABS */
-QTabBar::tab:left {
-    color: @text;
-    border: 1px solid @border_light;
-    border-right: 1px transparent;
-    background-color: @surface;
-    padding: 5px 20px;
-    border-top-left-radius: @button_radius;
-    border-bottom-left-radius: @button_radius;
-    min-width: 75px;
-}
-
-QTabBar::tab:left:selected {
-    color: @text;
-    background-color: @surface;
-    border-right: 1px solid @surface;
-}
-
-QTabBar::tab:left:!selected {
-    color: @text_muted;
-    background-color: @surface_sunken;
-    border: 1px transparent @border_light;
-    border-right: 1px solid @border_light;
-    border-top-left-radius: 0px;
-    border-bottom-left-radius: 0px;
-    margin-left: 3px;
-}
-
-QTabBar::tab:left:!selected:hover {
-    color: @text;
-    background-color: @state_pressed;
-}
-
-QTabBar::tab:left:first:!selected {
-    border-top-left-radius: @button_radius;
-}
-
-QTabBar::tab:left:last:!selected {
-    border-bottom-left-radius: @button_radius;
-}
-
-/* BOTTOM TABS */
-QTabBar::tab:bottom {
-    color: @text;
-    border: 1px solid @border_light;
-    border-top: 1px transparent;
-    background-color: @surface;
-    padding: 5px 20px;
-    border-bottom-left-radius: @button_radius;
-    border-bottom-right-radius: @button_radius;
-    min-width: 75px;
-}
-
-QTabBar::tab:bottom:selected {
-    color: @text;
-    background-color: @surface;
-    border-top: 1px solid @surface;
-}
-
-QTabBar::tab:bottom:!selected {
-    color: @text_muted;
-    background-color: @surface_sunken;
-    border: 1px transparent @border_light;
-    border-top: 1px solid @border_light;
-    border-bottom-left-radius: 0px;
-    border-bottom-right-radius: 0px;
-    margin-bottom: 3px;
-}
-
-QTabBar::tab:bottom:!selected:hover {
-    color: @text;
-    background-color: @state_pressed;
-}
-
-QTabBar::tab:bottom:first:!selected {
-    border-bottom-left-radius: @button_radius;
-}
-
-QTabBar::tab:bottom:last:!selected {
-    border-bottom-right-radius: @button_radius;
-}
-
-/* RIGHT TABS */
-QTabBar::tab:right {
-    color: @text;
-    border: 1px solid @border_light;
-    border-left: 1px transparent;
-    background-color: @surface;
-    padding: 5px 20px;
-    border-top-right-radius: @button_radius;
-    border-bottom-right-radius: @button_radius;
-    min-width: 75px;
-}
-
-QTabBar::tab:right:selected {
-    color: @text;
-    background-color: @surface;
-    border-left: 1px solid @surface;
-}
-
-QTabBar::tab:right:!selected {
-    color: @text_muted;
-    background-color: @surface_sunken;
-    border: 1px transparent @border_light;
-    border-left: 1px solid @border_light;
-    border-top-right-radius: 0px;
-    border-bottom-right-radius: 0px;
-    margin-right: 3px;
-}
-
-QTabBar::tab:right:!selected:hover {
-    color: @text;
-    background-color: @state_pressed;
-}
-
-QTabBar::tab:right:first:!selected {
-    border-top-right-radius: @button_radius;
-}
-
-QTabBar::tab:right:last:!selected {
-    border-bottom-right-radius: @button_radius;
 }
 
 
@@ -1705,14 +1581,11 @@ QPushButton[fxRole="flat"]:pressed
    ==========================================================================
    Focus is shown by changing something the widget already has, never by
    drawing a box around it. Qt's own focus rectangle is off (see `outline` on
-   QWidget above) precisely because it ignores a widget's shape: on a tab it
-   boxed the label inside the tab's own rounded lip.
+   QWidget above) because it ignores a widget's shape.
 
    So each class speaks with the shape it already owns. A widget with a border
    recolours that border, which moves nothing because the border box does not
-   change. A tab lights the one edge whose corners are already rounded, the
-   side facing away from the pane, so the accent traces the tab's silhouette
-   instead of fencing its text. A slider's handle recolours its edge.
+   change. A tab recolours its bar. A slider's handle recolours its edge.
 
    Rules live at the end of the file so they win over the base rules they
    recolour without needing extra specificity.
@@ -1760,30 +1633,11 @@ QSlider[fxFocusVisible="true"]::handle:vertical:focus
     border-color: @text;
 }
 
-/* A tab has a shape already, so the accent goes on the edge whose corners are
-   rounded, the side facing away from the pane. The pane-facing edge is
-   deliberately merged into the pane by the rules above, and lighting it would
-   cut the selected tab away from its own content. Every orientation already
-   carries 1px there, so nothing moves. */
-QTabBar[fxFocusVisible="true"]::tab:top:focus
-{
-    border-top-color: @accent_primary;
-}
-
-QTabBar[fxFocusVisible="true"]::tab:bottom:focus
-{
-    border-bottom-color: @accent_primary;
-}
-
-QTabBar[fxFocusVisible="true"]::tab:left:focus
-{
-    border-left-color: @accent_primary;
-}
-
-QTabBar[fxFocusVisible="true"]::tab:right:focus
-{
-    border-right-color: @accent_primary;
-}
+/* A tab's bar is the accent already, so focus draws it in @text. */
+QTabBar[fxFocusVisible="true"]::tab:top:focus { border-bottom-color: @text; }
+QTabBar[fxFocusVisible="true"]::tab:bottom:focus { border-top-color: @text; }
+QTabBar[fxFocusVisible="true"]::tab:left:focus { border-right-color: @text; }
+QTabBar[fxFocusVisible="true"]::tab:right:focus { border-left-color: @text; }
 
 /* A checkbox and a radio button have no border of their own to recolour, so
    both states declare one and only the colour differs. The indicator's own

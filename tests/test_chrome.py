@@ -20,6 +20,7 @@ from qtpy.QtWidgets import (
     QStyleOptionSlider,
     QStyleOptionSpinBox,
     QTableWidget,
+    QTabWidget,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -279,3 +280,72 @@ def test_rows_have_no_stripes_even_when_asked(qtbot, theme):
         point = rect.topRight() + QPoint(-4, rect.height() // 2)
         inks.add(image.pixelColor(view.viewport().mapTo(window, point)).name())
     assert inks == {fxstyle.colors().surface_sunken.lower()}, inks
+
+
+# (6) A tab's bar is straight, in QTabBar and in QtAds alike.
+
+
+def _bar_rows(image, rect, ink):
+    """Return the rows `ink` covers in each column of `rect`."""
+    columns = {}
+    for x in range(rect.left(), rect.right() + 1):
+        rows = frozenset(
+            y
+            for y in range(rect.top(), rect.bottom() + 1)
+            if image.pixelColor(x, y).name() == ink
+        )
+        columns[x] = rows
+    return columns
+
+
+def _assert_straight(image, rect, ink):
+    columns = _bar_rows(image, rect, ink)
+    lit = [rows for rows in columns.values() if rows]
+    # The bar spans the tab, 2px thick, its ends on its middle's rows.
+    assert len(lit) >= rect.width() - 2, (len(lit), rect.width())
+    middle = columns[rect.center().x()]
+    assert len(middle) == 2, middle
+    assert set(lit) == {middle}, set(lit)
+    assert max(middle) == rect.bottom()
+
+
+@THEMES
+def test_the_current_tab_wears_a_straight_bar(qtbot, theme):
+    tabs = QTabWidget()
+    for name in ("Render", "Comp", "Lighting"):
+        tabs.addTab(QLabel(name), name)
+    window = _shown(qtbot, theme, tabs)
+    bar = tabs.tabBar()
+    image = window.grab().toImage()
+    accent = fxstyle.colors().accent_primary.lower()
+    rect = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
+    _assert_straight(image, rect, accent)
+    # The other tabs reserve the bar but draw none.
+    other = bar.tabRect(1).translated(bar.mapTo(window, QPoint()))
+    assert not any(_bar_rows(image, other, accent).values())
+    assert bar.tabRect(0).height() == bar.tabRect(1).height()
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_dock_tab_wears_the_same_bar(qtbot, theme):
+    pytest.importorskip("PySide6QtAds")
+    from fxgui import fxdocking
+
+    docks = fxdocking.FXDockArea()
+    docks.set_central(QLabel("central"))
+    docks.add_dock("one", "Outliner", QLabel("outliner"), "left")
+    docks.add_dock("two", "Assets", QLabel("assets"), "left")
+    window = _shown(qtbot, theme, docks, (640, 480))
+    for _ in range(3):
+        QApplication.processEvents()
+    tab = next(
+        tab
+        for tab in docks.findChildren(QWidget)
+        if tab.metaObject().className() == "ads::CDockWidgetTab"
+        and tab.property("activeTab")
+    )
+    image = window.grab().toImage()
+    # The tab bar scrolls, so part of a tab can sit out of view.
+    rect = tab.visibleRegion().boundingRect()
+    rect = rect.translated(tab.mapTo(window, QPoint()))
+    _assert_straight(image, rect, fxstyle.colors().accent_primary.lower())
