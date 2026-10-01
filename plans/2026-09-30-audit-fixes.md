@@ -234,6 +234,13 @@ leave `FXThemeAware`.
   `text_muted` only beside secondary text. FXProgressCard's task icon
   (_progress_card.py:185, "text_muted") goes to `icon`; every fix group
   checks its widgets for the same mismatch.
+- Owner ruling, chrome pass (after t5c-slider commits; both edit style.qss):
+  (1) trees: no branch lines, chevron open/closed icons (the accordion's);
+  (2) scrollbars: thin rounded thumb, no arrow buttons, wider on hover;
+  (3) combo, spin box and header sort arrows: the same chevron icons, by
+  token; one arrow style everywhere; (4) group boxes: title above a plain
+  rounded card, not cut into the border; (5) no alternating row stripes,
+  hover and selection only.
 - Delegate hover: one look, @accent_secondary as plain lists use.
 - Order hang: `pytest -p no:randomly tests/test_gallery.py
   tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
