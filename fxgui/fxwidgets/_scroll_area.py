@@ -4,12 +4,12 @@
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import QEvent, QSize, Signal
+from qtpy.QtCore import QEvent, QSize
 from qtpy.QtWidgets import QScrollArea, QWidget
 
 
 class FXResizedScrollArea(QScrollArea):
-    """A scroll area that says when it is resized, and can fit its content.
+    """A scroll area that can fit its content.
 
     Given a `floor` or a `cap`, its minimum height is its content's height,
     held between the two, and follows the content as rows come and go: the
@@ -21,15 +21,10 @@ class FXResizedScrollArea(QScrollArea):
         floor: The least height, in pixels, however short the content.
         cap: The most height the content may ask for; past it, it scrolls.
 
-    Signals:
-        resized: Emitted when the scroll area is resized.
-
     Examples:
         >>> checks = FXResizedScrollArea(floor=60, cap=240)
         >>> checks.setWidgetResizable(True)
     """
-
-    resized = Signal()
 
     def __init__(
         self,
@@ -58,8 +53,3 @@ class FXResizedScrollArea(QScrollArea):
         if event.type() == QEvent.LayoutRequest:
             self.updateGeometry()
         return handled
-
-    def resizeEvent(self, event):
-        """Emit the resized signal when the widget is resized."""
-        self.resized.emit()
-        return super().resizeEvent(event)

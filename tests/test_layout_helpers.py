@@ -88,6 +88,10 @@ def test_a_plain_area_keeps_qt_s_own_minimum(qtbot):
     assert area.minimumSizeHint() == plain.minimumSizeHint()
 
 
+def test_the_area_has_no_resized_signal():
+    assert not hasattr(FXResizedScrollArea, "resized")
+
+
 MESSAGE = (
     "Wood reads C:/me/textures/wood_diffuse.png, which the farm cannot see "
     "from any of its render nodes, so this target would render with nothing "

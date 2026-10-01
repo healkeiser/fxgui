@@ -12,9 +12,6 @@ from qtpy.QtWidgets import QWidget
 from fxgui import fxstyle
 
 
-_FEEDBACK = ("success", "warning", "error", "info", "debug")
-
-
 class FXStatusDot(QWidget):
     """A filled circle in a feedback colour, or grey for no state.
 
@@ -47,7 +44,7 @@ class FXStatusDot(QWidget):
         An unknown key shows as off. Repaints only on a change, so a timer
         may call this constantly.
         """
-        known = key if key in _FEEDBACK else None
+        known = key if key in fxstyle.get_feedback_colors() else None
         self.setToolTip(tooltip)
         if known != self._feedback:
             self._feedback = known
@@ -58,7 +55,7 @@ class FXStatusDot(QWidget):
         if self._feedback is None:
             return self.palette().color(QPalette.Disabled, QPalette.WindowText)
         token = f"feedback_{self._feedback}_foreground"
-        return QColor(fxstyle.get_theme_colors()[token])
+        return QColor(getattr(fxstyle.colors(), token))
 
     def paintEvent(self, event) -> None:
         """Fill one antialiased circle, inset half a pixel so no edge is cut."""
