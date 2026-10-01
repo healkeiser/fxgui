@@ -4,7 +4,7 @@
 from typing import Callable, Optional
 
 # Third-party
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QKeyEvent, QKeySequence
 from qtpy.QtWidgets import (
     QHBoxLayout,
@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxutils
+from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._search_bar import FXSearchBar
 
 # Shift is absent: shifted characters are still typing.
@@ -119,6 +119,11 @@ class FXSplitButton(QToolButton):
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setPopupMode(QToolButton.MenuButtonPopup)
+
+    def sizeHint(self) -> QSize:
+        """Return Qt's width at a push button's height."""
+        # Qt's stylesheet style adds 3 px to every QToolButton's height.
+        return QSize(super().sizeHint().width(), fxstyle.control_height(self))
 
     @classmethod
     def dropdown_hint(cls) -> str:
