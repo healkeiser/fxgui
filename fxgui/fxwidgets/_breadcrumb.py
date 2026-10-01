@@ -37,7 +37,7 @@ fxstyle.register_widget_style(
     {
         background: transparent;
         border: 1px solid transparent;
-        border-radius: 4px;
+        border-radius: @button_radius;
         padding: 3px 5px;
     }
     QPushButton#fxBreadcrumbSegment[fxFocusVisible="true"]:focus
@@ -232,6 +232,9 @@ class FXBreadcrumb(QWidget):
         self._history: List[List[str]] = []
         self._history_index: int = -1
 
+        # The buttons, the strip and the editor are a push button's height.
+        side = fxstyle.control_height(self)
+
         # Main layout
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -241,7 +244,7 @@ class FXBreadcrumb(QWidget):
         if self._show_navigation:
             self._back_button = QPushButton()
             self._back_button.setCursor(Qt.PointingHandCursor)
-            self._back_button.setFixedSize(28, 28)
+            self._back_button.setFixedSize(side, side)
             fxicons.set_icon(self._back_button, "arrow_back")
             self._back_button.clicked.connect(self.go_back)
             apply_tip(
@@ -252,7 +255,7 @@ class FXBreadcrumb(QWidget):
 
             self._forward_button = QPushButton()
             self._forward_button.setCursor(Qt.PointingHandCursor)
-            self._forward_button.setFixedSize(28, 28)
+            self._forward_button.setFixedSize(side, side)
             fxicons.set_icon(self._forward_button, "arrow_forward")
             self._forward_button.clicked.connect(self.go_forward)
             apply_tip(
@@ -266,7 +269,7 @@ class FXBreadcrumb(QWidget):
 
         # Stacked widget to switch between breadcrumb and edit mode
         self._stacked = QStackedWidget()
-        self._stacked.setFixedHeight(28)
+        self._stacked.setFixedHeight(side)
 
         # Scroll area for breadcrumb overflow
         self._scroll_area = QScrollArea()
@@ -302,7 +305,7 @@ class FXBreadcrumb(QWidget):
         main_layout.addWidget(self._stacked)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.setFixedHeight(32)
+        self.setFixedHeight(side)
 
         if self._show_navigation:
             self._update_nav_buttons()
