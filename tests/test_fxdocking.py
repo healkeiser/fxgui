@@ -282,19 +282,23 @@ def test_show_dock_opens_a_closed_pane_in_front(qtbot):
     assert held.dockAreaWidget().currentDockWidget() is held
 
 
-def test_showing_a_floating_pane_raises_its_window(qtbot):
+def test_showing_a_floating_pane_raises_its_window(qtbot, monkeypatch):
     window = _window(qtbot)
     held = window.docks.manager().findDockWidget("side")
     held.setFloating()
     QApplication.processEvents()
-    window.activateWindow()
-    QApplication.processEvents()
-    assert QApplication.activeWindow() is window
+    floating = held.floatingDockContainer()
+    asked = []
+    # Whether the window then turns active is the platform's call: under
+    # offscreen Linux a floating pane is a QDockWidget that stays inactive.
+    monkeypatch.setattr(floating, "raise_", lambda: asked.append("raise"))
+    monkeypatch.setattr(
+        floating, "activateWindow", lambda: asked.append("activate")
+    )
 
     window.docks.show_dock("side")
-    QApplication.processEvents()
 
-    assert QApplication.activeWindow() is held.floatingDockContainer()
+    assert asked == ["raise", "activate"]
 
 
 def test_a_floating_panes_tabs_keep_their_docked_height(qtbot):
