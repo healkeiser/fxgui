@@ -280,3 +280,74 @@ Base: `audit-fixes` at b7ccd01a (r1 and r2 merged). Same rules.
   renamed name with its 13.0.0 replacement (from
   tests/test_removed_names.py and the plans' replacement tables), in
   the docs' student style.
+
+### Group r3 report
+
+Branch `fix-r3` from `audit-fixes` e2cf93a8. Full suite on PySide6 6.11.1:
+2494 passed, 6 skipped. Covering tests on PySide6 6.5.3 (icons, buttons,
+fonts, doctest, floor, readable_ink): 193 passed, 3 skipped. `ruff check
+--select F,B,BLE .` clean. A suite run with QT_QPA_FONTDIR set fails 19
+font and tab-pixel tests; they pass without it, so it stays out of suite runs.
+
+- B-2 done (c3976c8a). Active now takes the normal ink everywhere. Only a
+  menu's current row takes `icon_on_accent_primary`: the engine checks
+  whether a top-level QMenu is in its paint event
+  (`WA_WState_InPaintEvent`), because Qt asks a toolbar hover and a menu row
+  for the same Active pixmap and never names the widget. A combo or
+  completer current row is drawn in Selected mode, which already defaults to
+  the on-accent ink (measured: a combo popup asks for Selected and Normal,
+  never Active). `_icon_for_widget` and three redundant
+  `inks={"active": ...}` (fxdocking, FXPrimaryButton, FXIconButton) are
+  deleted. Tests: a hovered QToolBar action, through `_helpers.hover`, for
+  both set_icon and get_icon (failing first), and a real QMenu row. Renders
+  of a light and dark toolbar hover and menu row checked through the
+  backing store, not only `grab()`.
+- B-9 done (c0c7225a). icons.md states the new Active default; theming.md
+  says FXOutputLogWidget; the breadcrumb example uses `text_muted` at 48.
+  Every Python block of docs/how-to/*.md was run alone. 15 failed, and all
+  now run except two that need the reader's own files on purpose: icons.md
+  "Add a Custom Library" (its icon folder) and theming.md "Using Your Custom
+  Theme" (`/path/to/my_theme.yaml`).
+- B-16 done (ba06544a). get_fonts and get_font_family are deleted, and so
+  are their callers and tests; both are in test_removed_names.
+  `control_height` and `focus_visible` are in `fxstyle.__all__`.
+- B-17 done (43af7b1d, 7b41885f). tests/test_docstring_examples.py runs
+  every docstring that states an output. Only an example with a stated
+  output can fail it; mutation-checked by changing one stated value.
+  fxdocking is skipped when QtAds is absent (the 6.5.3 CI row). The
+  depth_shade example is fixed. Every fragment was also run once: no other
+  example calls a wrong API (the rest need a placeholder file).
+- B-18 done.
+  - dad9d54b: `import fxgui` raises `ImportError: fxgui needs PySide6 6.5
+    or newer; found X`.
+  - 4927eaf7: publish-pypi needs `create-release` to have succeeded.
+  - d21264f4: no pin works. Every PySide6-QtAds wheel pins one exact
+    PySide6-Essentials (4.0.3.1 pins 6.5.1.1, 4.3.1.3 pins 6.8.2,
+    5.0.0.2 pins 6.11.1; no wheel pins 6.5.3). A pinned extra forces that
+    PySide6, and an unpinned one pulls the newest. Either one replaces the
+    binding. So the `docking` extra is deleted. docs/installation.md gives
+    the recipe that does not swap:
+    `pip install PySide6-QtAds "PySide6-Essentials==<yours>"`. pip then
+    picks the matching QtAds, or answers ResolutionImpossible (dry-run
+    checked with 6.8.2 and 6.5.3). tests.yml installs `PySide6-QtAds` by
+    name. The lead's venv recipe `pip install -e ".[docking]"` now warns
+    about an unknown extra; use `pip install -e . PySide6-QtAds`.
+  - 01335ec1: docs/moving-from-12.md is in the nav after Installation. It
+    was built from an API diff of v12.12.0 against this branch: 140 removed
+    names and 61 changed signatures or properties. Each replacement was
+    checked in the code; rows that do not break a call are left out.
+- Found while writing the page, fixed (a74c84b5, plus the cache test):
+  `readable_ink(QColor(...))` raised `TypeError: unhashable`, since
+  lru_cache saw the QColor. It now caches on colour names, with a failing-first test.
+
+ls-pipeline call sites that change (ls 76f6b9eb):
+- python/ls_pipeline/apps/widgets/graph/view.py:92
+  `fxstyle.get_font_family(role)` plus the stack split ->
+  `families = fxstyle.font(role=role).families(); return families[0] if
+  families else fallback`.
+- tests/apps/test_theme.py:221, :235 `fxstyle.get_fonts(theme)[r]` ->
+  `fxstyle.font(theme, role=r).family()`.
+- tests/apps/test_workflow_items_qt.py:398 monkeypatches
+  `get_font_family` -> patch `graph_view.fxstyle.font` (or the new
+  family_for body).
+- No change for docking: ls-pipeline pins `PySide6-QtAds==5.0.0.2` itself.
