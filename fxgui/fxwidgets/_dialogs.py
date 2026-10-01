@@ -14,7 +14,6 @@ from qtpy.QtGui import (
     QPixmap,
 )
 from qtpy.QtWidgets import (
-    QApplication,
     QDialog,
     QDialogButtonBox,
     QFrame,
@@ -28,7 +27,6 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxdcc, fxicons, fxstyle
-from fxgui.fxwidgets._application import FXApplication
 from fxgui.fxwidgets._labels import FXIconLabel
 
 fxstyle.register_widget_style(
@@ -146,8 +144,7 @@ class FXFloatingDialog(QDialog):
         self.resize(200, 40)
 
         # Inside a DCC the host application carries no fxgui sheet.
-        if not isinstance(QApplication.instance(), FXApplication):
-            fxstyle.register_themed_root(self)
+        fxstyle.register_themed_root(self)
 
     # Private methods
     def _setup_title(self):

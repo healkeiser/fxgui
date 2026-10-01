@@ -103,8 +103,7 @@ class FXSystemTray(QObject):
         self.tray_menu.addAction(self.quit_action)
 
         # A parentless menu under a DCC host gets no application sheet.
-        if not isinstance(QApplication.instance(), FXApplication):
-            fxstyle.register_themed_root(self.tray_menu)
+        fxstyle.register_themed_root(self.tray_menu)
 
     def _handle_connections(self) -> None:
         self.tray_icon.activated.connect(self._on_tray_icon_activated)

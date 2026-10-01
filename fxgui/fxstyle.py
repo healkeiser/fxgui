@@ -1832,9 +1832,9 @@ def register_themed_root(root: QObject) -> None:
     re-applied on every subsequent :func:`apply_theme` call. Qt cascades
     the sheet to all descendants, so children need no registration.
 
-    Standalone apps: ``FXApplication`` registers itself; nothing to do.
-    DCC-embedded windows: ``FXMainWindow`` registers itself when the
-    running QApplication is foreign, so the host app is never restyled.
+    A widget is not registered while the QApplication is a root: the
+    application's sheet already reaches it, and the next switch of that
+    sheet would hand the widget back the palette of the theme before.
 
     Roots are held weakly; destroyed widgets drop out automatically.
 
@@ -1842,6 +1842,8 @@ def register_themed_root(root: QObject) -> None:
         root: Any object with ``setStyleSheet`` (QWidget or QApplication).
     """
     _ensure_theme_loaded()
+    if isinstance(root, QWidget) and not _in_host(root):
+        return
     _themed_roots.add(root)
     if isinstance(root, QWidget):
         root.setProperty(ROOT_PROPERTY, True)

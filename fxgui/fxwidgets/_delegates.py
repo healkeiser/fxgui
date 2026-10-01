@@ -181,7 +181,8 @@ class FXColorLabelDelegate(QStyledItemDelegate):
             colors_icons: A dictionary where keys are text patterns and values
                 are tuples containing background color, border color,
                 text/icon color, icon, and a boolean indicating if the icon
-                should be colored.
+                should be colored. A colour may be a theme token name, read
+                at each paint.
             parent: The parent object.
             margin_left: The left margin for the text and icon. Defaults to 2.
             margin_top: The top margin for the text and icon. Defaults to
@@ -262,6 +263,10 @@ class FXColorLabelDelegate(QStyledItemDelegate):
                 icon,
                 color_icon,
             ) = best_match
+            background_color, border_color, text_icon_color = (
+                FXThumbnailDelegate._as_color(color)
+                for color in (background_color, border_color, text_icon_color)
+            )
 
         # Adjust colors based on item state
         if option.state & QStyle.State_Selected:
@@ -409,8 +414,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         - `Qt.UserRole + 1` (`bool`): Whether to show the thumbnail.
         - `Qt.UserRole + 2` (`str`): Path to the thumbnail image.
         - `Qt.UserRole + 3` (`str`): Description text (supports Markdown).
-        - `Qt.UserRole + 4` (`QColor`): Status dot indicator color.
-        - `Qt.UserRole + 5` (`QColor`): Status label background color.
+        - `Qt.UserRole + 4` (`QColor` or token name): Status dot color.
+        - `Qt.UserRole + 5` (`QColor` or token name): Status label color.
         - `Qt.UserRole + 6` (`str`): Status label text.
         - `Qt.UserRole + 7` (`bool`): Whether to show the status dot.
         - `Qt.UserRole + 8` (`bool`): Whether to show the status label.
@@ -918,12 +923,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     @staticmethod
     def _as_color(value) -> QColor:
-        """Coerce a color role value to a QColor.
+        """Coerce a color role value to a QColor, reading a token name now.
 
-        The color roles are documented as QColor, but strings are the obvious
-        thing to store instead, so they are parsed here. Anything else yields
-        an invalid QColor, which hides the element rather than raising in the
-        middle of a paint or a size hint.
+        A theme token name (``"feedback_success_foreground"``) follows every
+        switch; a colour string is parsed. Anything else yields an invalid
+        QColor, which hides the element rather than raising in the middle of
+        a paint or a size hint.
 
         Args:
             value: Whatever the model returned for a color role.
@@ -943,7 +948,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         if isinstance(value, QColor):
             return value
         if isinstance(value, str):
-            return QColor(value)
+            return QColor(getattr(fxstyle.colors(), value, value))
         return QColor()
 
     @staticmethod

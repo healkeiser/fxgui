@@ -452,6 +452,10 @@ class FXDockArea(QWidget):
         super().showEvent(event)
         if self._built is not None:
             return
+        # Insetted as each area was made, before a host window's sheet
+        # reached its buttons.
+        for area in self._docks.findChildren(ads.CDockAreaWidget):
+            _inset(area)
         self._settle()
         self._built = bytes(self._docks.saveState())
         if self._pending is not None:

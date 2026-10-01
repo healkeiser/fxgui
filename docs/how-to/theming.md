@@ -345,8 +345,13 @@ Most applications never call it:
 | Class | Registers |
 |-------|-----------|
 | `FXApplication` | Itself, so every window is themed |
-| `FXMainWindow`, `FXFloatingDialog`, `FXSplashScreen`, `FXSystemTray`'s menu | Themselves, only when the running application is not an `FXApplication` (inside a host) |
-| `FXTooltip` | Itself, always: it is a window of its own |
+| `FXMainWindow`, `FXFloatingDialog`, `FXSplashScreen`, `FXSystemTray`'s menu, `FXTooltip` | Themselves, which counts only inside a host |
+
+While the `QApplication` is a themed root, `register_themed_root(widget)`
+does nothing. The application's sheet already reaches every widget, and a
+window that wore a sheet of its own as well would get the old theme's
+palette back on the next switch: its edges and its tab area would stay in
+the old colours.
 
 A registered widget carries the `fxThemedRoot` property
 (`fxstyle.ROOT_PROPERTY`), which a stylesheet may select on.

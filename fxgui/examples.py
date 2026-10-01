@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Third-party
 from qtpy.QtCore import QPoint, QRect, Qt, QTimer
-from qtpy.QtGui import QColor, QCursor
+from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -315,7 +315,6 @@ def _display_page() -> QWidget:
 
     plain = QPushButton("Native rich tooltip")
     fxwidgets.apply_tip(plain, "Save", "Write the scene to disk", "Ctrl+S")
-    keys = QLabel(f"Save {fxwidgets.keycap('Ctrl+S')}")
     rich = QPushButton("FXTooltip")
     fxwidgets.set_tooltip(
         rich,
@@ -354,7 +353,7 @@ def _display_page() -> QWidget:
         _section("FXThreadLine", _thread()),
         _section(
             "FXTooltip / set_tooltip / apply_tip / tip / keycap",
-            _row(plain, rich, keys),
+            _row(plain, rich),
         ),
     )
 
@@ -405,7 +404,6 @@ def _containers_page() -> QWidget:
 def _thumbnail_tree() -> QTreeWidget:
     """Return an episode, sequence and shot tree drawn with thumbnails."""
     delegate = fxwidgets.FXThumbnailDelegate
-    feedback = fxstyle.get_feedback_colors()
     tree = QTreeWidget()
     tree.setHeaderLabels(["Name", "Frame range", "Status"])
     tree.setItemDelegate(delegate(tree))
@@ -426,7 +424,7 @@ def _thumbnail_tree() -> QTreeWidget:
             item.setData(0, delegate.THUMBNAIL_VISIBLE_ROLE, True)
             item.setData(0, delegate.THUMBNAIL_PATH_ROLE, thumbnail)
             item.setData(0, delegate.STATUS_LABEL_TEXT_ROLE, status)
-            color = QColor(feedback[key]["foreground"])
+            color = f"feedback_{key}_foreground"
             item.setData(0, delegate.STATUS_DOT_COLOR_ROLE, color)
             item.setData(0, delegate.STATUS_LABEL_COLOR_ROLE, color)
     tree.setColumnWidth(0, 340)
@@ -484,7 +482,6 @@ def _lists_page() -> QWidget:
         icon_list.addItem(QListWidgetItem(get_icon(icon_name), text))
     icon_list.setFixedHeight(100)
 
-    feedback = fxstyle.get_feedback_colors()
     labels = QTreeWidget()
     labels.setHeaderHidden(True)
     labels.setRootIsDecorated(False)
@@ -492,9 +489,9 @@ def _lists_page() -> QWidget:
         fxwidgets.FXColorLabelDelegate(
             {
                 key: (
-                    QColor(feedback[key]["background"]),
-                    QColor(feedback[key]["foreground"]),
-                    QColor(feedback[key]["foreground"]),
+                    f"feedback_{key}_background",
+                    f"feedback_{key}_foreground",
+                    f"feedback_{key}_foreground",
                     get_icon(icon_name),
                     True,
                 )
