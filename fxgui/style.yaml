@@ -121,6 +121,7 @@ fonts:
 # Shadow:
 #   shadow            - Colour of a floating card's drop shadow, #AARRGGBB
 #   shadow_blur       - Its blur radius in pixels
+#   scrim             - Fill dimming a pane behind a loading overlay, #AARRGGBB
 #
 # Scrollbar Colors:
 #   scrollbar_track       - Scrollbar track/gutter
@@ -179,6 +180,7 @@ themes:
     # Shadow
     shadow: "#50000000"
     shadow_blur: 20
+    scrim: "#80000000"
 
     # Icon colors
     icon: "#b4b4b4"

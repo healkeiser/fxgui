@@ -709,6 +709,17 @@ def test_the_drop_targets_wear_the_theme_in_force(qtbot):
             assert cross.iconColor(part).name() == accent, theme
 
 
+def test_the_drop_targets_shadow_is_the_theme_shadow(qtbot):
+    window = _window(qtbot)
+    crosses = window.docks.manager().findChildren(ads.CDockOverlayCross)
+    part = ads.CDockOverlayCross.eIconColor.ShadowColor
+    for theme in ("dark", "light"):
+        fxstyle.apply_theme(theme)
+        shadow = QColor(fxstyle.colors().shadow)
+        for cross in crosses:
+            assert cross.iconColor(part) == shadow, theme
+
+
 _AT_SCALE = """
 import sys
 from qtpy.QtGui import QColor

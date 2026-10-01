@@ -140,8 +140,8 @@ def _recross(docks: "ads.CDockManager") -> None:
             part.WindowBackgroundColor, QColor(colors.surface_alt))
         cross.setIconColor(part.OverlayColor, overlay)
         cross.setIconColor(part.ArrowColor, QColor(colors.text))
-        # QtAds paints this one under its cross icons; black, as a shadow is.
-        cross.setIconColor(part.ShadowColor, QColor(0, 0, 0, 64))
+        # QtAds paints this one under its cross icons.
+        cross.setIconColor(part.ShadowColor, QColor(colors.shadow))
 
 
 def _inset(area: "ads.CDockAreaWidget") -> None:

@@ -134,6 +134,25 @@ def test_an_overlay_dims_and_takes_the_mouse_by_default(qtbot):
     assert parent.childAt(button.geometry().center()) is not button
 
 
+def test_the_dim_is_the_theme_scrim(qtbot, monkeypatch):
+    from qtpy.QtGui import QColor
+
+    from fxgui import fxstyle
+
+    parent, _button, _overlay, bare = _covered(qtbot)
+    under = bare.pixelColor(2, 2)
+    scrim = QColor(fxstyle.colors().scrim)
+    alpha = scrim.alphaF()
+    expected = [
+        round(getattr(scrim, part)() * alpha + getattr(under, part)() * (1 - alpha))
+        for part in ("red", "green", "blue")
+    ]
+    seen = parent.grab().toImage().pixelColor(2, 2)
+    assert max(
+        abs(a - b) for a, b in zip(
+            expected, (seen.red(), seen.green(), seen.blue()))) <= 2
+
+
 def test_an_overlay_can_leave_the_view_undimmed_and_clickable(qtbot):
     parent, button, overlay, bare = _covered(
         qtbot, dim=False, block_input=False

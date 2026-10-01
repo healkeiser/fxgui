@@ -202,6 +202,5 @@ class FXLoadingOverlay(QWidget):
         if not self._dim:
             return
         painter = QPainter(self)
-        # A scrim, black in every theme as a shadow is.
-        painter.fillRect(self.rect(), QColor(0, 0, 0, 128))
+        painter.fillRect(self.rect(), QColor(fxstyle.colors().scrim))
         painter.end()
