@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-fxgui is a Python library providing custom Qt-based widgets and utilities for VFX Digital Content Creation (DCC) applications. It uses QtPy for compatibility across PySide2/PySide6/PyQt5/PyQt6.
+fxgui is a Python library providing custom Qt-based widgets and utilities for VFX Digital Content Creation (DCC) applications. It runs on Qt 6 only, through QtPy: PySide6 6.5 or newer (Houdini 21 ships 6.5.3) or PyQt6.
 
 ## Development Commands
 
@@ -38,7 +38,6 @@ api-autonav plugin writes one API page per public module under
 - **fxstyle.py** - Themes from `style.yaml`. A themed root wears the theme's stylesheet, palette (`palette()`) and font (`font()`); `apply_theme(name)` re-applies all three and emits `theme_changed`. `colors()` is the cached colour namespace
 - **fxconfig.py** - QSettings-based persistent configuration (INI format)
 - **fxcore.py** - `FXSortFilterProxyModel` with fuzzy matching
-- **fxdcc.py** - DCC integration (Houdini, Maya, Nuke) with auto-detection
 - **fxicons.py** - Multi-library icons whose colours are theme token names, resolved by a `QIconEngine` each time the icon is drawn
 - **fxutils.py** - UI utilities (load_ui, create_action, shadows, repolish)
 

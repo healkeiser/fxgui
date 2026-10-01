@@ -19,11 +19,20 @@ Examples:
     >>> app = fxwidgets.FXApplication()
     >>> window = fxwidgets.FXMainWindow(title="My App")
     >>> window.show()
-    >>> app.exec_()
+    >>> app.exec()
 """
 
 # Built-in
 from importlib.metadata import version, PackageNotFoundError
+
+# Third-party
+import qtpy
+
+if not qtpy.QT6:
+    raise ImportError(
+        f"fxgui needs Qt 6 (PySide6 6.5 or newer, or PyQt6); qtpy found "
+        f"{qtpy.API_NAME}."
+    )
 
 # Internal
 from fxgui import (

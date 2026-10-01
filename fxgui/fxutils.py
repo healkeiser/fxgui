@@ -85,7 +85,7 @@ def load_ui(parent: QWidget, ui_file: str) -> QWidget:
         raise FileNotFoundError(f"UI file not found: {ui_file}")
 
     try:
-        # Not shipped by the PyQt bindings, hence the deferred import.
+        # Not shipped by PyQt6, hence the deferred import.
         from qtpy.QtUiTools import QUiLoader
     except ImportError:
         from qtpy.uic import loadUi
@@ -370,11 +370,8 @@ def fit_columns(view: QTreeView) -> None:
     `resizeColumnToContents` measures only the rows that are expanded.
     """
     model, header = view.model(), view.header()
-    if hasattr(view, "initViewItemOption"):
-        option = QStyleOptionViewItem()
-        view.initViewItemOption(option)
-    else:
-        option = view.viewOptions()  # Qt 5
+    option = QStyleOptionViewItem()
+    view.initViewItemOption(option)
     columns = range(model.columnCount())
     wanted = [header.sectionSizeHint(column) for column in columns]
     decorated = int(view.rootIsDecorated())
@@ -384,10 +381,7 @@ def fit_columns(view: QTreeView) -> None:
         for row in range(model.rowCount(parent)):
             for column in columns:
                 index = model.index(row, column, parent)
-                # Qt 5 names it `itemDelegate(index)`.
-                delegate = getattr(
-                    view, "itemDelegateForIndex", view.itemDelegate
-                )(index)
+                delegate = view.itemDelegateForIndex(index)
                 width = delegate.sizeHint(option, index).width()
                 if column == 0:
                     width += view.indentation() * (depth + decorated)

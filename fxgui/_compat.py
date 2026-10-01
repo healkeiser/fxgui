@@ -1,8 +1,7 @@
 """Cross-binding compatibility helpers for `fxgui`.
 
-`qtpy` only exposes ``qtpy.shiboken`` under PySide bindings; importing it
-under PyQt5/PyQt6 raises, so liveness checks live here. So does the one
-`QPixmapCache.find` call both PySide generations accept.
+`qtpy` only exposes ``qtpy.shiboken`` under PySide6; importing it under
+PyQt6 raises, so liveness checks live here.
 """
 
 # Metadata
@@ -19,12 +18,12 @@ from qtpy.QtGui import QPixmap, QPixmapCache
 
 
 try:
-    # PySide2 / PySide6
+    # PySide6
     from qtpy.shiboken import createdByPython as created_by_python
     from qtpy.shiboken import isValid as is_valid  # noqa: F401
 
 except ImportError:
-    # PyQt5 / PyQt6: every wrapper is filed where Qt files its object.
+    # PyQt6: every wrapper is filed where Qt files its object.
     from qtpy.sip import isdeleted as _isdeleted
 
     created_by_python = None
@@ -40,12 +39,7 @@ except ImportError:
 
 def find_pixmap(key: str) -> Optional[QPixmap]:
     """Return the pixmap QPixmapCache holds under `key`, or None."""
-    try:
-        found = QPixmapCache.find(key)
-    except TypeError:  # PySide2 only offers find(key, pixmap)
-        found = QPixmap()
-        if not QPixmapCache.find(key, found):
-            return None
+    found = QPixmapCache.find(key)
     return found if found is not None and not found.isNull() else None
 
 
