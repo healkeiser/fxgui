@@ -400,10 +400,20 @@ a pill (a slider groove, a scroll thumb, a progress bar) rounds at half
 its thickness, and a part set inside a 1 px border rounds 1 px less
 than its frame.
 
-A push button, `FXPrimaryButton`, a line edit, a combo box,
-`FXSplitButton`, `FXToggleSwitch` and `FXLoadingSpinner` all come to
-`control_height`. A control that sizes itself returns it from
-`sizeHint()`.
+Two sizes set every height, so controls side by side share one centre
+line:
+
+| Size | Value | Who takes it |
+|------|-------|--------------|
+| `fxstyle.control_height(widget)` | 28 px at the 12 px body font | Every control with text or a button's box: push buttons, `FXIconButton`, `FXSplitButton`, `FXJoinedGroup`, line edits, combo boxes, spin boxes, `FXSearchBar`, `FXFilePathWidget`, `FXBreadcrumb`, the `FXTagInput` field, the `FXTimelineSlider` row |
+| `fxstyle.INDICATOR_SIZE`, `@indicator_size` | 18 px | An on/off mark: a check box or radio indicator, and the track of `FXToggleSwitch` (twice as wide as tall) |
+
+A mark is smaller than the row and centres in it: an `FXToggleSwitch` is
+`control_height` tall, its 18 px track in the middle, so it lines up
+with the button beside it. A slider handle (14 px) and a status dot do
+the same. A control that sizes itself returns these from `sizeHint()`.
+A plain icon `QToolButton` in a toolbar sizes to its icon. The Buttons
+page of the gallery shows one row of every control.
 
 ### Fills and edges by state
 

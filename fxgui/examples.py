@@ -30,7 +30,9 @@ from qtpy.QtWidgets import (
     QMenu,
     QPlainTextEdit,
     QPushButton,
+    QRadioButton,
     QScrollArea,
+    QSlider,
     QSpinBox,
     QSplitter,
     QTabWidget,
@@ -101,6 +103,42 @@ def _page(*sections: QWidget) -> QScrollArea:
     return scroll
 
 
+def _control_row() -> QHBoxLayout:
+    """Return one of each control side by side, to show they line up."""
+    split = fxwidgets.FXSplitButton()
+    split.setText("Publish")
+    split.setMenu(QMenu(split))
+    joined = fxwidgets.FXJoinedGroup()
+    joined.add_widget(fxwidgets.FXPrimaryButton("Post"))
+    combo = QComboBox()
+    combo.addItems(["WIP", "Done"])
+    switch = fxwidgets.FXToggleSwitch()
+    switch.setChecked(True)
+    slider = QSlider(Qt.Horizontal)
+    slider.setValue(40)
+    slider.setFixedWidth(80)
+    dot = fxwidgets.FXStatusDot()
+    dot.set_feedback("success")
+    row = QHBoxLayout()
+    for widget in (
+        QPushButton("Cancel"),
+        fxwidgets.FXIconButton("mood"),
+        split,
+        joined,
+        QLineEdit("sh0010"),
+        combo,
+        QSpinBox(),
+        QCheckBox("Notify"),
+        QRadioButton("Draft"),
+        switch,
+        slider,
+        dot,
+    ):
+        row.addWidget(widget, 0, Qt.AlignVCenter)
+    row.addStretch()
+    return row
+
+
 def _buttons_page() -> QWidget:
     composer = []
     for icon_name, text in (
@@ -146,6 +184,7 @@ def _buttons_page() -> QWidget:
             "FXPrimaryButton / FXIconButton / FXJoinedGroup",
             _row(*composer, QPushButton("Cancel"), joined),
         ),
+        _section("One row: every control on one centre line", _control_row()),
         _section("FXSplitButton", _row(split)),
         _section("FXToggleSwitch", _row(*toggles)),
         _section("FXEmojiButton / FXEmojiPicker", _row(comment, emoji)),

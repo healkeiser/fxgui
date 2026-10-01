@@ -64,7 +64,8 @@ def _hover(qtbot, window, widget):
 
 
 def test_the_icon_button_is_round_and_fills_on_hover(qtbot, window):
-    button = _show(qtbot, window, FXIconButton("mood", window, tip="Emoji"))
+    button = _show(
+        qtbot, window, FXIconButton("mood", window, tip="Emoji", size=28))
     tokens = fxstyle._token_map("dark")
     assert button.size().width() == button.size().height() == 28
     assert button.iconSize().width() == 16
@@ -309,3 +310,8 @@ def test_a_hovered_checked_icon_takes_the_hover_ink(
             if image.pixelColor(x, y).alpha() == 255
         }
         assert inks == {fxstyle._token_map("split")[token].lower()}, checked
+
+
+def test_the_icon_button_is_a_push_button_s_height_by_default(qtbot, window):
+    button = _show(qtbot, window, FXIconButton("mood", window))
+    assert button.width() == button.height() == fxstyle.control_height(button)

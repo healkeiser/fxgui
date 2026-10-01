@@ -72,8 +72,8 @@ QCheckBox:disabled
 QCheckBox::indicator,
 QGroupBox::indicator
 {
-    width: 15px;
-    height: 15px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 QGroupBox::indicator
 {
@@ -86,8 +86,8 @@ QGroupBox::indicator:unchecked,
 QGroupBox::indicator:unchecked:hover
 {
     image: url(~icons/checkbox_unchecked.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QCheckBox[fxFocusVisible="true"]::indicator:unchecked:focus,
@@ -97,8 +97,8 @@ QGroupBox::indicator:unchecked:pressed
 {
   border: none;
     image: url(~icons/checkbox_unchecked_focus.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QCheckBox::indicator:checked,
@@ -107,8 +107,8 @@ QGroupBox::indicator:checked,
 QGroupBox::indicator:checked:hover
 {
     image: url(~icons/checkbox_checked.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QCheckBox[fxFocusVisible="true"]::indicator:checked:focus,
@@ -118,8 +118,8 @@ QGroupBox::indicator:checked:pressed
 {
   border: none;
     image: url(~icons/checkbox_checked_focus.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QCheckBox::indicator:indeterminate,
@@ -130,32 +130,32 @@ QGroupBox::indicator:indeterminate:hover,
 QGroupBox::indicator:indeterminate:pressed
 {
     image: url(~icons/checkbox_indeterminate.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QCheckBox[fxFocusVisible="true"]::indicator:indeterminate:focus,
 QGroupBox[fxFocusVisible="true"]::indicator:indeterminate:focus
 {
     image: url(~icons/checkbox_indeterminate_focus.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QCheckBox::indicator:checked:disabled,
 QGroupBox::indicator:checked:disabled
 {
     image: url(~icons/checkbox_checked_disabled.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QCheckBox::indicator:unchecked:disabled,
 QGroupBox::indicator:unchecked:disabled
 {
     image: url(~icons/checkbox_unchecked_disabled.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QRadioButton
@@ -176,16 +176,16 @@ QRadioButton:disabled
 }
 QRadioButton::indicator
 {
-    width: 21px;
-    height: 21px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QRadioButton::indicator:unchecked,
 QRadioButton::indicator:unchecked:hover
 {
     image: url(~icons/radio_unchecked.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QRadioButton[fxFocusVisible="true"]::indicator:unchecked:focus,
@@ -194,8 +194,8 @@ QRadioButton::indicator:unchecked:pressed
   border: none;
   outline: none;
     image: url(~icons/radio_unchecked_focus.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QRadioButton::indicator:checked,
@@ -204,8 +204,8 @@ QRadioButton::indicator:checked:hover
   border: none;
   outline: none;
     image: url(~icons/radio_checked.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QRadioButton[fxFocusVisible="true"]::indicator:checked:focus,
@@ -214,8 +214,8 @@ QRadioButton::indicator:checked:pressed
   border: none;
   outline: none;
     image: url(~icons/radio_checked_focus.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QRadioButton::indicator:indeterminate,
@@ -223,23 +223,23 @@ QRadioButton::indicator:indeterminate:hover,
 QRadioButton::indicator:indeterminate:pressed
 {
     image: url(~icons/radio_indeterminate.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QRadioButton::indicator:checked:disabled
 {
     outline: none;
     image: url(~icons/radio_checked_disabled.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 QRadioButton::indicator:unchecked:disabled
 {
     image: url(~icons/radio_unchecked_disabled.svg);
-    width: 18px;
-    height: 18px;
+    width: @indicator_size;
+    height: @indicator_size;
 }
 
 

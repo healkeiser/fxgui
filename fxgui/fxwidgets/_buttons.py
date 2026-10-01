@@ -123,7 +123,8 @@ class FXIconButton(QToolButton):
         tip: The tooltip, set through `apply_tip`.
         checkable: Whether a click toggles the button.
         checked_icon: The icon shown while checked. Defaults to `icon`.
-        size: The circle's diameter, in logical pixels.
+        size: The circle's diameter, in logical pixels. Defaults to a
+            push button's height.
 
     Examples:
         >>> eye = FXIconButton("visibility_off", bar, tip="Show to client",
@@ -138,9 +139,10 @@ class FXIconButton(QToolButton):
         tip: str = "",
         checkable: bool = False,
         checked_icon: Optional[str] = None,
-        size: int = 28,
+        size: Optional[int] = None,
     ):
         super().__init__(parent)
+        size = size or fxstyle.control_height(self)
         self.setAutoRaise(True)
         self.setCheckable(checkable)
         self.setFixedSize(size, size)

@@ -58,10 +58,11 @@ def _grab(qtbot, theme, checked, state=""):
     if state == "hover":
         switch.setAttribute(Qt.WA_UnderMouse, True)
     image = switch.grab().toImage()
-    width, height = switch.width(), switch.height()
-    middle = height // 2
-    thumb_x = width - height // 2 - 1 if checked else height // 2
-    track_x = 8 if checked else width - 8
+    track = switch.track_rect()
+    middle = track.center().y()
+    half = track.height() // 2
+    thumb_x = track.right() - half if checked else track.left() + half
+    track_x = track.left() + 4 if checked else track.right() - 4
 
     def at(x, y):
         return image.pixelColor(x, y).name()
@@ -69,7 +70,7 @@ def _grab(qtbot, theme, checked, state=""):
     return (
         at(thumb_x, middle),
         at(track_x, middle),
-        at(width // 2, 0),
+        at(track.center().x(), track.top()),
         fxstyle.colors().surface,
     )
 
@@ -84,7 +85,12 @@ def test_the_switch_is_as_tall_as_a_button(qtbot):
     qtbot.addWidget(window)
     window.show()
     qtbot.waitExposed(window)
+    # The row is a button's height; the track inside is the indicator size.
     assert switch.height() == button.height() == fxstyle.control_height(button)
+    track = switch.track_rect()
+    assert track.height() == fxstyle.INDICATOR_SIZE
+    assert track.width() == 2 * fxstyle.INDICATOR_SIZE
+    assert abs(track.center().y() - switch.rect().center().y()) <= 1
 
 
 @pytest.mark.parametrize("theme", _THEMES)

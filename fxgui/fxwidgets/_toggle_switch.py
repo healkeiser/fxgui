@@ -8,6 +8,7 @@ from qtpy.QtCore import (
     Property,
     QEasingCurve,
     QPropertyAnimation,
+    QRect,
     QRectF,
     QSize,
     Qt,
@@ -81,8 +82,11 @@ class FXToggleSwitch(QAbstractButton):
 
     def minimumSizeHint(self):
         """Return the minimum size of the switch."""
-        height = fxstyle.control_height(self)
-        return QSize(height * 2 - 4, height)
+        # A row's height, so it centres beside a button; the track inside
+        # is the indicator size, twice as wide as it is tall.
+        return QSize(
+            fxstyle.INDICATOR_SIZE * 2, fxstyle.control_height(self)
+        )
 
     def hitButton(self, pos):
         """Return True if pos is inside the clickable area."""
@@ -161,6 +165,17 @@ class FXToggleSwitch(QAbstractButton):
         )
         return fill, edge, thumb
 
+    def track_rect(self) -> QRect:
+        """Return the track: the indicator size tall, centred in the widget."""
+        side = fxstyle.INDICATOR_SIZE
+        width = min(self.width(), side * 2)
+        return QRect(
+            (self.width() - width) // 2,
+            (self.height() - side) // 2,
+            width,
+            side,
+        )
+
     def paintEvent(self, event) -> None:
         """Paint the track, its edge and the thumb."""
         painter = QPainter(self)
@@ -168,18 +183,22 @@ class FXToggleSwitch(QAbstractButton):
         fill, edge, thumb = (QColor(ink) for ink in self._inks())
 
         radius = fxstyle.BUTTON_RADIUS
+        box = self.track_rect()
         # Half a pixel in, so the whole 1 px edge is drawn.
-        track = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
         painter.setPen(edge)
         painter.setBrush(fill)
-        painter.drawRoundedRect(track, radius, radius)
+        painter.drawRoundedRect(
+            QRectF(box).adjusted(0.5, 0.5, -0.5, -0.5), radius, radius
+        )
 
-        margin = 3
-        size = self.height() - margin * 2
-        x = margin + self._position * (self.width() - size - margin * 2)
+        margin = 2
+        size = box.height() - margin * 2
+        x = box.left() + margin + self._position * (
+            box.width() - size - margin * 2
+        )
         painter.setPen(Qt.NoPen)
         painter.setBrush(thumb)
         painter.drawRoundedRect(
-            QRectF(x, margin, size, size), radius - 1, radius - 1
+            QRectF(x, box.top() + margin, size, size), radius - 1, radius - 1
         )
         painter.end()

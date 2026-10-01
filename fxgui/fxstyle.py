@@ -226,6 +226,10 @@ BUTTON_RADIUS = 4
 # The corners of a floating card: a tooltip, a banner, a dialog.
 CARD_RADIUS = 8
 
+# The side of an on/off mark: a check box or radio indicator, and the
+# height of a switch's track. It centres in a row of control_height.
+INDICATOR_SIZE = 18
+
 # WCAG's least contrast for the parts of a control: an edge on its
 # surface, a thumb on its track. `@control_edge` is held to it.
 CONTROL_CONTRAST = 3.0
@@ -1298,6 +1302,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     )
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
     tokens["@card_radius"] = f"{CARD_RADIUS}px"
+    tokens["@indicator_size"] = f"{INDICATOR_SIZE}px"
     tokens["@thin_scroll_radius"] = f"{THIN_SCROLL_WIDTH // 2}px"
     tokens["@thin_scroll"] = f"{THIN_SCROLL_WIDTH}px"
     # A bare number, for a sheet that writes its own unit: `@radiuspx`.
