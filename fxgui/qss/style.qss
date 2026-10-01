@@ -1394,6 +1394,8 @@ QTreeView::item:selected:hover {
     color: @text_on_accent_primary;
 }
 
+/* A slider is a sunken well, an accent span and a handle whose edge reads
+   at 3:1 on the surface. Hover lifts the fill; focus is at the end. */
 QSlider::groove:horizontal {
     border: none;
     height: 6px;
@@ -1404,11 +1406,11 @@ QSlider::groove:horizontal {
 
 QSlider::handle:horizontal {
     background: @slider_thumb;
-    border: 1px solid @state_hover;
+    border: 1px solid @control_edge;
     width: 14px;
     height: 14px;
     margin: -4px 0;
-    border-radius: 4px;
+    border-radius: @button_radius;
 }
 
 QSlider::handle:horizontal:hover,
@@ -1419,9 +1421,20 @@ QSlider::handle:horizontal:pressed {
 QSlider::sub-page:horizontal {
     border: none;
     height: 6px;
-    background: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 @accent_secondary, stop:1 @accent_primary);
+    background: @accent_primary;
     margin: 2px 0;
     border-radius: 3px;
+}
+
+QSlider::handle:horizontal:disabled,
+QSlider::handle:vertical:disabled {
+    background: @surface;
+    border-color: @border;
+}
+
+QSlider::sub-page:horizontal:disabled,
+QSlider::sub-page:vertical:disabled {
+    background: @border_strong;
 }
 
 QSlider::groove:vertical {
@@ -1434,11 +1447,11 @@ QSlider::groove:vertical {
 
 QSlider::handle:vertical {
     background: @slider_thumb;
-    border: 1px solid @state_hover;
+    border: 1px solid @control_edge;
     width: 14px;
     height: 14px;
     margin: 0 -4px;
-    border-radius: 4px;
+    border-radius: @button_radius;
 }
 
 QSlider::handle:vertical:hover,
@@ -1449,7 +1462,7 @@ QSlider::handle:vertical:pressed {
 QSlider::sub-page:vertical {
     border: none;
     width: 6px;
-    background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 @accent_primary, stop:1 @accent_secondary);
+    background: @accent_primary;
     margin: 0 0px;
     border-radius: 3px;
 }
