@@ -5,8 +5,12 @@ import re
 import pytest
 
 from fxgui import fxstyle
-import fxgui.fxdocking  # noqa: F401  registers its fragment
 import fxgui.fxwidgets  # noqa: F401  registers every fragment
+
+try:
+    import fxgui.fxdocking  # noqa: F401  registers its fragment
+except ImportError:  # QtAds is an optional extra.
+    pass
 
 _RULE = re.compile(r"([^{}]+)\{([^{}]*)\}")
 _COMMENT = re.compile(r"/\*.*?\*/", re.S)
