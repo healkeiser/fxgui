@@ -33,6 +33,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install ".[test,docking]"
 
+      - name: Lint
+        run: |
+          pip install ruff
+          ruff check --select F,B,BLE .
+
       - name: Run tests
         env:
           QT_QPA_PLATFORM: offscreen

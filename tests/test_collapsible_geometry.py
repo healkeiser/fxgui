@@ -125,7 +125,7 @@ def test_a_row_added_after_opening_is_not_clipped(qtbot, qapp):
     """The consequence of the stale cap, in the shape it is met in: a
     section is opened, and then something is added to it."""
     section = _section(max_content_height=0)
-    host = _nested_host(qtbot, section)
+    _host = _nested_host(qtbot, section)
     section.expand(animate=False)
     before = section._content_area.minimumHeight()
 
@@ -167,7 +167,7 @@ def test_an_interrupted_opening_is_reversed_from_where_it_got_to(
     backwards: the content snapped to its full height and fell from
     there, an end it had never reached."""
     section = _section(animation_duration=400)
-    host = _nested_host(qtbot, section)
+    _host = _nested_host(qtbot, section)
 
     section.expand(animate=True)
     qtbot.waitUntil(
@@ -201,7 +201,7 @@ def test_a_collapse_after_a_finished_expansion_does_not_grow_first(
     fixed the mid-flight jump.
     """
     section = _section(animation_duration=400)
-    host = _nested_host(qtbot, section)
+    _host = _nested_host(qtbot, section)
     section.expand(animate=False)
     _settled()
     on_screen = section._content_area.height()
@@ -226,7 +226,7 @@ def test_an_uncapped_section_never_reports_qwidgetsize_max(qtbot, qapp):
     whole visible range in the first frame, and that number handed to
     the very consumer `resized` exists for."""
     section = _section(animation_duration=400, max_content_height=0)
-    host = _nested_host(qtbot, section)
+    _host = _nested_host(qtbot, section)
     section.expand(animate=False)
     _settled()
     on_screen = section._content_area.height()
@@ -244,7 +244,7 @@ def test_an_interrupted_closing_is_reversed_from_where_it_got_to(
     qtbot, qapp
 ):
     section = _section(animation_duration=400)
-    host = _nested_host(qtbot, section)
+    _host = _nested_host(qtbot, section)
     section.expand(animate=False)
     full = section._content_area.minimumHeight()
 
@@ -264,7 +264,7 @@ def test_the_movement_reports_every_frame(qtbot, qapp):
     """A window sized to its own contents has to grow WITH the movement.
     `expanded` and `collapsed` both arrive before a frame is drawn."""
     section = _section(animation_duration=200, max_content_height=0)
-    host = _nested_host(qtbot, section)
+    _host = _nested_host(qtbot, section)
     frames = []
     section.resized.connect(frames.append)
 
@@ -296,7 +296,7 @@ def test_the_signal_reports_progress_and_not_only_the_end(qtbot, qapp):
     intermediate numbers or it grows only once the movement is over.
     """
     section = _section(animation_duration=300, max_content_height=0)
-    host = _nested_host(qtbot, section)
+    _host = _nested_host(qtbot, section)
     frames = []
     section.resized.connect(frames.append)
 

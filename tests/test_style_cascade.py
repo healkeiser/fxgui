@@ -121,7 +121,7 @@ def test_repolish_cost_on_deep_tree(qtbot):
     """Measure switch-time repolish on ~300 widgets. Generous bound: the
     point is a recorded number, not a race."""
     root = QWidget()
-    layout = QVBoxLayout(root)
+    QVBoxLayout(root)
     parent = root
     for _ in range(10):  # 10 levels deep
         box = QWidget(parent)

@@ -2,7 +2,7 @@
 
 # Third-party
 import pytest
-from qtpy.QtCore import QPoint, QSize, Qt
+from qtpy.QtCore import QPoint, QSize
 from qtpy.QtGui import QColor, QStatusTipEvent
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication

@@ -633,7 +633,7 @@ class _ThemedIconEngine(QIconEngine):
         # An exception escaping a Qt virtual kills the process on PySide6.
         try:
             return self._drawn(size, mode, state, scale)
-        except Exception:
+        except Exception:  # noqa: BLE001
             traceback.print_exc()
             return QPixmap()
 
