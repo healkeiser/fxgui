@@ -52,8 +52,8 @@ dcc:
 #
 # `ranks` is not a role: it sizes headings marked with
 # `fxstyle.mark_as_title(widget, rank="section")`. Each rank names a pixel
-# size and a weight; left out, "section" is 15 px and "card" 16 px, both
-# at 600. A rank named here replaces the built-in one of that name.
+# size and a weight; left out, "section" is 15 px at 600 and "card" 16 px
+# at 700. A rank named here replaces the built-in one of that name.
 #
 #   ranks:
 #     section: {size: 15, weight: 600}

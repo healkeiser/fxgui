@@ -272,9 +272,11 @@ _DEFAULT_FONTS = {
 
 # Title ranks when the color file's `fonts: ranks:` names none: pixel size
 # and weight of a heading marked with `mark_as_title(widget, rank=...)`.
+# "card" is bold: the splash title is one, and Qt 6.5 on Windows takes 0.4 s
+# to load a first 600 face, which a bold one does not cost.
 _DEFAULT_RANKS = {
     "section": {"size": 15, "weight": 600},
-    "card": {"size": 16, "weight": 600},
+    "card": {"size": 16, "weight": 700},
 }
 
 # A face's `weight:` in the color file, on the CSS scale QSS also reads.

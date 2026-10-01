@@ -34,7 +34,9 @@ def test_each_rank_takes_its_size_and_weight(qtbot, request, where):
     assert card.font().pixelSize() == 16
     assert body.font().pixelSize() == fxstyle.FONT_SIZE
     assert section.font().weight() == QFont.DemiBold
-    assert card.font().weight() == QFont.DemiBold
+    # Bold: Qt 6.5 on Windows loads a 600 face 0.4 s slowly, and the splash
+    # title, the first text an application shows, is a card title.
+    assert card.font().weight() == QFont.Bold
     assert body.font().weight() == QFont().weight()
 
 
