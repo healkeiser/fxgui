@@ -24,14 +24,20 @@ def _patch_color_file(monkeypatch, **sections):
     monkeypatch.setattr(fxstyle, "_colors", {**colors, **sections})
 
 
+def _fonts(theme="dark"):
+    """Return each role's resolved family, as the sheet writes it."""
+    return {role: fxstyle._qss_family(entries)
+            for role, entries in fxstyle._font_config(theme).items()}
+
+
 ###### Fallback to the pre-roles behaviour
 
 
 def test_shipped_color_file_emits_the_platform_font(qapp):
     # The block this replaced emitted exactly this for `*`.
     default = f'"{fxstyle._platform_default_font()}"'
-    assert fxstyle.get_fonts("dark")["body"] == default
-    assert fxstyle.get_fonts("dark")["title"] == default
+    assert _fonts()["body"] == default
+    assert _fonts()["title"] == default
 
 
 def test_the_body_family_is_the_root_font_not_a_sheet_rule(qapp):
@@ -49,7 +55,7 @@ def test_missing_fonts_section_falls_back(qapp, monkeypatch):
     }
     monkeypatch.setattr(fxstyle, "_colors", colors)
     default = f'"{fxstyle._platform_default_font()}"'
-    fonts = fxstyle.get_fonts("dark")
+    fonts = _fonts()
     assert fonts["title"] == default
     assert fonts["body"] == default
     # Mono has no platform equivalent, so its default lives in the module
@@ -60,14 +66,14 @@ def test_missing_fonts_section_falls_back(qapp, monkeypatch):
 def test_missing_role_falls_back(qapp, monkeypatch):
     _patch_color_file(monkeypatch, fonts={"body": ["Courier New"]})
     default = f'"{fxstyle._platform_default_font()}"'
-    assert fxstyle.get_fonts("dark")["title"] == default
+    assert _fonts()["title"] == default
 
 
 @pytest.mark.parametrize("empty", [[], "", None])
 def test_empty_role_value_falls_back(qapp, monkeypatch, empty):
     _patch_color_file(monkeypatch, fonts={"title": empty, "body": empty})
     default = f'"{fxstyle._platform_default_font()}"'
-    fonts = fxstyle.get_fonts("dark")
+    fonts = _fonts()
     assert fonts["title"] == default
     assert fonts["body"] == default
 
@@ -77,7 +83,7 @@ def test_absent_family_is_dropped_not_named(qapp, monkeypatch):
     # not complain, it substitutes whichever family sorts first, so the
     # sheet would claim a face that is not being drawn.
     _patch_color_file(monkeypatch, fonts={"title": ["No Such Family QQQ"]})
-    resolved = fxstyle.get_fonts("dark")["title"]
+    resolved = _fonts()["title"]
     assert "No Such Family QQQ" not in resolved
     assert resolved == f'"{fxstyle._platform_default_font()}"'
 
@@ -118,7 +124,7 @@ def test_color_file_declares_the_roles(qapp, monkeypatch):
     available = set(QFontDatabase.families())
     if not {"Courier New", "Verdana"} <= available:
         pytest.skip("system font database is empty on this platform")
-    fonts = fxstyle.get_fonts("dark")
+    fonts = _fonts()
     assert fonts["title"].startswith('"Courier New"')
     assert fonts["body"].startswith('"Verdana"')
 
@@ -138,9 +144,8 @@ def test_theme_may_override_a_single_role(qapp, monkeypatch):
     assert config["mono"] == colors["fonts"]["mono"]
 
 
-def test_get_font_family_falls_back_to_body_for_unknown_role(qapp):
-    fonts = fxstyle.get_fonts("dark")
-    assert fxstyle.get_font_family("no_such_role", "dark") == fonts["body"]
+def test_an_unknown_role_falls_back_to_the_body_font(qapp):
+    assert fxstyle.font("dark", role="no_such_role") == fxstyle.font("dark")
 
 
 ###### Registering a consumer's own files
@@ -285,7 +290,7 @@ def test_a_face_names_its_weight_and_hinting(qapp, monkeypatch):
     body = fxstyle.font("dark")
     assert body.weight() == QFont.Medium
     assert body.hintingPreference() == QFont.PreferNoHinting
-    assert fxstyle.get_fonts("dark")["body"] == (
+    assert _fonts()["body"] == (
         f'"{fxstyle._platform_default_font()}"')
 
 

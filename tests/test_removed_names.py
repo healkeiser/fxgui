@@ -29,7 +29,7 @@ _GONE = {
         "get_icon_on_accent_secondary", "replace_colors", "load_stylesheet",
         "build_stylesheet", "set_widget_style", "WIDGET_STYLE_PROPERTY",
         "get_contrast_text_color", "_FORCE_UPDATE_WALK",
-        "get_feedback_colors",
+        "get_feedback_colors", "get_fonts", "get_font_family",
     ),
     "fxgui.fxstyle:FXProxyStyle": ("set_icon_color", "icon_color"),
     "fxgui.fxutils": (

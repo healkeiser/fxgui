@@ -135,8 +135,6 @@ __all__ = [
     "overlay_color_file",
     # Font configuration
     "register_fonts",
-    "get_fonts",
-    "get_font_family",
     "mark_as_title",
     "mark_as_frame",
     "mark_as_thin_scroll",
@@ -157,6 +155,8 @@ __all__ = [
     "register_themed_root",
     "palette",
     "font",
+    "control_height",
+    "focus_visible",
     # Utility functions
     "get_luminance",
     "get_contrast_ratio",
@@ -626,48 +626,6 @@ def _qss_family(entries) -> str:
     """Return one role's family as a QSS ``font-family``, a generic unquoted."""
     name = _font_family(entries)
     return name if name in _GENERIC_FONT_FAMILIES else f'"{name}"'
-
-
-def get_fonts(theme: Optional[str] = None) -> Dict[str, str]:
-    """Get the resolved font family of every role in a theme.
-
-    Args:
-        theme: Theme name. Defaults to the current theme.
-
-    Returns:
-        Mapping of role name ("title", "body", "mono") to a QSS
-        ``font-family`` value: the role's first family Qt has, so this
-        reports what will actually be drawn.
-
-    Examples:
-        >>> fxstyle.get_fonts()["body"]
-        '"Segoe UI"'
-    """
-    if theme is None:
-        theme = get_theme()
-    return {
-        role: _qss_family(entries)
-        for role, entries in _font_config(theme).items()
-    }
-
-
-def get_font_family(role: str = "body", theme: Optional[str] = None) -> str:
-    """Get the resolved font family of a single role.
-
-    Args:
-        role: One of "title", "body", or "mono". Unknown roles fall back
-            to "body". Defaults to "body".
-        theme: Theme name. Defaults to the current theme.
-
-    Returns:
-        A QSS ``font-family`` value.
-
-    Examples:
-        >>> fxstyle.get_font_family("mono")
-        '"Consolas"'
-    """
-    fonts = get_fonts(theme)
-    return fonts.get(role) or fonts["body"]
 
 
 def mark_as_title(

@@ -45,7 +45,7 @@ def test_a_rank_wears_the_title_family(qapp):
     start = sheet.index(f'[{fxstyle.TITLE_PROPERTY}="true"]')
     rule = sheet[start:sheet.index("}", start)]
     assert f'[{fxstyle.TITLE_PROPERTY}="section"]' in rule
-    assert f"font-family: {fxstyle.get_font_family('title')}" in rule
+    assert f"font-family: {fxstyle._qss_family(fxstyle._font_config('dark')['title'])}" in rule
 
 
 def test_a_color_file_sets_its_own_rank_sizes(qtbot, host_root, monkeypatch):
