@@ -219,8 +219,9 @@ def test_the_drawn_pill_and_the_clickable_one_are_the_same_pill(qtbot):
     item.setData(1, Qt.ItemDataRole.FontRole, big)
     index = tree.model().index(0, 1)
 
+    # editorEvent fills the raw option in before it hit-tests.
     assert delegate._picker_rect(
-        _raw_option_for(tree, index), index
+        delegate._init(_raw_option_for(tree, index), index), index
     ) == delegate._picker_rect(_option_for(tree, index), index)
 
 

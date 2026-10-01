@@ -97,8 +97,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXFilteredTree` | An `FXKeyboardTree` under a filter bar, with expand-all and collapse-all |
 | `FXFloatingDialog` | Dialog that opens at the pointer |
 | `FXFlowLayout` | Layout that wraps its widgets onto new lines, like words |
-| `FXFuzzySearchList` | List with a search field that matches loosely |
-| `FXFuzzySearchTree` | Tree with a search field that matches loosely |
+| `FXFuzzySearchTree` | Tree, or flat list, with a search field that matches loosely |
 | `FXIconButton` | Round icon button; checkable, filled with the accent when checked |
 | `FXIconLabel` | Label that draws an icon in the theme's colours at paint time |
 | `FXIconLineEdit` | Line edit with an icon on the left or right |
@@ -115,14 +114,14 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXNotificationBanner` | Card with a message that slides in from a window's right edge |
 | `FXOutputLogHandler` | Logging handler that writes records into an `FXOutputLogWidget` |
 | `FXOutputLogWidget` | Read-only log display with search |
-| `FXPasswordLineEdit` | Password field with a show/hide button |
+| `FXPasswordLineEdit` | Password field with a show/hide eye icon |
 | `FXPrimaryButton` | The main action of a form, on the theme's accent |
 | `FXProgressCard` | Card showing a task's progress and status |
 | `FXPygmentsHighlighter` | Pygments syntax highlighter for any `QTextDocument` |
 | `FXRangeSlider` | Slider with two handles for a low and a high value |
 | `FXRatingWidget` | Star rating input, halves optional |
 | `FXResizedScrollArea` | Scroll area whose height follows its content, between a floor and a cap |
-| `FXSearchBar` | Search field with an optional filter dropdown |
+| `FXSearchBar` | Search field with a clear button and a debounced search signal |
 | `FXSeating` | Seats a tray panel off its icon or the pointer and slides it in |
 | `FXSingleInstance` | Lock on a local socket name; a second start wakes the first |
 | `FXSingleton` | Metaclass for Qt classes that have one instance |
@@ -200,7 +199,8 @@ disappears.
 ## Your Own Item-Data Roles
 
 `FXThumbnailDelegate` reads item-data roles of its own off the items it
-paints, from `Qt.UserRole + 1` up to `FIRST_FREE_ROLE`. A view that puts
+paints, from `Qt.UserRole + 1` up to `FIRST_FREE_ROLE`, and
+`FXSortedTreeWidgetItem.SORT_ROLE` sits in the same range. A view that puts
 roles of its own on the same items derives them from `FIRST_FREE_ROLE`:
 
 ``` python
@@ -211,9 +211,10 @@ ROW_COLOR_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 1
 ```
 
 !!! warning
-    Do not guess a margin instead. `Qt.UserRole + 10` is
-    `CHILD_COUNT_VISIBLE_ROLE`: a view storing its own value there gets a
-    child count drawn on rows with no children.
+    Do not guess a number instead. Every number below `FIRST_FREE_ROLE`
+    is one the delegate reads: a view storing its own value on
+    `CHILD_COUNT_VISIBLE_ROLE`'s number gets a child count drawn on rows
+    with no children.
 
 A role added to the delegate moves `FIRST_FREE_ROLE` up, and every role
 derived from it moves too.

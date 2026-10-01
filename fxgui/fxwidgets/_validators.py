@@ -23,13 +23,7 @@ class FXCamelCaseValidator(QRegularExpressionValidator):
     """
 
     def __init__(self, parent=None):
-        super().__init__(parent)
-
-        # Regular expression for camelCase without special characters or
-        # numbers
-        camel_case_regex = QRegularExpression("^[a-z]+([A-Z][a-z]*)*$")
-
-        self.setRegularExpression(camel_case_regex)
+        super().__init__(QRegularExpression("^[a-z]+([A-Z][a-z]*)*$"), parent)
 
 
 class FXLowerCaseValidator(QRegularExpressionValidator):
@@ -55,19 +49,11 @@ class FXLowerCaseValidator(QRegularExpressionValidator):
         allow_underscores: bool = False,
         parent: Optional[QWidget] = None,
     ):
-        super().__init__(parent)
-
-        # Build regex pattern based on options
-        pattern = "^[a-z"
-        if allow_numbers:
-            pattern += "0-9"
-        if allow_underscores:
-            pattern += "_"
-        pattern += "]+$"
-
-        lowercase_regex = QRegularExpression(pattern)
-
-        self.setRegularExpression(lowercase_regex)
+        digits = "0-9" if allow_numbers else ""
+        underscore = "_" if allow_underscores else ""
+        super().__init__(
+            QRegularExpression(f"^[a-z{digits}{underscore}]+$"), parent
+        )
 
 
 class FXLettersUnderscoreValidator(QRegularExpressionValidator):
@@ -87,15 +73,8 @@ class FXLettersUnderscoreValidator(QRegularExpressionValidator):
     def __init__(
         self, allow_numbers: bool = False, parent: Optional[QWidget] = None
     ):
-        super().__init__(parent)
-
-        # Regular expression for letters, underscores, and optionally numbers
-        if allow_numbers:
-            letters_underscore_regex = QRegularExpression("^[a-zA-Z0-9_]+$")
-        else:
-            letters_underscore_regex = QRegularExpression("^[a-zA-Z_]+$")
-
-        self.setRegularExpression(letters_underscore_regex)
+        digits = "0-9" if allow_numbers else ""
+        super().__init__(QRegularExpression(f"^[a-zA-Z{digits}_]+$"), parent)
 
 
 class FXCapitalizedLetterValidator(QValidator):

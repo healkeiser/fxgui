@@ -9,7 +9,6 @@ from qtpy.QtCore import QPoint, QRect, Qt
 from qtpy.QtGui import QColor, QFont, QPixmapCache
 from qtpy.QtWidgets import (
     QMenu,
-    QProxyStyle,
     QStyle,
     QStyleOptionViewItem,
     QTreeWidget,
@@ -17,9 +16,9 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxstyle
+from fxgui import fxstyle, fxutils
 from fxgui.fxwidgets import _delegates
-from fxgui.fxwidgets import FXColorLabelDelegate, FXThumbnailDelegate
+from fxgui.fxwidgets import FXThumbnailDelegate
 
 _IMAGE = str(
     Path(_delegates.__file__).parent.parent / "images" / "missing_image.png"
@@ -98,8 +97,8 @@ def test_the_markdown_import_is_not_retried_per_call(monkeypatch):
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", counting_import)
-    FXThumbnailDelegate.markdown_to_plain_text("**a**")
-    FXThumbnailDelegate.markdown_to_plain_text("**b**")
+    fxutils.markdown_to_plain_text("**a**")
+    fxutils.markdown_to_plain_text("**b**")
     assert attempts == []
 
 
@@ -177,7 +176,7 @@ def test_check_width_matches_what_paint_consumes(qtbot):
     delegate.initStyleOption(painted, index)
     box = delegate._check_rect(painted)
     consumed = box.right() + 1 - option.rect.left()
-    assert delegate._check_width(option, index) == consumed
+    assert delegate._check_width(delegate._init(option, index), index) == consumed
 
 
 def test_the_floor_makes_room_for_the_check_box(qtbot):
@@ -190,40 +189,15 @@ def test_the_floor_makes_room_for_the_check_box(qtbot):
         item.setData(0, FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE, "#0f0")
     plain_index = tree.model().index(0, 0)
     ticked_index = tree.model().index(1, 0)
-    option = _raw_option(tree, plain_index)
-    assert delegate._row_minimum_width(
-        _raw_option(tree, ticked_index), ticked_index, True
-    ) == delegate._row_minimum_width(
-        option, plain_index, True
-    ) + delegate._check_width(_raw_option(tree, ticked_index), ticked_index)
-
-
-def test_a_star_takes_no_width_it_does_not_paint(qtbot):
-    tree, delegate = _tree(qtbot)
-    plain = QTreeWidgetItem(tree, ["Same title"])
-    starred = QTreeWidgetItem(tree, ["Same title"])
-    starred.setData(0, FXThumbnailDelegate.STARRED_ROLE, True)
-    for item in (plain, starred):
-        item.setData(0, FXThumbnailDelegate.THUMBNAIL_PATH_ROLE, _IMAGE)
-    a = tree.model().index(0, 0)
-    b = tree.model().index(1, 0)
-    assert (
-        delegate.sizeHint(_raw_option(tree, a), a).width()
-        == delegate.sizeHint(_raw_option(tree, b), b).width()
+    plain_option = delegate._init(_raw_option(tree, plain_index), plain_index)
+    ticked_option = delegate._init(
+        _raw_option(tree, ticked_index), ticked_index
     )
-
-
-def test_a_star_without_an_icon_keeps_off_the_title(qtbot):
-    tree, delegate = _tree(qtbot)
-    delegate.show_thumbnail = False
-    QTreeWidgetItem(tree, ["Title"])
-    starred = QTreeWidgetItem(tree, ["Title"])
-    starred.setData(0, FXThumbnailDelegate.STARRED_ROLE, True)
-    a = tree.model().index(0, 0)
-    b = tree.model().index(1, 0)
-    plain_left = delegate._text_left(_raw_option(tree, a), a, False)
-    starred_left = delegate._text_left(_raw_option(tree, b), b, False)
-    assert starred_left > plain_left
+    assert delegate._row_minimum_width(
+        ticked_option, ticked_index, True
+    ) == delegate._row_minimum_width(
+        plain_option, plain_index, True
+    ) + delegate._check_width(ticked_option, ticked_index)
 
 
 def test_the_floor_is_not_remeasured_on_every_resize(qtbot, monkeypatch):
@@ -285,51 +259,3 @@ def test_a_theme_switch_repaints_with_the_new_colors(qtbot):
     light = tree.viewport().grab().toImage().pixelColor(point).name()
     assert dark != light
     assert light == QColor(fxstyle.colors().surface_sunken).name()
-
-
-def test_transparent_selection_is_applied_once(qtbot):
-    tree = QTreeWidget()
-    qtbot.addWidget(tree)
-    FXThumbnailDelegate.apply_transparent_selection(tree)
-    FXThumbnailDelegate.apply_transparent_selection(tree)
-    style = FXThumbnailDelegate.TRANSPARENT_SELECTION_STYLE
-    assert style.strip()
-    assert tree.styleSheet().count(style) == 1
-
-
-class _TextSpy(QProxyStyle):
-    def __init__(self):
-        super().__init__()
-        self.texts = []
-
-    def drawControl(self, element, option, painter, widget=None):
-        if element == QStyle.CE_ItemViewItem:
-            self.texts.append((option.text, option.icon.isNull()))
-        super().drawControl(element, option, painter, widget)
-
-
-def _color_tree(qtbot, text, selected=False):
-    tree = QTreeWidget()
-    spy = _TextSpy()
-    tree.setStyle(spy)
-    tree.setItemDelegate(FXColorLabelDelegate({}, tree))
-    item = QTreeWidgetItem(tree, [text])
-    item.setSelected(selected)
-    qtbot.addWidget(tree)
-    tree.resize(200, 100)
-    tree.show()
-    qtbot.waitExposed(tree)
-    spy.texts.clear()
-    tree.viewport().grab()
-    return spy
-
-
-def test_color_label_hides_the_native_text_and_icon(qtbot):
-    spy = _color_tree(qtbot, "Success")
-    assert spy.texts
-    assert all(text == "" and no_icon for text, no_icon in spy.texts)
-
-
-def test_color_label_paints_the_selection_of_an_empty_cell(qtbot):
-    spy = _color_tree(qtbot, "", selected=True)
-    assert spy.texts

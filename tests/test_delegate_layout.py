@@ -29,6 +29,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
+from fxgui import fxutils
 from fxgui.fxwidgets import FXThumbnailDelegate
 
 
@@ -54,7 +55,6 @@ def _tree_with_item(
     title: str = "Asset 001",
     description: str = "A character asset, shading",
     children: int = 0,
-    starred: bool = False,
     pill_color=PILL_COLOR,
     dot_color=DOT_COLOR,
     **flags,
@@ -71,7 +71,6 @@ def _tree_with_item(
         title: The item's display text.
         description: The item's description, or None for a one-line row.
         children: How many child rows to add, which draws the count badge.
-        starred: Whether the item is starred.
         pill_color: What to store in the status label color role.
         dot_color: What to store in the status dot color role.
         **flags: Delegate-global overrides, keyed by property name.
@@ -108,8 +107,6 @@ def _tree_with_item(
         item.setData(0, FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, "Ready")
     if dot:
         item.setData(0, FXThumbnailDelegate.STATUS_DOT_COLOR_ROLE, dot_color)
-    if starred:
-        item.setData(0, FXThumbnailDelegate.STARRED_ROLE, True)
     for number in range(children):
         QTreeWidgetItem(item, [f"Child {number}"])
     if decoration:
@@ -204,7 +201,7 @@ def _prefix_indicator_rects(row_rect: QRect, label_width: int, dot: bool):
 def _indicator_rects(delegate, option, index):
     """The pill and dot rects, as the paint helpers place them."""
 
-    label_width, dot_width, _ = delegate._indicator_metrics(index)
+    label_width, dot_width, _ = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
     label_x, dot_x = delegate._indicator_left(
         option.rect, label_width, dot_width
     )
@@ -283,7 +280,7 @@ def test_indicator_placement_matches_the_pre_fix_geometry(
         qtbot, pill=pill, dot=dot, width=width
     )
     option = _option_for(tree, index)
-    label_width, _, _ = delegate._indicator_metrics(index)
+    label_width, _, _ = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
 
     pill_rect, dot_rect = _indicator_rects(delegate, option, index)
     prefix_pill, prefix_dot = _prefix_indicator_rects(
@@ -334,7 +331,7 @@ def test_the_dot_is_centered_against_the_pill(qtbot):
     assert dot_rect.center().y() == pill_rect.center().y()
     # And it is no longer where cb76d019 put it
     _, prefix_dot = _prefix_indicator_rects(
-        option.rect, delegate._indicator_metrics(index)[0], True
+        option.rect, delegate._indicator_metrics(index, QStyleOptionViewItem())[0], True
     )
     assert dot_rect.top() != prefix_dot.top()
 
@@ -448,7 +445,7 @@ def test_reserved_footprint_matches_what_the_item_shows(
 
     tree, delegate, index = _tree_with_item(qtbot, pill=pill, dot=dot)
     option = _option_for(tree, index)
-    label_width, dot_width, footprint = delegate._indicator_metrics(index)
+    label_width, dot_width, footprint = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
 
     assert bool(label_width) is expect_pill
     assert bool(dot_width) is expect_dot
@@ -471,7 +468,7 @@ def test_one_indicator_reserves_only_its_own_width(qtbot, pill, dot):
     spacing between two things when there is only one."""
 
     tree, delegate, index = _tree_with_item(qtbot, pill=pill, dot=dot)
-    label_width, dot_width, footprint = delegate._indicator_metrics(index)
+    label_width, dot_width, footprint = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
     shown = label_width or dot_width
 
     assert footprint == delegate._INDICATOR_RIGHT_MARGIN + shown + 1
@@ -482,7 +479,7 @@ def test_both_indicators_reserve_both_and_the_spacing_between_them(qtbot):
     gap between them."""
 
     tree, delegate, index = _tree_with_item(qtbot)
-    label_width, dot_width, footprint = delegate._indicator_metrics(index)
+    label_width, dot_width, footprint = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
 
     assert (label_width, dot_width) != (0, 0)
     assert footprint == (
@@ -503,8 +500,8 @@ def test_the_pill_reserves_the_same_room_whether_the_dot_shows_or_not(qtbot):
         qtbot, dot=False
     )
 
-    paired = delegate._indicator_metrics(index)[2]
-    alone = other_delegate._indicator_metrics(other_index)[2]
+    paired = delegate._indicator_metrics(index, QStyleOptionViewItem())[2]
+    alone = other_delegate._indicator_metrics(other_index, QStyleOptionViewItem())[2]
     assert paired - alone == (
         delegate._DOT_SIZE + delegate._INDICATOR_SPACING
     )
@@ -514,14 +511,14 @@ def test_wider_pill_text_reserves_more_room(qtbot):
     """The pill grows with its text, so the footprint must grow with it too."""
 
     tree, delegate, index = _tree_with_item(qtbot)
-    narrow = delegate._indicator_metrics(index)[2]
+    narrow = delegate._indicator_metrics(index, QStyleOptionViewItem())[2]
 
     tree.topLevelItem(0).setData(
         0,
         FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE,
         "Waiting for approval, second pass",
     )
-    assert delegate._indicator_metrics(index)[2] > narrow
+    assert delegate._indicator_metrics(index, QStyleOptionViewItem())[2] > narrow
 
 
 @pytest.mark.parametrize(
@@ -539,7 +536,7 @@ def test_delegate_global_flags_gate_the_reservation(
     nothing. Both display modes that exist in production live here."""
 
     tree, delegate, index = _tree_with_item(qtbot, **flags)
-    label_width, dot_width, footprint = delegate._indicator_metrics(index)
+    label_width, dot_width, footprint = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
 
     assert bool(label_width) is expect_pill
     assert bool(dot_width) is expect_dot
@@ -561,7 +558,7 @@ def test_per_item_roles_gate_the_reservation(
 
     tree, delegate, index = _tree_with_item(qtbot)
     tree.topLevelItem(0).setData(0, role, False)
-    label_width, dot_width, _ = delegate._indicator_metrics(index)
+    label_width, dot_width, _ = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
 
     assert bool(label_width) is expect_pill
     assert bool(dot_width) is expect_dot
@@ -576,7 +573,7 @@ def test_the_floor_is_the_thumbnail_plus_the_indicators(qtbot):
 
     tree, delegate, index = _tree_with_item(qtbot)
     option = _option_for(tree, index)
-    footprint = delegate._indicator_metrics(index)[2]
+    footprint = delegate._indicator_metrics(index, QStyleOptionViewItem())[2]
 
     # Bordered thumbnail (68 + 2) inside its 5px margins, then the 5px gutter
     assert delegate._row_minimum_width(option, index, True) == (
@@ -605,7 +602,7 @@ def test_the_floor_follows_the_indicators_the_row_shows(qtbot, pill, dot):
     # At exactly the floor the leftmost indicator comes to rest on the text
     # origin, which is what the owner's screenshot showed
     row = QRect(option.rect.left(), option.rect.top(), floor, 50)
-    label_width, dot_width, _ = delegate._indicator_metrics(index)
+    label_width, dot_width, _ = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
     label_x, dot_x = delegate._indicator_left(row, label_width, dot_width)
     leftmost = label_x if label_width else dot_x
     assert leftmost == delegate._text_left(option, index, True)
@@ -718,7 +715,12 @@ def test_installing_the_floor_twice_leaves_one_handler(qtbot):
     FXThumbnailDelegate.apply_minimum_thumbnail_width(tree)
     floor = FXThumbnailDelegate._measure_minimum_width(tree, 0)
 
-    assert len(tree._fxgui_minimum_section_guards) == 1
+    guards = [
+        child
+        for child in tree.children()
+        if type(child).__name__ == "_ColumnFloor"
+    ]
+    assert len(guards) == 1
     tree.header().resizeSection(0, floor - 30)
     assert tree.columnWidth(0) == floor
 
@@ -1003,18 +1005,18 @@ def test_size_hint_grows_with_the_title_width(qtbot, thumbnail):
 
 
 @pytest.mark.parametrize(
-    "thumbnail, description, children, starred",
+    "thumbnail, description, children",
     [
-        (True, None, 0, False),
-        (True, "A character asset, shading in progress, pass two", 0, False),
-        (True, None, 12, True),
-        (False, None, 0, False),
-        (False, "Two lines, because a description is set", 0, False),
-        (False, None, 12, True),
+        (True, None, 0),
+        (True, "A character asset, shading in progress, pass two", 0),
+        (True, None, 12),
+        (False, None, 0),
+        (False, "Two lines, because a description is set", 0),
+        (False, None, 12),
     ],
 )
 def test_resize_to_contents_fits_the_whole_title(
-    qtbot, thumbnail, description, children, starred
+    qtbot, thumbnail, description, children
 ):
     """Regression: an artist sized the thumbnail column to contents and the
     title still came out short. `sizeHint` summed its parts while the paint
@@ -1028,7 +1030,6 @@ def test_resize_to_contents_fits_the_whole_title(
         title=LONG_TITLE,
         description=description,
         children=children,
-        starred=starred,
     )
     tree.resizeColumnToContents(0)
 
@@ -1043,7 +1044,7 @@ def test_resize_to_contents_fits_the_whole_title(
 
     if description:
         # The description stacks under the title and shares its width
-        plain = delegate.markdown_to_plain_text(description)
+        plain = fxutils.markdown_to_plain_text(description)
         description_metrics = QFontMetrics(delegate._description_font(option))
         assert available >= description_metrics.horizontalAdvance(plain)
 
@@ -1057,7 +1058,7 @@ def test_size_hint_covers_the_indicators_and_the_badge(qtbot):
     )
     option = _option_for(tree, index)
     base = delegate.sizeHint(option, index).width()
-    base_footprint = delegate._indicator_metrics(index)[2]
+    base_footprint = delegate._indicator_metrics(index, QStyleOptionViewItem())[2]
 
     tree.topLevelItem(0).setData(
         0,
@@ -1066,7 +1067,7 @@ def test_size_hint_covers_the_indicators_and_the_badge(qtbot):
     )
     grown = delegate.sizeHint(option, index).width()
     assert grown - base == (
-        delegate._indicator_metrics(index)[2] - base_footprint
+        delegate._indicator_metrics(index, QStyleOptionViewItem())[2] - base_footprint
     )
 
     badge_tree, badge_delegate, badge_index = _tree_with_item(
@@ -1075,7 +1076,9 @@ def test_size_hint_covers_the_indicators_and_the_badge(qtbot):
     badge_option = _option_for(badge_tree, badge_index)
     assert badge_delegate.sizeHint(
         badge_option, badge_index
-    ).width() - base == badge_delegate._child_count_width(badge_index)
+    ).width() - base == badge_delegate._child_count_width(
+        badge_index, QStyleOptionViewItem()
+    )
 
 
 ###### Layout of thumbnail-less rows
@@ -1122,7 +1125,7 @@ def test_color_roles_accept_a_string(qtbot, role_value):
     tree, delegate, index = _tree_with_item(
         qtbot, pill=False, dot_color=role_value
     )
-    assert delegate._indicator_metrics(index)[1] == delegate._DOT_SIZE
+    assert delegate._indicator_metrics(index, QStyleOptionViewItem())[1] == delegate._DOT_SIZE
 
     image = tree.viewport().grab().toImage()
     _save(image, "delegate_string_color.png")
@@ -1140,7 +1143,7 @@ def test_unusable_color_roles_hide_without_raising(qtbot, role_value):
     tree, delegate, index = _tree_with_item(
         qtbot, pill_color=role_value, dot_color=role_value
     )
-    label_width, dot_width, footprint = delegate._indicator_metrics(index)
+    label_width, dot_width, footprint = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
 
     assert (label_width, dot_width, footprint) == (0, 0, 0)
     # Neither painting nor sizing may raise on the way through

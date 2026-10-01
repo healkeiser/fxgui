@@ -1,49 +1,54 @@
-"""The search bar's focus ring and its focus call both work."""
+"""The search bar is a line edit: one Tab stop, its icon and clear as actions."""
 
 # Third-party
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLineEdit
+from qtpy.QtWidgets import QLineEdit, QPushButton, QToolButton
 
 # Internal
-from fxgui import fxstyle
 from fxgui.fxwidgets import FXSearchBar
 
 
-def _bar(qtbot):
-    host = QLineEdit()
-    bar = FXSearchBar()
+def _bar(qtbot, **kwargs):
+    bar = FXSearchBar(**kwargs)
     qtbot.addWidget(bar)
-    qtbot.addWidget(host)
     bar.show()
     qtbot.waitExposed(bar)
-    bar.activateWindow()
-    qtbot.waitUntil(bar.isActiveWindow, timeout=1000)
     return bar
 
 
-def test_set_focus_takes_a_reason_and_lands_in_the_field(qtbot, qapp):
+def test_the_bar_is_the_line_edit(qtbot, qapp):
     bar = _bar(qtbot)
-    bar.setFocus(Qt.TabFocusReason)
-    qtbot.waitUntil(lambda: bar._input.hasFocus(), timeout=1000)
+    assert isinstance(bar, QLineEdit)
+    assert bar.isClearButtonEnabled()
+    assert bar.findChildren(QPushButton) == []
 
 
-def test_focus_in_the_field_lights_the_container(qtbot, qapp):
+def test_text_is_qt_s_own_accessor(qtbot, qapp):
     bar = _bar(qtbot)
-    # Activation gave the field focus; it comes back by Tab.
-    bar._input.clearFocus()
-    bar.setFocus(Qt.TabFocusReason)
-    qtbot.waitUntil(lambda: bar._input.hasFocus(), timeout=1000)
-    assert bar._search_container.property("focused") is True
-    bar._input.clearFocus()
-    assert bar._search_container.property("focused") is False
+    qtbot.keyClicks(bar, "fx")
+    assert bar.text() == "fx"
+    bar.setText("comp")
+    assert bar.text() == "comp"
 
 
-def test_search_bar_styles_through_the_theme_sheet(qtbot, qapp):
-    bar = _bar(qtbot)
-    for child in (bar._search_container, bar._input, bar._clear_button,
-                  bar._search_icon):
-        assert child.styleSheet() == ""
-    assert 'fx_search_container[focused="true"]' in fxstyle.build_stylesheet()
+def test_typing_is_debounced_into_one_search_changed(qtbot, qapp):
+    bar = _bar(qtbot, debounce_ms=50)
+    seen = []
+    bar.search_changed.connect(seen.append)
+    with qtbot.waitSignal(bar.search_changed, timeout=1000):
+        qtbot.keyClicks(bar, "abc")
+    assert seen == ["abc"]
+
+
+def test_enter_submits_and_cancels_the_pending_change(qtbot, qapp):
+    bar = _bar(qtbot, debounce_ms=50)
+    changed, submitted = [], []
+    bar.search_changed.connect(changed.append)
+    bar.search_submitted.connect(submitted.append)
+    qtbot.keyClicks(bar, "abc")
+    qtbot.keyClick(bar, Qt.Key_Return)
+    qtbot.wait(150)
+    assert submitted == ["abc"] and changed == []
 
 
 def test_the_bar_is_one_tab_stop_even_with_text_in_it(qtbot, qapp):
@@ -55,7 +60,7 @@ def test_the_bar_is_one_tab_stop_even_with_text_in_it(qtbot, qapp):
     before, bar, after = QLineEdit(), FXSearchBar(), QLineEdit()
     for widget in (before, bar, after):
         column.addWidget(widget)
-    bar.text = "comp"
+    bar.setText("comp")
     window.show()
     qtbot.waitExposed(window)
     window.activateWindow()
@@ -63,15 +68,29 @@ def test_the_bar_is_one_tab_stop_even_with_text_in_it(qtbot, qapp):
     qtbot.waitUntil(before.hasFocus, timeout=1000)
 
     qtbot.keyClick(before, Qt.Key_Tab)
-    assert bar.line_edit().hasFocus()
-    qtbot.keyClick(bar.line_edit(), Qt.Key_Tab)
+    assert bar.hasFocus()
+    qtbot.keyClick(bar, Qt.Key_Tab)
     assert after.hasFocus(), "the clear button took no stop"
+    for button in bar.findChildren(QToolButton):
+        assert button.focusPolicy() == Qt.NoFocus
 
 
-def test_line_edit_is_the_field_typing_goes_to(qtbot, qapp):
-    bar = FXSearchBar()
-    qtbot.addWidget(bar)
+def test_clearing_leaves_focus_where_it_was(qtbot, qapp):
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
 
-    qtbot.keyClicks(bar.line_edit(), "fx")
+    window = QWidget()
+    qtbot.addWidget(window)
+    column = QVBoxLayout(window)
+    other, bar = QLineEdit(), FXSearchBar()
+    column.addWidget(other)
+    column.addWidget(bar)
+    bar.setText("comp")
+    window.show()
+    qtbot.waitExposed(window)
+    window.activateWindow()
+    other.setFocus()
+    qtbot.waitUntil(other.hasFocus, timeout=1000)
 
-    assert bar.text == "fx" and isinstance(bar.line_edit(), QLineEdit)
+    bar.clear()
+
+    assert bar.text() == "" and other.hasFocus()

@@ -250,10 +250,6 @@ def _tint(pixmap: QPixmap, color: str) -> QPixmap:
     return colored
 
 
-# TODO: shim; delete once _delegates.py:322 stops calling it.
-change_pixmap_color = _tint
-
-
 def _theme_ink(ink: Optional[str]) -> Optional[str]:
     """Return the colour `ink` names: a theme token's, or `ink` itself."""
     if not ink:
