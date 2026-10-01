@@ -119,7 +119,7 @@ An omitted `text_on_accent_*` is black or white, whichever reads better on the a
 
 ## Feedback Colors Reference
 
-Each theme has a `feedback:` block; a theme without one takes `dark`'s. Used by `FXNotificationBanner`, `FXLogWidget`, and other status widgets. Each colour is a token, `feedback_<level>_<part>`: `fxstyle.colors().feedback_error_foreground`, or `fxstyle.qcolor("feedback_error_foreground")` for a QColor.
+Each theme has a `feedback:` block; a theme without one takes `dark`'s. Used by `FXNotificationBanner`, `FXOutputLogWidget`, and other status widgets. Each colour is a token, `feedback_<level>_<part>`: `fxstyle.colors().feedback_error_foreground`, or `fxstyle.qcolor("feedback_error_foreground")` for a QColor.
 
 | Level | Property | Usage |
 |-------|----------|-------|
@@ -249,7 +249,7 @@ path), and one that is no YAML raises `yaml.YAMLError`, both from
 ```python
 from fxgui import fxstyle
 
-fxstyle.apply_theme("monokai")
+fxstyle.apply_theme("dracula")
 ```
 
 `apply_theme(name)` takes one theme name. It saves the choice, rebuilds
@@ -569,6 +569,10 @@ Every `QSlider` gets these rules from the base sheet.
 the card follows every theme switch:
 
 ```python
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QTreeWidgetItem
+
+item = QTreeWidgetItem(["sh010"])
 item.setData(0, Qt.BackgroundRole, "surface")
 ```
 
@@ -618,8 +622,10 @@ If your QSS uses a dynamic property in a selector, for example
 you call `setProperty()`. Call `fxutils.repolish()` after it:
 
 ```python
+from qtpy.QtWidgets import QLabel
 from fxgui import fxutils
 
+banner = QLabel("Disk full")
 banner.setProperty("level", "error")
 fxutils.repolish(banner)
 ```

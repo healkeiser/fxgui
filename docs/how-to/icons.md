@@ -18,6 +18,7 @@ button.setIcon(fxicons.get_icon("home"))
 
 ```python
 from pathlib import Path
+from qtpy.QtWidgets import QPushButton
 from fxgui import fxicons
 
 # Add the houdini library
@@ -50,7 +51,7 @@ be overridden on the call itself:
 ```python
 from fxgui import fxicons
 
-icon = fxicons.get_icon("crowd", library="houdini")
+icon = fxicons.get_icon("houdini", library="dcc")
 small_red = fxicons.get_icon("home", width=32, height=32, color="red")
 ```
 
@@ -64,9 +65,11 @@ instead of wrapping the call:
 ```python
 from fxgui import fxicons
 
+tool = "my_inhouse_tool"  # a name read from your tracker
+
 # A DCC the "dcc" library carries a brand mark for gets it; anything
 # else gets the general-purpose icon rather than no icon at all.
-icon = fxicons.get_icon(whatever_the_tracker_said, library="dcc", fallback="apps")
+icon = fxicons.get_icon(tool, library="dcc", fallback="apps")
 ```
 
 A fallback **name** is looked up in the *default* library, not in the one
@@ -79,7 +82,10 @@ Pass a `QIcon` instead of a name to be answered with it as it is, and
 `QIcon()` to ask for a blank rather than a picture of something else:
 
 ```python
-icon = fxicons.get_icon(name, library="dcc", fallback=QIcon())
+from qtpy.QtGui import QIcon
+from fxgui import fxicons
+
+icon = fxicons.get_icon("my_inhouse_tool", library="dcc", fallback=QIcon())
 ```
 
 A fallback that is not in the default library either still raises, since
@@ -113,8 +119,7 @@ fxicons.set_icon(button, "save")
 ```
 
 `set_icon(widget, name)` works on anything with `setIcon()`: buttons,
-actions, `FXIconLabel`. It is `widget.setIcon(get_icon(name))`, plus one
-rule for push buttons (see the table below).
+actions, `FXIconLabel`. It is `widget.setIcon(get_icon(name))`.
 
 ### Name the colour by token
 
@@ -124,6 +129,10 @@ name (any key of `fxstyle.colors()`, such as `"text_muted"` or
 (`"#ff0000"`, `"red"`) and it keeps that colour in every theme.
 
 ```python
+from fxgui import fxicons, fxwidgets
+
+indicator = fxwidgets.FXIconLabel()
+
 # Follows the theme: the error colour of whichever theme is on.
 fxicons.set_icon(indicator, "error", color="feedback_error_foreground")
 
@@ -139,11 +148,13 @@ three that are not the resting one, each a token or a colour:
 | Mode | When Qt uses it | Default ink |
 |------|-----------------|-------------|
 | `color` (Normal) | At rest | The library's default, `"icon"` for material, fontawesome and simple |
-| `"active"` | A hovered tool button, a highlighted menu row; a focused push button | `"icon_on_accent_primary"` |
+| `"active"` | A hovered tool button or toolbar button, a focused push button, a menu's highlighted row | The resting ink; `"icon_on_accent_primary"` on a menu's highlighted row, which is the accent |
 | `"selected"` | A selected item-view row | `"icon_on_accent_primary"` |
 | `"disabled"` | A disabled widget | `"text_disabled"` |
 
 ```python
+from fxgui import fxicons
+
 icon = fxicons.get_icon(
     "send",
     color="icon_on_accent_primary",
@@ -151,10 +162,10 @@ icon = fxicons.get_icon(
 )
 ```
 
-Any other key in `inks` raises `ValueError`. `set_icon` gives any button
-(a `QPushButton`, a `QToolButton`) an Active ink equal to its resting one,
-since Qt draws a hovered or focused button's icon in Active mode on no
-accent fill.
+Any other key in `inks` raises `ValueError`. Name an `"active"` ink only
+for a button that hovers on a coloured fill, as the send button above
+does: a hovered button sits on the grey hover fill, so by default its
+icon keeps the resting ink.
 
 A full-colour library (`dcc`, or one added with `recolor=False`) keeps its
 own pixels in every mode, whatever colour you ask for.
@@ -183,12 +194,13 @@ once, at the call. Use it for something you redraw yourself; use
 For menu and toolbar actions, use the `icon_name` parameter in `fxutils.create_action()`:
 
 ```python
-from fxgui import fxutils
+from fxgui import fxutils, fxwidgets
 
+window = fxwidgets.FXMainWindow(title="Editor")
 save_action = fxutils.create_action(
-    parent,
+    window,
     "Save",
-    trigger=save_function,
+    trigger=lambda: print("saved"),
     icon_name="save",
 )
 ```

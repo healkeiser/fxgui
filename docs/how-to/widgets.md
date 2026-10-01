@@ -157,6 +157,8 @@ And these functions and constants:
 ## Breadcrumbs
 
 ``` python
+from fxgui.fxwidgets import FXBreadcrumb
+
 crumb = FXBreadcrumb(home_icon="", segments_focusable=False)
 crumb.set_path(["pilot", "sq010", "sh0040", "comp"])
 crumb.set_edit_placeholder("Type a shot")
@@ -181,10 +183,13 @@ The starting colours are class attributes, so a subclass names its own
 tokens:
 
 ``` python
+from fxgui.fxwidgets import FXBreadcrumb
+
+
 class HouseCrumb(FXBreadcrumb):
     STRIP_RESTING_TOKEN = "surface_alt"
-    SEGMENT_HOVER_TOKEN = "accent_secondary"
-    SEGMENT_HOVER_ALPHA = 120
+    SEGMENT_HOVER_TOKEN = "text_muted"
+    SEGMENT_HOVER_ALPHA = 48
 ```
 
 Do not point `STRIP_RESTING_TOKEN` at `surface`: in every bundled theme
@@ -219,9 +224,10 @@ derived from it moves too.
 `apply_tip` is fxgui's tooltip. It hands Qt's own `setToolTip` a small HTML string, and sets a markup-free status tip for the window's status bar:
 
 ``` python
-# Internal
+from qtpy.QtWidgets import QPushButton
 from fxgui.fxwidgets import apply_tip
 
+save_button = QPushButton("Save")
 apply_tip(
     save_button,
     "Save",
