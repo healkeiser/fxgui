@@ -15,14 +15,6 @@ from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 from fxgui.fxwidgets._command_palette import FXCommand, FXCommandPalette
 from fxgui.fxwidgets._comments import FXMentionEdit, FXThreadLine
 from fxgui.fxwidgets._confirm_delete import FXConfirmDeleteDialog
-from fxgui.fxwidgets._severity import (
-    CRITICAL,
-    DEBUG,
-    ERROR,
-    INFO,
-    SUCCESS,
-    WARNING,
-)
 from fxgui.fxwidgets._delegates import (
     FXItemDelegate,
     FXThumbnailDelegate,
@@ -67,6 +59,14 @@ from fxgui.fxwidgets._screen_grab import grab_screen_region
 from fxgui.fxwidgets._scroll_area import FXResizedScrollArea
 from fxgui.fxwidgets._search_bar import FXSearchBar
 from fxgui.fxwidgets._seating import FXSeating
+from fxgui.fxwidgets._severity import (
+    CRITICAL,
+    DEBUG,
+    ERROR,
+    INFO,
+    SUCCESS,
+    WARNING,
+)
 from fxgui.fxwidgets._single_instance import FXSingleInstance
 from fxgui.fxwidgets._singleton import FXSingleton
 from fxgui.fxwidgets._splash_screen import FXSplashScreen
@@ -84,7 +84,6 @@ from fxgui.fxwidgets._validators import (
     FXLettersUnderscoreValidator,
     FXLowerCaseValidator,
 )
-from fxgui.fxwidgets._widget import FXWidget
 
 
 __all__ = [
@@ -158,7 +157,6 @@ __all__ = [
     "FXTimelineSlider",
     "FXToggleSwitch",
     "FXValidatedLineEdit",
-    "FXWidget",
     "grab_screen_region",
     "INFO",
     "keycap",

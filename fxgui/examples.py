@@ -407,9 +407,6 @@ def _containers_page() -> QWidget:
         rows_layout.addWidget(QLabel(f"Shot {number:04d}"))
     scroll.setWidget(rows)
 
-    plain = fxwidgets.FXWidget()
-    plain.main_layout.addWidget(QLabel("An FXWidget holding a label."))
-
     return _page(
         _section("FXAccordion", accordion),
         _section("FXCollapsibleWidget", collapsible),
@@ -417,7 +414,6 @@ def _containers_page() -> QWidget:
         _section(
             "FXDropZone", fxwidgets.FXDropZone(extensions={".exr", ".png"})
         ),
-        _section("FXWidget", plain),
     )
 
 

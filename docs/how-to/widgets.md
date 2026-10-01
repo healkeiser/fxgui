@@ -140,7 +140,6 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXTimelineSlider` | Timeline with playback, keyframes, markers and a loop region |
 | `FXToggleSwitch` | On/off switch that slides |
 | `FXValidatedLineEdit` | Line edit that shakes and flashes when its validator refuses a key |
-| `FXWidget` | Widget holding an optional Designer file in a padded box layout |
 
 `fxdocking.FXDockArea` docks named panes around a body; it needs the
 `docking` extra (`pip install fxgui[docking]`).
