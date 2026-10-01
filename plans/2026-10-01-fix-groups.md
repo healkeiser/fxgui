@@ -107,3 +107,4 @@ shows every public widget (its test enforces it).
   Theme contrast: solarized_light's own @text reads 4.13:1 on @surface (3.64:1 on the tab pill); every bundled theme's text tokens must reach 4.5:1 on the surfaces they sit on. Fix the theme values (or derive text inks as @tab_muted is), with a test over every theme.
 - Group h: test clean-up (duplicates, shared helpers, order hang, flaky
   busy-line test) after everything else lands.
+  Also: after a test builds the gallery, later offscreen renders draw empty boxes for text and come out wider (a leak, seen by the chrome agent); find and fix it. One full run had 20 hover failures and took 157 s instead of 86 (not reproduced; maybe machine load).
