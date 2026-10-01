@@ -7,6 +7,7 @@ import re
 import pytest
 from qtpy.QtCore import QPoint, QRect, Qt
 from qtpy.QtGui import QColor
+from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
     QApplication,
     QComboBox,
@@ -717,7 +718,7 @@ def _first_edge(image, y, start, stop):
 
 
 def test_a_dock_tab_starts_as_far_in_as_a_tab_bar_tab(qtbot):
-    """Measured from the strip's own start: a pane's starts inside its edge."""
+    """Measured from each pane's outer edge."""
     if fxdocking is None:
         pytest.skip("needs the docking extra")
     from fxgui import examples
@@ -731,7 +732,7 @@ def test_a_dock_tab_starts_as_far_in_as_a_tab_bar_tab(qtbot):
     bar = pages.tabBar()
     image = window.grab().toImage()
     first = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
-    left = bar.mapTo(window, QPoint()).x()
+    left = pages.mapTo(window, QPoint()).x()
     ours = _first_edge(image, first.center().y(), left, first.right())
 
     pages.setCurrentIndex(pages.count() - 1)
@@ -743,10 +744,9 @@ def test_a_dock_tab_starts_as_far_in_as_a_tab_bar_tab(qtbot):
         and widget.isVisible()
     ]
     assert tabs
-    border = 1
     for tab in tabs:
         area = tab.dockAreaWidget()
-        start = area.mapTo(window, QPoint()).x() + border
+        start = area.mapTo(window, QPoint()).x()
         rect = tab.rect().translated(tab.mapTo(window, QPoint()))
         assert _first_edge(image, rect.center().y(), start, rect.right()) == (
             ours), tab.dockWidget().windowTitle()
@@ -908,3 +908,161 @@ def test_the_gaps_around_and_between_tab_pills_are_one_size(qtbot):
                 dock_between=dock_between)
     assert len(set(gaps.values())) == 1, gaps
     assert one.height() == height
+
+
+def test_a_hovered_title_bar_button_is_a_tab_pill_tall(qtbot):
+    if fxdocking is None:
+        pytest.skip("needs the docking extra")
+    docks = fxdocking.FXDockArea()
+    docks.set_central(QLabel("central"))
+    docks.add_dock("one", "Render", QLabel("one"), "left")
+    docks.add_dock("two", "Comp", QLabel("two"), "left")
+    window = themed_window(qtbot, "dark", docks, size=(600, 400))
+    _room_for_tabs(docks, "one")
+    button = next(
+        widget for widget in window.findChildren(QWidget)
+        if widget.objectName() == "detachGroupButton" and widget.isVisible()
+    )
+    tab = docks.manager().findDockWidget("two").tabWidget()
+    hover(qtbot, button)
+    image = window.grab().toImage()
+    strip = fxstyle.colors().surface.lower()
+
+    def rows(widget, x):
+        origin = widget.mapTo(window, QPoint())
+        found = [
+            y for y in range(origin.y(), origin.y() + widget.height())
+            if image.pixelColor(origin.x() + x, y).name() != strip
+        ]
+        return min(found), max(found)
+
+    # The current tab's pill, edge included, a column inside its side edge.
+    assert rows(button, button.width() // 2) == rows(tab, tab.width() // 2)
+
+
+def _completer(qtbot, theme, items=("Alpha", "Beta", "Gamma", "Delta")):
+    from qtpy.QtWidgets import QCompleter, QLineEdit
+
+    line = QLineEdit()
+    window = themed_window(qtbot, theme, line)
+    completer = QCompleter(list(items), line)
+    line.setCompleter(completer)
+    line.setFocus()
+    completer.complete()
+    popup = completer.popup()
+    qtbot.waitUntil(popup.isVisible)
+    return window, completer, popup
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_completer_shows_four_rows_without_scrolling(qtbot, theme):
+    _window, _completer_, popup = _completer(qtbot, theme)
+    assert popup.verticalScrollBar().maximum() == 0
+    popup.hide()
+
+
+def test_a_completer_in_a_themed_app_shows_four_rows_too(qtbot, app_root):
+    from qtpy.QtWidgets import QCompleter, QLineEdit
+
+    line = QLineEdit()
+    app_root.layout().addWidget(line)
+    app_root.show()
+    qtbot.waitExposed(app_root)
+    completer = QCompleter(["Alpha", "Beta", "Gamma", "Delta"], line)
+    line.setCompleter(completer)
+    line.setFocus()
+    completer.complete()
+    popup = completer.popup()
+    qtbot.waitUntil(popup.isVisible)
+    assert popup.verticalScrollBar().maximum() == 0
+    popup.hide()
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_hovered_completer_row_is_the_accent_as_a_menu_row(qtbot, theme):
+    _window, completer, popup = _completer(qtbot, theme)
+    model = completer.completionModel()
+    row = popup.visualRect(model.index(2, 0))
+    # Not the hover helper: it would move the popup off its line edit.
+    QTest.mouseMove(popup, QPoint(-5, -5))
+    qtbot.wait(20)
+    QTest.mouseMove(popup.viewport(), row.center())
+    qtbot.waitUntil(popup.viewport().underMouse)
+    image = popup.viewport().grab().toImage()
+    popup.hide()
+    assert image.pixelColor(row.left() + 4, row.center().y()).name() == (
+        fxstyle.colors().accent_primary.lower())
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_combo_and_completer_rows_are_menu_rows_tall(qtbot, theme):
+    """A menu row is 24 px at the 12 px body font, its text plus 8 px."""
+    _window, completer, popup = _completer(qtbot, theme)
+    model = completer.completionModel()
+    completer_rows = {
+        popup.visualRect(model.index(row, 0)).height() for row in range(4)}
+    popup.hide()
+    combo = QComboBox()
+    combo.addItems(["Alpha", "Beta", "Gamma", "Delta"])
+    window = themed_window(qtbot, theme, combo)
+    combo.showPopup()
+    qtbot.waitUntil(lambda: combo.view().isVisible())
+    view = combo.view()
+    combo_rows = {
+        view.visualRect(view.model().index(row, 0)).height()
+        for row in range(4)}
+    combo.hidePopup()
+    menu = QMenu(window)
+    actions = [menu.addAction(name) for name in ("Alpha", "Beta")]
+    menu.popup(window.mapToGlobal(QPoint(10, 10)))
+    qtbot.waitExposed(menu)
+    menu_rows = {menu.actionGeometry(action).height() for action in actions}
+    menu.close()
+    assert completer_rows == combo_rows == menu_rows
+    assert len(menu_rows) == 1
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_combo_popup_has_the_menu_corners(qtbot, theme):
+    combo = QComboBox()
+    combo.addItems(["", "", ""])
+    window = themed_window(qtbot, theme, combo)
+    combo.showPopup()
+    qtbot.waitUntil(lambda: combo.view().isVisible())
+    combo_image = combo.view().window().grab().toImage()
+    combo.hidePopup()
+    menu = QMenu(window)
+    for _ in range(3):
+        menu.addAction("")
+    menu.popup(window.mapToGlobal(QPoint(10, 10)))
+    qtbot.waitExposed(menu)
+    menu_image = menu.grab().toImage()
+    menu.close()
+    colors = fxstyle.colors()
+    for image in (combo_image, menu_image):
+        # The edge bends away from the corner, as the card radius draws it.
+        assert {image.pixelColor(x, x).name() for x in range(2)} == {
+            colors.surface.lower()}
+        assert image.pixelColor(0, image.height() // 2).name() == (
+            colors.border.lower())
+
+
+def test_a_tooltip_wears_the_menu_look_and_corners(qtbot, app_root, monkeypatch):
+    from qtpy.QtWidgets import QToolTip
+
+    rounded = []
+    monkeypatch.setattr(fxutils, "round_window_corners", rounded.append)
+    app_root.show()
+    qtbot.waitExposed(app_root)
+    QToolTip.showText(app_root.mapToGlobal(QPoint(20, 20)), "Tip", app_root)
+    tip = next(
+        widget for widget in QApplication.topLevelWidgets()
+        if widget.windowType() == Qt.ToolTip and widget.isVisible())
+    image = tip.grab().toImage()
+    QToolTip.hideText()
+    colors = fxstyle.colors()
+    middle = image.height() // 2
+    assert image.pixelColor(0, middle).name() == colors.border.lower()
+    assert image.pixelColor(2, middle).name() == colors.surface.lower()
+    assert image.pixelColor(0, 0).name() != colors.border.lower()
+    assert tip in rounded

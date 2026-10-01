@@ -36,7 +36,7 @@ from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 # Third-party
 import yaml
-from qtpy.QtCore import QEvent, QObject, Qt, Signal
+from qtpy.QtCore import QEvent, QObject, QRectF, Qt, Signal
 from qtpy.QtGui import (
     QColor,
     QFont,
@@ -1790,6 +1790,7 @@ _FOCUS_EVENTS = frozenset((
     QEvent.MouseButtonDblClick,
     QEvent.FocusIn,
     QEvent.FocusOut,
+    QEvent.Polish,
     QEvent.Show,
 ))
 
@@ -1797,8 +1798,9 @@ _FOCUS_EVENTS = frozenset((
 class _FocusVisibility(QObject):
     """Mark a themed widget's focus visible when it came by keyboard.
 
-    It also gives every themed popup, Qt's own included, flyout corners,
-    and an item view in a host window a style without the focus rect.
+    It also gives every themed popup and tooltip, Qt's own included,
+    flyout corners, and an item view in a host window a style without the
+    focus rect.
     """
 
     def __init__(self, parent: QObject):
@@ -1819,31 +1821,44 @@ class _FocusVisibility(QObject):
             watched, QWidget
         ):
             self._mark(watched, kind == QEvent.FocusIn and self._visible(event))
-        elif (
-            kind == QEvent.Show
-            and isinstance(watched, QWidget)
-            and watched.windowType() == Qt.Popup
-        ):
-            self._dress_popup(watched)
-        elif kind == QEvent.Show and isinstance(watched, QAbstractItemView):
-            _drop_focus_rect(watched)
+        elif kind == QEvent.Polish:
+            # Qt measures a completer's rows before it shows the list.
+            if (
+                isinstance(watched, QAbstractItemView)
+                and watched.windowType() == Qt.Popup
+            ):
+                self._adopt(watched)
+        elif kind == QEvent.Show and isinstance(watched, QWidget):
+            if watched.windowType() in (Qt.Popup, Qt.ToolTip):
+                self._dress_popup(watched)
+            elif isinstance(watched, QAbstractItemView):
+                _drop_focus_rect(watched)
         return False
 
     @staticmethod
+    def _adopt(popup: QWidget) -> None:
+        """Theme a parentless popup as its owner is: a completer's line edit."""
+        if popup.property(POPUP_PROPERTY) or _compat.parent_widget(popup):
+            return
+        # A completer makes its line edit the list's focus proxy.
+        focus = popup.focusProxy() or QApplication.focusWidget()
+        if focus is None or not _is_themed(focus):
+            return
+        popup.setProperty(POPUP_PROPERTY, True)
+        if isinstance(popup, QAbstractItemView):
+            fxutils.repolish(popup)
+        register_themed_root(popup)
+
+    @staticmethod
     def _dress_popup(popup: QWidget) -> None:
-        """Theme a popup Qt shows: frame a combo list, round every corner."""
-        if _compat.parent_widget(popup) is None:
-            # A completer's list has no parent; it belongs to the focus.
-            focus = QApplication.focusWidget()
-            if focus is not None and _is_themed(focus):
-                if isinstance(popup, QAbstractItemView):
-                    popup.setProperty(POPUP_PROPERTY, True)
-                    fxutils.repolish(popup)
-                register_themed_root(popup)
+        """Theme a popup Qt shows and round its corners."""
+        # Not a tooltip: Qt keeps one for the whole application, a host's too.
+        if popup.windowType() == Qt.Popup:
+            _FocusVisibility._adopt(popup)
         if not _is_themed(popup):
             return
         if isinstance(_compat.parent_widget(popup), QComboBox):
-            _frame_combo_popup(popup)
+            _ComboCard.dress(popup)
         fxutils.round_window_corners(popup)
 
     def _visible(self, event) -> bool:
@@ -1868,24 +1883,42 @@ class _FocusVisibility(QObject):
 
 _focus_visibility: Optional[_FocusVisibility] = None
 
-_POPUP_FRAME = QFrame.Box | QFrame.Plain
 
+class _ComboCard(QObject):
+    """Paint a combo box's popup frame as the popup card a menu is.
 
-def _frame_combo_popup(popup: QFrame) -> None:
-    """Edge a combo box's popup frame in `@border` over `@surface`.
-
-    Qt's sheet never styles that frame, and it wears the combo's palette.
+    Qt's sheet never styles that frame, so it is painted here: `@surface`,
+    edged in `@border` at `CARD_RADIUS`, under a list with no fill.
     """
-    colors = _get_theme_namespace()
-    theme_palette = popup.palette()
-    theme_palette.setColor(QPalette.Window, QColor(colors.surface))
-    theme_palette.setColor(QPalette.WindowText, QColor(colors.border))
-    popup.setPalette(theme_palette)
-    if popup.frameStyle() != _POPUP_FRAME:
-        # The list was sized before the edge took its pixels.
-        popup.setFrameStyle(_POPUP_FRAME)
-        popup.setLineWidth(1)
-        popup.resize(popup.width(), popup.height() + 2 * popup.frameWidth())
+
+    @classmethod
+    def dress(cls, frame: QFrame) -> None:
+        """Give `frame` its painter once, and a 1 px edge for the list."""
+        if frame.findChild(cls, "", Qt.FindDirectChildrenOnly) is None:
+            frame.installEventFilter(cls(frame))
+        if frame.frameStyle() != _POPUP_FRAME:
+            # The list was sized before the edge took its pixels.
+            frame.setFrameStyle(_POPUP_FRAME)
+            frame.setLineWidth(1)
+            frame.resize(frame.width(), frame.height() + 2 * frame.frameWidth())
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Paint the card instead of Qt's frame."""
+        if event.type() != QEvent.Paint:
+            return False
+        colors = _get_theme_namespace()
+        painter = QPainter(watched)
+        painter.fillRect(watched.rect(), QColor(colors.surface))
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(QColor(colors.border))
+        painter.drawRoundedRect(
+            QRectF(watched.rect()).adjusted(0.5, 0.5, -0.5, -0.5),
+            CARD_RADIUS, CARD_RADIUS)
+        painter.end()
+        return True
+
+
+_POPUP_FRAME = QFrame.Box | QFrame.Plain
 
 
 def _watch_focus() -> None:

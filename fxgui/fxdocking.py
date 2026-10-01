@@ -28,7 +28,7 @@ from qtpy.QtCore import (
     qUncompress,
 )
 from qtpy.QtGui import QAction, QColor, QIcon, QShortcut
-from qtpy.QtWidgets import QSplitter, QVBoxLayout, QWidget
+from qtpy.QtWidgets import QSizePolicy, QSplitter, QVBoxLayout, QWidget
 
 # Internal
 from fxgui import _compat, fxicons, fxstyle
@@ -57,8 +57,8 @@ fxstyle.register_widget_style(
 #fxDocks ads--CDockAreaTabBar QWidget#tabsContainerWidget, #fxDocks ads--CDockWidget,
 #fxDocks ads--CDockWidget > QWidget { background: transparent; }
 #fxDocks ads--CTitleBarButton::menu-indicator { image: none; width: 0px; }
-/* No taller than a tab, so the tab sets the bar's height, buttons or not. */
-#fxDocks ads--CTitleBarButton { margin: 0px; padding: 0px; }
+/* A tab pill's height: the tab sets the bar's, buttons or not. */
+#fxDocks ads--CTitleBarButton { margin: 4px 0px; padding: 0px; }
 #fxDocks ads--CDockAreaWidget QAbstractItemView,
 #fxDocks ads--CDockAreaWidget QPlainTextEdit,
 #fxDocks ads--CDockAreaWidget QTextEdit { background-color: @well; }
@@ -152,6 +152,11 @@ def _inset(area: "ads.CDockAreaWidget") -> None:
     """
     bar = area.titleBar()
     bar.layout().setContentsMargins(0, 0, fxstyle.BUTTON_RADIUS, 0)
+    # The tabs set the bar's height; a button takes it, its margin inside.
+    for button in bar.findChildren(ads.CTitleBarButton):
+        policy = button.sizePolicy()
+        policy.setVerticalPolicy(QSizePolicy.Ignored)
+        button.setSizePolicy(policy)
 
 
 def _bare(tab: "ads.CDockWidgetTab") -> None:

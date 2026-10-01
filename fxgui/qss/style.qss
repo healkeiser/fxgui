@@ -26,15 +26,14 @@ QProgressBar::chunk
     background-color: @accent_primary;
 }
 
-/* A tooltip keeps the small radius: it is no popup, so the compositor does
-   not round its window, and a card radius would show square corners. */
+/* A tooltip is a popup card, as a menu is; fxstyle rounds its window. */
 QToolTip
 {
-    border: 1px solid @border_light;
-    background-color: @surface_sunken;
+    border: 1px solid @border;
+    background-color: @surface;
     color: @text;
     padding: 4px 8px;
-    border-radius: @button_radius;
+    border-radius: @card_radius;
 }
 
 QWidget
@@ -704,14 +703,24 @@ QPushButton:hover
 }
 
 
-/* Qt's sheet never reaches the frame around a combo box's list; fxstyle
-   edges it when it shows, and the list fills it square. */
-QComboBox QAbstractItemView
+/* A completer's list is the popup card, as a menu is. The padding is what
+   Qt's popup height leaves, so its rows show without a scroll. */
+QAbstractItemView[fxPopup="true"]
 {
     background-color: @surface;
+    border: 1px solid @border;
+    border-radius: @card_radius;
+    padding: 2px 4px;
+    margin: 0px;
+}
+
+/* A combo box's list sits in a frame fxstyle paints as the same card. */
+QComboBox QAbstractItemView
+{
+    background-color: transparent;
     border: none;
     border-radius: 0px;
-    padding: 4px;
+    padding: 2px 4px;
     margin: 0px;
 }
 
@@ -877,6 +886,11 @@ QTabWidget::pane {
     border: 1px solid @pane_border;
     border-radius: @button_radius;
     padding: 3px;
+}
+
+/* The tabs start past the pane's 1 px edge, as a dock pane's do inside its. */
+QTabWidget::tab-bar {
+    left: 1px;
 }
 
 /* One tab look for QTabBar and QtAds: bare @text_muted text, and the current
@@ -1095,23 +1109,6 @@ QTreeView::item:selected {
     border-radius: @button_radius;
 }
 
-/* A completer's list is a popup card, as a menu is. */
-QAbstractItemView[fxPopup="true"] {
-    background-color: @surface;
-    border: 1px solid @border;
-    border-radius: @card_radius;
-    padding: 4px;
-}
-
-/* Drawn as a menu's items: the pointer moves the selection. */
-QComboBox QAbstractItemView::item:hover,
-QComboBox QAbstractItemView::item:selected,
-QAbstractItemView[fxPopup="true"]::item:hover,
-QAbstractItemView[fxPopup="true"]::item:selected {
-    color: @text_on_accent_primary;
-    background: @accent_primary;
-}
-
 QListView::item:!selected:hover,
 QTreeView::item:!selected:hover {
     background: @state_hover;
@@ -1122,6 +1119,30 @@ QListView::item:selected:hover,
 QTreeView::item:selected:hover {
     background: @accent_primary;
     color: @text_on_accent_primary;
+}
+
+/* A popup list's rows are a menu's, its text and 4 px above and below, and
+   the pointer's row is the accent. After the view rules above, which match
+   as specifically; the maximum is Qt's own, no cap. */
+QComboBox QAbstractItemView::item,
+QAbstractItemView[fxPopup="true"]::item {
+    padding: 4px 0px;
+    min-height: 0px;
+    max-height: 16777215px;
+}
+
+/* A combo box's rows draw no native border for a host's margin to undo. */
+QComboBox QAbstractItemView::item {
+    margin: 0px;
+}
+
+QComboBox QAbstractItemView::item:hover,
+QComboBox QAbstractItemView::item:!selected:hover,
+QComboBox QAbstractItemView::item:selected,
+QAbstractItemView[fxPopup="true"]::item:hover,
+QAbstractItemView[fxPopup="true"]::item:selected {
+    color: @text_on_accent_primary;
+    background: @accent_primary;
 }
 
 /* A slider is a 4 px pill, its filled span the accent, and a round handle:
