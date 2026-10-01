@@ -404,7 +404,8 @@ QWidget:disabled
 
 QAbstractItemView
 {
-    alternate-background-color: @surface_alt;
+    /* Rows are told apart by hover and selection, never by stripes. */
+    qproperty-alternatingRowColors: false;
     color: @text;
     background-color: @surface_sunken;
     border: 1px solid @border;

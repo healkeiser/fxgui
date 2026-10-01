@@ -260,3 +260,22 @@ def test_a_group_title_sits_above_a_whole_card(qtbot, theme, checkable):
     assert image.pixelColor(
         frame.left(), frame.top() + fxstyle.CARD_RADIUS
     ).name() == border
+
+
+# (5) No alternating row stripes.
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_rows_have_no_stripes_even_when_asked(qtbot, theme):
+    view = QListWidget()
+    view.setAlternatingRowColors(True)
+    view.addItems(["first", "second", "third"])
+    window = _shown(qtbot, theme, view)
+    assert not view.alternatingRowColors()
+    image = window.grab().toImage()
+    inks = set()
+    for row in range(3):
+        rect = view.visualItemRect(view.item(row))
+        point = rect.topRight() + QPoint(-4, rect.height() // 2)
+        inks.add(image.pixelColor(view.viewport().mapTo(window, point)).name())
+    assert inks == {fxstyle.colors().surface_sunken.lower()}, inks
