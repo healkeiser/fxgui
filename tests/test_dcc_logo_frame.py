@@ -54,6 +54,12 @@ def test_view_box_is_square(path):
 
 
 @pytest.mark.parametrize("path", LOGOS, ids=lambda p: p.stem)
+def test_no_filter_or_blur(path):
+    text = path.read_text(encoding="ascii")
+    assert not re.search(r"<(filter|feGaussianBlur)\b|filter=", text)
+
+
+@pytest.mark.parametrize("path", LOGOS, ids=lambda p: p.stem)
 def test_artwork_is_centred(bounds, path):
     left, top, right, bottom = bounds[path.stem]
     assert abs(left - (SIZE - right)) <= 2
