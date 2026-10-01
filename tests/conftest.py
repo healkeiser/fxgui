@@ -13,6 +13,19 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import pytest  # noqa: E402
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _crisp_text(qapp):
+    """Draw text unantialiased, so a glyph pixel is its exact ink everywhere.
+
+    Linux antialiases text by subpixel, so no glyph pixel there is the ink.
+    """
+    from qtpy.QtGui import QFont
+
+    font = qapp.font()
+    font.setStyleStrategy(QFont.NoAntialias)
+    qapp.setFont(font)
+
+
 @pytest.fixture(autouse=True)
 def _isolate_fxgui_state(tmp_path, monkeypatch):
     """Isolate persistent and cached fxgui state per test.
