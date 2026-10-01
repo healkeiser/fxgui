@@ -53,3 +53,13 @@ def test_a_popup_is_a_surface_card_at_the_card_radius(popup):
     assert "border-radius: @card_radius" in body
     assert "background-color: @surface;" in body
     assert "border: 1px solid @border;" in body
+
+
+def test_no_fragment_sets_a_third_weight_or_a_point_size():
+    """Two weights, the body's and 600; sizes follow the root font."""
+    for names, body in _rules():
+        assert "font-weight: bold" not in body, names
+        assert not re.search(r"font-size:\s*[0-9.]+pt", body), names
+        # An emoji is a picture, sized as one; text takes the root font.
+        if not all(n.startswith("FXEmojiPicker") for n in names):
+            assert "font-size" not in body, names

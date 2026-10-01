@@ -76,7 +76,7 @@ fxstyle.register_widget_style(
         border: 1px solid @border;
         border-radius: @button_radius;
         padding: 6px 16px;
-        font-weight: bold;
+        font-weight: 600;
     }
     FXNotificationBanner QPushButton#fxBannerAction[fxFocusVisible="true"]:focus {
         border-color: @accent_primary;

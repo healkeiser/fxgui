@@ -7,7 +7,7 @@ from typing import List, Optional
 
 # Third-party
 from qtpy.QtCore import QEvent, QRect, QRectF, Qt, Signal
-from qtpy.QtGui import QColor, QPainter, QPen
+from qtpy.QtGui import QColor, QFont, QPainter, QPen
 from qtpy.QtWidgets import (
     QApplication,
     QFrame,
@@ -136,7 +136,7 @@ class _Segment(QPushButton):
         self._current = current
         if current:
             font = self.font()
-            font.setBold(True)
+            font.setWeight(QFont.DemiBold)
             self.setFont(font)
 
     def paintEvent(self, event) -> None:

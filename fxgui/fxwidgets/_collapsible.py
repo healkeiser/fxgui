@@ -398,6 +398,6 @@ FXCollapsibleWidget QLabel#fx_collapsible_icon {
 }
 FXCollapsibleWidget QLabel#fx_collapsible_title {
     background: transparent;
-    font-weight: bold;
+    font-weight: 600;
 }
 """)

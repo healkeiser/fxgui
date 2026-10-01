@@ -542,7 +542,7 @@ FXDropZone QLabel#FXDropZoneIcon {
 }
 FXDropZone QLabel#FXDropZoneTitle {
     color: @text;
-    font-weight: bold;
+    font-weight: 600;
     background: transparent;
     border: none;
 }
