@@ -86,6 +86,7 @@ from fxgui.fxwidgets._widget import FXWidget
 from fxgui.fxwidgets._flow_layout import FXFlowLayout
 from fxgui.fxwidgets._command_palette import FXCommand, FXCommandPalette
 from fxgui.fxwidgets._status_dot import FXStatusDot
+from fxgui.fxwidgets._checkable_combo import FXCheckableComboBox
 
 
 __all__ = [
@@ -160,4 +161,5 @@ __all__ = [
     "FXCommand",
     "FXCommandPalette",
     "FXStatusDot",
+    "FXCheckableComboBox",
 ]

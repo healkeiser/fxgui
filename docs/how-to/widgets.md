@@ -88,6 +88,7 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXApplication` | Application with automatic theming and style |
 | `FXAvatar` | Round avatar: a photo, or initials on a disc coloured by the name |
 | `FXBreadcrumb` | Clickable breadcrumb trail for hierarchical navigation |
+| `FXCheckableComboBox` | Combo box whose popup stays open while several rows are ticked |
 | `FXCollapsibleWidget` | Expandable/collapsible container |
 | `FXCommandPalette` | Popup search over a window's commands (`FXCommand` rows) or rows to go to |
 | `FXColorLabelDelegate` | Delegate for color label rendering in views |
