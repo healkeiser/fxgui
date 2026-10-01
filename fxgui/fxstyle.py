@@ -1780,6 +1780,16 @@ def _drop_focus_rect(view: QAbstractItemView) -> None:
     view.setStyle(style)
 
 
+_FOCUS_EVENTS = frozenset((
+    QEvent.KeyPress,
+    QEvent.MouseButtonPress,
+    QEvent.MouseButtonDblClick,
+    QEvent.FocusIn,
+    QEvent.FocusOut,
+    QEvent.Show,
+))
+
+
 class _FocusVisibility(QObject):
     """Mark a themed widget's focus visible when it came by keyboard.
 
@@ -1794,6 +1804,9 @@ class _FocusVisibility(QObject):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Note the last input, and set the property on focus in and out."""
         kind = event.type()
+        # Every event of the application passes here: most leave at once.
+        if kind not in _FOCUS_EVENTS:
+            return False
         if kind == QEvent.KeyPress:
             self._by_keyboard = True
         elif kind in (QEvent.MouseButtonPress, QEvent.MouseButtonDblClick):
