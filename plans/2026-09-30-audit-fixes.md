@@ -254,7 +254,14 @@ leave `FXThemeAware`.
   @surface with no stray margins, the popup border, Windows 11 flyout
   corners as the palette does, and items drawn as menu items; test: no
   pixel of the popup outside the theme's surface/border/item colours, and
-  rounded corners where the platform allows.
+  rounded corners where the platform allows; (9) unstyled-widget sweep:
+  every standard Qt widget and every sub-widget Qt builds itself (combo
+  popups and their scroll arrows, QCompleter popups, QDateEdit calendar
+  popup, scroll-area corner, table corner button, tab-bar scroll buttons,
+  toolbar extension button, size grip, QMessageBox, QFileDialog
+  non-native, dock title bars, menu tear-off) opened in every bundled
+  theme; each one's background must be a theme colour. The test stays,
+  so a widget added later can't slip through unstyled.
 - Delegate hover: one look, @accent_secondary as plain lists use.
 - Order hang: `pytest -p no:randomly tests/test_gallery.py
   tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
