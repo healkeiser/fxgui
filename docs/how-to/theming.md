@@ -59,7 +59,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 |------|---------|
 | `surface` | Main widget/window backgrounds, buttons, selected tabs, toolbar |
 | `surface_alt` | Alternate surface - odd rows in lists/tables, secondary panels |
-| `surface_sunken` | Recessed/inset areas - input fields, lists, menus, status bar, slider tracks |
+| `surface_sunken` | Recessed/inset areas - input fields, lists, status bar |
 | `frame` | The chrome around the panes of a framed window (optional) |
 | `well` | Lists and logs set into a pane (optional) |
 | `pane_border` | The 1 px edge of a pane on the frame (optional) |
@@ -103,7 +103,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 
 | Role | Purpose |
 |------|---------|
-| `scrollbar_track` | Track/gutter background, also used for menubar/statusbar borders |
+| `scrollbar_track` | Menu bar and status bar borders; a scroll bar has no track |
 | `scrollbar_thumb` | Draggable thumb, also used for checked header backgrounds |
 | `scrollbar_thumb_hover` | Thumb hover state |
 
@@ -465,10 +465,15 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 
 | Part | Token | Rule |
 |------|-------|------|
-| Edge of a switch or a slider handle | `@control_edge` | `border_strong`, darkened or lightened until it reads at 3:1 on `@surface` |
-| Filled part of a slider | `@accent_primary` | Reads at 3:1 on the `@surface_sunken` groove |
+| Edge of a switch or a slider handle, and a slider's empty groove | `@control_edge` | `border_strong`, darkened or lightened until it reads at 3:1 on `@surface` |
+| Filled part of a slider | `@accent_primary` | Reads at 3:1 on `@surface`; told from the groove by its hue and the handle |
 | Thumb of a switch | `@text_muted` off, `@text_on_accent_primary` on | Pushed to 3:1 on the track |
 | Moving part of a spinner | `@accent_primary` | Over a `@border_light` track |
+
+A slider's groove and span both read at 3:1 on `@surface`, so they cannot
+also read at 3:1 on each other: the bundled accents reach only 3.4:1 to
+7.8:1 on their surface. The span's hue and the handle at its end tell the
+two apart.
 
 3:1 is the WCAG minimum for the parts of a control
 (`fxstyle.CONTROL_CONTRAST`). `fxstyle.readable_ink(background, ink,
@@ -481,8 +486,10 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 - Text is `@text`. Secondary text and placeholders are `@text_muted`.
   Text on an accent fill is `@text_on_accent_primary`.
 - Icons take `color="icon"`; on an accent fill, `icon_on_accent_primary`.
-- A menu is `@surface_sunken` with a 1 px `@border`. Its hovered item is
-  `@accent_primary` with `@text_on_accent_primary` text.
+- A popup (a menu, a combo box's list, `FXCommandPalette`) is `@surface`
+  with a 1 px `@border`, its rows inset 4 px. A hovered menu item or combo
+  row is `@accent_primary` with `@text_on_accent_primary` text. No state
+  moves a row's text.
 - A menu bar item keeps one box, at the button radius, in every state.
   At rest it is bare; hovered, `@state_hover`; with its menu open,
   `@accent_primary` with `@text_on_accent_primary` text.
@@ -491,7 +498,7 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 
 | Kind | Examples | Frame | Shadow |
 |------|----------|-------|--------|
-| Popup: a window that closes when you click away | `QMenu`, a combo box list, `FXCommandPalette` | `@border`, `@button_radius` | The platform's own. Windows draws one under every popup window, and `fxutils.round_window_corners` asks Windows 11 for flyout corners. fxgui paints none. |
+| Popup: a window that closes when you click away | `QMenu`, a combo box list, `FXCommandPalette`, a completer or calendar popup | `@border`, `@button_radius` | The platform's own. Windows draws one under every popup window. Every popup under a themed root asks Windows 11 for flyout corners (`fxutils.round_window_corners`) when it shows. fxgui paints none. |
 | Floating card: a panel over the window that stays until it is done | `FXNotificationBanner`, `FXProgressCard`, `FXFloatingDialog` | `@border`, `@card_radius` | One painted shadow: `fxutils.add_shadows(parent, card)` with its defaults, black at 80 of 255, 20 px blur, no offset |
 
 A shadow has no theme token. It is black at low opacity in every theme,
@@ -507,7 +514,7 @@ too small for it. Anything else raises `ValueError`.
 | Control | Rest | Hover | Focus | Disabled |
 |---------|------|-------|-------|----------|
 | `QSlider`, `FXRangeSlider` handle | fill `@slider_thumb`, edge `@control_edge` | fill `@slider_thumb_hover` | fill `@text_on_accent_primary`, edge `@accent_primary` | fill `@surface`, edge `@border` |
-| `QSlider`, `FXRangeSlider` groove and span | groove `@surface_sunken`, span `@accent_primary` | | | span `@border_strong` |
+| `QSlider`, `FXRangeSlider` groove and span | groove `@control_edge`, span `@accent_primary` | | | span `@border_strong` |
 | `FXToggleSwitch` off | fill `@surface_sunken`, edge `@control_edge` | edge `@accent_primary` | edge `@accent_primary` | fill `@surface`, edge `@border` |
 | `FXToggleSwitch` on | fill `@accent_primary` | fill `@primary_button_hover` | edge `@text` | fill `@surface_alt`, edge `@border` |
 
@@ -552,6 +559,10 @@ fxstyle.register_widget_style("""
     }
 """)
 ```
+
+An image in a rule names an icon and a token: `image: ~icon(expand_more,
+icon);` draws the icon library's `expand_more` in the theme's `@icon`
+colour. Every arrow and chevron of the base sheet is drawn this way.
 
 Fragments come after the base stylesheet and are resolved again on every
 switch. Registering after themed roots exist re-applies the sheet to them

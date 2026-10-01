@@ -22,7 +22,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle, fxutils
+from fxgui import fxicons, fxstyle
 
 
 fxstyle.register_widget_style(
@@ -253,8 +253,6 @@ class FXCommandPalette(QFrame):
         self.resize(width, self.height())
         self._filter("")
         self.show()
-        # A popup's corners and shadow are the platform's, as a flyout's.
-        fxutils.round_window_corners(self)
         self.field.setFocus()
 
     def _filter(self, text: str) -> None:

@@ -101,9 +101,11 @@ def test_the_range_slider_speaks_the_slider_language(qtbot, theme):
     assert parts["edge"] == colors.accent_primary.lower()
     assert parts["fill"] == colors.surface.lower()
     assert parts["span"] == colors.accent_primary.lower()
-    assert parts["groove"] == colors.surface_sunken.lower()
-    assert ratio(parts["span"], parts["groove"]) >= 3, parts
+    assert parts["groove"] == colors.control_edge.lower()
+    # Both read at 3:1 on the surface; no theme has room for 3:1 between.
+    assert ratio(parts["groove"], colors.surface) >= 3, parts
     assert ratio(parts["span"], colors.surface) >= 3, parts
+    assert parts["span"] != parts["groove"]
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])

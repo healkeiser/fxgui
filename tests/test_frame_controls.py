@@ -192,7 +192,12 @@ def test_marking_writes_no_file(qtbot, tmp_path, monkeypatch):
     host, splitter = _splitter(qtbot, Qt.Horizontal)
     _handle_image(host, splitter)
 
-    assert list(temp.iterdir()) == []
+    # The sheet's own tinted icons are the only files a theme writes.
+    written = [
+        path for path in temp.rglob("*")
+        if path.is_file() and path.parent.name != "sheet_icons"
+    ]
+    assert written == []
     assert "splitter_mark" not in fxstyle.build_stylesheet()
 
 

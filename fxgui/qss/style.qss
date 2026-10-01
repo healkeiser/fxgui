@@ -31,13 +31,9 @@ QWidget
     selection-color: @text_on_accent_primary;
     background-clip: border;
     border-image: none;
-    /* This is Qt's focus rectangle, and it is the wrong tool for the job: it
-       lands as a hard box around a widget's label, ignoring whatever shape
-       the widget actually has. Measured on the dark theme, it drew on exactly
-       two classes, a tab and a checkable group box, and on a tab it boxed the
-       text inside the tab's own rounded lip. Both now carry a focus indicator
-       drawn in their own language instead, so the rectangle is off. See
-       KEYBOARD FOCUS at the end of the file. */
+    /* Qt's focus rectangle boxes a label whatever the widget's shape; each
+       class shows focus in its own shape instead. See KEYBOARD FOCUS at the
+       end of the file. */
     outline: none;
 }
 
@@ -273,13 +269,16 @@ QMenuBar::item:pressed:enabled
     background-color: @accent_primary;
 }
 
+/* One popup look for a menu, a combo box's list and the command palette:
+   @surface, the popup border, items inset in it. fxstyle asks the platform
+   for flyout corners when a themed popup shows. */
 QMenu
 {
     border: 1px solid @border;
     border-radius: @button_radius;
     color: @text;
-    /* margin: 2px; */
-    background-color: @surface_sunken;
+    background-color: @surface;
+    padding: 4px;
 }
 
 QMenu::icon
@@ -301,7 +300,7 @@ QMenu::icon:checked
 
 QMenu::item
 {
-    background-color: @surface_sunken;
+    background-color: transparent;
     border-radius: @button_radius;
     padding: 5px 25px 5px 25px;
     border: 3px transparent;
@@ -387,7 +386,13 @@ QMenu::indicator:exclusive:checked:selected {
 
 QMenu::right-arrow {
     margin: 5px;
-    image: url(~icons/right_arrow.svg)
+    width: 16px;
+    height: 16px;
+    image: ~icon(chevron_right, icon);
+}
+
+QMenu::right-arrow:selected {
+    image: ~icon(chevron_right, icon_on_accent_primary);
 }
 
 
@@ -398,6 +403,9 @@ QWidget:disabled
 
 QAbstractItemView
 {
+    /* Rows are told apart by hover and selection, never by stripes. The
+       alternate colour stays for what Qt paints in it: a calendar's header. */
+    qproperty-alternatingRowColors: false;
     alternate-background-color: @surface_alt;
     color: @text;
     background-color: @surface_sunken;
@@ -431,238 +439,99 @@ QLineEdit
     color: @text;
 }
 
+/* The title sits in the margin above a whole card, never cut into its
+   border; the margin is in em so it grows with the font. */
 QGroupBox {
-    border:1px solid @border;
-    border-radius: @button_radius;
-    margin-top: 20px;
+    border: 1px solid @border;
+    border-radius: @card_radius;
+    margin-top: 1.75em;
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
-    subcontrol-position: top center;
-    padding-left: 10px;
-    padding-right: 10px;
-    padding-top: 10px;
+    subcontrol-position: top left;
+    padding: 0px 2px;
 }
 
-/* The gutter a scroll area keeps around its scroll bars. */
+/* A scroll bar is a pill on whatever it scrolls: no track, no arrows. The
+   bar keeps one width, so the thumb widens inside it on hover and nothing
+   beside it moves. */
 QWidget#qt_scrollarea_hcontainer,
-QWidget#qt_scrollarea_vcontainer
+QWidget#qt_scrollarea_vcontainer,
+QAbstractScrollArea::corner
 {
-    background-color: @surface;
+    background: transparent;
+    border: none;
 }
 
+QScrollBar:vertical,
 QScrollBar:horizontal
 {
-    height: 12px;
-    margin: 0px 12px 0px 12px;
+    background: transparent;
     border: none;
-    border-radius: 6px;
-    background-color: @scrollbar_track;
-}
-
-QScrollBar::handle:horizontal
-{
-    background-color: @scrollbar_thumb;
-    min-width: 20px;
-    border-radius: @button_radius;
-    margin: 2px;
-}
-
-QScrollBar::handle:horizontal:hover
-{
-    background-color: @scrollbar_thumb_hover;
-}
-
-QScrollBar::add-line:horizontal
-{
-    margin: 0px 3px 0px 3px;
-    border-image: url(~icons/right_arrow_disabled.svg);
-    width: 10px;
-    height: 10px;
-    subcontrol-position: right;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::sub-line:horizontal
-{
-    margin: 0px 3px 0px 3px;
-    border-image: url(~icons/left_arrow_disabled.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: left;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::add-line:horizontal:hover,
-QScrollBar::add-line:horizontal:on
-{
-    border-image: url(~icons/right_arrow.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: right;
-    subcontrol-origin: margin;
-}
-
-
-QScrollBar::sub-line:horizontal:hover,
-QScrollBar::sub-line:horizontal:on
-{
-    border-image: url(~icons/left_arrow.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: left;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::up-arrow:horizontal,
-QScrollBar::down-arrow:horizontal
-{
-    background: none;
-}
-
-
-QScrollBar::add-page:horizontal,
-QScrollBar::sub-page:horizontal
-{
-    background: none;
+    margin: 0px;
 }
 
 QScrollBar:vertical
 {
-    background-color: @scrollbar_track;
-    width: 12px;
-    margin: 12px 0px 12px 0px;
-    border: none;
-    border-radius: 6px;
+    width: @thin_scroll;
+}
+
+QScrollBar:horizontal
+{
+    height: @thin_scroll;
+}
+
+QScrollBar::handle:vertical,
+QScrollBar::handle:horizontal
+{
+    background: @scrollbar_thumb;
+    border-radius: 2px;
 }
 
 QScrollBar::handle:vertical
 {
-    background-color: @scrollbar_thumb;
-    min-height: 20px;
-    border-radius: @button_radius;
-    margin: 2px;
+    min-height: 24px;
+    margin: 0px 2px;
 }
 
-QScrollBar::handle:vertical:hover
+QScrollBar::handle:horizontal
 {
-    background-color: @scrollbar_thumb_hover;
+    min-width: 24px;
+    margin: 2px 0px;
 }
 
-QScrollBar::sub-line:vertical
+QScrollBar::handle:vertical:hover,
+QScrollBar::handle:horizontal:hover,
+QScrollBar::handle:vertical:pressed,
+QScrollBar::handle:horizontal:pressed
 {
-    margin: 3px 0px 3px 0px;
-    border-image: url(~icons/up_arrow_disabled.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: top;
-    subcontrol-origin: margin;
+    background: @scrollbar_thumb_hover;
+    border-radius: @thin_scroll_radius;
+    margin: 0px;
 }
 
-QScrollBar::add-line:vertical
+QScrollBar::add-line,
+QScrollBar::sub-line
 {
-    margin: 3px 0px 3px 0px;
-    border-image: url(~icons/down_arrow_disabled.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: bottom;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::sub-line:vertical:hover,
-QScrollBar::sub-line:vertical:on
-{
-
-    border-image: url(~icons/up_arrow.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-}
-
-
-QScrollBar::add-line:vertical:hover,
-QScrollBar::add-line:vertical:on
-{
-    border-image: url(~icons/down_arrow.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: bottom;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::up-arrow:vertical,
-QScrollBar::down-arrow:vertical
-{
+    width: 0px;
+    height: 0px;
+    border: none;
     background: none;
 }
 
-
-QScrollBar::add-page:vertical,
-QScrollBar::sub-page:vertical
+QScrollBar::add-page,
+QScrollBar::sub-page
 {
     background: none;
 }
 
 /* A thin scroll area (fxstyle.mark_as_thin_scroll) sits on its card. */
 [fxThinScroll="true"],
-[fxThinScroll="true"] > QWidget#qt_scrollarea_viewport,
-[fxThinScroll="true"] > QWidget#qt_scrollarea_vcontainer,
-[fxThinScroll="true"] > QWidget#qt_scrollarea_hcontainer
+[fxThinScroll="true"] > QWidget#qt_scrollarea_viewport
 {
     background: transparent;
     border: none;
-}
-
-[fxThinScroll="true"] QScrollBar:vertical
-{
-    background: transparent;
-    border: none;
-    width: @thin_scroll;
-    margin: 0px;
-}
-
-[fxThinScroll="true"] QScrollBar:horizontal
-{
-    background: transparent;
-    border: none;
-    height: @thin_scroll;
-    margin: 0px;
-}
-
-[fxThinScroll="true"] QScrollBar::handle:vertical,
-[fxThinScroll="true"] QScrollBar::handle:horizontal
-{
-    background: @border_light;
-    border-radius: @thin_scroll_radius;
-    min-height: 12px;
-    min-width: 12px;
-    margin: 0px;
-}
-
-[fxThinScroll="true"] QScrollBar::handle:vertical:hover,
-[fxThinScroll="true"] QScrollBar::handle:horizontal:hover
-{
-    background: @scrollbar_thumb_hover;
-}
-
-[fxThinScroll="true"] QScrollBar::add-line,
-[fxThinScroll="true"] QScrollBar::sub-line,
-[fxThinScroll="true"] QScrollBar::add-line:hover,
-[fxThinScroll="true"] QScrollBar::sub-line:hover
-{
-    width: 0px;
-    height: 0px;
-    margin: 0px;
-    border: none;
-    border-image: none;
-}
-
-[fxThinScroll="true"] QScrollBar::add-page,
-[fxThinScroll="true"] QScrollBar::sub-page
-{
-    background: transparent;
 }
 
 QSizeGrip {
@@ -672,6 +541,12 @@ QSizeGrip {
     height: 0;
 }
 
+
+/* The workspace behind MDI windows, a property Qt paints itself. */
+QMdiArea
+{
+    qproperty-background: @frame;
+}
 
 QMainWindow::separator
 {
@@ -813,6 +688,8 @@ QComboBox
     border-radius: @button_radius;
     padding: 4px 6px;
     min-width: 75px;
+    /* A list popup: the menu-style one ticks and indents the current row. */
+    combobox-popup: 0;
 }
 
 QPushButton:checked{
@@ -845,68 +722,72 @@ QPushButton:hover
 }
 
 
-QComboBox:on
-{
-    /* background-color: #626873; */
-    padding-top: 3px;
-    padding-left: 4px;
-    /* selection-background-color: #4a4a4a; */
-}
-
+/* Qt's sheet never reaches the frame around a combo box's list; fxstyle
+   edges it when it shows, and the list fills it square. */
 QComboBox QAbstractItemView
 {
-    background-color: @surface_sunken;
-    border: 1px solid @border_strong;
-    selection-background-color: @accent_primary;
-    padding: 0px;
+    background-color: @surface;
+    border: none;
+    border-radius: 0px;
+    padding: 4px;
     margin: 0px;
     outline: none;
 }
 
-QComboBox QFrame
-{
-    background-color: @surface_sunken;
-    border: 1px solid @border_strong;
-    border-radius: 0px;
-    padding: 0px;
-    margin: 0px;
-}
-
-QComboBox QAbstractItemView::item
-{
-    background-color: @surface_sunken;
-    padding: 4px;
-    margin: 0px;
-    min-height: 20px;
-}
-
-QComboBox QAbstractItemView::item:selected
-{
-    background-color: @accent_primary;
-}
-
+/* Every arrow is the accordion's chevron in @icon: here, on a spin box,
+   a header's sort mark, a menu, a tab bar's scroll buttons, a tool button
+   and a push button with a menu. */
 QComboBox::drop-down
 {
     subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 15px;
-    border-left-width: 0px;
-    border-left-color: darkgray;
-    border-left-style: solid;
-    border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
+    subcontrol-position: center right;
+    width: 16px;
+    border: none;
 }
 
 QComboBox::down-arrow
 {
-    image: url(~icons/down_arrow_disabled.svg);
+    image: ~icon(expand_more, icon);
+    width: 16px;
+    height: 16px;
 }
 
-QComboBox::down-arrow:on,
-QComboBox::down-arrow:hover,
-QComboBox[fxFocusVisible="true"]::down-arrow:focus
+QComboBox::down-arrow:disabled
 {
-    image: url(~icons/down_arrow.svg);
+    image: ~icon(expand_more, text_disabled);
+}
+
+/* A date edit with a calendar popup opens it from a combo box's arrow. */
+QDateTimeEdit::drop-down
+{
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 16px;
+    border: none;
+}
+
+QDateTimeEdit::down-arrow
+{
+    image: ~icon(expand_more, icon);
+    width: 16px;
+    height: 16px;
+}
+
+QDateTimeEdit::down-arrow:disabled
+{
+    image: ~icon(expand_more, text_disabled);
+}
+
+QCalendarWidget QToolButton#qt_calendar_prevmonth
+{
+    qproperty-icon: ~icon(chevron_left, icon);
+    qproperty-iconSize: 16px;
+}
+
+QCalendarWidget QToolButton#qt_calendar_nextmonth
+{
+    qproperty-icon: ~icon(chevron_right, icon);
+    qproperty-iconSize: 16px;
 }
 
 QPushButton:pressed
@@ -971,28 +852,33 @@ QAbstractSpinBox:down-button
 }
 
 QAbstractSpinBox::up-arrow,
-QAbstractSpinBox::up-arrow:disabled,
-QAbstractSpinBox::up-arrow:off {
-    image: url(~icons/up_arrow_disabled.svg);
-    width: 10px;
-    height: 10px;
-}
-QAbstractSpinBox::up-arrow:hover
+QAbstractSpinBox::down-arrow
 {
-    image: url(~icons/up_arrow.svg);
+    width: 16px;
+    height: 16px;
 }
 
-QAbstractSpinBox::down-arrow,
+QAbstractSpinBox::up-arrow
+{
+    image: ~icon(expand_less, icon);
+}
+
+QAbstractSpinBox::down-arrow
+{
+    image: ~icon(expand_more, icon);
+}
+
+/* :off is an arrow at its end of the range. */
+QAbstractSpinBox::up-arrow:disabled,
+QAbstractSpinBox::up-arrow:off
+{
+    image: ~icon(expand_less, text_disabled);
+}
+
 QAbstractSpinBox::down-arrow:disabled,
 QAbstractSpinBox::down-arrow:off
 {
-    image: url(~icons/down_arrow_disabled.svg);
-    width: 10px;
-    height: 10px;
-}
-QAbstractSpinBox::down-arrow:hover
-{
-    image: url(~icons/down_arrow.svg);
+    image: ~icon(expand_more, text_disabled);
 }
 
 QLabel
@@ -1005,67 +891,117 @@ QTabWidget{
 }
 
 QTabWidget::pane {
-    top:-1px;
+    top: -1px;
     border: 1px solid @border_light;
     border-radius: @button_radius;
     padding: 3px;
 }
 
+/* One tab look for QTabBar and QtAds: bare text, and a straight 2px bar on
+   the side facing the pane, accent on the current tab. Every tab reserves
+   the bar, so selecting one moves nothing; no tab is rounded, so the bar's
+   ends do not curl. The dock tab names its activeTab property to outrank
+   the base QFrame[frameShape] rules. */
 QTabBar
 {
     qproperty-drawBase: 0;
-    left: 5px; /* Move to the right by 5px */
-    background-color: @surface_sunken;
-    border-top-left-radius: @button_radius;
-    border-top-right-radius: @button_radius;
-    margin-top: 3px;
+    background: transparent;
 }
 
-QTabBar:focus
+QTabBar::tab,
+ads--CDockWidgetTab[activeTab="false"],
+ads--CDockWidgetTab[activeTab="true"]
 {
-    border: 0px transparent;
+    color: @text_muted;
+    background: transparent;
+    border: none;
+    border-radius: 0px;
 }
 
+QTabBar::tab
+{
+    padding: 5px 12px;
+}
+
+ads--CDockWidgetTab[activeTab="false"],
+ads--CDockWidgetTab[activeTab="true"]
+{
+    padding: 0px 6px;
+}
+
+QTabBar::tab:top,
+ads--CDockWidgetTab[activeTab="false"],
+ads--CDockWidgetTab[activeTab="true"]
+{
+    border-bottom: 2px solid transparent;
+}
+
+QTabBar::tab:bottom { border-top: 2px solid transparent; }
+QTabBar::tab:left { border-right: 2px solid transparent; }
+QTabBar::tab:right { border-left: 2px solid transparent; }
+
+QTabBar::tab:hover,
+QTabBar::tab:selected,
+ads--CDockWidgetTab[activeTab="true"]
+{
+    color: @text;
+}
+
+QTabBar::tab:top:selected,
+ads--CDockWidgetTab[activeTab="true"]
+{
+    border-bottom-color: @accent_primary;
+}
+
+QTabBar::tab:bottom:selected { border-top-color: @accent_primary; }
+QTabBar::tab:left:selected { border-right-color: @accent_primary; }
+QTabBar::tab:right:selected { border-left-color: @accent_primary; }
+
+ads--CDockWidgetTab QLabel
+{
+    background: transparent;
+    color: @text_muted;
+}
+
+ads--CDockWidgetTab[activeTab="true"] QLabel
+{
+    color: @text;
+}
+
+/* The scroll buttons a crowded bar shows, over the tabs they scroll. */
 QTabBar QToolButton {
-    background-color: @surface_sunken;
-    border: 1px solid @border_light;
-    border-bottom: 1px solid @border_light;
+    background-color: @surface;
+    border: none;
     border-radius: @button_radius;
     margin: 0px;
-    margin-top: 3px;
-    padding: 4px 6px;
+    padding: 0px;
 }
 
-QTabBar QToolButton:hover {
-    background-color: @state_pressed;
-}
-
+QTabBar QToolButton:hover,
 QTabBar QToolButton:pressed {
-    background-color: @state_pressed;
+    background-color: @state_hover;
 }
 
-QTabBar QToolButton::right-arrow:enabled {
-    image: url(~icons/right_arrow.svg);
-    width: 10px;
-    height: 10px;
+QTabBar QToolButton::right-arrow,
+QTabBar QToolButton::left-arrow {
+    width: 16px;
+    height: 16px;
 }
 
-QTabBar QToolButton::left-arrow:enabled {
-    image: url(~icons/left_arrow.svg);
-    width: 10px;
-    height: 10px;
+QTabBar QToolButton::right-arrow {
+    image: ~icon(chevron_right, icon);
+}
+
+QTabBar QToolButton::left-arrow {
+    image: ~icon(chevron_left, icon);
 }
 
 QTabBar QToolButton::right-arrow:disabled {
-    image: url(~icons/right_arrow_disabled.svg);
-    width: 10px;
-    height: 10px;
+    image: ~icon(chevron_right, text_disabled);
 }
 
 QTabBar QToolButton::left-arrow:disabled {
-    image: url(~icons/left_arrow_disabled.svg);
-    width: 10px;
-    height: 10px;
+    image: ~icon(chevron_left, text_disabled);
 }
 
 QTabBar::close-button  {
@@ -1082,178 +1018,6 @@ QTabBar::close-button:hover
 QTabBar::close-button:pressed {
     image: url(~icons/close_pressed.svg);
     background: transparent;
-}
-
-QTabBar::close-button:!selected {
-    border: 1px transparent;
-    border-bottom: 1px transparent;
-    border-top-left-radius: @button_radius;
-    border-top-right-radius: @button_radius;
-    margin-top: 3px;
-}
-
-/* TOP TABS */
-QTabBar::tab:top {
-    color: @text;
-    border: 1px solid @border_light;
-    border-bottom: 1px transparent;
-    background-color: @surface;
-    padding: 5px 20px;
-    border-top-left-radius: @button_radius;
-    border-top-right-radius: @button_radius;
-    min-width: 75px;
-}
-
-QTabBar::tab:top:selected {
-    color: @text;
-    background-color: @surface;
-    border-bottom: 1px solid @surface;
-}
-
-QTabBar::tab:top:!selected {
-    color: @text_muted;
-    background-color: @surface_sunken;
-    border: 1px transparent @border_light;
-    border-bottom: 1px solid @border_light;
-    border-top-left-radius: 0px;
-    border-top-right-radius: 0px;
-    margin-top: 3px;
-}
-
-QTabBar::tab:top:!selected:hover {
-    color: @text;
-    background-color: @state_pressed;
-}
-
-QTabBar::tab:top:first:!selected {
-    border-top-left-radius: @button_radius;
-}
-
-QTabBar::tab:top:last:!selected {
-    border-top-right-radius: @button_radius;
-}
-
-/* LEFT TABS */
-QTabBar::tab:left {
-    color: @text;
-    border: 1px solid @border_light;
-    border-right: 1px transparent;
-    background-color: @surface;
-    padding: 5px 20px;
-    border-top-left-radius: @button_radius;
-    border-bottom-left-radius: @button_radius;
-    min-width: 75px;
-}
-
-QTabBar::tab:left:selected {
-    color: @text;
-    background-color: @surface;
-    border-right: 1px solid @surface;
-}
-
-QTabBar::tab:left:!selected {
-    color: @text_muted;
-    background-color: @surface_sunken;
-    border: 1px transparent @border_light;
-    border-right: 1px solid @border_light;
-    border-top-left-radius: 0px;
-    border-bottom-left-radius: 0px;
-    margin-left: 3px;
-}
-
-QTabBar::tab:left:!selected:hover {
-    color: @text;
-    background-color: @state_pressed;
-}
-
-QTabBar::tab:left:first:!selected {
-    border-top-left-radius: @button_radius;
-}
-
-QTabBar::tab:left:last:!selected {
-    border-bottom-left-radius: @button_radius;
-}
-
-/* BOTTOM TABS */
-QTabBar::tab:bottom {
-    color: @text;
-    border: 1px solid @border_light;
-    border-top: 1px transparent;
-    background-color: @surface;
-    padding: 5px 20px;
-    border-bottom-left-radius: @button_radius;
-    border-bottom-right-radius: @button_radius;
-    min-width: 75px;
-}
-
-QTabBar::tab:bottom:selected {
-    color: @text;
-    background-color: @surface;
-    border-top: 1px solid @surface;
-}
-
-QTabBar::tab:bottom:!selected {
-    color: @text_muted;
-    background-color: @surface_sunken;
-    border: 1px transparent @border_light;
-    border-top: 1px solid @border_light;
-    border-bottom-left-radius: 0px;
-    border-bottom-right-radius: 0px;
-    margin-bottom: 3px;
-}
-
-QTabBar::tab:bottom:!selected:hover {
-    color: @text;
-    background-color: @state_pressed;
-}
-
-QTabBar::tab:bottom:first:!selected {
-    border-bottom-left-radius: @button_radius;
-}
-
-QTabBar::tab:bottom:last:!selected {
-    border-bottom-right-radius: @button_radius;
-}
-
-/* RIGHT TABS */
-QTabBar::tab:right {
-    color: @text;
-    border: 1px solid @border_light;
-    border-left: 1px transparent;
-    background-color: @surface;
-    padding: 5px 20px;
-    border-top-right-radius: @button_radius;
-    border-bottom-right-radius: @button_radius;
-    min-width: 75px;
-}
-
-QTabBar::tab:right:selected {
-    color: @text;
-    background-color: @surface;
-    border-left: 1px solid @surface;
-}
-
-QTabBar::tab:right:!selected {
-    color: @text_muted;
-    background-color: @surface_sunken;
-    border: 1px transparent @border_light;
-    border-left: 1px solid @border_light;
-    border-top-right-radius: 0px;
-    border-bottom-right-radius: 0px;
-    margin-right: 3px;
-}
-
-QTabBar::tab:right:!selected:hover {
-    color: @text;
-    background-color: @state_pressed;
-}
-
-QTabBar::tab:right:first:!selected {
-    border-top-right-radius: @button_radius;
-}
-
-QTabBar::tab:right:last:!selected {
-    border-bottom-right-radius: @button_radius;
 }
 
 
@@ -1325,40 +1089,13 @@ QTreeView::branch:!selected:hover {
     background: @surface_sunken;
 }
 
-QTreeView::branch:has-siblings:!adjoins-item {
-    border-image: url(~icons/branch_vertical.svg);
+/* No branch lines; a parent shows the accordion's chevron. */
+QTreeView::branch:has-children:closed {
+    image: ~icon(chevron_right, icon);
 }
 
-QTreeView::branch:has-siblings:adjoins-item {
-    border-image: url(~icons/branch_more.svg);
-}
-
-QTreeView::branch:!has-children:!has-siblings:adjoins-item {
-    border-image: url(~icons/branch_end.svg);
-}
-
-QTreeView::branch:has-children:!has-siblings:closed,
-QTreeView::branch:closed:has-children:has-siblings {
-    border-image: none;
-    image: url(~icons/branch_closed.svg);
-}
-
-QTreeView::branch:open:has-children:!has-siblings,
-QTreeView::branch:open:has-children:has-siblings  {
-    border-image: none;
-    image: url(~icons/branch_open.svg);
-}
-
-QTreeView::branch:has-children:!has-siblings:closed:hover,
-QTreeView::branch:closed:has-children:has-siblings:hover {
-    border-image: none;
-    image: url(~icons/branch_closed_on.svg);
-}
-
-QTreeView::branch:open:has-children:!has-siblings:hover,
-QTreeView::branch:open:has-children:has-siblings:hover  {
-    border-image: none;
-    image: url(~icons/branch_open_on.svg);
+QTreeView::branch:has-children:open {
+    image: ~icon(expand_more, icon);
 }
 
 QListView,
@@ -1382,6 +1119,22 @@ QTreeView::item:selected {
     border-radius: @button_radius;
 }
 
+/* A list insets a resting row's text 1px inside Qt's own frame, which a
+   highlighted row (no longer native) loses: 1px more keeps the text still.
+   A combo box's list has no such inset. */
+QListView::item:hover,
+QListView::item:selected {
+    padding: 5px 9px;
+}
+
+/* Drawn as a menu's items: the pointer moves the selection. */
+QComboBox QAbstractItemView::item:hover,
+QComboBox QAbstractItemView::item:selected {
+    padding: 4px 8px;
+    color: @text_on_accent_primary;
+    background: @accent_primary;
+}
+
 QListView::item:!selected:hover,
 QTreeView::item:!selected:hover {
     background: @accent_secondary;
@@ -1400,7 +1153,9 @@ QTreeView::item:selected:hover {
    pressed. The handle overhangs the groove by a negative margin, and the
    slider is as thick as an indicator so the handle is never clipped. A
    handle's width excludes its border, so every state keeps a 16 px box and
-   the handle never shifts along the groove. */
+   the handle never shifts along the groove. The empty groove is
+   @control_edge, 3:1 on the surface; the span is told from it by hue and
+   by the handle, since both cannot also read 3:1 on each other. */
 QSlider:horizontal {
     min-height: @indicator_size;
 }
@@ -1414,7 +1169,7 @@ QSlider::sub-page:horizontal {
     border: none;
     height: 4px;
     margin: 0;
-    background: @surface_sunken;
+    background: @control_edge;
     border-radius: 2px;
 }
 
@@ -1423,7 +1178,7 @@ QSlider::add-page:vertical {
     border: none;
     width: 4px;
     margin: 0;
-    background: @surface_sunken;
+    background: @control_edge;
     border-radius: 2px;
 }
 
@@ -1475,7 +1230,7 @@ QSlider::add-page:vertical:disabled {
 
 /* Plain QToolButtons (toolbars, icon buttons) stay flat: transparent
    until hovered. Split buttons (MenuButtonPopup) instead read like
-   QPushButtons — see the popupMode="1" overrides below. */
+   QPushButtons: see the popupMode="1" overrides below. */
 QToolButton {
     background-color: transparent;
     /* Reserved for the hover and focus edges, so neither moves the icon. */
@@ -1537,9 +1292,9 @@ QToolButton:pressed,
 
 /* the subcontrol below is used only in the InstantPopup or DelayedPopup mode */
 QToolButton::menu-indicator {
-    image: url(~icons/down_arrow.svg);
-    width: 8px;
-    height: 8px;
+    image: ~icon(expand_more, icon);
+    width: 12px;
+    height: 12px;
     subcontrol-origin: padding;
     subcontrol-position: right center;
     right: 2px;
@@ -1561,33 +1316,26 @@ QToolButton::menu-button:hover {
 }
 
 QToolButton::menu-arrow {
-    image: url(~icons/down_arrow.svg);
-    width: 8px;
-    height: 8px;
+    image: ~icon(expand_more, icon);
+    width: 12px;
+    height: 12px;
 }
 
 QToolButton::menu-arrow:disabled {
-    image: url(~icons/down_arrow_disabled.svg);
-}
-
-QToolButton::menu-arrow:open {
-    top: 1px; left: 1px; /* shift it a bit */
+    image: ~icon(expand_more, text_disabled);
 }
 
 
 QPushButton::menu-indicator  {
+    image: ~icon(expand_more, icon);
     subcontrol-origin: padding;
     subcontrol-position: right;
-    width: 8px;
-    height: 8px;
-    padding-right: 5px;
+    width: 12px;
+    height: 12px;
 }
 
 QPushButton::menu-indicator:disabled {
-    image: url(~icons/down_arrow_disabled.svg);
-    width: 9px;
-    height: 9px;
-    padding-right: 3px;
+    image: ~icon(expand_more, text_disabled);
 }
 
 
@@ -1660,18 +1408,19 @@ QHeaderView::section:checked
 }
 
 /* style the sort indicator */
+QHeaderView::down-arrow,
+QHeaderView::up-arrow {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+}
+
 QHeaderView::down-arrow {
-    image: url(~icons/down_arrow.svg);
-    width: 7px;
-    height: 7px;
-    margin-right: 7px;
+    image: ~icon(expand_more, icon);
 }
 
 QHeaderView::up-arrow {
-    image: url(~icons/up_arrow.svg);
-    width: 7px;
-    height: 7px;
-    margin-right: 7px;
+    image: ~icon(expand_less, icon);
 }
 
 QTableCornerButton::section {
@@ -1868,14 +1617,11 @@ QPushButton[fxRole="flat"]:pressed
    ==========================================================================
    Focus is shown by changing something the widget already has, never by
    drawing a box around it. Qt's own focus rectangle is off (see `outline` on
-   QWidget above) precisely because it ignores a widget's shape: on a tab it
-   boxed the label inside the tab's own rounded lip.
+   QWidget above) because it ignores a widget's shape.
 
    So each class speaks with the shape it already owns. A widget with a border
    recolours that border, which moves nothing because the border box does not
-   change. A tab lights the one edge whose corners are already rounded, the
-   side facing away from the pane, so the accent traces the tab's silhouette
-   instead of fencing its text. A slider's handle recolours its edge.
+   change. A tab recolours its bar. A slider's handle recolours its edge.
 
    Rules live at the end of the file so they win over the base rules they
    recolour without needing extra specificity.
@@ -1923,30 +1669,11 @@ QSlider[fxFocusVisible="true"]::handle:vertical:focus
     border-color: @text;
 }
 
-/* A tab has a shape already, so the accent goes on the edge whose corners are
-   rounded, the side facing away from the pane. The pane-facing edge is
-   deliberately merged into the pane by the rules above, and lighting it would
-   cut the selected tab away from its own content. Every orientation already
-   carries 1px there, so nothing moves. */
-QTabBar[fxFocusVisible="true"]::tab:top:focus
-{
-    border-top-color: @accent_primary;
-}
-
-QTabBar[fxFocusVisible="true"]::tab:bottom:focus
-{
-    border-bottom-color: @accent_primary;
-}
-
-QTabBar[fxFocusVisible="true"]::tab:left:focus
-{
-    border-left-color: @accent_primary;
-}
-
-QTabBar[fxFocusVisible="true"]::tab:right:focus
-{
-    border-right-color: @accent_primary;
-}
+/* A tab's bar is the accent already, so focus draws it in @text. */
+QTabBar[fxFocusVisible="true"]::tab:top:focus { border-bottom-color: @text; }
+QTabBar[fxFocusVisible="true"]::tab:bottom:focus { border-top-color: @text; }
+QTabBar[fxFocusVisible="true"]::tab:left:focus { border-right-color: @text; }
+QTabBar[fxFocusVisible="true"]::tab:right:focus { border-left-color: @text; }
 
 /* A checkbox and a radio button have no border of their own to recolour, so
    both states declare one and only the colour differs. The indicator's own

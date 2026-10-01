@@ -250,7 +250,7 @@ class FXRangeSlider(QWidget):
         track = self._track_height
         top = middle - track // 2
         painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(theme.surface_sunken))
+        painter.setBrush(QColor(theme.control_edge))
         painter.drawRoundedRect(
             QRectF(margin, top, self.width() - margin * 2, track),
             track / 2,

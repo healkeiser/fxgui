@@ -25,7 +25,9 @@ __email__ = "valentin.onze@gmail.com"
 # Built-in
 import hashlib
 import os
+import re
 import sys
+import tempfile
 import weakref
 from collections import OrderedDict
 from functools import lru_cache
@@ -49,6 +51,8 @@ from qtpy.QtWidgets import (
     QAbstractItemView,
     QAbstractScrollArea,
     QApplication,
+    QComboBox,
+    QFrame,
     QProxyStyle,
     QSplitter,
     QStyle,
@@ -209,8 +213,8 @@ FRAME_PROPERTY = "fxFrame"
 # through mark_as_thin_scroll() rather than by hand.
 THIN_SCROLL_PROPERTY = "fxThinScroll"
 
-# The width, in pixels, of a thin scroll area's bar: `@thin_scroll` in QSS.
-THIN_SCROLL_WIDTH = 6
+# The width, in pixels, of every scroll bar: `@thin_scroll` in QSS.
+THIN_SCROLL_WIDTH = 8
 
 # Per tree level, toward `border_light`; the cap's 48% stays short of a border.
 DEPTH_STEP = 0.12
@@ -887,8 +891,7 @@ def mark_as_frame(widget: QWidget, is_frame: bool = True) -> None:
 def mark_as_thin_scroll(area: QAbstractScrollArea, is_thin: bool = True) -> None:
     """Draw a scroll area as part of the card it sits on.
 
-    No fill of its own, and a narrow bar (`THIN_SCROLL_WIDTH`) with a
-    quiet handle and no arrows, where the theme's full bar is too loud.
+    No fill and no border of its own.
 
     Args:
         area: The scroll area, or any QAbstractScrollArea.
@@ -899,12 +902,8 @@ def mark_as_thin_scroll(area: QAbstractScrollArea, is_thin: bool = True) -> None
     """
     area.setProperty(THIN_SCROLL_PROPERTY, bool(is_thin))
     # Child selectors are matched when the child polishes, not the parent.
-    parts = [area, area.viewport()]
-    for bar in (area.verticalScrollBar(), area.horizontalScrollBar()):
-        parts += [bar, bar.parentWidget()]
-    for part in parts:
-        if part is not None:
-            fxutils.repolish(part)
+    for part in (area, area.viewport()):
+        fxutils.repolish(part)
 
 
 ###### Color Utility Functions
@@ -1320,8 +1319,34 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     return tokens
 
 
+# `~icon(name, token)`: the icon library's `name`, filled with a token.
+_SHEET_ICON = re.compile(r"~icon\((\w+),\s*(\w+)\)")
+
+
+def _sheet_icon(name: str, color: str) -> str:
+    """Return a sheet `url()` of icon `name` filled with `color`.
+
+    A sheet loads an image only from a file, so each colour gets a copy.
+    """
+    folder = Path(tempfile.gettempdir()) / "fxgui" / "sheet_icons"
+    path = folder / f"{name}_{color.lstrip('#')}.svg"
+    if not path.exists():
+        svg = Path(fxicons.get_icon_path(name)).read_text(encoding="utf-8")
+        folder.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            svg.replace("<svg ", f'<svg fill="{color}" ', 1), encoding="utf-8"
+        )
+    return f"url({path.as_posix()})"
+
+
 def _substitute(qss: str, tokens: Dict[str, str]) -> str:
     """Replace each placeholder, longest first so @border spares @border_light."""
+
+    def icon(match: "re.Match") -> str:
+        color = tokens.get(f"@{match.group(2)}")
+        return _sheet_icon(match.group(1), color) if color else match.group(0)
+
+    qss = _SHEET_ICON.sub(icon, qss)
     for key in sorted(tokens, key=len, reverse=True):
         qss = qss.replace(key, tokens[key])
     return qss
@@ -1941,7 +1966,10 @@ _KEYBOARD_REASONS = (
 
 
 class _FocusVisibility(QObject):
-    """Mark a themed widget's focus visible when it came by keyboard."""
+    """Mark a themed widget's focus visible when it came by keyboard.
+
+    It also gives every themed popup, Qt's own included, flyout corners.
+    """
 
     def __init__(self, parent: QObject):
         super().__init__(parent)
@@ -1958,7 +1986,27 @@ class _FocusVisibility(QObject):
             watched, QWidget
         ):
             self._mark(watched, kind == QEvent.FocusIn and self._visible(event))
+        elif (
+            kind == QEvent.Show
+            and isinstance(watched, QWidget)
+            and watched.windowType() == Qt.Popup
+        ):
+            self._dress_popup(watched)
         return False
+
+    @staticmethod
+    def _dress_popup(popup: QWidget) -> None:
+        """Theme a popup Qt shows: frame a combo list, round every corner."""
+        if popup.parentWidget() is None:
+            # A completer's list has no parent; it belongs to the focus.
+            focus = QApplication.focusWidget()
+            if focus is not None and _is_themed(focus):
+                register_themed_root(popup)
+        if not _is_themed(popup):
+            return
+        if isinstance(popup.parentWidget(), QComboBox):
+            _frame_combo_popup(popup)
+        fxutils.round_window_corners(popup)
 
     def _visible(self, event) -> bool:
         reason = event.reason()
@@ -1981,6 +2029,25 @@ class _FocusVisibility(QObject):
 
 
 _focus_visibility: Optional[_FocusVisibility] = None
+
+_POPUP_FRAME = QFrame.Box | QFrame.Plain
+
+
+def _frame_combo_popup(popup: QFrame) -> None:
+    """Edge a combo box's popup frame in `@border` over `@surface`.
+
+    Qt's sheet never styles that frame, and it wears the combo's palette.
+    """
+    colors = _get_theme_namespace()
+    theme_palette = popup.palette()
+    theme_palette.setColor(QPalette.Window, QColor(colors.surface))
+    theme_palette.setColor(QPalette.WindowText, QColor(colors.border))
+    popup.setPalette(theme_palette)
+    if popup.frameStyle() != _POPUP_FRAME:
+        # The list was sized before the edge took its pixels.
+        popup.setFrameStyle(_POPUP_FRAME)
+        popup.setLineWidth(1)
+        popup.resize(popup.width(), popup.height() + 2 * popup.frameWidth())
 
 
 def _watch_focus() -> None:
