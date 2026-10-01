@@ -10,10 +10,13 @@ from qtpy.QtGui import QColor, QHoverEvent
 from qtpy.QtWidgets import (
     QApplication,
     QComboBox,
+    QGroupBox,
+    QLabel,
     QListWidget,
     QSpinBox,
     QStyle,
     QStyleOptionComboBox,
+    QStyleOptionGroupBox,
     QStyleOptionSlider,
     QStyleOptionSpinBox,
     QTableWidget,
@@ -222,3 +225,38 @@ def test_combo_spin_and_header_arrows_wear_the_icon_token(qtbot, theme):
     right = header.sectionViewportPosition(0) + header.sectionSize(0)
     mark = QRect(right - 20, 0, 20, header.height())
     assert _ink_near(image, mapped(header, mark), icon) <= 40
+
+
+# (4) A group box's title sits above a whole rounded card.
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+@pytest.mark.parametrize("checkable", [False, True], ids=["plain", "checkable"])
+def test_a_group_title_sits_above_a_whole_card(qtbot, theme, checkable):
+    group = QGroupBox("Render settings")
+    group.setCheckable(checkable)
+    QVBoxLayout(group).addWidget(QLabel("inside"))
+    window = _shown(qtbot, theme, group)
+    option = QStyleOptionGroupBox()
+    group.initStyleOption(option)
+
+    def rect(control):
+        return group.style().subControlRect(
+            QStyle.CC_GroupBox, option, control, group
+        ).translated(group.mapTo(window, QPoint()))
+
+    title = rect(QStyle.SC_GroupBoxLabel)
+    frame = rect(QStyle.SC_GroupBoxFrame)
+    assert title.bottom() < frame.top(), (title, frame)
+    image = window.grab().toImage()
+    border = fxstyle.colors().border.lower()
+    # The top edge is whole under the title, and the corners are round.
+    top = {
+        image.pixelColor(x, frame.top()).name()
+        for x in range(frame.left() + 12, frame.right() - 12)
+    }
+    assert top == {border}, top
+    assert image.pixelColor(frame.topLeft()).name() != border
+    assert image.pixelColor(
+        frame.left(), frame.top() + fxstyle.CARD_RADIUS
+    ).name() == border

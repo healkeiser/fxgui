@@ -437,18 +437,18 @@ QLineEdit
     color: @text;
 }
 
+/* The title sits in the margin above a whole card, never cut into its
+   border; the margin is in em so it grows with the font. */
 QGroupBox {
-    border:1px solid @border;
-    border-radius: @button_radius;
-    margin-top: 20px;
+    border: 1px solid @border;
+    border-radius: @card_radius;
+    margin-top: 1.75em;
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
-    subcontrol-position: top center;
-    padding-left: 10px;
-    padding-right: 10px;
-    padding-top: 10px;
+    subcontrol-position: top left;
+    padding: 0px 2px;
 }
 
 /* A scroll bar is a pill on whatever it scrolls: no track, no arrows. The
