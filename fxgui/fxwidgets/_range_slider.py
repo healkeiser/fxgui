@@ -80,9 +80,9 @@ class FXRangeSlider(QWidget):
         # Handle addressed by keyboard input (arrow keys); Tab toggles it
         # while the widget has focus.
         self._active_handle = self.HANDLE_LOW
-        # A QSlider's 14 px handle on its 6 px groove.
-        self._handle_radius = 7
-        self._track_height = 6
+        # A QSlider's 16 px handle on its 4 px groove.
+        self._handle_radius = 8
+        self._track_height = 4
 
         # Setup widget
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -213,15 +213,22 @@ class FXRangeSlider(QWidget):
         return self.HANDLE_NONE
 
     def _handle_inks(self, handle: int):
-        """Return a handle's fill and edge, as a QSlider's handle wears them."""
+        """Return a handle's fill, edge and edge width, as a QSlider's."""
         theme = fxstyle.colors()
         if not self.isEnabled():
-            return theme.surface, theme.border
-        if fxstyle.focus_visible(self) and self._active_handle == handle:
-            return theme.text_on_accent_primary, theme.accent_primary
-        if handle in (self._hover_handle, self._pressed_handle):
-            return theme.slider_thumb_hover, theme.control_edge
-        return theme.slider_thumb, theme.control_edge
+            return theme.surface, theme.border, 2
+        fill = (
+            theme.accent_primary
+            if handle == self._pressed_handle
+            else theme.surface
+        )
+        edge = (
+            theme.text
+            if fxstyle.focus_visible(self) and self._active_handle == handle
+            else theme.accent_primary
+        )
+        width = 4 if handle in (self._hover_handle, self._pressed_handle) else 2
+        return fill, edge, width
 
     def paintEvent(self, event) -> None:
         """Paint the groove, the span between the handles, and the values."""
@@ -251,21 +258,18 @@ class FXRangeSlider(QWidget):
         )
 
         side = self._handle_radius * 2
-        radius = fxstyle.BUTTON_RADIUS
         for handle, x in ((self.HANDLE_LOW, low_x), (self.HANDLE_HIGH, high_x)):
-            fill, edge = self._handle_inks(handle)
+            fill, edge, width = self._handle_inks(handle)
             painter.setBrush(QColor(fill))
-            painter.setPen(QPen(QColor(edge), 1))
-            # Half a pixel in, so the whole 1 px edge is drawn.
-            painter.drawRoundedRect(
+            painter.setPen(QPen(QColor(edge), width))
+            # Half the pen in, so the whole edge falls inside the circle.
+            painter.drawEllipse(
                 QRectF(
-                    round(x) - self._handle_radius + 0.5,
-                    middle - self._handle_radius + 0.5,
-                    side - 1,
-                    side - 1,
-                ),
-                radius,
-                radius,
+                    round(x) - self._handle_radius + width / 2,
+                    middle - self._handle_radius + width / 2,
+                    side - width,
+                    side - width,
+                )
             )
 
         if self._show_values:

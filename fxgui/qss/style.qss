@@ -1395,36 +1395,71 @@ QTreeView::item:selected:hover {
     color: @text_on_accent_primary;
 }
 
-/* A slider is a sunken well, an accent span and a handle whose edge reads
-   at 3:1 on the surface. Hover lifts the fill; focus is at the end. */
-QSlider::groove:horizontal {
+/* A slider is a 4 px pill, its filled span the accent, and a round handle:
+   surface fill and accent edge, a thicker edge on hover, an accent fill while
+   pressed. The handle overhangs the groove by a negative margin, and the
+   slider is as thick as an indicator so the handle is never clipped. A
+   handle's width excludes its border, so every state keeps a 16 px box and
+   the handle never shifts along the groove. */
+QSlider:horizontal {
+    min-height: @indicator_size;
+}
+
+QSlider:vertical {
+    min-width: @indicator_size;
+}
+
+QSlider::groove:horizontal,
+QSlider::sub-page:horizontal {
     border: none;
-    height: 6px;
+    height: 4px;
+    margin: 0;
     background: @surface_sunken;
-    margin: 2px 0;
-    border-radius: 3px;
+    border-radius: 2px;
+}
+
+QSlider::groove:vertical,
+QSlider::add-page:vertical {
+    border: none;
+    width: 4px;
+    margin: 0;
+    background: @surface_sunken;
+    border-radius: 2px;
+}
+
+/* A vertical slider fills from the bottom, which is its add-page. */
+QSlider::sub-page:horizontal,
+QSlider::add-page:vertical {
+    background: @accent_primary;
+}
+
+QSlider::handle:horizontal,
+QSlider::handle:vertical {
+    background: @surface;
+    border: 2px solid @accent_primary;
+    width: 12px;
+    height: 12px;
+    border-radius: 8px;
 }
 
 QSlider::handle:horizontal {
-    background: @slider_thumb;
-    border: 1px solid @control_edge;
-    width: 14px;
-    height: 14px;
-    margin: -4px 0;
-    border-radius: @button_radius;
+    margin: -6px 0;
+}
+
+QSlider::handle:vertical {
+    margin: 0 -6px;
 }
 
 QSlider::handle:horizontal:hover,
-QSlider::handle:horizontal:pressed {
-    background: @slider_thumb_hover;
+QSlider::handle:vertical:hover {
+    border-width: 4px;
+    width: 8px;
+    height: 8px;
 }
 
-QSlider::sub-page:horizontal {
-    border: none;
-    height: 6px;
+QSlider::handle:horizontal:pressed,
+QSlider::handle:vertical:pressed {
     background: @accent_primary;
-    margin: 2px 0;
-    border-radius: 3px;
 }
 
 QSlider::handle:horizontal:disabled,
@@ -1434,38 +1469,8 @@ QSlider::handle:vertical:disabled {
 }
 
 QSlider::sub-page:horizontal:disabled,
-QSlider::sub-page:vertical:disabled {
+QSlider::add-page:vertical:disabled {
     background: @border_strong;
-}
-
-QSlider::groove:vertical {
-    border: none;
-    width: 6px;
-    background: @surface_sunken;
-    margin: 0 0px;
-    border-radius: 3px;
-}
-
-QSlider::handle:vertical {
-    background: @slider_thumb;
-    border: 1px solid @control_edge;
-    width: 14px;
-    height: 14px;
-    margin: 0 -4px;
-    border-radius: @button_radius;
-}
-
-QSlider::handle:vertical:hover,
-QSlider::handle:vertical:pressed {
-    background: @slider_thumb_hover;
-}
-
-QSlider::sub-page:vertical {
-    border: none;
-    width: 6px;
-    background: @accent_primary;
-    margin: 0 0px;
-    border-radius: 3px;
 }
 
 /* Plain QToolButtons (toolbars, icon buttons) stay flat: transparent
@@ -1870,8 +1875,7 @@ QPushButton[fxRole="flat"]:pressed
    recolours that border, which moves nothing because the border box does not
    change. A tab lights the one edge whose corners are already rounded, the
    side facing away from the pane, so the accent traces the tab's silhouette
-   instead of fencing its text. A slider's handle changes colour rather than
-   growing a ring.
+   instead of fencing its text. A slider's handle recolours its edge.
 
    Rules live at the end of the file so they win over the base rules they
    recolour without needing extra specificity.
@@ -1911,28 +1915,12 @@ QToolButton[popupMode="2"][fxFocusVisible="true"]:focus
     border: 1px solid @accent_primary;
 }
 
-/* The handle changes colour; nothing is drawn around it. Note the selector
-   order: `QSlider:focus::handle` matches whether or not the slider has focus,
-   so it would recolour every handle permanently.
-
-   The accent cannot carry this one on its own: the filled half of the groove
-   is already an accent gradient, so an accent handle sitting on it reads as a
-   paler blob on a blue bar and loses the contrast the unfocused handle has.
-   The handle wears the token defined to be read against the accent instead,
-   which is exactly the situation it is in, and which is guaranteed to clear
-   3:1 against that track on every theme.
-
-   `slider_thumb_hover` was the other candidate and is the wrong one twice
-   over: it is a barely perceptible lift in some themes (1.07:1 in dracula)
-   and it is the hover colour, so a focused handle would have been
-   indistinguishable from a hovered one. The border carries the accent so the
-   two states stay apart, and it is the one theme where the fill cannot
-   change, light, whose handle is already white. */
+/* The handle's edge is the accent at rest, so focus rings it in @text.
+   `QSlider:focus::handle` would match an unfocused slider too. */
 QSlider[fxFocusVisible="true"]::handle:horizontal:focus,
 QSlider[fxFocusVisible="true"]::handle:vertical:focus
 {
-    background: @text_on_accent_primary;
-    border-color: @accent_primary;
+    border-color: @text;
 }
 
 /* A tab has a shape already, so the accent goes on the edge whose corners are

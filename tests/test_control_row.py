@@ -141,6 +141,13 @@ def test_everything_centres_on_one_line(row, name):
     assert abs(centre - line) <= 1, (name, centre, line)
 
 
+def test_a_slider_fits_in_the_row(row):
+    slider = row.widgets["QSlider"]
+    height = fxstyle.control_height(row.widgets["QPushButton"])
+    assert fxstyle.INDICATOR_SIZE <= slider.height() <= height
+    assert slider.rect().contains(_mark_box(slider))
+
+
 def test_the_switch_track_is_the_indicator_size(row):
     track = row.widgets["FXToggleSwitch"].track_rect()
     assert track.height() == fxstyle.INDICATOR_SIZE

@@ -12,7 +12,7 @@ Three properties are pinned here, and the third is a design constraint rather
 than an accessibility one:
 
 - the indicator is visible, measured as pixels of the theme's accent gained
-  when focus arrives,
+  when focus arrives (of `@text` on a slider, whose edge is the accent),
 - the indicator costs nothing, measured as the widget's geometry and size
   hint being identical focused and unfocused. A ring that widens a border
   reflows the layout under the person's cursor, and
@@ -240,7 +240,9 @@ def _focus_target(widget):
 def test_focus_gains_accent_pixels(qtbot, themed, name, factory):
     """Tabbing onto the widget has to change what is on screen."""
 
-    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
+    # A slider handle's edge is already the accent; focus rings it in text.
+    ink = "text" if name == "slider" else "accent_primary"
+    accent = QColor(fxstyle.get_theme_colors()[ink])
     widget = factory()
     # The window owns the widget, so it has to outlive the measurement
     window, _ = _hosted(qtbot, widget)
@@ -695,18 +697,11 @@ def test_qt_focus_rectangle_is_off_for_the_group_box(qtbot, themed):
     )
 
 
-def test_focused_slider_handle_changes_its_own_colour(qtbot, themed):
-    """Nothing is drawn around the handle: the handle's own fill changes.
-
-    The accent cannot do this alone, because the filled half of the groove is
-    already an accent gradient and an accent handle loses the contrast the
-    unfocused handle has against it. The handle wears the token defined to be
-    read against the accent, which is the situation it is in, and the accent
-    goes on its existing 1px border so focus stays distinct from hover.
-    """
+def test_a_focused_slider_rings_its_handle_in_text(qtbot, themed):
+    """The handle's accent edge turns `@text`, so focus differs from hover."""
 
     theme = fxstyle.get_theme_colors()
-    fill = QColor(fxstyle._get_theme_namespace().text_on_accent_primary)
+    text = QColor(theme["text"])
     accent = QColor(theme["accent_primary"])
 
     widget = QSlider(Qt.Horizontal)
@@ -719,11 +714,10 @@ def test_focused_slider_handle_changes_its_own_colour(qtbot, themed):
     after = widget.grab().toImage()
     _save(after, "focus_slider_designed.png")
 
-    assert _count(after, fill) > _count(before, fill), (
-        "the handle's own fill did not change"
+    assert _count(after, text) > _count(before, text), (
+        "the handle's edge did not take the text colour"
     )
-    assert _count(after, accent) > _count(before, accent), (
-        "the handle's border did not take the accent"
+    assert _count(after, accent) < _count(before, accent), (
+        "the ring was drawn beside the accent edge, not instead of it"
     )
-    # A ring around the handle would have grown it
     assert widget.sizeHint() == hint
