@@ -869,7 +869,7 @@ def depth_shade(base: Union[str, QColor], depth: int) -> str:
         depth: How many rows sit above it; 0 is a top-level row.
 
     Examples:
-        >>> fxstyle.depth_shade(colors["surface"], 2)
+        >>> fxstyle.depth_shade(fxstyle.colors().surface, 2)
     """
     base = QColor(base).name()
     if depth <= 0:
