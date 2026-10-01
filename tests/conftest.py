@@ -17,7 +17,7 @@ import pytest  # noqa: E402
 def _isolate_fxgui_state(tmp_path, monkeypatch):
     """Isolate persistent and cached fxgui state per test.
 
-    - Redirects fxconfig's settings file to a temp directory so tests never
+    - Points user-scope INI settings at a temp directory so tests never
       touch the user's real ``%APPDATA%/fxgui/settings.ini`` (apply_theme
       persists the theme).
     - Starts every test on the dark theme with the pointer off every
@@ -32,10 +32,14 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     temp = tmp_path / "tmp"
     temp.mkdir()
     monkeypatch.setattr(tempfile, "tempdir", str(temp))
-    monkeypatch.setattr(fxconfig, "CONFIG_DIR", tmp_path / "fxgui")
-    monkeypatch.setattr(
-        fxconfig, "SETTINGS_FILE", tmp_path / "fxgui" / "settings.ini"
+    from qtpy.QtCore import QSettings
+
+    # Every user-scope INI file, fxconfig's included, lands in this test's
+    # own folder; the previous test's QSettings is dropped first.
+    QSettings.setPath(
+        QSettings.IniFormat, QSettings.UserScope, str(tmp_path / "settings")
     )
+    monkeypatch.setattr(fxconfig, "_APP_NAME", "fxgui")
     monkeypatch.setattr(fxconfig, "_settings_instance", None)
     # Widget modules register their fragments at import; keep those.
     fragments = dict(fxstyle._widget_fragments)

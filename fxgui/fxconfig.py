@@ -1,18 +1,10 @@
 """Configuration and settings management for `fxgui`.
 
-This module provides persistent storage for application settings using
-QSettings with INI format. Settings are stored in platform-appropriate
-locations:
-    - Windows: %APPDATA%/fxgui/settings.ini
-    - Unix/macOS: ~/.fxgui/settings.ini
-
-Functions:
-    get_value: Get a setting value.
-    set_value: Set a setting value.
+One INI file per application, where `QSettings` puts a user-scope one:
+    - Windows: %APPDATA%/<name>/settings.ini
+    - Unix/macOS: ~/.config/<name>/settings.ini
 
 Examples:
-    Getting and setting values:
-
     >>> from fxgui import fxconfig
     >>> fxconfig.set_value("theme/current", "dracula")
     >>> theme = fxconfig.get_value("theme/current", "dark")
@@ -22,91 +14,35 @@ Examples:
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
-
-###### Imports
-
 # Built-in
-import os
-import sys
-from pathlib import Path
 from typing import Any, Optional
 
 # Third-party
 from qtpy.QtCore import QSettings
 
 
-###### Public API
-
-__all__ = [
-    "get_application_name",
-    "get_value",
-    "set_application_name",
-    "set_value",
-    "SETTINGS_FILE",
-]
-
-
-###### Constants
+__all__ = ["get_value", "set_application_name", "set_value"]
 
 _APP_NAME = "fxgui"
-
-
-def _get_config_dir() -> Path:
-    """Get the platform-appropriate configuration directory.
-
-    Returns:
-        Path to the configuration directory:
-        - Windows: %APPDATA%/fxgui
-        - Unix/macOS: ~/.fxgui
-    """
-    if sys.platform == "win32":
-        # Use APPDATA on Windows
-        appdata = os.environ.get("APPDATA")
-        if appdata:
-            return Path(appdata) / _APP_NAME
-        # Fallback to user home
-        return Path.home() / _APP_NAME
-    else:
-        # Use hidden directory in home on Unix/macOS
-        return Path.home() / f".{_APP_NAME}"
-
-
-# Configuration directory and settings file
-CONFIG_DIR = _get_config_dir()
-SETTINGS_FILE = CONFIG_DIR / "settings.ini"
-
-
-###### Private Helpers
-
 _settings_instance: Optional[QSettings] = None
-
-
-###### Public Functions
 
 
 def set_application_name(name: str) -> None:
     """Scope fxgui settings (including the persisted theme) to an application.
 
-    By default every tool built on fxgui shares one settings file, so e.g.
-    changing the theme in one tool changes it for all of them. Calling this
-    early in your application's startup isolates its settings in its own
-    file:
-
-    - Windows: ``%APPDATA%/<name>/settings.ini``
-    - Unix/macOS: ``~/.<name>/settings.ini``
+    By default every tool built on fxgui shares one settings file, so a theme
+    changed in one tool changes it for all. Call this early at startup.
 
     Args:
-        name: The application name to scope settings under. Must be a
-            non-empty, filesystem-safe string.
+        name: The application name, the settings file's folder.
 
     Raises:
         ValueError: If the name is empty or contains path separators.
 
     Examples:
-        >>> from fxgui import fxconfig
         >>> fxconfig.set_application_name("my_studio_tool")
     """
-    global _APP_NAME, CONFIG_DIR, SETTINGS_FILE, _settings_instance
+    global _APP_NAME, _settings_instance
 
     if not name or not name.strip():
         raise ValueError("Application name must be a non-empty string.")
@@ -114,29 +50,17 @@ def set_application_name(name: str) -> None:
         raise ValueError(
             f"Application name '{name}' must not contain path separators."
         )
-
     _APP_NAME = name.strip()
-    CONFIG_DIR = _get_config_dir()
-    SETTINGS_FILE = CONFIG_DIR / "settings.ini"
-    _settings_instance = None  # Recreated lazily against the new file
-
-
-def get_application_name() -> str:
-    """Return the application name settings are currently scoped under.
-
-    Returns:
-        The current application name ("fxgui" unless changed via
-        `set_application_name()`).
-    """
-    return _APP_NAME
+    _settings_instance = None
 
 
 def _settings() -> QSettings:
-    """Return the cached QSettings on the settings file, creating its folder."""
+    """Return the cached QSettings on this application's INI file."""
     global _settings_instance
     if _settings_instance is None:
-        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-        _settings_instance = QSettings(str(SETTINGS_FILE), QSettings.IniFormat)
+        _settings_instance = QSettings(
+            QSettings.IniFormat, QSettings.UserScope, _APP_NAME, "settings"
+        )
     return _settings_instance
 
 
@@ -145,7 +69,8 @@ def get_value(key: str, default: Any = None) -> Any:
 
     Args:
         key: The setting key (e.g., "theme/current").
-        default: Default value if the key doesn't exist.
+        default: Default value if the key doesn't exist. A bool, int or
+            float default also names the type the value is read as.
 
     Returns:
         The setting value, or the default if not found.
@@ -153,8 +78,10 @@ def get_value(key: str, default: Any = None) -> Any:
     Examples:
         >>> theme = fxconfig.get_value("theme/current", "dark")
     """
-    settings = _settings()
-    return settings.value(key, default)
+    # An INI file holds strings; a typed default names the type to read.
+    if isinstance(default, (bool, int, float)):
+        return _settings().value(key, default, type=type(default))
+    return _settings().value(key, default)
 
 
 def set_value(key: str, value: Any) -> None:
