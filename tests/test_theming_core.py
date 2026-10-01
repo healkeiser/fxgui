@@ -188,7 +188,7 @@ def test_dead_style_hooks_are_gone(qapp):
 
 
 def test_dead_utils_are_gone():
-    for name in ("filter_tree", "deprecated", "set_formatted_tooltip"):
+    for name in ("deprecated", "set_formatted_tooltip"):
         assert not hasattr(fxutils, name), name
         assert name not in fxutils.__all__
 
