@@ -41,7 +41,7 @@ def test_the_colour_does_not_depend_on_the_run(qtbot):
 
 def test_initials_read_on_every_disc(qapp):
     for disc in AVATAR_COLORS:
-        ink = fxstyle.get_contrast_text_color(disc)
+        ink = fxstyle.readable_ink(disc)
         assert fxstyle.get_contrast_ratio(disc, ink) >= 4.5, disc
 
 
@@ -70,11 +70,27 @@ def test_size_is_fixed_and_follows_set_size(qtbot):
     parent = QWidget()
     qtbot.addWidget(parent)
     avatar = FXAvatar("Anne", parent)
-    assert avatar.sizeHint() == QSize(26, 26)
-    assert avatar.minimumSizeHint() == QSize(26, 26)
+    assert avatar.minimumSize() == avatar.maximumSize() == QSize(26, 26)
     avatar.set_size(48)
-    assert avatar.sizeHint() == QSize(48, 48)
+    assert avatar.minimumSize() == avatar.maximumSize() == QSize(48, 48)
     assert avatar.size() == QSize(48, 48)
+
+
+def test_a_photo_s_ring_is_the_theme_s_light_border(qtbot):
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    photo = QPixmap(40, 40)
+    photo.fill(QColor("#00ff00"))
+    avatar = FXAvatar("Anne", parent, size=40, pixmap=photo)
+    for theme in ("dark", "light"):
+        fxstyle.apply_theme(theme)
+        ring = avatar.grab().toImage().pixelColor(20, 0)
+        want = QColor(fxstyle.colors().border_light)
+        # Antialiasing lets a little of the photo through.
+        apart = max(abs(ring.red() - want.red()),
+                    abs(ring.green() - want.green()),
+                    abs(ring.blue() - want.blue()))
+        assert apart <= 16, (ring.name(), want.name())
 
 
 def test_name_and_tooltip_follow_set_name(qtbot):
