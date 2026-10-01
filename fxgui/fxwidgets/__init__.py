@@ -154,3 +154,7 @@ __all__ = [
     "FXWidget",
     "theme_manager",
 ]
+
+from fxgui.fxwidgets._status_bar import FXStatusItem  # noqa: E402
+
+__all__ += ["FXStatusItem"]

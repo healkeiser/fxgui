@@ -8,7 +8,7 @@ from webbrowser import open_new_tab
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, QSize, Qt
-from qtpy.QtGui import QAction, QIcon
+from qtpy.QtGui import QAction, QIcon, QStatusTipEvent
 from qtpy.QtWidgets import (
     QActionGroup,
     QApplication,
@@ -144,7 +144,7 @@ class FXMainWindow(QMainWindow):
         self.window_title: Optional[str] = title
         self.window_size: Optional[Tuple[int, int]] = size
         self.documentation: Optional[str] = documentation
-        self.project: str = project or "Project"
+        self.project: str = project or ""
         self.version: str = version or "0.0.0"
         self.company: str = company or "\u00a9 Company"
         self.ui_file: Optional[str] = ui_file
@@ -798,6 +798,15 @@ class FXMainWindow(QMainWindow):
         super().setMenuBar(menu_bar)
         if menu_bar is not None:
             self._adopt_menu_bar(menu_bar)
+
+    def event(self, event: QEvent) -> bool:
+        """Write a hover tip after the status items, never over them."""
+        if isinstance(event, QStatusTipEvent):
+            bar = self.statusBar()
+            if isinstance(bar, FXStatusBar):
+                bar.show_tip(event.tip())
+                return True
+        return super().event(event)
 
     def setWindowTitle(self, title: str) -> None:
         """Set the window title; `None` or empty reads "Window"."""

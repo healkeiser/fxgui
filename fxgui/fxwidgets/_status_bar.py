@@ -1,19 +1,33 @@
-"""Custom status bar widget."""
+"""Custom status bar widget, and the status items it holds."""
 
 # Built-in
 import logging
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QEvent, Qt, Slot
-from qtpy.QtGui import QColor, QIcon, QLinearGradient, QPainter, QPixmap
-from qtpy.QtWidgets import QLabel, QStatusBar, QWidget
+from qtpy.QtCore import QEvent, QRectF, QSize, Qt, Slot
+from qtpy.QtGui import (
+    QColor,
+    QIcon,
+    QLinearGradient,
+    QPainter,
+    QPainterPath,
+    QPixmap,
+)
+from qtpy.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QStatusBar,
+    QToolButton,
+    QWidget,
+)
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._constants import INFO
 from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._severity import log, severity
+from fxgui.fxwidgets._tips import apply_tip
 
 # The painted lines replace the base sheet's top border.
 fxstyle.register_widget_style(
@@ -27,17 +41,190 @@ fxstyle.register_widget_style(
 # Accent line height, then the border line under it.
 STATUS_LINE_HEIGHT = 3
 
+# The side of a status item's icon, the size of the bar's message icon.
+ICON_SIZE = 14
+
+# Between an item's icon and its word.
+_ICON_GAP = 4
+
+# Least contrast of a toned icon on the bar: WCAG's floor for graphics.
+_ICON_CONTRAST = 3.0
+
+# Between the window's left edge and the first item or message.
+_LEFT_MARGIN = 6
+
+
+class FXStatusItem(QToolButton):
+    """An icon and a word on a status bar, flat, lit when it is clickable.
+
+    Painted against the bar as the bar is painted at that moment, a
+    message's tint included, so its ink always reads. Hidden while it has
+    no text.
+
+    Args:
+        text: The word shown. Defaults to `""`.
+        icon: An fxicons icon name. Defaults to `None`.
+        parent: Parent widget. Defaults to `None`.
+        clickable: Whether a click does something; otherwise plain text
+            that takes no mouse. Defaults to `True`.
+
+    Examples:
+        >>> item = FXStatusItem("3", "warning")
+        >>> window.statusBar().add_item(item)
+        >>> item.clicked.connect(show_log)
+    """
+
+    radius = fxstyle.BUTTON_RADIUS
+
+    def __init__(
+        self,
+        text: str = "",
+        icon: Optional[str] = None,
+        parent: Optional[QWidget] = None,
+        clickable: bool = True,
+    ):
+        super().__init__(parent)
+        self.icon_name = icon or ""
+        self.muted = False
+        self.clickable = clickable
+        self._tone = ""
+        self.setAutoRaise(True)
+        self.setFocusPolicy(Qt.NoFocus)
+        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setIconSize(QSize(ICON_SIZE, ICON_SIZE))
+        self.set_clickable(clickable)
+        self.setText(text)
+
+    def setText(self, text: str) -> None:
+        """Show `text`; an item with none hides."""
+        super().setText(text)
+        self._sync_visible()
+        self.updateGeometry()
+
+    def show_state(
+        self, text: str, icon: str, muted: bool = False, tone: str = ""
+    ) -> None:
+        """Show `text` beside `icon`, muted or in a feedback `tone`.
+
+        Args:
+            text: The word shown.
+            icon: An fxicons icon name.
+            muted: Whether the word takes the muted ink.
+            tone: A feedback level ("error", "warning", ...) for the icon,
+                or `""` for the word's ink.
+        """
+        self.icon_name, self.muted, self._tone = icon, muted, tone
+        self.setText(text)
+        self.update()
+
+    def set_clickable(self, clickable: bool) -> None:
+        """Make a click do something, or make the item plain text."""
+        self.clickable = clickable
+        self.setAttribute(Qt.WA_TransparentForMouseEvents, not clickable)
+        self.update()
+
+    def set_tip(self, title: str, body: str = "", keys: str = "") -> None:
+        """Say what the item is and what its click does."""
+        apply_tip(self, title, body, keys)
+        # Qt would write a status tip over the bar's own items.
+        self.setStatusTip("")
+
+    def ground(self) -> str:
+        """Return the colour the item is drawn on now."""
+        bar = self._bar()
+        if bar is not None:
+            return bar.ground()
+        return self.palette().color(self.backgroundRole()).name()
+
+    def ink(self) -> str:
+        """Return the word's colour on the ground the item is drawn on now."""
+        return self._ink(self.ground())
+
+    def _bar(self) -> Optional["FXStatusBar"]:
+        widget = self.parentWidget()
+        while widget is not None and not isinstance(widget, FXStatusBar):
+            widget = widget.parentWidget()
+        return widget
+
+    def _ink(self, ground: str) -> str:
+        theme = fxstyle.colors()
+        word = theme.text_muted if self.muted else theme.text
+        return fxstyle.readable_ink(ground, word)
+
+    def _icon_ink(self, ground: str, ink: str) -> str:
+        bar = self._bar()
+        # On a tint the feedback colour is the ground's own hue.
+        if self.muted or not self._tone or (bar is not None and bar.tint()):
+            return ink
+        tone = fxstyle.get_feedback_colors()[self._tone]["foreground"]
+        return fxstyle.readable_ink(ground, tone, _ICON_CONTRAST)
+
+    def sizeHint(self) -> QSize:
+        """Return the icon, the word and the side padding."""
+        metrics = self.fontMetrics()
+        width = 2 * self.radius + metrics.horizontalAdvance(self.text())
+        if self.icon_name:
+            width += self.iconSize().width() + _ICON_GAP
+        height = max(self.iconSize().height(), metrics.height()) + 4
+        return QSize(width, height)
+
+    def minimumSizeHint(self) -> QSize:
+        """Return `sizeHint`: an item is never squeezed."""
+        return self.sizeHint()
+
+    def paintEvent(self, event) -> None:
+        """Paint the hover fill, the icon and the word against the bar."""
+        ground = self.ground()
+        lit = self.clickable and self.isEnabled() and self.underMouse()
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        if lit:
+            ground = fxstyle.colors().state_hover
+            path = QPainterPath()
+            path.addRoundedRect(QRectF(self.rect()), self.radius, self.radius)
+            painter.fillPath(path, QColor(ground))
+        ink = self._ink(ground)
+        x = self.radius
+        if self.icon_name:
+            size = self.iconSize()
+            top = (self.height() - size.height()) // 2
+            icon = fxicons.get_icon(
+                self.icon_name, color=self._icon_ink(ground, ink))
+            icon.paint(painter, x, top, size.width(), size.height())
+            x += size.width() + _ICON_GAP
+        painter.setPen(QColor(ink))
+        painter.drawText(
+            self.rect().adjusted(x, 0, 0, 0),
+            int(Qt.AlignLeft | Qt.AlignVCenter),
+            self.text(),
+        )
+        painter.end()
+
+    def changeEvent(self, event: QEvent) -> None:
+        """Show or hide by the text once the item has a parent."""
+        super().changeEvent(event)
+        if event.type() == QEvent.ParentChange:
+            self._sync_visible()
+
+    def _sync_visible(self) -> None:
+        # Shown without a parent, an item would open as its own window.
+        if self.parentWidget() is not None or not self.text():
+            self.setVisible(bool(self.text()))
+
 
 class FXStatusBar(QStatusBar):
     """Customized QStatusBar class.
 
     The accent line and the border under it are painted along the top,
     except on the frame (`fxstyle.mark_as_frame`) or after
-    `hide_status_line`.
+    `hide_status_line`. `add_item` puts `FXStatusItem`s on the left,
+    before the message, which never hides them, or on the right, before
+    the company.
 
     Args:
         parent (QWidget, optional): Parent widget. Defaults to `None`.
-        project (str, optional): Project name. Defaults to `None`.
+        project (str, optional): Project name; `None` leaves it blank.
+            Defaults to `None`.
         version (str, optional): Version information. Defaults to `None`.
         company (str, optional): Company name. Defaults to `None`.
 
@@ -47,9 +234,10 @@ class FXStatusBar(QStatusBar):
         company (str): The company name.
         icon_label (QLabel): The icon label.
         message_label (QLabel): The message label.
-        project_label (QLabel): The project label.
-        version_label (QLabel): The version label.
-        company_label (QLabel): The company label.
+        project_label (FXStatusItem): The project, plain until
+            `set_clickable(True)`.
+        version_label (FXStatusItem): The version, likewise.
+        company_label (FXStatusItem): The company, likewise.
     """
 
     def __init__(
@@ -65,29 +253,96 @@ class FXStatusBar(QStatusBar):
         # Line state; `None` colours read the theme when painted.
         self._line_wanted = True
         self._line_colors: Optional[Tuple[str, str]] = None
+        self._tint: Optional[str] = None
         self._tint_border: Optional[str] = None
+        self._message = ""
+        self._right_items = 0
 
         # Attributes
-        self.project = project or "Project"
+        self.project = project or ""
         self.version = version or "0.0.0"
-        self.company = company or "\u00a9 Company"
-        self.icon_label = FXIconLabel(size=14)
+        self.company = company or "© Company"
+        self.icon_label = FXIconLabel(size=ICON_SIZE)
         self.message_label = QLabel()
-        self.project_label = QLabel(self.project)
-        self.version_label = QLabel(self.version)
-        self.company_label = QLabel(self.company)
-
         self.message_label.setTextFormat(Qt.RichText)
 
+        # Permanent, so no message hides the items; the message follows.
+        self._left = QWidget()
+        self._left.setObjectName("fxStatusItems")
+        self._left_row = QHBoxLayout(self._left)
+        self._left_row.setContentsMargins(_LEFT_MARGIN, 0, 0, 0)
+        self._left_row.setSpacing(0)
         for widget in (self.icon_label, self.message_label):
-            self.addWidget(widget)
+            self._left_row.addWidget(widget)
             widget.setVisible(False)  # Hide if no message is shown
+        self._left_row.addStretch(1)
+        self.addPermanentWidget(self._left, 1)
 
-        for widget in (self.project_label, self.version_label, self.company_label):
-            self.addPermanentWidget(widget)
+        self.project_label = FXStatusItem(self.project, clickable=False)
+        self.version_label = FXStatusItem(self.version, clickable=False)
+        self.company_label = FXStatusItem(self.company, clickable=False)
+        for item in (self.project_label, self.version_label, self.company_label):
+            self.addPermanentWidget(item)
 
         self.messageChanged.connect(self._on_status_message_changed)
         fxstyle.theme_changed.connect(self._theme_switched)
+
+    def add_item(self, item: FXStatusItem, side: str = "left") -> None:
+        """Put `item` on the bar, after the items already on that side.
+
+        Args:
+            item: The item to add.
+            side: "left", before the message, or "right", before the
+                company.
+
+        Raises:
+            ValueError: `side` is neither "left" nor "right".
+        """
+        if side == "left":
+            self._left_row.insertWidget(
+                self._left_row.indexOf(self.icon_label), item)
+        elif side == "right":
+            # After the left group, the project and the version.
+            self.insertPermanentWidget(3 + self._right_items, item)
+            self._right_items += 1
+        else:
+            raise ValueError(f"side is 'left' or 'right', not {side!r}")
+
+    def items(self) -> List[FXStatusItem]:
+        """Return every status item on the bar, shown or not."""
+        return self.findChildren(FXStatusItem)
+
+    def tint(self) -> Optional[str]:
+        """Return the colour a message tints the bar now, or `None`."""
+        return self._tint
+
+    def ground(self) -> str:
+        """Return the colour the bar is painted now: a tint, or its own."""
+        if self._tint:
+            return self._tint
+        theme = fxstyle.colors()
+        if self.property(fxstyle.FRAME_PROPERTY):
+            return theme.frame
+        return theme.surface_sunken
+
+    def show_tip(self, tip: str) -> None:
+        """Write a hover tip where messages go, after the items.
+
+        `FXMainWindow` routes Qt's status tips here; an empty tip gives a
+        message still standing back.
+        """
+        label = self.message_label
+        if tip:
+            label.setText(tip)
+            label.show()
+            self.icon_label.hide()
+        elif self.currentMessage():
+            label.setText(self._message)
+            label.show()
+            self.icon_label.show()
+        else:
+            label.clear()
+            label.hide()
 
     def showMessage(
         self,
@@ -156,10 +411,12 @@ class FXStatusBar(QStatusBar):
             else f"<b>{severity_prefix}</b>: "
         )
         self.icon_label.setIcon(severity_icon)
-        self.message_label.setText(f"{message_prefix} {message}")
+        self._message = f"{message_prefix} {message}"
+        self.message_label.setText(self._message)
 
         if set_color:
             # The bar's own sheet is the tint and nothing else.
+            self._tint = QColor(status_bar_color).name()
             self._tint_border = status_bar_border_color
             self.setStyleSheet(
                 f"""FXStatusBar {{
@@ -169,7 +426,7 @@ class FXStatusBar(QStatusBar):
                     color: {fxstyle.readable_ink(status_bar_color)};
                 }}"""
             )
-            self.update()
+            self._repaint_items()
 
         log(logger, severity_type, message)
 
@@ -192,9 +449,17 @@ class FXStatusBar(QStatusBar):
         self.icon_label.setVisible(False)
         self.message_label.clear()
         self.message_label.setVisible(False)
+        self._message = ""
+        self._tint = None
         self._tint_border = None
         self.setStyleSheet("")
+        self._repaint_items()
+
+    def _repaint_items(self) -> None:
+        """Repaint the bar and its items against the ground of the moment."""
         self.update()
+        for item in self.items():
+            item.update()
 
     @Slot(str)
     def _on_status_message_changed(self, message: str) -> None:
@@ -208,7 +473,7 @@ class FXStatusBar(QStatusBar):
 
     def _on_theme_changed(self, _theme_name: Optional[str] = None) -> None:
         """Drop a tint drawn in the old theme's colors; override to extend."""
-        if self._tint_border is not None:
+        if self._tint is not None:
             self._clear()
 
     def set_status_line_colors(self, color_a: str, color_b: str) -> None:
@@ -257,7 +522,7 @@ class FXStatusBar(QStatusBar):
             event.type() == QEvent.DynamicPropertyChange
             and bytes(event.propertyName()) == fxstyle.FRAME_PROPERTY.encode()
         ):
-            self.update()
+            self._repaint_items()
         return super().event(event)
 
 
@@ -285,6 +550,10 @@ def example() -> None:
     layout.addWidget(btn_success)
     layout.addWidget(btn_warning)
     layout.addWidget(btn_error)
+
+    warnings = FXStatusItem("0", "warning")
+    warnings.set_tip("Warnings", "Show the log")
+    window.status_bar.add_item(warnings)
 
     # Connect buttons to show messages
     btn_info.clicked.connect(
