@@ -940,10 +940,15 @@ ads--CDockWidgetTab[activeTab="true"] QLabel
 QTabBar QToolButton {
     background-color: @surface;
     border: none;
-    border-left: 4px solid @surface;
+    border-left: 8px solid @surface;
     border-radius: 0px;
     margin: 0px;
     padding: 0px;
+}
+
+/* Both buttons together: each an 8px gap and its 16px arrow. */
+QTabBar::scroller {
+    width: 48px;
 }
 
 QTabBar QToolButton:hover,
