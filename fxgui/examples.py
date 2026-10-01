@@ -901,7 +901,7 @@ def main() -> None:
     window = build()
     window.show()
     window.center_on_screen()
-    application.exec_()
+    application.exec()
 
 
 if __name__ == "__main__":

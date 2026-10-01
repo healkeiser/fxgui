@@ -38,6 +38,8 @@ class FXCheckableComboBox(QComboBox):
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        self._said: List[str] = []
+        self._setting = False
         self.setModel(QStandardItemModel(self))
         self.model().itemChanged.connect(self._on_item_changed)
         self.view().viewport().installEventFilter(self)
@@ -61,13 +63,14 @@ class FXCheckableComboBox(QComboBox):
     def set_checked_items(self, texts: Iterable[str]) -> None:
         """Tick exactly the rows whose text is in `texts`."""
         wanted = set(texts)
-        model = self.model()
-        model.blockSignals(True)
-        for item in self._items():
-            item.setCheckState(
-                Qt.Checked if item.text() in wanted else Qt.Unchecked
-            )
-        model.blockSignals(False)
+        self._setting = True
+        try:
+            for item in self._items():
+                item.setCheckState(
+                    Qt.Checked if item.text() in wanted else Qt.Unchecked
+                )
+        finally:
+            self._setting = False
         self._on_item_changed()
 
     def display_text(self) -> str:
@@ -118,5 +121,10 @@ class FXCheckableComboBox(QComboBox):
             )
 
     def _on_item_changed(self, *_) -> None:
+        if self._setting:
+            return
         self.update()
-        self.checked_changed.emit(self.checked_items())
+        checked = self.checked_items()
+        if checked != self._said:
+            self._said = checked
+            self.checked_changed.emit(checked)

@@ -74,11 +74,11 @@ def _wait(milliseconds: int) -> None:
     """Run the event loop for `milliseconds`."""
     loop = QEventLoop()
     QTimer.singleShot(milliseconds, loop.quit)
-    loop.exec_()
+    loop.exec()
 
 
 def grab_screen_region(window: QWidget) -> Optional[QPixmap]:
-    """Let the user drag out a screen region; None if they press Escape.
+    """Let the user drag out a region of `window`'s screen; None on Escape.
 
     `window` is hidden for the grab and shown again afterwards, whatever
     happens. Closing the last window is kept from quitting the
@@ -90,7 +90,7 @@ def grab_screen_region(window: QWidget) -> Optional[QPixmap]:
     Returns:
         The region as a pixmap, or None when cancelled or no screen exists.
     """
-    screen = QApplication.primaryScreen()
+    screen = window.screen() or QApplication.primaryScreen()
     if screen is None:
         return None
     was_visible = window.isVisible()
@@ -109,7 +109,7 @@ def grab_screen_region(window: QWidget) -> Optional[QPixmap]:
         overlay.showFullScreen()
         loop = QEventLoop()
         overlay.destroyed.connect(loop.quit)
-        loop.exec_()
+        loop.exec()
     finally:
         if was_visible:
             window.show()
