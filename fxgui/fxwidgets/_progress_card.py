@@ -38,17 +38,6 @@ fxstyle.register_widget_style(
     FXProgressCard QLabel#fxProgressCardPercentage {
         color: @text_muted;
     }
-    FXProgressCard QProgressBar:horizontal {
-        background-color: @surface_sunken;
-        border: none;
-        border-radius: 3px;
-        padding: 0px;
-    }
-    FXProgressCard QProgressBar::chunk:horizontal {
-        background-color: @accent_primary;
-        /* The bar's own pill: it fills the bar edge to edge. */
-        border-radius: 3px;
-    }
     """
 )
 
@@ -146,7 +135,6 @@ class FXProgressCard(QFrame):
         self._progress_bar.setRange(0, 100)
         self._progress_bar.setValue(progress)
         self._progress_bar.setTextVisible(False)
-        self._progress_bar.setFixedHeight(6)
         progress_layout.addWidget(self._progress_bar, 1)
 
         # Percentage label

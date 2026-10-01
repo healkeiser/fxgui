@@ -90,3 +90,17 @@ def test_a_widget_lays_itself_out_on_the_spacing_ramp():
                 if values - _RAMP:
                     off.append(f"{path.name}:{number} {group}")
     assert off == []
+
+
+def test_the_progress_card_takes_the_one_progress_bar_look(qtbot):
+    from fxgui.fxwidgets import FXProgressCard
+
+    assert not any(
+        "QProgressBar" in name
+        for names, _body in _rules() for name in names
+        if name.startswith("FXProgressCard")
+    )
+    card = FXProgressCard(title="Task", progress=40)
+    qtbot.addWidget(card)
+    bar = card._progress_bar
+    assert bar.minimumHeight() == 0 and bar.maximumHeight() > 6
