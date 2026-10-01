@@ -403,8 +403,10 @@ QWidget:disabled
 
 QAbstractItemView
 {
-    /* Rows are told apart by hover and selection, never by stripes. */
+    /* Rows are told apart by hover and selection, never by stripes. The
+       alternate colour stays for what Qt paints in it: a calendar's header. */
     qproperty-alternatingRowColors: false;
+    alternate-background-color: @surface_alt;
     color: @text;
     background-color: @surface_sunken;
     border: 1px solid @border;
@@ -539,6 +541,12 @@ QSizeGrip {
     height: 0;
 }
 
+
+/* The workspace behind MDI windows, a property Qt paints itself. */
+QMdiArea
+{
+    qproperty-background: @frame;
+}
 
 QMainWindow::separator
 {
@@ -747,6 +755,39 @@ QComboBox::down-arrow
 QComboBox::down-arrow:disabled
 {
     image: ~icon(expand_more, text_disabled);
+}
+
+/* A date edit with a calendar popup opens it from a combo box's arrow. */
+QDateTimeEdit::drop-down
+{
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 16px;
+    border: none;
+}
+
+QDateTimeEdit::down-arrow
+{
+    image: ~icon(expand_more, icon);
+    width: 16px;
+    height: 16px;
+}
+
+QDateTimeEdit::down-arrow:disabled
+{
+    image: ~icon(expand_more, text_disabled);
+}
+
+QCalendarWidget QToolButton#qt_calendar_prevmonth
+{
+    qproperty-icon: ~icon(chevron_left, icon);
+    qproperty-iconSize: 16px;
+}
+
+QCalendarWidget QToolButton#qt_calendar_nextmonth
+{
+    qproperty-icon: ~icon(chevron_right, icon);
+    qproperty-iconSize: 16px;
 }
 
 QPushButton:pressed
