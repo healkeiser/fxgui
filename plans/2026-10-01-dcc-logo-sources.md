@@ -20,3 +20,5 @@ Not added:
 | --- | --- |
 | `fbx` | No official SVG found: Autodesk publishes no FBX mark, and neither Wikipedia nor Commons hosts one. |
 | `megascans` | No official SVG found: quixel.com ships only the Quixel favicon, which is the Quixel mark, not Megascans. |
+
+- davinci_resolve.svg: owner-supplied glossy mark (C:/Users/ValentinBeaumont/Documents/vscode-dcc-icons/davinci_resolve_mark_glossy.svg), 2026-10-01; only the root viewBox/size changed (conformed to the shared 4% frame).
