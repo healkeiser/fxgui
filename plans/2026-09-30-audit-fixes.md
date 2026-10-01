@@ -220,6 +220,9 @@ leave `FXThemeAware`.
   group deletes the Qt 5 branches in its own files; CI adds a PySide6
   6.5.3 job so nothing newer than 6.5 slips in.
 - Delegate hover: one look, @accent_secondary as plain lists use.
+- Order hang: `pytest -p no:randomly tests/test_gallery.py
+  tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
+  533 s slow seed. Fix in the test clean-up group, at its cause.
 - ruff F841 in tests/test_collapsible_geometry.py and
   tests/test_style_cascade.py; run `ruff check --select F,B,BLE` over the
   whole repo and the suite under pytest-randomly before release.
