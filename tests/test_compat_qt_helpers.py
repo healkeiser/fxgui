@@ -2,6 +2,7 @@
 
 # Built-in
 import ast
+import gc
 from pathlib import Path
 
 # Third-party
@@ -10,6 +11,7 @@ from qtpy.QtWidgets import (
     QApplication,
     QMainWindow,
     QPushButton,
+    QScrollArea,
     QWidget,
 )
 
@@ -91,3 +93,16 @@ def test_a_focus_step_leaves_no_wrapper_owned_by_a_widget_that_dies(qtbot):
 
 def test_rehome_returns_none_for_none():
     assert _compat.rehome(None) is None
+
+
+
+def test_rehome_never_files_a_wrapper_under_one_about_to_go(qtbot):
+    from shiboken6 import Shiboken
+
+    area = QScrollArea()
+    qtbot.addWidget(area)
+    # Its parent is a container Qt made, which no Python name holds.
+    bar = _compat.rehome(area.horizontalScrollBar())
+    gc.collect()
+
+    assert Shiboken.isValid(bar)

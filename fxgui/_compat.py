@@ -18,9 +18,12 @@ from qtpy.QtCore import QTimer
 
 try:
     # PySide2 / PySide6
+    from qtpy.shiboken import createdByPython as _created_by_python
     from qtpy.shiboken import isValid as is_valid  # noqa: F401
 
-except Exception:
+except ImportError:
+    # `rehome` is a PySide wrapper fix; other bindings pass the widget on.
+    _created_by_python = None
     try:
         # PyQt5 / PyQt6
         from qtpy.sip import isdeleted as _isdeleted
@@ -33,7 +36,7 @@ except Exception:
                 # Not a sip-wrapped object; assume alive.
                 return True
 
-    except Exception:
+    except ImportError:
 
         def is_valid(obj) -> bool:
             """Fallback when no liveness API is available; assume alive."""
@@ -60,10 +63,27 @@ def rehome(widget):
     kills that one's wrapped children when it dies: a window reached from
     a dying button lost its live menu bar's wrapper. Qt skips a
     `setParent` to the same parent; the binding files the wrapper back.
+    A parent only C++ made is filed first, up to one Python made: its
+    wrapper dies, and kills this one, the moment no name holds it.
     """
-    if widget is not None:
-        widget.setParent(widget.parentWidget())
+    if widget is not None and _created_by_python is not None:
+        _file_back(widget)
     return widget
+
+
+def _file_back(widget) -> bool:
+    """File `widget` under its parent's lasting wrapper; say if one lasts."""
+    parent = widget.parentWidget()
+    if parent is None:
+        if not _created_by_python(widget):
+            # Python taking a host's window would delete it with the name.
+            return False
+        widget.setParent(None)
+        return True
+    if not (_created_by_python(parent) or _file_back(parent)):
+        return False
+    widget.setParent(parent)
+    return True
 
 
 def focus_step(widget, forward: bool = True):
