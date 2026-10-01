@@ -25,7 +25,9 @@ __email__ = "valentin.onze@gmail.com"
 # Built-in
 import hashlib
 import os
+import re
 import sys
+import tempfile
 import weakref
 from collections import OrderedDict
 from functools import lru_cache
@@ -1320,8 +1322,34 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     return tokens
 
 
+# `~icon(name, token)`: the icon library's `name`, filled with a token.
+_SHEET_ICON = re.compile(r"~icon\((\w+),\s*(\w+)\)")
+
+
+def _sheet_icon(name: str, color: str) -> str:
+    """Return a sheet `url()` of icon `name` filled with `color`.
+
+    A sheet loads an image only from a file, so each colour gets a copy.
+    """
+    folder = Path(tempfile.gettempdir()) / "fxgui" / "sheet_icons"
+    path = folder / f"{name}_{color.lstrip('#')}.svg"
+    if not path.exists():
+        svg = Path(fxicons.get_icon_path(name)).read_text(encoding="utf-8")
+        folder.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            svg.replace("<svg ", f'<svg fill="{color}" ', 1), encoding="utf-8"
+        )
+    return f"url({path.as_posix()})"
+
+
 def _substitute(qss: str, tokens: Dict[str, str]) -> str:
     """Replace each placeholder, longest first so @border spares @border_light."""
+
+    def icon(match: "re.Match") -> str:
+        color = tokens.get(f"@{match.group(2)}")
+        return _sheet_icon(match.group(1), color) if color else match.group(0)
+
+    qss = _SHEET_ICON.sub(icon, qss)
     for key in sorted(tokens, key=len, reverse=True):
         qss = qss.replace(key, tokens[key])
     return qss

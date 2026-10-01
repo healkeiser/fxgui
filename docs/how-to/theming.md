@@ -548,6 +548,10 @@ fxstyle.register_widget_style("""
 """)
 ```
 
+An image in a rule names an icon and a token: `image: ~icon(expand_more,
+icon);` draws the icon library's `expand_more` in the theme's `@icon`
+colour. Every arrow and chevron of the base sheet is drawn this way.
+
 Fragments come after the base stylesheet and are resolved again on every
 switch. Registering after themed roots exist re-applies the sheet to them
 at once, so import order does not matter.

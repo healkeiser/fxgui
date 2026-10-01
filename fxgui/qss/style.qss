@@ -1325,40 +1325,13 @@ QTreeView::branch:!selected:hover {
     background: @surface_sunken;
 }
 
-QTreeView::branch:has-siblings:!adjoins-item {
-    border-image: url(~icons/branch_vertical.svg);
+/* No branch lines; a parent shows the accordion's chevron. */
+QTreeView::branch:has-children:closed {
+    image: ~icon(chevron_right, icon);
 }
 
-QTreeView::branch:has-siblings:adjoins-item {
-    border-image: url(~icons/branch_more.svg);
-}
-
-QTreeView::branch:!has-children:!has-siblings:adjoins-item {
-    border-image: url(~icons/branch_end.svg);
-}
-
-QTreeView::branch:has-children:!has-siblings:closed,
-QTreeView::branch:closed:has-children:has-siblings {
-    border-image: none;
-    image: url(~icons/branch_closed.svg);
-}
-
-QTreeView::branch:open:has-children:!has-siblings,
-QTreeView::branch:open:has-children:has-siblings  {
-    border-image: none;
-    image: url(~icons/branch_open.svg);
-}
-
-QTreeView::branch:has-children:!has-siblings:closed:hover,
-QTreeView::branch:closed:has-children:has-siblings:hover {
-    border-image: none;
-    image: url(~icons/branch_closed_on.svg);
-}
-
-QTreeView::branch:open:has-children:!has-siblings:hover,
-QTreeView::branch:open:has-children:has-siblings:hover  {
-    border-image: none;
-    image: url(~icons/branch_open_on.svg);
+QTreeView::branch:has-children:open {
+    image: ~icon(expand_more, icon);
 }
 
 QListView,
