@@ -11,7 +11,6 @@ from qtpy.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
-    QScrollArea,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -19,6 +18,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._flow_layout import FXFlowLayout
 
 
 class FXTagChip(QFrame):
@@ -128,23 +128,9 @@ class FXTagInput(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(4)
 
-        # Tags container with scroll area
-        self._scroll_area = QScrollArea()
-        self._scroll_area.setWidgetResizable(True)
-        self._scroll_area.setFrameShape(QFrame.NoFrame)
-        # One row that scrolls sideways: a chip past the edge stays reachable.
-        self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._scroll_area.setMaximumHeight(80)
-
-        # Tags container widget
+        # Chips wrap onto new lines, so the field grows taller, never wider.
         self._tags_container = QWidget()
-        self._tags_layout = QHBoxLayout(self._tags_container)
-        self._tags_layout.setContentsMargins(0, 0, 0, 0)
-        self._tags_layout.setSpacing(4)
-        self._tags_layout.addStretch()
-
-        self._scroll_area.setWidget(self._tags_container)
+        self._tags_layout = FXFlowLayout(self._tags_container, spacing=4)
 
         # Input field
         self._input = QLineEdit()
@@ -152,11 +138,10 @@ class FXTagInput(QWidget):
         self._input.setPlaceholderText(placeholder)
         self._input.returnPressed.connect(self._on_return_pressed)
 
-        main_layout.addWidget(self._scroll_area)
+        main_layout.addWidget(self._tags_container)
         main_layout.addWidget(self._input)
 
-        # Hide scroll area initially if no tags
-        self._scroll_area.setVisible(False)
+        self._tags_container.setVisible(False)
 
     @property
     def tags(self) -> List[str]:
@@ -188,11 +173,8 @@ class FXTagInput(QWidget):
         chip = FXTagChip(tag, self._tags_container)
         chip.removed.connect(self.remove_tag)
 
-        # Insert before stretch
-        self._tags_layout.insertWidget(self._tags_layout.count() - 1, chip)
-
-        # Show scroll area
-        self._scroll_area.setVisible(True)
+        self._tags_layout.addWidget(chip)
+        self._tags_container.setVisible(True)
 
         # Emit signals
         self.tag_added.emit(tag)
@@ -223,9 +205,8 @@ class FXTagInput(QWidget):
                     widget.deleteLater()
                     break
 
-        # Hide scroll area if no tags
         if not self._tags:
-            self._scroll_area.setVisible(False)
+            self._tags_container.setVisible(False)
 
         # Emit signals
         self.tag_removed.emit(tag)

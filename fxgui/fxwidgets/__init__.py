@@ -83,6 +83,7 @@ from fxgui.fxwidgets._validators import (
     FXLowerCaseValidator,
 )
 from fxgui.fxwidgets._widget import FXWidget
+from fxgui.fxwidgets._flow_layout import FXFlowLayout
 
 
 __all__ = [
@@ -153,4 +154,5 @@ __all__ = [
     "FXValidatedLineEdit",
     "FXWidget",
     "theme_manager",
+    "FXFlowLayout",
 ]

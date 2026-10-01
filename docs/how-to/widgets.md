@@ -94,6 +94,7 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXEmojiButton` | Tool button that opens an emoji picker and can insert into an editor |
 | `FXEmojiPicker` | Popup grid of emoji, keyboard navigable |
 | `FXFilePathWidget` | File/folder path input with browse button |
+| `FXFlowLayout` | Layout that wraps its widgets onto new lines, like words |
 | `FXFloatingDialog` | Styled floating dialog |
 | `FXIconButton` | Round icon button; checkable, filled with the accent when checked |
 | `FXIconLineEdit` | Line edit with icon support |

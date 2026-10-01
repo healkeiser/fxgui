@@ -1,8 +1,11 @@
-"""Tag chips stay reachable, and the tags signal hands out a copy."""
+"""Tag chips wrap and stay shown, and the tags signal hands out a copy."""
+
+# Third-party
+from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXTagInput
+from fxgui.fxwidgets import FXFlowLayout, FXTagInput
 
 
 def test_tags_changed_emits_a_copy(qtbot, qapp):
@@ -15,22 +18,25 @@ def test_tags_changed_emits_a_copy(qtbot, qapp):
     assert tags.tags == ["python"]
 
 
-def test_chips_wider_than_the_field_can_be_scrolled_to(qtbot, qapp):
+def test_chips_wrap_onto_new_lines_and_all_stay_shown(qtbot, qapp):
+    host = QWidget()
+    qtbot.addWidget(host)
+    column = QVBoxLayout(host)
     tags = FXTagInput()
-    qtbot.addWidget(tags)
-    tags.resize(200, 120)
-    tags.show()
-    qtbot.waitExposed(tags)
+    column.addWidget(tags)
+    column.addStretch()
+    host.resize(200, 400)
+    host.show()
+    qtbot.waitExposed(host)
     for index in range(10):
         tags.add_tag(f"tag_number_{index}")
-    qtbot.waitUntil(
-        lambda: tags._scroll_area.horizontalScrollBar().isVisible(),
-        timeout=1000,
-    )
-    last = tags._tags_layout.itemAt(9).widget()
-    tags._scroll_area.ensureWidgetVisible(last)
     qapp.processEvents()
-    assert last.visibleRegion().boundingRect().width() == last.width()
+    chips = [tags._tags_layout.itemAt(i).widget() for i in range(10)]
+    assert isinstance(tags._tags_layout, FXFlowLayout)
+    assert len({chip.y() for chip in chips}) > 1, "chips wrapped"
+    assert host.width() == 200, "the field did not widen its window"
+    for chip in chips:
+        assert chip.visibleRegion().boundingRect().size() == chip.size()
 
 
 def test_chips_style_through_the_theme_sheet(qtbot, qapp):
