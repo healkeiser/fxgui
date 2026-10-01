@@ -205,6 +205,13 @@ leave `FXThemeAware`.
   method when the receiving widget is deleted (switch after delete, no
   error), since the pull model relies on it.
 - docs/how-to/styling.md 127-132 still documents the banner.
+- ruff F841 in tests/test_collapsible_geometry.py and
+  tests/test_style_cascade.py; run `ruff check --select F,B,BLE` over the
+  whole repo and the suite under pytest-randomly before release.
+- hython proofs for fxdocking (from move-c): houdini_qtads enum/flag
+  names, iconProvider copy, updateOverlayIcons on float/redock/restore,
+  findChildren(QShortcut, options=...) on 6.5, createdByPython/rehome,
+  Tab walk and closing a focused pane, 150% render.
 - Order-dependent tests: test_primary_button's shape test fails after
   test_icon_button_and_group alone (compares id() of wrappers); some test
   leaves the theme so a switch changes nothing. Fix both; the suite must
