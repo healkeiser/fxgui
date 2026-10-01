@@ -13,16 +13,12 @@ from qtpy.QtWidgets import QGroupBox, QTabWidget, QWidget
 # Internal
 from fxgui import examples, fxstyle, fxwidgets
 
-# Not widgets: an app, process plumbing, theme plumbing, data and an enum.
+# Not widgets: an app, process plumbing and data.
 _NOT_SHOWN = {
     "FXApplication",
     "FXCommand",
     "FXSingleInstance",
     "FXSingleton",
-    "FXThemeColors",
-    "FXThemeManager",
-    "FXTooltipManager",
-    "FXTooltipPosition",
 }
 
 

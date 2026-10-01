@@ -1,14 +1,5 @@
-"""Custom Qt widgets for fxgui.
+"""The fxgui widgets, each in its own private module, exported here."""
 
-This package provides a collection of custom Qt widgets built on top of qtpy,
-offering enhanced functionality and consistent styling for DCC applications.
-"""
-
-from fxgui.fxstyle import (
-    FXThemeManager,
-    FXThemeColors,
-    theme_manager,
-)
 from fxgui.fxwidgets._accordion import FXAccordion
 from fxgui.fxwidgets._application import FXApplication
 from fxgui.fxwidgets._avatar import FXAvatar
@@ -24,7 +15,7 @@ from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 from fxgui.fxwidgets._command_palette import FXCommand, FXCommandPalette
 from fxgui.fxwidgets._comments import FXMentionEdit, FXThreadLine
 from fxgui.fxwidgets._confirm_delete import FXConfirmDeleteDialog
-from fxgui.fxwidgets._constants import (
+from fxgui.fxwidgets._severity import (
     CRITICAL,
     DEBUG,
     ERROR,
@@ -33,7 +24,6 @@ from fxgui.fxwidgets._constants import (
     WARNING,
 )
 from fxgui.fxwidgets._delegates import (
-    FXColorLabelDelegate,
     FXItemDelegate,
     FXThumbnailDelegate,
 )
@@ -88,12 +78,6 @@ from fxgui.fxwidgets._tag_input import FXTagChip, FXTagInput
 from fxgui.fxwidgets._timeline_slider import FXTimelineSlider
 from fxgui.fxwidgets._tips import FXKeycap, apply_tip, keycap, tip
 from fxgui.fxwidgets._toggle_switch import FXToggleSwitch
-from fxgui.fxwidgets._tooltip import (
-    FXTooltip,
-    FXTooltipManager,
-    FXTooltipPosition,
-    set_tooltip,
-)
 from fxgui.fxwidgets._tree_items import FXSortedTreeWidgetItem
 from fxgui.fxwidgets._validators import (
     FXCamelCaseValidator,
@@ -121,7 +105,6 @@ __all__ = [
     "FXCheckableComboBox",
     "FXCodeBlock",
     "FXCollapsibleWidget",
-    "FXColorLabelDelegate",
     "FXCommand",
     "FXCommandPalette",
     "FXCommandRow",
@@ -172,23 +155,16 @@ __all__ = [
     "FXSystemTray",
     "FXTagChip",
     "FXTagInput",
-    "FXThemeColors",
-    "FXThemeManager",
     "FXThreadLine",
     "FXThumbnailDelegate",
     "FXTimelineSlider",
     "FXToggleSwitch",
-    "FXTooltip",
-    "FXTooltipManager",
-    "FXTooltipPosition",
     "FXValidatedLineEdit",
     "FXWidget",
     "grab_screen_region",
     "INFO",
     "keycap",
-    "set_tooltip",
     "SUCCESS",
-    "theme_manager",
     "tip",
     "WARNING",
 ]
