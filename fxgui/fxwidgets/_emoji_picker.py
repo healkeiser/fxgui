@@ -6,7 +6,7 @@ from typing import List, Optional, Sequence, Tuple
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, QPoint, QRect, QSize, Qt, Signal
-from qtpy.QtGui import QFont, QGuiApplication
+from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import (
     QFrame,
     QGridLayout,
@@ -20,6 +20,7 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import _compat, fxstyle
 from fxgui.fxwidgets._buttons import FXIconButton
+from fxgui.fxwidgets._seating import FXSeating
 
 
 # Reactions and studio work, in the order the grid shows them.
@@ -68,6 +69,7 @@ _EMOJI_NAMES = {
 
 DEFAULT_EMOJIS: Tuple[str, ...] = tuple(_EMOJI_NAMES)
 
+# A glyph sized as an icon, not as text: it ignores the body font.
 _EMOJI_PIXELS = 18
 _CELL = 36
 
@@ -82,24 +84,24 @@ def _emoji_name(emoji: str) -> str:
         return emoji
 
 
-fxstyle.register_widget_style("""
-FXEmojiPicker {
+fxstyle.register_widget_style(f"""
+FXEmojiPicker {{
     background-color: @surface_sunken;
     border: 1px solid @border;
     border-radius: @button_radius;
-}
-FXEmojiPicker QToolButton {
+}}
+FXEmojiPicker QToolButton {{
     border: 1px solid transparent;
     border-radius: @button_radius;
     background-color: transparent;
     padding: 0px;
-    font-size: 18px;
-}
+    font-size: {_EMOJI_PIXELS}px;
+}}
 FXEmojiPicker QToolButton:hover,
-FXEmojiPicker QToolButton[fxFocusVisible="true"]:focus {
+FXEmojiPicker QToolButton[fxFocusVisible="true"]:focus {{
     background-color: @state_hover;
     border: 1px solid @accent_primary;
-}
+}}
 """)
 
 
@@ -140,8 +142,6 @@ class FXEmojiPicker(QFrame):
         layout = QGridLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(2)
-        font = QFont(self.font())
-        font.setPixelSize(_EMOJI_PIXELS)
         for index, emoji in enumerate(
             DEFAULT_EMOJIS if emojis is None else emojis
         ):
@@ -149,7 +149,6 @@ class FXEmojiPicker(QFrame):
             button.setText(emoji)
             button.setToolTip(_emoji_name(emoji))
             button.setAccessibleName(_emoji_name(emoji))
-            button.setFont(font)
             button.setAutoRaise(True)
             button.setFixedSize(QSize(_CELL, _CELL))
             button.setFocusPolicy(Qt.StrongFocus)
@@ -188,9 +187,7 @@ class FXEmojiPicker(QFrame):
         y = pos.y()
         if anchor is not None and y + size.height() - 1 > area.bottom():
             y = anchor.top() - size.height()
-        x = max(area.left(), min(pos.x(), area.right() - size.width() + 1))
-        y = max(area.top(), min(y, area.bottom() - size.height() + 1))
-        self.move(x, y)
+        self.move(FXSeating.clamp(QPoint(pos.x(), y), size, area))
         if self._buttons:
             self._buttons[0].setFocus(Qt.PopupFocusReason)
 

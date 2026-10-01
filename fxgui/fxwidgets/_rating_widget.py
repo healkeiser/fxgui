@@ -93,15 +93,9 @@ class FXRatingWidget(QWidget):
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-    @property
     def rating(self) -> float:
         """Return the current rating."""
         return self._rating
-
-    @rating.setter
-    def rating(self, value: float) -> None:
-        """Set the rating."""
-        self.set_rating(value)
 
     def set_rating(self, rating: float, emit: bool = True) -> None:
         """Set the rating value.
@@ -119,10 +113,6 @@ class FXRatingWidget(QWidget):
             self._update_stars()
             if emit:
                 self.rating_changed.emit(rating)
-
-    def get_rating(self) -> float:
-        """Return the current rating."""
-        return self._rating
 
     def clear_rating(self) -> None:
         """Clear the rating (set to 0)."""
@@ -159,7 +149,7 @@ class FXRatingWidget(QWidget):
 
     def _get_rating_from_pos(self, x: int) -> float:
         """Calculate rating from mouse x position."""
-        star_width = self._icon_size + 2  # spacing
+        star_width = self._icon_size + self.layout().spacing()
         total_width = star_width * self._max_rating
 
         if x < 0:
@@ -206,16 +196,6 @@ class FXRatingWidget(QWidget):
             return
         event.accept()
 
-    def focusInEvent(self, event) -> None:
-        """Repaint to show the focus indicator."""
-        super().focusInEvent(event)
-        self.update()
-
-    def focusOutEvent(self, event) -> None:
-        """Repaint to hide the focus indicator."""
-        super().focusOutEvent(event)
-        self.update()
-
     def paintEvent(self, event) -> None:
         """Paint a focus indicator under the star labels when focused."""
         super().paintEvent(event)
@@ -226,15 +206,15 @@ class FXRatingWidget(QWidget):
             pen.setWidth(1)
             painter.setPen(pen)
             painter.setBrush(Qt.NoBrush)
+            radius = fxstyle.BUTTON_RADIUS
             painter.drawRoundedRect(
-                self.rect().adjusted(0, 0, -1, -1), 3, 3
+                self.rect().adjusted(0, 0, -1, -1), radius, radius
             )
             painter.end()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse move for hover preview."""
-        self._hover_rating = self._get_rating_from_pos(int(event.position().x()))
-        self._update_stars()
+        """Preview the rating under the pointer."""
+        self._hover(self._get_rating_from_pos(int(event.position().x())))
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse click to set rating."""
@@ -243,10 +223,11 @@ class FXRatingWidget(QWidget):
             self.set_rating(rating)
 
     def leaveEvent(self, event) -> None:
-        """Handle mouse leave to clear hover."""
-        self._hover_rating = None
-        self._update_stars()
+        """Drop the hover preview."""
+        self._hover(None)
 
-    def enterEvent(self, event) -> None:
-        """Handle mouse enter."""
-        pass  # Just to ensure tracking works
+    def _hover(self, rating: Optional[float]) -> None:
+        """Preview `rating`, redrawing the stars only when it changes."""
+        if rating != self._hover_rating:
+            self._hover_rating = rating
+            self._update_stars()

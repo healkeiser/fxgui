@@ -9,11 +9,7 @@ window told to be 200px wide: the window came out 680px and the button
 moved from x=90 to x=570.
 """
 
-# Built-in
-import warnings
-
 # Third-party
-import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
@@ -97,7 +93,7 @@ def test_eliding_from_the_right_is_still_the_default(qtbot, qapp):
     qtbot.waitExposed(label)
 
     assert label.elided_text().startswith("valentin"), "the head survived"
-    assert label.mode == Qt.ElideRight
+    assert label.mode() == Qt.ElideRight
 
 
 def test_a_label_can_be_asked_to_elide_from_the_middle(qtbot, qapp):
@@ -156,7 +152,7 @@ def test_changing_the_mode_re_cuts_the_text(qtbot, qapp):
     qtbot.waitExposed(label)
     before = label.elided_text()
 
-    label.mode = Qt.ElideMiddle
+    label.set_mode(Qt.ElideMiddle)
 
     assert label.elided_text() != before
 
@@ -185,73 +181,12 @@ def test_size_hint_measures_the_whole_string(qtbot, qapp):
     assert label.sizeHint().width() >= plain.sizeHint().width()
 
 
-def test_word_wrap_overruling_the_mode_says_so(qtbot, qapp):
-    """The defect was silence, not the behaviour: `mode` governs the
-    single-line case, and a caller who asked for `ElideMiddle` and then
-    turned word wrap on got `ElideRight` with nothing saying so."""
-    label = FXElidedLabel(IDENTITY, mode=Qt.ElideMiddle)
-    qtbot.addWidget(label)
-
-    with pytest.warns(RuntimeWarning, match="single-line"):
-        label.setWordWrap(True)
-
-
-def test_the_warning_names_a_way_out(qtbot, qapp):
-    label = FXElidedLabel(IDENTITY, mode=Qt.ElideMiddle)
-    qtbot.addWidget(label)
-
-    with pytest.warns(RuntimeWarning) as caught:
-        label.setWordWrap(True)
-
-    said = str(caught[0].message)
-    assert "wordWrap" in said
-    assert "Turn word wrap off" in said
-
-
-def test_the_default_mode_under_word_wrap_is_silent(qtbot, qapp):
-    """`ElideRight` IS what a wrapped label does, so there is nothing to
-    warn about."""
-    label = FXElidedLabel(IDENTITY)
-    qtbot.addWidget(label)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        label.setWordWrap(True)
-
-
-def test_setting_the_mode_after_word_wrap_warns_too(qtbot, qapp):
-    """Either order reaches the same moot combination."""
-    label = FXElidedLabel(IDENTITY)
-    qtbot.addWidget(label)
-    label.setWordWrap(True)
-
-    with pytest.warns(RuntimeWarning, match="single-line"):
-        label.mode = Qt.ElideMiddle
-
-
-def test_the_warning_lands_once_per_label(qtbot, qapp):
-    """A label re-elides on every resize; a warning per frame would be
-    noise nobody reads."""
-    label = FXElidedLabel(IDENTITY, mode=Qt.ElideMiddle)
-    qtbot.addWidget(label)
-
-    with pytest.warns(RuntimeWarning):
-        label.setWordWrap(True)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        label.setWordWrap(False)
-        label.setWordWrap(True)
-        label.mode = Qt.ElideLeft
-
-
-def test_a_wrapped_label_still_elides_from_the_right(qtbot, qapp):
-    """What the warning says it does, asserted rather than asserted-about.
-    """
+def test_a_wrapped_label_elides_from_the_right_at_its_maximum_height(
+    qtbot, qapp
+):
     label = FXElidedLabel(" ".join(["word"] * 200), mode=Qt.ElideMiddle)
     qtbot.addWidget(label)
-    with pytest.warns(RuntimeWarning):
-        label.setWordWrap(True)
+    label.setWordWrap(True)
     label.setFixedWidth(120)
     label.setMaximumHeight(40)
     label.show()
@@ -261,6 +196,34 @@ def test_a_wrapped_label_still_elides_from_the_right(qtbot, qapp):
 
     assert painted.startswith("word"), "the head survives"
     assert painted.endswith("..."), "and the cut is at the end"
+
+
+def test_a_wrapped_label_with_no_maximum_keeps_its_whole_text(qtbot, qapp):
+    text = " ".join(["word"] * 60)
+    label = FXElidedLabel(text)
+    qtbot.addWidget(label)
+    label.setWordWrap(True)
+    label.setFixedWidth(120)
+    label.resize(120, 10)
+    label.show()
+    qtbot.waitExposed(label)
+
+    assert label.elided_text() == text
+
+
+def test_a_font_change_cuts_the_text_again(qtbot, qapp):
+    label = FXElidedLabel(IDENTITY)
+    label.setFixedWidth(160)
+    qtbot.addWidget(label)
+    label.show()
+    qtbot.waitExposed(label)
+    before = label.elided_text()
+    font = label.font()
+    font.setPixelSize(30)
+
+    label.setFont(font)
+
+    assert label.elided_text() != before
 
 
 def _hover_tip(label, qapp):

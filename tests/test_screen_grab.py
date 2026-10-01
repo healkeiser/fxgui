@@ -62,6 +62,20 @@ def test_a_completed_drag_returns_a_pixmap_and_restores_the_window(qtbot):
     assert window.isVisible()
 
 
+def test_the_grab_reads_the_window_s_own_screen(qtbot, monkeypatch):
+    window = _shown(qtbot)
+    # Not the primary screen: the window's own is the one grabbed.
+    monkeypatch.setattr(QApplication, "primaryScreen", lambda: None)
+    pressed = []
+    timer = QTimer(window)
+    timer.setSingleShot(True)
+    timer.timeout.connect(lambda: (pressed.append(1), _press_escape(window)))
+    timer.start(SETTLE + 50)
+
+    assert grab_screen_region(window) is None
+    assert pressed, "no overlay waited for the user"
+
+
 def test_the_screen_is_read_only_once_the_hide_has_settled(
     qtbot, monkeypatch
 ):

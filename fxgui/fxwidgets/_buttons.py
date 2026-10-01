@@ -1,10 +1,10 @@
 """Buttons with a role beyond Qt's own, and a pill that joins them."""
 
 # Built-in
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject, QSize, QTimer
+from qtpy.QtCore import QEvent, QObject, QSize
 from qtpy.QtWidgets import (
     QApplication,
     QFrame,
@@ -16,7 +16,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import _compat, fxicons, fxstyle, fxutils
+from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._tips import apply_tip
 
 
@@ -148,10 +148,13 @@ class FXIconButton(QToolButton):
         self.setFixedSize(size, size)
         glyph = round(size * 0.57)
         self.setIconSize(QSize(glyph, glyph))
-        # Per instance, since the radius follows the size. Under half the
+        # One rule per size, since the radius follows it. Under half the
         # side: Qt draws square corners for a radius of exactly half.
-        self.setStyleSheet(
-            f"FXIconButton {{ border-radius: {size // 2 - 1}px; }}")
+        self.setProperty("fxSize", size)
+        fxstyle.register_widget_style(
+            f'FXIconButton[fxSize="{size}"] '
+            f"{{ border-radius: {size // 2 - 1}px; }}"
+        )
         if tip:
             apply_tip(self, tip)
         # Unchecked it hovers on state_hover, so Active keeps the plain ink;
@@ -267,7 +270,6 @@ class FXJoinedGroup(QFrame):
         # The frame's own 1px width already insets the children.
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        self._widgets: List[QWidget] = []
         QApplication.instance().focusChanged.connect(self._on_focus_changed)
         fxstyle._watch_focus()
 
@@ -276,20 +278,15 @@ class FXJoinedGroup(QFrame):
         widget.setParent(self)
         widget.setFixedHeight(self.height() - 2)
         self.layout().addWidget(widget)
-        self._widgets.append(widget)
         widget.installEventFilter(self)
         self._place_children()
 
     def _place_children(self) -> None:
         # Only shown children count: a hidden one must not keep the round
         # end or leave a divider on the first one showing.
-        if not _compat.is_valid(self):
-            return
-        self._widgets = [
-            w for w in self._widgets
-            if _compat.is_valid(w) and w.parent() is self
-        ]
-        shown = [w for w in self._widgets if not w.isHidden()]
+        layout = self.layout()
+        children = (layout.itemAt(i).widget() for i in range(layout.count()))
+        shown = [w for w in children if w is not None and not w.isHidden()]
         last = len(shown) - 1
         for index, child in enumerate(shown):
             if last == 0:
@@ -311,10 +308,10 @@ class FXJoinedGroup(QFrame):
         return super().eventFilter(watched, event)
 
     def event(self, event: QEvent) -> bool:
-        """Forget a child that is deleted or moved to another parent."""
-        # Deferred: a deleted child is still half alive while it is removed.
+        """Re-place the children when one is deleted or moved elsewhere."""
+        # The layout has already dropped the child: Qt tells it first.
         if event.type() == QEvent.ChildRemoved:
-            QTimer.singleShot(0, self._place_children)
+            self._place_children()
         return super().event(event)
 
     def _on_focus_changed(self, _old, new) -> None:

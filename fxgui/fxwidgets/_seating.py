@@ -88,11 +88,19 @@ class FXSeating:
         else:
             x = screen.right() - size.width() + 1 - gap
             y = screen.bottom() - size.height() + 1 - gap
+        return cls.clamp(QPoint(x, y), size, screen, gap)
+
+    @staticmethod
+    def clamp(
+        corner: QPoint, size: QSize, screen: QRect, gap: int = 0
+    ) -> QPoint:
+        """Return `corner` moved so a `size` rect sits `gap` inside `screen`."""
         right = screen.right() - size.width() + 1 - gap
         bottom = screen.bottom() - size.height() + 1 - gap
-        x = max(screen.left() + gap, min(x, right))
-        y = max(screen.top() + gap, min(y, bottom))
-        return QPoint(x, y)
+        return QPoint(
+            max(screen.left() + gap, min(corner.x(), right)),
+            max(screen.top() + gap, min(corner.y(), bottom)),
+        )
 
     def screen_for(
         self, tray: QRect, cursor: Optional[QPoint]

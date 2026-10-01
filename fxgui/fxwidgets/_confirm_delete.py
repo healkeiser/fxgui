@@ -45,7 +45,7 @@ class FXConfirmDeleteDialog(QDialog):
         >>> dialog = FXConfirmDeleteDialog(
         ...     window, title="Delete beauty v004",
         ...     body="This cannot be undone.", confirm_word="beauty")
-        >>> if dialog.exec_():
+        >>> if dialog.exec():
         ...     delete_version()
     """
 

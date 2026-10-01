@@ -8,12 +8,13 @@ from typing import Callable, List, Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QPoint, QRect, QSize, Qt
-from qtpy.QtGui import QBrush, QColor, QKeyEvent, QKeySequence
+from qtpy.QtGui import QColor, QKeyEvent, QKeySequence, QPalette
 from qtpy.QtWidgets import (
     QFrame,
     QHeaderView,
     QLabel,
     QLineEdit,
+    QStyledItemDelegate,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -76,6 +77,29 @@ class FXCommand:
 # Hands `load` a callback taking (row id, words) pairs.
 GoTo = Callable[[Callable[[List[Tuple[str, str]]], None]], None]
 
+# The FXCommand a row stands for, on its first column.
+_COMMAND_ROLE = Qt.UserRole
+
+
+class _RowInk(QStyledItemDelegate):
+    """Draw the section and keys muted, a disabled row disabled, when shown."""
+
+    def initStyleOption(self, option, index) -> None:
+        """Give the cell the theme's ink of the moment."""
+        super().initStyleOption(option, index)
+        entry = index.siblingAtColumn(0).data(_COMMAND_ROLE)
+        if entry is None:
+            return
+        if not entry.enabled:
+            token = "text_disabled"
+        elif index.column():
+            token = "text_muted"
+        else:
+            return
+        option.palette.setColor(
+            QPalette.Text, QColor(getattr(fxstyle.colors(), token))
+        )
+
 
 class FXCommandPalette(QFrame):
     """A frameless popup over `window`'s commands; Enter runs, Escape closes.
@@ -110,12 +134,10 @@ class FXCommandPalette(QFrame):
         self._position = "center"
         self._window = window
         self._commands = commands
-        self._items: List[QTreeWidgetItem] = []
         self._command_rows: List[FXCommand] = []
         self._go_to: Optional[List[FXCommand]] = None
         self._going = False
         self._loading = ""
-        self._shown: List[FXCommand] = []
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(6)
@@ -131,6 +153,7 @@ class FXCommandPalette(QFrame):
         self.rows.setRootIsDecorated(False)
         self.rows.setUniformRowHeights(True)
         self.rows.setFocusPolicy(Qt.NoFocus)
+        self.rows.setItemDelegate(_RowInk(self.rows))
         header = self.rows.header()
         header.setStretchLastSection(False)
         header.setSectionResizeMode(0, QHeaderView.Stretch)
@@ -285,9 +308,7 @@ class FXCommandPalette(QFrame):
         for column in (1, 2):
             self.rows.setColumnHidden(column, not commands)
         self.rows.clear()
-        self._items = []
         if source is None:
-            self._shown = []
             self._placeholder(self._loading)
             return
         ranked = sorted(
@@ -296,28 +317,22 @@ class FXCommandPalette(QFrame):
             if (found := self.rank(query, f"{entry.label} {entry.section}"))
             is not None
         )
-        self._shown = [source[index] for _found, index in ranked[: self.SHOWN]]
-        if not self._shown:
+        if not ranked:
             self._placeholder("Nothing matches")
             return
-        # Read once per keystroke: the popup holds the input while open.
-        colors = fxstyle.get_theme_colors()
-        muted = QBrush(QColor(colors["text_muted"]))
-        disabled = QBrush(QColor(colors["text_disabled"]))
-        for entry in self._shown:
+        items = []
+        for _found, index in ranked[: self.SHOWN]:
+            entry = source[index]
             keys = QKeySequence(entry.keys).toString(QKeySequence.NativeText)
             item = QTreeWidgetItem([entry.label, entry.section, keys])
+            item.setData(0, _COMMAND_ROLE, entry)
             item.setTextAlignment(2, Qt.AlignRight | Qt.AlignVCenter)
-            for column in range(3):
-                if not entry.enabled or column:
-                    item.setForeground(
-                        column, muted if entry.enabled else disabled
-                    )
-                if entry.tip:
+            if entry.tip:
+                for column in range(3):
                     item.setToolTip(column, entry.tip)
-            self._items.append(item)
-        self.rows.addTopLevelItems(self._items)
-        self.rows.setCurrentItem(self._items[0])
+            items.append(item)
+        self.rows.addTopLevelItems(items)
+        self.rows.setCurrentItem(items[0])
 
     def _placeholder(self, text: str) -> None:
         item = QTreeWidgetItem([text])
@@ -330,9 +345,7 @@ class FXCommandPalette(QFrame):
         self._tell(entry.tip if entry is not None else "")
 
     def _entry(self, item: Optional[QTreeWidgetItem]) -> Optional[FXCommand]:
-        if item is None or not self._shown:
-            return None
-        return self._shown[self.rows.indexOfTopLevelItem(item)]
+        return None if item is None else item.data(0, _COMMAND_ROLE)
 
     def _run_current(self) -> None:
         self._run(self.rows.currentItem())
@@ -349,11 +362,14 @@ class FXCommandPalette(QFrame):
         entry.run()
 
     def _step(self, by: int) -> None:
-        if not self._items:
+        current = self.rows.currentItem()
+        if self._entry(current) is None:
             return
-        now = self.rows.indexOfTopLevelItem(self.rows.currentItem())
-        last = len(self._items) - 1
-        self.rows.setCurrentItem(self._items[max(0, min(last, now + by))])
+        now = self.rows.indexOfTopLevelItem(current)
+        last = self.rows.topLevelItemCount() - 1
+        self.rows.setCurrentItem(
+            self.rows.topLevelItem(max(0, min(last, now + by)))
+        )
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Move with the arrows and pages; Escape closes."""

@@ -7,22 +7,18 @@ import pkgutil
 
 # Third-party
 import pytest
-from qtpy.QtCore import QtMsgType
-from qtpy.QtWidgets import QGroupBox, QTabWidget
+from qtpy.QtCore import QEvent, QObject, QtMsgType
+from qtpy.QtWidgets import QGroupBox, QTabWidget, QWidget
 
 # Internal
 from fxgui import examples, fxstyle, fxwidgets
 
-# Not widgets: an app, process plumbing, theme plumbing, data and an enum.
+# Not widgets: an app, process plumbing and data.
 _NOT_SHOWN = {
     "FXApplication",
     "FXCommand",
     "FXSingleInstance",
     "FXSingleton",
-    "FXThemeColors",
-    "FXThemeManager",
-    "FXTooltipManager",
-    "FXTooltipPosition",
 }
 
 
@@ -77,6 +73,39 @@ def test_the_gallery_shows_every_public_widget(qapp):
     ]
     assert [name for name in classes if name not in shown] == []
     assert "FXDockArea" in shown
+    window.deleteLater()
+
+
+class _WindowsShown(QObject):
+    """Record every window Qt shows while installed on the application."""
+
+    def __init__(self):
+        super().__init__()
+        self.windows = []
+
+    def eventFilter(self, watched, event):
+        if (
+            event.type() == QEvent.Show
+            and isinstance(watched, QWidget)
+            and watched.isWindow()
+        ):
+            self.windows.append(
+                f"{type(watched).__name__}#{watched.objectName()}"
+            )
+        return False
+
+
+def test_only_the_gallery_window_shows_while_it_builds(qapp):
+    recorder = _WindowsShown()
+    qapp.installEventFilter(recorder)
+    try:
+        window = examples.build()
+        window.show()
+        qapp.processEvents()
+    finally:
+        qapp.removeEventFilter(recorder)
+    assert recorder.windows == [f"FXMainWindow#{window.objectName()}"]
+    window.close()
     window.deleteLater()
 
 

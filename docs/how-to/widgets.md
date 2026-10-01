@@ -55,7 +55,7 @@ application = fxwidgets.FXApplication()
 window = MyWindow()
 window.setWindowTitle("Subclassed FXMainWindow")
 window.show()
-application.exec_()
+application.exec()
 ```
 
 ## The Gallery
@@ -120,7 +120,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXPygmentsHighlighter` | Pygments syntax highlighter for any `QTextDocument` |
 | `FXRangeSlider` | Slider with two handles for a low and a high value |
 | `FXRatingWidget` | Star rating input, halves optional |
-| `FXResizedScrollArea` | Scroll area that says when it is resized and can fit its content |
+| `FXResizedScrollArea` | Scroll area whose height follows its content, between a floor and a cap |
 | `FXSearchBar` | Search field with a clear button and a debounced search signal |
 | `FXSeating` | Seats a tray panel off its icon or the pointer and slides it in |
 | `FXSingleInstance` | Lock on a local socket name; a second start wakes the first |
@@ -134,15 +134,10 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXSystemTray` | System tray icon with a menu |
 | `FXTagChip` | One tag, removable or not |
 | `FXTagInput` | Field that turns what you type into `FXTagChip`s |
-| `FXThemeColors` | The theme's colours by dot name, as `fxstyle.colors()` returns them |
-| `FXThemeManager` | Holds the `theme_changed` signal; `theme_manager` is its one instance |
 | `FXThreadLine` | Line over a comment thread, from the comment's face into each reply's |
 | `FXThumbnailDelegate` | Item delegate with thumbnails, status dots, labels and stars |
 | `FXTimelineSlider` | Timeline with playback, keyframes, markers and a loop region |
 | `FXToggleSwitch` | On/off switch that slides |
-| `FXTooltip` | Widget-hosting tooltip, for what native tooltips cannot do |
-| `FXTooltipManager` | Replaces every tooltip of the application with an `FXTooltip` |
-| `FXTooltipPosition` | Where an `FXTooltip` sits against its anchor |
 | `FXValidatedLineEdit` | Line edit that shakes and flashes when its validator refuses a key |
 | `FXWidget` | Widget holding an optional Designer file in a padded box layout |
 
@@ -158,9 +153,7 @@ And these functions and constants:
 | `fix_wrapped_heights` | Gives every word-wrapped label under a widget the height its width needs |
 | `grab_screen_region` | Lets the user drag out a screen region and returns it, or `None` on Escape |
 | `keycap` | Renders one shortcut as a key in a tooltip's HTML; on a window, use `FXKeycap` |
-| `set_tooltip` | Attaches an `FXTooltip` to a widget or an item |
 | `tip` | Returns the HTML `apply_tip` sets |
-| `theme_manager` | The `FXThemeManager` instance |
 | `DEFAULT_EMOJIS` | The emoji an `FXEmojiPicker` offers by default |
 | `CRITICAL`, `ERROR`, `WARNING`, `SUCCESS`, `INFO`, `DEBUG` | Severities for messages, banners and progress cards |
 

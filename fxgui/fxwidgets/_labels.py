@@ -1,7 +1,6 @@
 """Custom label widgets."""
 
 # Built-in
-import warnings
 from typing import Optional
 
 # Third-party
@@ -11,35 +10,20 @@ from qtpy.QtWidgets import QFormLayout, QLabel, QStyle, QToolTip, QWidget
 
 
 class FXElidedLabel(QLabel):
-    """A QLabel that elides text with '...' when it doesn't fit.
+    """A QLabel that cuts its text with an ellipsis when it does not fit.
 
-    This label automatically truncates text and adds an ellipsis when the
-    text is too long to fit within the available space.
+    On one line the text is cut where `mode` says. With `wordWrap()` on
+    and a maximum height set, it is cut from the right at the last line
+    that fits; `mode` has no meaning across wrapped lines.
 
     Args:
-        text: The label's text. Defaults to `""`.
-        parent: Parent widget. Defaults to `None`.
-        mode: Where the text is cut when it does not fit. Defaults to
-            `Qt.ElideRight`. `Qt.ElideMiddle` is what tells apart
-            strings that share a tail -- paths under a common root, or
-            email-shaped identities at one domain, where two long values
-            cut from the right come out looking identical.
-
-            Governs the SINGLE-LINE case only. With `wordWrap()` on, the
-            text is cut at the last line that fits and an ellipsis is
-            appended there, whatever the mode -- because
-            `QFontMetrics.elidedText` elides one line, and there is no
-            one obvious meaning for "elide the middle" of a wrapped
-            block (which line loses its middle?). Enabling word wrap on
-            a label whose mode is not `ElideRight` warns, rather than
-            quietly doing something else than it was asked.
+        text: The label's text.
+        parent: Parent widget.
+        mode: Where one line is cut. `Qt.ElideMiddle` keeps apart strings
+            that share a tail, such as paths under one root.
 
     Examples:
-        >>> from qtpy.QtCore import Qt
-        >>> from fxgui import fxwidgets
-        >>> label = fxwidgets.FXElidedLabel(
-        ...     "a very long identity", mode=Qt.ElideMiddle
-        ... )
+        >>> label = FXElidedLabel("a very long identity", mode=Qt.ElideMiddle)
     """
 
     def __init__(
@@ -51,72 +35,20 @@ class FXElidedLabel(QLabel):
         super().__init__(text, parent)
         self._full_text = text
         self._mode = mode
-        self._warned_about_mode = False
 
     def minimumSizeHint(self) -> QSize:
-        """No width at all, and the height one line of this font needs.
-
-        `QLabel`'s own minimum width IS the width of its whole text --
-        measured, 696px for a 58-character string -- and a minimum is
-        not a preference: a label that will not go below its own text
-        width does not elide when the room runs out, it takes the room
-        from whatever shares its row and, failing that, from the window.
-        Measured: a 47-character string in a row with a button, in a
-        window told to be 200px wide, forced the window to 680px and
-        pushed the button from x=90 to x=570.
-
-        Which makes an eliding label with `QLabel`'s minimum a widget
-        that cannot do the one thing it exists for. This yields the
-        width instead, which is what eliding means, and keeps the height
-        so a row is still a row.
-
-        Returns:
-            QSize: Zero width, at `QLabel`'s own minimum height.
-        """
+        """Return no width and one line's height, so the label can shrink."""
+        # QLabel's own minimum width is its whole text: it would never elide.
         return QSize(0, super().minimumSizeHint().height())
 
-    @property
     def mode(self) -> Qt.TextElideMode:
-        """Where the text is cut when it does not fit."""
+        """Return where one line is cut when it does not fit."""
         return self._mode
 
-    @mode.setter
-    def mode(self, mode: Qt.TextElideMode) -> None:
+    def set_mode(self, mode: Qt.TextElideMode) -> None:
+        """Cut one line where `mode` says from now on."""
         self._mode = mode
-        self._warn_if_mode_is_moot()
         self._elide_text()
-
-    def setWordWrap(self, wrap: bool) -> None:
-        """Wrap the text, and say so if that makes `mode` moot.
-
-        Args:
-            wrap: Whether the label wraps rather than eliding on one
-                line.
-        """
-        super().setWordWrap(wrap)
-        self._warn_if_mode_is_moot()
-
-    def _warn_if_mode_is_moot(self) -> None:
-        """Warn once per label when word wrap has overruled `mode`.
-
-        The combination is not an error -- the label still elides, from
-        the right, at the last line that fits. It is worth a word because
-        the alternative is a caller who asked for `ElideMiddle` getting
-        `ElideRight` with nothing anywhere saying so.
-        """
-        if self._warned_about_mode:
-            return
-        if not self.wordWrap() or self._mode == Qt.ElideRight:
-            return
-        self._warned_about_mode = True
-        warnings.warn(
-            "FXElidedLabel: `mode` governs single-line elision only, and "
-            "wordWrap() is on, so this label truncates from the right at "
-            "the last line that fits. Turn word wrap off to elide at "
-            f"{self._mode!r}.",
-            RuntimeWarning,
-            stacklevel=3,
-        )
 
     def setText(self, text: str) -> None:
         """Set the text and store the full text for elision."""
@@ -159,6 +91,12 @@ class FXElidedLabel(QLabel):
         super().resizeEvent(event)
         self._elide_text()
 
+    def changeEvent(self, event: QEvent) -> None:
+        """Re-elide text in a new font."""
+        super().changeEvent(event)
+        if event.type() == QEvent.FontChange:
+            self._elide_text()
+
     def _elide_text(self) -> None:
         """Elide the text to fit within the label's width."""
         if not self._full_text:
@@ -168,19 +106,12 @@ class FXElidedLabel(QLabel):
         available_width = self.width() - 2  # Small margin
 
         if self.wordWrap():
-            # For word-wrapped labels, limit by line count. `_mode` does
-            # not reach here: see the class docstring's `mode` entry.
-            available_height = (
-                self.maximumHeight()
-                if self.maximumHeight() < 16777215
-                else self.height()
-            )
-            line_height = metrics.lineSpacing()
-            max_lines = (
-                max(1, available_height // line_height)
-                if line_height > 0
-                else 5
-            )
+            # 16777215 is QWIDGETSIZE_MAX: no maximum, so nothing to cut to.
+            if self.maximumHeight() >= 16777215:
+                super().setText(self._full_text)
+                return
+            line_height = max(1, metrics.lineSpacing())
+            max_lines = max(1, self.maximumHeight() // line_height)
 
             # Simple approach: truncate text if it would exceed max lines
             words = self._full_text.split()

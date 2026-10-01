@@ -196,4 +196,32 @@ def test_the_box_holds_its_lines_in_the_font_it_is_given_later(qtbot):
 
     box.setFont(font)
 
-    assert box.height() == box.fontMetrics().lineSpacing() * 3 + 12
+    assert box.height() == _lines_tall(box, 3)
+
+
+def _lines_tall(box, lines):
+    margin = box.document().documentMargin()
+    return int(box.fontMetrics().lineSpacing() * lines
+               + 2 * (box.frameWidth() + margin)) + 1
+
+
+def test_the_lines_fit_without_scrolling(qtbot):
+    box = FXMentionEdit(lines=3)
+    qtbot.addWidget(box)
+    box.setPlainText("\n".join(["one", "two", "three"]))
+    box.show()
+    qtbot.waitExposed(box)
+
+    assert box.verticalScrollBar().maximum() == 0
+
+
+def test_the_box_holds_its_lines_inside_the_frame_its_sheet_gives(qtbot):
+    box = FXMentionEdit(lines=2)
+    qtbot.addWidget(box)
+    before = box.height()
+
+    box.setStyleSheet("FXMentionEdit { border: 6px solid red; }")
+    box.ensurePolished()
+
+    assert box.frameWidth() == 6
+    assert box.height() == _lines_tall(box, 2) > before

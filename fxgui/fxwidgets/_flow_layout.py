@@ -27,7 +27,7 @@ class FXFlowLayout(QLayout):
     def __init__(self, parent: Optional[QWidget] = None, spacing: int = 4):
         super().__init__(parent)
         self._items: List[QLayoutItem] = []
-        self._gap = spacing
+        self.setSpacing(spacing)
         self.setContentsMargins(0, 0, 0, 0)
 
     def addItem(self, item: QLayoutItem) -> None:
@@ -86,9 +86,9 @@ class FXFlowLayout(QLayout):
         for item in self._shown():
             hint = item.sizeHint()
             if x + hint.width() > rect.right() + 1 and line > 0:
-                x, y, line = rect.x(), y + line + self._gap, 0
+                x, y, line = rect.x(), y + line + self.spacing(), 0
             if move:
                 item.setGeometry(QRect(QPoint(x, y), hint))
-            x += hint.width() + self._gap
+            x += hint.width() + self.spacing()
             line = max(line, hint.height())
         return y + line - rect.y()

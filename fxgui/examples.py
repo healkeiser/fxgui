@@ -10,10 +10,9 @@ __email__ = "valentin.onze@gmail.com"
 
 # Built-in
 import logging
-from pathlib import Path
 
 # Third-party
-from qtpy.QtCore import QRect, Qt, QTimer
+from qtpy.QtCore import QRect, Qt
 from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -44,19 +43,13 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import __version__, fxstyle, fxwidgets
+from fxgui import __version__, fxstyle, fxutils, fxwidgets
+from fxgui.fxconstants import IMAGES_ROOT
 from fxgui.fxicons import get_icon, set_icon
 
-_IMAGES = Path(__file__).parent / "images"
 _LOGGER = logging.getLogger("fxgui.examples")
-_FEEDBACK = ("success", "warning", "error", "info", "debug")
-_SEVERITIES = {
-    "Success": fxwidgets.SUCCESS,
-    "Warning": fxwidgets.WARNING,
-    "Error": fxwidgets.ERROR,
-    "Info": fxwidgets.INFO,
-    "Debug": fxwidgets.DEBUG,
-}
+# Every feedback level the theme colours; each is also a severity.
+_FEEDBACK = tuple(fxstyle.get_feedback_colors())
 
 
 def _section(title: str, *items) -> QGroupBox:
@@ -216,16 +209,12 @@ def _inputs_page() -> QWidget:
         edit.setPlaceholderText(f"e.g. {example}")
         validators.addRow(name, edit)
 
-    icon_edit = fxwidgets.FXIconLineEdit("search")
+    icon_edit = fxwidgets.FXIconLineEdit(icon_name="search")
     icon_edit.setPlaceholderText("Shot name")
     password = fxwidgets.FXPasswordLineEdit()
-    password.line_edit.setPlaceholderText("Password")
+    password.setPlaceholderText("Password")
 
-    search = fxwidgets.FXSearchBar(
-        placeholder="Search assets...",
-        show_filter=True,
-        filters=["All", "Models", "Textures"],
-    )
+    search = fxwidgets.FXSearchBar(placeholder="Search assets...")
     tags = fxwidgets.FXTagInput()
     tags.set_tags(["comp", "lighting", "fx"])
     chip = fxwidgets.FXTagChip("read only", removable=False)
@@ -258,7 +247,7 @@ def _inputs_page() -> QWidget:
         _section("FXTagInput / FXTagChip", tags, _row(chip)),
         _section("FXCheckableComboBox", _row(combo)),
         _section(
-            "FXFilePathWidget", fxwidgets.FXFilePathWidget(mode="directory")
+            "FXFilePathWidget", fxwidgets.FXFilePathWidget(mode="folder")
         ),
         _section(
             "FXRangeSlider", fxwidgets.FXRangeSlider(low=25, high=75)
@@ -332,17 +321,13 @@ def _display_page() -> QWidget:
 
     spinners = []
     for style in ("spinner", "dots", "pulse"):
-        spinner = fxwidgets.FXLoadingSpinner(size=28, style=style)
-        spinner.start()
-        spinners.append(spinner)
+        spinners.append(fxwidgets.FXLoadingSpinner(size=28, style=style))
     covered = QTextEdit("Content under an overlay.")
     covered.setFixedHeight(80)
     overlay = fxwidgets.FXLoadingOverlay(covered, message="Loading...")
-    shown = {"on": False}
 
     def toggle_overlay():
-        shown["on"] = not shown["on"]
-        overlay.show() if shown["on"] else overlay.hide()
+        overlay.setVisible(not overlay.isVisible())
 
     flow_box = QWidget()
     flow = fxwidgets.FXFlowLayout(flow_box, spacing=4)
@@ -355,16 +340,8 @@ def _display_page() -> QWidget:
     plain = QPushButton("Native rich tooltip")
     fxwidgets.apply_tip(plain, "Save", "Write the scene to disk", "Ctrl+S")
     key = fxwidgets.FXKeycap("Ctrl+S")
-    rich = QPushButton("FXTooltip")
-    fxwidgets.set_tooltip(
-        rich,
-        description="Write the scene to disk.",
-        title="Save",
-        icon="save",
-        shortcut="Ctrl+S",
-    )
 
-    return _page(
+    page = _page(
         _section("FXAvatar", _row(*avatars)),
         _section("FXStatusDot", _row(*dots)),
         _section("FXIconLabel", _row(*icons)),
@@ -392,10 +369,13 @@ def _display_page() -> QWidget:
         _section("FXFlowLayout", flow_box),
         _section("FXThreadLine", _thread()),
         _section(
-            "FXTooltip / set_tooltip / apply_tip / tip / keycap / FXKeycap",
-            _row(plain, rich, key),
+            "apply_tip / tip / keycap / FXKeycap", _row(plain, key)
         ),
     )
+    # start() shows the spinner: on one not yet in a layout, a window.
+    for spinner in spinners:
+        spinner.start()
+    return page
 
 
 def _containers_page() -> QWidget:
@@ -448,7 +428,7 @@ def _thumbnail_tree() -> QTreeWidget:
     tree.setHeaderLabels(["Name", "Frame range", "Status"])
     tree.setItemDelegate(delegate(tree))
     delegate.apply_transparent_selection(tree)
-    thumbnail = str(_IMAGES / "missing_image.png")
+    thumbnail = str(IMAGES_ROOT / "missing_image.png")
     for episode in ("ep101", "ep102"):
         top = QTreeWidgetItem(tree, [episode, "", "In progress"])
         top.setIcon(0, get_icon("movie"))
@@ -662,17 +642,15 @@ def _open_confirm(gallery: QWidget) -> None:
 def _open_splash(gallery: QWidget) -> None:
     # No parent: a splash is its own window, so the gallery holds it.
     gallery.splash = splash = fxwidgets.FXSplashScreen(
-        image_path=str(_IMAGES / "splash.png"),
+        image_path=str(IMAGES_ROOT / "splash.png"),
         title="fxgui",
         information="A splash screen with a progress bar; click to close.",
         show_progress_bar=True,
         project="fxgui",
-        corner_radius=12,
-        border_width=1,
     )
     splash.set_progress(60)
     splash.show()
-    QTimer.singleShot(4000, splash.close)
+    fxutils.later(4000, splash, splash.close)
 
 
 def _open_seated(gallery: QWidget) -> None:
@@ -710,29 +688,26 @@ def _windows_page(window: fxwidgets.FXMainWindow) -> QWidget:
     busy = QCheckBox("Busy")
     busy.toggled.connect(bar.set_busy)
 
-    banners = [
-        _button(
-            text,
-            lambda _=False, text=text, severity=severity: (
-                fxwidgets.FXNotificationBanner(
-                    parent=window.centralWidget(),
-                    message=f"A {text.lower()} banner.",
-                    severity_type=severity,
-                    timeout=4000,
-                ).show()
+    def banner(key, severity):
+        fxwidgets.FXNotificationBanner(
+            parent=window.centralWidget(),
+            message=f"A {key} banner.",
+            severity_type=severity,
+            timeout=4000,
+        ).show()
+
+    banners, messages = [], []
+    for key in _FEEDBACK:
+        severity = getattr(fxwidgets, key.upper())
+        banners.append(_button(
+            key.title(), lambda _=False, k=key, s=severity: banner(k, s)
+        ))
+        messages.append(_button(
+            key.title(),
+            lambda _=False, k=key, s=severity: bar.showMessage(
+                f"A {k} message.", s
             ),
-        )
-        for text, severity in _SEVERITIES.items()
-    ]
-    messages = [
-        _button(
-            text,
-            lambda _=False, text=text, severity=severity: bar.showMessage(
-                f"A {text.lower()} message.", severity
-            ),
-        )
-        for text, severity in _SEVERITIES.items()
-    ]
+        ))
 
     palette = fxwidgets.FXCommandPalette(
         window,
@@ -865,7 +840,7 @@ def main() -> None:
     window = build()
     window.show()
     window.center_on_screen()
-    application.exec_()
+    application.exec()
 
 
 if __name__ == "__main__":

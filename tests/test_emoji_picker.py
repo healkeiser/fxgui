@@ -293,5 +293,19 @@ def test_the_button_is_a_round_icon_button_of_the_given_size(qtbot, parent):
 
     assert isinstance(button, FXIconButton)
     assert (button.width(), button.height()) == (22, 22)
-    assert "border-radius: 10px" in button.styleSheet()
+    assert button.property("fxSize") == 22
     assert button.accessibleName() == "Insert an emoji"
+
+
+def test_the_emoji_size_comes_from_the_theme_sheet_alone(qtbot):
+    from fxgui import fxstyle
+
+    root = QWidget()
+    qtbot.addWidget(root)
+    fxstyle.register_themed_root(root)
+    picker = FXEmojiPicker(root)
+    button = picker.buttons()[0]
+    button.ensurePolished()
+
+    assert not button.testAttribute(Qt.WA_SetFont)
+    assert button.font().pixelSize() == 18

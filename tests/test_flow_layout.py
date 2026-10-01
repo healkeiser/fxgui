@@ -53,6 +53,14 @@ def test_the_minimum_is_the_widest_item_not_the_whole_row(qtbot):
     assert layout.sizeHint() == layout.minimumSize()
 
 
+def test_set_spacing_changes_the_gap(qtbot):
+    _host, layout, _buttons = _row(qtbot)
+    layout.setSpacing(10)
+
+    assert layout.spacing() == 10
+    assert layout.heightForWidth(60) == 6 * 20 + 5 * 10
+
+
 def test_items_can_be_taken_back_out(qtbot):
     _host, layout, buttons = _row(qtbot, count=2)
 

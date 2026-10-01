@@ -144,13 +144,17 @@ class FXMentionEdit(QPlainTextEdit):
         self._chosen.clear()
 
     def changeEvent(self, event: QEvent) -> None:
-        """Hold the lines again in a font a sheet or a theme hands it."""
+        """Hold the lines again in the font and frame a sheet hands it."""
         super().changeEvent(event)
-        if event.type() == QEvent.FontChange:
+        if event.type() in (QEvent.FontChange, QEvent.StyleChange):
             self._fit_lines()
 
     def _fit_lines(self) -> None:
-        self.setFixedHeight(self.fontMetrics().lineSpacing() * self._lines + 12)
+        inset = self.frameWidth() + self.document().documentMargin()
+        # One pixel more: Qt scrolls text exactly as tall as the viewport.
+        self.setFixedHeight(
+            int(self.fontMetrics().lineSpacing() * self._lines + 2 * inset) + 1
+        )
 
     def event(self, event: QEvent) -> bool:
         """Claim Escape from window shortcuts when the box closes on it."""
@@ -282,7 +286,7 @@ class FXThreadLine(QWidget):
         """Draw the line in the theme's border colour."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        pen = QPen(QColor(fxstyle.get_theme_colors()["border"]), self.WIDTH)
+        pen = QPen(QColor(fxstyle.colors().border), self.WIDTH)
         pen.setCapStyle(Qt.RoundCap)
         painter.setPen(pen)
         painter.setBrush(Qt.NoBrush)

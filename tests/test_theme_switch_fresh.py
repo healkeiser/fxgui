@@ -97,6 +97,10 @@ def differences(before: str, after: str) -> dict:
     # an inactive one draws its focus and selection differently.
     for build_in in (before, after):
         window = examples.build()
+        # A running spinner's angle is the time it has run: hold it still.
+        for spinner in window.findChildren(fxwidgets.FXLoadingSpinner):
+            spinner.stop()
+            spinner._angle = 0
         window.resize(720, 540)
         window.show()
         # A message shown across the switch keeps its words and recolours.

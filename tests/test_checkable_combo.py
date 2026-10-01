@@ -70,6 +70,29 @@ def test_ticks_can_be_set_and_say_so(qtbot):
     assert seen[-1] == ["render", "plate"]
 
 
+def test_setting_ticks_says_so_once_and_only_on_a_change(qtbot):
+    combo = FXCheckableComboBox()
+    qtbot.addWidget(combo)
+    combo.add_items(CHOICES)
+    seen = []
+    combo.checked_changed.connect(seen.append)
+
+    combo.set_checked_items(["render", "plate"])
+    combo.set_checked_items(["plate", "render"])
+
+    assert seen == [["render", "plate"]]
+
+
+def test_setting_ticks_repaints_an_open_popup(qtbot):
+    combo = _opened(qtbot)
+    changed = []
+    combo.model().dataChanged.connect(lambda *_: changed.append(True))
+
+    combo.set_checked_items(["cache"])
+
+    assert changed
+
+
 def test_the_closed_combo_reads_its_ticks(qtbot):
     combo = FXCheckableComboBox()
     qtbot.addWidget(combo)
