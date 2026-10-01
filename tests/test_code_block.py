@@ -1,7 +1,7 @@
 """The Pygments highlighter colours the right characters, once per change."""
 
 # Third-party
-from qtpy.QtGui import QTextCursor
+from qtpy.QtGui import QFontInfo, QTextCursor
 from qtpy.QtWidgets import QPlainTextEdit
 
 # Internal
@@ -121,3 +121,31 @@ def test_a_class_rule_gives_an_editor_the_mono_face_inside_a_host(qtbot):
     root.layout().addWidget(editor)
     editor.ensurePolished()
     assert editor.font().pixelSize() == 17, "the class rule beats the host's"
+
+
+def test_the_code_block_rule_adds_only_what_the_base_sheet_lacks():
+    rule = fxstyle.build_stylesheet().split("FXCodeBlock QTextEdit {")[1]
+    rule = rule.split("}")[0]
+
+    for repeated in ("background-color", "border", "selection", "color:"):
+        assert repeated not in rule
+    assert "font-family" in rule
+
+
+def test_the_block_fits_its_lines_in_the_stylesheet_font(qtbot, qapp):
+    root = QPlainTextEdit()
+    fxstyle.register_themed_root(root)
+    qtbot.addWidget(root)
+    short = FXCodeBlock("x = 1", parent=root)
+    tall = FXCodeBlock("\n".join(f"x{i} = {i}" for i in range(8)), parent=root)
+
+    edit = tall._text_edit
+    assert QFontInfo(edit.font()).family() == QFontInfo(
+        short._text_edit.font()).family()
+    lines = edit.fontMetrics().lineSpacing() * 8
+    assert edit.height() >= lines
+    assert edit.height() > short._text_edit.height()
+
+
+def test_the_language_list_helper_is_gone():
+    assert not hasattr(_code_block, "get_supported_languages")

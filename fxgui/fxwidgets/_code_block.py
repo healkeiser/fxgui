@@ -11,7 +11,7 @@ from typing import Optional
 # Third-party
 from pygments import lex
 from pygments.util import ClassNotFound
-from pygments.lexers import get_lexer_by_name, get_all_lexers
+from pygments.lexers import get_lexer_by_name
 from pygments.styles import get_style_by_name
 from qtpy.QtCore import Qt
 from qtpy.QtGui import (
@@ -25,27 +25,6 @@ from qtpy.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 
 # Internal
 from fxgui import fxstyle
-
-
-def get_supported_languages() -> list[str]:
-    """Get a list of all supported language names.
-
-    Returns:
-        A sorted list of language names that can be used with FXCodeBlock.
-
-    Example:
-        >>> languages = get_supported_languages()
-        >>> "python" in languages
-        True
-        >>> "javascript" in languages
-        True
-    """
-    languages = set()
-    for name, aliases, _, _ in get_all_lexers():
-        languages.add(name.lower())
-        for alias in aliases:
-            languages.add(alias.lower())
-    return sorted(languages)
 
 
 class FXPygmentsHighlighter(QSyntaxHighlighter):
@@ -71,7 +50,6 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
         super().__init__(document)
         self._language = language
         self._lexer = None
-        self._style = None
         self._formats = {}
         self._lexed_text = None
         self._spans = []
@@ -120,11 +98,11 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
         style_name = self._LIGHT_STYLE if fxstyle.is_light_theme() else self._DARK_STYLE
 
         try:
-            self._style = get_style_by_name(style_name)
+            style = get_style_by_name(style_name)
         except ClassNotFound:
-            self._style = get_style_by_name("default")
+            style = get_style_by_name("default")
 
-        for token_type, style_dict in self._style:
+        for token_type, style_dict in style:
             fmt = QTextCharFormat()
             if style_dict.get("color"):
                 fmt.setForeground(QColor(f"#{style_dict['color']}"))
@@ -211,6 +189,9 @@ class FXCodeBlock(QWidget):
         >>> code_block = FXCodeBlock(code)
     """
 
+    MIN_HEIGHT = 60
+    MAX_HEIGHT = 400
+
     def __init__(
         self,
         code: str = "",
@@ -228,10 +209,6 @@ class FXCodeBlock(QWidget):
         self._text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self._text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-        font = QFont("Consolas", 9)
-        font.setStyleHint(QFont.Monospace)
-        self._text_edit.setFont(font)
-
         self._highlighter = FXPygmentsHighlighter(
             self._text_edit.document(), language
         )
@@ -240,16 +217,18 @@ class FXCodeBlock(QWidget):
         self._adjust_height()
 
     def _adjust_height(self) -> None:
-        """Adjust widget height based on content."""
-        doc = self._text_edit.document()
-        # Calculate height based on line count with some padding
-        line_count = doc.blockCount()
-        line_height = self._text_edit.fontMetrics().lineSpacing()
-        # Add padding for margins and border
-        height = (line_count * line_height) + 32
-        # Set minimum and maximum heights
-        height = max(60, min(height, 400))
-        self._text_edit.setFixedHeight(height)
+        """Fit the editor to its lines, between MIN_HEIGHT and MAX_HEIGHT."""
+        edit = self._text_edit
+        # The stylesheet's mono font and padding apply once polished.
+        edit.ensurePolished()
+        margins = edit.contentsMargins()
+        height = (
+            int(edit.document().size().height())
+            + margins.top()
+            + margins.bottom()
+            + 2 * edit.frameWidth()
+        )
+        edit.setFixedHeight(max(self.MIN_HEIGHT, min(height, self.MAX_HEIGHT)))
 
     def set_code(self, code: str) -> None:
         """Set the code to display.
@@ -274,7 +253,7 @@ class FXCodeBlock(QWidget):
         Args:
             language: The language name. Supports 500+ languages via Pygments
                 (e.g., "python", "javascript", "cpp", "rust", "go", "java").
-                Use get_supported_languages() to see all available options.
+                An unknown name shows plain text.
         """
         self._highlighter.set_language(language)
 
@@ -283,12 +262,6 @@ fxstyle.register_widget_style("""
 FXCodeBlock QTextEdit {
     font-family: @font_mono;
     font-size: 9pt;
-    background-color: @surface_sunken;
-    color: @text;
-    border: 1px solid @border;
-    border-radius: @button_radius;
     padding: 8px;
-    selection-background-color: @accent_primary;
-    selection-color: @text_on_accent_primary;
 }
 """)
