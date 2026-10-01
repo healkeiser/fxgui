@@ -60,6 +60,13 @@ def test_no_filter_or_blur(path):
 
 
 @pytest.mark.parametrize("path", LOGOS, ids=lambda p: p.stem)
+def test_no_near_transparent_shape(path):
+    text = path.read_text(encoding="ascii")
+    found = re.findall(r'(?<![-\w])opacity\s*[:=]\s*"?([0-9.]+)', text)
+    assert all(float(v) >= 0.1 for v in found)
+
+
+@pytest.mark.parametrize("path", LOGOS, ids=lambda p: p.stem)
 def test_artwork_is_centred(bounds, path):
     left, top, right, bottom = bounds[path.stem]
     assert abs(left - (SIZE - right)) <= 2
