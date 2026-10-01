@@ -223,6 +223,10 @@ DEPTH_CAP = 4
 # shape of their own read it here.
 BUTTON_RADIUS = 4
 
+# WCAG's least contrast for the parts of a control: an edge on its
+# surface, a thumb on its track. `@control_edge` is held to it.
+CONTROL_CONTRAST = 3.0
+
 # Least WCAG contrast between a pane (`surface`) and the `frame` around
 # it. github_light's own pair, #ffffff on #f6f8fa, is 1.065.
 FRAME_MIN_CONTRAST = 1.06
@@ -1015,6 +1019,12 @@ def _primary_button_fills(
     return rest, hover, pressed
 
 
+def control_height(widget: QWidget) -> int:
+    """Return the height a push button comes to in `widget`'s font."""
+    # QPushButton in style.qss: 5 px of padding and a 1 px border each side.
+    return widget.fontMetrics().height() + 12
+
+
 def mix(one_hex, two_hex, amount: float) -> str:
     """Return the hex colour `amount` (0 to 1) of the way from one to two.
 
@@ -1271,6 +1281,13 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     for role, entries in _font_config(theme_name).items():
         tokens[f"@font_{role}"] = _resolve_font_stack(entries)
 
+    # No bundled border reads at 3:1 on its surface; a control whose edge
+    # is its only shape (a switch, a slider handle) wears this one.
+    tokens["@control_edge"] = readable_ink(
+        theme_data.get("surface", "#000000"),
+        theme_data.get("border_strong", "#808080"),
+        CONTROL_CONTRAST,
+    )
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
     tokens["@thin_scroll_radius"] = f"{THIN_SCROLL_WIDTH // 2}px"
     tokens["@thin_scroll"] = f"{THIN_SCROLL_WIDTH}px"
