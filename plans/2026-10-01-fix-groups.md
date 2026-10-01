@@ -5,6 +5,7 @@ the files it owns, plus the extra items below. Base: branch `integrate`.
 
 ## Rules for every group
 
+- NEVER kill processes by image name (`taskkill /IM python.exe`, `Stop-Process -Name python`, `pkill python`): it kills other agents, other sessions and the owner's own apps. Kill only a PID you started yourself, or use a pytest timeout.
 - Own worktree and branch; touch only your files. A change a caller in
   another group's file needs: list it (file:line -> new call), don't edit.
 - Owner rules: anything wrong, costly or too complicated requires a
