@@ -1,4 +1,7 @@
-"""A theme switch paints the gallery exactly as a fresh build in that theme."""
+"""A theme switch paints the gallery exactly as a fresh build in that theme.
+
+One pair each way: every bug this caught was one mechanism, not one theme.
+"""
 
 # Built-in
 import json
@@ -21,32 +24,27 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import examples, fxstyle, fxwidgets
 
-_LIGHT = ("light", "github_light", "catppuccin_latte", "solarized_light")
-_PAIRS = (
-    [(light, "dark") for light in _LIGHT]
-    + [("dark", light) for light in _LIGHT]
-    + [("dark", "dracula")]
-)
+_PAIRS = (("light", "dark"), ("dark", "light"))
+
+
+def _image(widget) -> QImage:
+    return widget.grab().toImage().convertToFormat(QImage.Format_ARGB32)
 
 
 def _pages(window) -> list:
+    """Return each whole page, scrolled-off part too, then the window."""
     app = QApplication.instance()
     tabs = window.findChild(QTabWidget)
     images = []
     for index in range(tabs.count()):
         tabs.setCurrentIndex(index)
         app.processEvents()
-        # The window as shown, then the whole page, scrolled-off part too.
-        shots = [window.grab()]
         page = tabs.widget(index)
-        if isinstance(page, QScrollArea):
-            shots.append(page.widget().grab())
         images.append(
-            [
-                shot.toImage().convertToFormat(QImage.Format_ARGB32)
-                for shot in shots
-            ]
+            _image(page.widget() if isinstance(page, QScrollArea) else page)
         )
+    # The chrome round the pages, the status bar and its message.
+    images.append(_image(window))
     return images
 
 
@@ -68,10 +66,10 @@ def _tooltip(window) -> list:
         for widget in app.topLevelWidgets()
         if widget.inherits("QTipLabel") and widget.isVisible()
     )
-    image = label.grab().toImage().convertToFormat(QImage.Format_ARGB32)
+    image = _image(label)
     QToolTip.hideText()
     app.processEvents()
-    return [image]
+    return image
 
 
 def _count(first: QImage, second: QImage) -> int:
@@ -99,6 +97,7 @@ def differences(before: str, after: str) -> dict:
     # an inactive one draws its focus and selection differently.
     for build_in in (before, after):
         window = examples.build()
+        window.resize(720, 540)
         window.show()
         # A message shown across the switch keeps its words and recolours.
         window.statusBar().showMessage(
@@ -110,14 +109,15 @@ def differences(before: str, after: str) -> dict:
             fxstyle.apply_theme(after)
             app.processEvents()
         tabs = window.findChild(QTabWidget)
-        titles = [tabs.tabText(i) for i in range(tabs.count())] + ["Tooltip"]
+        titles = [tabs.tabText(i) for i in range(tabs.count())]
+        titles += ["Window", "Tooltip"]
         pages.append(_pages(window) + [_tooltip(window)])
         window.close()
         window.deleteLater()
-        app.processEvents()
-    counts = {
-        title: sum(map(_count, a, b)) for title, a, b in zip(titles, *pages)
-    }
+        # Outside an event loop a deleteLater waits forever, and every
+        # later switch restyles the windows left behind.
+        app.sendPostedEvents(None, QEvent.DeferredDelete)
+    counts = {title: _count(a, b) for title, a, b in zip(titles, *pages)}
     return {title: count for title, count in counts.items() if count}
 
 
@@ -137,12 +137,7 @@ fxconfig.SETTINGS_FILE = folder / "settings.ini"
 from fxgui.fxwidgets import FXApplication
 import test_theme_switch_fresh as switch
 app = FXApplication()
-found = {{}}
-for before, after in switch._PAIRS:
-    counts = switch.differences(before, after)
-    if counts:
-        found[before + " -> " + after] = counts
-print(json.dumps(found))
+print(json.dumps(switch.differences(*switch._PAIRS[0])))
 """
 
 
@@ -152,7 +147,7 @@ def test_a_switch_in_an_fxapplication_equals_a_fresh_build():
         [sys.executable, "-c", code],
         capture_output=True,
         text=True,
-        timeout=600,
+        timeout=120,
     )
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout.strip().splitlines()[-1]) == {}

@@ -946,13 +946,12 @@ QPushButton[fxRole="primary"]:disabled
 }
 
 QAbstractSpinBox {
-    /* One more on top than below brings it to a line edit's height. */
-    padding-top: 3px;
+    padding-top: 2px;
     padding-bottom: 2px;
     border: 1px solid @border;
     background-color: @surface_sunken;
     color: @text;
-    border-radius: @button_radius;
+    border-radius: 2px;
     min-width: 75px;
 }
 
