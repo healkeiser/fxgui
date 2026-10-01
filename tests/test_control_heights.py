@@ -18,6 +18,7 @@ from fxgui.fxwidgets import (
     FXFilePathWidget,
     FXSearchBar,
     FXTagInput,
+    FXTimelineSlider,
 )
 
 # A line edit and a push button come to the same height with the theme's
@@ -26,6 +27,8 @@ _INPUTS = {
     "QSpinBox": QSpinBox,
     "FXFilePathWidget": FXFilePathWidget,
     "FXSearchBar": FXSearchBar,
+    # Its spin boxes set the row.
+    "FXTimelineSlider": FXTimelineSlider,
     # Its field is the whole widget until a tag is added.
     "FXTagInput": FXTagInput,
     "QDoubleSpinBox": QDoubleSpinBox,

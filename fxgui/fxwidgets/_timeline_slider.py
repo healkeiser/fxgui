@@ -166,6 +166,9 @@ class FXTimelineSlider(QWidget):
         # Widgets are created first (per the show_* flags), then arranged
         # according to controls_position at the end of __init__.
 
+        # The transport buttons are squares a push button's height.
+        side = fxstyle.control_height(self)
+
         # Start frame spinbox (editable)
         self._start_spinbox = QSpinBox()
         self._start_spinbox.setRange(-99999, 99999)
@@ -219,7 +222,7 @@ class FXTimelineSlider(QWidget):
             # Go to start
             self._goto_start_btn = QPushButton()
             fxicons.set_icon(self._goto_start_btn, "skip_previous")
-            self._goto_start_btn.setFixedSize(28, 28)
+            self._goto_start_btn.setFixedSize(side, side)
             self._goto_start_btn.setFlat(True)
             self._goto_start_btn.clicked.connect(self.go_to_start)
             apply_tip(
@@ -232,7 +235,7 @@ class FXTimelineSlider(QWidget):
             # Previous frame
             self._prev_btn = QPushButton()
             fxicons.set_icon(self._prev_btn, "chevron_left")
-            self._prev_btn.setFixedSize(28, 28)
+            self._prev_btn.setFixedSize(side, side)
             self._prev_btn.setFlat(True)
             self._prev_btn.clicked.connect(self.previous_frame)
             apply_tip(
@@ -245,7 +248,7 @@ class FXTimelineSlider(QWidget):
             # Play/Pause
             self._play_btn = QPushButton()
             fxicons.set_icon(self._play_btn, "play_arrow")
-            self._play_btn.setFixedSize(28, 28)
+            self._play_btn.setFixedSize(side, side)
             self._play_btn.clicked.connect(self.toggle_playback)
             apply_tip(
                 self._play_btn,
@@ -257,7 +260,7 @@ class FXTimelineSlider(QWidget):
             # Next frame
             self._next_btn = QPushButton()
             fxicons.set_icon(self._next_btn, "chevron_right")
-            self._next_btn.setFixedSize(28, 28)
+            self._next_btn.setFixedSize(side, side)
             self._next_btn.setFlat(True)
             self._next_btn.clicked.connect(self.next_frame)
             apply_tip(
@@ -270,7 +273,7 @@ class FXTimelineSlider(QWidget):
             # Go to end
             self._goto_end_btn = QPushButton()
             fxicons.set_icon(self._goto_end_btn, "skip_next")
-            self._goto_end_btn.setFixedSize(28, 28)
+            self._goto_end_btn.setFixedSize(side, side)
             self._goto_end_btn.setFlat(True)
             self._goto_end_btn.clicked.connect(self.go_to_end)
             apply_tip(
@@ -284,7 +287,7 @@ class FXTimelineSlider(QWidget):
             # or stop there (off).
             self._loop_btn = QPushButton()
             fxicons.set_icon(self._loop_btn, "repeat")
-            self._loop_btn.setFixedSize(28, 28)
+            self._loop_btn.setFixedSize(side, side)
             self._loop_btn.setFlat(True)
             self._loop_btn.setCheckable(True)
             self._loop_btn.setChecked(self._loop_playback)
@@ -300,7 +303,7 @@ class FXTimelineSlider(QWidget):
             if show_keyframe_controls:
                 self._prev_key_btn = QPushButton()
                 fxicons.set_icon(self._prev_key_btn, "keyboard_double_arrow_left")
-                self._prev_key_btn.setFixedSize(28, 28)
+                self._prev_key_btn.setFixedSize(side, side)
                 self._prev_key_btn.setFlat(True)
                 self._prev_key_btn.clicked.connect(self.go_to_previous_keyframe)
                 apply_tip(
@@ -311,7 +314,7 @@ class FXTimelineSlider(QWidget):
 
                 self._next_key_btn = QPushButton()
                 fxicons.set_icon(self._next_key_btn, "keyboard_double_arrow_right")
-                self._next_key_btn.setFixedSize(28, 28)
+                self._next_key_btn.setFixedSize(side, side)
                 self._next_key_btn.setFlat(True)
                 self._next_key_btn.clicked.connect(self.go_to_next_keyframe)
                 apply_tip(
@@ -329,7 +332,7 @@ class FXTimelineSlider(QWidget):
                 # end chevrons (first_page/last_page were near-identical).
                 self._mark_in_btn = QPushButton()
                 fxicons.set_icon(self._mark_in_btn, "login")
-                self._mark_in_btn.setFixedSize(28, 28)
+                self._mark_in_btn.setFixedSize(side, side)
                 self._mark_in_btn.setFlat(True)
                 self._mark_in_btn.clicked.connect(
                     lambda: self.in_point_requested.emit(self._current_frame)
@@ -343,7 +346,7 @@ class FXTimelineSlider(QWidget):
 
                 self._mark_out_btn = QPushButton()
                 fxicons.set_icon(self._mark_out_btn, "logout")
-                self._mark_out_btn.setFixedSize(28, 28)
+                self._mark_out_btn.setFixedSize(side, side)
                 self._mark_out_btn.setFlat(True)
                 self._mark_out_btn.clicked.connect(
                     lambda: self.out_point_requested.emit(self._current_frame)
@@ -500,7 +503,6 @@ class FXTimelineSlider(QWidget):
             main_layout.addLayout(self._extra_controls_layout)
 
             self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-            self.setMinimumHeight(30)
 
     def add_control_widget(self, widget: QWidget) -> None:
         """Append a consumer widget to the controls area.
