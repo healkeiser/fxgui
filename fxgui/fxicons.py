@@ -111,6 +111,8 @@ _libraries_info = {
     },
     "dcc": {
         "recolor": False,
+        # Single-colour marks, drawn in the theme's icon ink.
+        "recolor_names": frozenset({"alembic", "3d_equalizer", "rez", "zbrush"}),
         "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
         "defaults": {
             "extension": "svg",
@@ -513,18 +515,24 @@ def _raster(
 _get_pixmap_cached = lru_cache(maxsize=512)(_get_pixmap_internal)
 
 
-def _resolved(library, width, height, color):
+def _recolors(library: str, icon_name: str) -> bool:
+    """Return whether `icon_name` in `library` takes an ink."""
+    info = _libraries_info[library]
+    return info["recolor"] or icon_name in info.get("recolor_names", ())
+
+
+def _resolved(library, width, height, color, icon_name=None):
     """Fill a library, size and colour left unset from the library defaults.
 
-    A full-colour library answers no colour, whatever was asked.
+    A full-colour icon answers no colour, whatever was asked.
     """
     library = library or _default_library
     info = _libraries_info[library]
     defaults = info["defaults"]
-    if not info["recolor"]:
+    if not _recolors(library, icon_name):
         color = None
     elif color is None:
-        color = defaults["color"]
+        color = defaults["color"] if info["recolor"] else "icon"
     return (
         library,
         defaults["width"] if width is None else width,
@@ -566,7 +574,8 @@ def get_pixmap(
         >>> get_pixmap("lemon", library="fontawesome")
     """
 
-    library, width, height, color = _resolved(library, width, height, color)
+    library, width, height, color = _resolved(
+        library, width, height, color, icon_name)
     # A copy: one shares the pixels until written, so a caller changing it
     # leaves the cached one alone.
     return QPixmap(_get_pixmap_cached(
@@ -773,7 +782,7 @@ def get_icon(
     if unknown:
         raise ValueError(f"No icon mode named {sorted(unknown)}.")
     library, width, height, inks["normal"] = _resolved(
-        library, width, height, color)
+        library, width, height, color, icon_name)
     path = get_icon_path(
         icon_name, library=library, style=style, extension=extension
     )
@@ -781,7 +790,7 @@ def get_icon(
     # is handed (QtAds' icon provider) must not delete the cached one.
     return QIcon(_get_icon_cached(
         path, width, height, tuple(sorted(inks.items())),
-        _libraries_info[library]["recolor"],
+        _recolors(library, icon_name),
     ))
 
 
