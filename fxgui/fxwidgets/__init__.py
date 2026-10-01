@@ -89,6 +89,7 @@ from fxgui.fxwidgets._status_dot import FXStatusDot
 from fxgui.fxwidgets._checkable_combo import FXCheckableComboBox
 from fxgui.fxwidgets._labels import align_labels, fix_wrapped_heights
 from fxgui.fxwidgets._seating import FXSeating
+from fxgui.fxwidgets._screen_grab import grab_screen_region
 
 
 __all__ = [
@@ -167,4 +168,5 @@ __all__ = [
     "align_labels",
     "fix_wrapped_heights",
     "FXSeating",
+    "grab_screen_region",
 ]
