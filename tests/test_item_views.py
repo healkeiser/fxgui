@@ -381,3 +381,29 @@ def test_the_ratio_lives_in_the_proxy(qtbot):
     assert search.proxy_model().ratio() == 0.2
     assert not hasattr(search, "_color_match")
     assert not hasattr(search, "_ratio")
+
+
+def test_building_the_fuzzy_tree_shows_no_window(qtbot, qapp):
+    from qtpy.QtCore import QEvent, QObject
+
+    shown = []
+
+    class _Spy(QObject):
+        def eventFilter(self, watched, event):
+            if (
+                event.type() == QEvent.Show
+                and hasattr(watched, "isWindow")
+                and watched.isWindow()
+            ):
+                shown.append(type(watched).__name__)
+            return False
+
+    spy = _Spy()
+    qapp.installEventFilter(spy)
+    try:
+        search = fxwidgets.FXFuzzySearchTree(show_ratio_slider=True)
+        qtbot.addWidget(search)
+        qapp.processEvents()
+    finally:
+        qapp.removeEventFilter(spy)
+    assert shown == []

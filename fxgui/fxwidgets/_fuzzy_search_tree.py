@@ -90,7 +90,8 @@ class FXFuzzySearchTree(QWidget):
         layout.addWidget(self._search_bar)
         self.setFocusProxy(self._search_bar)
 
-        self._slider_container = QWidget()
+        # Parented first: a parentless widget shown is its own window.
+        self._slider_container = QWidget(self)
         slider_layout = QHBoxLayout(self._slider_container)
         slider_layout.setContentsMargins(0, 0, 0, 0)
         slider_layout.setSpacing(8)
@@ -332,11 +333,11 @@ class FXFuzzySearchTree(QWidget):
 
     def search_text(self) -> str:
         """Return the search text."""
-        return self._search_bar.text
+        return self._search_bar.text()
 
     def set_search_text(self, text: str) -> None:
         """Set the search text."""
-        self._search_bar.text = text
+        self._search_bar.setText(text)
 
     def ratio(self) -> float:
         """Return the similarity threshold, 0.0 to 1.0."""
