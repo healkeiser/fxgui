@@ -97,6 +97,10 @@ shows every public widget (its test enforces it).
 - Group a (fxstyle.py, style.qss, style.yaml, conftest) after the chrome
   pass: shadow tokens (@shadow, @shadow_blur) that follow a switch; 6.5.3
   item BackgroundRole blended (#a8454a vs #aa3333) and spin boxes 23 px;
-  conftest flushes deferred deletes after every test.
+  conftest flushes deferred deletes after every test; fxstyle
+  `_apply_to_root` sets the palette before the sheet, so a root with a
+  child switched before its first show shows the old theme: set the sheet
+  first (measured by group d); the empty slider track's 3:1 (if the chrome
+  pass leaves it); slider_thumb/slider_thumb_hover tokens are unused.
 - Group h: test clean-up (duplicates, shared helpers, order hang, flaky
   busy-line test) after everything else lands.
