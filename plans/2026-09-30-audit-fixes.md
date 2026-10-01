@@ -230,6 +230,10 @@ leave `FXThemeAware`.
   gap between chords. Applies to FXKeycap and keycap() in tips (square
   caps in native tooltips). Key names from QKeySequence's NativeText.
   Owner: fix group (d), with the tooltip rework.
+- Icon ink rule: an icon beside a title or label uses the `icon` token;
+  `text_muted` only beside secondary text. FXProgressCard's task icon
+  (_progress_card.py:185, "text_muted") goes to `icon`; every fix group
+  checks its widgets for the same mismatch.
 - Delegate hover: one look, @accent_secondary as plain lists use.
 - Order hang: `pytest -p no:randomly tests/test_gallery.py
   tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
