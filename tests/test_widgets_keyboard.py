@@ -102,3 +102,12 @@ def test_range_slider_keyboard_clamps(qtbot):
         qtbot.keyClick(slider, Qt.Key_Right)
     assert slider.low() == 6
     assert slider.high() == 6
+
+
+def test_the_initial_rating_is_held_in_range_and_rounded(qtbot):
+    rating = FXRatingWidget(max_rating=5, initial_rating=9.4)
+    qtbot.addWidget(rating)
+    assert rating.rating() == 5
+    rounded = FXRatingWidget(max_rating=5, initial_rating=2.6)
+    qtbot.addWidget(rounded)
+    assert rounded.rating() == 3

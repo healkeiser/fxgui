@@ -91,3 +91,12 @@ def test_a_card_without_an_icon_builds_none(qtbot):
 def test_the_card_keeps_one_way_to_set_its_progress():
     for name in ("progress", "increment", "reset", "STATUS_ICONS"):
         assert not hasattr(FXProgressCard, name), name
+
+
+def test_the_initial_progress_is_held_in_range(qtbot):
+    card = FXProgressCard(progress=150)
+    qtbot.addWidget(card)
+    assert card._progress_bar.value() == 100
+    assert card._percentage_label.text() == "100%"
+    card.set_progress(100)
+    assert card._progress == 100

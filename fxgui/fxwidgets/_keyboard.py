@@ -156,7 +156,8 @@ class FXSplitButton(QToolButton):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Click on Enter and open the menu on `DROPDOWN_KEYS`."""
-        if _is_return(event) and not event.modifiers():
+        # The keypad's Enter carries the keypad modifier.
+        if _is_return(event) and not event.modifiers() & ~Qt.KeypadModifier:
             self.click()
             return
         menu = self.menu()
