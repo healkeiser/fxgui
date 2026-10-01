@@ -44,11 +44,11 @@ _KEY_FILL = "palette(button)"
 fxstyle.register_widget_style(
     f"""
     FXKeycap {{
-        background: @surface;
+        background: @state_hover;
         color: @text_muted;
         border: 1px solid @border;
         border-radius: @button_radius;
-        padding: 0px 5px;
+        padding: 1px 5px;
         font-family: @font_mono;
         font-size: {KEYCAP_FONT_SIZE}px;
     }}
