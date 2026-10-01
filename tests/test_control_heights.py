@@ -13,7 +13,12 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXFilePathWidget, FXSearchBar, FXTagInput
+from fxgui.fxwidgets import (
+    FXBreadcrumb,
+    FXFilePathWidget,
+    FXSearchBar,
+    FXTagInput,
+)
 
 # A line edit and a push button come to the same height with the theme's
 # font installed; under a test's fontless offscreen platform they differ.
@@ -45,3 +50,14 @@ def test_an_input_is_as_tall_as_a_line_edit(qtbot, name):
     height, line_edit = _heights(qtbot, _INPUTS[name], QLineEdit)
     assert height == line_edit
 
+
+
+_BUTTONS = {
+    "FXBreadcrumb": lambda: FXBreadcrumb(show_navigation=True),
+}
+
+
+@pytest.mark.parametrize("name", sorted(_BUTTONS))
+def test_a_button_row_is_as_tall_as_a_push_button(qtbot, name):
+    height, button = _heights(qtbot, _BUTTONS[name], lambda: QPushButton("x"))
+    assert height == button
