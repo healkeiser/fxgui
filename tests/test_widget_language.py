@@ -13,7 +13,7 @@ except ImportError:  # QtAds is an optional extra.
     pass
 
 _RULE = re.compile(r"([^{}]+)\{([^{}]*)\}")
-_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
 _ACCENTS = ("@accent_primary", "@accent_secondary")
 # A menu's current row is the one hover that wears the accent.
 _MENU_LIKE = ("QMenu",)

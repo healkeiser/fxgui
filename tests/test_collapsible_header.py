@@ -88,7 +88,6 @@ def test_a_new_cap_applies_to_an_open_section(qtbot, qapp):
 
 
 def _header_fill(section):
-    from qtpy.QtGui import QColor
 
     header = section._header
     image = header.grab().toImage()
