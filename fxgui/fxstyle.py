@@ -181,6 +181,9 @@ __all__ = [
     "readable_ink",
     "mix",
     "step_toward",
+    "depth_shade",
+    "DEPTH_STEP",
+    "DEPTH_CAP",
 ]
 
 
@@ -208,6 +211,13 @@ THIN_SCROLL_PROPERTY = "fxThinScroll"
 
 # The width, in pixels, of a thin scroll area's bar: `@thin_scroll` in QSS.
 THIN_SCROLL_WIDTH = 6
+
+# Per tree level, toward `border_light`; the cap's 48% stays short of a border.
+DEPTH_STEP = 0.12
+
+# ponytail: rows deeper than this shade like this level; raise it for a
+# tree that nests deeper and needs telling apart.
+DEPTH_CAP = 4
 
 # Styles QPushButton through @button_radius; widgets that draw a button
 # shape of their own read it here.
@@ -1039,6 +1049,31 @@ def step_toward(start, toward, done) -> str:
 def _reads(against: str, minimum: float):
     """Return a test: does a color differ from `against` by `minimum`?"""
     return lambda color: get_contrast_ratio(color, against) >= minimum
+
+
+def depth_shade(base, depth: int) -> str:
+    """Return a tree row's `base` colour tinted for its `depth`.
+
+    Each level steps `DEPTH_STEP` toward the theme's ``border_light``,
+    its mid-tone rather than its text, which washes a dark blue to grey.
+    The step is held back where the text would fall under 4.5:1.
+
+    Args:
+        base: The row's colour at depth 0, anything QColor reads.
+        depth: How many rows sit above it; 0 is a top-level row.
+
+    Examples:
+        >>> fxstyle.depth_shade(colors["surface"], 2)
+    """
+    base = QColor(base).name()
+    if depth <= 0:
+        return base
+    colors = get_theme_colors()
+    text = colors["text"]
+    floor = min(4.5, get_contrast_ratio(text, base))
+    deepest = mix(
+        base, colors["border_light"], min(depth, DEPTH_CAP) * DEPTH_STEP)
+    return step_toward(deepest, base, _reads(text, floor))
 
 
 def _depth_colors(theme_data: dict) -> Dict[str, str]:
