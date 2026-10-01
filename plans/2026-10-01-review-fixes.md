@@ -66,6 +66,62 @@ named in items 21 and 25 below, in any file.
   real desktop vs 406 ms offscreen: trace where the time goes and fix
   what is ours.
 
+### Report r1
+
+Branch `fix-r1` off `audit-fixes` 6e3b8754. Full suite on the worktree
+venv (PySide6 6.11.1): 2472 passed, 6 skipped. Covering files on PySide6
+6.5.3 (scratchpad `venv65`, PYTHONPATH on the worktree): 518 passed, 12
+skipped, 1 failure that is that venv's editable install still pointing at
+fix-b's tree (`fxgui.fxdcc` found there), not this branch.
+
+| Item | State | What now holds |
+|---|---|---|
+| A2 | done | `set_color_file` parses into a local first: a missing file raises `FileNotFoundError`, a broken one `yaml.YAMLError`, at the call; the loaded colours stay. |
+| A10 | done | Every FXIconButton side 8-96 px gets its radius rule once at import; a new size re-sheets nothing. A side outside clamps to the nearest end (`ponytail:` note). |
+| A16 | done | `mark_as_frame` repolishes `FindDirectChildrenOnly` children. |
+| A19 | done | The drop cross wears `@shadow`; the loading overlay a new `scrim` token (`#80000000`, every theme through dark). |
+| A21 | done | `fxstyle.qcolor(value)`: token name, colour or QColor in, QColor out (invalid for anything else). `fxicons._theme_ink`, `FXThumbnailDelegate._as_color`, the timeline's `_ink` go through it; FXToggleSwitch's on/off/thumb colours take tokens. |
+| A22 | done | `@lru_cache` on `readable_ink`; `_log_widget._readable_ink` deleted. |
+| A25 | done | `get_feedback_colors` deleted (callers: examples.py, _status_dot.py, 4 tests); `_compat.QT_VERSION` is the one version parse; `focus_visible` starts the focus watch, no widget calls `_watch_focus` (FXJoinedGroup asks `focus_visible(self)` once when built, since it reads only on focus change). |
+| A27 | done | fxstyle uses `fxconstants.PACKAGE_ROOT` / `ICONS_ROOT`. |
+| A24 (part) | done | `fxutils.NO_CAP`, used by _labels.py and _collapsible.py; the class constant is gone. |
+| B1 | done | Completer list: padding 2px 4px, and it is themed at its Polish (Qt measures rows before it shows it), owner found through its focus proxy. Four rows, no scroll, host and app. |
+| B2 | done | Popup hover rules sit after the view rules, plus `:!selected:hover` for combos: the hovered row is the accent. |
+| B4 | half | Combo and completer rows are a menu row: text plus 4 px each side (24 px at the 12 px font), host and app. Text inset: waiting on the owner's ruling, untouched. |
+| B5 | done | The combo popup frame is painted as the card (`_ComboCard`: `@surface`, `@border`, `CARD_RADIUS`); Qt's sheet never reaches that frame. |
+| B3 | done | QToolTip is the menu card (`@border`, `@surface`, `@card_radius`) and a themed tooltip window is rounded like a popup. A host's tooltips are left alone (Qt keeps one for the whole app). |
+| B6 | done | Title-bar buttons: `margin: 4px 0px` and a vertical Ignored policy, so they light as a tab pill and never set the bar's height. |
+| B7 | done | `QTabWidget::tab-bar { left: 1px; }`: tab-bar tabs start 3 px from the pane's outer edge, as dock tabs do. The test now measures both from the outer edge. |
+| Docs | done | icons.md (no set_default_icon_library, set_icon_defaults, superpose_icons; `badged`; the Active ink and button rule as the code has them), exec() on every page, theming.md (feedback tokens, qcolor, scrim, the popup/tooltip card, colour-file errors, focus watch). |
+| Splash 400 ms on 6.5.3 | done | The `card` rank is 700. 6.5.3 real desktop, first show: 404-414 ms at 600, 24 ms at 700; the look holds (rendered dark and light). The 600 cost moves to the first 600 text, which in an app is built behind the splash. |
+| Gallery 916 vs 406 ms | done | Cause: Qt on Windows takes about 0.4 s to resolve the first font naming two families, and the mono role named three (the Display page's code block paid it). Each font role now resolves to its first installed family alone. Real desktop build: 750-900 ms before, 230-340 ms after. |
+
+Not mine, found on the way, for r2: `_loading_spinner.py:124`
+`vars(colors).get(self._color, self._color)` is another token-or-colour
+copy; it becomes `fxstyle.qcolor(self._color)`.
+
+ls-pipeline call sites that change (main at 76f6b9eb):
+`fxstyle.get_feedback_colors()` is gone; read
+`fxstyle.colors().feedback_<level>_<part>` or `fxstyle.qcolor(...)`:
+python/ls_pipeline/apps/widgets/status_items.py:129,
+apps/hub/views/comments.py:514, :882, :967, apps/hub/views/task_info.py:370,
+apps/views/tree.py:53 (a level check: `hasattr(fxstyle.colors(),
+f"feedback_{role}_foreground")`), apps/launcher/views/rows.py:175,
+apps/hub/views/composer.py:411, apps/theme.py:119,
+apps/timesheet/views/window.py:151, scripts/widget_gallery.py:154, and the
+tests test_dependency_page_qt.py:1109, test_workflow_window_qt.py:1334,
+test_workflow_items_qt.py:539, :561, test_theme_switch_qt.py:37,
+test_status_dot.py:28, test_launcher_popup_qt.py:263, :353,
+test_scene_manager_qt.py:303, :313, :875-879, :952, test_hub_qt.py:879,
+:931, test_launcher_qt.py:44, test_task_pane_qt.py:160,
+test_graph_canvas_qt.py:715, :739, :757, :787, :833, :857, :3308.
+`get_font_family` / `get_fonts` now return one family, not a stack:
+apps/widgets/graph/view.py:88-92 reads it as a stack (works with one
+name; its docstring example goes stale), tests/apps/test_theme.py:221, :235.
+
+Commits: c68455cf, 0436e727, 5c51e5f4, 67c0152e, 2881ef6c, 3b261d73,
+06160f00, c207d6b9, and this report.
+
 ## Group r2: widgets
 
 Files: every fxgui/fxwidgets module except the lines r1 owns above.
