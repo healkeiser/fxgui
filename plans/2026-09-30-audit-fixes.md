@@ -225,6 +225,11 @@ leave `FXThemeAware`.
   shadow it made follows a theme switch through one module-level list
   (a QGraphicsDropShadowEffect colour is fixed once set, so this is a
   real side effect). Test: switch theme, shadow colour changes.
+- Owner ruling: a shortcut shows one cap per key, close together
+  (`Ctrl` `S`, not one `Ctrl+S` cap); a multi-chord sequence gets a wider
+  gap between chords. Applies to FXKeycap and keycap() in tips (square
+  caps in native tooltips). Key names from QKeySequence's NativeText.
+  Owner: fix group (d), with the tooltip rework.
 - Delegate hover: one look, @accent_secondary as plain lists use.
 - Order hang: `pytest -p no:randomly tests/test_gallery.py
   tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
