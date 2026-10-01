@@ -108,3 +108,4 @@ shows every public widget (its test enforces it).
 - Group h: test clean-up (duplicates, shared helpers, order hang, flaky
   busy-line test) after everything else lands.
   Also: after a test builds the gallery, later offscreen renders draw empty boxes for text and come out wider (a leak, seen by the chrome agent); find and fix it. One full run had 20 hover failures and took 157 s instead of 86 (not reproduced; maybe machine load).
+  Flaky under load: test_status_items' hover test timed out after 1 s in one full run; a log-widget test failed once on order on 6.5.3. Make waits event-driven, not timer-bound.
