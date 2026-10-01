@@ -137,7 +137,9 @@ def test_a_colour_file_change_reaches_roots_and_signal(
     qtbot.addWidget(root)
     fxstyle.register_themed_root(root)
     received = []
-    fxstyle.theme_changed.connect(received.append)
+    # PySide6 6.5 disconnects only the very object it connected.
+    note = received.append
+    fxstyle.theme_changed.connect(note)
     path = _yaml(tmp_path, "themes:\n  dark:\n    surface: '#123456'\n")
 
     try:
@@ -146,7 +148,7 @@ def test_a_colour_file_change_reaches_roots_and_signal(
         else:
             fxstyle.set_color_file(path)
     finally:
-        fxstyle.theme_changed.disconnect(received.append)
+        fxstyle.theme_changed.disconnect(note)
 
     assert "#123456" in root.styleSheet()
     assert received == ["dark"]

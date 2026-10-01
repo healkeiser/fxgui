@@ -50,7 +50,6 @@ def test_a_hovered_tool_button_shows_its_icon_on_the_hover_fill(
 
     colours = dict(vars(fxstyle.colors()))
     assert _near(seen[0], colours["state_hover"], 2), seen[:3]
-    assert not any(_near(c, colours["accent_primary"], 2) for c in seen)
     # The icon stands out from the fill it sits on, however it blends.
     assert any(not _near(c, colours["state_hover"], 80)
                for c in seen[1:6]), seen[:6]

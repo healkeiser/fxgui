@@ -19,9 +19,11 @@ def test_colors_tracks_theme_switches(qtbot):
 
 def test_module_level_theme_changed_signal(qtbot):
     received = []
-    fxstyle.theme_changed.connect(received.append)
+    # PySide6 6.5 disconnects only the very object it connected.
+    note = received.append
+    fxstyle.theme_changed.connect(note)
     try:
         fxstyle.apply_theme("light")
     finally:
-        fxstyle.theme_changed.disconnect(received.append)
+        fxstyle.theme_changed.disconnect(note)
     assert received == ["light"]

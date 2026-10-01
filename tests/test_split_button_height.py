@@ -48,8 +48,9 @@ def test_a_hovered_split_button_hovers_as_a_push_button(qtbot, theme):
     colors = fxstyle.colors()
     middle = split.height() // 2
     assert image.pixelColor(3, middle).name() == colors.state_hover.lower()
+    # Hover is a fill only: the edge stays the button's own.
     assert image.pixelColor(split.width() // 2, 0).name() == (
-        colors.accent_primary.lower()
+        colors.border_light.lower()
     )
     # The arrow's part takes the same fill, not a second accent.
     assert image.pixelColor(split.width() - 3, 3).name() == (
