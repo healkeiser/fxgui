@@ -822,6 +822,49 @@ def superpose_icons(*icons: QIcon) -> QIcon:
     return QIcon(pixmap)
 
 
+# Painted at 32: Windows asks a tray 16 at 100% and 32 at 200%, and the
+# dot stays round at both.
+_BADGE_PIXELS = 32
+# Of the side: smaller vanishes at 16 px, larger eats the mark.
+_BADGE_DOT = 0.4
+_BADGE_GAP = 0.07
+
+
+def badged(icon: QIcon, color: str = "accent_primary") -> QIcon:
+    """Return `icon` with a filled dot at its lower right, for work in flight.
+
+    A ring round the dot is cleared first, so the dot never reads as part
+    of the mark under it.
+
+    Args:
+        icon: The icon to badge; it is left unchanged.
+        color: A theme token or any colour QColor reads.
+
+    Examples:
+        >>> tray.setIcon(fxicons.badged(icon) if busy else icon)
+    """
+    side = _BADGE_PIXELS
+    size = max(2, round(side * _BADGE_DOT))
+    gap = max(1, round(side * _BADGE_GAP))
+    # Drawn onto a transparent page: an opaque source has no alpha to clear.
+    painted = QPixmap(side, side)
+    painted.fill(Qt.transparent)
+    painter = QPainter(painted)
+    painter.drawPixmap(0, 0, icon.pixmap(side, side))
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setPen(Qt.NoPen)
+    painter.setCompositionMode(QPainter.CompositionMode_Clear)
+    painter.setBrush(Qt.black)
+    painter.drawEllipse(
+        side - size - gap, side - size - gap, size + gap * 2, size + gap * 2
+    )
+    painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+    painter.setBrush(QColor(_theme_ink(color)))
+    painter.drawEllipse(side - size, side - size, size, size)
+    painter.end()
+    return QIcon(painted)
+
+
 def rounded_pixmap(
     image: Union[str, Path, QPixmap],
     side: int,
