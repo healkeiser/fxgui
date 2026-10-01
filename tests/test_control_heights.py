@@ -64,3 +64,15 @@ _BUTTONS = {
 def test_a_button_row_is_as_tall_as_a_push_button(qtbot, name):
     height, button = _heights(qtbot, _BUTTONS[name], lambda: QPushButton("x"))
     assert height == button
+
+
+def test_a_plain_tool_button_keeps_its_size_with_its_reserved_edge(qtbot):
+    """A 16 px icon, 3 px margin, 2 px padding, the 1 px edge, Qt's own 3."""
+    from qtpy.QtWidgets import QToolButton
+
+    from fxgui import fxicons
+
+    button = QToolButton()
+    fxicons.set_icon(button, "home")
+    height, _ = _heights(qtbot, lambda: button, QPushButton)
+    assert height == 16 + 2 * (3 + 2 + 1) + 3
