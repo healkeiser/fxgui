@@ -281,3 +281,28 @@ def test_the_palette_asks_for_the_platform_s_flyout_corners(qtbot, monkeypatch):
     monkeypatch.setattr(fxutils, "round_window_corners", asked.append)
     _window_, palette = _palette(qtbot, _commands([]))
     assert asked == [palette]
+
+
+def _ink(palette, row, column):
+    from qtpy.QtGui import QPalette
+    from qtpy.QtWidgets import QStyleOptionViewItem
+
+    rows = palette.rows
+    option = QStyleOptionViewItem()
+    index = rows.model().index(row, column)
+    rows.itemDelegate().initStyleOption(option, index)
+    return option.palette.color(QPalette.Text).name()
+
+
+def test_open_rows_take_a_theme_switch(qtbot):
+    blocked = FXCommand("Blocked", lambda: None, section="Act", enabled=False)
+    _window_, palette = _palette(qtbot, [*_commands([]), blocked])
+    fxstyle.apply_theme("light")
+    colors = fxstyle.colors()
+
+    labels = _labels(palette)
+    assert _ink(palette, 0, 1) == colors.text_muted.lower()
+    assert _ink(palette, labels.index("Blocked"), 0) == (
+        colors.text_disabled.lower()
+    )
+    assert not hasattr(palette, "_items") and not hasattr(palette, "_shown")
