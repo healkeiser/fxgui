@@ -61,7 +61,7 @@ fxstyle.register_widget_style(
     FXTooltip #FXTooltipContent {
         background-color: @surface_sunken;
         border: 1px solid @border;
-        border-radius: 8px;
+        border-radius: @card_radius;
     }
     FXTooltip #FXTooltipContent QLabel {
         background: transparent;

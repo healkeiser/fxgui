@@ -223,6 +223,9 @@ DEPTH_CAP = 4
 # shape of their own read it here.
 BUTTON_RADIUS = 4
 
+# The corners of a floating card: a tooltip, a banner, a dialog, a palette.
+CARD_RADIUS = 8
+
 # WCAG's least contrast for the parts of a control: an edge on its
 # surface, a thumb on its track. `@control_edge` is held to it.
 CONTROL_CONTRAST = 3.0
@@ -1294,6 +1297,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         CONTROL_CONTRAST,
     )
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
+    tokens["@card_radius"] = f"{CARD_RADIUS}px"
     tokens["@thin_scroll_radius"] = f"{THIN_SCROLL_WIDTH // 2}px"
     tokens["@thin_scroll"] = f"{THIN_SCROLL_WIDTH}px"
     # A bare number, for a sheet that writes its own unit: `@radiuspx`.

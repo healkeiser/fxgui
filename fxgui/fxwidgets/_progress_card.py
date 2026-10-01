@@ -28,7 +28,7 @@ fxstyle.register_widget_style(
     FXProgressCard {
         background-color: @surface;
         border: 1px solid @border;
-        border-radius: 8px;
+        border-radius: @card_radius;
     }
     FXProgressCard QLabel {
         background: transparent;
@@ -51,7 +51,8 @@ fxstyle.register_widget_style(
     }
     FXProgressCard QProgressBar::chunk:horizontal {
         background-color: @accent_primary;
-        border-radius: 2px;
+        /* The bar's own pill: it fills the bar edge to edge. */
+        border-radius: 3px;
     }
     """
 )

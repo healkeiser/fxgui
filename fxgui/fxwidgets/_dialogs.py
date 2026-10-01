@@ -39,7 +39,7 @@ fxstyle.register_widget_style(
     #FXFloatingDialogContainer {
         background-color: @surface;
         border: 1px solid @border;
-        border-radius: @button_radius;
+        border-radius: @card_radius;
     }
     #fxFloatingDialogTitle {
         background-color: @surface_sunken;
@@ -73,7 +73,7 @@ fxstyle.register_widget_style(
     }
     """
     # The title sits 1 px inside the frame's border.
-    % {"inner": fxstyle.BUTTON_RADIUS - 1}
+    % {"inner": fxstyle.CARD_RADIUS - 1}
 )
 
 

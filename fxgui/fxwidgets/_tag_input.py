@@ -253,7 +253,7 @@ FXTagChip QLabel {
 FXTagChip QPushButton {
     background: transparent;
     border: none;
-    border-radius: 8px;
+    border-radius: @button_radius;
 }
 FXTagChip QPushButton:hover {
     background: @primary_button_hover;

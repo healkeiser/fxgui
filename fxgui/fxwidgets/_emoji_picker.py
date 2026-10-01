@@ -86,11 +86,11 @@ fxstyle.register_widget_style("""
 FXEmojiPicker {
     background-color: @surface_sunken;
     border: 1px solid @border;
-    border-radius: 2px;
+    border-radius: @button_radius;
 }
 FXEmojiPicker QToolButton {
     border: 1px solid transparent;
-    border-radius: 4px;
+    border-radius: @button_radius;
     background-color: transparent;
     padding: 0px;
     font-size: 18px;

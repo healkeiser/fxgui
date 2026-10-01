@@ -38,7 +38,7 @@ fxstyle.register_widget_style(
     FXNotificationBanner {
         background-color: @surface_sunken;
         border: 1px solid @border;
-        border-radius: 8px;
+        border-radius: @card_radius;
     }
     FXNotificationBanner QLabel {
         background: transparent;
@@ -78,7 +78,7 @@ fxstyle.register_widget_style(
         background: transparent;
         color: @text_muted;
         border: 1px solid @border;
-        border-radius: 4px;
+        border-radius: @button_radius;
         padding: 6px 16px;
         font-weight: bold;
         font-size: 12px;

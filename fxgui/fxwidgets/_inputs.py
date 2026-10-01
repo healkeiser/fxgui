@@ -135,7 +135,7 @@ QPushButton#fx_icon_line_edit_button {
     border: none;
 }
 FXPasswordLineEdit QPushButton#fx_icon_line_edit_button {
-    border-radius: 4px;
+    border-radius: @button_radius;
 }
 FXPasswordLineEdit QPushButton#fx_icon_line_edit_button:hover {
     background-color: @state_hover;

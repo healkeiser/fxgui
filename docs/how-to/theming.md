@@ -391,8 +391,14 @@ reuses them, so it looks like it belongs.
 | Part | Value | Where it comes from |
 |------|-------|---------------------|
 | Height | 28 px at the 12 px body font | `fxstyle.control_height(widget)`: the font's line plus 5 px of padding and a 1 px border on each side |
-| Corner radius | 4 px | `fxstyle.BUTTON_RADIUS`, `@button_radius` in QSS |
+| Corner radius of a control or a menu | 4 px | `fxstyle.BUTTON_RADIUS`, `@button_radius` in QSS |
+| Corner radius of a floating card (tooltip, banner, progress card, drop zone, `FXFloatingDialog`) | 8 px | `fxstyle.CARD_RADIUS`, `@card_radius` |
 | Border | 1 px, solid | Every control |
+
+No rule names a 2, 4 or 8 px radius in pixels. Two shapes do keep pixels:
+a pill (a slider groove, a scroll thumb, a progress bar) rounds at half
+its thickness, and a part set inside a 1 px border rounds 1 px less
+than its frame.
 
 A push button, `FXPrimaryButton`, a line edit, a combo box,
 `FXSplitButton`, `FXToggleSwitch` and `FXLoadingSpinner` all come to
@@ -583,7 +589,7 @@ class MyStatusChip(QWidget):
 Every role in the tables at the top of this page is a token: `@surface`
 in QSS, `fxstyle.colors().surface` in code. So are the computed ones:
 `@text_on_accent_primary`, `@icon_on_accent_primary`, `@primary_button`,
-`@control_edge`,
+`@control_edge`, `@card_radius`,
 the flattened feedback colours (`@feedback_error_foreground`,
 `@feedback_info_background`, ...), `@radius`, `@button_radius` and the
 font roles (`@font_body`, `@font_title`, `@font_mono`).

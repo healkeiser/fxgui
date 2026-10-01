@@ -120,12 +120,12 @@ def _shown(qtbot, theme):
 
 
 @pytest.mark.parametrize("theme", fxstyle.get_available_themes())
-def test_the_frame_wears_the_border_at_the_button_radius(qtbot, theme):
+def test_the_frame_wears_the_border_at_the_card_radius(qtbot, theme):
     dialog = _shown(qtbot, theme)
     frame = dialog._container
     image = frame.grab().toImage()
     border = QColor(fxstyle.colors().border).name()
-    radius = fxstyle.BUTTON_RADIUS
+    radius = fxstyle.CARD_RADIUS
     middle = frame.height() // 2
     assert image.pixelColor(0, middle).name() == border
     assert image.pixelColor(frame.width() - 1, middle).name() == border

@@ -286,7 +286,7 @@ FXCodeBlock QTextEdit {
     background-color: @surface_sunken;
     color: @text;
     border: 1px solid @border;
-    border-radius: 4px;
+    border-radius: @button_radius;
     padding: 8px;
     selection-background-color: @accent_primary;
     selection-color: @text_on_accent_primary;
