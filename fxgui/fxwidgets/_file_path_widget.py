@@ -19,7 +19,11 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle
 from fxgui._compat import is_valid as is_valid_object
+from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._tips import apply_tip
+
+
+MODES = ("file", "files", "folder", "save")
 
 
 def _path_is_valid(path: str, mode: str) -> bool:
@@ -79,11 +83,14 @@ class FXFilePathWidget(QWidget):
 
     Args:
         parent: Parent widget.
-        mode: Selection mode ('file', 'files', 'folder', 'save').
+        mode: Selection mode: 'file', 'files', 'folder' or 'save'.
         placeholder: Placeholder text.
         file_filter: File filter for file dialogs (e.g., "Images (*.png *.jpg)").
         default_path: Default path for the file dialog.
         validate: Whether to show validation indicator.
+
+    Raises:
+        ValueError: `mode` is not one of `MODES`.
 
     Signals:
         path_changed: Emitted when the path changes.
@@ -111,11 +118,16 @@ class FXFilePathWidget(QWidget):
     ):
         super().__init__(parent)
 
-        self._mode = mode
         self._file_filter = file_filter
         self._default_path = default_path or os.path.expanduser("~")
         self._validate = validate
         self._is_valid = False
+
+        # Debounce timer for validation
+        self._validation_timer = QTimer(self)
+        self._validation_timer.setSingleShot(True)
+        self._validation_timer.setInterval(300)  # ms
+        self._validation_timer.timeout.connect(self._do_validation)
 
         # Main layout
         layout = QHBoxLayout(self)
@@ -126,29 +138,19 @@ class FXFilePathWidget(QWidget):
         self._input = QLineEdit()
         self._input.setPlaceholderText(placeholder)
         self._input.textChanged.connect(self._on_text_changed)
-        self._input.setAcceptDrops(True)
+        # A drop on the field reaches dropEvent, not the line edit's own
+        # text drop.
+        self._input.setAcceptDrops(False)
         layout.addWidget(self._input, 1)
 
-        # Validation indicator
         if validate:
-            self._indicator = QPushButton()
-            self._indicator.setFixedSize(24, 24)
-            self._indicator.setFlat(True)
-            self._indicator.setStyleSheet(
-                "background: transparent; border: none;"
-            )
+            self._indicator = FXIconLabel()
             self._update_indicator()
             layout.addWidget(self._indicator)
 
-        # Browse button
         self._browse_btn = QPushButton()
         self._browse_btn.setCursor(Qt.PointingHandCursor)
-
-        # Set icon based on mode
-        if mode == "folder":
-            fxicons.set_icon(self._browse_btn, "folder_open")
-        else:
-            fxicons.set_icon(self._browse_btn, "file_open")
+        self.set_mode(mode)
 
         # A square as tall as a push button, beside a line edit as tall.
         side = fxstyle.control_height(self._browse_btn)
@@ -161,28 +163,11 @@ class FXFilePathWidget(QWidget):
         )
         layout.addWidget(self._browse_btn)
 
-        # Enable drag and drop
         self.setAcceptDrops(True)
-
-        # Debounce timer for validation
-        self._validation_timer = QTimer(self)
-        self._validation_timer.setSingleShot(True)
-        self._validation_timer.setInterval(300)  # ms
-        self._validation_timer.timeout.connect(self._do_validation)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-    @property
     def path(self) -> str:
-        """Return the current path."""
-        return self._input.text()
-
-    @path.setter
-    def path(self, value: str) -> None:
-        """Set the path."""
-        self._input.setText(value)
-
-    def get_path(self) -> str:
         """Return the current path."""
         return self._input.text()
 
@@ -206,14 +191,19 @@ class FXFilePathWidget(QWidget):
         """Set the selection mode.
 
         Args:
-            mode: Selection mode ('file', 'files', 'folder', 'save').
-        """
-        self._mode = mode
+            mode: Selection mode: 'file', 'files', 'folder' or 'save'.
 
-        if mode == "folder":
-            fxicons.set_icon(self._browse_btn, "folder_open")
-        else:
-            fxicons.set_icon(self._browse_btn, "file_open")
+        Raises:
+            ValueError: `mode` is not one of `MODES`.
+        """
+        if mode not in MODES:
+            raise ValueError(f"mode {mode!r} is not one of {MODES}")
+        self._mode = mode
+        fxicons.set_icon(
+            self._browse_btn,
+            "folder_open" if mode == "folder" else "file_open",
+        )
+        self._validation_timer.start()
 
     def set_file_filter(self, filter_str: str) -> None:
         """Set the file filter.

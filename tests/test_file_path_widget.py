@@ -35,7 +35,7 @@ def test_a_multi_file_drop_keeps_every_file(qtbot, qapp, tmp_path):
 
     widget.dropEvent(event)
 
-    assert widget.path.split(";") == [
+    assert widget.path().split(";") == [
         QUrl.fromLocalFile(str(first)).toLocalFile(),
         QUrl.fromLocalFile(str(second)).toLocalFile(),
     ]
@@ -56,3 +56,42 @@ def test_a_result_for_a_deleted_widget_is_dropped(qtbot, qapp, tmp_path):
     qapp.sendPostedEvents(None, QEvent.DeferredDelete)
     QThreadPool.globalInstance().waitForDone(2000)
     qapp.processEvents()
+
+
+def test_an_unknown_mode_is_refused(qtbot, qapp):
+    import pytest
+
+    with pytest.raises(ValueError):
+        FXFilePathWidget(mode="directory")
+    widget = FXFilePathWidget(mode="folder")
+    qtbot.addWidget(widget)
+    with pytest.raises(ValueError):
+        widget.set_mode("dir")
+
+
+def test_one_accessor_for_the_path(qtbot, qapp):
+    widget = FXFilePathWidget()
+    qtbot.addWidget(widget)
+
+    widget.set_path("C:/shots")
+
+    assert widget.path() == "C:/shots"
+    assert not hasattr(widget, "get_path")
+
+
+def test_the_indicator_is_an_icon_label_with_no_sheet(qtbot, qapp):
+    from fxgui.fxwidgets import FXIconLabel
+
+    widget = FXFilePathWidget()
+    qtbot.addWidget(widget)
+
+    assert isinstance(widget._indicator, FXIconLabel)
+    assert widget._indicator.styleSheet() == ""
+
+
+def test_a_drop_on_the_field_reaches_the_widget(qtbot, qapp):
+    widget = FXFilePathWidget()
+    qtbot.addWidget(widget)
+
+    assert not widget._input.acceptDrops()
+    assert widget.acceptDrops()
