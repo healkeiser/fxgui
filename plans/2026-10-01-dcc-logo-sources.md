@@ -9,6 +9,10 @@ All fetched on 2026-10-01.
 | `deadline` | AWS Architecture Icons package (https://aws.amazon.com/architecture/icons/), `Icon-package_07312026.zip`, `Architecture-Service-Icons_07312026/Arch_Media-Services/64/Arch_AWS-Thinkbox-Deadline_64.svg` | Export `<title>` removed. |
 | `python` | Python Software Foundation logo page (https://www.python.org/community/logos/), "two snakes" SVG: https://s3.dualstack.us-east-2.amazonaws.com/pythondotorg-assets/media/files/python-logo-only.svg | Inkscape comment, metadata, namedview and editor attributes removed. The single-colour `python` in the `simple` library stays. |
 | `kitsu` | CGWire's Kitsu repository, `src/assets/kitsu.svg`: https://raw.githubusercontent.com/cgwire/kitsu/main/src/assets/kitsu.svg | None. |
+| `redshift` | Owner-supplied official Maxon file, `Maxon_Redshift_Mark_Primary.svg`, 2026-10-01 | None. |
+| `redshift_no_badge` | Owner-supplied official Maxon file, `Maxon_Redshift_Mark_NoBadge_Primary.svg`, 2026-10-01 | None. |
+| `cinema_4d` | Owner-supplied official Maxon file, `Maxon_Cinema_4D_Mark_Primary.svg`, 2026-10-01 | None. |
+| `cinema_4d_no_badge` | Owner-supplied official Maxon file, `Maxon_Cinema_4D_Mark_NoBadge_Primary.svg`, 2026-10-01 | None. |
 
 Not added:
 

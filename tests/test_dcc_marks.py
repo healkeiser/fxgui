@@ -7,7 +7,10 @@ from fxgui import fxicons
 MARKS = [
     "adobe_after_effects",
     "cinema_4d",
+    "cinema_4d_no_badge",
     "davinci_resolve",
+    "redshift",
+    "redshift_no_badge",
     "unreal_engine",
     "vlc",
     "xstudio",
