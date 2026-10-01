@@ -523,11 +523,14 @@ def _timeline_page() -> QWidget:
     full.set_marker_frames(
         "cached",
         set(range(1020, 1081)) | set(range(1150, 1201)),
-        color="#22c55e",
+        color="feedback_success_foreground",
         style="strip",
     )
     full.set_marker_frames(
-        "errors", {1035, 1036, 1132, 1197}, color="#ef4444", style="line"
+        "errors",
+        {1035, 1036, 1132, 1197},
+        color="feedback_error_foreground",
+        style="line",
     )
     # The in and out buttons only ask; the caller sets the loop region.
     loop = {"in": 1040, "out": 1120}
