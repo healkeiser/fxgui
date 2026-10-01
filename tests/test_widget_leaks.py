@@ -17,6 +17,10 @@ def _breadcrumb():
     return crumb
 
 
+def _banner():
+    return fxwidgets.FXNotificationBanner(actions={"Retry": lambda: None})
+
+
 @pytest.mark.parametrize(
     "build",
     [
@@ -25,8 +29,12 @@ def _breadcrumb():
         fxwidgets.FXEmojiPicker,
         fxwidgets.FXFuzzySearchTree,
         fxwidgets.FXFilteredTree,
+        _banner,
     ],
-    ids=["main_window", "breadcrumb", "emoji_picker", "fuzzy", "filtered"],
+    ids=[
+        "main_window", "breadcrumb", "emoji_picker", "fuzzy", "filtered",
+        "banner",
+    ],
 )
 def test_a_dropped_widget_is_freed(qapp, build):
     ref = weakref.ref(build())

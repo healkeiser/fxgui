@@ -495,8 +495,9 @@ class FXNotificationBanner(QFrame):
         # The first one leads; the rest step back.
         button.setProperty("primary", not self._action_buttons)
         button.setCursor(Qt.PointingHandCursor)
-        button.clicked.connect(
-            lambda _=False: self._run_action(callback))
+        # On the button, not in a lambda: a lambda holding self leaks it.
+        button.callback = callback
+        button.clicked.connect(self._action_clicked)
         self._actions_layout.addWidget(button)
         self._action_buttons.append(button)
 
@@ -510,6 +511,9 @@ class FXNotificationBanner(QFrame):
             self._reposition_notifications(self.parent())
 
         return button
+
+    def _action_clicked(self, _=False) -> None:
+        self._run_action(self.sender().callback)
 
     def _run_action(self, callback: Optional[Callable[[], None]]) -> None:
         """Run an action's callback, then close the banner.
