@@ -506,3 +506,25 @@ def test_icon_only_buttons_carry_a_name(qtbot):
     assert all(button.accessibleName() for button in picker.buttons())
     assert picker.buttons()[0].accessibleName() != picker.buttons()[0].text()
 
+
+
+def test_apply_tip_shows_the_theme_in_force_when_it_shows(qtbot):
+    from qtpy.QtCore import QEvent, QPoint
+    from qtpy.QtGui import QHelpEvent
+    from qtpy.QtWidgets import QApplication, QToolTip
+
+    button = QPushButton()
+    qtbot.addWidget(button)
+    button.show()
+    fxstyle.apply_theme("dark")
+    _tips.apply_tip(button, "Save", "Write the scene to disk", "Ctrl+S")
+    fxstyle.apply_theme("light")
+
+    point = QPoint(2, 2)
+    event = QHelpEvent(QEvent.ToolTip, point, button.mapToGlobal(point))
+    QApplication.sendEvent(button, event)
+
+    assert QToolTip.text() == _tips.tip(
+        "Save", "Write the scene to disk", "Ctrl+S"
+    )
+    QToolTip.hideText()

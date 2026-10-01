@@ -27,18 +27,19 @@ not needed either: the tooltip popup word-wraps itself, measured at 192px for
 a short body, 224px for a full sentence, and saturating at 440px however long
 the body gets, so a tooltip never stretches across a monitor on its own.
 
-Colors are read from the active theme on every call rather than baked in, so
-these tooltips follow a theme switch and a studio's custom theme without any
-extra wiring. The surface they land on is styled by the `QToolTip` rule in
-`qss/style.qss`, from the same tokens.
+Rich text takes only literal colours, so `tip` and `keycap` write those of
+the theme in force when called. `apply_tip` builds the tooltip again each
+time it shows, so a widget's tooltip follows a switch. The surface they land
+on is styled by the `QToolTip` rule in `qss/style.qss`, from the same tokens.
 """
 
 # Built-in
 from html import escape
 
 # Third-party
+from qtpy.QtCore import QEvent, QObject
 from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QToolTip, QWidget
 
 # Internal
 from fxgui import fxstyle
@@ -144,6 +145,30 @@ def tip(title: str, body: str = "", shortcut: str = "") -> str:
     return blocks
 
 
+class _ShownTip(QObject):
+    """Show its widget's `apply_tip` tooltip built in the theme of the moment."""
+
+    NAME = "fxShownTip"
+
+    def __init__(self, widget: QWidget):
+        super().__init__(widget)
+        self.setObjectName(self.NAME)
+        self.parts = ("", "", "")
+        self.html = ""
+        widget.installEventFilter(self)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Show the tip as `tip` builds it now, unless it was replaced."""
+        if (
+            event.type() == QEvent.ToolTip
+            and self.html
+            and watched.toolTip() == self.html
+        ):
+            QToolTip.showText(event.globalPos(), tip(*self.parts), watched)
+            return True
+        return False
+
+
 def apply_tip(
     widget: QWidget,
     title: str,
@@ -173,7 +198,14 @@ def apply_tip(
         without `setStatusTip` only get the tooltip.
     """
 
-    widget.setToolTip(tip(title, body, shortcut))
+    html = tip(title, body, shortcut)
+    widget.setToolTip(html)
+    if isinstance(widget, QWidget):
+        shown = widget.findChild(_ShownTip, _ShownTip.NAME)
+        if shown is None:
+            shown = _ShownTip(widget)
+        shown.parts = (title, body, shortcut)
+        shown.html = html
 
     plain = f"{title} - {body}" if body else title
     if hasattr(widget, "setStatusTip"):
