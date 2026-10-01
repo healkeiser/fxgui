@@ -198,7 +198,7 @@ class FXSplashScreen(QSplashScreen):
         fxutils.add_shadow(self.overlay_frame)
 
         layout = QVBoxLayout(self.overlay_frame)
-        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setContentsMargins(40, 40, 40, 40)
 
         self.icon_label = QLabel()
         self.icon_label.setPixmap(icon.pixmap(self.ICON_HEIGHT))

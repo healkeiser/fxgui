@@ -65,7 +65,8 @@ def test_no_fragment_sets_a_third_weight_or_a_point_size():
             assert "font-size" not in body, names
 
 
-_RAMP = {0, 2, 4, 6, 8, 12, 16, 24}
+# The spacing ramp; 32 and 40 are for a window-sized panel, a splash.
+_RAMP = {0, 2, 4, 6, 8, 12, 16, 24, 32, 40}
 _LITERAL = re.compile(
     r"\.(?:setSpacing|setContentsMargins|addSpacing)\(([0-9, ]+)\)")
 
