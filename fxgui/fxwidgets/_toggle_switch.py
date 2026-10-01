@@ -20,6 +20,10 @@ from qtpy.QtWidgets import QAbstractButton, QSizePolicy, QWidget
 from fxgui import fxstyle
 
 
+# WCAG's minimum contrast for the parts of a control.
+_PARTS = 3.0
+
+
 class FXToggleSwitch(QAbstractButton):
     """A modern iOS/Material-style animated toggle switch.
 
@@ -135,11 +139,18 @@ class FXToggleSwitch(QAbstractButton):
         painter.setRenderHint(QPainter.Antialiasing)
 
         theme = fxstyle.colors()
-        on_color = QColor(self._custom_on_color or theme.accent_primary)
-        off_color = QColor(self._custom_off_color or theme.surface_sunken)
-        thumb_color = QColor(self._custom_thumb_color or theme.slider_thumb)
-        border_color = QColor(theme.border)
-        disabled_color = QColor(theme.text_disabled)
+        on_color = self._custom_on_color or fxstyle.readable_ink(
+            theme.surface, theme.accent_primary, _PARTS
+        )
+        off_color = self._custom_off_color or theme.surface_sunken
+        # The off fill sits close to the surface; the edge is what reads.
+        edge = fxstyle.readable_ink(theme.surface, theme.border_strong, _PARTS)
+        thumb_off = self._custom_thumb_color or fxstyle.readable_ink(
+            off_color, theme.text_muted, _PARTS
+        )
+        thumb_on = self._custom_thumb_color or fxstyle.readable_ink(
+            on_color, theme.text_on_accent_primary, _PARTS
+        )
 
         # Calculate dimensions
         width = self.width()
@@ -153,15 +164,17 @@ class FXToggleSwitch(QAbstractButton):
 
         # Determine colors based on state
         if not self.isEnabled():
+            disabled_color = QColor(theme.text_disabled)
             track_color = disabled_color
             thumb_color = disabled_color.lighter(150)
             current_border_color = disabled_color
         else:
-            # Interpolate between off and on colors
-            track_color = self._interpolate_color(
-                off_color, on_color, self._position
+            position = self._position
+            track_color = QColor(fxstyle.mix(off_color, on_color, position))
+            thumb_color = QColor(fxstyle.mix(thumb_off, thumb_on, position))
+            current_border_color = QColor(
+                fxstyle.mix(edge, on_color, position)
             )
-            current_border_color = border_color
             # Focus indicator: keyboard users need to see where focus is.
             # The ring must contrast with the track at any position (an
             # accent ring would vanish on the accent-colored "on" track).
@@ -182,10 +195,14 @@ class FXToggleSwitch(QAbstractButton):
         )
         painter.fillPath(track_path, track_color)
 
-        # Draw track border
+        # Draw track border, half a pixel in so the whole line is drawn
         painter.setPen(current_border_color)
         painter.setBrush(Qt.NoBrush)
-        painter.drawRoundedRect(track_rect, corner_radius, corner_radius)
+        painter.drawRoundedRect(
+            QRectF(track_rect).adjusted(0.5, 0.5, -0.5, -0.5),
+            corner_radius,
+            corner_radius,
+        )
 
         # Calculate thumb position
         thumb_x = margin + self._position * (width - thumb_size - margin * 2)
@@ -218,12 +235,3 @@ class FXToggleSwitch(QAbstractButton):
         )
 
         painter.end()
-
-    def _interpolate_color(
-        self, color1: QColor, color2: QColor, ratio: float
-    ) -> QColor:
-        """Interpolate between two colors."""
-        r = int(color1.red() + (color2.red() - color1.red()) * ratio)
-        g = int(color1.green() + (color2.green() - color1.green()) * ratio)
-        b = int(color1.blue() + (color2.blue() - color1.blue()) * ratio)
-        return QColor(r, g, b)

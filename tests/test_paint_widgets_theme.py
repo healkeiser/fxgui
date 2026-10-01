@@ -27,7 +27,7 @@ def test_rating_click_sets_the_star_under_the_pointer(qtbot, qapp):
     assert rating.rating == 3
 
 
-def test_toggle_thumb_uses_the_theme_thumb_colour(qtbot, qapp):
+def test_an_off_toggle_thumb_takes_the_theme_s_muted_ink(qtbot, qapp):
     fxstyle.apply_theme("dark")
     switch = FXToggleSwitch()
     qtbot.addWidget(switch)
@@ -37,5 +37,5 @@ def test_toggle_thumb_uses_the_theme_thumb_colour(qtbot, qapp):
     height = switch.height()
     centre = QPoint(3 + (height - 6) // 2, height // 2)
     assert image.pixelColor(centre).name() == QColor(
-        fxstyle.colors().slider_thumb
+        fxstyle.colors().text_muted
     ).name()
