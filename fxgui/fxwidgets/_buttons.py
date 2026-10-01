@@ -166,7 +166,6 @@ class FXIconButton(QToolButton):
         self.setIcon(self._icons[checked])
 
 
-_JOINED_HEIGHT = 30
 _STATES = ("", ":hover", ":focus", ":pressed", ":on", ":disabled")
 
 
@@ -258,7 +257,8 @@ class FXJoinedGroup(QFrame):
         super().__init__(parent)
         # A shaped frame: the theme hides the border of a NoFrame QFrame.
         self.setFrameShape(QFrame.StyledPanel)
-        self.setFixedHeight(_JOINED_HEIGHT)
+        # The outline is a push button's height; the children sit inside it.
+        self.setFixedHeight(fxstyle.control_height(self))
         self.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         self.setProperty("fxFocus", "false")
         layout = QHBoxLayout(self)
@@ -272,7 +272,7 @@ class FXJoinedGroup(QFrame):
     def add_widget(self, widget: QWidget) -> None:
         """Append `widget` at the right end of the group."""
         widget.setParent(self)
-        widget.setFixedHeight(_JOINED_HEIGHT - 2)
+        widget.setFixedHeight(self.height() - 2)
         self.layout().addWidget(widget)
         self._widgets.append(widget)
         widget.installEventFilter(self)

@@ -16,6 +16,8 @@ from fxgui import fxstyle
 from fxgui.fxwidgets import (
     FXBreadcrumb,
     FXFilePathWidget,
+    FXJoinedGroup,
+    FXPrimaryButton,
     FXSearchBar,
     FXTagInput,
     FXTimelineSlider,
@@ -55,7 +57,16 @@ def test_an_input_is_as_tall_as_a_line_edit(qtbot, name):
 
 
 
+
+
+def _joined():
+    group = FXJoinedGroup()
+    group.add_widget(FXPrimaryButton("Post"))
+    return group
+
+
 _BUTTONS = {
+    "FXJoinedGroup": _joined,
     "FXBreadcrumb": lambda: FXBreadcrumb(show_navigation=True),
 }
 
