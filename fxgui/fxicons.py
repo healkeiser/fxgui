@@ -556,7 +556,7 @@ def get_pixmap(
             the primary screen's.
 
     Returns:
-        QPixmap: The QPixmap of the icon.
+        QPixmap: The caller's own pixmap; changing it touches no other.
 
     Examples:
         >>> get_pixmap("add", color="red")
@@ -564,10 +564,12 @@ def get_pixmap(
     """
 
     library, width, height, color = _resolved(library, width, height, color)
-    return _get_pixmap_cached(
+    # A copy: one shares the pixels until written, so a caller changing it
+    # leaves the cached one alone.
+    return QPixmap(_get_pixmap_cached(
         icon_name, width, height, _theme_ink(color), library, style, extension,
         _screen_dpr() if dpr is None else float(dpr),
-    )
+    ))
 
 
 class _ThemedIconEngine(QIconEngine):
@@ -719,7 +721,7 @@ def get_icon(
             hearing about rather than a second silent stand-in.
 
     Returns:
-        QIcon: The QIcon of the icon.
+        QIcon: The caller's own icon; deleting it touches no other.
 
     Examples:
         >>> get_icon("add", color="red")
@@ -772,10 +774,12 @@ def get_icon(
     path = get_icon_path(
         icon_name, library=library, style=style, extension=extension
     )
-    return _get_icon_cached(
+    # A copy, which shares the engine: a binding that deletes the icon it
+    # is handed (QtAds' icon provider) must not delete the cached one.
+    return QIcon(_get_icon_cached(
         path, width, height, tuple(sorted(inks.items())),
         _libraries_info[library]["recolor"],
-    )
+    ))
 
 
 def superpose_icons(*icons: QIcon) -> QIcon:
