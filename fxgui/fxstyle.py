@@ -304,6 +304,8 @@ _theme_namespace = None  # Cached FXThemeColors for the current theme
 _theme_namespace_key = None  # (theme, colour dict id) the cache was built for
 _widget_fragments: "OrderedDict[str, str]" = OrderedDict()
 _themed_roots: "weakref.WeakSet" = weakref.WeakSet()
+# id -> widget given a sheet by `set_widget_style`, until it is destroyed.
+_styled_widgets: dict = {}
 
 _DEFAULT_FEEDBACK = {
     "debug": {"foreground": "#26C6DA", "background": "#006064"},
@@ -1778,17 +1780,24 @@ def set_widget_style(widget: QWidget, qss: str) -> None:
     """
     widget.setProperty(WIDGET_STYLE_PROPERTY, qss or None)
     widget.setStyleSheet(resolve(qss) if qss else "")
+    key = id(widget)
+    if not qss:
+        _styled_widgets.pop(key, None)
+    elif key not in _styled_widgets:
+        # Held, not weak: a wrapper Qt made is collected while its widget
+        # lives on. The widget's own end drops it.
+        _styled_widgets[key] = widget
+        widget.destroyed.connect(lambda *_: _styled_widgets.pop(key, None))
 
 
 def _reapply_widget_styles() -> None:
     """Resolve every `set_widget_style` sheet again in the current theme."""
-    app = QApplication.instance()
-    if app is None:
-        return
+    # Only these: wrapping every widget of the app, a host's or a
+    # library's own included, crashed PySide on a class it half knows.
     tokens = None
-    # ponytail: walks every widget at a switch, cheaper than the root
-    # restyle that precedes it; keep a registry if a host ever has 100k.
-    for widget in app.allWidgets():
+    for widget in list(_styled_widgets.values()):
+        if not _compat.is_valid(widget):
+            continue
         qss = widget.property(WIDGET_STYLE_PROPERTY)
         if qss:
             tokens = tokens or _token_map(get_theme())

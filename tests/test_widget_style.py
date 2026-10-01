@@ -66,3 +66,19 @@ def test_a_deleted_widget_is_skipped(qtbot):
     label.deleteLater()
     qtbot.wait(10)
     fxstyle.apply_theme("light")
+
+
+def test_a_switch_touches_only_the_widgets_given_a_sheet(qtbot, monkeypatch):
+    from qtpy.QtWidgets import QApplication
+
+    label = QLabel()
+    qtbot.addWidget(label)
+    fxstyle.set_widget_style(label, "color: @text;")
+
+    def every_widget():
+        raise AssertionError("a switch walked every widget of the app")
+
+    # A host's widgets, or a library's, are not fxgui's to visit.
+    monkeypatch.setattr(QApplication, "allWidgets", every_widget)
+    fxstyle.apply_theme("nord")
+    assert label.styleSheet() == f"color: {fxstyle.colors().text};"
