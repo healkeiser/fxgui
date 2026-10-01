@@ -13,6 +13,8 @@ _SIZES = {"2", "4", "8"}
 
 def _literal_radii(qss: str) -> list:
     qss = re.sub(r"/\*.*?\*/", "", qss, flags=re.S)
+    # A slider's groove and round handle are both pills.
+    qss = re.sub(r"QSlider::[^{]*\{[^}]*\}", "", qss)
     return [m for m in re.findall(r"radius:\s*(\d+)px", qss) if m in _SIZES]
 
 

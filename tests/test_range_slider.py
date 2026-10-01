@@ -3,7 +3,6 @@
 # Third-party
 import pytest
 from qtpy.QtCore import QPoint, Qt
-from qtpy.QtGui import QColor
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
 
@@ -41,21 +40,11 @@ def test_stacked_handles_split_toward_the_drag(qtbot, qapp):
     assert slider.high == 50
 
 
-def test_handles_are_painted_in_the_theme_thumb_colour(qtbot, qapp):
-    slider = _slider(qtbot, minimum=0, maximum=100, low=20, high=80)
-    fxstyle.apply_theme("light")
-    image = slider.grab().toImage()
-    x = int(slider._value_to_position(20))
-    y = slider.height() // 2
-    assert image.pixelColor(x, y).name() == QColor(
-        fxstyle.colors().slider_thumb
-    ).name()
-
-
 def _parts(qtbot, theme, state=""):
-    """Return the low handle's edge and fill, the span and the groove."""
+    """Return the low handle's edge, centre and corners, the span and groove."""
     fxstyle.apply_theme(theme)
     window = QWidget()
+    fxstyle.register_themed_root(window)
     layout = QVBoxLayout(window)
     sink = QPushButton("sink")
     slider = FXRangeSlider(minimum=0, maximum=100, low=20, high=60)
@@ -74,19 +63,30 @@ def _parts(qtbot, theme, state=""):
         assert slider.hasFocus()
     if state == "hover":
         slider._hover_handle = slider.HANDLE_LOW
-    image = slider.grab().toImage()
-    x = int(slider._value_to_position(20))
+    if state == "pressed":
+        slider._pressed_handle = slider.HANDLE_LOW
+    # The window, not the slider: the slider paints no background.
+    image = window.grab().toImage()
+    x = round(slider._value_to_position(20))
     y = slider.height() // 2
     half = slider._handle_radius
 
     def at(px, py):
-        return image.pixelColor(px, py).name()
+        return image.pixelColor(slider.mapTo(window, QPoint(px, py))).name()
 
     return {
-        "edge": at(x, y - half),
+        "edge": at(x, y - half + 1),
+        "inner": at(x, y - half + 3),
         "fill": at(x, y),
+        "corners": {
+            at(x - half, y - half),
+            at(x + half - 1, y - half),
+            at(x - half, y + half - 1),
+            at(x + half - 1, y + half - 1),
+        },
         "span": at(int(slider._value_to_position(40)), y),
         "groove": at(int(slider._value_to_position(80)), y),
+        "track": (slider._handle_radius, slider._track_height),
     }
 
 
@@ -95,25 +95,31 @@ def test_the_range_slider_speaks_the_slider_language(qtbot, theme):
     parts = _parts(qtbot, theme)
     colors = fxstyle.colors()
     ratio = fxstyle.get_contrast_ratio
-    assert parts["edge"] == colors.control_edge
-    assert ratio(parts["edge"], colors.surface) >= 3, parts
-    assert parts["fill"] == colors.slider_thumb.lower()
+    # A QSlider's 16 px round handle on its 4 px groove.
+    assert parts["track"] == (8, 4)
+    assert parts["corners"] == {colors.surface.lower()}, parts
+    assert parts["edge"] == colors.accent_primary.lower()
+    assert parts["fill"] == colors.surface.lower()
     assert parts["span"] == colors.accent_primary.lower()
-    assert ratio(parts["span"], parts["groove"]) >= 3, parts
     assert parts["groove"] == colors.surface_sunken.lower()
+    assert ratio(parts["span"], parts["groove"]) >= 3, parts
+    assert ratio(parts["span"], colors.surface) >= 3, parts
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
 def test_the_range_slider_states_wear_the_slider_tokens(qtbot, theme):
+    colors = fxstyle.colors
+    rest = _parts(qtbot, theme)
     hover = _parts(qtbot, theme, "hover")
-    colors = fxstyle.colors()
-    # Hover lifts the fill only, so it never reads as focus.
-    assert hover["edge"] == colors.control_edge
-    assert hover["fill"] == colors.slider_thumb_hover.lower()
+    assert rest["inner"] == colors().surface.lower()
+    assert hover["inner"] == colors().accent_primary.lower()
+    assert hover["fill"] == colors().surface.lower()
+    pressed = _parts(qtbot, theme, "pressed")
+    assert pressed["fill"] == colors().accent_primary.lower()
     focus = _parts(qtbot, theme, "focus")
-    assert focus["edge"] == colors.accent_primary.lower()
-    assert focus["fill"] == colors.text_on_accent_primary.lower()
+    assert focus["edge"] == colors().text.lower()
+    assert focus["fill"] == colors().surface.lower()
     disabled = _parts(qtbot, theme, "disabled")
-    assert disabled["edge"] == colors.border.lower()
-    assert disabled["fill"] == colors.surface.lower()
-    assert disabled["span"] == colors.border_strong.lower()
+    assert disabled["edge"] == colors().border.lower()
+    assert disabled["fill"] == colors().surface.lower()
+    assert disabled["span"] == colors().border_strong.lower()
