@@ -75,7 +75,7 @@ def test_marking_after_the_show_takes_effect(qtbot, card):
 def test_unmarking_brings_the_area_fill_back(qtbot, card):
     root, frame = card
     area = QListWidget()
-    area.addItems([f"row {index}" for index in range(40)])
+    area.addItem("row")
     frame.layout().addWidget(area)
     fxstyle.mark_as_thin_scroll(area)
     root.show()
@@ -83,5 +83,7 @@ def test_unmarking_brings_the_area_fill_back(qtbot, card):
     fxstyle.mark_as_thin_scroll(area, False)
     QApplication.processEvents()
     image = root.grab().toImage()
-    inside = area.viewport().mapTo(root, QPoint(4, 4))
+    # Below the one row, the view's own fill.
+    below = QPoint(4, area.viewport().height() - 4)
+    inside = area.viewport().mapTo(root, below)
     assert image.pixelColor(inside).name() == fxstyle.colors().surface_sunken

@@ -1230,7 +1230,7 @@ QSlider::add-page:vertical:disabled {
 
 /* Plain QToolButtons (toolbars, icon buttons) stay flat: transparent
    until hovered. Split buttons (MenuButtonPopup) instead read like
-   QPushButtons — see the popupMode="1" overrides below. */
+   QPushButtons: see the popupMode="1" overrides below. */
 QToolButton {
     background-color: transparent;
     /* Reserved for the hover and focus edges, so neither moves the icon. */

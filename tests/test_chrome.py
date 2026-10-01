@@ -378,7 +378,7 @@ def test_a_combo_popup_row_keeps_its_text_still(qtbot, theme):
     combo = QComboBox()
     combo.addItems(["Same"] * 3)
     combo.setCurrentIndex(1)
-    window = _shown(qtbot, theme, combo)
+    _window = _shown(qtbot, theme, combo)
     combo.showPopup()
     qtbot.waitUntil(lambda: combo.view().isVisible())
     view = combo.view()
@@ -424,7 +424,7 @@ def test_a_view_row_keeps_its_text_still(qtbot, theme, kind):
         view = QTreeWidget()
         view.setHeaderHidden(True)
         items = [QTreeWidgetItem(view, ["Same"]) for _ in range(3)]
-    window = _shown(qtbot, theme, view)
+    _window = _shown(qtbot, theme, view)
     items[1].setSelected(True)
     rows = [view.visualItemRect(item) for item in items]
     _hover(view.viewport(), rows[2].center())
@@ -474,7 +474,7 @@ def test_a_combo_popup_is_the_popup_look_edge_to_edge(qtbot, theme):
     combo = QComboBox()
     # No text, so every pixel is fill, edge or the selected row.
     combo.addItems(["", "", ""])
-    window = _shown(qtbot, theme, combo)
+    _window = _shown(qtbot, theme, combo)
     combo.showPopup()
     qtbot.waitUntil(lambda: combo.view().isVisible())
     popup = combo.view().window()
