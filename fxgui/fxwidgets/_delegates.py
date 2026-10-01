@@ -500,7 +500,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     # The first item-data role this delegate does not claim. Derive your
     # own roles from it; roles added here go below and move it up.
-    FIRST_FREE_ROLE = Qt.UserRole + 16
+    # `Qt.UserRole + 16` is `FXSortedTreeWidgetItem.SORT_ROLE`.
+    FIRST_FREE_ROLE = Qt.UserRole + 17
 
     #: A viewer chose a value from a row's picker. The delegate writes
     #: nothing: what a choice means belongs to whoever put the choices

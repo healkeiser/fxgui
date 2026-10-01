@@ -20,7 +20,7 @@ from qtpy.QtGui import QIcon
 
 # Internal
 from fxgui import fxicons
-from fxgui.fxwidgets import FXThumbnailDelegate
+from fxgui.fxwidgets import FXSortedTreeWidgetItem, FXThumbnailDelegate
 
 
 # A brand fxgui's curated "dcc" library does carry, and one no library
@@ -99,7 +99,7 @@ def test_the_fallback_keeps_the_size_and_colour_asked_for(qtbot, qapp):
 
 
 def test_the_delegates_role_ceiling_is_published(qtbot, qapp):
-    assert FXThumbnailDelegate.FIRST_FREE_ROLE == Qt.UserRole + 16
+    assert FXThumbnailDelegate.FIRST_FREE_ROLE == Qt.UserRole + 17
 
 
 def test_the_ceiling_is_clear_of_every_role_the_delegate_claims(
@@ -111,7 +111,7 @@ def test_the_ceiling_is_clear_of_every_role_the_delegate_claims(
         value
         for name, value in vars(FXThumbnailDelegate).items()
         if name.endswith("_ROLE") and name != "FIRST_FREE_ROLE"
-    ]
+    ] + [FXSortedTreeWidgetItem.SORT_ROLE]
 
     assert claimed, "the delegate does claim roles"
     assert FXThumbnailDelegate.FIRST_FREE_ROLE > max(claimed)
@@ -124,7 +124,7 @@ def test_the_ceiling_wastes_nothing(qtbot, qapp):
         value
         for name, value in vars(FXThumbnailDelegate).items()
         if name.endswith("_ROLE") and name != "FIRST_FREE_ROLE"
-    ]
+    ] + [FXSortedTreeWidgetItem.SORT_ROLE]
 
     assert FXThumbnailDelegate.FIRST_FREE_ROLE == max(claimed) + 1
 
