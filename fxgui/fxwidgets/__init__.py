@@ -25,7 +25,6 @@ from fxgui.fxwidgets._emoji_picker import (
 )
 from fxgui.fxwidgets._file_path_widget import FXFilePathWidget
 from fxgui.fxwidgets._flow_layout import FXFlowLayout
-from fxgui.fxwidgets._fuzzy_search_tree import FXFuzzySearchTree
 from fxgui.fxwidgets._inputs import (
     FXIconLineEdit,
     FXPasswordLineEdit,
@@ -112,7 +111,6 @@ __all__ = [
     "FXFilteredTree",
     "FXFloatingDialog",
     "FXFlowLayout",
-    "FXFuzzySearchTree",
     "FXIconButton",
     "FXIconLabel",
     "FXIconLineEdit",

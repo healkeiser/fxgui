@@ -166,3 +166,84 @@ Files: every fxgui/fxwidgets module except the lines r1 owns above.
 - A26 FXFilteredTree (_keyboard.py:172-199) and FXFuzzySearchTree are two
   public search-over-a-tree widgets: merge into one public name.
   List the ls-pipeline call sites that change.
+
+### Group r2 report
+
+Branch `fix-r2` from `audit-fixes` 6e3b8754. Full suite 2450 passed, 6
+skipped (baseline 2440 / 6). Covering tests on PySide6 6.5.3: 527 passed.
+`ruff check --select F,B,BLE fxgui tests` clean.
+
+Every item is done. Each has a test that failed first.
+
+- A1 done, 29423821. `FXThreadLine.path()` drops faces Qt has deleted
+  (`_compat.is_valid`) before it reads them.
+- A3 done, b700d851 + ae8255b2. Bound methods replace the lambdas in
+  `_main_window`, `_breadcrumb` (a segment navigates itself), `_emoji_picker`
+  (`sender().text()`), `_fuzzy_search_tree` and `FXFilteredTree`. The same leak
+  was in `FXNotificationBanner.add_action` and in `FXCommandPalette`'s
+  itemClicked, so those are fixed too. Test: `tests/test_widget_leaks.py`
+  drops each widget, runs gc and checks the weakref is dead.
+- A4 done, e7524b7d. `_has_icon` takes the filled-in option and reads
+  `option.icon`. Qt turns a QColor or a QPixmap decoration into that icon.
+  All 4 paint sites paint `option.icon`.
+- A5 done, 16449a6c. The highlighter marks itself dirty on
+  `contentsChange`, connected before `setDocument` so the flag is set ahead
+  of Qt's rehighlight. The text is read once per change. 8000 lines: 0.66 s,
+  was 3.1 s.
+- A6 done, f2210bed. `setKeyboardTracking(False)` in `_spinbox_for`, so
+  start, end, view start and view end all apply on Enter or focus out.
+- A7 done, f0b07c20. Geometry, raise and spinner start/stop moved into
+  `showEvent` / `hideEvent`. The `show` and `hide` overrides are gone.
+- A8 done, 35e9661a. One `_clamped(low, high)` serves the constructor and
+  `set_values`. A new minimum lifts the maximum and a new maximum lowers the
+  minimum, as QSlider does.
+- A9 done, 4793006a. `_size_text` catches OSError and shows "-".
+- A11 done, cf0e17c4. Each opening takes a ticket, and a `landed` callback
+  from an older ticket does nothing. `open_commands` takes a ticket too.
+- A12 done, 37456c8e. `html.escape` on the message and the tip in
+  `_status_bar`, and on the confirm word. The body label is `Qt.PlainText`.
+- A13 done, 37456c8e. `register_themed_root(self)`.
+- A14 done, 8c4273bc. The logical rect is scaled by the screen pixmap's
+  `devicePixelRatio()` before the crop.
+- A15 done, 13c6d86a + 48394250. With no icon given, the splash draws
+  `_FXMark`, an FXIconLabel that inks `FAVICON_LIGHT` in the `icon` token
+  each time it paints. I tried registering a library in fxicons first. It
+  changed the library table that `test_icon_engine_palette` pins, and the
+  result depended on test order, so I dropped it.
+- A17 done, 80787a75. Progress is clamped in the constructor. The first
+  rating goes through `set_rating(emit=False)`. Enter on FXSplitButton
+  ignores the keypad modifier.
+- A18 done, b700d851. `documentation()` + `set_documentation(url)`, and the
+  action's enabled state follows the setter. The public attribute is gone.
+- A20 done, e7524b7d. A QPersistentModelIndex is taken before the menu runs.
+  `picked` emits the row where it is now, or nothing if the row is gone.
+- A23 done. `_drop_zone.py` in 4793006a. `_fuzzy_search_tree.py` is deleted
+  (A26).
+- A24 (part) done, e7524b7d. The description uses `text_muted`. On a
+  selected row it keeps the selection's text colour, because muted ink
+  would sit on the accent.
+- A26 done, a17505f8. Ruling (I asked the lead and got no answer, so this
+  is my default): FXFilteredTree survives and FXFuzzySearchTree is deleted.
+  Only FXFilteredTree can wrap a QTreeWidget the caller already has. That is
+  what ls-pipeline's planned move needs (move-d item 50, a lazy tree).
+  FXFuzzySearchTree owns its model and cannot do that. Fuzzy matching stays
+  public as `fxcore.FXSortFilterProxyModel`. What is lost: a ready-made
+  widget with a ratio slider that ranks by match quality. The gallery now
+  shows FXFilteredTree only, and `test_removed_names` lists
+  FXFuzzySearchTree.
+
+Left for others:
+
+- r1 (docs): docs/how-to/widgets.md:97 lists FXFuzzySearchTree, and
+  docs/how-to/theming.md:553 names its slider. Both go. widgets.md should
+  say FXMainWindow has `documentation()` / `set_documentation()`.
+- r1 (fxconstants): FAVICON_LIGHT is used only by the splash mark now.
+- Not done because it is r1's line: the scrim at _loading_spinner.py:206
+  (A19), and `fxstyle._watch_focus()` in _range_slider.py and
+  _rating_widget.py (A25).
+
+ls-pipeline call sites that change (checked at 76f6b9eb): none. It never
+uses FXFuzzySearchTree, FXFilteredTree, `FXMainWindow.documentation`, or a
+markup message to `showMessage` / `show_tip`. Move-d item 50
+(widgets/rows.py:345 fold_buttons, :366 filtered_tree_panel ->
+`FXFilteredTree(tree)`) still holds.

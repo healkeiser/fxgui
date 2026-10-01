@@ -11,6 +11,7 @@ from qtpy.QtCore import (
     QEvent,
     QModelIndex,
     QObject,
+    QPersistentModelIndex,
     QPointF,
     QRect,
     QRectF,
@@ -719,15 +720,15 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         if has_thumbnail:
             return option.rect.left() + self._THUMBNAIL_SPAN
         left = option.rect.left() + self._ICON_MARGIN
-        if self._has_icon(index):
+        if self._has_icon(option):
             left += self._ICON_SIZE + self._ICON_MARGIN
         return left
 
     @staticmethod
-    def _has_icon(index: QModelIndex) -> bool:
-        """Whether the item carries a decoration icon."""
-        icon = index.data(Qt.DecorationRole)
-        return icon is not None and not icon.isNull()
+    def _has_icon(option: QStyleOptionViewItem) -> bool:
+        """Whether the filled-in option carries a decoration icon."""
+        # `option.icon`: Qt turns a QColor or QPixmap decoration into one.
+        return not option.icon.isNull()
 
     def _text_left(
         self,
@@ -1155,9 +1156,11 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             str(index.data(Qt.DisplayRole) or ""),
         )
         if description_rect is not None:
-            muted = QColor(color)
-            muted.setAlpha(180)
-            painter.setPen(muted)
+            # On a selected row the muted ink would sit on the accent.
+            selected = option.state & QStyle.State_Selected
+            painter.setPen(
+                color if selected else QColor(fxstyle.colors().text_muted)
+            )
             painter.setFont(self._description_font(option))
             painter.drawText(
                 description_rect, Qt.AlignLeft | Qt.AlignVCenter, description
@@ -1180,7 +1183,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         y = option.rect.top() + (option.rect.height() - outer_height) // 2
         painter.drawPixmap(x, y, thumbnail)
 
-        if self._has_icon(index):
+        if self._has_icon(option):
             size = self._OVERLAY_SIZE
             icon_rect = QRect(
                 x + outer_width - size - self._OVERLAY_MARGIN,
@@ -1191,7 +1194,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             _draw_overlay_disc(
                 painter, QRectF(icon_rect).center(), size / 2 + 2
             )
-            index.data(Qt.DecorationRole).paint(
+            option.icon.paint(
                 painter, icon_rect, Qt.AlignCenter, QIcon.Normal, QIcon.On
             )
 
@@ -1298,11 +1301,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             action.setEnabled(not reason)
         # `exec_` first: tests patch it, since `exec` is unpatchable on PySide
         runner = getattr(menu, "exec_", None) or menu.exec
+        # The model may change while the menu runs its own event loop.
+        row = QPersistentModelIndex(index)
         chosen = runner(anchor)
         text = chosen.text() if chosen is not None else None
         menu.deleteLater()
-        if text is not None:
-            self.picked.emit(index, text)
+        if text is not None and row.isValid():
+            self.picked.emit(QModelIndex(row), text)
 
     def _check_width(
         self, option: QStyleOptionViewItem, index: QModelIndex
@@ -1360,10 +1365,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         index: QModelIndex,
     ) -> None:
         """Draw column 0's icon, title and description, without a thumbnail."""
-        if self._has_icon(index):
+        if self._has_icon(option):
             _paint_icon(
                 painter,
-                index.data(Qt.DecorationRole),
+                option.icon,
                 self._icon_rect(option.rect),
                 option.state,
             )
@@ -1384,11 +1389,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     ) -> None:
         """Draw the icon and text of a column other than 0."""
         text_x = option.rect.left() + self._ICON_MARGIN
-        if self._has_icon(index):
+        if self._has_icon(option):
             icon_rect = self._icon_rect(option.rect)
-            _paint_icon(
-                painter, index.data(Qt.DecorationRole), icon_rect, option.state
-            )
+            _paint_icon(painter, option.icon, icon_rect, option.state)
             text_x = icon_rect.right() + 1 + self._ICON_MARGIN
 
         text = index.data(Qt.DisplayRole)

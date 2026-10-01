@@ -193,3 +193,22 @@ def test_the_labels_take_the_root_font_size():
     zone_rules = zone_rules[: zone_rules.index("FXDropZoneCount")]
 
     assert "font-size" not in zone_rules
+
+
+def test_a_file_gone_from_disk_lists_with_no_size(qtbot, qapp, tmp_path):
+    zone = FXDropZone()
+    qtbot.addWidget(zone)
+    kept = _file(tmp_path, "kept.png")
+
+    zone.set_files([tmp_path / "gone.png", kept])
+
+    tree = zone.file_tree()
+    assert tree.topLevelItem(0).text(0) == "gone.png"
+    assert tree.topLevelItem(0).text(2) == "-"
+    assert tree.topLevelItem(1).text(2) != "-"
+
+
+def test_the_file_list_has_no_alternating_rows(qtbot, qapp):
+    zone = FXDropZone()
+    qtbot.addWidget(zone)
+    assert not zone.file_tree().alternatingRowColors()

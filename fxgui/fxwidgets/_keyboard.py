@@ -156,7 +156,8 @@ class FXSplitButton(QToolButton):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Click on Enter and open the menu on `DROPDOWN_KEYS`."""
-        if _is_return(event) and not event.modifiers():
+        # The keypad's Enter carries the keypad modifier.
+        if _is_return(event) and not event.modifiers() & ~Qt.KeypadModifier:
             self.click()
             return
         menu = self.menu()
@@ -194,9 +195,7 @@ class FXFilteredTree(QWidget):
         self.collapse_button = self._fold_button("unfold_less", "Collapse all")
         self.expand_button.clicked.connect(self.tree.expandAll)
         self.collapse_button.clicked.connect(self.tree.collapseAll)
-        self.filter_bar.search_changed.connect(
-            lambda text: fxutils.filter_tree(self.tree, text)
-        )
+        self.filter_bar.search_changed.connect(self._filter)
         self.tree.type_into(self.filter_bar)
 
         bar = QHBoxLayout()
@@ -208,6 +207,9 @@ class FXFilteredTree(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addLayout(bar)
         layout.addWidget(self.tree, 1)
+
+    def _filter(self, text: str) -> None:
+        fxutils.filter_tree(self.tree, text)
 
     def _fold_button(self, icon: str, tip: str) -> QToolButton:
         button = QToolButton(self)

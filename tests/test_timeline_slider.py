@@ -59,6 +59,21 @@ def test_start_spinbox_goes_through_set_range_and_clamps_the_view(qtbot, qapp):
     assert timeline._view_start_spinbox.value() == first
 
 
+def test_a_typed_range_applies_on_enter_not_per_key(qtbot, qapp):
+    timeline = _timeline(qtbot, start_frame=1, end_frame=100, current_frame=50)
+    field = timeline._end_spinbox
+    field.setFocus()
+    field.selectAll()
+
+    QTest.keyClicks(field, "250")
+    assert timeline.frame_range() == (1, 100)
+    assert timeline.current_frame() == 50, "no stop at frame 2 on the way"
+    QTest.keyClick(field, Qt.Key_Return)
+
+    assert timeline.frame_range() == (1, 250)
+    assert timeline.current_frame() == 50
+
+
 def test_start_spinbox_past_the_end_is_refused(qtbot, qapp):
     timeline = _timeline(qtbot, start_frame=1, end_frame=100)
     timeline._start_spinbox.setValue(150)

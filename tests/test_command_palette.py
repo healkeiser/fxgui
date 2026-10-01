@@ -186,6 +186,22 @@ def test_go_to_reads_loading_until_the_rows_land(qtbot):
     assert picked == ["pilot/sh0010/lighting"]
 
 
+def test_a_slow_load_does_not_overwrite_a_newer_one(qtbot):
+    window = _window(qtbot)
+    palette = FXCommandPalette(window, lambda: _commands([]))
+    held = []
+    palette.open_go_to(held.append, lambda _row: None)
+    palette.open_go_to(held.append, lambda _row: None)
+
+    held[1]([("new", "sh0020 new")])
+    held[0]([("old", "sh0010 old")])
+    assert _labels(palette) == ["sh0020 new"]
+
+    palette.open_commands()
+    held[1]([("new", "sh0020 new")])
+    assert "sh0020 new" not in _labels(palette)
+
+
 def test_a_leading_angle_switches_go_to_to_commands(qtbot):
     window = _window(qtbot)
     palette = FXCommandPalette(window, lambda: _commands([]))

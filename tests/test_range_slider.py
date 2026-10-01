@@ -156,3 +156,30 @@ def test_the_height_follows_the_font(qtbot):
     assert slider.minimumSizeHint().height() == slider.sizeHint().height()
     assert bare.sizeHint().height() == 2 * bare._handle_radius
     assert slider.minimumHeight() == 0
+
+
+@pytest.mark.parametrize(
+    "kwargs, values",
+    [
+        (dict(minimum=0, maximum=100, low=-5, high=500), (0, 100)),
+        (dict(minimum=0, maximum=100, low=80, high=20), (80, 80)),
+        (dict(minimum=50, maximum=10), (50, 50)),
+    ],
+)
+def test_the_constructor_holds_low_and_high_in_range(qtbot, kwargs, values):
+    slider = FXRangeSlider(**kwargs)
+    qtbot.addWidget(slider)
+    assert (slider.low(), slider.high()) == values
+
+
+def test_a_new_minimum_or_maximum_carries_both_handles(qtbot):
+    slider = FXRangeSlider(minimum=0, maximum=100, low=10, high=20)
+    qtbot.addWidget(slider)
+
+    slider.set_minimum(50)
+    assert (slider.low(), slider.high()) == (50, 50)
+
+    slider.set_maximum(30)
+    assert (slider.low(), slider.high()) == (30, 30)
+    slider.set_values(0, 100)
+    assert (slider.low(), slider.high()) == (30, 30)

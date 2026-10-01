@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxconstants, fxstyle, fxutils
-from fxgui.fxwidgets._labels import FXElidedLabel
+from fxgui.fxwidgets._labels import FXElidedLabel, FXIconLabel
 
 fxstyle.register_widget_style(
     """
@@ -51,6 +51,37 @@ class _FXOverlay(QFrame):
         painter.setClipPath(_rounded(
             splash.rect().translated(-self.pos()), splash.corner_radius))
         painter.fillRect(self.rect(), color)
+        painter.end()
+
+
+class _FXMark(FXIconLabel):
+    """fxgui's mark, one ink, drawn in the theme's `icon` token when shown."""
+
+    def __init__(self, size: int):
+        super().__init__(size=size)
+        self._mark = QPixmap(str(fxconstants.FAVICON_LIGHT))
+
+    def pixmap(self) -> QPixmap:
+        """Return the mark in the ink of the theme in force."""
+        ratio = self.devicePixelRatioF()
+        side = round(self.iconSize().width() * ratio)
+        inked = self._mark.scaled(
+            side, side, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        painter = QPainter(inked)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+        painter.fillRect(inked.rect(), QColor(fxstyle.colors().icon))
+        painter.end()
+        inked.setDevicePixelRatio(ratio)
+        return inked
+
+    def paintEvent(self, event) -> None:
+        """Draw the mark centred."""
+        mark = self.pixmap()
+        size = mark.deviceIndependentSize().toSize()
+        box = QRect(self.rect().topLeft(), size)
+        box.moveCenter(self.rect().center())
+        painter = QPainter(self)
+        painter.drawPixmap(box, mark)
         painter.end()
 
 
@@ -147,7 +178,7 @@ class FXSplashScreen(QSplashScreen):
         # The corners outside the painted clip stay see-through.
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self._build_panel(
-            QIcon(icon or str(fxconstants.FAVICON_LIGHT)),
+            QIcon(icon) if icon else None,
             title or "Untitled",
             information or "",
             show_progress_bar,
@@ -182,7 +213,7 @@ class FXSplashScreen(QSplashScreen):
 
     def _build_panel(
         self,
-        icon: QIcon,
+        icon: Optional[QIcon],
         title: str,
         information: str,
         show_progress_bar: bool,
@@ -200,8 +231,10 @@ class FXSplashScreen(QSplashScreen):
         layout = QVBoxLayout(self.overlay_frame)
         layout.setContentsMargins(40, 40, 40, 40)
 
-        self.icon_label = QLabel()
-        self.icon_label.setPixmap(icon.pixmap(self.ICON_HEIGHT))
+        if icon is None:
+            self.icon_label = _FXMark(self.ICON_HEIGHT)
+        else:
+            self.icon_label = FXIconLabel(icon, size=self.ICON_HEIGHT)
         self.title_label = QLabel(title)
         fxstyle.mark_as_title(self.title_label, rank="card")
         heading = QHBoxLayout()

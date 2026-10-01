@@ -41,6 +41,16 @@ def _local_paths(event) -> List[Path]:
     return [path for path in paths if path.exists()]
 
 
+def _size_text(path: Path) -> str:
+    """Return a file's size in Qt's own format, or "-" if it is unreadable."""
+    try:
+        size = path.stat().st_size
+    except OSError:
+        return "-"
+    return QLocale().formattedDataSize(
+        size, 1, QLocale.DataSizeTraditionalFormat)
+
+
 class FXDropZone(QWidget):
     """A drag and drop zone widget for file and folder selection.
 
@@ -182,7 +192,6 @@ class FXDropZone(QWidget):
             self._file_tree.setSelectionMode(
                 QAbstractItemView.ExtendedSelection
             )
-            self._file_tree.setAlternatingRowColors(True)
             self._file_tree.setRootIsDecorated(False)
             self._file_tree.setHeaderLabels(["Name", "Type", "Size"])
             header = self._file_tree.header()
@@ -272,14 +281,7 @@ class FXDropZone(QWidget):
             else:
                 item.setText(1, path.suffix.upper().lstrip(".") or "File")
                 item.setIcon(0, fxicons.get_icon("description"))
-                item.setText(
-                    2,
-                    QLocale().formattedDataSize(
-                        path.stat().st_size,
-                        1,
-                        QLocale.DataSizeTraditionalFormat,
-                    ),
-                )
+                item.setText(2, _size_text(path))
             self._file_tree.addTopLevelItem(item)
 
         count = len(self._selected_files)

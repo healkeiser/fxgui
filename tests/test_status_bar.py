@@ -124,3 +124,13 @@ def test_a_long_message_does_not_widen_the_window(qtbot):
     qtbot.wait(20)
 
     assert host.width() == width
+
+
+def test_markup_in_a_message_or_tip_reads_as_typed(qtbot):
+    bar = _bar(qtbot)
+
+    bar.showMessage("<i>a</i> & b", time=False)
+    assert "&lt;i&gt;a&lt;/i&gt; &amp; b" in bar.message_label.text()
+
+    bar.show_tip("<b>tip</b>")
+    assert bar.message_label.text() == "&lt;b&gt;tip&lt;/b&gt;"

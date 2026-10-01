@@ -216,3 +216,11 @@ def test_the_fold_buttons_wear_the_house_tip(qtbot):
     qtbot.addWidget(panel)
     assert panel.expand_button.statusTip() == "Expand all"
     assert panel.collapse_button.statusTip() == "Collapse all"
+
+
+def test_keypad_enter_clicks_a_split_button(qtbot):
+    _window, button, _menu = _split(qtbot)
+    clicks = []
+    button.clicked.connect(lambda: clicks.append(True))
+    _press(Qt.Key_Enter, Qt.KeypadModifier)
+    assert clicks == [True]

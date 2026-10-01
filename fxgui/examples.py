@@ -454,19 +454,6 @@ def _thumbnail_tree() -> QTreeWidget:
 
 
 def _lists_page() -> QWidget:
-    fuzzy_tree = fxwidgets.FXFuzzySearchTree(
-        placeholder="Search assets...", show_ratio_slider=True
-    )
-    for category, assets in (
-        ("Characters", ("hero_body", "hero_head", "villain")),
-        ("Vehicles", ("car_sports", "truck_pickup")),
-    ):
-        fuzzy_tree.add_item(category)
-        for asset in assets:
-            fuzzy_tree.add_item(asset, parent=category)
-    fuzzy_tree.expand_all()
-    fuzzy_tree.setMinimumHeight(180)
-
     filtered = fxwidgets.FXFilteredTree(placeholder="Filter, or type on the tree")
     filtered.tree.setHeaderHidden(True)
     for sequence in ("seq010", "seq020"):
@@ -498,7 +485,6 @@ def _lists_page() -> QWidget:
     icon_list.setFixedHeight(100)
 
     return _page(
-        _section("FXFuzzySearchTree", fuzzy_tree),
         _section("FXFilteredTree / FXKeyboardTree", filtered),
         _section("FXSortedTreeWidgetItem", sorted_tree),
         _section("FXThumbnailDelegate", _thumbnail_tree()),

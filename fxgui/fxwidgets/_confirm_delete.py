@@ -1,6 +1,7 @@
 """A dialog that asks for a thing's name before destroying it."""
 
 # Built-in
+import html
 from typing import Optional
 
 # Third-party
@@ -62,12 +63,14 @@ class FXConfirmDeleteDialog(QDialog):
         self.setWindowTitle(title)
         layout = QVBoxLayout(self)
         message = QLabel(body)
+        message.setTextFormat(Qt.PlainText)
         message.setWordWrap(True)
         layout.addWidget(message)
         # Copying lowers the bar to a paste, but a name nobody can read
         # accurately gets worked around in worse ways.
         self.word_label = QLabel(
-            f"Type <b>{confirm_word}</b> to confirm (click it to copy)"
+            f"Type <b>{html.escape(confirm_word)}</b> to confirm"
+            " (click it to copy)"
         )
         self.word_label.setTextFormat(Qt.RichText)
         self.word_label.setCursor(Qt.PointingHandCursor)
@@ -91,6 +94,8 @@ class FXConfirmDeleteDialog(QDialog):
         self.delete_button.clicked.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+        # Opened over a host that is not themed, it still wears the theme.
+        fxstyle.register_themed_root(self)
 
     def copy_word(self) -> None:
         """Put the confirmation word on the clipboard."""

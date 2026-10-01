@@ -1,6 +1,7 @@
 """Custom status bar widget, and the status items it holds."""
 
 # Built-in
+import html
 import logging
 from datetime import datetime
 from typing import List, Optional, Tuple
@@ -345,7 +346,7 @@ class FXStatusBar(QStatusBar):
         """
         label = self.message_label
         if tip:
-            label.setText(tip)
+            label.setText(html.escape(tip))
             label.show()
             self.icon_label.hide()
         elif self.currentMessage():
@@ -405,14 +406,14 @@ class FXStatusBar(QStatusBar):
         severity_icon = fxicons.get_icon(
             kind.icon, color=f"feedback_{kind.feedback}_foreground")
 
-        # Use inline style for bold as QSS can interfere with <b> tag rendering
         message_prefix = (
             f"<b>{severity_prefix}</b>: {datetime.now():%H:%M} - "
             if time
             else f"<b>{severity_prefix}</b>: "
         )
         self.icon_label.setIcon(severity_icon)
-        self._message = f"{message_prefix} {message}"
+        # The label is rich for the bold prefix; the message is plain text.
+        self._message = f"{message_prefix} {html.escape(message)}"
         self.message_label.setText(self._message)
 
         if set_color:

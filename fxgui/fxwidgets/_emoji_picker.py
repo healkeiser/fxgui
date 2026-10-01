@@ -154,8 +154,7 @@ class FXEmojiPicker(QFrame):
             button.setAutoRaise(True)
             button.setFixedSize(QSize(_CELL, _CELL))
             button.setFocusPolicy(Qt.StrongFocus)
-            button.clicked.connect(
-                lambda _checked=False, e=emoji: self._pick(e))
+            button.clicked.connect(self._clicked)
             button.installEventFilter(self)
             layout.addWidget(
                 button, index // self._columns, index % self._columns)
@@ -202,6 +201,9 @@ class FXEmojiPicker(QFrame):
             event.globalPosition().toPoint())
         self.setAttribute(Qt.WA_NoMouseReplay, on_anchor)
         super().mousePressEvent(event)
+
+    def _clicked(self, _=False) -> None:
+        self._pick(self.sender().text())
 
     def _pick(self, emoji: str) -> None:
         # Closed first, so a listener can hand focus back to its editor.

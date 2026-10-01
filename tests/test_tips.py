@@ -534,7 +534,7 @@ def test_library_widgets_use_native_tooltips(qtbot):
     from fxgui.fxwidgets import (
         FXBreadcrumb,
         FXFilePathWidget,
-        FXFuzzySearchTree,
+        FXFilteredTree,
     )
 
     breadcrumb = FXBreadcrumb(show_navigation=True)
@@ -547,10 +547,10 @@ def test_library_widgets_use_native_tooltips(qtbot):
     qtbot.addWidget(path_widget)
     assert "<b>Browse</b>" in path_widget._browse_btn.toolTip()
 
-    search_list = FXFuzzySearchTree(show_ratio_slider=True)
-    qtbot.addWidget(search_list)
-    assert "<b>Sensitivity</b>" in search_list._ratio_icon.toolTip()
-    assert "<b>Match Threshold</b>" in search_list._ratio_slider.toolTip()
+    filtered = FXFilteredTree()
+    qtbot.addWidget(filtered)
+    assert "<b>Expand all</b>" in filtered.expand_button.toolTip()
+    assert "<b>Collapse all</b>" in filtered.collapse_button.toolTip()
 
 
 def test_timeline_playback_keeps_a_rich_tooltip(qtbot):
@@ -576,7 +576,7 @@ def test_library_tooltips_carry_their_words(qtbot):
     from fxgui.fxwidgets import (
         FXBreadcrumb,
         FXFilePathWidget,
-        FXFuzzySearchTree,
+        FXFilteredTree,
         FXOutputLogWidget,
         FXTimelineSlider,
     )
@@ -590,14 +590,7 @@ def test_library_tooltips_carry_their_words(qtbot):
         "FXFilePathWidget": [
             ("Browse", "Open file browser to select a path"),
         ],
-        "FXFuzzySearchTree": [
-            ("Sensitivity", "Adjust fuzzy matching sensitivity"),
-            (
-                "Match Threshold",
-                "Lower = more results (looser match), Higher = fewer "
-                "results (stricter match)",
-            ),
-        ],
+        "FXFilteredTree": [("Expand all", ""), ("Collapse all", "")],
         "FXOutputLogWidget": [
             (
                 "Output Area",
@@ -629,7 +622,7 @@ def test_library_tooltips_carry_their_words(qtbot):
     roots = {
         "FXBreadcrumb": FXBreadcrumb(show_navigation=True),
         "FXFilePathWidget": FXFilePathWidget(),
-        "FXFuzzySearchTree": FXFuzzySearchTree(show_ratio_slider=True),
+        "FXFilteredTree": FXFilteredTree(),
         "FXOutputLogWidget": FXOutputLogWidget(),
         "FXTimelineSlider": FXTimelineSlider(
             show_controls=True,

@@ -251,3 +251,41 @@ def test_a_theme_switch_repaints_with_the_new_colors(qtbot):
     light = tree.viewport().grab().toImage().pixelColor(point).name()
     assert dark != light
     assert light == QColor(fxstyle.colors().surface_sunken).name()
+
+
+def test_a_colour_decoration_paints_as_a_swatch(qtbot):
+    tree, delegate, item = delegate_tree(
+        qtbot, row=["Red", "Also"], widths=(200, 200), show_thumbnail=False
+    )
+    for column in (0, 1):
+        item.setData(column, Qt.DecorationRole, QColor("#ff0000"))
+
+    shot = tree.viewport().grab().toImage()
+
+    for column in (0, 1):
+        rect = tree.visualRect(tree.indexFromItem(item, column))
+        centre = delegate._icon_rect(rect).center()
+        assert shot.pixelColor(centre).name() == "#ff0000"
+    # The thumbnail's overlay takes the swatch too.
+    delegate.show_thumbnail = True
+    tree.viewport().grab()
+
+
+def _inks(image, rect):
+    return {
+        image.pixelColor(x, y).name()
+        for x in range(rect.left(), rect.right())
+        for y in range(rect.top(), rect.bottom())
+    }
+
+
+def test_a_description_is_drawn_in_text_muted(qtbot):
+    tree, _delegate, item = delegate_tree(
+        qtbot, row=["Title"], show_thumbnail=False
+    )
+    item.setData(0, FXThumbnailDelegate.DESCRIPTION_ROLE, "WWWW")
+    rect = tree.visualRect(tree.indexFromItem(item, 0))
+
+    inks = _inks(tree.viewport().grab().toImage(), rect)
+
+    assert QColor(fxstyle.colors().text_muted).name() in inks

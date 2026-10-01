@@ -102,3 +102,21 @@ def test_the_hint_wears_the_theme_s_error_ink(qtbot):
     error = fxstyle.colors().feedback_error_foreground
     assert ink == QColor(error)
     assert dialog.hint.styleSheet() == ""
+
+
+def test_the_dialog_is_a_themed_root_of_its_own(qtbot):
+    dialog = FXConfirmDeleteDialog(
+        None, title="t", body="b", confirm_word="w")
+    qtbot.addWidget(dialog)
+    assert dialog in fxstyle._themed_roots
+
+
+def test_markup_in_the_word_and_body_reads_as_typed(qtbot):
+    dialog = FXConfirmDeleteDialog(
+        None, title="t", body="<i>gone</i> & lost", confirm_word="<b>x</b>")
+    qtbot.addWidget(dialog)
+    labels = {label.text(): label for label in dialog.findChildren(type(dialog.hint))}
+
+    body = labels["<i>gone</i> & lost"]
+    assert body.textFormat() == Qt.PlainText
+    assert "&lt;b&gt;x&lt;/b&gt;" in dialog.word_label.text()

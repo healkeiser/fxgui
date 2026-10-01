@@ -53,6 +53,22 @@ def test_the_overlay_follows_its_parent_resizing(qtbot):
     assert overlay.geometry() == parent.rect()
 
 
+def test_set_visible_covers_the_parent_and_spins(qtbot):
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    parent.resize(200, 100)
+    overlay = FXLoadingOverlay(parent, "Loading")
+    parent.show()
+    parent.resize(300, 120)
+
+    overlay.setVisible(True)
+    assert overlay.geometry() == parent.rect()
+    assert overlay._spinner.is_spinning()
+
+    overlay.setVisible(False)
+    assert not overlay._spinner.is_spinning()
+
+
 def test_the_overlay_carries_no_dead_sheet(qtbot):
     parent = QWidget()
     qtbot.addWidget(parent)

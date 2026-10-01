@@ -38,7 +38,7 @@ _GONE = {
     ),
     "fxgui.fxwidgets": (
         "FXThemeAware", "FXAccordionSection", "FXWidget",
-        "FXColorLabelDelegate",
+        "FXColorLabelDelegate", "FXFuzzySearchTree", "FXFuzzySearchList",
     ),
     "fxgui.fxwidgets:FXCollapsibleWidget": (
         "header_widget", "content_area", "toggle_button", "title_label",

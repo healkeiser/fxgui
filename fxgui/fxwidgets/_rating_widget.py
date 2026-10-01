@@ -56,7 +56,7 @@ class FXRatingWidget(QWidget):
         super().__init__(parent)
 
         self._max_rating = max_rating
-        self._rating = initial_rating
+        self._rating = 0
         self._allow_half = allow_half
         self._icon_size = icon_size
         self._filled_icon = filled_icon
@@ -80,8 +80,9 @@ class FXRatingWidget(QWidget):
 
         layout.addStretch()
 
-        # Initial update
         self._update_stars()
+        # Through the setter, so it is clamped and rounded like any other.
+        self.set_rating(initial_rating, emit=False)
 
         # Mouse tracking
         self.setMouseTracking(True)

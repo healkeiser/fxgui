@@ -82,6 +82,7 @@ class FXProgressCard(QFrame):
     ):
         super().__init__(parent)
 
+        progress = max(0, min(100, progress))
         self._progress = progress
         self._status = status
 

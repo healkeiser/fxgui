@@ -27,7 +27,7 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import QCompleter, QPlainTextEdit, QSizePolicy, QWidget
 
 # Internal
-from fxgui import fxstyle
+from fxgui import _compat, fxstyle
 
 
 _ID_ROLE = Qt.UserRole
@@ -266,6 +266,10 @@ class FXThreadLine(QWidget):
     def path(self) -> QPainterPath:
         """Return the line: down from the head, an elbow into each face."""
         drawn = QPainterPath()
+        # A reply the thread deleted would crash the paint.
+        self._faces = [f for f in self._faces if _compat.is_valid(f)]
+        if self._head is not None and not _compat.is_valid(self._head):
+            self._head = None
         shown = [f for f in self._faces if f.isVisibleTo(self._thread)]
         if self._head is None or not shown:
             return drawn

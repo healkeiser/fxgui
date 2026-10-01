@@ -139,6 +139,10 @@ class _Segment(QPushButton):
             font.setWeight(QFont.DemiBold)
             self.setFont(font)
 
+    def navigate(self, _=False) -> None:
+        """Navigate the breadcrumb to this segment."""
+        self._crumb.navigate_to(self.index)
+
     def paintEvent(self, event) -> None:
         """Paint the hover tint, the style's box, and the label in ink."""
         crumb = self._crumb
@@ -581,9 +585,8 @@ class FXBreadcrumb(QWidget):
                 # Home button only triggers home navigation, not segment click
                 button.clicked.connect(self._on_home_clicked)
             else:
-                button.clicked.connect(
-                    lambda _=False, idx=index: self.navigate_to(idx)
-                )
+                button.index = index
+                button.clicked.connect(button.navigate)
 
         button.installEventFilter(self)
 
