@@ -313,6 +313,10 @@ def test_selection_and_hover_wear_the_theme_under_a_host_s_sheet(
     view, items = _three_rows(build)
     window.setCentralWidget(view)
     _shown(qtbot, window, (400, 300))
+    # Clear of the host: the offscreen platform sends a pointer over both
+    # windows to the host, and whether the hovered row lies there depended
+    # on how tall the window's bars are.
+    window.move(host.frameGeometry().right() + 20, host.y())
     view.setCurrentItem(items[1])
     QTest.mouseMove(window, QPoint(1, 1))
     hovered = _rect(view, items[2])
