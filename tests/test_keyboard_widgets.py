@@ -209,3 +209,10 @@ def test_a_filtered_tree_wraps_a_tree_it_is_given(qtbot):
     panel = FXFilteredTree(tree)
     assert panel.tree is tree
     assert tree.parent() is panel
+
+
+def test_the_fold_buttons_wear_the_house_tip(qtbot):
+    panel = FXFilteredTree()
+    qtbot.addWidget(panel)
+    assert panel.expand_button.statusTip() == "Expand all"
+    assert panel.collapse_button.statusTip() == "Collapse all"

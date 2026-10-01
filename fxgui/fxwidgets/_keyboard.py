@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._search_bar import FXSearchBar
+from fxgui.fxwidgets._tips import apply_tip
 
 # Shift is absent: shifted characters are still typing.
 _COMMAND_MODIFIERS = Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier
@@ -159,7 +160,7 @@ class FXSplitButton(QToolButton):
             self.click()
             return
         menu = self.menu()
-        pressed = QKeySequence(int(event.modifiers().value) | int(event.key()))
+        pressed = QKeySequence(event.keyCombination())
         if menu is not None and any(
             pressed == QKeySequence(keys) for keys in self.DROPDOWN_KEYS
         ):
@@ -212,5 +213,5 @@ class FXFilteredTree(QWidget):
         button = QToolButton(self)
         button.setAutoRaise(True)
         fxicons.set_icon(button, icon)
-        button.setToolTip(tip)
+        apply_tip(button, tip)
         return button
