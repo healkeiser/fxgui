@@ -137,6 +137,7 @@ class FXCommandPalette(QFrame):
         self._command_rows: List[FXCommand] = []
         self._go_to: Optional[List[FXCommand]] = None
         self._going = False
+        self._ticket = 0
         self._loading = ""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -160,7 +161,7 @@ class FXCommandPalette(QFrame):
         for column in (1, 2):
             header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
         self.rows.currentItemChanged.connect(self._followed)
-        self.rows.itemClicked.connect(lambda item, _c: self._run(item))
+        self.rows.itemClicked.connect(self._run)
         self.hint = QLabel()
         self.hint.setObjectName("fxPaletteHint")
         self.hint.setWordWrap(True)
@@ -227,8 +228,12 @@ class FXCommandPalette(QFrame):
         self._go_to = None
         self._loading = loading
         self._open(placeholder, position)
+        ticket = self._ticket
 
         def landed(entries: List[Tuple[str, str]]) -> None:
+            # A load that lands after a newer opening is out of date.
+            if ticket != self._ticket:
+                return
             self._go_to = [
                 FXCommand(words, partial(select, row_id))
                 for row_id, words in entries
@@ -243,6 +248,7 @@ class FXCommandPalette(QFrame):
                 f"position must be one of {self.POSITIONS}, not {position!r}"
             )
         self._position = position
+        self._ticket += 1
         self.field.setPlaceholderText(placeholder)
         self._command_rows = self._commands()
         self.field.blockSignals(True)
@@ -348,7 +354,7 @@ class FXCommandPalette(QFrame):
     def _run_current(self) -> None:
         self._run(self.rows.currentItem())
 
-    def _run(self, item: Optional[QTreeWidgetItem]) -> None:
+    def _run(self, item: Optional[QTreeWidgetItem], _column: int = 0) -> None:
         entry = self._entry(item)
         if entry is None:
             return
