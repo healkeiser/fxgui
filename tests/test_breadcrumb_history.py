@@ -35,12 +35,12 @@ def _buttons(crumb):
 def test_a_segment_click_can_be_undone_with_back(qtbot, qapp):
     crumb = _crumb(qtbot)
     QTest.mouseClick(_buttons(crumb)[1], Qt.LeftButton)
-    assert crumb.path == PATH[:2]
+    assert crumb.path() == PATH[:2]
 
     assert crumb.go_back() is True
-    assert crumb.path == PATH
+    assert crumb.path() == PATH
     assert crumb.go_forward() is True
-    assert crumb.path == PATH[:2]
+    assert crumb.path() == PATH[:2]
 
 
 def test_double_click_on_a_segment_opens_the_editor(qtbot, qapp):
@@ -60,3 +60,43 @@ def test_theme_switch_redraws_the_strip_without_the_mixin(qtbot, qapp):
     before = crumb._container.grab().toImage()
     fxstyle.apply_theme("light")
     assert crumb._container.grab().toImage() != before
+
+
+def test_a_home_click_says_home_once(qtbot, qapp):
+    crumb = _crumb(qtbot)
+    homes, segments = [], []
+    crumb.home_clicked.connect(lambda: homes.append(True))
+    crumb.segment_clicked.connect(lambda *args: segments.append(args))
+
+    QTest.mouseClick(_buttons(crumb)[0], Qt.LeftButton)
+
+    assert homes == [True]
+    assert segments == []
+    assert crumb.path() == PATH[:1]
+
+
+def test_a_home_click_goes_to_the_home_path(qtbot, qapp):
+    crumb = _crumb(qtbot)
+    crumb.set_home_path(["Projects", "MyShow"])
+
+    QTest.mouseClick(_buttons(crumb)[0], Qt.LeftButton)
+
+    assert crumb.path() == ["Projects", "MyShow"]
+    assert crumb.home_path() == ["Projects", "MyShow"]
+
+
+def test_back_and_forward_hand_out_a_copy(qtbot, qapp):
+    crumb = _crumb(qtbot)
+    crumb.set_path(PATH[:2])
+    seen = []
+    crumb.navigated_back.connect(seen.append)
+    crumb.navigated_forward.connect(seen.append)
+
+    crumb.go_back()
+    seen[-1].append("x")
+    crumb.go_forward()
+    seen[-1].append("x")
+
+    assert crumb.path() == PATH[:2]
+    crumb.go_back()
+    assert crumb.path() == PATH
