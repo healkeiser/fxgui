@@ -1,6 +1,7 @@
 """Navigation breadcrumb widget."""
 
 # Built-in
+from functools import lru_cache
 from typing import List, Optional
 
 # Third-party
@@ -63,7 +64,7 @@ def _ground(widget: QWidget) -> str:
     return "surface"
 
 
-def _strip_colors(colors: dict, ground: str, resting: str, hovered: str):
+def _strip_colors(ground: str, resting: str, hovered: str):
     """Return the strip's rest fill, hover fill, edge and ink on `ground`.
 
     The rest fill is `resting` or `surface`, whichever stands out more from
@@ -71,16 +72,29 @@ def _strip_colors(colors: dict, ground: str, resting: str, hovered: str):
     fills, the edge `pane_border` stepped until it shows at
     `PANE_BORDER_MIN_CONTRAST` against the ground and both fills.
     """
-    under = colors[ground]
+    colors = fxstyle.colors()
+    return _worked_out(
+        getattr(colors, ground),
+        getattr(colors, resting),
+        colors.surface,
+        getattr(colors, hovered),
+        colors.text,
+        colors.pane_border,
+    )
+
+
+# Keyed on the colours themselves, so a theme or colour file switch misses.
+@lru_cache(maxsize=64)
+def _worked_out(under, resting, surface, hover, text, pane_border):
+    """Return the rest fill, hover fill, edge and ink from these colours."""
     rest = max(
-        (colors[resting], colors["surface"]),
+        (resting, surface),
         key=lambda fill: fxstyle.get_contrast_ratio(fill, under),
     )
-    hover = colors[hovered]
-    ink = colors["text"]
+    ink = text
     for fill in (rest, hover):
         ink = fxstyle.readable_ink(fill, ink)
-    edge = colors["pane_border"]
+    edge = pane_border
     for other in (under, rest, hover):
         edge = fxstyle.readable_ink(
             other, edge, fxstyle.PANE_BORDER_MIN_CONTRAST
@@ -102,7 +116,7 @@ class _Strip(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(QPen(QColor(edge), 1))
         painter.setBrush(QColor(hover if self._crumb._lit else rest))
-        radius = self._crumb.RADIUS
+        radius = fxstyle.BUTTON_RADIUS
         painter.drawRoundedRect(
             QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5), radius, radius
         )
@@ -127,15 +141,15 @@ class _Segment(QPushButton):
         crumb = self._crumb
         painter = QStylePainter(self)
         if not self._current and self.underMouse():
-            tint = QColor(
-                fxstyle.get_theme_colors()[crumb.SEGMENT_HOVER_TOKEN]
-            )
+            tint = QColor(getattr(fxstyle.colors(), crumb.SEGMENT_HOVER_TOKEN))
             tint.setAlpha(crumb.SEGMENT_HOVER_ALPHA)
             painter.setRenderHint(QPainter.Antialiasing)
             painter.setPen(Qt.NoPen)
             painter.setBrush(tint)
             painter.drawRoundedRect(
-                QRectF(self.rect()), crumb.RADIUS, crumb.RADIUS
+                QRectF(self.rect()),
+                fxstyle.BUTTON_RADIUS,
+                fxstyle.BUTTON_RADIUS,
             )
         option = QStyleOptionButton()
         self.initStyleOption(option)
@@ -204,9 +218,6 @@ class FXBreadcrumb(QWidget):
     # border or a bolder weight shifts nothing beside it.
     SEGMENT_HOVER_ALPHA = 80
 
-    # The corner the strip and a hovered segment are rounded by.
-    RADIUS = 4
-
     def __init__(
         self,
         parent: Optional[QWidget] = None,
@@ -226,7 +237,7 @@ class FXBreadcrumb(QWidget):
         self._home_icon = home_icon
         self._show_navigation = show_navigation
         self._path_separator = path_separator
-        self._home_path = home_path
+        self._home_path = list(home_path) if home_path else None
 
         # History tracking
         self._history: List[List[str]] = []
@@ -307,13 +318,11 @@ class FXBreadcrumb(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setFixedHeight(side)
 
-        if self._show_navigation:
-            self._update_nav_buttons()
+        self._update_nav_buttons()
 
     def _colors(self):
         """Return the strip's rest fill, hover fill, edge and ink, now."""
         return _strip_colors(
-            fxstyle.get_theme_colors(),
             _ground(self),
             self.STRIP_RESTING_TOKEN,
             self.STRIP_HOVERED_TOKEN,
@@ -421,7 +430,6 @@ class FXBreadcrumb(QWidget):
             self._history_index < len(self._history) - 1
         )
 
-    @property
     def path(self) -> List[str]:
         """Return the current path segments."""
         return self._path.copy()
@@ -444,8 +452,7 @@ class FXBreadcrumb(QWidget):
             if not self._history or self._history[-1] != path:
                 self._history.append(path.copy())
                 self._history_index = len(self._history) - 1
-            if self._show_navigation:
-                self._update_nav_buttons()
+            self._update_nav_buttons()
 
     def append_segment(self, segment: str) -> None:
         """Append a segment to the path.
@@ -476,7 +483,7 @@ class FXBreadcrumb(QWidget):
         """
         if 0 <= index < len(self._path):
             self.set_path(self._path[: index + 1])
-            self.segment_clicked.emit(index, self.path)
+            self.segment_clicked.emit(index, self.path())
 
     def clear(self) -> None:
         """Clear the breadcrumb path."""
@@ -489,15 +496,7 @@ class FXBreadcrumb(QWidget):
         Returns:
             True if navigation occurred, False if at beginning of history.
         """
-        if self._history_index > 0:
-            self._history_index -= 1
-            self._path = self._history[self._history_index].copy()
-            self._rebuild_breadcrumb()
-            if self._show_navigation:
-                self._update_nav_buttons()
-            self.navigated_back.emit(self._path)
-            return True
-        return False
+        return self._step(-1, self.navigated_back)
 
     def go_forward(self) -> bool:
         """Navigate to the next path in history.
@@ -505,15 +504,19 @@ class FXBreadcrumb(QWidget):
         Returns:
             True if navigation occurred, False if at end of history.
         """
-        if self._history_index < len(self._history) - 1:
-            self._history_index += 1
-            self._path = self._history[self._history_index].copy()
-            self._rebuild_breadcrumb()
-            if self._show_navigation:
-                self._update_nav_buttons()
-            self.navigated_forward.emit(self._path)
-            return True
-        return False
+        return self._step(1, self.navigated_forward)
+
+    def _step(self, by: int, signal) -> bool:
+        """Move `by` places through history and announce it on `signal`."""
+        index = self._history_index + by
+        if not 0 <= index < len(self._history):
+            return False
+        self._history_index = index
+        self._path = self._history[index].copy()
+        self._rebuild_breadcrumb()
+        self._update_nav_buttons()
+        signal.emit(self.path())
+        return True
 
     def can_go_back(self) -> bool:
         """Check if back navigation is available."""
@@ -527,8 +530,7 @@ class FXBreadcrumb(QWidget):
         """Clear the navigation history."""
         self._history.clear()
         self._history_index = -1
-        if self._show_navigation:
-            self._update_nav_buttons()
+        self._update_nav_buttons()
 
     def is_editing(self) -> bool:
         """Check if currently in edit mode."""
@@ -577,7 +579,7 @@ class FXBreadcrumb(QWidget):
                 button.clicked.connect(self._on_home_clicked)
             else:
                 button.clicked.connect(
-                    lambda checked, idx=index: self.navigate_to(idx)
+                    lambda _=False, idx=index: self.navigate_to(idx)
                 )
 
         button.installEventFilter(self)
@@ -596,22 +598,14 @@ class FXBreadcrumb(QWidget):
         self._layout.insertWidget(self._layout.count() - 1, label)
 
     def _on_home_clicked(self) -> None:
-        """Handle home segment click."""
+        """Go to the home path, or the first segment, and say home."""
+        self.set_path(self._home_path or self._path[:1])
         self.home_clicked.emit()
-        if self._home_path is not None:
-            self.set_path(self._home_path)
-            # Emit segment_clicked so external code can handle navigation
-            self.segment_clicked.emit(len(self._home_path) - 1, self._path)
-        else:
-            # Navigate to first segment if no home_path set
-            self.navigate_to(0)
 
-    @property
     def home_path(self) -> Optional[List[str]]:
-        """Get the home path."""
+        """Return where a home click goes; None means the first segment."""
         return self._home_path.copy() if self._home_path else None
 
-    @home_path.setter
-    def home_path(self, path: Optional[List[str]]) -> None:
-        """Set the home path."""
-        self._home_path = path.copy() if path else None
+    def set_home_path(self, path: Optional[List[str]]) -> None:
+        """Set the path a home click goes to; None means the first segment."""
+        self._home_path = list(path) if path else None

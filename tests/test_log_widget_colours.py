@@ -22,7 +22,7 @@ def _fragments(pane):
 
 
 def _pane(qtbot, text):
-    pane = FXOutputLogWidget(capture_output=False)
+    pane = FXOutputLogWidget()
     qtbot.addWidget(pane)
     pane.append_log(text)
     qtbot.waitUntil(lambda: bool(pane.output_area.toPlainText().strip()))

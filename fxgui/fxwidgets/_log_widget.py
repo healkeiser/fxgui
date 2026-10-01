@@ -1,8 +1,9 @@
 """Output log widget with ANSI color support."""
 
 # Built-in
-import logging
+import bisect
 import functools
+import logging
 import re
 import weakref
 from collections import deque
@@ -11,7 +12,6 @@ from typing import Deque, Optional, Pattern, Sequence, Union
 # Third-party
 from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal
 from qtpy.QtGui import (
-    QCloseEvent,
     QColor,
     QFont,
     QFontMetricsF,
@@ -24,8 +24,8 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPushButton,
-    QSizePolicy,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -34,7 +34,6 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle
 from fxgui._compat import is_valid
-from fxgui.fxwidgets._inputs import FXIconLineEdit
 from fxgui.fxwidgets._tips import apply_tip
 
 
@@ -87,25 +86,24 @@ class FXOutputLogHandler(logging.Handler):
 _ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[([0-9;]+)m")
 
 
-# ANSI foreground code -> theme role, after colorlog's level colours.
-# Feedback roles name `get_feedback_colors()` entries, others theme tokens.
+# ANSI foreground code -> theme token, after colorlog's level colours.
 ANSI_ROLES = {
     "30": "text_disabled",
     "90": "text_disabled",
     "37": "text",
     "97": "text",
-    "31": "error",
-    "91": "error",
-    "35": "error",
-    "95": "error",
-    "33": "warning",
-    "93": "warning",
-    "32": "info",
-    "92": "info",
-    "34": "info",
-    "94": "info",
-    "36": "debug",
-    "96": "debug",
+    "31": "feedback_error_foreground",
+    "91": "feedback_error_foreground",
+    "35": "feedback_error_foreground",
+    "95": "feedback_error_foreground",
+    "33": "feedback_warning_foreground",
+    "93": "feedback_warning_foreground",
+    "32": "feedback_info_foreground",
+    "92": "feedback_info_foreground",
+    "34": "feedback_info_foreground",
+    "94": "feedback_info_foreground",
+    "36": "feedback_debug_foreground",
+    "96": "feedback_debug_foreground",
 }
 
 # Char format properties that remember a segment's role across themes.
@@ -116,13 +114,9 @@ _readable_ink = functools.lru_cache(maxsize=256)(fxstyle.readable_ink)
 
 
 def _paint_role(fmt: QTextCharFormat, role: str, dim: bool) -> None:
-    """Set `fmt`'s foreground to `role` in the current theme, readable."""
+    """Set `fmt`'s foreground to the `role` token, readable on the pane."""
     theme = fxstyle.colors()
-    feedback = fxstyle.get_feedback_colors()
-    wanted = (
-        feedback[role]["foreground"] if role in feedback else getattr(theme, role)
-    )
-    colour = QColor(_readable_ink(theme.surface_sunken, wanted))
+    colour = QColor(_readable_ink(theme.surface_sunken, getattr(theme, role)))
     if dim:
         colour.setAlpha(128)
     fmt.setForeground(colour)
@@ -143,16 +137,13 @@ def _ansi_format(role: Optional[str], dim: bool, bright: bool) -> QTextCharForma
 
 
 class FXOutputLogWidget(QWidget):
-    """A reusable read-only output log widget for displaying application logs.
+    """A read-only log pane with ANSI colours, search and a throttle.
 
-    This widget provides a text display area that captures and shows
-    logging output from the application. It supports ANSI color codes,
-    search functionality, and log throttling for performance.
+    Records reach it through an `FXOutputLogHandler` added to a logger,
+    or through `append_log` and `append_many`.
 
     Args:
         parent: Parent widget.
-        capture_output: If `True`, adds a logging handler to capture
-            log output from Python's logging module.
         max_blocks: How many lines the pane keeps before Qt prunes the
             oldest, as a terminal's scrollback does. Defaults to `0`, no
             limit: only the consumer knows whether dropping old records
@@ -167,9 +158,10 @@ class FXOutputLogWidget(QWidget):
             delivery).
 
     Examples:
+        >>> import logging
         >>> from fxgui import fxwidgets
-        >>> log_widget = fxwidgets.FXOutputLogWidget(capture_output=True)
-        >>> log_widget.show()
+        >>> log_widget = fxwidgets.FXOutputLogWidget()
+        >>> logging.root.addHandler(fxwidgets.FXOutputLogHandler(log_widget))
     """
 
     # Signal for thread-safe log message delivery
@@ -178,21 +170,20 @@ class FXOutputLogWidget(QWidget):
     # Records per flush: 1000 take about 8.5 ms, inside the 16 ms tick.
     MAX_RECORDS_PER_FLUSH = 1000
 
+    # The match count waits this long after the last keystroke, in ms: a
+    # count scans the whole document.
+    COUNT_DELAY_MS = 150
+
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        capture_output: bool = False,
         max_blocks: int = 0,
         hang_indent: Optional[Union[str, Pattern]] = None,
     ):
-        """Initialize the output log widget."""
         super().__init__(parent)
 
-        self._capture_output = capture_output
         self._max_blocks = max_blocks
         self._hang = re.compile(hang_indent) if hang_indent else None
-        self._log_handler = None
-        self._logger_check_timer = None
 
         # The throttle limits repaints, never records: all are queued.
         self._pending_logs: Deque[str] = deque()
@@ -201,34 +192,32 @@ class FXOutputLogWidget(QWidget):
         self._throttle_timer.timeout.connect(self._flush_pending_log)
         self._throttle_interval = 16
 
+        self._count_timer = QTimer(self)
+        self._count_timer.setSingleShot(True)
+        self._count_timer.setInterval(self.COUNT_DELAY_MS)
+        self._count_timer.timeout.connect(self._update_search_count)
+
         # Queued across threads: a handler may emit off the UI thread.
         self.log_message.connect(self.append_log)
 
-        # Setup UI
         self._setup_ui()
-
-        # Setup output capture if requested
-        if self._capture_output:
-            self._setup_output_capture()
 
         # Shown segments keep their role; a switch repaints them.
         fxstyle.theme_changed.connect(self._recolour)
 
     def _setup_ui(self) -> None:
-        """Setup the log widget UI components."""
+        """Build the output area, the search bar and the Clear button."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(5)
 
-        # Output area (read-only)
-        # We're using `QTextEdit` for HTML support
+        # A QTextEdit, for its rich text formats.
         self.output_area = QTextEdit()
         self.output_area.setReadOnly(True)
         # A log is never undone; the undo stack would grow with it.
         self.output_area.setUndoRedoEnabled(False)
         if self._max_blocks > 0:
-            # Qt prunes from the top once the document is this long. Off
-            # by default on purpose -- see the class docstring.
+            # Qt prunes from the top once the document is this long.
             self.output_area.document().setMaximumBlockCount(self._max_blocks)
         self.output_area.setLineWrapMode(QTextEdit.WidgetWidth)
         self.output_area.setObjectName("fxOutputLogArea")
@@ -239,41 +228,34 @@ class FXOutputLogWidget(QWidget):
             "Press Ctrl+F to search",
             "Ctrl+F",
         )
-
-        # Set monospace font (colors will come from theme stylesheet)
-        font = QFont("Consolas", 9)
-        font.setStyleHint(QFont.Monospace)
-        self.output_area.setFont(font)
-
         layout.addWidget(self.output_area)
 
-        # Bottom bar with search and buttons
-        bottom_layout = QHBoxLayout()
-        bottom_layout.setContentsMargins(0, 0, 0, 0)
-        bottom_layout.setSpacing(5)
+        # One container, shown and hidden whole.
+        self._search_bar = QWidget()
+        search_layout = QHBoxLayout(self._search_bar)
+        search_layout.setContentsMargins(0, 0, 0, 0)
+        search_layout.setSpacing(5)
 
-        # Search controls (initially hidden)
         self.search_label = QLabel("Find:")
-        self.search_label.hide()
-        bottom_layout.addWidget(self.search_label)
+        search_layout.addWidget(self.search_label)
 
-        self.search_input = FXIconLineEdit(icon_name="search")
+        self.search_input = QLineEdit()
+        self.search_input.addAction(
+            fxicons.get_icon("search"), QLineEdit.LeadingPosition
+        )
         self.search_input.setPlaceholderText("Search...")
         self.search_input.returnPressed.connect(self._find_next)
-        self.search_input.textChanged.connect(self._update_search_count)
-        self.search_input.hide()
-        bottom_layout.addWidget(self.search_input)
+        self.search_input.textChanged.connect(self._count_timer.start)
+        # Shift+Enter goes back; returnPressed cannot tell it from Enter.
+        self.search_input.installEventFilter(self)
+        search_layout.addWidget(self.search_input, 1)
 
-        # Search count label (shows "X of Y" matches)
         self.search_count_label = QLabel("")
         self.search_count_label.setMinimumWidth(60)
-        self.search_count_label.hide()
-        bottom_layout.addWidget(self.search_count_label)
+        search_layout.addWidget(self.search_count_label)
 
         self.prev_button = QPushButton("Previous")
         fxicons.set_icon(self.prev_button, "keyboard_arrow_left")
-        self.prev_button.setProperty("icon_name", "keyboard_arrow_left")
-        self.prev_button.setMaximumWidth(100)
         self.prev_button.clicked.connect(self._find_previous)
         apply_tip(
             self.prev_button,
@@ -281,27 +263,16 @@ class FXOutputLogWidget(QWidget):
             "Find previous match",
             "Shift+Enter",
         )
-        self.prev_button.hide()
-        bottom_layout.addWidget(self.prev_button)
+        search_layout.addWidget(self.prev_button)
 
         self.next_button = QPushButton("Next")
         fxicons.set_icon(self.next_button, "keyboard_arrow_right")
-        self.next_button.setProperty("icon_name", "keyboard_arrow_right")
-        self.next_button.setMaximumWidth(80)
         self.next_button.clicked.connect(self._find_next)
-        apply_tip(
-            self.next_button,
-            "Find Next",
-            "Find next match",
-            "Enter",
-        )
-        self.next_button.hide()
-        bottom_layout.addWidget(self.next_button)
+        apply_tip(self.next_button, "Find Next", "Find next match", "Enter")
+        search_layout.addWidget(self.next_button)
 
         self.close_search_button = QPushButton("")
         fxicons.set_icon(self.close_search_button, "close")
-        self.close_search_button.setProperty("icon_name", "close")
-        self.close_search_button.setMaximumWidth(30)
         apply_tip(
             self.close_search_button,
             "Close Search",
@@ -309,208 +280,107 @@ class FXOutputLogWidget(QWidget):
             "Esc",
         )
         self.close_search_button.clicked.connect(self._hide_search)
-        self.close_search_button.hide()
-        bottom_layout.addWidget(self.close_search_button)
+        search_layout.addWidget(self.close_search_button)
 
-        # Spacer to push Clear button to the right
-        self.log_spacer = QWidget()
-        self.log_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        bottom_layout.addWidget(self.log_spacer)
+        self._search_bar.hide()
 
-        # Clear button (always visible)
         self.clear_button = QPushButton("Clear")
         fxicons.set_icon(self.clear_button, "delete")
-        self.clear_button.setProperty("icon_name", "delete")
-        self.clear_button.setMaximumWidth(80)
         self.clear_button.clicked.connect(self.clear_log)
-        apply_tip(
-            self.clear_button,
-            "Clear Log",
-            "Clear all log messages",
-        )
-        bottom_layout.addWidget(self.clear_button)
-        # A consumer may hide Clear at any time; the spacer follows it.
-        self.clear_button.installEventFilter(self)
+        apply_tip(self.clear_button, "Clear Log", "Clear all log messages")
 
+        # Clear keeps the right edge; the bar takes the rest. With both
+        # hidden the row is empty and takes no room.
+        bottom_layout = QHBoxLayout()
+        bottom_layout.setContentsMargins(0, 0, 0, 0)
+        bottom_layout.setSpacing(5)
+        bottom_layout.addWidget(self._search_bar, 1)
+        bottom_layout.addWidget(self.clear_button, 0, Qt.AlignRight)
         layout.addLayout(bottom_layout)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Keep the spacer in step as the Clear button is shown or hidden."""
-        if watched is self.clear_button and event.type() in (
-            QEvent.ShowToParent,
-            QEvent.HideToParent,
+        """Send Shift+Enter in the search field to the previous match."""
+        if (
+            watched is self.search_input
+            and event.type() == QEvent.KeyPress
+            and event.key() in (Qt.Key_Return, Qt.Key_Enter)
+            and event.modifiers() & Qt.ShiftModifier
         ):
-            self._sync_spacer()
+            self._find_previous()
+            return True
         return super().eventFilter(watched, event)
 
     def show_search(self) -> None:
         """Show the search bar and put the cursor in it."""
-        self.search_label.show()
-        self.search_input.show()
-        self.search_count_label.show()
-        self.prev_button.show()
-        self.next_button.show()
-        self.close_search_button.show()
-        # Limit spacer width when search is visible
-        self.log_spacer.setMaximumWidth(50)
-        self._sync_spacer()
+        self._search_bar.show()
         self.search_input.setFocus()
         self.search_input.selectAll()
-        # Update count on show
         self._update_search_count()
 
     def _hide_search(self) -> None:
-        """Hide the search bar and clear highlighting."""
-        self.search_label.hide()
-        self.search_input.hide()
-        self.search_count_label.hide()
-        self.prev_button.hide()
-        self.next_button.hide()
-        self.close_search_button.hide()
-        # Remove spacer width limit when search is hidden
-        self.log_spacer.setMaximumWidth(16777215)  # Qt's QWIDGETSIZE_MAX
-        self._sync_spacer()
-        # Clear any existing search highlighting
+        """Hide the search bar and clear the match selection."""
+        self._search_bar.hide()
         cursor = self.output_area.textCursor()
         cursor.clearSelection()
         self.output_area.setTextCursor(cursor)
 
-    def _sync_spacer(self) -> None:
-        """Give the spacer room only while it has a Clear button to push.
-
-        `isHidden`, not `isVisible`: this runs before the window is shown.
-        """
-        self.log_spacer.setVisible(not self.clear_button.isHidden())
-
     def _update_search_count(self) -> None:
-        """Count total occurrences and update the count label."""
+        """Show "X of Y": the selected match's place among all matches."""
+        self._count_timer.stop()
         search_text = self.search_input.text()
         if not search_text:
             self.search_count_label.setText("")
             return
 
-        # Save current cursor position
-        original_cursor = self.output_area.textCursor()
+        document = self.output_area.document()
+        ends = []
+        cursor = document.find(search_text, QTextCursor(document))
+        while not cursor.isNull():
+            ends.append(cursor.position())
+            cursor = document.find(search_text, cursor)
 
-        # Count total occurrences
-        cursor = QTextCursor(self.output_area.document())
-        total_count = 0
-        current_index = 0
-        found_positions = []
+        current = 0
+        selected = self.output_area.textCursor()
+        if ends and selected.hasSelection():
+            current = min(
+                bisect.bisect_left(ends, selected.position()) + 1, len(ends)
+            )
+        self.search_count_label.setText(f"{current} of {len(ends)}")
 
-        while True:
-            cursor = self.output_area.document().find(search_text, cursor)
-            if cursor.isNull():
-                break
-            total_count += 1
-            found_positions.append(cursor.position())
-
-        # Determine current position index
-        if total_count > 0 and original_cursor.hasSelection():
-            current_pos = original_cursor.position()
-            for idx, pos in enumerate(found_positions):
-                if pos >= current_pos:
-                    current_index = idx + 1
-                    break
-            if current_index == 0:
-                current_index = len(found_positions)
-
-        # Update label
-        if total_count == 0:
-            self.search_count_label.setText("0 of 0")
-        elif current_index > 0:
-            self.search_count_label.setText(f"{current_index} of {total_count}")
-        else:
-            self.search_count_label.setText(f"0 of {total_count}")
+    def _find(self, backward: bool) -> None:
+        """Select the next match, or the previous one, wrapping round."""
+        search_text = self.search_input.text()
+        if not search_text:
+            return
+        flags = [QTextDocument.FindBackward] if backward else []
+        if not self.output_area.find(search_text, *flags):
+            cursor = self.output_area.textCursor()
+            cursor.movePosition(
+                QTextCursor.End if backward else QTextCursor.Start
+            )
+            self.output_area.setTextCursor(cursor)
+            self.output_area.find(search_text, *flags)
+        self._update_search_count()
 
     def _find_next(self) -> None:
-        """Find next occurrence of search text."""
-        search_text = self.search_input.text()
-        if not search_text:
-            return
-
-        # Search forward from current position
-        found = self.output_area.find(search_text)
-
-        # If not found, wrap around to beginning
-        if not found:
-            cursor = self.output_area.textCursor()
-            cursor.movePosition(QTextCursor.Start)
-            self.output_area.setTextCursor(cursor)
-            self.output_area.find(search_text)
-
-        # Update the count display
-        self._update_search_count()
+        """Select the next match."""
+        self._find(backward=False)
 
     def _find_previous(self) -> None:
-        """Find previous occurrence of search text."""
-        search_text = self.search_input.text()
-        if not search_text:
-            return
-
-        # Search backward from current position
-        found = self.output_area.find(search_text, QTextDocument.FindBackward)
-
-        # If not found, wrap around to end
-        if not found:
-            cursor = self.output_area.textCursor()
-            cursor.movePosition(QTextCursor.End)
-            self.output_area.setTextCursor(cursor)
-            self.output_area.find(search_text, QTextDocument.FindBackward)
-
-        # Update the count display
-        self._update_search_count()
+        """Select the previous match."""
+        self._find(backward=True)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        """Handle keyboard shortcuts."""
-        # CTRL+F to show search
+        """Open search on Ctrl+F; close it on Escape."""
         if event.key() == Qt.Key_F and event.modifiers() == Qt.ControlModifier:
             self.show_search()
             event.accept()
             return
-
-        # ESC to hide search
-        if event.key() == Qt.Key_Escape and self.search_input.isVisible():
+        if event.key() == Qt.Key_Escape and self._search_bar.isVisible():
             self._hide_search()
             event.accept()
             return
-
         super().keyPressEvent(event)
-
-    def _setup_output_capture(self) -> None:
-        """Setup logging capture.
-
-        Adds a handler to the root logger to capture log messages
-        and display them in the widget. Messages from child loggers
-        will propagate up to the root logger automatically.
-        """
-        # Add logging handler to root logger only
-        # Child loggers will propagate messages up to root by default
-        self._log_handler = FXOutputLogHandler(self)
-        self._log_handler.setLevel(logging.DEBUG)
-
-        # Set a standard formatter
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        self._log_handler.setFormatter(formatter)
-
-        logging.root.addHandler(self._log_handler)
-        self._check_for_new_loggers()
-        # A logger that does not propagate never reaches root; poll for them.
-        self._logger_check_timer = QTimer(self)
-        self._logger_check_timer.timeout.connect(self._check_for_new_loggers)
-        self._logger_check_timer.start(1000)
-
-    def _check_for_new_loggers(self) -> None:
-        """Attach the handler to every logger that does not propagate."""
-        for logger in list(logging.root.manager.loggerDict.values()):
-            if (
-                isinstance(logger, logging.Logger)
-                and not logger.propagate
-                and self._log_handler not in logger.handlers
-            ):
-                logger.addHandler(self._log_handler)
 
     def _flush_pending_log(self) -> None:
         """Write up to `MAX_RECORDS_PER_FLUSH` queued messages.
@@ -534,7 +404,6 @@ class FXOutputLogWidget(QWidget):
         if following:
             scrollbar.setValue(scrollbar.maximum())
 
-        # Schedule next update if needed
         self._throttle_timer.start(self._throttle_interval)
 
     def append_log(self, text: str) -> None:
@@ -638,23 +507,3 @@ class FXOutputLogWidget(QWidget):
     def clear_log(self) -> None:
         """Clear the log output."""
         self.output_area.clear()
-
-    def restore_output_streams(self) -> None:
-        """Flush what is queued, then detach the handler from logging."""
-        # No next tick will come, so drain everything past the bound.
-        while self._pending_logs:
-            self._flush_pending_log()
-        self._throttle_timer.stop()
-        if self._logger_check_timer:
-            self._logger_check_timer.stop()
-            self._logger_check_timer.deleteLater()
-            self._logger_check_timer = None
-
-        if self._log_handler:
-            self._log_handler.detach()
-
-    def closeEvent(self, event: QCloseEvent) -> None:
-        """Handle widget close event to restore output streams."""
-        if self._capture_output:
-            self.restore_output_streams()
-        super().closeEvent(event)

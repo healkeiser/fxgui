@@ -7,7 +7,6 @@ import logging
 # Third-party
 from qtpy.QtCore import QEvent
 from qtpy.QtGui import QTextCursor
-from qtpy.QtWidgets import QWidget
 
 # Internal
 from fxgui.fxwidgets import FXOutputLogHandler, FXOutputLogWidget
@@ -18,7 +17,7 @@ def _lines(pane):
 
 
 def test_handler_detaches_once_its_widget_is_deleted(qtbot, qapp):
-    pane = FXOutputLogWidget(capture_output=False)
+    pane = FXOutputLogWidget()
     handler = FXOutputLogHandler(pane)
     logging.root.addHandler(handler)
     errors = []
@@ -35,25 +34,8 @@ def test_handler_detaches_once_its_widget_is_deleted(qtbot, qapp):
         logging.root.removeHandler(handler)
 
 
-def test_captured_pane_inside_a_parent_detaches_when_the_parent_dies(
-    qtbot, qapp
-):
-    parent = QWidget()
-    pane = FXOutputLogWidget(parent, capture_output=True)
-    handler = pane._log_handler
-    timer = pane._logger_check_timer
-    assert handler in logging.root.handlers
-    try:
-        parent.deleteLater()
-        qapp.sendPostedEvents(None, QEvent.DeferredDelete)
-        assert handler not in logging.root.handlers
-        del timer
-    finally:
-        logging.root.removeHandler(handler)
-
-
 def test_flush_keeps_the_readers_selection(qtbot, qapp):
-    pane = FXOutputLogWidget(capture_output=False)
+    pane = FXOutputLogWidget()
     qtbot.addWidget(pane)
     pane.append_log("first line to select")
     qtbot.waitUntil(lambda: _lines(pane) == ["first line to select"])
@@ -71,7 +53,7 @@ def test_flush_keeps_the_readers_selection(qtbot, qapp):
 
 
 def test_flush_scrolls_only_a_pane_already_at_the_bottom(qtbot, qapp):
-    pane = FXOutputLogWidget(capture_output=False)
+    pane = FXOutputLogWidget()
     qtbot.addWidget(pane)
     pane.resize(300, 120)
     pane.show()
@@ -93,7 +75,7 @@ def test_flush_scrolls_only_a_pane_already_at_the_bottom(qtbot, qapp):
 
 
 def test_mid_and_tail_ansi_segments_share_one_format(qtbot, qapp):
-    pane = FXOutputLogWidget(capture_output=False)
+    pane = FXOutputLogWidget()
     qtbot.addWidget(pane)
     pane.append_log("\x1b[1;2;31mmid\x1b[0m\x1b[1;2;31mtail")
     qtbot.waitUntil(lambda: _lines(pane) == ["midtail"])

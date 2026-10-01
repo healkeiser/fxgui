@@ -16,7 +16,7 @@ def test_tags_changed_emits_a_copy(qtbot, qapp):
     tags.tags_changed.connect(received.append)
     tags.add_tag("python")
     received[-1].append("injected")
-    assert tags.tags == ["python"]
+    assert tags.tags() == ["python"]
 
 
 def test_chips_wrap_onto_new_lines_and_all_stay_shown(qtbot, qapp):
@@ -76,3 +76,59 @@ def test_a_chip_has_a_border_at_the_theme_radius(qtbot, theme, removable):
     # Rounded at the theme's radius: the corner pixel is not the border.
     assert at(0, 0) != colors.border_light.lower()
     assert at(radius + 2, middle) == colors.primary_button.lower()
+
+
+def _chips(tags):
+    layout = tags._tags_layout
+    return [layout.itemAt(i).widget() for i in range(layout.count())]
+
+
+def test_a_removed_tag_leaves_no_chip_behind(qtbot, qapp):
+    tags = FXTagInput()
+    qtbot.addWidget(tags)
+    tags.set_tags(["comp", "fx"])
+
+    tags.remove_tag("comp")
+
+    assert [chip.text() for chip in _chips(tags)] == ["fx"]
+
+
+def test_set_then_clear_in_one_turn_leaves_no_ghost(qtbot, qapp):
+    tags = FXTagInput(allow_duplicates=True)
+    qtbot.addWidget(tags)
+    tags.set_tags(["comp", "comp", "fx"])
+
+    tags.clear_tags()
+
+    assert _chips(tags) == []
+    assert tags.tags() == []
+
+
+def test_a_chip_click_removes_that_chip(qtbot, qapp):
+    tags = FXTagInput(allow_duplicates=True)
+    qtbot.addWidget(tags)
+    tags.set_tags(["comp", "comp"])
+    second = _chips(tags)[1]
+
+    second.remove_button.click()
+
+    assert _chips(tags) == [_chips(tags)[0]]
+    assert second not in _chips(tags)
+    assert tags.tags() == ["comp"]
+
+
+def test_a_bulk_set_says_tags_changed_once(qtbot, qapp):
+    tags = FXTagInput()
+    qtbot.addWidget(tags)
+    tags.add_tag("old")
+    received = []
+    tags.tags_changed.connect(received.append)
+
+    tags.set_tags(["comp", "lighting", "fx"])
+
+    assert received == [["comp", "lighting", "fx"]]
+
+
+def test_the_chip_label_takes_the_root_font_size(qtbot, qapp):
+    assert "font-size" not in fxstyle.build_stylesheet().split(
+        "FXTagChip QLabel")[1].split("}")[0]

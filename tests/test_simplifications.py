@@ -1,8 +1,5 @@
 """Behaviour the simplification pass must keep."""
 
-# Built-in
-import logging
-
 # Third-party
 from qtpy.QtCore import QMimeData, QPoint, Qt, QUrl
 from qtpy.QtGui import QDragEnterEvent, QDragLeaveEvent
@@ -13,7 +10,6 @@ from qtpy.QtWidgets import QLabel, QVBoxLayout, QWidget
 from fxgui.fxwidgets import (
     FXCollapsibleWidget,
     FXDropZone,
-    FXOutputLogWidget,
     FXRangeSlider,
     FXTimelineSlider,
 )
@@ -45,22 +41,6 @@ def test_collapsible_scrolls_only_content_taller_than_its_cap(qtbot, qapp):
     assert tall._content_area.height() == 0
 
 
-def test_a_quiet_logger_made_later_still_reaches_a_capturing_pane(qtbot, qapp):
-    pane = FXOutputLogWidget(capture_output=True)
-    qtbot.addWidget(pane)
-    quiet = logging.getLogger("fxgui.test.quiet_later")
-    quiet.propagate = False
-    try:
-        pane._check_for_new_loggers()
-        assert pane._log_handler in quiet.handlers
-        pane.restore_output_streams()
-        assert pane._log_handler not in quiet.handlers
-        assert pane._log_handler not in logging.root.handlers
-    finally:
-        quiet.propagate = True
-        quiet.handlers.clear()
-
-
 def test_a_click_on_the_timeline_track_scrubs_to_that_frame(qtbot, qapp):
     timeline = FXTimelineSlider(start_frame=0, end_frame=100)
     qtbot.addWidget(timeline)
@@ -70,7 +50,7 @@ def test_a_click_on_the_timeline_track_scrubs_to_that_frame(qtbot, qapp):
     track = timeline._track_widget
     x = track.EDGE_PAD + (track.width() - 2 * track.EDGE_PAD) // 2
     QTest.mouseClick(track, Qt.LeftButton, Qt.NoModifier, QPoint(x, 10))
-    assert timeline.current_frame == 50
+    assert timeline.current_frame() == 50
 
 
 def test_range_slider_hover_follows_the_pointer(qtbot, qapp):
@@ -97,13 +77,13 @@ def test_drop_zone_tree_follows_rules_set_after_construction(
         event = QDragEnterEvent(
             QPoint(5, 5), Qt.CopyAction, mime, Qt.LeftButton, Qt.NoModifier
         )
-        zone.file_tree.dragEnterEvent(event)
+        zone.dragEnterEvent(event)
         return event.isAccepted()
 
     assert not taken(text)
-    zone.extensions = {".txt"}
+    zone.set_extensions({".txt"})
     assert taken(text)
-    zone.accept_mode = "folders"
+    zone.set_accept_mode("folders")
     assert not taken(text)
     assert taken(tmp_path)
 
@@ -115,11 +95,11 @@ def test_drop_zone_drag_leave_returns_to_idle(qtbot, qapp, tmp_path):
     target.write_text("x")
     mime = QMimeData()
     mime.setUrls([QUrl.fromLocalFile(str(target))])
-    zone._handle_drag_enter(QDragEnterEvent(
+    zone.dragEnterEvent(QDragEnterEvent(
         QPoint(5, 5), Qt.CopyAction, mime, Qt.LeftButton, Qt.NoModifier
     ))
     assert zone._drop_area.property("dropState") == "drag"
-    zone._handle_drag_leave(QDragLeaveEvent())
+    zone.dragLeaveEvent(QDragLeaveEvent())
     assert zone._drop_area.property("dropState") == "idle"
 
 

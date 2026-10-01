@@ -21,13 +21,8 @@ _DRAIN_MS = 500
 
 
 def _pane(qtbot):
-    """A log pane, not capturing anything the process logs.
-
-    `capture_output=False` because what is under test is the path from
-    `append_log` to the document, and a handler attached to the root
-    logger would put the suite's own records in the same pane.
-    """
-    pane = FXOutputLogWidget(capture_output=False)
+    """A log pane with no handler, so only the test writes to it."""
+    pane = FXOutputLogWidget()
     qtbot.addWidget(pane)
     return pane
 
@@ -193,7 +188,7 @@ def test_the_document_is_unbounded_by_default(qtbot, qapp):
 def test_a_consumer_can_bound_the_document(qtbot, qapp):
     """For a pane that is a view onto a log it does not own, which is the
     case a scrollback limit is for."""
-    pane = FXOutputLogWidget(capture_output=False, max_blocks=20)
+    pane = FXOutputLogWidget(max_blocks=20)
     qtbot.addWidget(pane)
 
     for index in range(60):
@@ -204,42 +199,6 @@ def test_a_consumer_can_bound_the_document(qtbot, qapp):
     lines = _lines(pane)
     assert len(lines) <= 20, f"pruned to the cap, got {len(lines)}"
     assert lines[-1] == "record 59", "and it is the newest that survive"
-
-
-def test_a_pending_queue_is_written_out_before_the_handler_goes(qtbot, qapp):
-    """`restore_output_streams` is the last chance those records have.
-    Called while a window is open, it must not leave the queue behind."""
-    pane = _pane(qtbot)
-
-    pane.append_log("flushed on the way in")
-    pane.append_log("still queued")
-    pane.append_log("also queued")
-    assert len(_lines(pane)) == 1, "the throttle is genuinely holding two"
-
-    pane.restore_output_streams()
-
-    assert _lines(pane) == [
-        "flushed on the way in",
-        "still queued",
-        "also queued",
-    ]
-
-
-def test_the_last_flush_ignores_the_per_flush_bound(qtbot, qapp):
-    """More queued than one flush may write, and no next tick coming:
-    there is no event loop left to continue a partial drain on, so the
-    bound has to give way to not losing the records."""
-    pane = _pane(qtbot)
-    burst = FXOutputLogWidget.MAX_RECORDS_PER_FLUSH * 2 + 3
-    for index in range(burst):
-        pane.append_log(f"{index:06d}")
-    assert len(pane._pending_logs) > FXOutputLogWidget.MAX_RECORDS_PER_FLUSH
-
-    pane.restore_output_streams()
-
-    assert not pane._pending_logs, "nothing left behind"
-    assert len(_lines(pane)) == burst
-    assert not pane._throttle_timer.isActive(), "and it does not idle armed"
 
 
 def test_the_queue_survives_a_record_logged_from_a_timer_callback(

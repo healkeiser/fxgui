@@ -27,7 +27,6 @@ def test_the_strip_reads_on_its_ground_in_every_theme(qapp, theme, ground):
     fxstyle.apply_theme(theme)
     colors = fxstyle.get_theme_colors()
     rest, hover, edge, ink = _strip_colors(
-        colors,
         ground,
         FXBreadcrumb.STRIP_RESTING_TOKEN,
         FXBreadcrumb.STRIP_HOVERED_TOKEN,

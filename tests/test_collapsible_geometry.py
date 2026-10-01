@@ -15,7 +15,7 @@ All four are inherited by `FXAccordion`, which is built out of these.
 - A group run backwards starts at its own end value, so a header clicked
   twice quickly snapped to a height it had never reached and fell from
   there.
-- `expanded` and `collapsed` both arrive before a single frame is drawn,
+- `expanded` and `collapsed` both arrive before a single frame is drawn;
   which is no use to a window sized to its own contents: it has to grow
   WITH the movement, not after it.
 """
@@ -205,11 +205,13 @@ def test_a_collapse_after_a_finished_expansion_does_not_grow_first(
     section.expand(animate=False)
     _settled()
     on_screen = section._content_area.height()
-    assert on_screen < section.max_content_height, (
+    assert on_screen < section.max_content_height(), (
         "the body must be SHORTER than its cap, or the bug hides"
     )
     frames = []
-    section.resized.connect(frames.append)
+    _first_animation(section).valueChanged.connect(
+        lambda height: frames.append(int(height))
+    )
 
     section.collapse(animate=True)
 
@@ -224,14 +226,16 @@ def test_an_uncapped_section_never_reports_qwidgetsize_max(qtbot, qapp):
     """With `max_content_height=0` the released maximum is
     QWIDGETSIZE_MAX, so a collapse read from it ran 16,777,215 -> 0: the
     whole visible range in the first frame, and that number handed to
-    the very consumer `resized` exists for."""
+    a window sized to its contents."""
     section = _section(animation_duration=400, max_content_height=0)
     _host = _nested_host(qtbot, section)
     section.expand(animate=False)
     _settled()
     on_screen = section._content_area.height()
     frames = []
-    section.resized.connect(frames.append)
+    _first_animation(section).valueChanged.connect(
+        lambda height: frames.append(int(height))
+    )
 
     section.collapse(animate=True)
     qtbot.waitUntil(lambda: bool(frames), timeout=2000)
@@ -266,7 +270,9 @@ def test_the_movement_reports_every_frame(qtbot, qapp):
     section = _section(animation_duration=200, max_content_height=0)
     _host = _nested_host(qtbot, section)
     frames = []
-    section.resized.connect(frames.append)
+    _first_animation(section).valueChanged.connect(
+        lambda height: frames.append(int(height))
+    )
 
     section.expand(animate=True)
     qtbot.waitUntil(
@@ -298,7 +304,9 @@ def test_the_signal_reports_progress_and_not_only_the_end(qtbot, qapp):
     section = _section(animation_duration=300, max_content_height=0)
     _host = _nested_host(qtbot, section)
     frames = []
-    section.resized.connect(frames.append)
+    _first_animation(section).valueChanged.connect(
+        lambda height: frames.append(int(height))
+    )
 
     section.expand(animate=True)
     qtbot.waitUntil(

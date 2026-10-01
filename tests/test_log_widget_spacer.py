@@ -1,23 +1,17 @@
-"""The stretch that pushes the Clear button, and what it does when
-there is no Clear button to push.
+"""The bottom row: the search bar takes the width, Clear keeps the right
+edge, and an empty row takes no room."""
 
-A consumer with nothing to clear -- a live view of a session's log --
-hides that button. The stretch was left behind pushing nothing, and the
-50px cap the search bar applies then reads as dead space between the
-bar's close button and the widget's own right edge.
-"""
+# Third-party
+from qtpy.QtCore import Qt
+from qtpy.QtTest import QTest
 
 # Internal
 from fxgui.fxwidgets import FXOutputLogWidget
 
 
 def _shown(qtbot, clear=True):
-    """A log pane on screen, with or without its Clear button.
-
-    On screen because the assertions are about geometry, and the search
-    bar is laid out when it is first opened.
-    """
-    pane = FXOutputLogWidget(capture_output=False)
+    """A log pane on screen, with or without its Clear button."""
+    pane = FXOutputLogWidget()
     if not clear:
         pane.clear_button.hide()
     qtbot.addWidget(pane)
@@ -27,40 +21,34 @@ def _shown(qtbot, clear=True):
     return pane
 
 
-def test_the_spacer_holds_room_while_the_clear_button_is_there(qtbot, qapp):
+def _right_edge(pane, widget, qapp):
+    qapp.processEvents()
+    return widget.mapTo(pane, widget.rect().topRight()).x()
+
+
+def test_clear_keeps_the_right_edge_beside_the_search_bar(qtbot, qapp):
     pane = _shown(qtbot)
 
     pane.show_search()
 
-    assert pane.log_spacer.isVisible()
-    assert pane.clear_button.isVisible()
+    assert _right_edge(pane, pane.clear_button, qapp) == pane.width() - 1
+    assert _right_edge(pane, pane.close_search_button, qapp) < (
+        pane.clear_button.mapTo(pane, pane.clear_button.rect().topLeft()).x()
+    )
 
 
-def test_a_hidden_clear_button_takes_its_spacer_with_it(qtbot, qapp):
-    """The right edge of the search bar is the right edge of the widget,
-    rather than 50 pixels short of it."""
+def test_without_clear_the_search_bar_reaches_the_right_edge(qtbot, qapp):
     pane = _shown(qtbot, clear=False)
 
     pane.show_search()
-    # Qt lays out on a posted event; read geometry before it and the
-    # buttons sit where the last layout left them, which the font decides.
-    qapp.processEvents()
 
-    assert not pane.log_spacer.isVisible()
-    assert (
-        pane.close_search_button.geometry().right()
-        >= pane.width() - pane.close_search_button.width()
-    ), "the search bar reaches the widget's own right edge"
+    assert _right_edge(pane, pane.close_search_button, qapp) == pane.width() - 1
 
 
-def test_the_spacer_comes_back_with_the_clear_button(qtbot, qapp):
-    pane = _shown(qtbot, clear=False)
-    pane.show_search()
+def test_clear_alone_sits_at_the_right_edge(qtbot, qapp):
+    pane = _shown(qtbot)
 
-    pane.clear_button.show()
-    pane.show_search()
-
-    assert pane.log_spacer.isVisible()
+    assert _right_edge(pane, pane.clear_button, qapp) == pane.width() - 1
 
 
 def _output_gap(pane, qapp):
@@ -71,7 +59,6 @@ def _output_gap(pane, qapp):
 def test_an_empty_bottom_row_takes_no_room(qtbot, qapp):
     pane = _shown(qtbot, clear=False)
 
-    assert not pane.log_spacer.isVisible()
     assert _output_gap(pane, qapp) == 0
 
 
@@ -82,7 +69,6 @@ def test_the_bottom_row_follows_the_clear_button_both_ways(qtbot, qapp):
 
     pane.clear_button.show()
 
-    assert pane.log_spacer.isVisible()
     assert _output_gap(pane, qapp) > 0
 
 
@@ -96,3 +82,58 @@ def test_the_search_bar_still_opens_and_closes_without_clear(qtbot, qapp):
 
     assert not pane.search_input.isVisible()
     assert _output_gap(pane, qapp) == 0
+
+
+def _searching(qtbot, qapp, text="match"):
+    pane = _shown(qtbot)
+    pane.append_many([f"{text} {index}" for index in range(3)])
+    qtbot.waitUntil(lambda: not pane._pending_logs)
+    pane.show_search()
+    pane.search_input.setText(text)
+    return pane
+
+
+def test_shift_enter_goes_to_the_previous_match(qtbot, qapp):
+    pane = _searching(qtbot, qapp)
+    QTest.keyClick(pane.search_input, Qt.Key_Return)
+    QTest.keyClick(pane.search_input, Qt.Key_Return)
+    assert pane.search_count_label.text() == "2 of 3"
+
+    QTest.keyClick(pane.search_input, Qt.Key_Return, Qt.ShiftModifier)
+
+    assert pane.search_count_label.text() == "1 of 3"
+
+
+def test_typing_counts_once_the_keys_stop(qtbot, qapp, monkeypatch):
+    pane = _searching(qtbot, qapp)
+    pane._update_search_count()
+    calls = []
+    real = pane.output_area.document().find
+    monkeypatch.setattr(
+        pane.output_area.document().__class__,
+        "find",
+        lambda self, *args: calls.append(1) or real(*args),
+    )
+
+    for key in "atch":
+        pane.search_input.setText("m" + key)
+
+    assert calls == [], "no scan per keystroke"
+    qtbot.waitUntil(lambda: bool(calls), timeout=1000)
+
+
+def test_the_search_widgets_live_in_one_container(qtbot, qapp):
+    pane = _shown(qtbot)
+
+    pane.show_search()
+
+    for widget in (
+        pane.search_label,
+        pane.search_input,
+        pane.search_count_label,
+        pane.prev_button,
+        pane.next_button,
+        pane.close_search_button,
+    ):
+        assert widget.parentWidget() is pane._search_bar
+        assert not widget.isHidden()
