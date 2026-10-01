@@ -91,3 +91,37 @@ def test_the_flash_shows_over_a_focused_field(qtbot, qapp):
     error = QColor(fxstyle.colors().feedback_error_foreground).rgb()
     edge = [image.pixel(x, 0) for x in range(8, image.width() - 8)]
     assert all(pixel == error for pixel in edge)
+
+
+def test_enter_in_a_dialog_s_password_field_accepts_the_dialog(qtbot):
+    from qtpy.QtCore import Qt
+    from qtpy.QtWidgets import (
+        QDialog,
+        QDialogButtonBox,
+        QLineEdit,
+        QVBoxLayout,
+    )
+
+    from fxgui.fxwidgets import FXPasswordLineEdit
+
+    dialog = QDialog()
+    qtbot.addWidget(dialog)
+    column = QVBoxLayout(dialog)
+    secret = FXPasswordLineEdit()
+    column.addWidget(secret)
+    buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+    buttons.accepted.connect(dialog.accept)
+    column.addWidget(buttons)
+    dialog.show()
+    qtbot.waitExposed(dialog)
+    secret.line_edit.setText("hunter2")
+    # Revealed once with the mouse, then hidden again: the button keeps
+    # the focus a click gave it.
+    secret.reveal_button.click()
+    secret.reveal_button.click()
+    secret.reveal_button.setFocus()
+
+    qtbot.keyClick(secret.reveal_button, Qt.Key_Return)
+
+    assert dialog.result() == QDialog.Accepted
+    assert secret.line_edit.echoMode() == QLineEdit.Password

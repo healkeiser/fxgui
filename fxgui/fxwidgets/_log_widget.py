@@ -7,7 +7,7 @@ import functools
 import re
 import weakref
 from collections import deque
-from typing import Deque, Optional
+from typing import Deque, Optional, Pattern, Sequence, Union
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal
@@ -15,6 +15,7 @@ from qtpy.QtGui import (
     QCloseEvent,
     QColor,
     QFont,
+    QFontMetricsF,
     QKeyEvent,
     QTextCharFormat,
     QTextCursor,
@@ -157,6 +158,10 @@ class FXOutputLogWidget(QWidget):
             oldest, as a terminal's scrollback does. Defaults to `0`, no
             limit: only the consumer knows whether dropping old records
             is safe.
+        hang_indent: A regular expression matching a record's header, such
+            as its time, level and logger name. A wrapped record's later
+            lines then start under the end of the match, not at column 0.
+            Nothing is added to the text, so a copy gives the original.
 
     Signals:
         log_message: Emitted when a log message is received (for thread-safe
@@ -179,12 +184,14 @@ class FXOutputLogWidget(QWidget):
         parent: Optional[QWidget] = None,
         capture_output: bool = False,
         max_blocks: int = 0,
+        hang_indent: Optional[Union[str, Pattern]] = None,
     ):
         """Initialize the output log widget."""
         super().__init__(parent)
 
         self._capture_output = capture_output
         self._max_blocks = max_blocks
+        self._hang = re.compile(hang_indent) if hang_indent else None
         self._log_handler = None
         self._logger_check_timer = None
 
@@ -337,8 +344,8 @@ class FXOutputLogWidget(QWidget):
             self._sync_spacer()
         return super().eventFilter(watched, event)
 
-    def _show_search(self) -> None:
-        """Show the search bar and focus the input."""
+    def show_search(self) -> None:
+        """Show the search bar and put the cursor in it."""
         self.search_label.show()
         self.search_input.show()
         self.search_count_label.show()
@@ -459,7 +466,7 @@ class FXOutputLogWidget(QWidget):
         """Handle keyboard shortcuts."""
         # CTRL+F to show search
         if event.key() == Qt.Key_F and event.modifiers() == Qt.ControlModifier:
-            self._show_search()
+            self.show_search()
             event.accept()
             return
 
@@ -544,13 +551,28 @@ class FXOutputLogWidget(QWidget):
         if not self._throttle_timer.isActive():
             self._flush_pending_log()
 
+    def append_many(self, lines: Sequence[str]) -> None:
+        """Queue `lines` in order, behind whatever is already queued.
+
+        For a history written elsewhere: one call, and the throttle writes
+        them in as few repaints as it can.
+
+        Args:
+            lines: Each without its own newline; may carry ANSI codes.
+        """
+        self._pending_logs.extend(lines)
+        if not self._throttle_timer.isActive():
+            self._flush_pending_log()
+
     def _insert_text_with_ansi(self, text: str) -> None:
-        """Insert text with ANSI colors using QTextCharFormat.
+        """Insert text with ANSI colors, then hang its wrapped lines.
 
         Args:
             text: Text with ANSI escape codes.
         """
-        cursor = QTextCursor(self.output_area.document())
+        document = self.output_area.document()
+        first = document.blockCount() - 1
+        cursor = QTextCursor(document)
         cursor.movePosition(QTextCursor.End)
         role, dim, bright = None, False, False
         # split() alternates text and the codes captured between escapes.
@@ -574,6 +596,23 @@ class FXOutputLogWidget(QWidget):
                     role = None
                 elif code in ANSI_ROLES:
                     role = ANSI_ROLES[code]
+        if self._hang is not None:
+            self._hang_blocks(first)
+
+    def _hang_blocks(self, first: int) -> None:
+        """Indent each block from `first` on under its header's end."""
+        document = self.output_area.document()
+        metrics = QFontMetricsF(self.output_area.font())
+        for number in range(first, document.blockCount()):
+            block = document.findBlockByNumber(number)
+            match = self._hang.match(block.text())
+            if match is None:
+                continue
+            indent = metrics.horizontalAdvance(" " * match.end())
+            block_format = block.blockFormat()
+            block_format.setLeftMargin(indent)
+            block_format.setTextIndent(-indent)
+            QTextCursor(block).setBlockFormat(block_format)
 
     def _recolour(self, _theme_name: Optional[str] = None) -> None:
         """Repaint every role-coloured segment in the current theme."""

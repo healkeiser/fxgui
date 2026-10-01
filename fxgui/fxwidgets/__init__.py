@@ -88,6 +88,16 @@ from fxgui.fxwidgets._keyboard import (
     FXKeyboardTree,
     FXSplitButton,
 )
+from fxgui.fxwidgets._flow_layout import FXFlowLayout
+from fxgui.fxwidgets._command_palette import FXCommand, FXCommandPalette
+from fxgui.fxwidgets._status_dot import FXStatusDot
+from fxgui.fxwidgets._checkable_combo import FXCheckableComboBox
+from fxgui.fxwidgets._labels import align_labels, fix_wrapped_heights
+from fxgui.fxwidgets._seating import FXSeating
+from fxgui.fxwidgets._screen_grab import grab_screen_region
+from fxgui.fxwidgets._single_instance import FXSingleInstance
+from fxgui.fxwidgets._comments import FXMentionEdit, FXThreadLine
+from fxgui.fxwidgets._confirm_delete import FXConfirmDeleteDialog
 
 
 __all__ = [
@@ -162,6 +172,19 @@ __all__ = [
     "FXFilteredTree",
     "FXKeyboardTree",
     "FXSplitButton",
+    "FXFlowLayout",
+    "FXCommand",
+    "FXCommandPalette",
+    "FXStatusDot",
+    "FXCheckableComboBox",
+    "align_labels",
+    "fix_wrapped_heights",
+    "FXSeating",
+    "grab_screen_region",
+    "FXSingleInstance",
+    "FXMentionEdit",
+    "FXThreadLine",
+    "FXConfirmDeleteDialog",
 ]
 
 from fxgui.fxwidgets._status_bar import FXStatusItem  # noqa: E402

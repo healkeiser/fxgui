@@ -109,6 +109,8 @@ class FXSearchBar(QWidget):
         self._clear_button.setFlat(True)
         self._clear_button.setCursor(Qt.PointingHandCursor)
         self._clear_button.setObjectName("fx_search_clear")
+        # The bar is one Tab stop, its field; the field clears by keyboard.
+        self._clear_button.setFocusPolicy(Qt.NoFocus)
         self._clear_button.clicked.connect(self.clear)
         self._clear_button.setVisible(False)
         search_layout.addWidget(self._clear_button)
@@ -135,6 +137,10 @@ class FXSearchBar(QWidget):
             )
             fxutils.repolish(self._search_container)
         return super().eventFilter(watched, event)
+
+    def line_edit(self) -> QLineEdit:
+        """Return the field typing goes to, the bar's one Tab stop."""
+        return self._input
 
     @property
     def text(self) -> str:

@@ -55,8 +55,8 @@ def test_double_click_on_a_segment_opens_the_editor(qtbot, qapp):
     assert QApplication.mouseButtons() == Qt.NoButton
 
 
-def test_theme_switch_redraws_the_separators_without_the_mixin(qtbot, qapp):
+def test_theme_switch_redraws_the_strip_without_the_mixin(qtbot, qapp):
     crumb = _crumb(qtbot)
-    before = crumb._container.styleSheet()
+    before = crumb._container.grab().toImage()
     fxstyle.apply_theme("light")
-    assert crumb._container.styleSheet() != before
+    assert crumb._container.grab().toImage() != before

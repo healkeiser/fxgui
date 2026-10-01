@@ -119,7 +119,7 @@ def _button_under(qtbot, window):
 def test_the_button_opens_its_picker_below_itself(qtbot, parent):
     button = _button_under(qtbot, parent)
     assert button.autoRaise()
-    assert button.toolTip() == "Insert an emoji"
+    assert "Insert an emoji" in button.toolTip()
     assert not button.icon().isNull()
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
     picker = button.picker()
@@ -284,3 +284,14 @@ def test_a_press_on_the_button_is_not_replayed_to_it(qtbot, parent):
     elsewhere = parent.mapToGlobal(QPoint(parent.width() - 2, 2))
     QApplication.sendEvent(picker, press_at(elsewhere))
     assert not picker.testAttribute(Qt.WidgetAttribute.WA_NoMouseReplay)
+
+
+def test_the_button_is_a_round_icon_button_of_the_given_size(qtbot, parent):
+    from fxgui.fxwidgets import FXIconButton
+
+    button = FXEmojiButton(parent, size=22)
+
+    assert isinstance(button, FXIconButton)
+    assert (button.width(), button.height()) == (22, 22)
+    assert "border-radius: 10px" in button.styleSheet()
+    assert button.accessibleName() == "Insert an emoji"

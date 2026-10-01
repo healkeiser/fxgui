@@ -30,7 +30,7 @@ def _shown(qtbot, clear=True):
 def test_the_spacer_holds_room_while_the_clear_button_is_there(qtbot, qapp):
     pane = _shown(qtbot)
 
-    pane._show_search()
+    pane.show_search()
 
     assert pane.log_spacer.isVisible()
     assert pane.clear_button.isVisible()
@@ -41,7 +41,7 @@ def test_a_hidden_clear_button_takes_its_spacer_with_it(qtbot, qapp):
     rather than 50 pixels short of it."""
     pane = _shown(qtbot, clear=False)
 
-    pane._show_search()
+    pane.show_search()
     # Qt lays out on a posted event; read geometry before it and the
     # buttons sit where the last layout left them, which the font decides.
     qapp.processEvents()
@@ -55,10 +55,10 @@ def test_a_hidden_clear_button_takes_its_spacer_with_it(qtbot, qapp):
 
 def test_the_spacer_comes_back_with_the_clear_button(qtbot, qapp):
     pane = _shown(qtbot, clear=False)
-    pane._show_search()
+    pane.show_search()
 
     pane.clear_button.show()
-    pane._show_search()
+    pane.show_search()
 
     assert pane.log_spacer.isVisible()
 
@@ -89,7 +89,7 @@ def test_the_bottom_row_follows_the_clear_button_both_ways(qtbot, qapp):
 def test_the_search_bar_still_opens_and_closes_without_clear(qtbot, qapp):
     pane = _shown(qtbot, clear=False)
 
-    pane._show_search()
+    pane.show_search()
     assert pane.search_input.isVisible()
     assert _output_gap(pane, qapp) > 0
     pane._hide_search()

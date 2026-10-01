@@ -94,6 +94,8 @@ class FXIconLineEdit(QLineEdit):
         self.icon_button.setObjectName("fx_icon_line_edit_button")
         self.icon_button.setFlat(True)
         self.icon_button.setFixedSize(18, 18)
+        # In a dialog, Enter belongs to the default button, not the icon.
+        self.icon_button.setAutoDefault(False)
 
         # Set icon using set_icon for auto-refresh
         if icon_name is not None:

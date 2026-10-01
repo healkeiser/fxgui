@@ -29,6 +29,7 @@ from qtpy.QtGui import QColor
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._constants import CRITICAL, ERROR
 from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._severity import SEVERITIES, log, severity
 
@@ -123,6 +124,8 @@ class FXNotificationBanner(QFrame):
         severity_type: Severity level (CRITICAL, ERROR, WARNING, SUCCESS, INFO, DEBUG).
             If None, a custom notification is shown using title and icon.
         timeout: Auto-dismiss timeout in milliseconds (0 = no auto-dismiss).
+            Defaults to 5000, and to 0 for ERROR and CRITICAL: an error
+            waits for the artist to read it.
         action_text: Text for a single action button. Sugar for a one-entry
             `actions` whose callback emits `action_clicked`.
         actions: Buttons to put on the banner, as `{label: callback}`, left to
@@ -183,7 +186,7 @@ class FXNotificationBanner(QFrame):
         parent: Optional[QWidget] = None,
         message: str = "",
         severity_type: Optional[int] = None,
-        timeout: int = 5000,
+        timeout: Optional[int] = None,
         action_text: Optional[str] = None,
         actions: Optional[Mapping[str, Callable[[], None]]] = None,
         closable: bool = True,
@@ -198,6 +201,8 @@ class FXNotificationBanner(QFrame):
 
         self._message = message
         self._severity_type = severity_type
+        if timeout is None:
+            timeout = 0 if severity_type in (ERROR, CRITICAL) else 5000
         self._timeout = timeout
         self._action_text = action_text
         self._closable = closable
@@ -373,12 +378,27 @@ class FXNotificationBanner(QFrame):
         if self._closable:
             fxicons.set_icon(self._close_button, "close", color="text_muted")
 
-    def show(self) -> None:
+    def show(self, unique: bool = False) -> bool:
         """Show the notification with slide-in animation from the right.
 
         Automatically calculates position based on other active notifications
         for the same parent widget, stacking them vertically with spacing.
+
+        Args:
+            unique: If a banner on the same parent already says this
+                message, show nothing and delete this one.
+
+        Returns:
+            bool: Whether the banner was shown.
         """
+        parent = self.parent()
+        if unique and parent and any(
+            other is not self and other._message == self._message
+            for other in _staying(parent)
+        ):
+            self.deleteLater()
+            return False
+
         # Ensure layout is calculated before showing
         self.adjustSize()
 
@@ -386,7 +406,6 @@ class FXNotificationBanner(QFrame):
 
         log(self._logger, self._severity_type, self._message)
 
-        parent = self.parent()
         if parent:
             # Below every banner already staying on this parent.
             y_offset = max(
@@ -404,6 +423,7 @@ class FXNotificationBanner(QFrame):
         # Start auto-dismiss timer
         if self._timeout > 0:
             self._dismiss_timer.start(self._timeout)
+        return True
 
     def dismiss(self) -> None:
         """Dismiss the notification with slide-out animation to the right."""
@@ -508,6 +528,10 @@ class FXNotificationBanner(QFrame):
         if callback is not None:
             callback()
         self.dismiss()
+
+    def message(self) -> str:
+        """Return the message the banner says."""
+        return self._message
 
     def set_message(self, message: str) -> None:
         """Set the notification message.
