@@ -99,10 +99,14 @@ class FXToggleSwitch(QAbstractButton):
         self.update()
 
     def _on_toggled(self, checked: bool) -> None:
-        """Handle toggle state change with animation."""
+        """Slide to the new state, or jump there while nobody sees it."""
         self._animation.stop()
+        end = 1.0 if checked else 0.0
+        if not self.isVisible():
+            self.position = end
+            return
         self._animation.setStartValue(self._position)
-        self._animation.setEndValue(1.0 if checked else 0.0)
+        self._animation.setEndValue(end)
         self._animation.start()
 
     def focusInEvent(self, event) -> None:
