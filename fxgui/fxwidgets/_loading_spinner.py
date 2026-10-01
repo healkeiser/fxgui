@@ -178,18 +178,18 @@ class FXLoadingOverlay(QWidget):
 
         self.hide()
 
-    def show(self) -> None:
-        """Show the overlay and start the spinner."""
-        if self.parent():
-            self.setGeometry(self.parent().rect())
-        super().show()
+    def showEvent(self, event) -> None:
+        """Cover the parent, come to the front and start the spinner."""
+        if self.parentWidget() is not None:
+            self.setGeometry(self.parentWidget().rect())
+        super().showEvent(event)
         self.raise_()
         self._spinner.start()
 
-    def hide(self) -> None:
-        """Hide the overlay and stop the spinner."""
+    def hideEvent(self, event) -> None:
+        """Stop the spinner."""
         self._spinner.stop()
-        super().hide()
+        super().hideEvent(event)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Cover the parent again when it resizes."""
