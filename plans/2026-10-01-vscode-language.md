@@ -406,3 +406,4 @@ Defects the renders found in the "after" sheet itself:
 ## Owner rulings
 
 - 2026-10-01: a selected row keeps the accent in every view, focused or not (no grey inactive selection). The selection in one view drives what other views show (e.g. the Hub Browse tree), so it must stay visible. Change 5 is dropped, and with it the inactive-selection icon contrast problem.
+- 2026-10-02: the selected tab's pill has no border, in QTabBar and in QtAds tabs. It stays apart from a hovered pill by its fill: selected is `@state_pressed` with `@text`, hovered is `@state_hover` with `@text_muted`. A hovered selected tab keeps `@state_pressed`, and a transparent 1px edge keeps every pill the same size.

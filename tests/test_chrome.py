@@ -265,28 +265,29 @@ def test_rows_have_no_stripes_even_when_asked(qtbot, theme):
     assert inks == {fxstyle.colors().surface_sunken.lower()}, inks
 
 
-# (6) A tab is muted text; the current one an edged pill, in QTabBar and
-# QtAds alike.
+# (6) A tab is muted text; the current one a filled pill with no edge, in
+# QTabBar and QtAds alike.
 
 
 def _pill(image, rect):
-    """Return the current tab's edge rows, its width and its text's rows.
+    """Return the current tab's top and bottom rows, width and text rows.
 
-    The edge is the @control_edge ring; rows count from the tab's top.
+    The pill is its @state_pressed fill; rows count from the tab's top.
     """
     colors = fxstyle.colors()
-    edge = colors.control_edge.lower()
-    fill = colors.state_hover
+    fill = colors.state_pressed
     middle = rect.center().y()
     columns = [
         x for x in range(rect.left(), rect.right() + 1)
-        if image.pixelColor(x, middle).name() == edge
+        if image.pixelColor(x, middle).name() == fill.lower()
     ]
-    centre = (min(columns) + max(columns)) // 2
-    rows = [
+    # Left of the text, where the fill runs from the top row to the bottom.
+    side = min(columns) + 3
+    filled = [
         y for y in range(rect.top(), rect.bottom() + 1)
-        if image.pixelColor(centre, y).name() == edge
+        if image.pixelColor(side, y).name() == fill.lower()
     ]
+    rows = [min(filled), max(filled)]
     ink = [
         y - rect.top()
         for x in range(min(columns) + 1, max(columns))
@@ -301,7 +302,7 @@ def _pill(image, rect):
 
 
 @THEMES
-def test_the_current_tab_is_an_edged_pill(qtbot, theme):
+def test_the_current_tab_is_a_filled_pill_with_no_edge(qtbot, theme):
     tabs = QTabWidget()
     for name in ("Render", "Comp", "Lighting"):
         tabs.addTab(QLabel(name), name)
@@ -311,17 +312,17 @@ def test_the_current_tab_is_an_edged_pill(qtbot, theme):
     colors = fxstyle.colors()
     current = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
     rows, width, _ink = _pill(image, current)
-    # A ring: one row at the top and one at the bottom, rounded corners.
-    assert len(rows) == 2, rows
+    # Rounded corners, and nothing drawn around the fill.
     corner = QPoint(current.center().x() - width // 2, current.top() + rows[0])
-    assert image.pixelColor(corner).name() != colors.control_edge.lower()
+    assert image.pixelColor(corner).name() != colors.state_pressed.lower()
+    assert colors.control_edge.lower() not in _pixels(image, current)
     inside = QPoint(corner.x() + 3, current.center().y())
-    assert image.pixelColor(inside).name() == colors.state_hover.lower()
+    assert image.pixelColor(inside).name() == colors.state_pressed.lower()
     # The other tabs are bare text on the strip, in the muted tab ink.
     # Above the pane's top edge, which the bar overlaps by a pixel.
     other = bar.tabRect(1).translated(bar.mapTo(window, QPoint()))
     inks = _pixels(image, other.adjusted(0, 0, 0, -2))
-    assert colors.control_edge.lower() not in inks
+    assert colors.state_pressed.lower() not in inks
     assert colors.state_hover.lower() not in inks
     assert min(_distance(ink, colors.text_muted) for ink in inks) <= 24
     assert bar.tabRect(0).height() == bar.tabRect(1).height()
@@ -332,8 +333,10 @@ def test_inactive_tab_text_reads_at_4_5_to_1(theme):
     fxstyle.apply_theme(theme)
     colors = fxstyle.colors()
     assert fxstyle.get_contrast_ratio(colors.text_muted, colors.surface) >= 4.5
-    # The pill's edge is what marks the current tab at 3:1.
-    assert fxstyle.get_contrast_ratio(colors.control_edge, colors.surface) >= 3
+    # The current tab's fill stands off a hovered tab's; its text reads.
+    assert fxstyle.get_contrast_ratio(
+        colors.state_pressed, colors.state_hover) >= fxstyle.STATE_MIN_CONTRAST
+    assert fxstyle.get_contrast_ratio(colors.text, colors.state_pressed) >= 4.5
 
 
 def test_selecting_a_tab_moves_nothing(qtbot):
@@ -604,7 +607,7 @@ def test_a_dock_tab_matches_a_tab_bar_tab(qtbot, theme):
         and tab.property("activeTab")
         and tab.isVisible()
     )
-    # Same height, the pill's edge and the "Assets" text on the same rows.
+    # Same height, the pill and the "Assets" text on the same rows.
     ours = tab.rect().translated(tab.mapTo(window, QPoint()))
     theirs = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
     assert ours.height() == theirs.height()
@@ -709,8 +712,8 @@ def test_no_dock_tab_in_the_gallery_is_elided(qtbot):
 
 
 def _first_edge(image, y, start, stop):
-    """Return how far right of `start` the first @control_edge pixel is."""
-    edge = fxstyle.colors().control_edge.lower()
+    """Return how far right of `start` the current pill's fill starts."""
+    edge = fxstyle.colors().state_pressed.lower()
     return next(
         x - start for x in range(start, stop)
         if image.pixelColor(x, y).name() == edge
@@ -792,6 +795,21 @@ def test_a_hovered_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_hovered_current_tab_keeps_its_own_fill(qtbot, theme):
+    tabs = QTabWidget()
+    for name in ("Render", "Comp"):
+        tabs.addTab(QLabel(name), name)
+    window = themed_window(qtbot, theme, tabs)
+    bar = tabs.tabBar()
+    current = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
+    hover(qtbot, bar, bar.tabRect(0).center())
+
+    inside, _corner, _inks = _hovered_tab(window.grab().toImage(), current)
+
+    assert inside == fxstyle.colors().state_pressed.lower()
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
 def test_a_hovered_dock_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
     if fxdocking is None:
         pytest.skip("needs PySide6-QtAds")
@@ -818,17 +836,31 @@ def test_a_hovered_dock_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
     assert colors.text.lower() not in inks
 
 
-def _vertical_gaps(image, x, top, bottom):
-    """Return the strip rows above and below the pill's edge at column `x`.
+def _pill_run(line):
+    """Return the first and last index of the current pill in `line`.
 
-    Above runs from `top` to the edge; below, from the edge to the first row
-    that is neither the strip nor the pill: the pane's or content's edge.
+    The pill is the run of non-strip pixels around its first fill pixel: its
+    antialiased rim belongs to it.
     """
     colors = fxstyle.colors()
-    edge, strip = colors.control_edge.lower(), colors.surface.lower()
+    fill, strip = colors.state_pressed.lower(), colors.surface.lower()
+    first = last = line.index(fill)
+    while first > 0 and line[first - 1] != strip:
+        first -= 1
+    while line[last + 1] != strip:
+        last += 1
+    return first, last
+
+
+def _vertical_gaps(image, x, top, bottom):
+    """Return the strip rows above and below the current pill at column `x`.
+
+    Above runs from `top` to the pill; below, from the pill to the first row
+    that is neither the strip nor the pill: the pane's or content's edge.
+    """
+    strip = fxstyle.colors().surface.lower()
     rows = [image.pixelColor(x, y).name() for y in range(top, bottom)]
-    first = rows.index(edge)
-    last = len(rows) - 1 - rows[::-1].index(edge)
+    first, last = _pill_run(rows)
     below = 0
     while rows[last + 1 + below] == strip:
         below += 1
@@ -836,11 +868,10 @@ def _vertical_gaps(image, x, top, bottom):
 
 
 def _gap_between(image, y, start, stop):
-    """Return the strip columns between the edged pill and the hovered one."""
-    colors = fxstyle.colors()
-    edge, strip = colors.control_edge.lower(), colors.surface.lower()
+    """Return the strip columns between the current pill and the hovered one."""
+    strip = fxstyle.colors().surface.lower()
     cols = [image.pixelColor(x, y).name() for x in range(start, stop)]
-    right = max(i for i, c in enumerate(cols) if c == edge)
+    _first, right = _pill_run(cols)
     nxt = next(i for i in range(right + 1, len(cols)) if cols[i] != strip)
     return nxt - right - 1
 

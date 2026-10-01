@@ -894,12 +894,12 @@ QTabWidget::tab-bar {
 }
 
 /* One tab look for QTabBar and QtAds: bare @text_muted text, and the current
-   tab a small rounded pill in @state_hover with @text, edged in
-   @control_edge for 3:1 on the strip. A hovered tab shows the pill's fill
-   alone and keeps its muted text. Every
-   tab reserves the pill's 1px edge, so nothing moves. QtAds tabs name
-   activeTab to outrank QFrame[frameShape]. A tab is its text plus the
-   padding: never elided, never stretched; a full bar scrolls. */
+   tab a small rounded pill in @state_pressed with @text, with no edge. A
+   hovered tab shows the lighter @state_hover pill and keeps its muted text;
+   a hovered current tab keeps its own fill. Every tab keeps a transparent
+   1px edge, so nothing moves. QtAds tabs name activeTab to outrank
+   QFrame[frameShape]. A tab is its text plus the padding: never elided,
+   never stretched; a full bar scrolls. */
 QTabBar
 {
     qproperty-drawBase: 0;
@@ -922,7 +922,7 @@ ads--CDockWidgetTab[activeTab="true"]
     padding: 3px 10px;
 }
 
-/* Hover shows the pill's fill without its edge; the text keeps its ink. */
+/* Hover shows a lighter pill; the text keeps its ink. */
 QTabBar::tab:hover,
 ads--CDockWidgetTab[activeTab="false"]:hover
 {
@@ -933,8 +933,7 @@ QTabBar::tab:selected,
 ads--CDockWidgetTab[activeTab="true"]
 {
     color: @text;
-    background: @state_hover;
-    border-color: @control_edge;
+    background: @state_pressed;
 }
 
 ads--CDockWidgetTab QLabel

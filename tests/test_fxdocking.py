@@ -523,8 +523,8 @@ def test_the_current_tab_pill_follows_a_theme_change(qtbot):
     for theme in ("dark", "light"):
         fxstyle.apply_theme(theme)
         qtbot.wait(20)
-        fill = QColor(fxstyle.colors().state_hover).name()
-        # Inside the pill's edge, left of its text.
+        fill = QColor(fxstyle.colors().state_pressed).name()
+        # Inside the pill, left of its text.
         assert pixel(window, tab, 5, tab.height() // 2) == fill, theme
 
 

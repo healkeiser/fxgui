@@ -86,8 +86,8 @@ An omitted `text_on_accent_*` is black or white, whichever reads better on the a
 
 | Role | Purpose |
 |------|---------|
-| `state_hover` | Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab; the current tab's pill. Pushed to 1.2:1 off `surface` when a theme sets it closer |
-| `state_pressed` | Pressed and checked fills, an open menu bar item. Pushed to 1.2:1 off `state_hover` (`fxstyle.STATE_MIN_CONTRAST`) when a theme sets the two closer |
+| `state_hover` | Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Pushed to 1.2:1 off `surface` when a theme sets it closer |
+| `state_pressed` | Pressed and checked fills, an open menu bar item, the current tab's pill. Pushed to 1.2:1 off `state_hover` (`fxstyle.STATE_MIN_CONTRAST`) when a theme sets the two closer |
 
 ### Scrollbar Colors
 
@@ -424,7 +424,7 @@ looks like the focused one.
 | Rest | fill `@surface`, edge `@border_light` | no fill | fill `@surface_sunken`, edge `@border` | no fill | no fill | text `@text_muted` |
 | Hover | fill `@state_hover`, edge kept | fill `@state_hover`, no edge | edge `@border_light` | fill `@state_hover`, text kept | fill `@accent_primary`, text `@text_on_accent_primary` | fill `@state_hover` in the pill's shape, no edge, text kept |
 | Pressed | fill `@state_pressed` | fill `@state_pressed` | | fill `@accent_primary` | fill `@accent_secondary` | |
-| Checked or current | fill `@state_pressed`, edge `@grid` | fill `@state_pressed`, edge `@accent_primary` | | selected: fill `@accent_primary`, focused view or not | check mark | pill `@state_hover`, edge `@control_edge` |
+| Checked or current | fill `@state_pressed`, edge `@grid` | fill `@state_pressed`, edge `@accent_primary` | | selected: fill `@accent_primary`, focused view or not | check mark | pill `@state_pressed`, no edge |
 | Keyboard focus | edge `@accent_primary` | edge `@accent_primary` | edge `@accent_primary` | the delegate's ring | | edge `@accent_primary` |
 | Disabled | fill `@surface`, edge `@border`, text `@text_disabled` | no fill | text `@text_disabled` | | text `@text_disabled` | |
 
@@ -486,7 +486,7 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 |------|-------|------|
 | Edge of a switch or a slider handle, and a slider's empty groove | `@control_edge` | `border_strong`, darkened or lightened until it reads at 3:1 on `@surface` |
 | Text of a tab that is not the current one | `@text_muted` | 4.5:1 on `@surface`, as every text ink is |
-| Current tab | `@control_edge` edge on a `@state_hover` pill | The edge reads at 3:1 on `@surface`; the same look on `QTabBar` and QtAds pane tabs. A hovered tab shows the same pill without the edge, its text still `@text_muted` |
+| Current tab | A `@state_pressed` pill with `@text`, no edge | The same look on `QTabBar` and QtAds pane tabs. A hovered tab shows a lighter `@state_hover` pill, its text still `@text_muted`; a hovered current tab keeps its `@state_pressed` fill. The two fills stand at least 1.2:1 apart |
 | Filled part of a slider | `@accent_primary` | Reads at 3:1 on `@surface`; told from the groove by its hue and the handle |
 | Thumb of a switch | `@text_muted` off, `@text_on_accent_primary` on | Pushed to 3:1 on the track |
 | Moving part of a spinner | `@accent_primary` | Over a `@border_light` track |
