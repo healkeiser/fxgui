@@ -50,9 +50,9 @@ class FXPrimaryButton(QPushButton):
         if icon:
             # Qt draws a hovered push button's icon in Normal mode, so the
             # hover fill's ink is a second icon swapped in; each resolves
-            # its token when drawn. Active is focus, on the resting fill.
+            # its token when drawn.
             self._icons = {
-                hovered: fxicons.get_icon(icon, color=ink, inks={"active": ink})
+                hovered: fxicons.get_icon(icon, color=ink)
                 for hovered, ink in (
                     (False, "icon_on_accent_primary"),
                     (True, "icon_on_accent_secondary"),
@@ -161,10 +161,10 @@ class FXIconButton(QToolButton):
         self.setProperty("fxSize", min(max(size, _SIZES[0]), _SIZES[-1]))
         if tip:
             apply_tip(self, tip)
-        # Active is a hovered tool button: unchecked on state_hover, so the
-        # plain ink; checked on primary_button_hover, the secondary ink.
+        # Active is a hovered tool button: checked, on primary_button_hover,
+        # it takes the secondary ink.
         self._icons = {
-            False: fxicons.get_icon(icon, inks={"active": "icon"}),
+            False: fxicons.get_icon(icon),
             True: fxicons.get_icon(
                 checked_icon or icon, color="icon_on_accent_primary",
                 inks={"active": "icon_on_accent_secondary"}),

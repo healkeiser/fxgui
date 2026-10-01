@@ -6,23 +6,20 @@ The QApplication, headless platform, and cleanup are handled by pytest-qt's
 Icons carry per-state pixmaps:
 - Disabled  -> grayed (everywhere)
 - Selected  -> accent color (selected item rows)
-- Active    -> accent color (hovered rows, highlighted menu items)
-
-Qt also renders a *focused push button*'s icon in Active mode, with no accent
-behind it, so `set_icon` strips Active for push buttons. A hovered tool
-button sits on the secondary accent and keeps it.
+- Active    -> the normal ink, except on a menu's current row, the accent
 """
 
 import inspect
 
 import pytest
 from qtpy.QtGui import QColor, QIcon, QImage, QPixmap, QPixmapCache
-from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QAction, QLabel, QPushButton, QToolButton
+from qtpy.QtCore import QPoint, QSize
+from qtpy.QtWidgets import (
+    QAction, QLabel, QMenu, QPushButton, QToolBar, QToolButton)
 
 from fxgui import fxicons, fxstyle
 
-from _helpers import first_ink
+from _helpers import first_ink, hover, inks, near, themed_window
 
 _SIZE = QSize(48, 48)
 
@@ -36,13 +33,12 @@ def _active_matches_normal(icon: QIcon) -> bool:
 
 
 def test_get_icon_has_per_state_colors(qapp):
-    """A bare get_icon() carries distinct Disabled / Selected / Active pixmaps
-    so menus and item views recolor their icons on a highlight background."""
+    """A bare get_icon() carries distinct Disabled and Selected pixmaps, so
+    item views recolor their icons on a highlight background."""
     icon = fxicons.get_icon("check", width=48, height=48)
     normal = _img(icon, QIcon.Normal)
     assert _img(icon, QIcon.Disabled) != normal
     assert _img(icon, QIcon.Selected) != normal
-    assert _img(icon, QIcon.Active) != normal
 
 
 def test_an_active_ink_of_the_normal_token_matches_normal(qapp):
@@ -77,39 +73,59 @@ def test_a_hovered_tool_button_icon_keeps_its_normal_ink(qtbot):
     assert _active_matches_normal(button.icon())
 
 
-def test_menu_action_keeps_active_recolor(qapp, monkeypatch):
-    """A QAction (menu item) is not a button: a current menu row is filled
-    with the primary accent, so its icon takes the ink made for it. A theme
-    whose two on-accent inks differ tells them apart."""
-    from fxgui import fxstyle
+def test_an_active_icon_outside_a_menu_wears_its_normal_ink(qapp):
+    icon = fxicons.get_icon("check", width=48, height=48)
+    assert first_ink(_img(icon, QIcon.Active)) == (
+        QColor(fxstyle.colors().icon).name())
 
-    colors = fxstyle.get_colors()
-    split = dict(colors["themes"]["dark"])
-    split.update({
-        "icon_on_accent_primary": "#ffffff",
-        "icon_on_accent_secondary": "#000000",
-    })
-    patched = dict(colors, themes={**colors["themes"], "split": split})
-    monkeypatch.setattr(fxstyle, "get_colors", lambda: patched)
-    fxstyle.apply_theme("split")
-    action = QAction("Open")
-    fxicons.set_icon(action, "check", width=48, height=48)
-    assert not _active_matches_normal(action.icon())
-    assert first_ink(_img(action.icon(), QIcon.Active)) == (
-        fxstyle.colors().icon_on_accent_primary.lower())
+
+def _wears(pixmap, ink: str) -> bool:
+    """Return whether a small icon's antialiased strokes reach `ink`."""
+    return any(near(colour, ink, 16) for colour in inks(pixmap))
+
+
+@pytest.mark.parametrize("how", ("set_icon", "get_icon"))
+def test_a_hovered_toolbar_action_keeps_its_normal_ink(qtbot, how):
+    """A toolbar button hovers on the neutral fill, never on the accent."""
+    toolbar = QToolBar()
+    action = QAction("Save", toolbar)
+    if how == "set_icon":
+        fxicons.set_icon(action, "check")
+    else:
+        action.setIcon(fxicons.get_icon("check"))
+    toolbar.addAction(action)
+    window = themed_window(qtbot, "light", toolbar)
+    button = toolbar.widgetForAction(action)
+    hover(qtbot, button)
+
+    assert _wears(button.grab(), fxstyle.colors().icon)
+    window.close()
+
+
+def test_a_current_menu_row_draws_its_icon_in_the_on_accent_ink(qtbot):
+    """The pointer's menu row is the accent, so its icon takes the ink made
+    for it; no text, which would wear the same ink."""
+    fxstyle.apply_theme("dark")
+    menu = QMenu()
+    fxstyle.register_themed_root(menu)
+    qtbot.addWidget(menu)
+    action = menu.addAction(fxicons.get_icon("check"), "")
+    menu.popup(QPoint(0, 0))
+    qtbot.waitExposed(menu)
+    menu.setActiveAction(action)
+
+    assert _wears(menu.grab(menu.actionGeometry(action)),
+                  fxstyle.colors().icon_on_accent_primary)
 
 
 @pytest.mark.parametrize("theme", __import__("fxgui.fxstyle").fxstyle
                          .get_available_themes())
 def test_a_current_menu_row_icon_reads_on_the_accent(qapp, theme):
     """WCAG's 3:1 for a control's part, in every bundled theme."""
-    from fxgui import fxstyle
-
     fxstyle.apply_theme(theme)
-    icon = fxicons.get_icon("check", width=48, height=48)
-    ink = first_ink(_img(icon, QIcon.Active))
+    colors = fxstyle.colors()
     assert fxstyle.get_contrast_ratio(
-        ink, fxstyle.colors().accent_primary) >= 3.0, ink
+        colors.icon_on_accent_primary, colors.accent_primary) >= 3.0
 
 
 def test_a_disabled_icon_wears_the_text_disabled_token(qapp):

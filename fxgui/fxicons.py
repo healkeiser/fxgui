@@ -58,12 +58,13 @@ _MODES = {
     "selected": QIcon.Selected,
     "disabled": QIcon.Disabled,
 }
-# Active is a current menu or combo row, the one hover on the accent.
+# Selected is an item-view row on the accent. Active (hover, focus) takes
+# the normal ink, except on a menu's current row, the one hover on the accent.
 _DEFAULT_INKS = {
-    "active": "icon_on_accent_primary",
     "selected": "icon_on_accent_primary",
     "disabled": "text_disabled",
 }
+_MENU_ROW_INK = "icon_on_accent_primary"
 
 # Before Qt 6.8, QIcon hands scaledPixmap a device size and sets the
 # returned pixmap's ratio itself; measured on 6.5.3, 6.7.3 and 6.8.3.
@@ -459,6 +460,8 @@ class _ThemedIconEngine(QIconEngine):
         # An icon drawn in its file's own colours keeps them, except disabled.
         elif name != "disabled" and not self._inks.get("normal"):
             ink = None
+        elif name == "active":
+            ink = _MENU_ROW_INK if _menu_painting() else self._inks["normal"]
         else:
             ink = _DEFAULT_INKS[name]
         return fxstyle.qcolor(ink).name(QColor.HexArgb) if ink else None
@@ -513,6 +516,21 @@ class _ThemedIconEngine(QIconEngine):
         painter.drawPixmap(x, y, pixmap)
 
 
+def _menu_painting() -> bool:
+    """Return whether a menu is painting, the only Active draw on the accent.
+
+    Qt asks a menu's current row and a hovered toolbar button for the same
+    Active pixmap, and an engine is never told the widget.
+    """
+    from qtpy.QtWidgets import QApplication, QMenu
+
+    return any(
+        isinstance(widget, QMenu)
+        and widget.testAttribute(Qt.WA_WState_InPaintEvent)
+        for widget in QApplication.topLevelWidgets()
+    )
+
+
 # Engines handed to Qt by clone(), held until Qt deletes them.
 _clones: List[QIconEngine] = []
 
@@ -521,7 +539,7 @@ def _engine(icon_name, width, height, color, library, style, extension,
             inks) -> _ThemedIconEngine:
     """Return an engine drawing `icon_name` in the inks asked."""
     inks = dict(inks or {})
-    unknown = set(inks) - set(_DEFAULT_INKS)
+    unknown = set(inks) - (set(_MODES) - {"normal"})
     if unknown:
         raise ValueError(f"No icon mode named {sorted(unknown)}.")
     library, width, height, inks["normal"], recolors = _resolved(
@@ -558,8 +576,9 @@ def get_icon(
         style: The style of the icon. Defaults to `None`.
         extension: The extension of the icon. Defaults to `None`.
         inks: Inks for the other modes, keyed "active", "selected" or
-            "disabled", each a token or a colour. Unset, Active and
-            Selected take the on-accent tokens and Disabled text_disabled.
+            "disabled", each a token or a colour. Unset, Active takes the
+            normal ink (icon_on_accent_primary on a menu's current row),
+            Selected icon_on_accent_primary and Disabled text_disabled.
         fallback: What to answer with when `icon_name` is in no library
             this asked. A name is resolved in the DEFAULT library rather
             than in `library`, which is the point: a curated set is
@@ -712,8 +731,6 @@ def rounded_pixmap(
 def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
     """Set an icon on a widget; it takes its theme inks when drawn.
 
-    A button's Active ink is its normal one (see `_icon_for_widget`).
-
     Args:
         widget: Anything with `setIcon` (QAction, QPushButton, etc.).
         icon_name: The name of the icon.
@@ -730,24 +747,6 @@ def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
         >>> fxicons.set_icon(my_button, "save")
         >>> fxicons.set_icon(indicator, "check", color="#00ff00")
     """
-    icon = _icon_for_widget(widget, icon_name, kwargs)
+    icon = get_icon(icon_name, **kwargs)
     widget.setIcon(icon)
     return icon
-
-
-def _icon_for_widget(widget: Any, icon_name: str, kwargs: Dict) -> QIcon:
-    """Build the icon for a widget; a button's Active ink is its normal.
-
-    Qt draws a hovered or focused button's icon in Active mode, on the
-    neutral hover fill or the resting one, never on the accent.
-    """
-    from qtpy.QtWidgets import QAbstractButton
-
-    if isinstance(widget, QAbstractButton):
-        inks = dict(kwargs.pop("inks", None) or {})
-        library = kwargs.get("library")
-        inks.setdefault(
-            "active",
-            _resolved(library, None, None, kwargs.get("color"), icon_name)[3])
-        kwargs["inks"] = inks
-    return get_icon(icon_name, **kwargs)

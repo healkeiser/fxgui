@@ -113,10 +113,8 @@ def _configure() -> None:
     ads.CDockManager.setConfigFlag(flag.ActiveTabHasCloseButton, False)
     icons = ads.CDockManager.iconProvider()
     for slot, name in _BUTTONS.values():
-        # A copy: the provider deletes the icon it is given. A hovered
-        # button sits on the neutral hover fill, so Active keeps the ink.
-        icons.registerCustomIcon(
-            slot, QIcon(fxicons.get_icon(name, inks={"active": "icon"})))
+        # A copy: the provider deletes the icon it is given.
+        icons.registerCustomIcon(slot, QIcon(fxicons.get_icon(name)))
     # No auto-hide: its pin read as "keep here" and made the pane vanish.
     hide = ads.CDockManager.eAutoHideFlag
     for name in ("AutoHideFeatureEnabled", "DockAreaHasAutoHideButton"):
