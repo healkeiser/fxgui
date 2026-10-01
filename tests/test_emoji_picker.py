@@ -309,3 +309,24 @@ def test_the_emoji_size_comes_from_the_theme_sheet_alone(qtbot):
 
     assert not button.testAttribute(Qt.WA_SetFont)
     assert button.font().pixelSize() == 18
+
+
+def test_a_hovered_cell_is_filled_but_not_edged_like_focus(qtbot, parent):
+    from qtpy.QtGui import QColor
+
+    from fxgui import fxstyle
+
+    fxstyle.register_themed_root(parent)
+    picker = _shown_picker(qtbot, parent)
+    cell = picker.buttons()[1]
+    cell.setAttribute(Qt.WA_UnderMouse, True)
+    image = cell.grab().toImage()
+    colors = fxstyle.colors()
+    y = cell.height() // 2
+    # The box sits inside the button's margin: its first opaque pixel.
+    left = next(x for x in range(cell.width())
+                if image.pixelColor(x, y).alpha() == 255)
+    assert image.pixelColor(left, y).name() != QColor(
+        colors.accent_primary).name()
+    assert image.pixelColor(left + 3, y).name() == QColor(
+        colors.state_hover).name()

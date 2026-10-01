@@ -99,6 +99,7 @@ FXEmojiPicker QToolButton {{
 }}
 FXEmojiPicker QToolButton:hover {{
     background-color: @state_hover;
+    border-color: transparent;
 }}
 FXEmojiPicker QToolButton[fxFocusVisible="true"]:focus {{
     border: 1px solid @accent_primary;
