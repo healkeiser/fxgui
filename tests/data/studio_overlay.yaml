@@ -1,0 +1,48 @@
+# A studio overlay: one brand theme, and brand faces under every theme.
+fonts:
+  title: ["Urbanist", "Inter"]
+  body: ["Inter"]
+  mono: ["JetBrains Mono", "Consolas", "Courier New", "monospace"]
+
+themes:
+  lotchi:
+    accent_primary: "#FF4200"
+    accent_secondary: "#AA2C00"
+    text_on_accent_primary: "#000000"
+    icon_on_accent_primary: "#000000"
+    surface: "#2C2F36"
+    surface_alt: "#262930"
+    surface_sunken: "#15171B"
+    tooltip: "#1A1C21"
+    border: "#3D444F"
+    border_light: "#4A525E"
+    border_strong: "#6A7689"
+    text: "#E4E6EA"
+    text_muted: "#9AA3B0"
+    text_disabled: "#5B6472"
+    state_hover: "#353A43"
+    state_pressed: "#3D434D"
+    scrollbar_track: "#101216"
+    scrollbar_thumb: "#4A525E"
+    scrollbar_thumb_hover: "#6A7689"
+    grid: "#3D444F"
+    separator: "#6A7689"
+    slider_thumb: "#9AA3B0"
+    slider_thumb_hover: "#E4E6EA"
+    icon: "#9AA3B0"
+    feedback:
+      debug:
+        foreground: "#6A7689"
+        background: "#1A1C21"
+      info:
+        foreground: "#8284F5"
+        background: "#1B1747"
+      success:
+        foreground: "#44D89A"
+        background: "#0E3A28"
+      warning:
+        foreground: "#FFBB33"
+        background: "#7B5918"
+      error:
+        foreground: "#FF4444"
+        background: "#7B2323"
