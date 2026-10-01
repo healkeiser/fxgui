@@ -114,16 +114,6 @@ class FXToggleSwitch(QAbstractButton):
         self._animation.setEndValue(end)
         self._animation.start()
 
-    def focusInEvent(self, event) -> None:
-        """Repaint to show the focus indicator."""
-        super().focusInEvent(event)
-        self.update()
-
-    def focusOutEvent(self, event) -> None:
-        """Repaint to hide the focus indicator."""
-        super().focusOutEvent(event)
-        self.update()
-
     def enterEvent(self, event) -> None:
         """Repaint to show the hover state."""
         super().enterEvent(event)
