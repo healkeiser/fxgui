@@ -211,8 +211,8 @@ FRAME_PROPERTY = "fxFrame"
 # through mark_as_thin_scroll() rather than by hand.
 THIN_SCROLL_PROPERTY = "fxThinScroll"
 
-# The width, in pixels, of a thin scroll area's bar: `@thin_scroll` in QSS.
-THIN_SCROLL_WIDTH = 6
+# The width, in pixels, of every scroll bar: `@thin_scroll` in QSS.
+THIN_SCROLL_WIDTH = 8
 
 # Per tree level, toward `border_light`; the cap's 48% stays short of a border.
 DEPTH_STEP = 0.12
@@ -889,8 +889,7 @@ def mark_as_frame(widget: QWidget, is_frame: bool = True) -> None:
 def mark_as_thin_scroll(area: QAbstractScrollArea, is_thin: bool = True) -> None:
     """Draw a scroll area as part of the card it sits on.
 
-    No fill of its own, and a narrow bar (`THIN_SCROLL_WIDTH`) with a
-    quiet handle and no arrows, where the theme's full bar is too loud.
+    No fill and no border of its own.
 
     Args:
         area: The scroll area, or any QAbstractScrollArea.
@@ -901,12 +900,8 @@ def mark_as_thin_scroll(area: QAbstractScrollArea, is_thin: bool = True) -> None
     """
     area.setProperty(THIN_SCROLL_PROPERTY, bool(is_thin))
     # Child selectors are matched when the child polishes, not the parent.
-    parts = [area, area.viewport()]
-    for bar in (area.verticalScrollBar(), area.horizontalScrollBar()):
-        parts += [bar, bar.parentWidget()]
-    for part in parts:
-        if part is not None:
-            fxutils.repolish(part)
+    for part in (area, area.viewport()):
+        fxutils.repolish(part)
 
 
 ###### Color Utility Functions

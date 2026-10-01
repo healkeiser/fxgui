@@ -103,7 +103,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 
 | Role | Purpose |
 |------|---------|
-| `scrollbar_track` | Track/gutter background, also used for menubar/statusbar borders |
+| `scrollbar_track` | Menu bar and status bar borders; a scroll bar has no track |
 | `scrollbar_thumb` | Draggable thumb, also used for checked header backgrounds |
 | `scrollbar_thumb_hover` | Thumb hover state |
 

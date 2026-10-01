@@ -2,10 +2,13 @@
 
 # Third-party
 import pytest
-from qtpy.QtCore import QPoint
-from qtpy.QtGui import QColor
+from qtpy.QtCore import QEvent, QPoint, QPointF, Qt
+from qtpy.QtGui import QColor, QHoverEvent
 from qtpy.QtWidgets import (
     QApplication,
+    QListWidget,
+    QStyle,
+    QStyleOptionSlider,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -92,3 +95,66 @@ def test_a_tree_draws_chevrons_and_no_branch_lines(qtbot, theme):
     assert image.copy(_branch(tree, opened)) != image.copy(
         _branch(tree, closed)
     )
+
+
+# (2) Scroll bars: a thin rounded thumb, no arrows, wider on hover.
+
+
+def _hover(widget, point):
+    widget.setAttribute(Qt.WA_UnderMouse, True)
+    QApplication.sendEvent(
+        widget,
+        QHoverEvent(
+            QEvent.HoverMove,
+            QPointF(point),
+            QPointF(widget.mapToGlobal(point)),
+            QPointF(-1, -1),
+        ),
+    )
+    QApplication.processEvents()
+
+
+def _bar_rect(bar, control):
+    option = QStyleOptionSlider()
+    bar.initStyleOption(option)
+    return bar.style().subControlRect(QStyle.CC_ScrollBar, option, control, bar)
+
+
+def _thumb_width(bar):
+    """Return how many pixels across the bar the thumb paints."""
+    image = bar.window().grab().toImage()
+    middle = _bar_rect(bar, QStyle.SC_ScrollBarSlider).center().y()
+    row = [
+        image.pixelColor(bar.mapTo(bar.window(), QPoint(x, middle))).name()
+        for x in range(bar.width())
+    ]
+    thumb = fxstyle.colors().scrollbar_thumb.lower()
+    hover = fxstyle.colors().scrollbar_thumb_hover.lower()
+    return sum(ink in (thumb, hover) for ink in row)
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_scroll_bar_is_a_thin_pill_with_no_arrows(qtbot, theme):
+    view = QListWidget()
+    view.addItems([f"row {index}" for index in range(60)])
+    window = _shown(qtbot, theme, view)
+    bar = view.verticalScrollBar()
+    assert bar.isVisible()
+    assert bar.width() == fxstyle.THIN_SCROLL_WIDTH
+    for control in (QStyle.SC_ScrollBarAddLine, QStyle.SC_ScrollBarSubLine):
+        assert _bar_rect(bar, control).isEmpty()
+    # No track: below the thumb the bar shows the view's own fill.
+    image = window.grab().toImage()
+    groove = bar.mapTo(window, QPoint(bar.width() // 2, bar.height() * 3 // 4))
+    assert image.pixelColor(groove).name() == fxstyle.colors().surface_sunken
+    # A rounded thumb paints its corner pixel only in part.
+    handle = _bar_rect(bar, QStyle.SC_ScrollBarSlider)
+    corner = bar.mapTo(window, QPoint(2, handle.top()))
+    middle = bar.mapTo(window, QPoint(bar.width() // 2, handle.center().y()))
+    assert image.pixelColor(middle).name() == fxstyle.colors().scrollbar_thumb
+    assert image.pixelColor(corner).name() != fxstyle.colors().scrollbar_thumb
+    rest = _thumb_width(bar)
+    _hover(bar, handle.center())
+    hovered = _thumb_width(bar)
+    assert 0 < rest < hovered <= bar.width(), (rest, hovered)
+    assert bar.width() == fxstyle.THIN_SCROLL_WIDTH

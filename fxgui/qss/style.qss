@@ -445,224 +445,85 @@ QGroupBox::title {
     padding-top: 10px;
 }
 
-/* The gutter a scroll area keeps around its scroll bars. */
+/* A scroll bar is a pill on whatever it scrolls: no track, no arrows. The
+   bar keeps one width, so the thumb widens inside it on hover and nothing
+   beside it moves. */
 QWidget#qt_scrollarea_hcontainer,
-QWidget#qt_scrollarea_vcontainer
+QWidget#qt_scrollarea_vcontainer,
+QAbstractScrollArea::corner
 {
-    background-color: @surface;
+    background: transparent;
+    border: none;
 }
 
+QScrollBar:vertical,
 QScrollBar:horizontal
 {
-    height: 12px;
-    margin: 0px 12px 0px 12px;
+    background: transparent;
     border: none;
-    border-radius: 6px;
-    background-color: @scrollbar_track;
-}
-
-QScrollBar::handle:horizontal
-{
-    background-color: @scrollbar_thumb;
-    min-width: 20px;
-    border-radius: @button_radius;
-    margin: 2px;
-}
-
-QScrollBar::handle:horizontal:hover
-{
-    background-color: @scrollbar_thumb_hover;
-}
-
-QScrollBar::add-line:horizontal
-{
-    margin: 0px 3px 0px 3px;
-    border-image: url(~icons/right_arrow_disabled.svg);
-    width: 10px;
-    height: 10px;
-    subcontrol-position: right;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::sub-line:horizontal
-{
-    margin: 0px 3px 0px 3px;
-    border-image: url(~icons/left_arrow_disabled.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: left;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::add-line:horizontal:hover,
-QScrollBar::add-line:horizontal:on
-{
-    border-image: url(~icons/right_arrow.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: right;
-    subcontrol-origin: margin;
-}
-
-
-QScrollBar::sub-line:horizontal:hover,
-QScrollBar::sub-line:horizontal:on
-{
-    border-image: url(~icons/left_arrow.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: left;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::up-arrow:horizontal,
-QScrollBar::down-arrow:horizontal
-{
-    background: none;
-}
-
-
-QScrollBar::add-page:horizontal,
-QScrollBar::sub-page:horizontal
-{
-    background: none;
+    margin: 0px;
 }
 
 QScrollBar:vertical
 {
-    background-color: @scrollbar_track;
-    width: 12px;
-    margin: 12px 0px 12px 0px;
-    border: none;
-    border-radius: 6px;
+    width: @thin_scroll;
+}
+
+QScrollBar:horizontal
+{
+    height: @thin_scroll;
+}
+
+QScrollBar::handle:vertical,
+QScrollBar::handle:horizontal
+{
+    background: @scrollbar_thumb;
+    border-radius: 2px;
 }
 
 QScrollBar::handle:vertical
 {
-    background-color: @scrollbar_thumb;
-    min-height: 20px;
-    border-radius: @button_radius;
-    margin: 2px;
+    min-height: 24px;
+    margin: 0px 2px;
 }
 
-QScrollBar::handle:vertical:hover
+QScrollBar::handle:horizontal
 {
-    background-color: @scrollbar_thumb_hover;
+    min-width: 24px;
+    margin: 2px 0px;
 }
 
-QScrollBar::sub-line:vertical
+QScrollBar::handle:vertical:hover,
+QScrollBar::handle:horizontal:hover,
+QScrollBar::handle:vertical:pressed,
+QScrollBar::handle:horizontal:pressed
 {
-    margin: 3px 0px 3px 0px;
-    border-image: url(~icons/up_arrow_disabled.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: top;
-    subcontrol-origin: margin;
+    background: @scrollbar_thumb_hover;
+    border-radius: @thin_scroll_radius;
+    margin: 0px;
 }
 
-QScrollBar::add-line:vertical
+QScrollBar::add-line,
+QScrollBar::sub-line
 {
-    margin: 3px 0px 3px 0px;
-    border-image: url(~icons/down_arrow_disabled.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: bottom;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::sub-line:vertical:hover,
-QScrollBar::sub-line:vertical:on
-{
-
-    border-image: url(~icons/up_arrow.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: top;
-    subcontrol-origin: margin;
-}
-
-
-QScrollBar::add-line:vertical:hover,
-QScrollBar::add-line:vertical:on
-{
-    border-image: url(~icons/down_arrow.svg);
-    height: 10px;
-    width: 10px;
-    subcontrol-position: bottom;
-    subcontrol-origin: margin;
-}
-
-QScrollBar::up-arrow:vertical,
-QScrollBar::down-arrow:vertical
-{
+    width: 0px;
+    height: 0px;
+    border: none;
     background: none;
 }
 
-
-QScrollBar::add-page:vertical,
-QScrollBar::sub-page:vertical
+QScrollBar::add-page,
+QScrollBar::sub-page
 {
     background: none;
 }
 
 /* A thin scroll area (fxstyle.mark_as_thin_scroll) sits on its card. */
 [fxThinScroll="true"],
-[fxThinScroll="true"] > QWidget#qt_scrollarea_viewport,
-[fxThinScroll="true"] > QWidget#qt_scrollarea_vcontainer,
-[fxThinScroll="true"] > QWidget#qt_scrollarea_hcontainer
+[fxThinScroll="true"] > QWidget#qt_scrollarea_viewport
 {
     background: transparent;
     border: none;
-}
-
-[fxThinScroll="true"] QScrollBar:vertical
-{
-    background: transparent;
-    border: none;
-    width: @thin_scroll;
-    margin: 0px;
-}
-
-[fxThinScroll="true"] QScrollBar:horizontal
-{
-    background: transparent;
-    border: none;
-    height: @thin_scroll;
-    margin: 0px;
-}
-
-[fxThinScroll="true"] QScrollBar::handle:vertical,
-[fxThinScroll="true"] QScrollBar::handle:horizontal
-{
-    background: @border_light;
-    border-radius: @thin_scroll_radius;
-    min-height: 12px;
-    min-width: 12px;
-    margin: 0px;
-}
-
-[fxThinScroll="true"] QScrollBar::handle:vertical:hover,
-[fxThinScroll="true"] QScrollBar::handle:horizontal:hover
-{
-    background: @scrollbar_thumb_hover;
-}
-
-[fxThinScroll="true"] QScrollBar::add-line,
-[fxThinScroll="true"] QScrollBar::sub-line,
-[fxThinScroll="true"] QScrollBar::add-line:hover,
-[fxThinScroll="true"] QScrollBar::sub-line:hover
-{
-    width: 0px;
-    height: 0px;
-    margin: 0px;
-    border: none;
-    border-image: none;
-}
-
-[fxThinScroll="true"] QScrollBar::add-page,
-[fxThinScroll="true"] QScrollBar::sub-page
-{
-    background: transparent;
 }
 
 QSizeGrip {

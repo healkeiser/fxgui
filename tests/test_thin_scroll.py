@@ -1,4 +1,4 @@
-"""A thin scroll area sits on its card: no fill, a narrow quiet bar."""
+"""A thin scroll area sits on its card: no fill, the theme's thin bar."""
 
 import pytest
 from qtpy.QtCore import QPoint, Qt
@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QApplication,
     QFrame,
     QLabel,
+    QListWidget,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -71,12 +72,16 @@ def test_marking_after_the_show_takes_effect(qtbot, card):
     assert area.verticalScrollBar().width() == fxstyle.THIN_SCROLL_WIDTH
 
 
-def test_unmarking_brings_the_theme_bar_back(qtbot, card):
+def test_unmarking_brings_the_area_fill_back(qtbot, card):
     root, frame = card
-    area = _area(frame)
+    area = QListWidget()
+    area.addItems([f"row {index}" for index in range(40)])
+    frame.layout().addWidget(area)
     fxstyle.mark_as_thin_scroll(area)
     root.show()
     qtbot.waitExposed(root)
     fxstyle.mark_as_thin_scroll(area, False)
     QApplication.processEvents()
-    assert area.verticalScrollBar().width() > fxstyle.THIN_SCROLL_WIDTH
+    image = root.grab().toImage()
+    inside = area.viewport().mapTo(root, QPoint(4, 4))
+    assert image.pixelColor(inside).name() == fxstyle.colors().surface_sunken
