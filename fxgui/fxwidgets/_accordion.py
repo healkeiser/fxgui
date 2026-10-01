@@ -61,14 +61,12 @@ class FXAccordion(QWidget):
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
-    @property
     def exclusive(self) -> bool:
-        """Return whether accordion is in exclusive mode."""
+        """Return whether only one section can be open at a time."""
         return self._exclusive
 
-    @exclusive.setter
-    def exclusive(self, value: bool) -> None:
-        """Set exclusive mode."""
+    def set_exclusive(self, value: bool) -> None:
+        """Set whether only one section can be open at a time."""
         self._exclusive = value
 
     def add_section(
@@ -94,7 +92,7 @@ class FXAccordion(QWidget):
             animation_duration=self._animation_duration,
         )
 
-        if content:
+        if content is not None:
             if isinstance(content, QWidget):
                 section.set_content_widget(content)
             else:
@@ -163,10 +161,15 @@ class FXAccordion(QWidget):
             section.collapse()
 
     def expand_all(self) -> None:
-        """Expand all sections (only works if not exclusive)."""
-        if not self._exclusive:
-            for section in self._sections:
-                section.expand()
+        """Expand all sections.
+
+        Raises:
+            RuntimeError: The accordion is exclusive.
+        """
+        if self._exclusive:
+            raise RuntimeError("an exclusive accordion opens one section")
+        for section in self._sections:
+            section.expand()
 
     def _index_of(self, section: FXCollapsibleWidget) -> int:
         """Return the section's current index, or -1 once removed."""
@@ -182,7 +185,7 @@ class FXAccordion(QWidget):
         if self._exclusive:
             # Collapse all other sections
             for i, section in enumerate(self._sections):
-                if i != index and section.is_expanded:
+                if i != index and section.is_expanded():
                     section.collapse()
 
         self.section_expanded.emit(index)
