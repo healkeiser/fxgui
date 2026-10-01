@@ -69,9 +69,6 @@ class FXCollapsibleWidget(QWidget):
     expanded = Signal()
     collapsed = Signal()
 
-    # QWIDGETSIZE_MAX: an opened area is released to it after animating.
-    NO_CAP = 16777215
-
     def __init__(
         self,
         parent: Optional[QWidget] = None,
@@ -317,7 +314,7 @@ class FXCollapsibleWidget(QWidget):
             self._content_area.setMaximumHeight(
                 self._max_content_height
                 if self._max_content_height > 0
-                else self.NO_CAP
+                else fxutils.NO_CAP
             )
 
         self.updateGeometry()

@@ -144,3 +144,18 @@ def test_a_disabled_switch_wears_the_disabled_button_tokens(
     assert thumb == colors.text_disabled.lower()
     assert track == (colors.surface_alt if checked else colors.surface).lower()
     assert edge == colors.border.lower()
+
+
+def test_custom_colours_take_a_token_and_follow_a_switch(qtbot):
+    switch = FXToggleSwitch(
+        on_color="feedback_success_foreground", off_color="surface_alt",
+        thumb_color="#ff0000")
+    qtbot.addWidget(switch)
+    switch.setChecked(True)
+    fill, _edge, thumb = switch._inks()
+    assert fill == fxstyle.colors().feedback_success_foreground.lower()
+    assert thumb == "#ff0000"
+    switch.setChecked(False)
+    fxstyle.apply_theme("light")
+    fill, _edge, _thumb = switch._inks()
+    assert fill == fxstyle.colors().surface_alt.lower()

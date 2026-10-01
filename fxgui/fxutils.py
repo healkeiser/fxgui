@@ -63,7 +63,11 @@ __all__ = [
     "later",
     "rehome",
     "focus_step",
+    "NO_CAP",
 ]
+
+# Qt's QWIDGETSIZE_MAX: a maximum width or height that caps nothing.
+NO_CAP = 16777215
 
 # `DWMWA_WINDOW_CORNER_PREFERENCE` from `dwmapi.h`: which rounding the
 # compositor gives a window's corners. Windows 11 and up; an older build

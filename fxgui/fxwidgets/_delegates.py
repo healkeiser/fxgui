@@ -365,7 +365,6 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             parent: The parent widget.
         """
         super().__init__(parent)
-        fxstyle._watch_focus()
         #: Whether rows show their thumbnail.
         self.show_thumbnail = True
         #: Whether rows show their status dot.
@@ -498,28 +497,6 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         opt = QStyleOptionViewItem(option)
         self.initStyleOption(opt, index)
         return opt
-
-    @staticmethod
-    def _as_color(value) -> QColor:
-        """Coerce a color role value to a QColor, reading a token name now.
-
-        A theme token name follows every switch; a colour string is parsed.
-        Anything else is an invalid QColor, which hides the element rather
-        than raising in the middle of a paint.
-
-        Examples:
-            >>> FXThumbnailDelegate._as_color("#ff0000").isValid()
-            True
-            >>> FXThumbnailDelegate._as_color("not a color").isValid()
-            False
-            >>> FXThumbnailDelegate._as_color(None).isValid()
-            False
-        """
-        if isinstance(value, QColor):
-            return value
-        if isinstance(value, str):
-            return QColor(getattr(fxstyle.colors(), value, value))
-        return QColor()
 
     @staticmethod
     def _text_color(option: QStyleOptionViewItem) -> QColor:
@@ -668,9 +645,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         for the pill). `footprint` is how far in from the row's right edge
         the leftmost mark reaches, 0 when neither shows.
         """
-        label_color = self._as_color(index.data(self.STATUS_LABEL_COLOR_ROLE))
+        label_color = fxstyle.qcolor(index.data(self.STATUS_LABEL_COLOR_ROLE))
         label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
-        dot_color = self._as_color(index.data(self.STATUS_DOT_COLOR_ROLE))
+        dot_color = fxstyle.qcolor(index.data(self.STATUS_DOT_COLOR_ROLE))
 
         show_label = bool(
             self.show_status_label
@@ -926,7 +903,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         else:
             # A QColor, or a token name read now so the card follows
             # every theme switch.
-            color = self._as_color(data)
+            color = fxstyle.qcolor(data)
         return color if color.isValid() and color.alpha() > 0 else None
 
     def _has_thumbnail(self, index: QModelIndex) -> bool:

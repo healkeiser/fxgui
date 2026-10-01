@@ -8,6 +8,9 @@ from qtpy.QtCore import QEvent, QSize, Qt
 from qtpy.QtGui import QFontMetrics, QIcon, QPainter, QPixmap
 from qtpy.QtWidgets import QFormLayout, QLabel, QStyle, QToolTip, QWidget
 
+# Internal
+from fxgui import fxutils
+
 
 class FXElidedLabel(QLabel):
     """A QLabel that cuts its text with an ellipsis when it does not fit.
@@ -106,8 +109,8 @@ class FXElidedLabel(QLabel):
         available_width = self.width() - 2  # Small margin
 
         if self.wordWrap():
-            # 16777215 is QWIDGETSIZE_MAX: no maximum, so nothing to cut to.
-            if self.maximumHeight() >= 16777215:
+            # No maximum, so nothing to cut to.
+            if self.maximumHeight() >= fxutils.NO_CAP:
                 super().setText(self._full_text)
                 return
             line_height = max(1, metrics.lineSpacing())

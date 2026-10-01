@@ -36,7 +36,6 @@ from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 # Third-party
 import yaml
-from qtpy import QT_VERSION
 from qtpy.QtCore import QEvent, QObject, Qt, Signal
 from qtpy.QtGui import (
     QColor,
@@ -64,7 +63,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import _compat, fxconfig, fxicons, fxutils
+from fxgui import _compat, fxconfig, fxconstants, fxicons, fxutils
 
 
 ###### Theme Management
@@ -130,10 +129,10 @@ __all__ = [
     "THIN_SCROLL_WIDTH",
     # Color configuration
     "colors",
+    "qcolor",
     "get_colors",
     "set_color_file",
     "overlay_color_file",
-    "get_feedback_colors",
     # Font configuration
     "register_fonts",
     "get_fonts",
@@ -172,9 +171,8 @@ __all__ = [
 
 ###### Constants
 
-_parent_directory = Path(__file__).parent
-STYLE_FILE = _parent_directory / "qss" / "style.qss"
-DEFAULT_COLOR_FILE = _parent_directory / "style.yaml"
+STYLE_FILE = fxconstants.PACKAGE_ROOT / "qss" / "style.qss"
+DEFAULT_COLOR_FILE = fxconstants.PACKAGE_ROOT / "style.yaml"
 
 # Theme persistence keys
 _SETTINGS_THEME_KEY = "theme/current"
@@ -247,8 +245,7 @@ MUTED_STEP = 1.5
 # ponytail: measured on 6.5.3 and 6.11.2 only; move the bound if a version
 # between them measures otherwise.
 _SPIN_PADDING = (
-    "4px 0px" if tuple(map(int, QT_VERSION.split(".")[:2])) < (6, 6)
-    else "3px 0px 2px 0px"
+    "4px 0px" if _compat.QT_VERSION < (6, 6) else "3px 0px 2px 0px"
 )
 
 # The body text size, in pixels, of every themed root.
@@ -341,14 +338,17 @@ def _colour_tokens(theme_name: str) -> Dict[str, str]:
 ###### Private Helper Functions
 
 
+def _read_yaml(path) -> dict:
+    """Return a YAML file's mapping, empty for an empty file."""
+    with open(path, "r", encoding="utf-8") as in_file:
+        return yaml.safe_load(in_file) or {}
+
+
 def _load_colors_from_yaml() -> dict:
     """Return the loaded colour file, reading it on first use."""
-    global _colors, _color_file
-    path = _color_file or str(DEFAULT_COLOR_FILE)
-    if _colors is None or _color_file != path:
-        with open(path, "r", encoding="utf-8") as in_file:
-            _colors = yaml.safe_load(in_file)
-        _color_file = path
+    global _colors
+    if _colors is None:
+        _colors = _read_yaml(_color_file or DEFAULT_COLOR_FILE)
     return _colors
 
 
@@ -404,9 +404,13 @@ def set_color_file(color_file: str) -> None:
 
     Args:
         color_file: Path to the YAML color configuration file.
+
+    Raises:
+        OSError: If the file cannot be read; the loaded one stays.
+        yaml.YAMLError: If it is no YAML; the loaded one stays.
     """
     global _colors, _color_file
-    _colors = None
+    _colors = _read_yaml(color_file)
     _color_file = str(color_file)
     _colors_changed()
 
@@ -425,9 +429,7 @@ def overlay_color_file(color_file: str) -> None:
         >>> fxstyle.overlay_color_file("studio_colors.yaml")
     """
     global _colors
-    with open(color_file, "r", encoding="utf-8") as in_file:
-        over = yaml.safe_load(in_file) or {}
-    _colors = _deep_merge(get_colors(), over)
+    _colors = _deep_merge(get_colors(), _read_yaml(color_file))
     _colors_changed()
 
 
@@ -442,20 +444,6 @@ def get_colors() -> dict:
         '#ff6600'
     """
     return _load_colors_from_yaml()
-
-
-def get_feedback_colors() -> dict:
-    """Return the current theme's feedback levels, as the colour file names them.
-
-    One entry per level ("debug", "info", "success", "warning", "error"),
-    each a ``foreground`` and a ``background``. For one colour, read
-    ``colors().feedback_<level>_<part>``.
-
-    Examples:
-        >>> list(fxstyle.get_feedback_colors())
-        ['debug', 'info', 'success', 'warning', 'error']
-    """
-    return _feedback(get_theme())
 
 
 def _feedback(theme_name: str) -> dict:
@@ -741,9 +729,8 @@ def mark_as_frame(widget: QWidget, is_frame: bool = True) -> None:
         _SplitterMark(widget)
     fxutils.repolish(widget)
     # Child selectors are matched when the child polishes, not the parent.
-    for child in widget.findChildren(QWidget):
-        if child.parentWidget() is widget:
-            fxutils.repolish(child)
+    for child in widget.findChildren(QWidget, "", Qt.FindDirectChildrenOnly):
+        fxutils.repolish(child)
 
 
 def mark_as_thin_scroll(area: QAbstractScrollArea, is_thin: bool = True) -> None:
@@ -796,6 +783,7 @@ def get_contrast_ratio(one_hex: str, two_hex: str) -> float:
     return (high + 0.05) / (low + 0.05)
 
 
+@lru_cache(maxsize=512)
 def readable_ink(
     background: str, preferred: Optional[str] = None, floor: float = 4.5
 ) -> str:
@@ -1205,9 +1193,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         "stylesheet_light" if _is_light(theme_data["surface"])
         else "stylesheet_dark"
     )
-    tokens["~icons"] = str(_parent_directory / "icons" / icon_folder).replace(
-        os.sep, "/"
-    )
+    tokens["~icons"] = (fxconstants.ICONS_ROOT / icon_folder).as_posix()
     return tokens
 
 
@@ -1381,6 +1367,24 @@ def colors() -> "FXThemeColors":
     """
     _ensure_theme_loaded()
     return _get_theme_namespace()
+
+
+def qcolor(value) -> QColor:
+    """Return a QColor for a theme token name, a colour or a QColor, now.
+
+    A token is read from the current theme, so a caller that keeps the name
+    follows every switch. Anything QColor cannot read is an invalid QColor,
+    which a paint can skip rather than raise.
+
+    Examples:
+        >>> fxstyle.qcolor("accent_primary")
+        >>> fxstyle.qcolor("#ff5722")
+    """
+    if isinstance(value, QColor):
+        return QColor(value)
+    if not isinstance(value, str):
+        return QColor()
+    return QColor(getattr(colors(), value, value))
 
 
 def apply_theme(theme: str) -> str:
@@ -1885,11 +1889,7 @@ def _frame_combo_popup(popup: QFrame) -> None:
 
 
 def _watch_focus() -> None:
-    """Install the one focus watcher on the running application.
-
-    A themed root installs it, and so does a widget that paints its own
-    focus look, since it may live outside any root.
-    """
+    """Install the one focus watcher on the running application."""
     global _focus_visibility
     app = QApplication.instance()
     if app is None:
@@ -1913,7 +1913,12 @@ def _is_themed(widget: QWidget) -> bool:
 
 
 def focus_visible(widget: QWidget) -> bool:
-    """Return whether `widget` has focus that came by keyboard."""
+    """Return whether `widget` has focus that came by keyboard.
+
+    The first call starts the focus watch, so a widget that draws its own
+    focus look asks once before its first focus: when it is built or paints.
+    """
+    _watch_focus()
     return widget.hasFocus() and bool(widget.property(FOCUS_VISIBLE_PROPERTY))
 
 

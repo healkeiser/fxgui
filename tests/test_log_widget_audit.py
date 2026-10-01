@@ -94,7 +94,7 @@ def test_mid_and_tail_ansi_segments_share_one_format(qtbot, qapp):
 
     error = fxstyle.readable_ink(
         fxstyle.colors().surface_sunken,
-        fxstyle.get_feedback_colors()["error"]["foreground"],
+        fxstyle.colors().feedback_error_foreground,
     )
     assert formats == [(error, 128, True)] * len(formats)
     assert formats

@@ -56,7 +56,7 @@ def test_the_tint_is_the_themes_own_feedback_colour(qtbot, theme):
 
     bar.showMessage("something happened", INFO, duration=30)
 
-    expected = fxstyle.get_feedback_colors()["info"]["background"]
+    expected = fxstyle.colors().feedback_info_background
     assert bar.tint() == expected.lower()
 
 
@@ -68,7 +68,7 @@ def test_a_switch_keeps_the_message_and_recolours_the_tint(qtbot):
 
     fxstyle.apply_theme("light")
 
-    warning = fxstyle.get_feedback_colors()["warning"]["background"].lower()
+    warning = fxstyle.colors().feedback_warning_background.lower()
     assert bar.message_label.isVisible()
     assert bar.tint() == warning
     assert _ink_and_ground(bar)[1] == warning

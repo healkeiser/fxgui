@@ -33,7 +33,7 @@ from qtpy.QtGui import (
     QPixmap,
     QPixmapCache,
 )
-from qtpy.QtCore import Qt, QRect, QRectF, QSize, qVersion
+from qtpy.QtCore import Qt, QRect, QRectF, QSize
 
 # Internal
 from fxgui import _compat, fxconstants
@@ -67,7 +67,7 @@ _DEFAULT_INKS = {
 
 # Before Qt 6.8, QIcon hands scaledPixmap a device size and sets the
 # returned pixmap's ratio itself; measured on 6.5.3, 6.7.3 and 6.8.3.
-_DEVICE_SIZED = tuple(int(part) for part in qVersion().split(".")[:2]) < (6, 8)
+_DEVICE_SIZED = _compat.QT_VERSION < (6, 8)
 
 # Opacity of a disabled full-colour icon.
 _DISABLED_ALPHA = 0.35
@@ -249,15 +249,6 @@ def _tint(pixmap: QPixmap, color: str) -> QPixmap:
     painter.fillRect(colored.rect(), QColor(color))
     painter.end()
     return colored
-
-
-def _theme_ink(ink: Optional[str]) -> Optional[str]:
-    """Return the colour `ink` names: a theme token's, or `ink` itself."""
-    if not ink:
-        return None
-    from fxgui import fxstyle
-
-    return vars(fxstyle.colors()).get(ink, ink)
 
 
 def _faded(pixmap: QPixmap) -> QPixmap:
@@ -460,13 +451,17 @@ class _ThemedIconEngine(QIconEngine):
     def _ink(self, mode) -> Optional[str]:
         if not self._recolor:
             return None
+        from fxgui import fxstyle
+
         name = next(key for key, value in _MODES.items() if value == mode)
         if name in self._inks:
-            return _theme_ink(self._inks[name])
+            ink = self._inks[name]
         # An icon drawn in its file's own colours keeps them, except disabled.
-        if name != "disabled" and not self._inks.get("normal"):
-            return None
-        return _theme_ink(_DEFAULT_INKS[name])
+        elif name != "disabled" and not self._inks.get("normal"):
+            ink = None
+        else:
+            ink = _DEFAULT_INKS[name]
+        return fxstyle.qcolor(ink).name(QColor.HexArgb) if ink else None
 
     def scaledPixmap(self, size: QSize, mode, state, scale: float) -> QPixmap:
         """Return the icon drawn for `mode` at `size` and pixel ratio `scale`."""
@@ -647,7 +642,9 @@ def badged(icon: QIcon, color: str = "accent_primary") -> QIcon:
         side - size - gap, side - size - gap, size + gap * 2, size + gap * 2
     )
     painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
-    painter.setBrush(QColor(_theme_ink(color)))
+    from fxgui import fxstyle
+
+    painter.setBrush(fxstyle.qcolor(color))
     painter.drawEllipse(side - size, side - size, size, size)
     painter.end()
     return QIcon(painted)

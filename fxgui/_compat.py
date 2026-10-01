@@ -8,13 +8,20 @@ PyQt6 raises, so liveness checks live here.
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
-__all__ = ["created_by_python", "find_pixmap", "is_valid", "parent_widget"]
+__all__ = [
+    "QT_VERSION", "created_by_python", "find_pixmap", "is_valid",
+    "parent_widget",
+]
 
 # Built-in
 from typing import Optional
 
 # Third-party
+from qtpy.QtCore import qVersion
 from qtpy.QtGui import QPixmap, QPixmapCache
+
+# The running Qt's (major, minor), for the few looks that differ by version.
+QT_VERSION = tuple(int(part) for part in qVersion().split(".")[:2])
 
 
 try:

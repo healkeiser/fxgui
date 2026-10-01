@@ -50,7 +50,7 @@ def _coalesce_runs(frames) -> List[Tuple[int, int]]:
 
 def _ink(color: Optional[str]) -> QColor:
     """Return `color`, a theme token or any colour, now; None is the accent."""
-    return QColor(fxicons._theme_ink(color or "accent_primary"))
+    return fxstyle.qcolor(color or "accent_primary")
 
 
 class _FpsBox(QDoubleSpinBox):

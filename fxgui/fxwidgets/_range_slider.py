@@ -94,7 +94,6 @@ class FXRangeSlider(QWidget):
         self.setCursor(Qt.PointingHandCursor)
         # Keyboard: arrows adjust the active handle, Space switches handle
         self.setFocusPolicy(Qt.StrongFocus)
-        fxstyle._watch_focus()
 
     def sizeHint(self):
         """Return the preferred size."""

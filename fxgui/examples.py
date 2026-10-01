@@ -50,7 +50,7 @@ from fxgui.fxicons import get_icon, set_icon
 
 _LOGGER = logging.getLogger("fxgui.examples")
 # Every feedback level the theme colours; each is also a severity.
-_FEEDBACK = tuple(fxstyle.get_feedback_colors())
+_FEEDBACK = ("debug", "info", "success", "warning", "error")
 
 
 def _section(title: str, *items) -> QGroupBox:

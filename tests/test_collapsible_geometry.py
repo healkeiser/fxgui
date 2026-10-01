@@ -25,6 +25,7 @@ from qtpy.QtCore import QAbstractAnimation
 from qtpy.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 # Internal
+from fxgui import fxutils
 from fxgui.fxwidgets import FXCollapsibleWidget
 
 
@@ -116,7 +117,7 @@ def test_an_opened_section_is_released_from_the_animations_cap(qtbot, qapp):
     section.expand(animate=False)
 
     assert section._content_area.maximumHeight() == (
-        FXCollapsibleWidget.NO_CAP
+        fxutils.NO_CAP
     ), "no cap asked for, so none left behind"
     assert section._content_area.minimumHeight() > 0, "and still open"
 
@@ -240,7 +241,7 @@ def test_an_uncapped_section_never_reports_qwidgetsize_max(qtbot, qapp):
     section.collapse(animate=True)
     qtbot.waitUntil(lambda: bool(frames))
 
-    assert FXCollapsibleWidget.NO_CAP not in frames
+    assert fxutils.NO_CAP not in frames
     assert max(frames) <= on_screen, f"reported off-screen heights: {frames}"
 
 

@@ -2,7 +2,6 @@
 
 # Built-in
 import bisect
-import functools
 import logging
 import re
 import weakref
@@ -110,13 +109,11 @@ ANSI_ROLES = {
 _ROLE = QTextFormat.UserProperty + 1
 _DIM = QTextFormat.UserProperty + 2
 
-_readable_ink = functools.lru_cache(maxsize=256)(fxstyle.readable_ink)
-
-
 def _paint_role(fmt: QTextCharFormat, role: str, dim: bool) -> None:
     """Set `fmt`'s foreground to the `role` token, readable on the pane."""
     theme = fxstyle.colors()
-    colour = QColor(_readable_ink(theme.surface_sunken, getattr(theme, role)))
+    colour = QColor(
+        fxstyle.readable_ink(theme.surface_sunken, getattr(theme, role)))
     if dim:
         colour.setAlpha(128)
     fmt.setForeground(colour)

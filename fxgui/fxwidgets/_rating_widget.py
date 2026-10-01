@@ -89,7 +89,6 @@ class FXRatingWidget(QWidget):
 
         # Keyboard: arrow keys adjust, digits set, Delete/Backspace clears
         self.setFocusPolicy(Qt.StrongFocus)
-        fxstyle._watch_focus()
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 

@@ -272,7 +272,8 @@ class FXJoinedGroup(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         QApplication.instance().focusChanged.connect(self._on_focus_changed)
-        fxstyle._watch_focus()
+        # Asked once now, so the focus watch runs before a child's focus.
+        fxstyle.focus_visible(self)
 
     def add_widget(self, widget: QWidget) -> None:
         """Append `widget` at the right end of the group."""

@@ -28,10 +28,11 @@ class FXToggleSwitch(QAbstractButton):
 
     Args:
         parent: Parent widget.
-        on_color: Color when switch is on. If None, uses theme accent.
-        off_color: Color when switch is off. If None, the sunken surface.
-        thumb_color: Color of the thumb. If None, the muted text off and the
-            on-accent text on.
+        on_color: A theme token or a colour, when on. Defaults to the accent.
+        off_color: A token or a colour, when off. Defaults to the sunken
+            surface.
+        thumb_color: A token or a colour for the thumb. Defaults to the muted
+            text off and the on-accent text on.
 
     Signals:
         toggled: Emitted when the switch state changes.
@@ -71,7 +72,6 @@ class FXToggleSwitch(QAbstractButton):
         # Keyboard: focusable via Tab and mouse; QAbstractButton then
         # handles Space to toggle.
         self.setFocusPolicy(Qt.StrongFocus)
-        fxstyle._watch_focus()
 
         # Connect signals
         self.toggled.connect(self._on_toggled)
@@ -135,11 +135,14 @@ class FXToggleSwitch(QAbstractButton):
             # As a disabled push button, and a disabled primary one when on.
             fill = theme.surface_alt if self.isChecked() else theme.surface
             return fill, theme.border, theme.text_disabled
+        def custom(value):
+            return fxstyle.qcolor(value).name() if value else None
+
         hovered = self.underMouse()
-        on = self._custom_on_color or reads(
+        on = custom(self._custom_on_color) or reads(
             theme.primary_button_hover if hovered else theme.accent_primary
         )
-        off = self._custom_off_color or (
+        off = custom(self._custom_off_color) or (
             theme.state_hover if hovered else theme.surface_sunken
         )
         position = self._position
@@ -148,7 +151,7 @@ class FXToggleSwitch(QAbstractButton):
             edge = theme.text if self.isChecked() else reads(theme.accent_primary)
         else:
             edge = fxstyle.mix(theme.control_edge, on, position)
-        thumb = self._custom_thumb_color or fxstyle.mix(
+        thumb = custom(self._custom_thumb_color) or fxstyle.mix(
             reads(theme.text_muted, off),
             reads(theme.text_on_accent_primary, on),
             position,

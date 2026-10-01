@@ -44,7 +44,8 @@ class FXStatusDot(QWidget):
         An unknown key shows as off. Repaints only on a change, so a timer
         may call this constantly.
         """
-        known = key if key in fxstyle.get_feedback_colors() else None
+        known = key if hasattr(
+            fxstyle.colors(), f"feedback_{key}_foreground") else None
         self.setToolTip(tooltip)
         if known != self._feedback:
             self._feedback = known

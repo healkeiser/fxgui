@@ -30,7 +30,7 @@ def _pane(qtbot, text):
 
 
 def _expected(role):
-    foreground = fxstyle.get_feedback_colors()[role]["foreground"]
+    foreground = fxstyle.qcolor(f"feedback_{role}_foreground").name()
     return fxstyle.readable_ink(fxstyle.colors().surface_sunken, foreground)
 
 
