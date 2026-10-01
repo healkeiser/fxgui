@@ -902,9 +902,14 @@ QTabWidget::pane {
    @control_edge for 3:1 on the strip. Hover changes the text only. Every
    tab reserves the pill's 1px edge, so nothing moves. QtAds tabs name
    activeTab to outrank QFrame[frameShape]. */
+/* A tab is its text plus the padding: never elided, never stretched; a
+   full bar scrolls. */
 QTabBar
 {
     qproperty-drawBase: 0;
+    qproperty-elideMode: ElideNone;
+    qproperty-usesScrollButtons: true;
+    qproperty-expanding: false;
     background: transparent;
 }
 
@@ -917,19 +922,7 @@ ads--CDockWidgetTab[activeTab="true"]
     border: 1px solid transparent;
     border-radius: @button_radius;
     margin: 3px 2px;
-}
-
-QTabBar::tab
-{
     padding: 3px 10px;
-}
-
-/* QtAds' own layout pads a tab 8px on the left and keeps a gap for its
-   close button on the right; these make the text sit as a QTabBar's does. */
-ads--CDockWidgetTab[activeTab="false"],
-ads--CDockWidgetTab[activeTab="true"]
-{
-    padding: 3px 1px 3px 2px;
 }
 
 QTabBar::tab:hover,

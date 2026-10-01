@@ -155,6 +155,21 @@ def _inset(area: "ads.CDockAreaWidget") -> None:
     bar.layout().setContentsMargins(inset, 0, inset, 0)
 
 
+def _bare(tab: "ads.CDockWidgetTab") -> None:
+    """Drop the gaps QtAds lays around a tab's title.
+
+    They scale with the font, so only the sheet's padding is left, and a tab
+    is its text plus that padding, as a QTabBar tab is.
+    """
+    layout = tab.layout()
+    layout.setContentsMargins(0, 0, 0, 0)
+    for index in range(layout.count()):
+        spacer = layout.itemAt(index).spacerItem()
+        if spacer is not None:
+            spacer.changeSize(0, 0)
+    layout.invalidate()
+
+
 def _floor(area: "ads.CDockAreaWidget") -> None:
     """Hold `area` at least as big as the tab in front needs.
 
@@ -332,6 +347,7 @@ class FXDockArea(QWidget):
         held = ads.CDockWidget(self._docks, title)
         held.setObjectName(name)
         held.setWidget(widget, _NO_SCROLL)
+        _bare(held.tabWidget())
         # Its content's floor, not QtAds' 60 px: a narrower pane clips.
         held.setMinimumSizeHintMode(
             ads.CDockWidget.eMinimumSizeHintMode.MinimumSizeHintFromContent

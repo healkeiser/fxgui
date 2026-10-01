@@ -304,7 +304,7 @@ def _pill(image, rect):
     """
     colors = fxstyle.colors()
     edge = colors.control_edge.lower()
-    text = QColor(colors.text)
+    fill = colors.state_hover
     middle = rect.center().y()
     columns = [
         x for x in range(rect.left(), rect.right() + 1)
@@ -319,7 +319,7 @@ def _pill(image, rect):
         y - rect.top()
         for x in range(min(columns) + 1, max(columns))
         for y in range(min(rows) + 1, max(rows))
-        if abs(image.pixelColor(x, y).lightness() - text.lightness()) < 30
+        if _distance(image.pixelColor(x, y).name(), fill) > 60
     ]
     return (
         [y - rect.top() for y in rows],
@@ -566,7 +566,8 @@ def test_a_dock_tab_matches_a_tab_bar_tab(qtbot, theme):
     docks.add_dock("shots", "Shots", QLabel("s"), "left")
     docks.add_dock("assets", "Assets", QLabel("a"), "left")
     column.addWidget(docks)
-    window = _shown(qtbot, theme, holder, (800, 600))
+    # Wide enough that both dock tabs fit, so neither scrolls out of view.
+    window = _shown(qtbot, theme, holder, (1400, 600))
     for _ in range(3):
         QApplication.processEvents()
     image = window.grab().toImage()
@@ -589,3 +590,84 @@ def test_a_dock_tab_matches_a_tab_bar_tab(qtbot, theme):
         label.text() == label.property("text") or "..." not in label.text()
         for label in tab.findChildren(QLabel)
     )
+
+
+# A tab is its text plus the padding (10px, a 1px edge and a 2px margin on
+# each side), in every state, and never elided.
+_TAB_FRAME = 2 * (10 + 1 + 2)
+
+
+def _text_width(widget, text):
+    return widget.fontMetrics().size(Qt.TextShowMnemonic, text).width()
+
+
+def test_a_tab_is_its_text_plus_the_padding_in_every_state(qtbot):
+    if fxdocking is None:
+        pytest.skip("needs the docking extra")
+    names = ("A", "Render", "Lighting and shading")
+    holder = QWidget()
+    column = QVBoxLayout(holder)
+    tabs = QTabWidget()
+    for name in names:
+        tabs.addTab(QLabel(name), name)
+    column.addWidget(tabs)
+    docks = fxdocking.FXDockArea()
+    docks.set_central(QLabel("central"))
+    for name in names:
+        docks.add_dock(name, name, QLabel(name), "left")
+    column.addWidget(docks)
+    _window = _shown(qtbot, "dark", holder, (1000, 500))
+    bar = tabs.tabBar()
+    dock_tabs = [
+        docks.manager().findDockWidget(name).tabWidget() for name in names
+    ]
+
+    def widths():
+        ours = [
+            bar.tabRect(index).width() - _text_width(bar, bar.tabText(index))
+            for index in range(bar.count())
+        ]
+        theirs = [
+            tab.width() - _text_width(tab, tab.findChild(QLabel).text())
+            for tab in dock_tabs
+        ]
+        return ours + theirs
+
+    assert bar.elideMode() == Qt.ElideNone
+    rest = widths()
+    assert rest == [_TAB_FRAME] * 6, rest
+    _hover(bar, bar.tabRect(1).center())
+    _hover(dock_tabs[0], dock_tabs[0].rect().center())
+    assert widths() == rest
+    tabs.setCurrentIndex(2)
+    docks.show_dock(names[0])
+    QApplication.processEvents()
+    assert widths() == rest
+
+
+def test_no_dock_tab_in_the_gallery_is_elided(qtbot):
+    if fxdocking is None:
+        pytest.skip("needs the docking extra")
+    from fxgui import examples
+
+    fxstyle.apply_theme("dark")
+    window = examples.build()
+    pages = window.centralWidget()
+    pages.setCurrentIndex(pages.count() - 1)
+    window.show()
+    qtbot.waitExposed(window)
+    QApplication.processEvents()
+    tabs = [
+        widget for widget in window.findChildren(QWidget)
+        if widget.metaObject().className() == "ads::CDockWidgetTab"
+        and widget.isVisible()
+    ]
+    assert tabs
+    for tab in tabs:
+        label = tab.findChild(QLabel)
+        title = tab.dockWidget().windowTitle()
+        assert label.text() == title, (label.text(), title)
+        assert tab.width() - _text_width(tab, title) == _TAB_FRAME
+    window.close()
+    window.deleteLater()
+    QApplication.processEvents()
