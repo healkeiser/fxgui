@@ -351,3 +351,42 @@ ls-pipeline call sites that change (ls 76f6b9eb):
   `get_font_family` -> patch `graph_view.fxstyle.font` (or the new
   family_for body).
 - No change for docking: ls-pipeline pins `PySide6-QtAds==5.0.0.2` itself.
+
+#### Group r3 extra items (owner, 2026-10-02)
+
+Full suite after both: 2504 passed, 6 skipped. 6.5.3 covering tests: 134
+passed, 9 skipped (docking skipped). ruff clean. PNGs are in the session
+scratchpad: `r3/icons/{before,after}_crop_{dark,light}.png` and
+`r3/tabs/{before,after}_tabs_{dark,light}.png`.
+
+- Item-view icon size done (db8c8a1c). Measured on the gallery's Lists
+  tab:
+  - QListWidget asked for a 24 px box (`PM_ListViewIconSize`), so the
+    folder drew 20 x 16 px beside 12 px text. A QTreeWidget item icon used
+    16 px (`PM_SmallIconSize`).
+  - The branch chevron filled the 20 px indentation in every tree,
+    FXThumbnailDelegate's included (8 x 4 px of ink, against 6 x 3 at 16
+    px). The delegate's own icons were already 16 px.
+  - The rule now: every item view draws in the 16 px box. FXProxyStyle maps
+    PM_ListViewIconSize to PM_SmallIconSize, so an explicit setIconSize
+    still wins. The sheet pads `QTreeView::branch:has-children` by 2 px, so
+    the chevron sits in 16 px.
+  - Test: tests/test_item_view_icon_size.py measures the drawn ink against
+    the same glyph at 16 px, for a list, a tree, and branches with and
+    without the delegate, dark and light. It failed first on the list and
+    on both chevrons.
+  - Open: a completer popup in a host application (no FXProxyStyle) still
+    gets 24 px list icons.
+- Selected tab without an edge done (0dcc9344). The current tab is now a
+  `@state_pressed` pill with `@text`. A hovered tab stays `@state_hover`,
+  and a hovered current tab keeps `@state_pressed`. The transparent 1 px
+  edge stays, so nothing moves. QTabBar and QtAds share the one rule in
+  style.qss. The spec rulings and theming.md are updated.
+  - Fills, dark: hover #403f3f, selected #4f4e4e. Selected is 1.27:1 off
+    hover and 1.61:1 off surface; text on it 5.54:1.
+  - Fills, light: hover #d8d8d8, selected #bdbdbd. Selected is 1.32:1 off
+    hover and 1.65:1 off surface; text on it 8.57:1.
+  - Every bundled theme keeps selected at least 1.25:1 off hover
+    (`STATE_MIN_CONTRAST` is 1.2) and text on it at least 4.5:1.
+  - The tab tests now find the pill by its fill: 16 of them fail on the old
+    sheet. A new test covers a hovered current tab.
