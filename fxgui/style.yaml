@@ -35,8 +35,10 @@ dcc:
 # FONTS
 # =============================================================================
 # Typefaces by role, the way the sections above name colors by role. Each
-# role is a family stack: the first family the running Qt has wins, and the
-# platform default UI font is appended, so a role never resolves to nothing.
+# role lists families in order: the first the running Qt has is the one
+# drawn, alone, and with none found the platform default UI font is, so a
+# role never resolves to nothing. Alone because Qt on Windows takes about
+# 0.4 s to resolve the first font that names two families.
 #
 #   title - Text marked with `fxstyle.mark_as_title(widget)`. Left empty
 #           here, so it draws like body until a family is named.

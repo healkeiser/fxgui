@@ -590,12 +590,13 @@ def _shape(theme_name: str, role: str) -> Tuple[Optional[int], Optional[str]]:
     return weight, hinting
 
 
-def _font_families(entries) -> list:
-    """Return one role's installed families, generics lowercased, never empty.
+def _font_family(entries) -> str:
+    """Return one role's family: the first the running Qt has, or a generic.
 
-    A family the running Qt lacks is dropped: Qt would draw whichever family
-    sorts first instead. The platform default closes the list unless it
-    already ends in a CSS generic, which is terminal.
+    One family, never a list: Qt on Windows takes about 0.4 s to resolve
+    the first font that names two. A family Qt lacks is skipped, since Qt
+    would draw whichever family sorts first instead. A CSS generic stands
+    for itself, lowercased; with nothing found, the platform default.
 
     Args:
         entries: A family name, a list of them, a mapping with a ``family``
@@ -612,36 +613,31 @@ def _font_families(entries) -> list:
     available = (
         set(QFontDatabase.families()) if QGuiApplication.instance() else set()
     )
-    families = []
     for entry in entries:
         name = str(entry).strip()
         if name.lower() in _GENERIC_FONT_FAMILIES:
-            families.append(name.lower())
-        elif name in available:
-            families.append(name)
-    if not families or families[-1] not in _GENERIC_FONT_FAMILIES:
-        families.append(_platform_default_font())
-    return families
+            return name.lower()
+        if name in available:
+            return name
+    return _platform_default_font()
 
 
-def _resolve_font_stack(entries) -> str:
-    """Return one role's families as a QSS ``font-family``, generics unquoted."""
-    return ", ".join(
-        name if name in _GENERIC_FONT_FAMILIES else f'"{name}"'
-        for name in _font_families(entries)
-    )
+def _qss_family(entries) -> str:
+    """Return one role's family as a QSS ``font-family``, a generic unquoted."""
+    name = _font_family(entries)
+    return name if name in _GENERIC_FONT_FAMILIES else f'"{name}"'
 
 
 def get_fonts(theme: Optional[str] = None) -> Dict[str, str]:
-    """Get the resolved font stack for every role in a theme.
+    """Get the resolved font family of every role in a theme.
 
     Args:
         theme: Theme name. Defaults to the current theme.
 
     Returns:
         Mapping of role name ("title", "body", "mono") to a QSS
-        ``font-family`` value, with unavailable families already
-        removed, so this reports what will actually be drawn.
+        ``font-family`` value: the role's first family Qt has, so this
+        reports what will actually be drawn.
 
     Examples:
         >>> fxstyle.get_fonts()["body"]
@@ -650,13 +646,13 @@ def get_fonts(theme: Optional[str] = None) -> Dict[str, str]:
     if theme is None:
         theme = get_theme()
     return {
-        role: _resolve_font_stack(entries)
+        role: _qss_family(entries)
         for role, entries in _font_config(theme).items()
     }
 
 
 def get_font_family(role: str = "body", theme: Optional[str] = None) -> str:
-    """Get the resolved font stack for a single role.
+    """Get the resolved font family of a single role.
 
     Args:
         role: One of "title", "body", or "mono". Unknown roles fall back
@@ -668,7 +664,7 @@ def get_font_family(role: str = "body", theme: Optional[str] = None) -> str:
 
     Examples:
         >>> fxstyle.get_font_family("mono")
-        '"Consolas", "Courier New", monospace'
+        '"Consolas"'
     """
     fonts = get_fonts(theme)
     return fonts.get(role) or fonts["body"]
@@ -1116,7 +1112,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
 
     The one token resolver: the theme's roles, the derived ones (depth,
     states, text inks, on-accent, primary fills, control edge), the
-    flattened feedback colours, font stacks, sizes and the ``~icons`` path.
+    flattened feedback colours, font families, sizes and the ``~icons`` path.
 
     Args:
         theme_name: Theme to resolve. Keys it omits come from the file's
@@ -1173,7 +1169,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     # Font roles flatten to @font_<role>, resolved against the families
     # Qt actually has so the sheet never names one it cannot honour.
     for role, entries in _font_config(theme_name).items():
-        tokens[f"@font_{role}"] = _resolve_font_stack(entries)
+        tokens[f"@font_{role}"] = _qss_family(entries)
 
     # No bundled border reads at 3:1 on its surface; a control whose edge
     # is its only shape (a switch, a slider handle) wears this one.
@@ -2037,7 +2033,7 @@ def palette(theme: Optional[str] = None) -> QPalette:
 
 
 def font(theme: Optional[str] = None, role: str = "body") -> QFont:
-    """Build a role's font: its installed families, weight and hinting.
+    """Build a role's font: its installed family, weight and hinting.
 
     The body role is the root font, set on every themed root with the
     palette; a child's own ``setFont`` wins over it, which a sheet
@@ -2056,12 +2052,9 @@ def font(theme: Optional[str] = None, role: str = "body") -> QFont:
     """
     theme = theme or get_theme()
     roles = _font_config(theme)
-    families = _font_families(roles.get(role, roles["body"]))
+    family = _font_family(roles.get(role, roles["body"]))
     result = QFont()
-    named = [name for name in families if name not in _GENERIC_FONT_FAMILIES]
-    result.setFamilies(named)
-    if named:
-        result.setFamily(named[0])
+    result.setFamilies([] if family in _GENERIC_FONT_FAMILIES else [family])
     result.setPixelSize(FONT_SIZE)
     weight, hinting = _shape(theme, role)
     if weight is not None:

@@ -84,7 +84,20 @@ def test_absent_family_is_dropped_not_named(qapp, monkeypatch):
 
 def test_generic_keyword_is_terminal_and_unquoted(qapp):
     # A CSS generic ends the stack, so nothing is appended after it.
-    assert fxstyle._resolve_font_stack(["monospace"]) == "monospace"
+    assert fxstyle._qss_family(["monospace"]) == "monospace"
+
+
+def test_a_role_resolves_to_its_first_installed_family_alone(
+    qapp, monkeypatch
+):
+    # Qt on Windows takes about 0.4 s to resolve a first font naming two.
+    monkeypatch.setattr(
+        fxstyle.QFontDatabase, "families",
+        staticmethod(lambda *_: ["Courier New", "Consolas"]))
+    stack = ["No Such QQQ", "Consolas", "Courier New", "monospace"]
+    assert fxstyle._qss_family(stack) == '"Consolas"'
+    _patch_color_file(monkeypatch, fonts={"mono": stack})
+    assert fxstyle.font("dark", role="mono").families() == ["Consolas"]
 
 
 def test_stylesheet_leaves_no_font_token_unresolved(qapp):
