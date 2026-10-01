@@ -14,6 +14,7 @@ edit_uri = "edit/main/docs/"
 nav = [
   { "Home" = "index.md" },
   { "Installation" = "installation.md" },
+  { "Moving from 12.x" = "moving-from-12.md" },
   { "How-to" = ["how-to/index.md", { "Styling" = "how-to/styling.md" }, { "Theming" = "how-to/theming.md" }, { "Widgets" = "how-to/widgets.md" }, { "Icons" = "how-to/icons.md" }] },
   { "Changelog" = "changelog.md" },
 ]
