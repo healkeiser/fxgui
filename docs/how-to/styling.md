@@ -29,8 +29,8 @@ window = QMainWindow()
 fxstyle.register_themed_root(window)
 ```
 
-`FXMainWindow`, `FXFloatingDialog`, `FXSplashScreen`, `FXTooltip` and
-the `FXSystemTray` menu do this on themselves, so the host is never
+`FXMainWindow`, `FXFloatingDialog`, `FXSplashScreen` and the
+`FXSystemTray` menu do this on themselves, so the host is never
 restyled. While the `QApplication` is a themed root, registering a widget
 does nothing: the application's sheet already reaches it.
 

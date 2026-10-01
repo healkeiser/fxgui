@@ -21,8 +21,6 @@ _NOT_SHOWN = {
     "FXSingleton",
     "FXThemeColors",
     "FXThemeManager",
-    "FXTooltipManager",
-    "FXTooltipPosition",
 }
 
 

@@ -88,12 +88,6 @@ from fxgui.fxwidgets._tag_input import FXTagChip, FXTagInput
 from fxgui.fxwidgets._timeline_slider import FXTimelineSlider
 from fxgui.fxwidgets._tips import FXKeycap, apply_tip, keycap, tip
 from fxgui.fxwidgets._toggle_switch import FXToggleSwitch
-from fxgui.fxwidgets._tooltip import (
-    FXTooltip,
-    FXTooltipManager,
-    FXTooltipPosition,
-    set_tooltip,
-)
 from fxgui.fxwidgets._tree_items import FXSortedTreeWidgetItem
 from fxgui.fxwidgets._validators import (
     FXCamelCaseValidator,
@@ -178,15 +172,11 @@ __all__ = [
     "FXThumbnailDelegate",
     "FXTimelineSlider",
     "FXToggleSwitch",
-    "FXTooltip",
-    "FXTooltipManager",
-    "FXTooltipPosition",
     "FXValidatedLineEdit",
     "FXWidget",
     "grab_screen_region",
     "INFO",
     "keycap",
-    "set_tooltip",
     "SUCCESS",
     "theme_manager",
     "tip",
