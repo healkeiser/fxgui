@@ -252,14 +252,18 @@ class FXLoadingSpinner(QWidget):
 
 
 class FXLoadingOverlay(QWidget):
-    """A loading overlay that blocks the parent widget.
+    """A loading spinner centred over the parent widget.
 
-    This widget creates a semi-transparent overlay with a loading
-    spinner, useful for indicating that a long operation is in progress.
+    By default the overlay dims the parent and takes its mouse, for a long
+    operation the user must wait out. A view still usable while its rows
+    load passes `dim=False, block_input=False`.
 
     Args:
         parent: Parent widget to overlay.
         message: Optional message to display below the spinner.
+        dim: Whether to darken the parent behind the spinner.
+        block_input: Whether the overlay takes the parent's mouse.
+        size: The spinner's diameter in pixels.
 
     Examples:
         >>> overlay = FXLoadingOverlay(my_widget, "Loading assets...")
@@ -272,9 +276,14 @@ class FXLoadingOverlay(QWidget):
         self,
         parent: Optional[QWidget] = None,
         message: Optional[str] = None,
+        dim: bool = True,
+        block_input: bool = True,
+        size: int = 48,
     ):
         super().__init__(parent)
+        self._dim = dim
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents, not block_input)
         if parent is not None:
             parent.installEventFilter(self)
 
@@ -283,7 +292,7 @@ class FXLoadingOverlay(QWidget):
         layout.setAlignment(Qt.AlignCenter)
 
         # Spinner
-        self._spinner = FXLoadingSpinner(self, size=48)
+        self._spinner = FXLoadingSpinner(self, size=size)
         layout.addWidget(self._spinner, 0, Qt.AlignCenter)
 
         # Message label
@@ -314,7 +323,9 @@ class FXLoadingOverlay(QWidget):
         return super().eventFilter(watched, event)
 
     def paintEvent(self, event) -> None:
-        """Paint the semi-transparent background."""
+        """Paint the semi-transparent background, if dimming."""
+        if not self._dim:
+            return
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor(0, 0, 0, 128))
         painter.end()
