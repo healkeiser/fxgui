@@ -8,11 +8,18 @@ import sys
 
 # Third-party
 import pytest
-from qtpy.QtGui import QImage
-from qtpy.QtWidgets import QApplication, QScrollArea, QTabWidget
+from qtpy.QtCore import QEvent, QPoint
+from qtpy.QtGui import QHelpEvent, QImage
+from qtpy.QtWidgets import (
+    QApplication,
+    QPushButton,
+    QScrollArea,
+    QTabWidget,
+    QToolTip,
+)
 
 # Internal
-from fxgui import examples, fxstyle
+from fxgui import examples, fxstyle, fxwidgets
 
 _LIGHT = ("light", "github_light", "catppuccin_latte", "solarized_light")
 _PAIRS = (
@@ -43,6 +50,30 @@ def _pages(window) -> list:
     return images
 
 
+def _tooltip(window) -> list:
+    """Return the native rich tooltip of the gallery's `apply_tip` button."""
+    app = QApplication.instance()
+    button = next(
+        button
+        for button in window.findChildren(QPushButton)
+        if button.text() == "Native rich tooltip"
+    )
+    point = QPoint(2, 2)
+    app.sendEvent(
+        button, QHelpEvent(QEvent.ToolTip, point, button.mapToGlobal(point))
+    )
+    app.processEvents()
+    label = next(
+        widget
+        for widget in app.topLevelWidgets()
+        if widget.inherits("QTipLabel") and widget.isVisible()
+    )
+    image = label.grab().toImage().convertToFormat(QImage.Format_ARGB32)
+    QToolTip.hideText()
+    app.processEvents()
+    return [image]
+
+
 def _count(first: QImage, second: QImage) -> int:
     if first.size() != second.size():
         return first.width() * first.height()
@@ -69,14 +100,18 @@ def differences(before: str, after: str) -> dict:
     for build_in in (before, after):
         window = examples.build()
         window.show()
+        # A message shown across the switch keeps its words and recolours.
+        window.statusBar().showMessage(
+            "Render queued", fxwidgets.WARNING, duration=600, time=False
+        )
         app.processEvents()
         if build_in == before:
             _pages(window)
             fxstyle.apply_theme(after)
             app.processEvents()
         tabs = window.findChild(QTabWidget)
-        titles = [tabs.tabText(i) for i in range(tabs.count())]
-        pages.append(_pages(window))
+        titles = [tabs.tabText(i) for i in range(tabs.count())] + ["Tooltip"]
+        pages.append(_pages(window) + [_tooltip(window)])
         window.close()
         window.deleteLater()
         app.processEvents()

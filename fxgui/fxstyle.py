@@ -1242,11 +1242,16 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     for key, value in _depth_colors(theme_data).items():
         tokens[f"@{key}"] = value
 
-    # Feedback colors flatten to @feedback_<level>_<part>.
+    # Feedback colors flatten to @feedback_<level>_<part>, plus
+    # @feedback_<level>_ink, a text colour that reads on the background.
     for level, pair in _feedback(theme_name).items():
         if isinstance(pair, dict):
             for part, value in pair.items():
                 tokens[f"@feedback_{level}_{part}"] = value
+            if "background" in pair:
+                tokens[f"@feedback_{level}_ink"] = readable_ink(
+                    pair["background"]
+                )
 
     # On-accent colors: theme value if defined, computed otherwise.
     accent_primary = theme_data.get("accent_primary", "#2196F3")
