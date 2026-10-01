@@ -132,3 +132,12 @@ def test_a_centred_panel_forgets_its_anchor(qtbot):
     area = panel.screen().availableGeometry()
     assert panel.pos() == centred
     assert abs(panel.geometry().center().x() - area.center().x()) <= 1
+
+
+def test_clamp_keeps_a_rect_inside_the_screen_off_its_edges_by_the_gap():
+    clamp = FXSeating.clamp
+    assert clamp(QPoint(1900, -5), SIZE, SCREEN) == QPoint(1920 - 320, 0)
+    assert clamp(QPoint(-5, 900), SIZE, SCREEN, gap=10) == QPoint(
+        10, 1040 - 420 - 10
+    )
+    assert clamp(QPoint(100, 100), SIZE, SCREEN) == QPoint(100, 100)
