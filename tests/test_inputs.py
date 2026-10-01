@@ -1,8 +1,10 @@
 """Input widgets style through the theme and leave the caller's state alone."""
 
 # Third-party
-from qtpy.QtCore import QAbstractAnimation
+import pytest
+from qtpy.QtCore import QAbstractAnimation, Qt
 from qtpy.QtTest import QTest
+from qtpy.QtWidgets import QLineEdit, QPushButton, QToolButton
 
 # Internal
 from fxgui import fxstyle
@@ -23,9 +25,14 @@ def _validated(qtbot):
     return edit
 
 
+def _animating(edit):
+    group = edit._flash_group
+    return group is not None and group.state() == QAbstractAnimation.Running
+
+
 def _reject(qtbot, edit):
     QTest.keyClicks(edit, "1")
-    qtbot.waitUntil(lambda: not edit._is_animating, timeout=1000)
+    qtbot.waitUntil(lambda: not _animating(edit), timeout=1000)
 
 
 def test_rejections_reuse_one_set_of_animations(qtbot, qapp):
@@ -44,9 +51,9 @@ def test_rejection_keeps_the_callers_margins_and_sheet(qtbot, qapp):
     edit.setStyleSheet(sheet)
 
     QTest.keyClicks(edit, "1")
-    assert edit._is_animating
+    assert _animating(edit)
     assert edit.styleSheet() == sheet
-    qtbot.waitUntil(lambda: not edit._is_animating, timeout=1000)
+    qtbot.waitUntil(lambda: not _animating(edit), timeout=1000)
 
     margins = edit.textMargins()
     assert (margins.left(), margins.top(), margins.right(), margins.bottom()) == (
@@ -55,16 +62,60 @@ def test_rejection_keeps_the_callers_margins_and_sheet(qtbot, qapp):
     assert edit.styleSheet() == sheet
 
 
-def test_icon_and_password_edits_style_through_the_theme(qtbot, qapp):
-    password = FXPasswordLineEdit()
-    icon_edit = FXIconLineEdit(icon_name="search")
-    qtbot.addWidget(password)
-    qtbot.addWidget(icon_edit)
-    assert password.reveal_button.styleSheet() == ""
-    assert icon_edit.icon_button.styleSheet() == ""
-    sheet = fxstyle.build_stylesheet()
-    assert "FXPasswordLineEdit" in sheet
-    assert "fx_icon_line_edit_button" in sheet
+def test_a_finished_flash_leaves_no_border(qtbot, qapp):
+    edit = _validated(qtbot)
+    _reject(qtbot, edit)
+    assert edit.borderColor.alpha() == 0
+
+
+def _shown(qtbot, edit):
+    qtbot.addWidget(edit)
+    edit.resize(200, edit.sizeHint().height())
+    edit.show()
+    qtbot.waitExposed(edit)
+    return edit
+
+
+@pytest.mark.parametrize("position", ["left", "right"])
+def test_the_icon_is_a_line_edit_action_on_its_side(qtbot, qapp, position):
+    edit = _shown(qtbot, FXIconLineEdit(icon_name="search",
+                                        icon_position=position))
+    assert len(edit.actions()) == 1
+    assert edit.findChildren(QPushButton) == []
+    (button,) = [b for b in edit.findChildren(QToolButton) if b.isVisible()]
+    on_left = button.geometry().center().x() < edit.width() // 2
+    assert on_left == (position == "left")
+
+
+def test_a_bad_icon_position_is_refused(qtbot, qapp):
+    with pytest.raises(ValueError):
+        FXIconLineEdit(icon_name="search", icon_position="top")
+
+
+def test_the_parent_comes_first(qtbot, qapp):
+    from qtpy.QtWidgets import QWidget
+
+    holder = QWidget()
+    qtbot.addWidget(holder)
+    assert FXIconLineEdit(holder, "search").parent() is holder
+    assert FXPasswordLineEdit(holder).parent() is holder
+
+
+def test_the_password_field_is_the_line_edit(qtbot, qapp):
+    secret = _shown(qtbot, FXPasswordLineEdit())
+    assert isinstance(secret, QLineEdit)
+    assert secret.echoMode() == QLineEdit.Password
+    (reveal,) = secret.actions()
+    reveal.trigger()
+    assert secret.echoMode() == QLineEdit.Normal
+    reveal.trigger()
+    assert secret.echoMode() == QLineEdit.Password
+
+
+def test_the_reveal_takes_no_tab_stop(qtbot, qapp):
+    secret = _shown(qtbot, FXPasswordLineEdit())
+    for button in secret.findChildren(QToolButton):
+        assert button.focusPolicy() == Qt.NoFocus
 
 
 def test_the_flash_shows_over_a_focused_field(qtbot, qapp):
@@ -94,15 +145,7 @@ def test_the_flash_shows_over_a_focused_field(qtbot, qapp):
 
 
 def test_enter_in_a_dialog_s_password_field_accepts_the_dialog(qtbot):
-    from qtpy.QtCore import Qt
-    from qtpy.QtWidgets import (
-        QDialog,
-        QDialogButtonBox,
-        QLineEdit,
-        QVBoxLayout,
-    )
-
-    from fxgui.fxwidgets import FXPasswordLineEdit
+    from qtpy.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout
 
     dialog = QDialog()
     qtbot.addWidget(dialog)
@@ -114,14 +157,13 @@ def test_enter_in_a_dialog_s_password_field_accepts_the_dialog(qtbot):
     column.addWidget(buttons)
     dialog.show()
     qtbot.waitExposed(dialog)
-    secret.line_edit.setText("hunter2")
-    # Revealed once with the mouse, then hidden again: the button keeps
-    # the focus a click gave it.
-    secret.reveal_button.click()
-    secret.reveal_button.click()
-    secret.reveal_button.setFocus()
+    secret.setText("hunter2")
+    # Revealed once with the mouse, then hidden again.
+    (reveal,) = [b for b in secret.findChildren(QToolButton) if b.isVisible()]
+    QTest.mouseClick(reveal, Qt.LeftButton)
+    QTest.mouseClick(reveal, Qt.LeftButton)
 
-    qtbot.keyClick(secret.reveal_button, Qt.Key_Return)
+    qtbot.keyClick(dialog.focusWidget() or secret, Qt.Key_Return)
 
     assert dialog.result() == QDialog.Accepted
-    assert secret.line_edit.echoMode() == QLineEdit.Password
+    assert secret.echoMode() == QLineEdit.Password
