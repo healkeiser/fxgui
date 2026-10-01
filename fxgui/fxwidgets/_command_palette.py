@@ -10,7 +10,6 @@ from typing import Callable, List, Optional, Tuple
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtGui import QBrush, QColor, QKeyEvent, QKeySequence
 from qtpy.QtWidgets import (
-    QAbstractItemView,
     QFrame,
     QHeaderView,
     QLabel,
@@ -126,7 +125,6 @@ class FXCommandPalette(QFrame):
         self.rows.setRootIsDecorated(False)
         self.rows.setUniformRowHeights(True)
         self.rows.setFocusPolicy(Qt.NoFocus)
-        self.rows.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
         header = self.rows.header()
         header.setStretchLastSection(False)
         header.setSectionResizeMode(0, QHeaderView.Stretch)

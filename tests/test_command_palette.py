@@ -198,3 +198,12 @@ def test_a_leading_angle_switches_go_to_to_commands(qtbot):
     _type(palette, ">keyboard")
 
     assert _labels(palette) == ["Keyboard shortcuts"]
+
+
+def test_the_list_scrolls_by_the_pixel(qtbot):
+    from qtpy.QtWidgets import QAbstractItemView
+
+    _window_, palette = _palette(qtbot, _commands([]))
+
+    pixel = QAbstractItemView.ScrollPerPixel
+    assert palette.rows.verticalScrollMode() == pixel
