@@ -11,7 +11,8 @@ from pathlib import Path
 # Third-party
 import pytest
 from qtpy.QtCore import QPoint, Qt
-from qtpy.QtGui import QActionGroup, QColor
+from qtpy.QtGui import QActionGroup, QColor, QCursor
+from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -43,7 +44,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons
+from fxgui import fxicons, fxstyle
 from fxgui.fxwidgets import FXMainWindow, FXStatusItem
 
 _SIDEFX = Path("C:/Program Files/Side Effects Software")
@@ -261,3 +262,70 @@ def test_a_table_cell_background_shows_under_a_host_s_sheet(qtbot, sheet):
     image = table.viewport().grab().toImage()
     for x in (rect.center().x(), rect.right()):
         assert image.pixelColor(x, rect.center().y()).name() == "#aa3333"
+
+
+def _three_rows(build):
+    view = build()
+    texts = ["own", "selected", "hovered"]
+    if isinstance(view, QTableWidget):
+        view.setRowCount(3)
+        view.setColumnCount(1)
+        items = [QTableWidgetItem(text) for text in texts]
+        for row, item in enumerate(items):
+            view.setItem(row, 0, item)
+    elif isinstance(view, QTreeWidget):
+        view.setColumnCount(1)
+        items = [QTreeWidgetItem([text]) for text in texts]
+        view.addTopLevelItems(items)
+    else:
+        view.addItems(texts)
+        items = [view.item(row) for row in range(3)]
+    if isinstance(view, QTreeWidget):
+        items[0].setBackground(0, QColor("#aa3333"))
+    else:
+        items[0].setBackground(QColor("#aa3333"))
+    return view, items
+
+
+def _rect(view, item):
+    return view.visualItemRect(item)
+
+
+@pytest.mark.parametrize("build", [QTableWidget, QTreeWidget, QListWidget])
+@pytest.mark.parametrize("sheet", _houdini_sheets())
+def test_selection_and_hover_wear_the_theme_under_a_host_s_sheet(
+    qtbot, sheet, build
+):
+    host = _host(qtbot, sheet)
+    window = _Probe(parent=host)
+    view, items = _three_rows(build)
+    window.setCentralWidget(view)
+    _shown(qtbot, window, (400, 300))
+    view.setCurrentItem(items[1])
+    QTest.mouseMove(window, QPoint(1, 1))
+    hovered = _rect(view, items[2])
+    QTest.mouseMove(view.viewport(), hovered.center())
+    qtbot.waitUntil(
+        lambda: view.indexAt(view.viewport().mapFromGlobal(
+            QCursor.pos())) == view.indexFromItem(items[2])
+        if hasattr(view, "indexFromItem") else True, timeout=1000)
+    qtbot.wait(20)
+
+    image = view.viewport().grab().toImage()
+
+    def fill(item):
+        rect = _rect(view, item)
+        return image.pixelColor(rect.right() - 2, rect.center().y()).name()
+
+    theme = fxstyle.colors()
+    assert fill(items[0]) == "#aa3333", "an unselected cell keeps its own"
+    assert fill(items[1]) == QColor(theme.accent_primary).name()
+    assert fill(items[2]) == QColor(theme.accent_secondary).name()
+    other = QMainWindow()
+    qtbot.addWidget(other)
+    other.show()
+    other.activateWindow()
+    qtbot.waitUntil(lambda: not window.isActiveWindow(), timeout=1000)
+    image = view.viewport().grab().toImage()
+    assert fill(items[1]) == QColor(theme.accent_primary).name(), (
+        "an inactive selection wears the theme too")

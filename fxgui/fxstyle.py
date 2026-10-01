@@ -1853,6 +1853,8 @@ QMenu::icon {{ position: relative; top: 0px; left: 0px; bottom: 0px; right: 0px;
 /* Native, not none: any other ::item border makes the sheet paint the cell
    and hide its BackgroundRole. */
 QTableView::item {{ border: native; }}
+/* A native border grows a list row 1px each side; the margin takes it back. */
+QListView::item {{ border: native; margin: -1px 0px; }}
 QMenuBar {{ border: none; padding: 0px; }}
 QSpinBox {{ padding-left: 0px; padding-right: 0px; }}
 QAbstractSpinBox::up-arrow, QAbstractSpinBox::down-arrow {{ background: none; border: none; }}
