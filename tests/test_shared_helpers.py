@@ -50,7 +50,7 @@ def test_qcolor_follows_a_switch(qapp):
 
 
 def test_readable_ink_is_cached_once(qapp):
-    assert hasattr(fxstyle.readable_ink, "cache_info")
+    assert hasattr(fxstyle._readable_ink, "cache_info")
     from fxgui.fxwidgets import _log_widget
 
     assert not hasattr(_log_widget, "_readable_ink")
