@@ -17,6 +17,9 @@ Functions:
     filter_tree: Hide the rows of a tree a text does not match.
     fit_columns: Widen a tree's columns to every row, collapsed ones too.
     TreeState: What is open, selected and current in a tree, by row text.
+    later: Run a call after a delay unless its owner died (PySide 6.5 safe).
+    rehome: Give a widget's PySide wrapper back to its own parent's.
+    focus_step: Step the focus chain without leaving wrappers to die.
 
 Examples:
     Loading a UI file:
@@ -61,6 +64,9 @@ from qtpy.QtWidgets import (
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtCore import QFile, QModelIndex, QPoint
 
+# Internal
+from fxgui._compat import focus_step, later, rehome
+
 
 # Public API
 __all__ = [
@@ -76,6 +82,9 @@ __all__ = [
     "filter_tree",
     "fit_columns",
     "TreeState",
+    "later",
+    "rehome",
+    "focus_step",
 ]
 
 # `DWMWA_WINDOW_CORNER_PREFERENCE` from `dwmapi.h`: which rounding the
