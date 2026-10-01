@@ -20,6 +20,8 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 from fxgui.fxwidgets import FXCommandRow, FXMainWindow
 
+from _helpers import pixel
+
 THEMES = fxstyle.get_available_themes()
 
 
@@ -46,12 +48,6 @@ def _window(qtbot, framed=True, theme="dark"):
     qtbot.waitExposed(window)
     qtbot.wait(10)
     return window
-
-
-def _pixel(window, widget, x, y):
-    image = window.grab().toImage()
-    point = widget.mapTo(window, QPoint(x, y))
-    return image.pixelColor(point).name()
 
 
 def _frame():
@@ -129,9 +125,9 @@ def test_the_corner_has_no_fill_of_its_own(qtbot, theme):
     corner = window.menuBar().cornerWidget()
     name = window.banner_label
 
-    assert _pixel(window, corner, 1, 1) == _frame()
-    assert _pixel(window, name, 0, 0) == _frame()
-    assert _pixel(window, name, name.width() - 1, name.height() - 1) == (
+    assert pixel(window, corner, 1, 1) == _frame()
+    assert pixel(window, name, 0, 0) == _frame()
+    assert pixel(window, name, name.width() - 1, name.height() - 1) == (
         _frame())
 
 
@@ -140,7 +136,7 @@ def test_the_corner_follows_a_theme_switch(qtbot):
     fxstyle.apply_theme("github_light")
     qtbot.wait(10)
 
-    assert _pixel(window, window.banner_label, 0, 0) == _frame()
+    assert pixel(window, window.banner_label, 0, 0) == _frame()
 
 
 @pytest.mark.parametrize("theme", THEMES)
@@ -164,7 +160,7 @@ def test_controls_on_the_frame_have_no_fill(qtbot, theme):
     for widget in (window.label, window.check, window.radio):
         # Inside the 1 px border a check box keeps for its focus ring.
         right = widget.width() - 3
-        assert _pixel(window, widget, right, 2) == _frame(), widget.text()
+        assert pixel(window, widget, right, 2) == _frame(), widget.text()
 
 
 @pytest.mark.parametrize("theme", THEMES)
@@ -177,14 +173,14 @@ def test_a_disabled_tool_button_on_the_frame_shows_no_box(qtbot, theme):
     window.toolbar.addWidget(button)
     qtbot.wait(10)
 
-    assert _pixel(window, button, 1, 1) == _frame()
-    assert _pixel(window, button, button.width() // 2, 2) == _frame()
+    assert pixel(window, button, 1, 1) == _frame()
+    assert pixel(window, button, button.width() // 2, 2) == _frame()
 
 
 def test_a_label_in_a_plain_window_keeps_the_surface(qtbot):
     window = _window(qtbot, framed=False)
 
-    assert _pixel(window, window.label, window.label.width() - 2, 1) == (
+    assert pixel(window, window.label, window.label.width() - 2, 1) == (
         QColor(fxstyle.colors().surface).name())
 
 
@@ -196,7 +192,7 @@ def test_mark_as_frame_paints_a_band_of_your_own(qtbot):
     qtbot.wait(10)
 
     assert band.property(fxstyle.FRAME_PROPERTY) is True
-    assert _pixel(window, window.label, window.label.width() - 2, 1) == (
+    assert pixel(window, window.label, window.label.width() - 2, 1) == (
         _frame())
 
 
@@ -220,17 +216,17 @@ def test_a_framed_status_bar_has_no_line_on_top(qtbot, theme):
     qtbot.wait(10)
 
     for y in (0, 1, 2, 3, bar.height() - 2):
-        assert _pixel(window, bar, 0, y) == _frame()
-        assert _pixel(window, bar, bar.width() // 2, y) == _frame()
+        assert pixel(window, bar, 0, y) == _frame()
+        assert pixel(window, bar, bar.width() // 2, y) == _frame()
 
 
 def test_a_plain_status_bar_keeps_its_accent_and_the_line_under_it(qtbot):
     window = _window(qtbot, framed=False)
     bar = window.statusBar()
 
-    assert _pixel(window, bar, 0, 2) == QColor(
+    assert pixel(window, bar, 0, 2) == QColor(
         fxstyle.colors().accent_primary).name()
-    assert _pixel(window, bar, bar.width() // 2, 3) == QColor(
+    assert pixel(window, bar, bar.width() // 2, 3) == QColor(
         fxstyle.colors().border).name()
 
 
@@ -240,7 +236,7 @@ def test_a_status_bar_leaving_the_frame_gets_its_accent_back(qtbot):
     bar.setProperty(fxstyle.FRAME_PROPERTY, False)
     qtbot.wait(10)
 
-    assert _pixel(window, bar, 0, 1) == QColor(
+    assert pixel(window, bar, 0, 1) == QColor(
         fxstyle.colors().accent_primary).name()
 
 
@@ -251,9 +247,9 @@ def test_a_hidden_accent_stays_hidden_when_the_bar_leaves_the_frame(qtbot):
     bar.setProperty(fxstyle.FRAME_PROPERTY, False)
     qtbot.wait(10)
 
-    assert _pixel(window, bar, 0, 1) != QColor(
+    assert pixel(window, bar, 0, 1) != QColor(
         fxstyle.colors().accent_primary).name()
-    assert _pixel(window, bar, bar.width() // 2, 3) != QColor(
+    assert pixel(window, bar, bar.width() // 2, 3) != QColor(
         fxstyle.colors().border).name()
 
 
@@ -266,9 +262,9 @@ def test_a_status_bar_set_later_is_framed_too(qtbot):
     qtbot.wait(10)
 
     assert window.statusBar() is bar
-    assert _pixel(window, bar, bar.width() // 2, bar.height() // 2) == (
+    assert pixel(window, bar, bar.width() // 2, bar.height() // 2) == (
         _frame())
-    assert _pixel(window, bar, bar.width() // 2, 0) == _frame(), "no line"
+    assert pixel(window, bar, bar.width() // 2, 0) == _frame(), "no line"
 
 
 @pytest.mark.parametrize("theme", ["dark", "github_light"])

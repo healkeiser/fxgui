@@ -35,7 +35,7 @@ def test_typing_is_debounced_into_one_search_changed(qtbot, qapp):
     bar = _bar(qtbot, debounce_ms=50)
     seen = []
     bar.search_changed.connect(seen.append)
-    with qtbot.waitSignal(bar.search_changed, timeout=1000):
+    with qtbot.waitSignal(bar.search_changed):
         qtbot.keyClicks(bar, "abc")
     assert seen == ["abc"]
 
@@ -65,7 +65,7 @@ def test_the_bar_is_one_tab_stop_even_with_text_in_it(qtbot, qapp):
     qtbot.waitExposed(window)
     window.activateWindow()
     before.setFocus()
-    qtbot.waitUntil(before.hasFocus, timeout=1000)
+    qtbot.waitUntil(before.hasFocus)
 
     qtbot.keyClick(before, Qt.Key_Tab)
     assert bar.hasFocus()
@@ -89,7 +89,7 @@ def test_clearing_leaves_focus_where_it_was(qtbot, qapp):
     qtbot.waitExposed(window)
     window.activateWindow()
     other.setFocus()
-    qtbot.waitUntil(other.hasFocus, timeout=1000)
+    qtbot.waitUntil(other.hasFocus)
 
     bar.clear()
 

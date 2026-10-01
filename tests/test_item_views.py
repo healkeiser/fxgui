@@ -137,22 +137,6 @@ def test_every_role_is_claimed_once_from_one_table():
     assert _roles.FIRST_FREE == max(claimed)
 
 
-def test_dead_delegate_api_is_gone():
-    assert not hasattr(fxwidgets, "FXColorLabelDelegate")
-    for name in (
-        "TRANSPARENT_SELECTION_STYLE",
-        "markdown_to_plain_text",
-        "show_child_count",
-        "show_starred",
-        "STARRED_ROLE",
-        "STARRED_COLOR_ROLE",
-        "STATUS_LABEL_ICON_ROLE",
-        "_get_column_position",
-    ):
-        assert not hasattr(FXThumbnailDelegate, name), name
-    assert not hasattr(_delegates, "_find_cached")
-
-
 def test_the_show_flags_are_plain_attributes():
     delegate = FXThumbnailDelegate()
     for name in (

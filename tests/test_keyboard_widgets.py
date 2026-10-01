@@ -185,7 +185,7 @@ def test_a_filtered_tree_narrows_as_its_bar_changes(qtbot):
     top = QTreeWidgetItem(panel.tree, ["Beauty"])
     other = QTreeWidgetItem(panel.tree, ["Other"])
     panel.filter_bar.setText("beau")
-    qtbot.waitUntil(other.isHidden, timeout=2000)
+    qtbot.waitUntil(other.isHidden)
     assert not top.isHidden()
 
 

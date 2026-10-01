@@ -33,14 +33,14 @@ def _focused_vs_unfocused(qtbot, widget, name: str):
     widget.show()
     qtbot.waitExposed(widget)
     widget.activateWindow()
-    qtbot.waitUntil(widget.isActiveWindow, timeout=2000)
+    qtbot.waitUntil(widget.isActiveWindow)
 
     widget.clearFocus()
     unfocused = _grab(widget)
     _save(unfocused, f"{name}_unfocused.png")
 
     widget.setFocus(Qt.TabFocusReason)
-    qtbot.waitUntil(widget.hasFocus, timeout=2000)
+    qtbot.waitUntil(widget.hasFocus)
     focused = _grab(widget)
     _save(focused, f"{name}_focused.png")
 

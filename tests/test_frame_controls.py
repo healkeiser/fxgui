@@ -21,6 +21,8 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle
 
+from _helpers import hover
+
 THEMES = fxstyle.get_available_themes()
 ORIENTATIONS = [Qt.Horizontal, Qt.Vertical]
 GAP = 6
@@ -287,10 +289,7 @@ def test_a_disabled_flat_button_has_no_box(qtbot, theme):
 @pytest.mark.parametrize("theme", THEMES)
 def test_a_hovered_flat_button_fills(qtbot, theme):
     window, button = _flat(qtbot, theme, on_frame=True)
-    # From off the button: the cursor stays where the last test left it.
-    qtbot.mouseMove(window, QPoint(1, 1))
-    qtbot.mouseMove(button, button.rect().center())
-    qtbot.wait(20)
+    hover(qtbot, button)
 
     assert _at(window, button, 2, 2) == _color("state_hover")
 

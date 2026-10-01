@@ -235,7 +235,7 @@ def _popups(qtbot, window, widgets, menu):
         QPoint(date.width() - 8, date.height() // 2),
     )
     calendar = date.calendarWidget()
-    qtbot.waitUntil(calendar.isVisible, timeout=1000)
+    qtbot.waitUntil(calendar.isVisible)
     yield [("date edit calendar", calendar.window())]
     calendar.window().hide()
 

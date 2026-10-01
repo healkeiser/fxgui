@@ -17,33 +17,20 @@ from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
     QStyle,
     QStyleOptionViewItem,
-    QTreeWidget,
-    QTreeWidgetItem,
 )
 
 # Internal
-from fxgui.fxwidgets import FXThumbnailDelegate
+
+from _helpers import delegate_tree
 
 
 def _tree(qtbot, *, checkable: bool, title: str = "Beauty"):
     """A one-row tree drawn through the delegate, ticked or not tickable."""
-
-    tree = QTreeWidget()
-    tree.setHeaderLabels(["Name"])
-    tree.setRootIsDecorated(False)
-    tree.header().setStretchLastSection(False)
-    tree.setColumnWidth(0, 300)
-    tree.resize(340, 120)
-    delegate = FXThumbnailDelegate()
-    delegate.show_thumbnail = False
-    tree.setItemDelegate(delegate)
-    item = QTreeWidgetItem(tree, [title])
+    tree, delegate, item = delegate_tree(
+        qtbot, [title], ["Name"], show_thumbnail=False)
     if checkable:
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(0, Qt.Unchecked)
-    qtbot.addWidget(tree)
-    tree.show()
-    qtbot.waitExposed(tree)
     return tree, delegate, item
 
 

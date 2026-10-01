@@ -26,7 +26,7 @@ def test_later_runs_the_call_once(qtbot):
     ran = []
 
     fxutils.later(0, owner, lambda: ran.append(1))
-    qtbot.waitUntil(lambda: ran == [1], timeout=1000)
+    qtbot.waitUntil(lambda: ran == [1])
     qtbot.wait(30)
 
     assert ran == [1]

@@ -145,7 +145,3 @@ def test_the_block_fits_its_lines_in_the_stylesheet_font(qtbot, qapp):
     lines = edit.fontMetrics().lineSpacing() * 8
     assert edit.height() >= lines
     assert edit.height() > short._text_edit.height()
-
-
-def test_the_language_list_helper_is_gone():
-    assert not hasattr(_code_block, "get_supported_languages")

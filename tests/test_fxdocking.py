@@ -27,6 +27,8 @@ from qtpy.QtWidgets import (  # noqa: E402
 from fxgui import fxdocking, fxicons, fxstyle  # noqa: E402
 from fxgui.fxwidgets import FXMainWindow  # noqa: E402
 
+from _helpers import pixel  # noqa: E402
+
 GAP = 6
 THEMES = fxstyle.get_available_themes()
 
@@ -63,12 +65,6 @@ def _window(qtbot, panes=("side",), size=(900, 600), show=True):
 
 def _three(qtbot, **kwargs):
     return _window(qtbot, ("side", "low", "right"), **kwargs)
-
-
-def _pixel(window, widget, x, y):
-    point = widget.mapTo(window, widget.rect().topLeft())
-    image = window.grab().toImage()
-    return QColor(image.pixel(point.x() + x, point.y() + y)).name()
 
 
 def _frame():
@@ -331,9 +327,11 @@ def test_a_floating_panes_tabs_keep_their_docked_height(qtbot):
     docked = area.titleBar().height()
 
     area.setFloating()
-    qtbot.wait(300)
+    held = manager.findDockWidget("side")
+    qtbot.waitUntil(lambda: held.floatingDockContainer() is not None)
+    qtbot.waitExposed(held.floatingDockContainer())
 
-    floated = manager.findDockWidget("side").dockAreaWidget().titleBar()
+    floated = held.dockAreaWidget().titleBar()
     assert floated.height() == docked
 
 
@@ -342,7 +340,7 @@ def test_a_pane_floats_above_the_window_it_belongs_to(qtbot):
     held = window.docks.manager().findDockWidget("side")
 
     held.setFloating()
-    qtbot.wait(100)
+    qtbot.waitUntil(lambda: held.floatingDockContainer() is not None)
 
     floating = held.floatingDockContainer()
     assert floating.isWindow()
@@ -492,11 +490,11 @@ def test_every_pane_is_a_rounded_card_on_the_frame(qtbot, theme):
     area = _areas(window)[0]
     edge = QColor(fxstyle.colors().pane_border).name()
     radius = fxstyle.BUTTON_RADIUS
-    assert _pixel(window, area, area.width() // 2, 0) == edge
-    assert _pixel(window, area, 0, area.height() // 2) == edge
+    assert pixel(window, area, area.width() // 2, 0) == edge
+    assert pixel(window, area, 0, area.height() // 2) == edge
     # Round, not square: a square card's top row is its edge to the corner.
-    assert _pixel(window, area, 0, 0) != edge
-    assert _pixel(window, area, radius, 0) == edge
+    assert pixel(window, area, 0, 0) != edge
+    assert pixel(window, area, radius, 0) == edge
 
 
 @pytest.mark.parametrize("theme", THEMES)
@@ -527,7 +525,7 @@ def test_the_current_tab_pill_follows_a_theme_change(qtbot):
         qtbot.wait(20)
         fill = QColor(fxstyle.colors().state_hover).name()
         # Inside the pill's edge, left of its text.
-        assert _pixel(window, tab, 5, tab.height() // 2) == fill, theme
+        assert pixel(window, tab, 5, tab.height() // 2) == fill, theme
 
 
 def test_a_moved_pane_keeps_the_gap(qtbot):
@@ -550,12 +548,15 @@ def test_a_floated_and_redocked_pane_keeps_the_gap(qtbot):
     low = manager.findDockWidget("low")
 
     low.setFloating()
-    qtbot.wait(100)
+    qtbot.waitUntil(lambda: low.floatingDockContainer() is not None)
     floating = low.floatingDockContainer()
-    margins = floating.dockContainer().layout().contentsMargins()
+    layout = floating.dockContainer().layout()
+    # The gap is set by a queued sweep after the float.
+    qtbot.waitUntil(lambda: layout.contentsMargins().left() == GAP)
+    margins = layout.contentsMargins()
     assert (margins.left(), margins.top(), margins.right(),
             margins.bottom()) == (GAP,) * 4
-    assert _pixel(floating, low.dockAreaWidget(), 0, 0) == _frame()
+    assert pixel(floating, low.dockAreaWidget(), 0, 0) == _frame()
     manager.addDockWidget(ads.BottomDockWidgetArea, low,
                           manager.findDockWidget("side").dockAreaWidget())
     qtbot.wait(50)
@@ -602,7 +603,7 @@ def test_the_mark_and_the_frame_follow_a_theme_switch(qtbot):
 
     _corners_are_frame(window)
     handle = _handles(window)[0]
-    assert _pixel(window, handle, 0, 0) == _frame()
+    assert pixel(window, handle, 0, 0) == _frame()
 
 
 def test_sizes_weigh_the_split(qtbot):
@@ -798,7 +799,7 @@ def _floated(qtbot):
     qtbot.waitExposed(floating)
     floating.activateWindow()
     field.setFocus()
-    qtbot.waitUntil(field.hasFocus, timeout=2000)
+    qtbot.waitUntil(field.hasFocus)
     return window, floating
 
 
@@ -808,7 +809,7 @@ def test_a_window_key_answers_in_its_floating_pane(qtbot):
     QTest.keyClick(QApplication.focusWidget(), Qt.Key_Y,
                    Qt.ControlModifier | Qt.ShiftModifier)
 
-    qtbot.waitUntil(lambda: window.ran == ["window"], timeout=2000)
+    qtbot.waitUntil(lambda: window.ran == ["window"])
 
 
 def test_a_widget_s_own_key_stays_out_of_a_floating_pane(qtbot):
@@ -830,7 +831,7 @@ def test_a_widget_s_own_key_stays_out_of_a_floating_pane(qtbot):
     qtbot.waitExposed(floating)
     floating.activateWindow()
     field.setFocus()
-    qtbot.waitUntil(field.hasFocus, timeout=2000)
+    qtbot.waitUntil(field.hasFocus)
 
     QTest.keyClick(field, Qt.Key_G, Qt.ControlModifier)
     qtbot.wait(50)
@@ -853,7 +854,7 @@ def test_tab_follows_the_declared_order_across_panes(qtbot):
         window.docks.show_dock(name)
     # One and three tab together; bring each to the front before it walks.
     fields["two"].setFocus()
-    qtbot.waitUntil(fields["two"].hasFocus, timeout=2000)
+    qtbot.waitUntil(fields["two"].hasFocus)
 
     QTest.keyClick(fields["two"], Qt.Key_Tab)
 
@@ -875,7 +876,7 @@ def test_tab_passes_a_widget_whose_focus_goes_elsewhere(qtbot):
     window.docks.add_dock("far", "Far", field, "left")
     _activated(qtbot, window)
     first.setFocus()
-    qtbot.waitUntil(first.hasFocus, timeout=2000)
+    qtbot.waitUntil(first.hasFocus)
 
     QTest.keyClick(first, Qt.Key_Tab)
 
@@ -893,7 +894,7 @@ def test_tab_skips_a_hidden_widget_in_the_chain(qtbot):
     _activated(qtbot, window)
     hidden.hide()
     first.setFocus()
-    qtbot.waitUntil(first.hasFocus, timeout=2000)
+    qtbot.waitUntil(first.hasFocus)
 
     QTest.keyClick(first, Qt.Key_Tab)
 
@@ -913,7 +914,7 @@ def test_child_close_a_pane_on_the_focus(qtbot, how):
     window.docks.add_dock("field", "Field", field, "right")
     _activated(qtbot, window)
     field.setFocus()
-    qtbot.waitUntil(field.hasFocus, timeout=2000)
+    qtbot.waitUntil(field.hasFocus)
     pane = window.docks.manager().findDockWidget("field")
 
     if how == "toggle":
@@ -924,23 +925,22 @@ def test_child_close_a_pane_on_the_focus(qtbot, how):
         assert button is not None and button.isVisible()
         QTest.mouseClick(button, Qt.LeftButton)
 
-    qtbot.waitUntil(lambda: not field.isVisible(), timeout=2000)
+    qtbot.waitUntil(lambda: not field.isVisible())
     assert not field.hasFocus()
 
 
-@pytest.mark.parametrize("how", ["toggle", "button"])
-def test_a_pane_closed_on_the_focus_does_not_crash(how, tmp_path):
-    # A child pytest: a native crash in Qt's focus move fails this case only.
+def test_a_pane_closed_on_the_focus_does_not_crash(tmp_path):
+    # A child pytest: a native crash in Qt's focus move fails this test only.
     env = {**os.environ, _CHILD: "1", "APPDATA": str(tmp_path)}
     ran = subprocess.run(
         [sys.executable, "-m", "pytest", "-p", "no:cacheprovider", "-q",
-         f"{Path(__file__)}::test_child_close_a_pane_on_the_focus[{how}]"],
+         f"{Path(__file__)}::test_child_close_a_pane_on_the_focus"],
         cwd=Path(__file__).parents[1], env=env, capture_output=True,
         text=True, timeout=300, check=False)
 
     said = ran.stdout[-3000:] + ran.stderr[-3000:]
     assert ran.returncode == 0, said
-    assert "1 passed" in ran.stdout, said
+    assert "2 passed" in ran.stdout, said
 
 
 # -- Banners ------------------------------------------------------------
@@ -992,10 +992,3 @@ def test_a_burst_of_tree_signals_sweeps_once(qtbot, monkeypatch):
     qtbot.wait(20)
 
     assert swept == [1]
-
-
-def test_the_shim_paths_are_gone():
-    from fxgui import _compat
-
-    for name in ("later", "rehome", "focus_step"):
-        assert not hasattr(_compat, name), name

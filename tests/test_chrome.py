@@ -5,8 +5,8 @@ import re
 
 # Third-party
 import pytest
-from qtpy.QtCore import QEvent, QPoint, QPointF, QRect, Qt
-from qtpy.QtGui import QColor, QHoverEvent
+from qtpy.QtCore import QPoint, QRect, Qt
+from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QApplication,
     QComboBox,
@@ -31,6 +31,8 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxstyle, fxutils
 
+from _helpers import hover, themed_window
+
 # Imported here, not in a test: the suite keeps only the sheet fragments
 # registered before a test starts.
 try:
@@ -39,23 +41,6 @@ except ImportError:
     fxdocking = None
 
 THEMES = pytest.mark.parametrize("theme", fxstyle.get_available_themes())
-
-
-def _shown(qtbot, theme, widget, size=(320, 240)):
-    """Show `widget` alone in a themed window and return the window."""
-    fxstyle.apply_theme(theme)
-    window = QWidget()
-    fxstyle.register_themed_root(window)
-    QVBoxLayout(window).addWidget(widget)
-    window.resize(*size)
-    qtbot.addWidget(window)
-    window.show()
-    qtbot.waitExposed(window)
-    # The window holds focus, so no widget wears its focus look.
-    window.setFocusPolicy(Qt.StrongFocus)
-    window.setFocus()
-    QApplication.processEvents()
-    return window
 
 
 def _distance(first, second):
@@ -103,7 +88,7 @@ def _branch(tree, item):
 @THEMES
 def test_a_tree_draws_chevrons_and_no_branch_lines(qtbot, theme):
     tree = _tree()
-    window = _shown(qtbot, theme, tree)
+    window = themed_window(qtbot, theme, tree)
     image = window.grab().toImage()
     colors = fxstyle.colors()
     opened, closed, leaf = (tree.topLevelItem(row) for row in range(3))
@@ -121,20 +106,6 @@ def test_a_tree_draws_chevrons_and_no_branch_lines(qtbot, theme):
 
 
 # (2) Scroll bars: a thin rounded thumb, no arrows, wider on hover.
-
-
-def _hover(widget, point):
-    widget.setAttribute(Qt.WA_UnderMouse, True)
-    QApplication.sendEvent(
-        widget,
-        QHoverEvent(
-            QEvent.HoverMove,
-            QPointF(point),
-            QPointF(widget.mapToGlobal(point)),
-            QPointF(-1, -1),
-        ),
-    )
-    QApplication.processEvents()
 
 
 def _bar_rect(bar, control):
@@ -160,7 +131,7 @@ def _thumb_width(bar):
 def test_a_scroll_bar_is_a_thin_pill_with_no_arrows(qtbot, theme):
     view = QListWidget()
     view.addItems([f"row {index}" for index in range(60)])
-    window = _shown(qtbot, theme, view)
+    window = themed_window(qtbot, theme, view)
     bar = view.verticalScrollBar()
     assert bar.isVisible()
     assert bar.width() == fxstyle.THIN_SCROLL_WIDTH
@@ -177,7 +148,7 @@ def test_a_scroll_bar_is_a_thin_pill_with_no_arrows(qtbot, theme):
     assert image.pixelColor(middle).name() == fxstyle.colors().scrollbar_thumb
     assert image.pixelColor(corner).name() != fxstyle.colors().scrollbar_thumb
     rest = _thumb_width(bar)
-    _hover(bar, handle.center())
+    hover(qtbot, bar, handle.center())
     hovered = _thumb_width(bar)
     assert 0 < rest < hovered <= bar.width(), (rest, hovered)
     assert bar.width() == fxstyle.THIN_SCROLL_WIDTH
@@ -212,7 +183,7 @@ def test_combo_spin_and_header_arrows_wear_the_icon_token(qtbot, theme):
     table.sortByColumn(0, Qt.AscendingOrder)
     for widget in (combo, spin, table):
         column.addWidget(widget)
-    window = _shown(qtbot, theme, holder, (320, 320))
+    window = themed_window(qtbot, theme, holder, size=(320, 320))
     image = window.grab().toImage()
     icon = fxstyle.colors().icon
 
@@ -248,7 +219,7 @@ def test_a_group_title_sits_above_a_whole_card(qtbot, theme, checkable):
     group = QGroupBox("Render settings")
     group.setCheckable(checkable)
     QVBoxLayout(group).addWidget(QLabel("inside"))
-    window = _shown(qtbot, theme, group)
+    window = themed_window(qtbot, theme, group)
     option = QStyleOptionGroupBox()
     group.initStyleOption(option)
 
@@ -282,7 +253,7 @@ def test_rows_have_no_stripes_even_when_asked(qtbot, theme):
     view = QListWidget()
     view.setAlternatingRowColors(True)
     view.addItems(["first", "second", "third"])
-    window = _shown(qtbot, theme, view)
+    window = themed_window(qtbot, theme, view)
     assert not view.alternatingRowColors()
     image = window.grab().toImage()
     inks = set()
@@ -333,7 +304,7 @@ def test_the_current_tab_is_an_edged_pill(qtbot, theme):
     tabs = QTabWidget()
     for name in ("Render", "Comp", "Lighting"):
         tabs.addTab(QLabel(name), name)
-    window = _shown(qtbot, theme, tabs)
+    window = themed_window(qtbot, theme, tabs)
     bar = tabs.tabBar()
     image = window.grab().toImage()
     colors = fxstyle.colors()
@@ -368,7 +339,7 @@ def test_selecting_a_tab_moves_nothing(qtbot):
     tabs = QTabWidget()
     for name in ("Render", "Comp", "Lighting"):
         tabs.addTab(QLabel(name), name)
-    _window = _shown(qtbot, "dark", tabs)
+    _window = themed_window(qtbot, "dark", tabs)
     bar = tabs.tabBar()
     before = [bar.tabRect(index) for index in range(3)]
     tabs.setCurrentIndex(1)
@@ -383,7 +354,7 @@ def test_no_tab_text_shows_inside_the_scroll_buttons(qtbot, theme):
         tabs.addTab(QLabel(str(index)), f"Crowded tab {index}")
     # A widget's own rule outranks the theme's, so tab text is one ink.
     tabs.tabBar().setStyleSheet("QTabBar::tab { color: #ff00ff; }")
-    window = _shown(qtbot, theme, tabs, (420, 120))
+    window = themed_window(qtbot, theme, tabs, size=(420, 120))
     bar = tabs.tabBar()
     buttons = [
         button for button in bar.findChildren(QWidget)
@@ -424,7 +395,7 @@ def test_a_combo_popup_row_keeps_its_text_still(qtbot, theme):
     combo = QComboBox()
     combo.addItems(["Same"] * 3)
     combo.setCurrentIndex(1)
-    _window = _shown(qtbot, theme, combo)
+    _window = themed_window(qtbot, theme, combo)
     combo.showPopup()
     qtbot.waitUntil(lambda: combo.view().isVisible())
     view = combo.view()
@@ -444,7 +415,7 @@ def test_a_combo_popup_row_keeps_its_text_still(qtbot, theme):
 @pytest.mark.parametrize("theme", ["dark", "light"])
 def test_a_menu_row_keeps_its_text_still(qtbot, theme):
     holder = QWidget()
-    window = _shown(qtbot, theme, holder)
+    window = themed_window(qtbot, theme, holder)
     menu = QMenu(window)
     actions = [menu.addAction("Same") for _ in range(3)]
     menu.popup(holder.mapToGlobal(QPoint(10, 10)))
@@ -470,10 +441,10 @@ def test_a_view_row_keeps_its_text_still(qtbot, theme, kind):
         view = QTreeWidget()
         view.setHeaderHidden(True)
         items = [QTreeWidgetItem(view, ["Same"]) for _ in range(3)]
-    _window = _shown(qtbot, theme, view)
+    _window = themed_window(qtbot, theme, view)
     items[1].setSelected(True)
     rows = [view.visualItemRect(item) for item in items]
-    _hover(view.viewport(), rows[2].center())
+    hover(qtbot, view.viewport(), rows[2].center())
     image = view.viewport().grab().toImage()
     # Row 0 rests, 1 is selected, 2 is hovered.
     assert image.pixelColor(rows[2].center()).name() != image.pixelColor(
@@ -523,7 +494,7 @@ def test_a_combo_popup_is_the_popup_look_edge_to_edge(qtbot, theme):
     combo = QComboBox()
     # No text, so every pixel is fill, edge or the selected row.
     combo.addItems(["", "", ""])
-    _window = _shown(qtbot, theme, combo)
+    _window = themed_window(qtbot, theme, combo)
     combo.showPopup()
     qtbot.waitUntil(lambda: combo.view().isVisible())
     popup = combo.view().window()
@@ -539,7 +510,7 @@ def test_a_combo_popup_is_the_popup_look_edge_to_edge(qtbot, theme):
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
 def test_a_menu_wears_the_same_popup_look(qtbot, theme):
-    window = _shown(qtbot, theme, QWidget())
+    window = themed_window(qtbot, theme, QWidget())
     menu = QMenu(window)
     actions = [menu.addAction("") for _ in range(3)]
     menu.popup(window.mapToGlobal(QPoint(10, 10)))
@@ -561,7 +532,7 @@ def test_a_completer_list_wears_the_popup_look(qtbot, theme):
     from qtpy.QtWidgets import QCompleter, QLineEdit
 
     line = QLineEdit()
-    window = _shown(qtbot, theme, line)
+    window = themed_window(qtbot, theme, line)
     completer = QCompleter(["", "", ""], line)
     line.setCompleter(completer)
     line.setFocus()
@@ -588,7 +559,7 @@ def test_every_themed_popup_asks_for_flyout_corners(qtbot, monkeypatch):
     monkeypatch.setattr(fxutils, "round_window_corners", rounded.append)
     combo = QComboBox()
     combo.addItems(["one", "two"])
-    window = _shown(qtbot, "dark", combo)
+    window = themed_window(qtbot, "dark", combo)
     combo.showPopup()
     qtbot.waitUntil(lambda: combo.view().isVisible())
     popup = combo.view().window()
@@ -620,7 +591,7 @@ def test_a_dock_tab_matches_a_tab_bar_tab(qtbot, theme):
     docks.add_dock("assets", "Assets", QLabel("a"), "left")
     column.addWidget(docks)
     # Wide enough that both dock tabs fit, so neither scrolls out of view.
-    window = _shown(qtbot, theme, holder, (1400, 600))
+    window = themed_window(qtbot, theme, holder, size=(1400, 600))
     for _ in range(3):
         QApplication.processEvents()
     image = window.grab().toImage()
@@ -654,6 +625,14 @@ def _text_width(widget, text):
     return widget.fontMetrics().size(Qt.TextShowMnemonic, text).width()
 
 
+def _room_for_tabs(docks, name, width=400):
+    """Widen the left pane area: no tab sits behind its title bar buttons."""
+    manager = docks.manager()
+    area = manager.findDockWidget(name).dockAreaWidget()
+    manager.setSplitterSizes(area, [width, 200])
+    QApplication.processEvents()
+
+
 def test_a_tab_is_its_text_plus_the_padding_in_every_state(qtbot):
     if fxdocking is None:
         pytest.skip("needs the docking extra")
@@ -669,7 +648,8 @@ def test_a_tab_is_its_text_plus_the_padding_in_every_state(qtbot):
     for name in names:
         docks.add_dock(name, name, QLabel(name), "left")
     column.addWidget(docks)
-    _window = _shown(qtbot, "dark", holder, (1000, 500))
+    _window = themed_window(qtbot, "dark", holder, size=(1000, 500))
+    _room_for_tabs(docks, names[0], 600)
     bar = tabs.tabBar()
     dock_tabs = [
         docks.manager().findDockWidget(name).tabWidget() for name in names
@@ -689,8 +669,9 @@ def test_a_tab_is_its_text_plus_the_padding_in_every_state(qtbot):
     assert bar.elideMode() == Qt.ElideNone
     rest = widths()
     assert rest == [_TAB_FRAME] * 6, rest
-    _hover(bar, bar.tabRect(1).center())
-    _hover(dock_tabs[0], dock_tabs[0].rect().center())
+    hover(qtbot, bar, bar.tabRect(1).center())
+    assert widths() == rest
+    hover(qtbot, dock_tabs[0], dock_tabs[0].rect().center())
     assert widths() == rest
     tabs.setCurrentIndex(2)
     docks.show_dock(names[0])
@@ -787,13 +768,13 @@ def test_a_hovered_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
     tabs = QTabWidget()
     for name in ("Render", "Comp", "Lighting"):
         tabs.addTab(QLabel(name), name)
-    window = _shown(qtbot, theme, tabs)
+    window = themed_window(qtbot, theme, tabs)
     bar = tabs.tabBar()
     colors = fxstyle.colors()
     other = bar.tabRect(1).translated(bar.mapTo(window, QPoint()))
     rest = _pixels(window.grab().toImage(), other.adjusted(0, 0, 0, -2))
     before = bar.tabRect(1)
-    _hover(bar, bar.tabRect(1).center())
+    hover(qtbot, bar, bar.tabRect(1).center())
     image = window.grab().toImage()
     inside, corner, inks = _hovered_tab(image, other)
     # The pill's fill, rounded, a visible step off the strip, with no edge.
@@ -818,7 +799,8 @@ def test_a_hovered_dock_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
     docks.set_central(QLabel("central"))
     docks.add_dock("one", "Render", QLabel("one"), "left")
     docks.add_dock("two", "Comp", QLabel("two"), "left")
-    window = _shown(qtbot, theme, docks, (600, 400))
+    window = themed_window(qtbot, theme, docks, size=(600, 400))
+    _room_for_tabs(docks, "one")
     manager = docks.manager()
     manager.findDockWidget("one").toggleView(True)
     manager.findDockWidget("one").setAsCurrentTab()
@@ -826,7 +808,7 @@ def test_a_hovered_dock_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
     tab = manager.findDockWidget("two").tabWidget()
     colors = fxstyle.colors()
     rect = tab.rect().translated(tab.mapTo(window, QPoint()))
-    _hover(tab, tab.rect().center())
+    hover(qtbot, tab, tab.rect().center())
     image = window.grab().toImage()
     inside, corner, inks = _hovered_tab(image, rect)
     assert inside == colors.state_hover.lower()
@@ -875,7 +857,7 @@ def test_the_gaps_around_and_between_tab_pills_are_one_size(qtbot):
     qtbot.waitExposed(window)
     QApplication.processEvents()
     bar = pages.tabBar()
-    _hover(bar, bar.tabRect(1).center())
+    hover(qtbot, bar, bar.tabRect(1).center())
     image = window.grab().toImage()
     origin = bar.mapTo(window, QPoint())
     first = bar.tabRect(0).translated(origin)
@@ -908,13 +890,14 @@ def test_the_gaps_around_and_between_tab_pills_are_one_size(qtbot):
     docks.set_central(QLabel("central"))
     docks.add_dock("one", "Render", QLabel("one"), "left")
     docks.add_dock("two", "Comp", QLabel("two"), "left")
-    holder = _shown(qtbot, "dark", docks, (600, 400))
+    holder = themed_window(qtbot, "dark", docks, size=(600, 400))
+    _room_for_tabs(docks, "one")
     manager = docks.manager()
     manager.findDockWidget("one").setAsCurrentTab()
     QApplication.processEvents()
     one = manager.findDockWidget("one").tabWidget()
     two = manager.findDockWidget("two").tabWidget()
-    _hover(two, two.rect().center())
+    hover(qtbot, two, two.rect().center())
     image = holder.grab().toImage()
     left = one.rect().translated(one.mapTo(holder, QPoint()))
     right = two.rect().translated(two.mapTo(holder, QPoint()))

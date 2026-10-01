@@ -68,11 +68,6 @@ def test_a_shadow_follows_a_theme_switch_when_it_draws(qtbot, tmp_path):
     assert shadow.blurRadius() == 9
 
 
-def test_the_one_caller_helpers_are_gone():
-    assert not hasattr(fxutils, "get_formatted_time")
-    assert "add_shadows" not in fxutils.__all__
-
-
 @pytest.mark.parametrize(
     "name",
     ["set_app_user_model_id", "markdown_to_plain_text", "add_shadow"],

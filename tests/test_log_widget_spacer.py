@@ -119,7 +119,7 @@ def test_typing_counts_once_the_keys_stop(qtbot, qapp, monkeypatch):
         pane.search_input.setText("m" + key)
 
     assert calls == [], "no scan per keystroke"
-    qtbot.waitUntil(lambda: bool(calls), timeout=1000)
+    qtbot.waitUntil(lambda: bool(calls))
 
 
 def test_the_search_widgets_live_in_one_container(qtbot, qapp):

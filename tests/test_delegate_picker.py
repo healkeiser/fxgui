@@ -5,33 +5,20 @@ from qtpy.QtGui import QFont, QImage
 from qtpy.QtWidgets import (
     QMenu,
     QStyleOptionViewItem,
-    QTreeWidget,
-    QTreeWidgetItem,
 )
 
 from fxgui.fxwidgets import FXThumbnailDelegate
 
+from _helpers import delegate_tree
+
 
 def _tree(qtbot, *, choices):
     """A one-row, two-column tree whose second column may hold a picker."""
-
-    tree = QTreeWidget()
-    tree.setHeaderLabels(["Name", "Version"])
-    tree.setRootIsDecorated(False)
-    tree.header().setStretchLastSection(False)
-    tree.setColumnWidth(0, 240)
-    tree.setColumnWidth(1, 90)
-    tree.resize(360, 120)
-    delegate = FXThumbnailDelegate()
-    delegate.show_thumbnail = False
-    delegate.picker_column = 1
-    tree.setItemDelegate(delegate)
-    item = QTreeWidgetItem(tree, ["Beauty", "v003"])
+    tree, delegate, item = delegate_tree(
+        qtbot, ["Beauty", "v003"], ["Name", "Version"], (240, 90),
+        show_thumbnail=False, picker_column=1)
     item.setData(1, FXThumbnailDelegate.PICKER_TEXT_ROLE, "v003")
     item.setData(1, FXThumbnailDelegate.PICKER_CHOICES_ROLE, choices)
-    qtbot.addWidget(tree)
-    tree.show()
-    qtbot.waitExposed(tree)
     return tree, delegate, item
 
 

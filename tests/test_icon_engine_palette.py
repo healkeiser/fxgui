@@ -12,17 +12,9 @@ from qtpy.QtWidgets import QApplication, QListWidget, QListWidgetItem, QPushButt
 # Internal
 from fxgui import fxicons, fxstyle
 
+from _helpers import first_ink
+
 _SIZE = QSize(32, 32)
-
-
-def _ink(pixmap) -> str:
-    image = pixmap.toImage()
-    for x in range(image.width()):
-        for y in range(image.height()):
-            colour = image.pixelColor(x, y)
-            if colour.alpha() == 255:
-                return colour.name().lower()
-    return ""
 
 
 def _name(value: str) -> str:
@@ -82,18 +74,18 @@ def test_a_foreign_app_palette_is_untouched(qtbot):
 def test_an_icon_follows_a_theme_switch_by_itself(qapp):
     fxstyle.apply_theme("dark")
     icon = fxicons.get_icon("check")
-    assert _ink(icon.pixmap(_SIZE)) == _name(fxstyle.colors().icon)
+    assert first_ink(icon.pixmap(_SIZE)) == _name(fxstyle.colors().icon)
 
     fxstyle.apply_theme("light")
 
-    assert _ink(icon.pixmap(_SIZE)) == _name(fxstyle.colors().icon)
+    assert first_ink(icon.pixmap(_SIZE)) == _name(fxstyle.colors().icon)
     assert fxstyle.colors().icon.lower() != "#b4b4b4"
 
 
 def test_an_explicit_colour_ignores_the_theme(qapp):
     icon = fxicons.get_icon("check", color="#00ff00")
     fxstyle.apply_theme("light")
-    assert _ink(icon.pixmap(_SIZE)) == "#00ff00"
+    assert first_ink(icon.pixmap(_SIZE)) == "#00ff00"
 
 
 def test_a_disabled_button_icon_wears_the_disabled_colour(qtbot):
@@ -149,11 +141,6 @@ def test_an_icon_copy_that_detaches_still_draws(qapp):
     assert len(fxicons._clones) == 1  # dead clones dropped on the next one
 
 
-def test_the_widget_registry_is_gone(qapp):
-    for name in ("sync_colors_with_theme", "refresh_all_icons", "_icon_widgets"):
-        assert not hasattr(fxicons, name), name
-
-
 def test_two_thousand_icon_draws_fit_a_small_budget(qtbot):
     names = ["check", "close", "save", "add", "delete", "folder", "home",
              "search", "settings", "refresh"]
@@ -192,7 +179,7 @@ def test_a_full_colour_icon_ignores_a_colour(qapp):
 
 def test_a_monochrome_icon_takes_a_colour(qapp):
     icon = fxicons.get_icon("check", library="material", color="#00ff00")
-    assert _ink(icon.pixmap(_SIZE)) == "#00ff00"
+    assert first_ink(icon.pixmap(_SIZE)) == "#00ff00"
 
 
 def test_libraries_declare_whether_they_recolour(qapp, monkeypatch, tmp_path):

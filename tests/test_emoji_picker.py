@@ -13,6 +13,8 @@ from qtpy.QtWidgets import (
 
 from fxgui.fxwidgets import DEFAULT_EMOJIS, FXEmojiButton, FXEmojiPicker
 
+from _helpers import hover
+
 
 @pytest.fixture
 def parent(qtbot):
@@ -319,7 +321,7 @@ def test_a_hovered_cell_is_filled_but_not_edged_like_focus(qtbot, parent):
     fxstyle.register_themed_root(parent)
     picker = _shown_picker(qtbot, parent)
     cell = picker.buttons()[1]
-    cell.setAttribute(Qt.WA_UnderMouse, True)
+    hover(qtbot, cell)
     image = cell.grab().toImage()
     colors = fxstyle.colors()
     y = cell.height() // 2

@@ -83,7 +83,7 @@ def test_the_timeout_clears_the_tint(qtbot):
 
     bar.showMessage("boom", ERROR, duration=0.05)
     assert bar.tint()
-    qtbot.waitUntil(lambda: bar.tint() is None, timeout=2000)
+    qtbot.waitUntil(lambda: bar.tint() is None)
 
     assert not bar.message_label.isVisible()
     assert _pixel(bar, bar.width() // 2, bar.height() // 2) == (

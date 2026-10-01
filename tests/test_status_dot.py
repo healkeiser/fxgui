@@ -76,7 +76,7 @@ def test_a_left_click_emits_clicked(qtbot):
     dot = FXStatusDot()
     qtbot.addWidget(dot)
 
-    with qtbot.waitSignal(dot.clicked, timeout=500):
+    with qtbot.waitSignal(dot.clicked):
         qtbot.mouseClick(dot, Qt.LeftButton)
     assert dot.cursor().shape() == Qt.PointingHandCursor
 

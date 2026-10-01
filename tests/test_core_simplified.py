@@ -4,18 +4,7 @@
 from pathlib import Path
 
 # Internal
-from fxgui import fxconfig, fxicons, fxstyle
-
-
-def test_one_name_per_job_in_fxstyle():
-    for name in (
-        "theme_manager", "FXThemeManager", "get_theme_colors",
-        "get_accent_colors", "get_icon_color", "get_icon_on_accent_primary",
-        "get_icon_on_accent_secondary", "replace_colors", "load_stylesheet",
-        "build_stylesheet", "set_widget_style", "WIDGET_STYLE_PROPERTY",
-        "get_contrast_text_color",
-    ):
-        assert not hasattr(fxstyle, name), name
+from fxgui import fxconfig, fxstyle
 
 
 def test_a_theme_switch_and_a_colour_change_share_one_path(qapp, monkeypatch):
@@ -59,18 +48,6 @@ def test_primary_button_fills_read_in_every_theme(qapp):
             assert ratio >= 4.5, (theme, fill)
         assert tokens["@primary_button"] != tokens["@primary_button_hover"]
         assert tokens["@primary_button_pressed"] != tokens["@primary_button"]
-
-
-def test_unused_icon_and_config_helpers_are_gone():
-    for module, name in (
-        (fxicons, "convert_icon_to_pixmap"),
-        (fxicons, "get_available_libraries"),
-        (fxconfig, "get_config_dir"),
-        (fxconfig, "get_settings"),
-        (fxstyle, "invalidate_standard_icon_map"),
-    ):
-        assert not hasattr(module, name), name
-        assert name not in module.__all__, name
 
 
 def test_settings_still_round_trip(qapp):

@@ -83,7 +83,7 @@ def test_ancestor_restyle_repaints_custom_painted_child(qtbot):
     before = child.paint_count
     root.setStyleSheet("QWidget { background-color: #00ff00; }")
 
-    qtbot.waitUntil(lambda: child.paint_count > before, timeout=2000)
+    qtbot.waitUntil(lambda: child.paint_count > before)
 
 
 def test_qss_class_selector_matches_python_subclass(qtbot):

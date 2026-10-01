@@ -2,8 +2,7 @@
 
 # Third-party
 import pytest
-from qtpy.QtCore import QEvent, QPoint, QPointF, Qt
-from qtpy.QtGui import QHoverEvent
+from qtpy.QtCore import QPoint, Qt
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
     QApplication,
@@ -18,6 +17,8 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxstyle
 from fxgui.fxwidgets import FXFuzzySearchTree
+
+from _helpers import hover
 
 
 def _plain(orientation=Qt.Horizontal):
@@ -47,20 +48,6 @@ def _rect(slider, control):
     )
 
 
-def _hover(slider):
-    centre = QPointF(_rect(slider, QStyle.SC_SliderHandle).center())
-    slider.setAttribute(Qt.WA_UnderMouse, True)
-    QApplication.sendEvent(
-        slider,
-        QHoverEvent(
-            QEvent.HoverMove,
-            centre,
-            slider.mapToGlobal(centre),
-            QPointF(-1, -1),
-        ),
-    )
-
-
 def _slider(qtbot, theme, state="", make=_HORIZONTAL):
     fxstyle.apply_theme(theme)
     window = QWidget()
@@ -76,7 +63,7 @@ def _slider(qtbot, theme, state="", make=_HORIZONTAL):
     window.show()
     qtbot.waitExposed(window)
     if state == "hover":
-        _hover(slider)
+        hover(qtbot, slider, _rect(slider, QStyle.SC_SliderHandle).center())
     if state == "pressed":
         QTest.mousePress(
             slider,
@@ -103,6 +90,9 @@ def _parts(qtbot, theme, state="", make=_HORIZONTAL):
     # The window, not the slider: a slider grabbed alone has no background.
     window = slider.window()
     image = window.grab().toImage()
+    if state == "pressed":
+        QTest.mouseRelease(
+            slider, Qt.LeftButton, Qt.NoModifier, handle.center())
     middle = handle.center()
 
     def at(x, y):

@@ -2,12 +2,14 @@
 
 # Third-party
 import pytest
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QPoint
 from qtpy.QtWidgets import QHBoxLayout, QMenu, QPushButton, QWidget
 
 # Internal
 from fxgui import fxstyle
 from fxgui.fxwidgets import FXPrimaryButton, FXSplitButton
+
+from _helpers import hover
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
@@ -43,7 +45,7 @@ def test_a_hovered_split_button_hovers_as_a_push_button(qtbot, theme):
     qtbot.addWidget(window)
     window.show()
     qtbot.waitExposed(window)
-    split.setAttribute(Qt.WA_UnderMouse, True)
+    hover(qtbot, split, QPoint(4, split.height() // 2))
     image = split.grab().toImage()
     colors = fxstyle.colors()
     middle = split.height() // 2

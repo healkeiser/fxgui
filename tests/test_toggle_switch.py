@@ -9,6 +9,8 @@ from qtpy.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
 from fxgui import fxstyle
 from fxgui.fxwidgets import FXToggleSwitch
 
+from _helpers import hover
+
 
 def test_a_switch_checked_before_it_shows_is_drawn_on(qtbot):
     switch = FXToggleSwitch()
@@ -56,7 +58,7 @@ def _grab(qtbot, theme, checked, state=""):
         QApplication.processEvents()
         assert switch.hasFocus()
     if state == "hover":
-        switch.setAttribute(Qt.WA_UnderMouse, True)
+        hover(qtbot, switch)
     image = switch.grab().toImage()
     track = switch.track_rect()
     middle = track.center().y()

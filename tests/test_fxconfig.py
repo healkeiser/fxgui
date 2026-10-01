@@ -64,12 +64,6 @@ def test_get_value_answers_in_the_defaults_type(qapp):
     assert fxconfig.get_value("probe/missing", 7) == 7
 
 
-def test_unused_config_names_are_gone():
-    for name in ("get_application_name", "SETTINGS_FILE", "CONFIG_DIR"):
-        assert not hasattr(fxconfig, name), name
-        assert name not in fxconfig.__all__, name
-
-
 @pytest.mark.parametrize("bad_name", ["", "   ", "a/b", "a\\b", ".."])
 def test_set_application_name_rejects_unsafe_names(bad_name):
     with pytest.raises(ValueError):

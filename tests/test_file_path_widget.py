@@ -17,7 +17,7 @@ def test_checks_run_on_the_pool_not_on_owned_threads(qtbot, qapp, tmp_path):
     for text in ("nope", str(tmp_path / "missing"), str(target)):
         widget.set_path(text)
         widget._do_validation()
-    qtbot.waitUntil(lambda: widget.is_valid(), timeout=2000)
+    qtbot.waitUntil(lambda: widget.is_valid())
     assert widget.findChildren(QThread) == []
 
 

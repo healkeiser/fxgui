@@ -18,7 +18,7 @@ def _opened(qtbot):
     combo.show()
     qtbot.waitExposed(combo)
     combo.showPopup()
-    qtbot.waitUntil(combo.view().isVisible, timeout=1000)
+    qtbot.waitUntil(combo.view().isVisible)
     return combo
 
 

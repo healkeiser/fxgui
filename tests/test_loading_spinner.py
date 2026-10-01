@@ -91,18 +91,18 @@ def test_a_spinner_animates_while_its_branch_is_open(qtbot):
     tree, branch, spinner = _lazy_tree(qtbot)
 
     branch.setExpanded(True)
-    qtbot.waitUntil(spinner.isVisible, timeout=1000)
+    qtbot.waitUntil(spinner.isVisible)
     assert spinner._timer.isActive()
 
     branch.setExpanded(False)
-    qtbot.waitUntil(lambda: not spinner.isVisible(), timeout=1000)
+    qtbot.waitUntil(lambda: not spinner.isVisible())
     assert not spinner._timer.isActive()
 
 
 def test_clearing_a_tree_with_a_running_spinner_needs_no_stop(qtbot):
     tree, branch, spinner = _lazy_tree(qtbot)
     branch.setExpanded(True)
-    qtbot.waitUntil(spinner.isVisible, timeout=1000)
+    qtbot.waitUntil(spinner.isVisible)
 
     tree.clear()
     qtbot.wait(50)

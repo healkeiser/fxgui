@@ -32,7 +32,7 @@ def _animating(edit):
 
 def _reject(qtbot, edit):
     QTest.keyClicks(edit, "1")
-    qtbot.waitUntil(lambda: not _animating(edit), timeout=1000)
+    qtbot.waitUntil(lambda: not _animating(edit))
 
 
 def test_rejections_reuse_one_set_of_animations(qtbot, qapp):
@@ -53,7 +53,7 @@ def test_rejection_keeps_the_callers_margins_and_sheet(qtbot, qapp):
     QTest.keyClicks(edit, "1")
     assert _animating(edit)
     assert edit.styleSheet() == sheet
-    qtbot.waitUntil(lambda: not _animating(edit), timeout=1000)
+    qtbot.waitUntil(lambda: not _animating(edit))
 
     margins = edit.textMargins()
     assert (margins.left(), margins.top(), margins.right(), margins.bottom()) == (
@@ -136,7 +136,7 @@ def test_the_flash_shows_over_a_focused_field(qtbot, qapp):
     qtbot.waitUntil(edit.hasFocus)
     QTest.keyClicks(edit, "1")
     # Only the hold is the error colour itself; the fades blend it away.
-    qtbot.waitUntil(lambda: edit.borderColor.alpha() == 255, timeout=1000)
+    qtbot.waitUntil(lambda: edit.borderColor.alpha() == 255)
     area = QRect(edit.mapTo(window, QPoint(0, 0)), edit.size())
     image = window.grab(area).toImage()
     error = QColor(fxstyle.colors().feedback_error_foreground).rgb()

@@ -25,7 +25,7 @@ def test_a_second_claim_is_refused_and_wakes_the_first(qtbot):
     first = FXSingleInstance(_name("second"))
     assert first.claim()
 
-    with qtbot.waitSignal(first.woken, timeout=2000):
+    with qtbot.waitSignal(first.woken):
         assert not FXSingleInstance(_name("second")).claim()
 
 

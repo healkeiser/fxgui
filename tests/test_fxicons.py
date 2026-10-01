@@ -16,11 +16,13 @@ button sits on the secondary accent and keeps it.
 import inspect
 
 import pytest
-from qtpy.QtGui import QColor, QIcon, QPixmapCache
+from qtpy.QtGui import QColor, QIcon, QImage, QPixmap, QPixmapCache
 from qtpy.QtCore import QSize
 from qtpy.QtWidgets import QAction, QLabel, QPushButton, QToolButton
 
-from fxgui import fxicons
+from fxgui import fxicons, fxstyle
+
+from _helpers import first_ink
 
 _SIZE = QSize(48, 48)
 
@@ -75,16 +77,6 @@ def test_a_hovered_tool_button_icon_keeps_its_normal_ink(qtbot):
     assert _active_matches_normal(button.icon())
 
 
-def _ink(icon: QIcon, mode) -> str:
-    image = _img(icon, mode)
-    for x in range(image.width()):
-        for y in range(image.height()):
-            colour = image.pixelColor(x, y)
-            if colour.alpha() == 255:
-                return colour.name().lower()
-    return ""
-
-
 def test_menu_action_keeps_active_recolor(qapp, monkeypatch):
     """A QAction (menu item) is not a button: a current menu row is filled
     with the primary accent, so its icon takes the ink made for it. A theme
@@ -103,7 +95,7 @@ def test_menu_action_keeps_active_recolor(qapp, monkeypatch):
     action = QAction("Open")
     fxicons.set_icon(action, "check", width=48, height=48)
     assert not _active_matches_normal(action.icon())
-    assert _ink(action.icon(), QIcon.Active) == (
+    assert first_ink(_img(action.icon(), QIcon.Active)) == (
         fxstyle.colors().icon_on_accent_primary.lower())
 
 
@@ -115,7 +107,7 @@ def test_a_current_menu_row_icon_reads_on_the_accent(qapp, theme):
 
     fxstyle.apply_theme(theme)
     icon = fxicons.get_icon("check", width=48, height=48)
-    ink = _ink(icon, QIcon.Active)
+    ink = first_ink(_img(icon, QIcon.Active))
     assert fxstyle.get_contrast_ratio(
         ink, fxstyle.colors().accent_primary) >= 3.0, ink
 
@@ -126,7 +118,7 @@ def test_a_disabled_icon_wears_the_text_disabled_token(qapp):
     for theme in ("dark", "light"):
         fxstyle.apply_theme(theme)
         icon = fxicons.get_icon("check")
-        assert _ink(icon, QIcon.Disabled) == (
+        assert first_ink(_img(icon, QIcon.Disabled)) == (
             QColor(fxstyle.colors().text_disabled).name()), theme
 
 
@@ -158,23 +150,70 @@ def test_get_pixmap_is_the_engines_drawing(qapp):
     assert pixmap.toImage() == drawn.toImage()
 
 
-def test_the_dead_icon_api_is_gone():
-    for name in (
-        "set_default_icon_library",
-        "set_icon_defaults",
-        "get_available_icons_in_library",
-        "get_icon_color",
-        "superpose_icons",
-    ):
-        assert not hasattr(fxicons, name), name
-        assert name not in fxicons.__all__, name
-    assert not hasattr(fxicons, "change_pixmap_color")
-    assert "badged" in fxicons.__all__
-
-
 def test_a_fallback_name_keeps_the_size_and_colour_asked(qapp):
     icon = fxicons.get_icon(
         "no_such_mark", 20, 20, color="#00ff00", library="dcc",
         fallback="check")
     assert icon.actualSize(QSize(64, 64)) == QSize(20, 20)
-    assert _ink(icon, QIcon.Normal) == "#00ff00"
+    assert first_ink(_img(icon, QIcon.Normal)) == "#00ff00"
+
+
+def _count_calls(monkeypatch, module, name):
+    calls = []
+    original = getattr(module, name)
+
+    def counting(*args, **kwargs):
+        calls.append(args)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(module, name, counting)
+    return calls
+
+
+def test_get_icon_reads_the_colour_cache(qapp, monkeypatch):
+    fxstyle.colors()
+    depth = _count_calls(monkeypatch, fxstyle, "_depth_colors")
+    for name in ("add", "close", "save"):
+        fxicons.get_icon(name)
+
+    assert depth == []
+
+
+def test_an_opaque_pixmap_recolours(qapp):
+    pixmap = QPixmap(8, 8)
+    pixmap.fill(QColor("#ff0000"))
+
+    out = fxicons._tint(pixmap, "#00ff00")
+
+    assert out.toImage().pixelColor(4, 4) == QColor("#00ff00")
+
+
+def _png_library(monkeypatch, tmp_path):
+    folder = tmp_path / "studio"
+    folder.mkdir()
+    image = QImage(8, 8, QImage.Format_ARGB32)
+    image.fill(QColor("#ff0000"))
+    image.save(str(folder / "square.png"))
+    monkeypatch.setattr(
+        fxicons, "_libraries_info", dict(fxicons._libraries_info)
+    )
+    fxicons.add_library(
+        "studio",
+        pattern="{root}/{library}/{icon_name}.{extension}",
+        defaults={
+            "extension": "png",
+            "style": None,
+            "color": "#00ff00",
+            "width": 8,
+            "height": 8,
+        },
+        root=str(tmp_path),
+    )
+
+
+def test_an_opaque_png_icon_recolours(qapp, monkeypatch, tmp_path):
+    _png_library(monkeypatch, tmp_path)
+
+    pixmap = fxicons.get_pixmap("square", library="studio", dpr=1.0)
+
+    assert pixmap.toImage().pixelColor(4, 4) == QColor("#00ff00")

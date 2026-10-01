@@ -9,6 +9,9 @@ from qtpy.QtWidgets import QLabel
 from fxgui import fxstyle
 from fxgui.fxwidgets import FXCollapsibleWidget
 
+from _helpers import hover
+
+
 
 def _section(qtbot):
     section = FXCollapsibleWidget(title="Notes", animation_duration=0)
@@ -107,7 +110,7 @@ def test_a_header_is_a_section_header_hover_fills_open_weighs(qtbot, qapp):
     window.show()
     qtbot.addWidget(window)
     qtbot.waitExposed(window)
-    hover = QColor(fxstyle.colors().state_hover).name()
+    lit = QColor(fxstyle.colors().state_hover).name()
     resting = _header_fill(section)
 
     section.expand(animate=False)
@@ -116,5 +119,5 @@ def test_a_header_is_a_section_header_hover_fills_open_weighs(qtbot, qapp):
     section.collapse(animate=False)
     assert section._title_label.font().weight() == QFont.Normal
 
-    section._header.setAttribute(Qt.WA_UnderMouse, True)
-    assert _header_fill(section) == hover
+    hover(qtbot, section._header)
+    assert _header_fill(section) == lit

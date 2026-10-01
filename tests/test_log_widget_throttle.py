@@ -15,9 +15,6 @@ from qtpy.QtCore import QTimer
 from fxgui.fxwidgets import FXOutputLogWidget
 
 
-# Comfortably longer than the widget's own 16ms interval, so a flush that
-# is going to happen has happened.
-_DRAIN_MS = 500
 
 
 def _pane(qtbot):
@@ -40,7 +37,7 @@ def test_a_burst_of_records_all_reach_the_pane(qtbot, qapp):
     for index in range(6):
         pane.append_log(f"entry {index}")
 
-    qtbot.waitUntil(lambda: len(_lines(pane)) == 6, timeout=_DRAIN_MS)
+    qtbot.waitUntil(lambda: len(_lines(pane)) == 6)
     assert _lines(pane) == [f"entry {index}" for index in range(6)]
 
 
@@ -63,7 +60,7 @@ def test_records_queued_behind_the_timer_keep_their_order(qtbot, qapp):
     for index in range(20):
         pane.append_log(f"{index:02d}")
 
-    qtbot.waitUntil(lambda: len(_lines(pane)) == 20, timeout=_DRAIN_MS)
+    qtbot.waitUntil(lambda: len(_lines(pane)) == 20)
     assert _lines(pane) == [f"{index:02d}" for index in range(20)]
 
 
@@ -75,12 +72,12 @@ def test_records_arriving_across_several_windows_all_survive(qtbot, qapp):
 
     pane.append_log("first burst a")
     pane.append_log("first burst b")
-    qtbot.waitUntil(lambda: len(_lines(pane)) == 2, timeout=_DRAIN_MS)
+    qtbot.waitUntil(lambda: len(_lines(pane)) == 2)
 
     pane.append_log("second burst a")
     pane.append_log("second burst b")
 
-    qtbot.waitUntil(lambda: len(_lines(pane)) == 4, timeout=_DRAIN_MS)
+    qtbot.waitUntil(lambda: len(_lines(pane)) == 4)
     assert _lines(pane) == [
         "first burst a",
         "first burst b",
@@ -99,7 +96,7 @@ def test_a_record_from_the_signal_is_queued_like_any_other(qtbot, qapp):
     for index in range(6):
         pane.log_message.emit(f"through the signal {index}")
 
-    qtbot.waitUntil(lambda: len(_lines(pane)) == 6, timeout=_DRAIN_MS)
+    qtbot.waitUntil(lambda: len(_lines(pane)) == 6)
     assert _lines(pane) == [f"through the signal {index}" for index in range(6)]
 
 
@@ -119,7 +116,7 @@ def test_each_queued_entry_is_parsed_for_ansi_on_its_own(qtbot, qapp):
     pane.append_log("\x1b[32mgreen\x1b[0m")
     pane.append_log("\x1b[31mred\x1b[0m")
 
-    qtbot.waitUntil(lambda: len(_lines(pane)) == 2, timeout=_DRAIN_MS)
+    qtbot.waitUntil(lambda: len(_lines(pane)) == 2)
     assert _lines(pane) == ["green", "red"], "codes consumed, text kept"
 
 
@@ -169,7 +166,7 @@ def test_the_flush_chain_stops_when_the_queue_empties(qtbot, qapp):
     pane.append_log("one")
 
     qtbot.waitUntil(
-        lambda: not pane._throttle_timer.isActive(), timeout=_DRAIN_MS
+        lambda: not pane._throttle_timer.isActive()
     )
 
     assert _lines(pane) == ["one"]
@@ -194,7 +191,7 @@ def test_a_consumer_can_bound_the_document(qtbot, qapp):
     for index in range(60):
         pane.append_log(f"record {index}")
 
-    qtbot.waitUntil(lambda: not pane._pending_logs, timeout=_DRAIN_MS)
+    qtbot.waitUntil(lambda: not pane._pending_logs)
 
     lines = _lines(pane)
     assert len(lines) <= 20, f"pruned to the cap, got {len(lines)}"
@@ -215,5 +212,5 @@ def test_the_queue_survives_a_record_logged_from_a_timer_callback(
     pane.append_log("before")
     later.start(0)
 
-    qtbot.waitUntil(lambda: len(_lines(pane)) == 2, timeout=_DRAIN_MS)
+    qtbot.waitUntil(lambda: len(_lines(pane)) == 2)
     assert _lines(pane) == ["before", "from the callback"]

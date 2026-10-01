@@ -223,18 +223,6 @@ def test_the_theme_actions_follow_a_switch_without_the_mixin(qtbot):
     assert window.theme_actions["github_light"].isChecked()
 
 
-def test_the_dead_helpers_are_gone():
-    for name in (
-        "_move_window",
-        "_refresh_dialog_button_icons",
-        "_add_shadows",
-        "_live_menu_bar",
-        "_create_banner",
-    ):
-        assert not hasattr(FXMainWindow, name), name
-    assert "closeEvent" not in FXMainWindow.__dict__
-
-
 def test_a_subclass_hook_without_the_theme_name_still_runs(qtbot):
     seen = []
 

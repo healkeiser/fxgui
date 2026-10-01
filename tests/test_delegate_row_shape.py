@@ -10,6 +10,10 @@ from qtpy.QtWidgets import QStyle, QStyleOptionViewItem
 from fxgui import fxstyle
 from fxgui.fxwidgets import FXThumbnailDelegate
 
+from _helpers import delegate_tree
+
+from _helpers import near
+
 _FILL = QColor("#1a3a5c")
 _BLANK = QColor("#ff00ff")
 
@@ -37,17 +41,10 @@ def _paint(qtbot, draw, position):
     return canvas.toImage()
 
 
-def _near(color, reference, tolerance=40):
-    return all(
-        abs(a - b) <= tolerance
-        for a, b in zip(color.getRgb()[:3], reference.getRgb()[:3])
-    )
-
-
 def test_the_first_cell_rounds_its_outer_corners_only(qtbot):
     image = _paint(qtbot, "card", (True, False))
-    assert not _near(image.pixelColor(1, 1), _FILL)
-    assert _near(image.pixelColor(30, 15), _FILL)
+    assert not near(image.pixelColor(1, 1), _FILL, 40)
+    assert near(image.pixelColor(30, 15), _FILL, 40)
     # The inner edge is square and carries the column separator
     assert image.pixelColor(59, 2) != _BLANK
 
@@ -74,25 +71,13 @@ def test_the_focus_ring_closes_only_at_the_row_ends(
 ):
     image = _paint(qtbot, "ring", position)
     accent = QColor(fxstyle.colors().accent_primary)
-    assert _near(image.pixelColor(30, 0), accent)
-    assert _near(image.pixelColor(0, 15), accent) is left
-    assert _near(image.pixelColor(59, 15), accent) is right
+    assert near(image.pixelColor(30, 0), accent, 40)
+    assert near(image.pixelColor(0, 15), accent, 40) is left
+    assert near(image.pixelColor(59, 15), accent, 40) is right
 
 
 def _tree_row(qtbot, text="Row"):
-    from qtpy.QtWidgets import QTreeWidget, QTreeWidgetItem
-
-    tree = QTreeWidget()
-    tree.setHeaderHidden(True)
-    tree.setRootIsDecorated(False)
-    delegate = FXThumbnailDelegate()
-    tree.setItemDelegate(delegate)
-    item = QTreeWidgetItem(tree, [text])
-    qtbot.addWidget(tree)
-    tree.resize(300, 120)
-    tree.show()
-    qtbot.waitExposed(tree)
-    return tree, delegate, item
+    return delegate_tree(qtbot, [text])
 
 
 def test_size_and_paint_agree_on_a_falsy_thumbnail_role(qtbot):
@@ -117,7 +102,7 @@ def test_a_selected_title_is_painted_in_the_highlighted_text_color(qtbot):
         for x in range(rect.left(), rect.left() + 120)
         for y in range(rect.top(), rect.bottom())
     }
-    assert any(_near(QColor(c), ink, 30) for c in colors)
+    assert any(near(QColor(c), ink, 30) for c in colors)
 
 
 def test_a_hidden_child_count_paints_no_badge(qtbot):

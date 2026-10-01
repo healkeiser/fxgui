@@ -7,30 +7,6 @@ from qtpy.QtWidgets import QApplication, QLabel, QScrollArea, QVBoxLayout, QWidg
 from fxgui import fxstyle
 
 
-@pytest.fixture
-def app_root(qtbot, qapp):
-    """A window in an application fxgui themes, as FXApplication does."""
-    sheet, font = qapp.styleSheet(), qapp.font()
-    fxstyle.register_themed_root(qapp)
-    window = QWidget()
-    qtbot.addWidget(window)
-    QVBoxLayout(window)
-    yield window
-    fxstyle._themed_roots.discard(qapp)
-    qapp.setStyleSheet(sheet)
-    qapp.setFont(font)
-
-
-@pytest.fixture
-def host_root(qtbot):
-    """A window themed on its own inside an application fxgui leaves alone."""
-    window = QWidget()
-    qtbot.addWidget(window)
-    fxstyle.register_themed_root(window)
-    QVBoxLayout(window)
-    return window
-
-
 def _shown(qtbot, root, *labels):
     """Show `root`, then move `labels` in, as a page built late would be."""
     root.show()

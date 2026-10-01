@@ -53,7 +53,7 @@ def _themed_tree(qtbot):
     root.show()
     qtbot.waitExposed(root)
     root.activateWindow()
-    qtbot.waitUntil(root.isActiveWindow, timeout=1000)
+    qtbot.waitUntil(root.isActiveWindow)
     tree.clearFocus()
     tree.setFocus(Qt.TabFocusReason)
     tree.setCurrentItem(child)

@@ -108,7 +108,7 @@ def test_two_flashes_share_one_owned_timer(qtbot, qapp, tmp_path):
     assert zone._flash_timer.parent() is zone
     assert zone._drop_area.property("dropState") == "success"
     qtbot.waitUntil(
-        lambda: zone._drop_area.property("dropState") == "idle", timeout=1000
+        lambda: zone._drop_area.property("dropState") == "idle"
     )
 
 

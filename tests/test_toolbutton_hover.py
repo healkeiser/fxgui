@@ -1,11 +1,12 @@
 """A hovered tool button sits on the neutral hover fill, its icon readable."""
 
 import pytest
-from qtpy.QtCore import QEvent, QPoint, QPointF, QRect, QSize, Qt
-from qtpy.QtGui import QColor, QHoverEvent
+from qtpy.QtCore import QPoint, QRect, QSize
 from qtpy.QtWidgets import QToolButton, QVBoxLayout, QWidget
 
 from fxgui import fxicons, fxstyle
+
+from _helpers import hover, near
 
 
 def _most(image) -> list[str]:
@@ -15,12 +16,6 @@ def _most(image) -> list[str]:
             name = image.pixelColor(x, y).name().lower()
             counts[name] = counts.get(name, 0) + 1
     return sorted(counts, key=lambda n: -counts[n])
-
-
-def _near(a: str, b: str, step: int = 12) -> bool:
-    one, two = QColor(a), QColor(b)
-    return max(abs(one.red() - two.red()), abs(one.green() - two.green()),
-               abs(one.blue() - two.blue())) <= step
 
 
 @pytest.mark.parametrize("theme", fxstyle.get_available_themes())
@@ -40,16 +35,12 @@ def test_a_hovered_tool_button_shows_its_icon_on_the_hover_fill(
     window.show()
     qtbot.waitExposed(window)
 
-    centre = QPointF(button.width() / 2, button.height() / 2)
-    qapp.sendEvent(
-        button, QHoverEvent(QEvent.Type.HoverEnter, centre, centre, centre))
-    button.setAttribute(Qt.WidgetAttribute.WA_UnderMouse, True)
-    qapp.processEvents()
+    hover(qtbot, button)
     area = QRect(button.mapTo(window, QPoint(0, 0)), button.size())
     seen = _most(window.grab(area).toImage())
 
     colours = dict(vars(fxstyle.colors()))
-    assert _near(seen[0], colours["state_hover"], 2), seen[:3]
+    assert near(seen[0], colours["state_hover"], 2), seen[:3]
     # The icon stands out from the fill it sits on, however it blends.
-    assert any(not _near(c, colours["state_hover"], 80)
+    assert any(not near(c, colours["state_hover"], 80)
                for c in seen[1:6]), seen[:6]

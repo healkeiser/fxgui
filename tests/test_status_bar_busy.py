@@ -19,6 +19,11 @@ def _window(qtbot, framed=True):
     return window
 
 
+def _run_to(qtbot, bar, frame):
+    """Wait for the busy line's timer to reach `frame`, where it shows."""
+    qtbot.waitUntil(lambda: bar._busy_frame >= frame)
+
+
 def _top_row(bar):
     image = bar.grab().toImage()
     return {
@@ -33,7 +38,7 @@ def test_busy_paints_a_line_across_the_top_and_moves_nothing(qtbot):
     was = (window.centralWidget().geometry(), bar.geometry())
 
     bar.set_busy(True)
-    qtbot.wait(120)
+    _run_to(qtbot, bar, 6)
 
     assert bar.is_busy()
     assert (window.centralWidget().geometry(), bar.geometry()) == was
@@ -44,27 +49,28 @@ def test_busy_paints_a_line_across_the_top_and_moves_nothing(qtbot):
     assert below == QColor(bar.ground()).name(), "only the top band changes"
 
 
-
 def test_the_busy_line_is_one_flat_accent_like_a_progress_chunk(qtbot):
     from fxgui import fxstyle
 
     window = _window(qtbot)
     bar = window.statusBar()
     bar.set_busy(True)
-    qtbot.wait(120)
+    _run_to(qtbot, bar, 6)
 
     assert _top_row(bar) <= {
         QColor(bar.ground()).name(),
         QColor(fxstyle.colors().accent_primary).name(),
     }
+
+
 def test_the_line_moves_while_busy(qtbot):
     window = _window(qtbot)
     bar = window.statusBar()
     bar.set_busy(True)
-    qtbot.wait(50)
+    _run_to(qtbot, bar, 3)
 
     first = bar.grab().toImage().copy(0, 0, bar.width(), STATUS_LINE_HEIGHT)
-    qtbot.wait(200)
+    _run_to(qtbot, bar, 6)
     later = bar.grab().toImage().copy(0, 0, bar.width(), STATUS_LINE_HEIGHT)
 
     assert first != later
@@ -76,7 +82,7 @@ def test_not_busy_gives_the_bar_its_resting_top_back(qtbot):
     resting = _top_row(bar)
 
     bar.set_busy(True)
-    qtbot.wait(50)
+    _run_to(qtbot, bar, 3)
     bar.set_busy(False)
 
     assert not bar.is_busy()
@@ -102,6 +108,6 @@ def test_busy_shows_over_a_hidden_status_line(qtbot):
     resting = _top_row(bar)
 
     bar.set_busy(True)
-    qtbot.wait(50)
+    _run_to(qtbot, bar, 3)
 
     assert _top_row(bar) != resting

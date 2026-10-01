@@ -46,7 +46,8 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     # Every test starts on the dark theme, with the pointer off every window.
     fxstyle._theme = fxstyle._DEFAULT_THEME
     fxstyle._invalidate_theme_namespace()
-    from qtpy.QtWidgets import QApplication
+    from qtpy.QtCore import Qt
+    from qtpy.QtWidgets import QApplication, QWidget
 
     if QApplication.instance() is not None:
         from qtpy.QtGui import QCursor
@@ -55,8 +56,20 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
 
     yield
 
-    # A popup left open grabs the mouse from every later test.
     app = QApplication.instance()
+    held = app.mouseButtons() if app is not None else None
+    if held:
+        # A press never released makes every later pointer move a drag, so
+        # no later test can hover: let it go, then fail the test that left it.
+        from qtpy.QtTest import QTest
+
+        sink = QWidget()
+        sink.show()
+        for button in (Qt.LeftButton, Qt.RightButton, Qt.MiddleButton):
+            if held & button:
+                QTest.mouseRelease(sink, button)
+        sink.deleteLater()
+    # A popup left open grabs the mouse from every later test.
     if app is not None:
         for widget in app.topLevelWidgets():
             if widget.isVisible():
@@ -77,3 +90,43 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     fxstyle._widget_fragments.clear()
     fxstyle._widget_fragments.update(fragments)
     fxstyle._themed_roots = type(fxstyle._themed_roots)()
+    if held:
+        pytest.fail(f"the test left {held} pressed: release it")
+
+
+@pytest.fixture
+def app_root(qtbot, qapp):
+    """A window in an application fxgui themes, as FXApplication does."""
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
+
+    from fxgui import fxstyle
+
+    sheet, font, palette = qapp.styleSheet(), qapp.font(), qapp.palette()
+    style = qapp.style().name()
+    fxstyle.apply_theme("dark")
+    fxstyle.set_style(qapp, "Fusion")
+    fxstyle.register_themed_root(qapp)
+    window = QWidget()
+    qtbot.addWidget(window)
+    QVBoxLayout(window)
+    yield window
+    fxstyle._themed_roots.discard(qapp)
+    qapp.setStyleSheet(sheet)
+    qapp.setFont(font)
+    qapp.setPalette(palette)
+    qapp.setStyle(style)
+
+
+@pytest.fixture
+def host_root(qtbot):
+    """A window themed on its own inside an application fxgui leaves alone."""
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
+
+    from fxgui import fxstyle
+
+    fxstyle.apply_theme("dark")
+    window = QWidget()
+    qtbot.addWidget(window)
+    fxstyle.register_themed_root(window)
+    QVBoxLayout(window)
+    return window

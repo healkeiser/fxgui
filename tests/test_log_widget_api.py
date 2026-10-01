@@ -90,7 +90,7 @@ def test_append_many_writes_every_line_in_order_after_what_is_queued(qtbot):
     panel.append_log("queued")
 
     panel.append_many([f"history {n}" for n in range(3)])
-    qtbot.waitUntil(lambda: len(_blocks(panel)) == 5, timeout=1000)
+    qtbot.waitUntil(lambda: len(_blocks(panel)) == 5)
 
     assert [b.text() for b in _blocks(panel)] == [
         "first", "queued", "history 0", "history 1", "history 2"

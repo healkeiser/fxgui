@@ -59,7 +59,7 @@ def test_flush_scrolls_only_a_pane_already_at_the_bottom(qtbot, qapp):
     pane.show()
     for index in range(200):
         pane.append_log(f"line {index}")
-    qtbot.waitUntil(lambda: len(_lines(pane)) == 200, timeout=2000)
+    qtbot.waitUntil(lambda: len(_lines(pane)) == 200)
     bar = pane.output_area.verticalScrollBar()
     assert bar.value() == bar.maximum() > 0
 

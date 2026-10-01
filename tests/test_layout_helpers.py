@@ -67,7 +67,7 @@ def test_content_past_the_cap_scrolls_inside_the_cap(qtbot):
         lines.addWidget(QLabel(f"more {index}"))
     # The layout outside hears of it: its own minimum grows to the cap.
     qtbot.waitUntil(
-        lambda: outside.minimumSize().height() > before, timeout=1000
+        lambda: outside.minimumSize().height() > before
     )
 
     assert content.sizeHint().height() > CAP

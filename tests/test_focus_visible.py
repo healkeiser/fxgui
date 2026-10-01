@@ -100,7 +100,6 @@ def _click(widget, sink) -> None:
                     break
                 QTest.qWait(10)
     QTest.mouseMove(sink)
-    widget.setAttribute(Qt.WA_UnderMouse, False)
     QApplication.processEvents()
 
 
@@ -154,7 +153,6 @@ def test_a_clicked_dialog_button_looks_untouched(qtbot):
     before = apply.grab().toImage()
     QTest.mouseClick(apply, Qt.LeftButton, Qt.NoModifier, QPoint(6, 6))
     QTest.mouseMove(box.button(QDialogButtonBox.Ok))
-    apply.setAttribute(Qt.WA_UnderMouse, False)
     QApplication.processEvents()
     assert apply.hasFocus() and apply.isDefault()
     assert apply.grab().toImage() == before

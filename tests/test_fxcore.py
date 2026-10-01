@@ -1,8 +1,8 @@
 """Tests for `fxgui.fxcore.FXSortFilterProxyModel` filtering and match color."""
 
 # Third-party
-from qtpy.QtCore import QStringListModel
-from qtpy.QtGui import QColor
+from qtpy.QtCore import QModelIndex, QStringListModel, Qt
+from qtpy.QtGui import QColor, QStandardItem, QStandardItemModel
 
 # Internal
 from fxgui import fxstyle
@@ -62,3 +62,50 @@ def test_match_color_is_theme_aware_not_red_green(qapp):
     assert good == QColor(colors["accent_primary"])
     assert poor != QColor(255, 0, 0)
     assert good != QColor(0, 255, 0)
+
+
+def _count_calls(monkeypatch, module, name):
+    calls = []
+    original = getattr(module, name)
+
+    def counting(*args, **kwargs):
+        calls.append(args)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(module, name, counting)
+    return calls
+
+
+def _number_proxy():
+    model = QStandardItemModel()
+    for value in (5, 15, None):
+        item = QStandardItem()
+        item.setData(value, Qt.DisplayRole)
+        model.appendRow(item)
+    proxy = FXSortFilterProxyModel(ratio=0.5)
+    proxy.setSourceModel(model)
+    proxy._test_model = model
+    return proxy, model
+
+
+def test_filtering_survives_non_text_data(qapp):
+    proxy, model = _number_proxy()
+    proxy._filter_text = "5"
+    proxy._matcher.set_seq2("5")
+
+    assert proxy.filterAcceptsRow(0, QModelIndex())
+    assert isinstance(
+        proxy.lessThan(model.index(0, 0), model.index(1, 0)), bool
+    )
+    proxy.set_filter_text("5")
+    assert proxy.index(0, 0).data(Qt.ForegroundRole) is not None
+
+
+def test_match_colour_reads_the_cache(qapp, monkeypatch):
+    fxstyle.colors()
+    depth = _count_calls(monkeypatch, fxstyle, "_depth_colors")
+
+    for ratio in (0.0, 0.5, 1.0):
+        FXSortFilterProxyModel._match_color(ratio)
+
+    assert depth == []

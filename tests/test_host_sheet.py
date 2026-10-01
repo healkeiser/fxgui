@@ -12,8 +12,7 @@ from pathlib import Path
 # Third-party
 import pytest
 from qtpy.QtCore import QPoint, Qt
-from qtpy.QtGui import QActionGroup, QColor, QCursor
-from qtpy.QtTest import QTest
+from qtpy.QtGui import QActionGroup, QColor
 from qtpy.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -47,6 +46,8 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle
 from fxgui.fxwidgets import FXMainWindow, FXStatusItem
+
+from _helpers import hover, shown
 
 _SIDEFX = Path("C:/Program Files/Side Effects Software")
 
@@ -89,18 +90,6 @@ def _host(qtbot, sheet):
     return host
 
 
-def _shown(qtbot, window, size=(1100, 800)):
-    # A child goes with its registered parent: pytest-qt deletes that parent
-    # first, and closing the child after raises on PySide6 6.5.
-    if window.parentWidget() is None:
-        qtbot.addWidget(window)
-    window.resize(*size)
-    window.show()
-    qtbot.waitExposed(window)
-    qtbot.wait(20)
-    return window
-
-
 class _Probe(FXMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent=parent, framed=True, project="Show")
@@ -113,8 +102,8 @@ class _Probe(FXMainWindow):
 @pytest.mark.parametrize("sheet", _houdini_sheets())
 def test_a_host_s_sheet_stays_out_of_a_window_it_owns(qtbot, sheet):
     host = _host(qtbot, sheet)
-    free = _shown(qtbot, _Probe())
-    held = _shown(qtbot, _Probe(parent=host))
+    free = shown(qtbot, _Probe(), (1100, 800))
+    held = shown(qtbot, _Probe(parent=host), (1100, 800))
 
     def looks(window):
         label = window.statusBar().message_label
@@ -228,8 +217,8 @@ class _Gallery(_Probe):
 @pytest.mark.parametrize("sheet", _houdini_sheets())
 def test_a_host_s_sheet_changes_no_pixel_of_a_control(qtbot, sheet):
     host = _host(qtbot, sheet)
-    free = _shown(qtbot, _Gallery(), (1200, 900))
-    held = _shown(qtbot, _Gallery(parent=host), (1200, 900))
+    free = shown(qtbot, _Gallery(), (1200, 900))
+    held = shown(qtbot, _Gallery(parent=host), (1200, 900))
     qtbot.wait(50)
 
     def looks(window):
@@ -251,10 +240,10 @@ def test_a_host_s_sheet_changes_no_pixel_of_a_control(qtbot, sheet):
 
 def test_a_window_reparented_into_a_host_takes_the_reset(qtbot):
     host = _host(qtbot, _houdini_sheets()[0].values[0])
-    free = _shown(qtbot, _Probe())
+    free = shown(qtbot, _Probe(), (1100, 800))
     moved = _Probe()
     moved.setParent(host, moved.windowFlags())
-    _shown(qtbot, moved)
+    shown(qtbot, moved, (1100, 800))
 
     button = [b for b in moved.findChildren(QToolButton) if b.isVisible()][0]
     twin = [b for b in free.findChildren(QToolButton) if b.isVisible()][0]
@@ -271,7 +260,7 @@ def test_a_table_cell_background_shows_under_a_host_s_sheet(qtbot, sheet):
     item.setBackground(QColor("#aa3333"))
     table.setItem(0, 0, item)
     window.setCentralWidget(table)
-    _shown(qtbot, window, (400, 300))
+    shown(qtbot, window, (400, 300))
 
     rect = table.visualItemRect(item)
     image = table.viewport().grab().toImage()
@@ -315,20 +304,9 @@ def test_selection_and_hover_wear_the_theme_under_a_host_s_sheet(
     window = _Probe(parent=host)
     view, items = _three_rows(build)
     window.setCentralWidget(view)
-    _shown(qtbot, window, (400, 300))
-    # Clear of the host: the offscreen platform sends a pointer over both
-    # windows to the host, and whether the hovered row lies there depended
-    # on how tall the window's bars are.
-    window.move(host.frameGeometry().right() + 20, host.y())
+    shown(qtbot, window, (400, 300))
     view.setCurrentItem(items[1])
-    QTest.mouseMove(window, QPoint(1, 1))
-    hovered = _rect(view, items[2])
-    QTest.mouseMove(view.viewport(), hovered.center())
-    qtbot.waitUntil(
-        lambda: view.indexAt(view.viewport().mapFromGlobal(
-            QCursor.pos())) == view.indexFromItem(items[2])
-        if hasattr(view, "indexFromItem") else True, timeout=1000)
-    qtbot.wait(20)
+    hover(qtbot, view.viewport(), _rect(view, items[2]).center())
 
     image = view.viewport().grab().toImage()
 
@@ -344,7 +322,7 @@ def test_selection_and_hover_wear_the_theme_under_a_host_s_sheet(
     qtbot.addWidget(other)
     other.show()
     other.activateWindow()
-    qtbot.waitUntil(lambda: not window.isActiveWindow(), timeout=1000)
+    qtbot.waitUntil(lambda: not window.isActiveWindow())
     image = view.viewport().grab().toImage()
     assert fill(items[1]) == QColor(theme.accent_primary).name(), (
         "an inactive selection wears the theme too")

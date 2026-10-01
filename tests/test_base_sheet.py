@@ -18,35 +18,6 @@ from qtpy.QtWidgets import (
 from fxgui import fxstyle
 
 
-@pytest.fixture
-def app_root(qtbot, qapp):
-    """A window in an application fxgui themes, as FXApplication does."""
-    sheet, font, palette = qapp.styleSheet(), qapp.font(), qapp.palette()
-    style = qapp.style().name()
-    fxstyle.apply_theme("dark")
-    fxstyle.set_style(qapp, "Fusion")
-    fxstyle.register_themed_root(qapp)
-    window = QWidget()
-    qtbot.addWidget(window)
-    QVBoxLayout(window)
-    yield window
-    qapp.setStyleSheet(sheet)
-    qapp.setFont(font)
-    qapp.setPalette(palette)
-    qapp.setStyle(style)
-
-
-@pytest.fixture
-def host_root(qtbot):
-    """A window themed on its own inside an application fxgui leaves alone."""
-    fxstyle.apply_theme("dark")
-    window = QWidget()
-    qtbot.addWidget(window)
-    fxstyle.register_themed_root(window)
-    QVBoxLayout(window)
-    return window
-
-
 def _show(qtbot, root):
     root.resize(300, 200)
     root.show()

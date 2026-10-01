@@ -8,6 +8,8 @@ from qtpy.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
 from fxgui import fxstyle
 from fxgui.fxwidgets import FXPrimaryButton
 
+from _helpers import hover, near, unhover
+
 
 def _ratio(one: str, two: str) -> float:
     low, high = sorted(
@@ -22,12 +24,6 @@ def _most(image) -> str:
             name = image.pixelColor(x, y).name().lower()
             counts[name] = counts.get(name, 0) + 1
     return max(counts, key=counts.get)
-
-
-def _near(a: str, b: str, step: int = 6) -> bool:
-    one, two = QColor(a), QColor(b)
-    return max(abs(one.red() - two.red()), abs(one.green() - two.green()),
-               abs(one.blue() - two.blue())) <= step
 
 
 @pytest.mark.parametrize("theme", fxstyle.get_available_themes())
@@ -82,14 +78,10 @@ def _grab(window, button) -> str:
 def test_the_button_paints_the_fill_and_the_hover(qtbot, qapp, theme):
     window, button = _window_with_button(qtbot, theme)
     tokens = fxstyle._token_map(theme)
-    assert _near(_grab(window, button), tokens["@primary_button"])
+    assert near(_grab(window, button), tokens["@primary_button"], 6)
 
-    # Off first: the last test left the pointer where this button now is.
-    qtbot.mouseMove(window, QPoint(1, 1))
-    qtbot.mouseMove(button, QPoint(button.width() // 2, button.height() // 2))
-    qtbot.waitUntil(button.underMouse)
-    qapp.processEvents()
-    assert _near(_grab(window, button), tokens["@primary_button_hover"])
+    hover(qtbot, button)
+    assert near(_grab(window, button), tokens["@primary_button_hover"], 6)
 
 
 def test_a_disabled_button_leaves_the_accent(qtbot, qapp):
@@ -97,7 +89,7 @@ def test_a_disabled_button_leaves_the_accent(qtbot, qapp):
     button.setEnabled(False)
     qapp.processEvents()
     tokens = fxstyle._token_map("dark")
-    assert _near(_grab(window, button), tokens["@surface_alt"])
+    assert near(_grab(window, button), tokens["@surface_alt"], 6)
 
 
 def test_a_plain_push_button_is_untouched(qtbot, qapp):
@@ -109,7 +101,8 @@ def test_a_plain_push_button_is_untouched(qtbot, qapp):
     QVBoxLayout(window).addWidget(plain)
     window.show()
     qtbot.waitExposed(window)
-    assert _near(_grab(window, plain), fxstyle._token_map("dark")["@surface"])
+    surface = fxstyle._token_map("dark")["@surface"]
+    assert near(_grab(window, plain), surface, 6)
 
 
 def test_the_icon_is_drawn_in_the_on_accent_colour(qtbot, qapp):
@@ -169,7 +162,7 @@ def test_rest_hover_and_pressed_fills_differ_visibly(qapp, theme):
     pressed = tokens["@primary_button_pressed"]
     for one, two in ((rest, hover), (pressed, hover), (pressed, rest)):
         # Hue counts too: dracula's purple and pink share a luminance.
-        assert _ratio(one, two) >= 1.1 or not _near(one, two, 47), (
+        assert _ratio(one, two) >= 1.1 or not near(one, two, 47), (
             f"{theme}: {one} vs {two}")
 
 
@@ -203,14 +196,12 @@ def test_a_hovered_press_draws_the_text_its_fill_was_tuned_for(
 ):
     tokens = _split_theme(monkeypatch)
     window, button = _window_with_button(qtbot, "split")
-    qtbot.mouseMove(window, QPoint(1, 1))
-    qtbot.mouseMove(button, QPoint(button.width() // 2, button.height() // 2))
-    qtbot.waitUntil(button.underMouse)
+    hover(qtbot, button)
     button.setDown(True)
     qapp.processEvents()
     area = QRect(button.mapTo(window, QPoint(0, 0)), button.size())
     image = window.grab(area).toImage()
-    assert _near(_most(image), tokens["@primary_button_pressed"])
+    assert near(_most(image), tokens["@primary_button_pressed"], 6)
     inks = [
         image.pixelColor(x, y)
         for x in range(4, image.width() - 4)
@@ -241,15 +232,13 @@ def test_the_icon_takes_the_ink_of_each_state_fill(qtbot, qapp, monkeypatch):
     window, button = _window_with_button(qtbot, "split", icon="send")
     centre = QPoint(button.width() // 2, button.height() // 2)
 
-    qtbot.mouseMove(window, QPoint(1, 1))
-    qtbot.waitUntil(lambda: not button.underMouse())
+    unhover(qtbot, button)
     assert _icon_inks(button) == {"#ffffff"}
-    qtbot.mouseMove(button, centre)
-    qtbot.waitUntil(button.underMouse)
+    hover(qtbot, button, centre)
     qtbot.waitUntil(lambda: _icon_inks(button) == {"#000000"})
     qtbot.mousePress(button, Qt.MouseButton.LeftButton, pos=centre)
     assert _icon_inks(button) == {"#ffffff"}
     qtbot.mouseRelease(button, Qt.MouseButton.LeftButton, pos=centre)
     assert _icon_inks(button) == {"#000000"}
-    qtbot.mouseMove(window, QPoint(1, 1))
+    unhover(qtbot, button)
     qtbot.waitUntil(lambda: _icon_inks(button) == {"#ffffff"})

@@ -55,7 +55,7 @@ def _resting_x(banner):
 def _assert_gone(qtbot, banner, parent):
     """The banner is hidden, and hidden from off-screen, not from mid-window."""
     message = banner._message
-    qtbot.waitUntil(lambda: message in _left_at, timeout=3000)
+    qtbot.waitUntil(lambda: message in _left_at)
     assert _left_at.pop(message) >= parent.width(), (
         f"{message!r} stopped instead of leaving past x={parent.width()}"
     )
@@ -66,7 +66,7 @@ def test_staggered_dismissals_both_leave_the_window(qtbot):
     parent = _host(qtbot)
     first = _banner(qtbot, parent, "first")
     second = _banner(qtbot, parent, "second")
-    qtbot.waitUntil(lambda: second.x() == _resting_x(second), timeout=3000)
+    qtbot.waitUntil(lambda: second.x() == _resting_x(second))
 
     # Far enough apart that `first` completes while `second` is mid-flight
     first.dismiss()
@@ -91,7 +91,7 @@ def test_a_new_banner_does_not_stack_under_a_leaving_one(qtbot):
     """A dismissing banner holds no slot, so the next one takes the top."""
     parent = _host(qtbot)
     leaving = _banner(qtbot, parent, "leaving")
-    qtbot.waitUntil(lambda: leaving.x() == _resting_x(leaving), timeout=3000)
+    qtbot.waitUntil(lambda: leaving.x() == _resting_x(leaving))
     leaving.dismiss()
 
     arriving = _banner(qtbot, parent, "arriving")
@@ -104,7 +104,7 @@ def test_a_dismissed_banner_deletes_itself(qtbot):
 
     banner.dismiss()
 
-    qtbot.waitUntil(lambda: not _compat.is_valid(banner), timeout=3000)
+    qtbot.waitUntil(lambda: not _compat.is_valid(banner))
 
 
 def test_banners_shown_on_a_hidden_parent_stack(qtbot):
@@ -128,7 +128,7 @@ def test_the_banner_carries_no_sheet_and_follows_a_theme_switch(qtbot):
     parent = _host(qtbot)
     fxstyle.register_themed_root(parent)
     banner = _banner(qtbot, parent, "themed")
-    qtbot.waitUntil(lambda: banner.x() == _resting_x(banner), timeout=3000)
+    qtbot.waitUntil(lambda: banner.x() == _resting_x(banner))
     fxstyle.apply_theme("github_light")
     qtbot.wait(10)
 

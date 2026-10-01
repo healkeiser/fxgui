@@ -2,7 +2,6 @@
 
 import pytest
 from qtpy.QtCore import QPoint, QSize, Qt
-from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QApplication,
     QComboBox,
@@ -15,20 +14,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxstyle
 from fxgui.fxwidgets import FXIconButton, FXJoinedGroup, FXPrimaryButton
 
-
-def _near(a, b, step: int = 8) -> bool:
-    one, two = QColor(a), QColor(b)
-    return max(abs(one.red() - two.red()), abs(one.green() - two.green()),
-               abs(one.blue() - two.blue())) <= step
-
-
-def _inks(icon, size: int) -> set:
-    image = icon.pixmap(size, size).toImage()
-    return {
-        image.pixelColor(x, y).name()
-        for x in range(image.width()) for y in range(image.height())
-        if image.pixelColor(x, y).alpha() == 255
-    }
+from _helpers import hover, near, pixel, unhover
 
 
 @pytest.fixture
@@ -49,36 +35,22 @@ def _show(qtbot, window, child):
     return child
 
 
-def _pixel(window, widget, x, y) -> str:
-    image = window.grab().toImage()
-    at = widget.mapTo(window, QPoint(x, y))
-    return image.pixelColor(at.x(), at.y()).name()
-
-
-def _hover(qtbot, window, widget):
-    # Off first: the last test may have left the pointer where this is.
-    qtbot.mouseMove(window, QPoint(1, 1))
-    qtbot.mouseMove(widget, QPoint(widget.width() // 2, widget.height() // 2))
-    qtbot.waitUntil(widget.underMouse)
-    QApplication.processEvents()
-
-
 def test_the_icon_button_is_round_and_fills_on_hover(qtbot, window):
     button = _show(
         qtbot, window, FXIconButton("mood", window, tip="Emoji", size=28))
     tokens = fxstyle._token_map("dark")
     assert button.size().width() == button.size().height() == 28
     assert button.iconSize().width() == 16
-    _hover(qtbot, window, button)
-    assert _near(_pixel(window, button, 14, 3), tokens["@state_hover"])
-    assert _near(_pixel(window, button, 1, 1), tokens["@surface"])
-    assert _near(_pixel(window, button, 26, 26), tokens["@surface"])
+    hover(qtbot, button)
+    assert near(pixel(window, button, 14, 3), tokens["@state_hover"])
+    assert near(pixel(window, button, 1, 1), tokens["@surface"])
+    assert near(pixel(window, button, 26, 26), tokens["@surface"])
 
 
 def test_the_icon_button_rests_without_a_fill(qtbot, window):
     button = _show(qtbot, window, FXIconButton("mood", window))
     tokens = fxstyle._token_map("dark")
-    assert _near(_pixel(window, button, 14, 3), tokens["@surface"])
+    assert near(pixel(window, button, 14, 3), tokens["@surface"])
 
 
 def test_the_tip_is_the_house_rich_tooltip(qtbot, window):
@@ -95,10 +67,8 @@ def test_checkable_toggles_on_click_and_swaps_icon_and_fill(qtbot, window):
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
     assert button.isChecked()
     assert button.icon().pixmap(16, 16).toImage() != off
-    qtbot.mouseMove(window, QPoint(1, 1))
-    qtbot.waitUntil(lambda: not button.underMouse())
-    QApplication.processEvents()
-    assert _near(_pixel(window, button, 14, 3), tokens["@primary_button"])
+    unhover(qtbot, button)
+    assert near(pixel(window, button, 14, 3), tokens["@primary_button"])
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
     assert not button.isChecked()
 
@@ -140,16 +110,16 @@ def test_the_group_draws_one_outline_and_a_divider(qtbot, window):
         qtbot, window, lambda p: QPushButton("Post", p))
     tokens = fxstyle._token_map("dark")
     middle = combo.width() // 2
-    assert _near(_pixel(window, group, combo.x() + middle, 0),
+    assert near(pixel(window, group, combo.x() + middle, 0),
                  tokens["@border_light"])
     # Borderless children: nothing but the one outline at the top.
-    assert not _near(_pixel(window, group, combo.x() + middle, 1),
+    assert not near(pixel(window, group, combo.x() + middle, 1),
                      tokens["@border_light"], 4)
-    assert not _near(_pixel(window, group, combo.x() + middle, 2),
+    assert not near(pixel(window, group, combo.x() + middle, 2),
                      tokens["@border_light"], 4)
-    divider = _pixel(window, group, button.x(), group.height() // 2)
-    assert _near(divider, tokens["@border"], 4), divider
-    assert _near(_pixel(window, group, 0, 0), tokens["@surface"])
+    divider = pixel(window, group, button.x(), group.height() // 2)
+    assert near(divider, tokens["@border"], 4), divider
+    assert near(pixel(window, group, 0, 0), tokens["@surface"])
 
 
 def test_a_primary_keeps_its_fill_clipped_to_the_outline(qtbot, window):
@@ -158,14 +128,14 @@ def test_a_primary_keeps_its_fill_clipped_to_the_outline(qtbot, window):
     tokens = fxstyle._token_map("dark")
     mid = group.height() // 2
     fill = tokens["@primary_button"]
-    assert _near(_pixel(window, group, button.x() + 4, mid), fill)
-    assert _near(_pixel(window, group, group.width() - 6, mid), fill)
-    assert not _near(_pixel(window, group, combo.x() + 6, mid), fill, 40)
+    assert near(pixel(window, group, button.x() + 4, mid), fill)
+    assert near(pixel(window, group, group.width() - 6, mid), fill)
+    assert not near(pixel(window, group, combo.x() + 6, mid), fill, 40)
     # The outer corner lies outside the outline, so shows the window behind.
-    assert _near(_pixel(window, group, group.width() - 1, 0),
+    assert near(pixel(window, group, group.width() - 1, 0),
                  tokens["@surface"])
     # The inner side is square: the fill reaches the top next to the divider.
-    assert _near(_pixel(window, group, button.x() + 2, 2), fill)
+    assert near(pixel(window, group, button.x() + 2, 2), fill)
 
 
 def test_the_outline_has_the_push_button_corner(qtbot, window):
@@ -177,13 +147,13 @@ def test_the_outline_has_the_push_button_corner(qtbot, window):
     QApplication.processEvents()
     tokens = fxstyle._token_map("dark")
     # 2 px in from the corner is inside a 4 px radius; a pill leaves it out.
-    assert _near(_pixel(window, group, group.width() - 3, 2),
+    assert near(pixel(window, group, group.width() - 3, 2),
                  tokens["@primary_button"])
     image = window.grab().toImage()
     for x in range(5):
         for y in range(5):
             at, ref = (w.mapTo(window, QPoint(x, y)) for w in (group, plain))
-            assert _near(image.pixelColor(at), image.pixelColor(ref), 4), (x, y)
+            assert near(image.pixelColor(at), image.pixelColor(ref), 4), (x, y)
 
 
 def test_keyboard_focus_on_a_child_lights_the_outline(qtbot, window):
@@ -191,17 +161,17 @@ def test_keyboard_focus_on_a_child_lights_the_outline(qtbot, window):
         qtbot, window, lambda p: FXPrimaryButton("Post", p))
     tokens = fxstyle._token_map("dark")
     top = (combo.x() + combo.width() // 2, 0)
-    assert not _near(_pixel(window, group, *top), tokens["@accent_primary"])
+    assert not near(pixel(window, group, *top), tokens["@accent_primary"])
     qtbot.keyClick(QApplication.focusWidget(), Qt.Key.Key_Tab)
     qtbot.waitUntil(combo.hasFocus)
     QApplication.processEvents()
-    assert _near(_pixel(window, group, *top), tokens["@accent_primary"])
+    assert near(pixel(window, group, *top), tokens["@accent_primary"])
     size = group.size()
     qtbot.keyClick(combo, Qt.Key.Key_Tab)
     qtbot.keyClick(QApplication.focusWidget(), Qt.Key.Key_Tab)
     qtbot.waitUntil(lambda: not group.isAncestorOf(QApplication.focusWidget()))
     QApplication.processEvents()
-    assert not _near(_pixel(window, group, *top), tokens["@accent_primary"])
+    assert not near(pixel(window, group, *top), tokens["@accent_primary"])
     assert group.size() == size
 
 
@@ -267,8 +237,8 @@ def test_a_hidden_first_child_takes_the_divider_with_it(qtbot, window):
     assert _places([b, c]) == ["first", "last"]
     _show(qtbot, window, group)
     tokens = fxstyle._token_map("dark")
-    edge = _pixel(window, group, b.x(), group.height() // 2)
-    assert not _near(edge, tokens["@border"], 4), edge
+    edge = pixel(window, group, b.x(), group.height() // 2)
+    assert not near(edge, tokens["@border"], 4), edge
 
 
 def test_the_icon_button_renders_at_its_own_pixel_ratio(qtbot, window,
@@ -322,10 +292,10 @@ def test_the_icon_button_round_comes_from_the_theme_not_its_own_sheet(
 ):
     button = _show(qtbot, window, FXIconButton("mood", window, size=40))
     tokens = fxstyle._token_map("dark")
-    _hover(qtbot, window, button)
+    hover(qtbot, button)
     assert button.styleSheet() == ""
-    assert _near(_pixel(window, button, 20, 3), tokens["@state_hover"])
-    assert _near(_pixel(window, button, 2, 2), tokens["@surface"])
+    assert near(pixel(window, button, 20, 3), tokens["@state_hover"])
+    assert near(pixel(window, button, 2, 2), tokens["@surface"])
 
 
 def test_a_deleted_child_leaves_the_group_at_once(qtbot, window):

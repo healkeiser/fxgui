@@ -46,7 +46,7 @@ def test_actions_run_their_callback_then_close_the_banner(qtbot):
     banner._action_buttons[0].click()
 
     assert answered == ["Retry"]
-    qtbot.waitUntil(lambda: not _compat.is_valid(banner), timeout=3000)
+    qtbot.waitUntil(lambda: not _compat.is_valid(banner))
 
 
 def test_actions_cancel_the_auto_dismiss(qtbot):

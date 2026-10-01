@@ -218,7 +218,7 @@ def test_a_collapse_after_a_finished_expansion_does_not_grow_first(
     assert _first_animation(section).startValue() <= on_screen, (
         "a collapse starts from the height on screen, not from the cap"
     )
-    qtbot.waitUntil(lambda: bool(frames), timeout=2000)
+    qtbot.waitUntil(lambda: bool(frames))
     assert max(frames) <= on_screen, f"it grew before falling: {frames}"
 
 
@@ -238,7 +238,7 @@ def test_an_uncapped_section_never_reports_qwidgetsize_max(qtbot, qapp):
     )
 
     section.collapse(animate=True)
-    qtbot.waitUntil(lambda: bool(frames), timeout=2000)
+    qtbot.waitUntil(lambda: bool(frames))
 
     assert FXCollapsibleWidget.NO_CAP not in frames
     assert max(frames) <= on_screen, f"reported off-screen heights: {frames}"
@@ -254,7 +254,7 @@ def test_an_interrupted_closing_is_reversed_from_where_it_got_to(
 
     section.collapse(animate=True)
     qtbot.waitUntil(
-        lambda: 0 < section._content_area.maximumHeight() < full, timeout=2000
+        lambda: 0 < section._content_area.maximumHeight() < full
     )
     reached = section._content_area.maximumHeight()
 

@@ -29,7 +29,7 @@ def _palette(qtbot, commands):
     window = _window(qtbot)
     palette = FXCommandPalette(window, lambda: commands)
     palette.open_commands()
-    qtbot.waitUntil(palette.isVisible, timeout=1000)
+    qtbot.waitUntil(palette.isVisible)
     return window, palette
 
 
@@ -122,9 +122,8 @@ def test_a_click_outside_closes(qtbot):
     )
     assert not palette.rect().contains(corner)
     QTest.mouseClick(palette, Qt.LeftButton, pos=corner)
-    QTest.qWait(50)
 
-    assert not palette.isVisible()
+    qtbot.waitUntil(lambda: not palette.isVisible())
 
 
 def _below_rows(palette):
@@ -221,7 +220,7 @@ def _placed(qtbot, position, size=(900, 600)):
     qtbot.waitExposed(window)
     palette = FXCommandPalette(window, lambda: _commands([]))
     palette.open_commands(position=position)
-    qtbot.waitUntil(palette.isVisible, timeout=1000)
+    qtbot.waitUntil(palette.isVisible)
     central = window.centralWidget()
     area = central.geometry()
     area.moveTopLeft(window.mapToGlobal(area.topLeft()))

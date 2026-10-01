@@ -20,23 +20,15 @@ from fxgui import fxstyle, fxutils
 from fxgui.fxwidgets import _delegates
 from fxgui.fxwidgets import FXThumbnailDelegate
 
+from _helpers import delegate_tree
+
 _IMAGE = str(
     Path(_delegates.__file__).parent.parent / "images" / "missing_image.png"
 )
 
 
-def _tree(qtbot, delegate=None, width=300):
-    tree = QTreeWidget()
-    tree.setHeaderLabels(["Name"])
-    tree.setRootIsDecorated(False)
-    tree.header().setStretchLastSection(False)
-    tree.setColumnWidth(0, width)
-    tree.resize(width + 40, 160)
-    delegate = delegate or FXThumbnailDelegate()
-    tree.setItemDelegate(delegate)
-    qtbot.addWidget(tree)
-    tree.show()
-    qtbot.waitExposed(tree)
+def _tree(qtbot):
+    tree, delegate, _ = delegate_tree(qtbot, headers=["Name"], height=160)
     return tree, delegate
 
 

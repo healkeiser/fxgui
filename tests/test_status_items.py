@@ -4,12 +4,14 @@
 import pytest
 from qtpy.QtCore import QPoint, QSize
 from qtpy.QtGui import QColor, QStatusTipEvent
-from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication
 
 # Internal
 from fxgui import fxstyle
 from fxgui.fxwidgets import ERROR, INFO, FXMainWindow, FXStatusItem
+
+from _helpers import hover, pixel
+
 
 FLOOR = 4.5 - 0.01
 
@@ -45,11 +47,6 @@ def _items(window):
             if item.isVisible()]
 
 
-def _pixel(window, widget, point):
-    image = window.grab().toImage()
-    return QColor(image.pixel(widget.mapTo(window, point))).name()
-
-
 def test_every_item_reads_on_every_theme(qtbot, any_theme):
     window = _window(qtbot)
     bar = window.statusBar()
@@ -62,7 +59,7 @@ def test_every_item_reads_on_every_theme(qtbot, any_theme):
             any_theme, item.text())
     left = bar.artist.parentWidget()
     spot = QPoint(left.width() - 5, left.height() // 2)
-    assert _pixel(window, left, spot) == QColor(bar.ground()).name(), (
+    assert pixel(window, left, spot) == QColor(bar.ground()).name(), (
         "the items sit on the bar, with no fill")
 
 
@@ -103,7 +100,7 @@ def test_a_message_keeps_the_items_shown_and_readable(qtbot, any_theme):
         assert bar.tint() == ground
         assert ground != fxstyle.colors().frame, "tinted"
         spot = QPoint(bar.width() // 2, bar.height() - 2)
-        assert _pixel(window, bar, spot) == QColor(ground).name(), (
+        assert pixel(window, bar, spot) == QColor(ground).name(), (
             "the ink is chosen against the tint painted")
         for item in before:
             assert fxstyle.get_contrast_ratio(item.ink(), ground) >= FLOOR, (
@@ -125,7 +122,7 @@ def test_a_theme_switch_mid_message_keeps_the_items_readable(qtbot, theme):
     qtbot.wait(50)
 
     spot = QPoint(bar.width() // 2, bar.height() - 2)
-    painted = _pixel(window, bar, spot)
+    painted = pixel(window, bar, spot)
     assert painted == QColor(bar.ground()).name(), (
         "the ground is what the bar paints")
     for item in _items(window):
@@ -212,15 +209,12 @@ def test_a_tip_over_a_message_gives_the_message_back(qtbot):
 def test_a_clickable_item_lights_under_the_mouse(qtbot):
     window = _window(qtbot)
     item = window.statusBar().artist
-    hover = QColor(fxstyle.colors().state_hover).name()
+    lit = QColor(fxstyle.colors().state_hover).name()
 
-    QTest.mouseMove(window, window.rect().center())
-    QTest.mouseMove(item, item.rect().center())
-    qtbot.waitUntil(item.underMouse, timeout=1000)
-    qtbot.wait(20)
+    hover(qtbot, item)
 
-    assert _pixel(window, item, QPoint(4, item.height() // 2)) == hover
-    assert _pixel(window, item, QPoint(0, 0)) != hover, "the corners round"
+    assert pixel(window, item, QPoint(4, item.height() // 2)) == lit
+    assert pixel(window, item, QPoint(0, 0)) != lit, "the corners round"
 
 
 def test_a_plain_item_takes_no_mouse_until_it_is_clickable(qtbot):

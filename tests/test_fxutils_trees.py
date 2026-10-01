@@ -22,7 +22,7 @@ def test_popup_menu_shows_the_menu_and_frees_it_once_closed(qtbot):
     fxutils.popup_menu(menu, QPoint(10, 10))
     qtbot.waitUntil(menu.isVisible)
     menu.close()
-    qtbot.waitUntil(lambda: bool(gone), timeout=1000)
+    qtbot.waitUntil(lambda: bool(gone))
 
 
 def test_add_submenu_outlives_its_python_wrapper(qtbot):

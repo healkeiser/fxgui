@@ -28,6 +28,8 @@ from qtpy.QtWidgets import (
 from fxgui import fxstyle
 from fxgui.fxwidgets import FXBreadcrumb
 
+from _helpers import hover, unhover
+
 
 PATH = ["Projects", "MyShow", "Assets", "Hero"]
 
@@ -59,11 +61,10 @@ def _segments(crumb):
     return drawn
 
 
-def _corner(segment, hovered):
+def _corner(qtbot, segment, hovered):
     """The colour a segment paints at its left edge, over its strip."""
-    segment.setAttribute(Qt.WA_UnderMouse, hovered)
+    (hover if hovered else unhover)(qtbot, segment)
     image = segment.parentWidget().grab().toImage()
-    segment.setAttribute(Qt.WA_UnderMouse, False)
     box = segment.geometry()
     return image.pixelColor(box.left() + 3, box.center().y())
 
@@ -91,7 +92,8 @@ def test_a_clickable_segment_says_so_under_the_pointer(qtbot, qapp):
     crumb = _crumb(qtbot)
 
     for segment in _segments(crumb)[:-1]:
-        assert _corner(segment, True) != _corner(segment, False), (
+        lit = _corner(qtbot, segment, True)
+        assert lit != _corner(qtbot, segment, False), (
             f"{segment.text()} answers a hover"
         )
 
@@ -110,9 +112,11 @@ def test_a_clickable_segment_says_so_with_its_cursor(qtbot, qapp):
 def test_the_segment_the_path_is_already_at_promises_nothing(qtbot, qapp):
     """The last segment is connected to nothing, so a tint on it would
     offer a click that does nothing at all."""
-    last = _segments(_crumb(qtbot))[-1]
+    crumb = _crumb(qtbot)
+    last = _segments(crumb)[-1]
 
-    assert _corner(last, True) == _corner(last, False)
+    # Under the pointer the strip wears its hover fill, and nothing over it.
+    assert _corner(qtbot, last, True) == QColor(crumb._colors()[1])
 
 
 def test_the_tint_is_a_neutral_theme_ink_rather_than_a_hex(qtbot, qapp):
@@ -121,13 +125,14 @@ def test_the_tint_is_a_neutral_theme_ink_rather_than_a_hex(qtbot, qapp):
     assert FXBreadcrumb.SEGMENT_HOVER_TOKEN == "text"
     crumb = _crumb(qtbot)
     colors = dict(vars(fxstyle.colors()))
+    # The pointer over a segment is over the strip too.
     expected = _tinted(
-        crumb._colors()[0],
+        crumb._colors()[1],
         colors[FXBreadcrumb.SEGMENT_HOVER_TOKEN],
         FXBreadcrumb.SEGMENT_HOVER_ALPHA,
     )
 
-    assert _close(_corner(_segments(crumb)[0], True), expected)
+    assert _close(_corner(qtbot, _segments(crumb)[0], True), expected)
 
 
 def test_a_subclass_can_name_its_own_tokens(qtbot, qapp):
@@ -148,8 +153,9 @@ def test_a_subclass_can_name_its_own_tokens(qtbot, qapp):
     colors = dict(vars(fxstyle.colors()))
 
     assert crumb._colors()[0] == colors["surface_alt"]
-    expected = _tinted(colors["surface_alt"], colors["accent_secondary"], 120)
-    assert _close(_corner(_segments(crumb)[0], True), expected)
+    expected = _tinted(
+        crumb._colors()[1], colors["accent_secondary"], 120)
+    assert _close(_corner(qtbot, _segments(crumb)[0], True), expected)
 
 
 def test_the_strip_is_never_the_window_s_own_colour(qtbot, qapp):
@@ -197,7 +203,7 @@ def test_a_theme_change_keeps_the_segments_and_their_tint(qtbot, qapp):
     assert _segments(crumb) == before
     assert _strip_fill(crumb) == QColor(crumb._colors()[0]).name()
     first = before[0]
-    assert _corner(first, True) != _corner(first, False)
+    assert _corner(qtbot, first, True) != _corner(qtbot, first, False)
 
 
 def test_a_new_path_bolds_only_its_last_segment(qtbot, qapp):

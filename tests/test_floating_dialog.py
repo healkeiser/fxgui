@@ -11,6 +11,8 @@ from fxgui import fxstyle
 from fxgui.fxwidgets import _dialogs
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
 
+from _helpers import hover
+
 
 class _Cursor:
     @staticmethod
@@ -45,7 +47,7 @@ def test_close_runs_qdialogs_own_close(qtbot):
     dialog = _dialog(qtbot)
     dialog.show()
 
-    with qtbot.waitSignal(dialog.finished, timeout=1000):
+    with qtbot.waitSignal(dialog.finished):
         dialog.close()
 
     assert "closeEvent" not in FXFloatingDialog.__dict__
@@ -102,7 +104,7 @@ def test_the_close_button_rejects_and_deletes_the_dialog(qtbot):
     dialog = _dialog(qtbot)
     dialog.show()
 
-    with qtbot.waitSignal(dialog.rejected, timeout=1000):
+    with qtbot.waitSignal(dialog.rejected):
         dialog.button_close.click()
     # PySide6 6.5 runs a deleteLater only once control is back in the loop
     # it was posted from; delivering it here proves one was posted.
@@ -159,9 +161,7 @@ def test_the_buttons_are_the_theme_s_push_buttons(qtbot, theme):
     dialog = _shown(qtbot, theme)
     button = dialog.button_close
     assert button.height() == fxstyle.control_height(button)
-    qtbot.mouseMove(dialog, QPoint(1, 1))
-    qtbot.mouseMove(button, button.rect().center())
-    qtbot.wait(20)
+    hover(qtbot, button)
     image = button.grab().toImage()
     colors = fxstyle.colors()
     assert image.pixelColor(4, button.height() // 2).name() == (
