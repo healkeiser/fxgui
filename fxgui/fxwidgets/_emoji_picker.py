@@ -18,7 +18,8 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import _compat, fxicons, fxstyle
+from fxgui import _compat, fxstyle
+from fxgui.fxwidgets._buttons import FXIconButton
 
 
 # Reactions and studio work, in the order the grid shows them.
@@ -234,12 +235,13 @@ class FXEmojiPicker(QFrame):
         return super().eventFilter(watched, event)
 
 
-class FXEmojiButton(QToolButton):
-    """A tool button that opens an `FXEmojiPicker` just below itself.
+class FXEmojiButton(FXIconButton):
+    """A round icon button that opens an `FXEmojiPicker` just below itself.
 
     Args:
         parent: Parent widget.
         emojis: The emoji to offer. Defaults to `DEFAULT_EMOJIS`.
+        size: The circle's diameter, in logical pixels.
 
     Signals:
         emoji_picked(str): The emoji picked.
@@ -255,16 +257,16 @@ class FXEmojiButton(QToolButton):
         self,
         parent: Optional[QWidget] = None,
         emojis: Optional[Sequence[str]] = None,
+        size: int = 28,
     ):
-        super().__init__(parent)
+        super().__init__(
+            "add_reaction", parent, tip="Insert an emoji", size=size
+        )
         self._emojis = emojis
         self._picker: Optional[FXEmojiPicker] = None
         self._editor: Optional[QWidget] = None
         self.emoji_picked.connect(self._insert)
-        self.setAutoRaise(True)
-        self.setToolTip("Insert an emoji")
         self.setAccessibleName("Insert an emoji")
-        fxicons.set_icon(self, "add_reaction", fallback="mood")
         self.clicked.connect(self.open_picker)
 
     def picker(self) -> FXEmojiPicker:

@@ -93,7 +93,7 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXCommandPalette` | Popup search over a window's commands (`FXCommand` rows) or rows to go to |
 | `FXColorLabelDelegate` | Delegate for color label rendering in views |
 | `FXElidedLabel` | Label with automatic text elision |
-| `FXEmojiButton` | Tool button that opens an emoji picker and can insert into an editor |
+| `FXEmojiButton` | Round icon button that opens an emoji picker and can insert into an editor |
 | `FXEmojiPicker` | Popup grid of emoji, keyboard navigable |
 | `FXFilePathWidget` | File/folder path input with browse button |
 | `FXFlowLayout` | Layout that wraps its widgets onto new lines, like words |
