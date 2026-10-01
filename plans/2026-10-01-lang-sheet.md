@@ -145,3 +145,30 @@ Folder: `C:/Users/ValentinBeaumont/AppData/Local/Temp/claude/C--Users-ValentinBe
 - `resources/lotchi_colors.yaml`: drop `separator`, `slider_thumb`, `slider_thumb_hover` (dead), and add `shadow` / `shadow_blur` only if Lotchi wants its own.
 - Lotchi's `text` / `text_muted` may be derived darker or lighter on its surfaces; nothing to change, but a pixel test there that compares to the yaml value would move.
 - `fxutils.add_shadow(widget, blur=..., alpha=...)` no longer takes blur or alpha: none in ls.
+
+## Follow-up on audit-fixes
+
+- a1ad998a: muted vs text. `text` steps on until 1.5:1 off `text_muted`
+  (`MUTED_STEP`); where text hits black or white (nord), muted steps back
+  toward the surface while it still reads 4.5:1. text/muted now: dark 1.52
+  (text #c0c0c0 -> #d3d3d3), light 2.41, dracula 1.76, one_dark_pro 1.53
+  (#d0d4db), github_dark 2.60, github_light 2.79, catppuccin_mocha 1.54,
+  catppuccin_latte 1.52 (text #393b4f), nord 1.53 (text #ffffff, muted
+  #cbd1dc), material_dark 1.85, solarized_light 1.52 (text #3c494e). Every
+  muted stays >= 5.66:1 on its surface. Test over every theme.
+- 82432638: the 6.5.3 host-only focus tint. A list, tree or table in a themed
+  host window gets its own `FXProxyStyle` at its first show (after the
+  sheet polished it), not at Polish. Headers and popup lists are skipped:
+  headers are item views too, and giving them the style made the view
+  skip its own. The earlier attempt's chevron and combo-row changes came
+  from the Polish timing and the popup lists; neither happens now. A
+  delegate's row style replaces it and drops it. The 6.5.3 host
+  BackgroundRole tests pass.
+- Full suite 6.11.2: 2398 passed on seed 3359073002; on seed 3079771269,
+  20 failed, all pointer-hover timeouts
+  (`test_frame_controls::test_a_hovered_flat_button_fills` 11,
+  `test_host_sheet::test_selection_and_hover...` 9): group h's known
+  hover flake, reproducible with that seed. 6.5.3 covering files: pass
+  but for the shim's QtAds import test, `test_theming_core::
+  test_a_colour_file_without_dark_fills_from_the_default` (order-dependent;
+  passes alone on 6.5.3) and the 4 known fxdocking teardown errors.

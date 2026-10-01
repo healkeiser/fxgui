@@ -78,7 +78,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 | `text_on_accent_primary` | *(Optional)* Text on `accent_primary` backgrounds (e.g., selected items). Auto-computed if omitted |
 | `text_on_accent_secondary` | *(Optional)* Text on `accent_secondary` backgrounds (a hovered primary button). Auto-computed if omitted |
 
-`text` and `text_muted` are held to 4.5:1 (`fxstyle.TEXT_CONTRAST`, WCAG AA) on every surface they sit on: `surface`, `surface_sunken`, `surface_alt`, `well`, `frame`, `tooltip` and `state_hover`, and `text` on `state_pressed` too. A theme's value that misses it is darkened or lightened until it reads, so `fxstyle.colors().text` can differ from the file. `catppuccin_latte` and `solarized_light` move furthest: there `text_muted` ends close to `text`.
+`text` and `text_muted` are held to 4.5:1 (`fxstyle.TEXT_CONTRAST`, WCAG AA) on every surface they sit on: `surface`, `surface_sunken`, `surface_alt`, `well`, `frame`, `tooltip` and `state_hover`, and `text` on `state_pressed` too. A theme's value that misses it is darkened or lightened until it reads, so `fxstyle.colors().text` can differ from the file. `text` then moves on until it stands 1.5:1 off `text_muted` (`fxstyle.MUTED_STEP`), so the two always read as two ranks; where `text` is already black or white, `text_muted` steps back toward the surface instead, as far as it still reads at 4.5:1.
 
 An omitted `text_on_accent_*` is black or white, whichever reads better on the accent.
 
