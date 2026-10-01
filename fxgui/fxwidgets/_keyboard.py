@@ -197,7 +197,7 @@ class FXFilteredTree(QWidget):
         self.filter_bar.search_changed.connect(
             lambda text: fxutils.filter_tree(self.tree, text)
         )
-        self.tree.type_into(self.filter_bar.focusProxy())
+        self.tree.type_into(self.filter_bar)
 
         bar = QHBoxLayout()
         bar.setContentsMargins(0, 0, 0, 0)

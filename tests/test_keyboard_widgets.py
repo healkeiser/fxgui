@@ -184,7 +184,7 @@ def test_a_filtered_tree_narrows_as_its_bar_changes(qtbot):
     _window = _shown(qtbot, panel)
     top = QTreeWidgetItem(panel.tree, ["Beauty"])
     other = QTreeWidgetItem(panel.tree, ["Other"])
-    panel.filter_bar.text = "beau"
+    panel.filter_bar.setText("beau")
     qtbot.waitUntil(other.isHidden, timeout=2000)
     assert not top.isHidden()
 
@@ -197,7 +197,7 @@ def test_a_filtered_tree_takes_typing_and_folds(qtbot):
     panel.tree.setCurrentItem(top)
     panel.tree.setFocus()
     _press(Qt.Key_T)
-    assert panel.filter_bar.text == "t"
+    assert panel.filter_bar.text() == "t"
     panel.expand_button.click()
     assert top.isExpanded()
     panel.collapse_button.click()

@@ -209,16 +209,12 @@ def _inputs_page() -> QWidget:
         edit.setPlaceholderText(f"e.g. {example}")
         validators.addRow(name, edit)
 
-    icon_edit = fxwidgets.FXIconLineEdit("search")
+    icon_edit = fxwidgets.FXIconLineEdit(icon_name="search")
     icon_edit.setPlaceholderText("Shot name")
     password = fxwidgets.FXPasswordLineEdit()
-    password.line_edit.setPlaceholderText("Password")
+    password.setPlaceholderText("Password")
 
-    search = fxwidgets.FXSearchBar(
-        placeholder="Search assets...",
-        show_filter=True,
-        filters=["All", "Models", "Textures"],
-    )
+    search = fxwidgets.FXSearchBar(placeholder="Search assets...")
     tags = fxwidgets.FXTagInput()
     tags.set_tags(["comp", "lighting", "fx"])
     chip = fxwidgets.FXTagChip("read only", removable=False)
@@ -437,7 +433,6 @@ def _thumbnail_tree() -> QTreeWidget:
         top = QTreeWidgetItem(tree, [episode, "", "In progress"])
         top.setIcon(0, get_icon("movie"))
         top.setData(0, delegate.DESCRIPTION_ROLE, "Episode")
-        top.setData(0, delegate.STARRED_ROLE, episode == "ep101")
         # A token name, so each card follows every theme switch.
         top.setData(0, Qt.BackgroundRole, "surface")
         for shot, status, key in (
@@ -461,13 +456,9 @@ def _thumbnail_tree() -> QTreeWidget:
 
 
 def _lists_page() -> QWidget:
-    fuzzy_list = fxwidgets.FXFuzzySearchList(
-        placeholder="Search shots...", show_ratio_slider=True
+    fuzzy_tree = fxwidgets.FXFuzzySearchTree(
+        placeholder="Search assets...", show_ratio_slider=True
     )
-    fuzzy_list.set_items([f"sh{number:04d}" for number in range(10, 200, 10)])
-    fuzzy_list.setMinimumHeight(180)
-
-    fuzzy_tree = fxwidgets.FXFuzzySearchTree(placeholder="Search assets...")
     for category, assets in (
         ("Characters", ("hero_body", "hero_head", "villain")),
         ("Vehicles", ("car_sports", "truck_pickup")),
@@ -510,7 +501,6 @@ def _lists_page() -> QWidget:
     icon_list.setFixedHeight(100)
 
     return _page(
-        _section("FXFuzzySearchList", fuzzy_list),
         _section("FXFuzzySearchTree", fuzzy_tree),
         _section("FXFilteredTree / FXKeyboardTree", filtered),
         _section("FXSortedTreeWidgetItem", sorted_tree),
