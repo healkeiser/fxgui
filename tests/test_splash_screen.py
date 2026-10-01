@@ -149,7 +149,7 @@ def test_the_splash_keeps_one_way_to_set_each_thing():
 
 
 def test_a_show_costs_what_a_widget_show_costs(qtbot):
-    # Qt 6.6+ waits up to 1 s in the Show event for a window it maps after.
+    # Qt 6.7+ waits up to 1 s in the Show event for a window it maps after.
     import time
 
     splash = FXSplashScreen()
