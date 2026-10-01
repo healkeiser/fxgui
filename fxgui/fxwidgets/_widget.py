@@ -51,30 +51,3 @@ class FXWidget(QWidget):
         self.main_layout.setContentsMargins(9, 9, 9, 9)
         if self.ui:
             self.main_layout.addWidget(self.ui)
-
-
-def example() -> None:
-    import sys
-    from qtpy.QtWidgets import QLabel, QPushButton
-    from fxgui.fxwidgets import FXApplication, FXMainWindow
-
-    app = FXApplication(sys.argv)
-    window = FXMainWindow()
-    window.setWindowTitle("FXWidget Demo")
-
-    # Create a simple FXWidget
-    widget = FXWidget()
-    widget.main_layout.addWidget(QLabel("This is an FXWidget with styled theme."))
-    widget.main_layout.addWidget(QPushButton("Click Me"))
-
-    window.setCentralWidget(widget)
-    window.resize(400, 200)
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    import os
-
-    if os.getenv("DEVELOPER_MODE") == "1":
-        example()

@@ -4,7 +4,6 @@ recursive-include fxgui *.yaml
 recursive-include fxgui *.svg
 recursive-include fxgui *.png
 recursive-include fxgui *.qss
-recursive-include fxgui *.ui
 
 # Exclude root-level directories not needed in sdist
 prune .github

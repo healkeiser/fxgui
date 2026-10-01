@@ -14,11 +14,12 @@ git clone --recurse-submodules https://github.com/healkeiser/fxgui
 pip install -e .
 ```
 
-### Running Examples
+### Gallery
 ```bash
-python -m fxgui.examples                    # Full showcase application
-DEVELOPER_MODE=1 python -m fxgui.fxwidgets._accordion  # Individual widget example
+python -m fxgui.examples    # Every public widget, a page per kind
 ```
+`fxgui/examples.py` is the only example. A new public widget gets a section
+there, titled with its class name; `tests/test_gallery.py` fails otherwise.
 
 ### Documentation
 ```bash
@@ -63,7 +64,7 @@ class MyCard(QFrame):
 
 The `fxwidgets/` directory contains 30+ custom widgets. Each module:
 - Private module name (e.g., `_accordion.py`)
-- Standalone `example()` function for testing (runs with `DEVELOPER_MODE=1`)
+- No `example()` or `__main__` block: the gallery shows it
 - Signals/slots with `@Slot` decorator
 
 ## Conventions

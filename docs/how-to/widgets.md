@@ -58,25 +58,17 @@ window.show()
 application.exec_()
 ```
 
-## Running Widget Examples
-
-Every widget in the `fxwidgets` module includes a standalone example that demonstrates its usage. Set the `DEVELOPER_MODE` environment variable to `1` to enable examples:
+## The Gallery
 
 ```bash
-# Set the environment variable first
-set DEVELOPER_MODE=1  # Windows
-export DEVELOPER_MODE=1  # Linux/macOS
-
-# Run any widget file directly
-python -m fxgui.fxwidgets._breadcrumb
-python -m fxgui.fxwidgets._accordion
-python -m fxgui.fxwidgets._collapsible
-python -m fxgui.fxwidgets._range_slider
-# ... and more
+python -m fxgui.examples
 ```
 
-!!! tip "Explore Widgets Interactively"
-    This is a great way to explore the available widgets and see how they behave before integrating them into your application.
+A window opens with every public widget, a page per kind: buttons,
+inputs, display, containers, lists and trees, the timeline, windows and
+dialogs, and docking. Each box is titled with the class names it shows.
+**Window > Theme** switches the theme, so you can see a widget in each.
+The Docking page needs the `docking` extra (`pip install fxgui[docking]`).
 
 ## Available Widgets
 

@@ -1,7 +1,6 @@
 """Animated loading indicator widget."""
 
 # Built-in
-import os
 import math
 from typing import Optional
 
@@ -329,48 +328,3 @@ class FXLoadingOverlay(QWidget):
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor(0, 0, 0, 128))
         painter.end()
-
-
-def example() -> None:
-    import sys
-    from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QGroupBox
-    from fxgui.fxwidgets import FXApplication, FXMainWindow
-
-    app = FXApplication(sys.argv)
-    window = FXMainWindow()
-    window.setWindowTitle("FXLoadingSpinner Demo")
-    widget = QWidget()
-    window.setCentralWidget(widget)
-    layout = QHBoxLayout(widget)
-
-    # Spinner style
-    spinner_group = QGroupBox("Spinner")
-    spinner_layout = QVBoxLayout(spinner_group)
-    spinner = FXLoadingSpinner(size=48, style="spinner")
-    spinner.start()
-    spinner_layout.addWidget(spinner)
-    layout.addWidget(spinner_group)
-
-    # Dots style
-    dots_group = QGroupBox("Dots")
-    dots_layout = QVBoxLayout(dots_group)
-    dots = FXLoadingSpinner(size=48, style="dots")
-    dots.start()
-    dots_layout.addWidget(dots)
-    layout.addWidget(dots_group)
-
-    # Pulse style
-    pulse_group = QGroupBox("Pulse")
-    pulse_layout = QVBoxLayout(pulse_group)
-    pulse = FXLoadingSpinner(size=48, style="pulse")
-    pulse.start()
-    pulse_layout.addWidget(pulse)
-    layout.addWidget(pulse_group)
-
-    window.adjustSize()
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    example()

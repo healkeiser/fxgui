@@ -540,37 +540,3 @@ class FXSplashScreen(QSplashScreen):
         painter.end()
 
         self.setMask(bitmap)
-
-
-def example() -> None:
-    import sys
-    import time
-    from fxgui.fxwidgets import FXApplication
-
-    app = FXApplication(sys.argv)
-
-    splash = FXSplashScreen(
-        title="FXSplashScreen",
-        information="Loading resources and preparing the application...",
-        show_progress_bar=True,
-        project="Demo Project",
-        version="1.0.0",
-        company="Demo Company",
-        corner_radius=12,
-        border_width=1,
-        fade_in=True,
-    )
-    splash.show()
-
-    # Simulate loading progress
-    for i in range(101):
-        splash.set_progress(i)
-        app.processEvents()
-        time.sleep(0.02)
-
-    splash.close()
-    sys.exit(0)
-
-
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    example()

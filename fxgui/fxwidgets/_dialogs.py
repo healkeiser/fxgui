@@ -1,7 +1,6 @@
 """Floating popup dialog."""
 
 # Built-in
-import os
 from typing import Optional
 
 # Third-party
@@ -277,64 +276,3 @@ class FXFloatingDialog(QDialog):
 
         if event.button() != Qt.RightButton:
             self.close()
-
-
-def example() -> None:
-    import sys
-    from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget, QLabel
-    from fxgui.fxwidgets import FXApplication, FXMainWindow
-
-    app = FXApplication(sys.argv)
-    window = FXMainWindow()
-    window.setWindowTitle("FXFloatingDialog Demo")
-    widget = QWidget()
-    window.setCentralWidget(widget)
-    layout = QVBoxLayout(widget)
-
-    # Basic floating dialog
-    def show_basic_dialog():
-        dialog = FXFloatingDialog(window, title="Basic Dialog")
-        dialog.main_layout.addWidget(QLabel("This is a basic floating dialog."))
-        dialog.show_under_cursor()
-
-    # Dialog with custom icon
-    def show_icon_dialog():
-        icon = fxicons.get_icon("settings").pixmap(32, 32)
-        dialog = FXFloatingDialog(window, icon=icon, title="Settings")
-        dialog.main_layout.addWidget(QLabel("Configure your settings here."))
-        dialog.main_layout.addWidget(QLabel("Option 1: Enabled"))
-        dialog.main_layout.addWidget(QLabel("Option 2: Disabled"))
-        dialog.resize(250, 150)
-        dialog.show_under_cursor()
-
-    # Popup style dialog
-    def show_popup_dialog():
-        dialog = FXFloatingDialog(window, title="Quick Info", popup=True)
-        dialog.main_layout.addWidget(
-            QLabel("This is a popup dialog.\nClick outside to close.")
-        )
-        dialog.resize(200, 80)
-        dialog.show_under_cursor()
-
-    # Buttons to trigger dialogs
-    btn_basic = QPushButton("Show Basic Dialog")
-    btn_basic.clicked.connect(show_basic_dialog)
-    layout.addWidget(btn_basic)
-
-    btn_icon = QPushButton("Show Dialog with Icon")
-    btn_icon.clicked.connect(show_icon_dialog)
-    layout.addWidget(btn_icon)
-
-    btn_popup = QPushButton("Show Popup Dialog")
-    btn_popup.clicked.connect(show_popup_dialog)
-    layout.addWidget(btn_popup)
-
-    layout.addStretch()
-
-    window.resize(300, 200)
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    example()

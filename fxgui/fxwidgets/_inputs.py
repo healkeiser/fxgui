@@ -1,7 +1,6 @@
 """Input widgets with icons."""
 
 # Built-in
-import os
 from typing import Optional
 
 # Third-party
@@ -333,73 +332,3 @@ class FXValidatedLineEdit(QLineEdit):
         self._is_animating = False
         self._border_color_value = QColor("transparent")
         self.update()
-
-
-def example() -> None:
-    import sys
-
-    from qtpy.QtWidgets import QFormLayout, QLabel, QVBoxLayout
-
-    from fxgui.fxwidgets import (
-        FXApplication,
-        FXCamelCaseValidator,
-        FXLowerCaseValidator,
-        FXMainWindow,
-    )
-
-    app = FXApplication(sys.argv)
-    window = FXMainWindow()
-    window.setWindowTitle("FXInputs Demo")
-    widget = QWidget()
-    window.setCentralWidget(widget)
-    layout = QVBoxLayout(widget)
-
-    # Description
-    description = QLabel(
-        "Test the input widgets below. FXValidatedLineEdit will shake\n"
-        "and flash red when you type invalid characters."
-    )
-    layout.addWidget(description)
-
-    form_layout = QFormLayout()
-    layout.addLayout(form_layout)
-
-    # Icon line edit with icon on the left
-    icon_line_edit_left = FXIconLineEdit(
-        icon_name="search", icon_position="left"
-    )
-    icon_line_edit_left.setPlaceholderText("Search...")
-    form_layout.addRow("FXIconLineEdit (left):", icon_line_edit_left)
-
-    # Icon line edit with icon on the right
-    icon_line_edit_right = FXIconLineEdit(
-        icon_name="email", icon_position="right"
-    )
-    icon_line_edit_right.setPlaceholderText("Enter email...")
-    form_layout.addRow("FXIconLineEdit (right):", icon_line_edit_right)
-
-    # Password line edit
-    password_line_edit = FXPasswordLineEdit()
-    password_line_edit.line_edit.setPlaceholderText("Enter password...")
-    form_layout.addRow("FXPasswordLineEdit:", password_line_edit)
-
-    # Validated line edit with CamelCase validator
-    camel_case_edit = FXValidatedLineEdit()
-    camel_case_edit.setValidator(FXCamelCaseValidator())
-    camel_case_edit.setPlaceholderText("camelCase (e.g., myVariableName)")
-    form_layout.addRow("FXValidatedLineEdit (camelCase):", camel_case_edit)
-
-    # Validated line edit with lowercase validator
-    lowercase_edit = FXValidatedLineEdit()
-    lowercase_edit.setValidator(FXLowerCaseValidator(allow_underscores=True))
-    lowercase_edit.setPlaceholderText("snake_case (e.g., my_variable)")
-    form_layout.addRow("FXValidatedLineEdit (snake_case):", lowercase_edit)
-
-    layout.addStretch()
-    window.resize(600, 300)
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    example()

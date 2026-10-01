@@ -170,28 +170,3 @@ class FXAvatar(QWidget):
         painter.setFont(font)
         painter.setPen(QColor(ink))
         painter.drawText(whole, Qt.AlignCenter, initials)
-
-
-def example() -> None:
-    import sys
-    from qtpy.QtWidgets import QHBoxLayout
-    from fxgui.fxwidgets import FXApplication, FXMainWindow
-
-    app = FXApplication(sys.argv)
-    window = FXMainWindow()
-    window.setWindowTitle("FXAvatar Demo")
-    widget = QWidget()
-    window.setCentralWidget(widget)
-    layout = QHBoxLayout(widget)
-    for name in ("Anne Martin", "Madonna", "Bob Stone", ""):
-        layout.addWidget(FXAvatar(name, widget, size=40))
-    layout.addStretch()
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    import os
-
-    if os.getenv("DEVELOPER_MODE") == "1":
-        example()

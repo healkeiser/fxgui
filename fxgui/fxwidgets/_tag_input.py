@@ -265,31 +265,3 @@ FXTagInput QLineEdit#fx_tag_input_field:focus {
     border-color: @accent_primary;
 }
 """)
-
-
-def example() -> None:
-    import sys
-    from qtpy.QtWidgets import QVBoxLayout, QWidget
-    from fxgui.fxwidgets import FXApplication, FXMainWindow
-
-    app = FXApplication(sys.argv)
-    window = FXMainWindow()
-    window.setWindowTitle("FXTagInput Demo")
-    widget = QWidget()
-    window.setCentralWidget(widget)
-    layout = QVBoxLayout(widget)
-    tag_input = FXTagInput(placeholder="Add tags...", max_tags=5)
-    tag_input.tags_changed.connect(lambda tags: print(f"Tags: {tags}"))
-    layout.addWidget(tag_input)
-    window.setLayout(layout)
-    window.resize(400, 200)
-    window.show()
-
-    sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    import os
-
-    if os.getenv("DEVELOPER_MODE") == "1":
-        example()

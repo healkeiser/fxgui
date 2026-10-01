@@ -1014,20 +1014,3 @@ class FXMainWindow(QMainWindow):
             TypeError: The window's status bar is not an FXStatusBar.
         """
         self._fx_status_bar().version_label.setText(version)
-
-
-def example() -> None:
-    import sys
-    from fxgui.fxwidgets import FXApplication
-
-    app = FXApplication(sys.argv)
-    window = FXMainWindow()
-    window.setWindowTitle("FXMainWindow Demo")
-
-    window.resize(550, 500)
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__" and os.getenv("DEVELOPER_MODE") == "1":
-    example()

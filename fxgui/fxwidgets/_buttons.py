@@ -319,28 +319,3 @@ class FXJoinedGroup(QFrame):
         if (self.property("fxFocus") == "true") != inside:
             self.setProperty("fxFocus", "true" if inside else "false")
             fxutils.repolish(self)
-
-
-def example() -> None:
-    import sys
-    from qtpy.QtWidgets import QHBoxLayout
-    from fxgui.fxwidgets import FXApplication, FXMainWindow
-
-    app = FXApplication(sys.argv)
-    window = FXMainWindow()
-    window.setWindowTitle("FXPrimaryButton Demo")
-    widget = QWidget()
-    window.setCentralWidget(widget)
-    layout = QHBoxLayout(widget)
-    layout.addStretch()
-    layout.addWidget(QPushButton("Cancel", widget))
-    layout.addWidget(FXPrimaryButton("Post", widget, icon="send"))
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    import os
-
-    if os.getenv("DEVELOPER_MODE") == "1":
-        example()

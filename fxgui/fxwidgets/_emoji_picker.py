@@ -308,30 +308,3 @@ class FXEmojiButton(FXIconButton):
         else:
             editor.insertPlainText(emoji)
         editor.setFocus(Qt.OtherFocusReason)
-
-
-def example() -> None:
-    import sys
-    from qtpy.QtWidgets import QVBoxLayout
-    from fxgui.fxwidgets import FXApplication, FXMainWindow
-
-    app = FXApplication(sys.argv)
-    window = FXMainWindow()
-    window.setWindowTitle("FXEmojiPicker Demo")
-    widget = QWidget()
-    window.setCentralWidget(widget)
-    layout = QVBoxLayout(widget)
-    editor = QPlainTextEdit(widget)
-    button = FXEmojiButton(widget)
-    button.attach(editor)
-    layout.addWidget(button)
-    layout.addWidget(editor)
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    import os
-
-    if os.getenv("DEVELOPER_MODE") == "1":
-        example()

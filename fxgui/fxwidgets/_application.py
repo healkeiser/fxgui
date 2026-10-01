@@ -42,31 +42,3 @@ class FXApplication(QApplication):
 
             # The saved theme's sheet now, and again on every apply_theme().
             fxstyle.register_themed_root(self)
-
-
-def example() -> None:
-    import sys
-    from qtpy.QtWidgets import QLabel, QVBoxLayout, QWidget
-    from fxgui.fxwidgets import FXMainWindow
-
-    app = FXApplication(sys.argv)
-    window = FXMainWindow()
-    window.setWindowTitle("FXApplication Demo")
-
-    widget = QWidget()
-    window.setCentralWidget(widget)
-    layout = QVBoxLayout(widget)
-
-    label = QLabel("This is a demo of FXApplication with styled theme.")
-    layout.addWidget(label)
-
-    window.resize(400, 200)
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    import os
-
-    if os.getenv("DEVELOPER_MODE") == "1":
-        example()
