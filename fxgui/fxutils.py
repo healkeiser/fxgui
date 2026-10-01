@@ -311,9 +311,9 @@ def round_window_corners(widget: QWidget) -> bool:
     panel is still a panel and an application that refuses to open
     because a compositor declined is not.
 
-    This is the one place in fxgui that reaches for `ctypes`. It is
-    stdlib, it is loaded lazily by the platform guard below on every
-    system that is not Windows, and there is no Qt API for the request.
+    `ctypes` is stdlib, the platform guard below keeps it unused on
+    every system that is not Windows, and there is no Qt API for the
+    request.
 
     Args:
         widget: The window to round. Must already BE a window: this
@@ -364,6 +364,34 @@ def round_window_corners(widget: QWidget) -> bool:
     except (AttributeError, ImportError, OSError, ValueError):
         return False
     return bool(result == 0)
+
+
+def set_app_user_model_id(app_id: str) -> bool:
+    """Tell Windows this process is its own application, `app_id`.
+
+    Windows groups taskbar buttons and picks their icon by this id, so a
+    Python-run application otherwise wears the Python icon. Call before
+    the first window exists: Windows reads the id when a window is made.
+    A pinned shortcut must carry the same id. Nothing here raises.
+
+    Args:
+        app_id: A machine-wide id, such as `"Studio.Launcher"`.
+
+    Returns:
+        bool: Whether Windows took it; always False off Windows.
+
+    Examples:
+        >>> fxutils.set_app_user_model_id("Studio.App")  # doctest: +SKIP
+        True
+    """
+    if not sys.platform.startswith("win"):
+        return False
+    try:
+        shell32 = ctypes.windll.shell32
+        result = shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+    except (AttributeError, OSError):
+        return False
+    return result == 0
 
 
 def popup_menu(menu: QMenu, at: QPoint) -> None:
