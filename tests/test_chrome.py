@@ -772,3 +772,65 @@ def test_a_dock_tab_starts_as_far_in_as_a_tab_bar_tab(qtbot):
     window.close()
     window.deleteLater()
     QApplication.processEvents()
+
+
+def _hovered_tab(image, rect):
+    """Return the pill's inside, its corner and the inks of a tab's `rect`."""
+    pill = rect.adjusted(2, 3, -2, -3)
+    inside = image.pixelColor(pill.left() + 3, pill.center().y()).name()
+    corner = image.pixelColor(pill.topLeft()).name()
+    return inside, corner, _pixels(image, pill.adjusted(1, 1, -1, -1))
+
+
+@THEMES
+def test_a_hovered_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
+    tabs = QTabWidget()
+    for name in ("Render", "Comp", "Lighting"):
+        tabs.addTab(QLabel(name), name)
+    window = _shown(qtbot, theme, tabs)
+    bar = tabs.tabBar()
+    colors = fxstyle.colors()
+    other = bar.tabRect(1).translated(bar.mapTo(window, QPoint()))
+    rest = _pixels(window.grab().toImage(), other.adjusted(0, 0, 0, -2))
+    before = bar.tabRect(1)
+    _hover(bar, bar.tabRect(1).center())
+    image = window.grab().toImage()
+    inside, corner, inks = _hovered_tab(image, other)
+    # The pill's fill, rounded, a visible step off the strip, with no edge.
+    assert inside == colors.state_hover.lower()
+    assert corner != colors.state_hover.lower()
+    assert fxstyle.get_contrast_ratio(
+        colors.state_hover, colors.surface) >= fxstyle.STATE_MIN_CONTRAST
+    assert colors.control_edge.lower() not in inks
+    # The text keeps its rest ink: the muted text, not the normal one.
+    assert colors.text_muted.lower() in rest
+    assert colors.text_muted.lower() in inks
+    if colors.text.lower() != colors.text_muted.lower():
+        assert colors.text.lower() not in inks
+    assert bar.tabRect(1) == before
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_hovered_dock_tab_shows_the_pill_and_keeps_its_text(qtbot, theme):
+    if fxdocking is None:
+        pytest.skip("needs the docking extra")
+    docks = fxdocking.FXDockArea()
+    docks.set_central(QLabel("central"))
+    docks.add_dock("one", "Render", QLabel("one"), "left")
+    docks.add_dock("two", "Comp", QLabel("two"), "left")
+    window = _shown(qtbot, theme, docks, (600, 400))
+    manager = docks.manager()
+    manager.findDockWidget("one").toggleView(True)
+    manager.findDockWidget("one").setAsCurrentTab()
+    QApplication.processEvents()
+    tab = manager.findDockWidget("two").tabWidget()
+    colors = fxstyle.colors()
+    rect = tab.rect().translated(tab.mapTo(window, QPoint()))
+    _hover(tab, tab.rect().center())
+    image = window.grab().toImage()
+    inside, corner, inks = _hovered_tab(image, rect)
+    assert inside == colors.state_hover.lower()
+    assert corner != colors.state_hover.lower()
+    assert colors.control_edge.lower() not in inks
+    assert colors.text_muted.lower() in inks
+    assert colors.text.lower() not in inks

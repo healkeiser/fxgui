@@ -39,7 +39,7 @@ pinned what changed.
 | Tab-widget pane, QToolBox, QDockWidget title | yes | pane card `@surface` + `@pane_border`; QToolBox 28 px flat header with chevron (`image-position: left`), hover fill, open at 600; QDockWidget title flat `@surface` |
 | Type and spacing | partly | no new rank or spacing constants (see not done) |
 | Contrast floor hover/pressed | yes | `state_pressed` stepped away from `surface` to 1.2:1 off `state_hover` (`STATE_MIN_CONTRAST`); moves dark, nord, github_light |
-| Tabs | unchanged | option B kept; `@tab_muted` replaced by `@text_muted`, which now meets 4.5:1 itself |
+| Tabs | owner change | Hover shows the pill's `@state_hover` fill in the pill's shape, no edge, text kept at `@text_muted` (QTabBar and QtAds). Selected unchanged. `state_hover` is now floored at 1.2:1 off `surface` (same `STATE_MIN_CONTRAST`); measured hover/strip: dark 1.27, light 1.25, dracula 1.56, one_dark_pro 1.33, github_dark 1.21, github_light 1.23 (was 1.10), catppuccin_mocha 1.31, catppuccin_latte 1.20 (was 1.08), nord 1.24, material_dark 1.26 (was 1.17), solarized_light 1.20 (was 1.14). Tests `test_a_hovered_tab_shows_the_pill_and_keeps_its_text` (every theme) and the dock-tab twin failed first, pass on 6.11.2 and 6.5.3. Renders `after/{dark,light}_tab_hover.png`. `@tab_muted` is `@text_muted`, which meets 4.5:1 itself |
 | Open tab item: text behind scroll arrows | yes | scroll buttons opaque with a `border-left: 4px solid @surface` gap. Test `test_no_tab_text_shows_inside_the_scroll_buttons` failed before the rule (the gap held tab pixels), passes after |
 | Owner bug: dock tabs start too far right | yes | `_inset` now insets the right side only (buttons); first pill is 2 px inside the pane's border, as a QTabBar's is inside its bar (was 6). Test `test_a_dock_tab_starts_as_far_in_as_a_tab_bar_tab` (gallery Docking page) passes on 6.11.2 and 6.5.3 |
 
@@ -116,7 +116,7 @@ theme author fixes it by darkening `text`.
 ## Tests
 
 - PySide6 6.11.2, full suite: 2351 passed, 6 skipped in fixed order and on
-  `--randomly-seed=385779718`. One earlier random run had 11 order-dependent
+  `--randomly-seed=385779718`; after the tab hover change 2386 passed, 6 skipped (fixed order). One earlier random run had 11 order-dependent
   `test_frame_controls::test_a_hovered_flat_button_fills` failures (pass
   alone and in fixed order), the hover flake group h already lists.
 - PySide6 6.5.3 (scratchpad `v653`, QtAds via `ads65shim`), covering files
