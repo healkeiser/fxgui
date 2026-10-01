@@ -381,6 +381,92 @@ Nothing about looks needs this signal. The stylesheet, the palette, the
 colours read in `paintEvent` and the icons all take the new theme by
 themselves.
 
+## The Control Language
+
+Every fxgui control is built from the same few parts. A new control
+reuses them, so it looks like it belongs.
+
+### Size and shape
+
+| Part | Value | Where it comes from |
+|------|-------|---------------------|
+| Height | 28 px at the 12 px body font | `fxstyle.control_height(widget)`: the font's line plus 5 px of padding and a 1 px border on each side |
+| Corner radius | 4 px | `fxstyle.BUTTON_RADIUS`, `@button_radius` in QSS |
+| Border | 1 px, solid | Every control |
+
+A push button, `FXPrimaryButton`, a line edit, a combo box,
+`FXSplitButton`, `FXToggleSwitch` and `FXLoadingSpinner` all come to
+`control_height`. A control that sizes itself returns it from
+`sizeHint()`.
+
+### Fills and edges by state
+
+| State | Button (`QPushButton`, `FXSplitButton`) | Input (line edit, combo box, `FXSearchBar`) | Primary (`FXPrimaryButton`) |
+|-------|------|-------|---------|
+| Rest | fill `@surface`, edge `@border_light` | fill `@surface_sunken`, edge `@border` | fill and edge `@primary_button` |
+| Hover | fill `@state_hover`, edge `@accent_primary` | edge `@accent_primary` | fill `@primary_button_hover` |
+| Pressed or checked | fill `@state_pressed` | | fill `@primary_button_pressed` |
+| Focus | edge `@accent_primary` | edge `@accent_primary` | edge `@text` |
+| Disabled | fill `@surface`, edge `@border`, text `@border_strong` | | fill `@surface_alt`, edge `@border`, text `@text_disabled` |
+
+Focus never draws a box around a control. It recolours the edge the
+control already has, so nothing moves.
+
+### Parts that must be seen
+
+The bundled `@border` tokens sit close to the surface (about 1.2:1).
+That is fine for a button, whose text says what it is. A control whose
+shape is the only thing you see (a switch, a slider handle) needs more.
+
+| Part | Token | Rule |
+|------|-------|------|
+| Edge of a switch or a slider handle | `@control_edge` | `border_strong`, darkened or lightened until it reads at 3:1 on `@surface` |
+| Filled part of a slider | `@accent_primary` | Reads at 3:1 on the `@surface_sunken` groove |
+| Thumb of a switch | `@text_muted` off, `@text_on_accent_primary` on | Pushed to 3:1 on the track |
+| Moving part of a spinner | `@accent_primary` | Over a `@border_light` track |
+
+3:1 is the WCAG minimum for the parts of a control
+(`fxstyle.CONTROL_CONTRAST`). `fxstyle.readable_ink(background, ink,
+3.0)` pushes any colour of your own to it.
+
+### Accent, text and icons
+
+- The accent marks the one thing to look at: the main action, a
+  selection, a filled span, a hovered or focused edge.
+- Text is `@text`. Secondary text and placeholders are `@text_muted`.
+  Text on an accent fill is `@text_on_accent_primary`.
+- Icons take `color="icon"`; on an accent fill, `icon_on_accent_primary`.
+- A menu is `@surface_sunken` with a 1 px `@border`. Its hovered item is
+  `@accent_primary` with `@text_on_accent_primary` text.
+
+### Sliders and switches
+
+| Control | Rest | Hover | Focus | Disabled |
+|---------|------|-------|-------|----------|
+| `QSlider`, `FXRangeSlider` handle | fill `@slider_thumb`, edge `@control_edge` | fill `@slider_thumb_hover` | fill `@text_on_accent_primary`, edge `@accent_primary` | fill `@surface`, edge `@border` |
+| `QSlider`, `FXRangeSlider` groove and span | groove `@surface_sunken`, span `@accent_primary` | | | span `@border_strong` |
+| `FXToggleSwitch` off | fill `@surface_sunken`, edge `@control_edge` | edge `@accent_primary` | edge `@accent_primary` | fill `@surface`, edge `@border` |
+| `FXToggleSwitch` on | fill `@accent_primary` | fill `@primary_button_hover` | edge `@text` | fill `@surface_alt`, edge `@border` |
+
+The switch's fills are pushed to 3:1 on `@surface` when a theme's own
+accent misses it.
+
+Every `QSlider` gets these rules from the base sheet, the threshold
+slider of `FXFuzzySearchList` and `FXFuzzySearchTree` included.
+
+### Cards in item views
+
+`FXThumbnailDelegate` draws a row as a card when the row has a
+`Qt.BackgroundRole`. The fill is that colour. Give it a token name, and
+the card follows every theme switch:
+
+```python
+item.setData(0, Qt.BackgroundRole, "surface")
+```
+
+The card's edge is `@border_light`. A selected card is filled and edged
+with `@accent_primary`. A row with no background has no card.
+
 ## Registering Your Own Widget Styles
 
 `fxstyle.register_widget_style(qss)` adds a QSS fragment to the theme
@@ -465,6 +551,7 @@ class MyStatusChip(QWidget):
 Every role in the tables at the top of this page is a token: `@surface`
 in QSS, `fxstyle.colors().surface` in code. So are the computed ones:
 `@text_on_accent_primary`, `@icon_on_accent_primary`, `@primary_button`,
+`@control_edge`,
 the flattened feedback colours (`@feedback_error_foreground`,
 `@feedback_info_background`, ...), `@radius`, `@button_radius` and the
 font roles (`@font_body`, `@font_title`, `@font_mono`).
