@@ -208,7 +208,6 @@ class FXTimelineSlider(QWidget):
                 "Last visible frame; edit to zoom the track",
             )
             for spinbox in (self._view_start_spinbox, self._view_end_spinbox):
-                spinbox.setKeyboardTracking(False)
                 spinbox.valueChanged.connect(self._on_view_spin_changed)
             self.view_changed.connect(self._sync_view_spinboxes)
 
@@ -353,6 +352,8 @@ class FXTimelineSlider(QWidget):
         spinbox = QSpinBox(self)
         spinbox.setRange(-99999, 99999)
         spinbox.setValue(value)
+        # Typed digits apply on Enter or focus out: "250" is not 2, then 25.
+        spinbox.setKeyboardTracking(False)
         spinbox.setFixedWidth(55)
         apply_tip(spinbox, title, body)
         return spinbox
