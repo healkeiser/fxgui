@@ -315,3 +315,26 @@ def test_a_hovered_checked_icon_takes_the_hover_ink(
 def test_the_icon_button_is_a_push_button_s_height_by_default(qtbot, window):
     button = _show(qtbot, window, FXIconButton("mood", window))
     assert button.width() == button.height() == fxstyle.control_height(button)
+
+
+def test_the_icon_button_round_comes_from_the_theme_not_its_own_sheet(
+    qtbot, window
+):
+    button = _show(qtbot, window, FXIconButton("mood", window, size=40))
+    tokens = fxstyle._token_map("dark")
+    _hover(qtbot, window, button)
+    assert button.styleSheet() == ""
+    assert _near(_pixel(window, button, 20, 3), tokens["@state_hover"])
+    assert _near(_pixel(window, button, 2, 2), tokens["@surface"])
+
+
+def test_a_deleted_child_leaves_the_group_at_once(qtbot, window):
+    from qtpy import shiboken
+
+    group = FXJoinedGroup(window)
+    a, b, c = (QPushButton(t, group) for t in "abc")
+    for child in (a, b, c):
+        group.add_widget(child)
+    shiboken.delete(c)
+    assert _places([a, b]) == ["first", "last"]
+    assert not hasattr(group, "_widgets")
