@@ -33,6 +33,12 @@ if not qtpy.QT6:
         f"fxgui needs Qt 6 (PySide6 6.5 or newer, or PyQt6); qtpy found "
         f"{qtpy.API_NAME}."
     )
+if qtpy.PYSIDE6 and tuple(
+    int(part) for part in qtpy.PYSIDE_VERSION.split(".")[:2]
+) < (6, 5):
+    raise ImportError(
+        f"fxgui needs PySide6 6.5 or newer; found {qtpy.PYSIDE_VERSION}."
+    )
 
 # Internal
 from fxgui import (
