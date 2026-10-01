@@ -94,3 +94,30 @@ def test_code_block_sets_no_stylesheet_of_its_own(qtbot, qapp):
     qtbot.addWidget(block)
     assert block._text_edit.styleSheet() == ""
     assert "FXCodeBlock" in fxstyle.build_stylesheet()
+
+
+def test_the_highlighter_is_public():
+    from fxgui import fxwidgets
+    from fxgui.fxwidgets._code_block import FXPygmentsHighlighter
+
+    assert fxwidgets.FXPygmentsHighlighter is FXPygmentsHighlighter
+    assert "FXPygmentsHighlighter" in fxwidgets.__all__
+
+
+def test_a_class_rule_gives_an_editor_the_mono_face_inside_a_host(qtbot):
+    from qtpy.QtWidgets import QPlainTextEdit, QVBoxLayout, QWidget
+
+    class _MonoProbeEditor(QPlainTextEdit):
+        pass
+
+    fxstyle.register_widget_style(
+        "_MonoProbeEditor { font-family: @font_mono; font-size: 17px; }")
+    root = QWidget()
+    QVBoxLayout(root)
+    qtbot.addWidget(root)
+    fxstyle.register_themed_root(root)
+    root.show()
+    editor = _MonoProbeEditor()
+    root.layout().addWidget(editor)
+    editor.ensurePolished()
+    assert editor.font().pixelSize() == 17, "the class rule beats the host's"

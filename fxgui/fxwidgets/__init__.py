@@ -18,7 +18,7 @@ from fxgui.fxwidgets._buttons import (
     FXJoinedGroup,
     FXPrimaryButton,
 )
-from fxgui.fxwidgets._code_block import FXCodeBlock
+from fxgui.fxwidgets._code_block import FXCodeBlock, FXPygmentsHighlighter
 from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 from fxgui.fxwidgets._constants import (
     CRITICAL,
@@ -101,6 +101,7 @@ __all__ = [
     "FXCamelCaseValidator",
     "FXCapitalizedLetterValidator",
     "FXCodeBlock",
+    "FXPygmentsHighlighter",
     "FXCollapsibleWidget",
     "FXColorLabelDelegate",
     "FXDropZone",
