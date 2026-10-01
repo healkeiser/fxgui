@@ -1,8 +1,8 @@
-# :material-image:{.scale-in-center} Icons
+# :material-image: Icons
 
 ## Use `fxicons`
 
-[fxicons](../technical/fxicons.md) is a module that provides a way to use library icons in your applications. It comes with 5 libraries by default: "material", "fontawesome", "simple", "dcc", and "beacon". You can add your own libraries by using the `add_library` function.
+[fxicons](../technical/fxgui/fxicons.md) is a module that provides a way to use library icons in your applications. It comes with 5 libraries by default: "material", "fontawesome", "simple", "dcc", and "beacon". You can add your own libraries by using the `add_library` function.
 
 ### Basic Usage
 

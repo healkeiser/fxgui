@@ -14,7 +14,13 @@ from pygments.util import ClassNotFound
 from pygments.lexers import get_lexer_by_name, get_all_lexers
 from pygments.styles import get_style_by_name
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QColor, QFont, QSyntaxHighlighter, QTextCharFormat
+from qtpy.QtGui import (
+    QColor,
+    QFont,
+    QSyntaxHighlighter,
+    QTextCharFormat,
+    QTextDocument,
+)
 from qtpy.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 
 # Internal
@@ -61,7 +67,7 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
     _DARK_STYLE = "one-dark"
     _LIGHT_STYLE = "friendly"
 
-    def __init__(self, document, language: str = "python"):
+    def __init__(self, document: QTextDocument, language: str = "python"):
         super().__init__(document)
         self._language = language
         self._lexer = None

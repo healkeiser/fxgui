@@ -30,7 +30,7 @@ import weakref
 from collections import OrderedDict
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 # Third-party
 import yaml
@@ -618,7 +618,9 @@ def _platform_default_font() -> str:
     return QFontDatabase.systemFont(QFontDatabase.GeneralFont).family()
 
 
-def register_fonts(paths) -> Dict[str, list]:
+def register_fonts(
+    paths: Union[str, os.PathLike, Iterable[Union[str, os.PathLike]]],
+) -> Dict[str, list]:
     """Register font files with Qt so a color file may name them.
 
     Hands each file to ``QFontDatabase.addApplicationFont`` and reports
@@ -1026,7 +1028,9 @@ def mix(one_hex, two_hex, amount: float) -> str:
     ).name()
 
 
-def step_toward(start, toward, done) -> str:
+def step_toward(
+    start: str, toward: str, done: Callable[[str], bool]
+) -> str:
     """Return the first hex colour from `start` to `toward` that is `done`.
 
     Args:
@@ -1053,7 +1057,7 @@ def _reads(against: str, minimum: float):
     return lambda color: get_contrast_ratio(color, against) >= minimum
 
 
-def depth_shade(base, depth: int) -> str:
+def depth_shade(base: Union[str, QColor], depth: int) -> str:
     """Return a tree row's `base` colour tinted for its `depth`.
 
     Each level steps `DEPTH_STEP` toward the theme's ``border_light``,

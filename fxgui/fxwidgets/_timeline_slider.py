@@ -2,7 +2,7 @@
 
 # Built-in
 from bisect import bisect_left, bisect_right
-from typing import List, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QEvent, QPointF, Qt, Signal, QTimer
@@ -650,7 +650,7 @@ class FXTimelineSlider(QWidget):
     def set_marker_frames(
         self,
         name: str,
-        frames,
+        frames: Iterable[int],
         color: Optional[str] = None,
         style: str = "line",
     ) -> None:

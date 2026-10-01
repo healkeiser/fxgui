@@ -1,3 +1,0 @@
-# Zensical documentation dependencies
-# Source of truth: pyproject.toml [project.optional-dependencies.zensical]
--e .[zensical]

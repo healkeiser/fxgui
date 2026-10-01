@@ -11,6 +11,11 @@ on:
 permissions:
   contents: write
 
+# Two deploys at once would race on gh-pages.
+concurrency:
+  group: docs
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -23,35 +28,36 @@ jobs:
         with:
           python-version: 3.x
 
+      # The mike fork for zensical is not on PyPI.
       - name: Install dependencies
-        run: pip install -r requirements.mkdocs.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade ".[zensical]" "git+https://github.com/squidfunk/mike.git"
 
+      # strict = true in zensical.toml: a broken link fails here.
+      - name: Build
+        run: zensical build --clean
+
+      # Only main and tags publish; a run on another branch stops at the build.
       - name: Configure Git
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
 
       - name: Fetch gh-pages branch
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
           if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
             git fetch origin gh-pages:gh-pages
-            echo "Fetched existing gh-pages branch"
-          else
-            echo "gh-pages branch does not exist yet, mike will create it"
           fi
 
       - name: Deploy docs (versioned)
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         run: |
-          # Always use the latest git tag as version
+          # One version per tag, the newest also as "latest".
           VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
           mike deploy --push --update-aliases "$VERSION" latest
-
-          # Re-fetch gh-pages after deploy to get the updated branch
           git fetch origin gh-pages:gh-pages --force
           mike set-default --push latest
-
-          # Verify
-          echo "Mike versions:"
           mike list

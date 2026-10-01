@@ -1,4 +1,4 @@
-# :material-home:{.scale-in-center} Home
+# :material-home: Home
 
 <div id="top"></div>
 <div align="center">
@@ -42,14 +42,14 @@ app.exec_()
 
 | Module | Description |
 |--------|-------------|
-| [fxconfig](technical/fxconfig.md) | Configuration and settings management |
-| [fxcore](technical/fxcore.md) | Core functionality (fuzzy filtering proxy model) |
-| [fxdcc](technical/fxdcc.md) | DCC-specific utilities (Houdini, Maya, Nuke) |
-| [fxdocking](technical/fxdocking.md) | Docked panes around a body (needs the `docking` extra) |
-| [fxicons](technical/fxicons.md) | Icon management with multiple libraries |
-| [fxstyle](technical/fxstyle.md) | Theming, stylesheets, and color management |
-| [fxutils](technical/fxutils.md) | General utility functions |
-| [fxwidgets](technical/fxwidgets/index.md) | Custom Qt widgets |
+| [fxconfig](technical/fxgui/fxconfig.md) | Configuration and settings management |
+| [fxcore](technical/fxgui/fxcore.md) | Core functionality (fuzzy filtering proxy model) |
+| [fxdcc](technical/fxgui/fxdcc.md) | DCC-specific utilities (Houdini, Maya, Nuke) |
+| [fxdocking](technical/fxgui/fxdocking.md) | Docked panes around a body (needs the `docking` extra) |
+| [fxicons](technical/fxgui/fxicons.md) | Icon management with multiple libraries |
+| [fxstyle](technical/fxgui/fxstyle.md) | Theming, stylesheets, and color management |
+| [fxutils](technical/fxgui/fxutils.md) | General utility functions |
+| [fxwidgets](technical/fxgui/fxwidgets/index.md) | Custom Qt widgets |
 
 !!! note
     This documentation is updated regularly to reflect the most recent changes.<br>

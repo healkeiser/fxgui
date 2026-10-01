@@ -1,4 +1,4 @@
-# :material-theme-light-dark:{.scale-in-center} Theming
+# :material-theme-light-dark: Theming
 
 fxgui uses a YAML configuration file to define all theme colors. YAML supports **anchors and aliases** for theme inheritance, allowing you to create new themes that extend existing ones and override only specific colors.
 

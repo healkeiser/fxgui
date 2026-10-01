@@ -1,4 +1,4 @@
-# :material-book:{.scale-in-center} How-to Guides
+# :material-book: How-to Guides
 
 Welcome to the fxgui how-to guides. Choose a topic to get started:
 

@@ -1,5 +1,8 @@
 """One running copy of an application per name, and a way to wake it."""
 
+# Built-in
+from typing import Optional
+
 # Third-party
 from qtpy.QtCore import QObject, Signal
 
@@ -31,7 +34,7 @@ class FXSingleInstance(QObject):
 
     woken = Signal()
 
-    def __init__(self, name: str, parent=None):
+    def __init__(self, name: str, parent: Optional[QObject] = None):
         super().__init__(parent)
         self._name = name
         self._server = None

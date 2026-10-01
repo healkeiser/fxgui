@@ -1,4 +1,4 @@
-# :material-download:{.scale-in-center} Installation
+# :material-download: Installation
 
 ## From PyPI
 
@@ -36,28 +36,15 @@ pip install "fxgui[docking]"
 
 Nothing else in fxgui imports it.
 
-### MkDocs Documentation
+### Documentation
 
-For building documentation with MkDocs:
-
-``` shell
-pip install -e ".[mkdocs]"
-# or
-pip install -r requirements.mkdocs.txt
-```
-
-### Zensical Documentation
-
-For building documentation with Zensical:
+To build this site with [Zensical](https://zensical.org):
 
 ``` shell
 pip install -e ".[zensical]"
-# or
-pip install -r requirements.zensical.txt
+zensical serve    # Preview at http://127.0.0.1:8000
+zensical build    # Write the site to site/
 ```
-
-!!! note
-    Zensical is still in early development and does not yet support all MkDocs plugins.
 
 ## DCC Integration
 

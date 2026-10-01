@@ -1,4 +1,4 @@
-# :material-palette:{.scale-in-center} Styling
+# :material-palette: Styling
 
 ## Style an Existing Application
 
@@ -52,7 +52,7 @@ registering your own widget styles (`register_widget_style()`).
 
 ## Apply the Custom Google Material Icons
 
-You can find a `QProxyStyle` subclass in [fxstyle](../technical/fxstyle.md), called `FXProxyStyle`. When used on a `QApplication` instance, it allows you to switch the defaults icons provided by `Qt` for Google Material icons.
+You can find a `QProxyStyle` subclass in [fxstyle](../technical/fxgui/fxstyle.md), called `FXProxyStyle`. When used on a `QApplication` instance, it allows you to switch the defaults icons provided by `Qt` for Google Material icons.
 
 ``` python
 from qtpy.QtWidgets import QApplication
@@ -63,7 +63,7 @@ application.setStyle(fxstyle.FXProxyStyle())
 ```
 
 !!! tip
-    The `FXApplication` class found inside [fxwidgets](../technical/fxwidgets/index.md) already applies this custom style.
+    The `FXApplication` class found inside [fxwidgets](../technical/fxgui/fxwidgets/index.md) already applies this custom style.
 
 
 You can now use the icons by doing:
@@ -83,7 +83,7 @@ application.exec_()
 ```
 
 !!! note
-    By default, the `FXApplication` found inside [fxwidgets](../technical/fxwidgets/index.md) already applies this custom style.
+    By default, the `FXApplication` found inside [fxwidgets](../technical/fxgui/fxwidgets/index.md) already applies this custom style.
 
 !!! warning
     Applying the `FXProxyStyle` is only allowed on a `QApplication` instance! So if you're instantiating a `FXMainWindow` inside a parent DCC, **do not** set the style on it.

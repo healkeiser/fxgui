@@ -86,24 +86,13 @@ pip install -r requirements.txt
 
 ### Optional Dependencies
 
-For building documentation with MkDocs:
-
-``` shell
-pip install -e ".[mkdocs]"
-# or
-pip install -r requirements.mkdocs.txt
-```
-
-For building documentation with Zensical:
+To build the documentation site with [Zensical](https://zensical.org):
 
 ``` shell
 pip install -e ".[zensical]"
-# or
-pip install -r requirements.zensical.txt
+zensical serve    # Preview at http://127.0.0.1:8000
+zensical build    # Write the site to site/
 ```
-
-> [!NOTE]
-> Zensical is still in early development and does not yet support all MkDocs plugins.
 
 > [!IMPORTANT]
 > In order to have access to the module inside your application, make sure to add `fxgui` to the `$PYTHONPATH` of the DCCs. For Houdini, you can find the [`houdini_package.json` example file](./houdini_package.json).

@@ -23,10 +23,13 @@ there, titled with its class name; `tests/test_gallery.py` fails otherwise.
 
 ### Documentation
 ```bash
-pip install -r requirements.mkdocs.txt
-mkdocs serve    # Local preview at http://127.0.0.1:8000
-mkdocs build    # Build static docs
+pip install -e ".[zensical]"
+zensical serve    # Local preview at http://127.0.0.1:8000
+zensical build    # Build static docs into site/
 ```
+`zensical.toml` is the config; zensical's own theme, no custom CSS. The
+api-autonav plugin writes one API page per public module under
+`technical/fxgui/`. `strict = true`: a broken link fails the build.
 
 ## Architecture
 

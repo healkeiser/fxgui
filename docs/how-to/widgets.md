@@ -1,4 +1,4 @@
-# :material-widgets:{.scale-in-center} Widgets
+# :material-widgets: Widgets
 
 ## Subclass the `FXMainWindow`
 
@@ -72,7 +72,7 @@ The Docking page needs the `docking` extra (`pip install fxgui[docking]`).
 
 ## Available Widgets
 
-The [fxwidgets](../technical/fxwidgets/index.md) module holds these classes:
+The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classes:
 
 | Class | What it is |
 |-------|------------|
@@ -246,7 +246,7 @@ The title renders in the theme's primary text, the body dimmed, and the shortcut
 
 Two lower-level helpers are exported alongside it: `tip()` returns the HTML if you need to set it yourself, and `keycap()` renders one shortcut as a key (through `QKeySequence`, so a Mac shows the platform glyphs rather than the literal "Ctrl").
 
-Reach for [`FXTooltip`](../technical/fxwidgets/index.md) instead when a native tooltip cannot do the job:
+Reach for [`FXTooltip`](../technical/fxgui/fxwidgets/index.md) instead when a native tooltip cannot do the job:
 
 - hosting live widgets (icons, images, action buttons)
 - staying up while the pointer is over the tooltip itself
