@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
-from fxgui.fxwidgets import FXMainWindow
+from fxgui.fxwidgets import FXCommandRow, FXMainWindow
 
 THEMES = fxstyle.get_available_themes()
 
@@ -27,6 +27,8 @@ def _window(qtbot, framed=True, theme="dark"):
     fxstyle.apply_theme(theme)
     window = FXMainWindow(title="probe", framed=framed)
     window.set_banner_text("Probe")
+    window.toolbar = FXCommandRow("Toolbar")
+    window.addToolBar(window.toolbar)
     body = QWidget()
     row = QHBoxLayout(body)
     window.label = QLabel("A label")
@@ -214,7 +216,7 @@ def test_the_corner_does_not_grow_the_menu_bar(qtbot):
 def test_a_framed_status_bar_has_no_line_on_top(qtbot, theme):
     window = _window(qtbot, theme=theme)
     bar = window.statusBar()
-    window.show_status_line()
+    bar.show_status_line()
     qtbot.wait(10)
 
     for y in (0, 1, 2, 3, bar.height() - 2):
@@ -245,7 +247,7 @@ def test_a_status_bar_leaving_the_frame_gets_its_accent_back(qtbot):
 def test_a_hidden_accent_stays_hidden_when_the_bar_leaves_the_frame(qtbot):
     window = _window(qtbot)
     bar = window.statusBar()
-    window.hide_status_line()
+    bar.hide_status_line()
     bar.setProperty(fxstyle.FRAME_PROPERTY, False)
     qtbot.wait(10)
 
@@ -305,16 +307,16 @@ def _drop_wrapper(widget):
 
 def test_a_theme_switch_survives_a_dropped_menu_bar_wrapper(qtbot):
     window = _window(qtbot)
-    _drop_wrapper(window.menu_bar)
+    _drop_wrapper(window.menuBar())
 
     with qtbot.captureExceptions() as raised:
         fxstyle.apply_theme("github_light")
         qtbot.wait(10)
 
     assert not raised, raised
-    assert window.menu_bar is window.menuBar()
-    assert window.menu_bar.cornerWidget() is window.title_corner
-    assert window.title_corner.height() == window.menu_bar.height()
+    assert window.menuBar() is window.menuBar()
+    assert window.menuBar().cornerWidget() is window.title_corner
+    assert window.title_corner.height() == window.menuBar().height()
 
 
 def test_a_new_menu_bar_is_framed_at_once(qtbot, qapp):
@@ -324,10 +326,10 @@ def test_a_new_menu_bar_is_framed_at_once(qtbot, qapp):
     bar.addMenu("File")
 
     window.setMenuBar(bar)
-    assert window.menu_bar is bar, "before Qt deletes the old bar"
+    assert window.menuBar() is bar, "before Qt deletes the old bar"
     qapp.processEvents()
 
-    assert window.menu_bar is bar
+    assert window.menuBar() is bar
     assert bar.property(fxstyle.FRAME_PROPERTY) is True
     assert bar.cornerWidget() is corner
     bar.resize(bar.width(), bar.height() + 10)
@@ -340,7 +342,7 @@ def test_a_plain_window_leaves_a_new_menu_bar_unframed(qtbot):
 
     window.setMenuBar(bar)
 
-    assert window.menu_bar is bar
+    assert window.menuBar() is bar
     assert bar.property(fxstyle.FRAME_PROPERTY) is None
 
 
@@ -356,7 +358,7 @@ def test_a_new_menu_bar_takes_the_corner_on_a_theme_switch(qtbot):
         qtbot.wait(50)
 
     assert not raised, raised
-    assert window.menu_bar is bar
+    assert window.menuBar() is bar
     assert window.title_corner is corner
     assert bar.cornerWidget() is corner
     assert corner.parentWidget() is bar

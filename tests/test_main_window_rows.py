@@ -35,26 +35,53 @@ def test_a_window_with_a_parent_stays_its_own_window(qtbot):
     qtbot.addWidget(host)
     host.show()
 
-    window = _shown(qtbot, FXMainWindow(parent=host))
+    # The host owns the window; qtbot closing both trips PySide6 6.5.
+    window = FXMainWindow(parent=host)
+    window.show()
+    qtbot.waitExposed(window)
 
     assert window.parent() is host
     assert window.isWindow()
     assert window.windowHandle() is not host.windowHandle()
 
 
-def test_the_window_s_toolbar_is_a_fixed_command_row(qtbot):
+def test_a_window_builds_no_toolbar(qtbot):
     window = _shown(qtbot, FXMainWindow())
 
-    assert isinstance(window.toolbar, FXCommandRow)
-    assert window.findChildren(QToolBar) == [window.toolbar]
-    assert not window.toolbar.isMovable()
-    assert not window.toolbar.isFloatable()
-    assert not window.toolbar.toggleViewAction().isVisible(), (
+    assert window.findChildren(QToolBar) == []
+
+
+def test_a_command_row_is_fixed_in_place(qtbot):
+    window = _shown(qtbot, FXMainWindow())
+    row = FXCommandRow()
+    window.addToolBar(Qt.TopToolBarArea, row)
+
+    assert not row.isMovable()
+    assert not row.isFloatable()
+    assert not row.toggleViewAction().isVisible(), (
         "the menu bar's right-click cannot hide it")
 
 
+@pytest.mark.parametrize("area", [Qt.TopToolBarArea, Qt.LeftToolBarArea])
+def test_a_row_is_its_margins_on_every_side(qtbot, area):
+    window = _shown(qtbot, FXMainWindow())
+    row = FXCommandRow(margins=(2, 5, 7, 11), spacing=0)
+    window.addToolBar(area, row)
+    first, second = QPushButton("one"), QPushButton("two")
+    for button in (first, second):
+        button.setFixedSize(30, 30)
+        row.addWidget(button)
+    QApplication.processEvents()
+
+    assert first.geometry().topLeft() == QPoint(2, 5)
+    hint = row.sizeHint()
+    across = 2 * 30 if area == Qt.TopToolBarArea else 30
+    down = 30 if area == Qt.TopToolBarArea else 2 * 30
+    assert (hint.width(), hint.height()) == (2 + across + 7, 5 + down + 11)
+
+
 def test_a_row_starts_its_controls_at_its_margins(qtbot):
-    window = _shown(qtbot, FXMainWindow(toolbar=False))
+    window = _shown(qtbot, FXMainWindow())
     row = FXCommandRow(margins=(12, 5, 7, 0), spacing=6)
     window.addToolBar(Qt.TopToolBarArea, row)
     first, second = QPushButton("one"), QPushButton("two")
@@ -68,7 +95,7 @@ def test_a_row_starts_its_controls_at_its_margins(qtbot):
 
 
 def test_a_row_keeps_its_margins_through_a_style_change(qtbot):
-    window = _shown(qtbot, FXMainWindow(toolbar=False))
+    window = _shown(qtbot, FXMainWindow())
     row = FXCommandRow(margins=(12, 5, 7, 0), spacing=6)
     window.addToolBar(Qt.TopToolBarArea, row)
     button = QPushButton("one")
@@ -84,7 +111,7 @@ def test_a_row_keeps_its_margins_through_a_style_change(qtbot):
 
 
 def test_a_bare_blank_on_a_framed_row_shows_the_frame(qtbot):
-    window = _shown(qtbot, FXMainWindow(framed=True, toolbar=False))
+    window = _shown(qtbot, _with_row(FXMainWindow(framed=True)))
     row = FXCommandRow()
     window.addToolBar(Qt.TopToolBarArea, row)
     blank = QWidget()
@@ -108,7 +135,7 @@ def _corner_tools(qtbot, window):
 
 
 def test_a_corner_tool_shown_later_is_placed_not_overflowed(qtbot):
-    window = FXMainWindow(toolbar=False)
+    window = FXMainWindow()
     tools = _corner_tools(qtbot, window)
     _shown(qtbot, window)
 
@@ -123,7 +150,7 @@ def test_a_corner_tool_shown_later_is_placed_not_overflowed(qtbot):
 
 
 def test_add_corner_widget_watches_the_widget_it_adds(qtbot):
-    window = FXMainWindow(toolbar=False)
+    window = FXMainWindow()
     tools = _corner_tools(qtbot, window)
     _shown(qtbot, window)
     hides = []
@@ -142,6 +169,12 @@ def test_add_corner_widget_watches_the_widget_it_adds(qtbot):
     assert window.title_corner.isVisible()
 
 
+def _with_row(window):
+    window.toolbar = FXCommandRow("Toolbar")
+    window.addToolBar(Qt.TopToolBarArea, window.toolbar)
+    return window
+
+
 def _icon_button():
     button = QPushButton()
     button.setIcon(fxicons.get_icon("arrow_back"))
@@ -149,7 +182,7 @@ def _icon_button():
 
 
 def test_a_framed_window_flattens_icon_only_buttons_on_its_bands(qtbot):
-    window = _shown(qtbot, FXMainWindow(framed=True))
+    window = _shown(qtbot, _with_row(FXMainWindow(framed=True)))
     early, worded = _icon_button(), QPushButton("Run")
     window.toolbar.addWidget(early)
     window.toolbar.addWidget(worded)
@@ -168,7 +201,7 @@ def test_a_framed_window_flattens_icon_only_buttons_on_its_bands(qtbot):
 
 
 def test_a_button_given_a_role_keeps_it(qtbot):
-    window = _shown(qtbot, FXMainWindow(framed=True))
+    window = _shown(qtbot, _with_row(FXMainWindow(framed=True)))
     primary = _icon_button()
     primary.setProperty("fxRole", "primary")
 
@@ -179,7 +212,7 @@ def test_a_button_given_a_role_keeps_it(qtbot):
 
 
 def test_an_unframed_window_leaves_its_buttons_alone(qtbot):
-    window = _shown(qtbot, FXMainWindow())
+    window = _shown(qtbot, _with_row(FXMainWindow()))
     button = _icon_button()
 
     window.toolbar.addWidget(button)
@@ -192,7 +225,7 @@ def test_an_unframed_window_leaves_its_buttons_alone(qtbot):
 @pytest.mark.parametrize("theme", ["dark", "github_light"])
 def test_corner_tools_show_the_menu_bar_through(qtbot, framed, theme):
     fxstyle.apply_theme(theme)
-    window = FXMainWindow(framed=framed, toolbar=False)
+    window = FXMainWindow(framed=framed)
     tools = _corner_tools(qtbot, window)
     idle = tools.addAction(fxicons.get_icon("play_arrow"), "Run")
     idle.setEnabled(False)

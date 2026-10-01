@@ -2,17 +2,16 @@
 
 # Built-in
 import logging
+from datetime import datetime
 from typing import List, Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QEvent, QRectF, QSize, Qt, QTimer, Slot
 from qtpy.QtGui import (
     QColor,
-    QIcon,
     QLinearGradient,
     QPainter,
     QPainterPath,
-    QPixmap,
 )
 from qtpy.QtWidgets import (
     QHBoxLayout,
@@ -24,9 +23,8 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
-from fxgui.fxwidgets._constants import INFO
 from fxgui.fxwidgets._labels import FXIconLabel
-from fxgui.fxwidgets._severity import SEVERITIES, log, severity
+from fxgui.fxwidgets._severity import INFO, SEVERITIES, log, severity
 from fxgui.fxwidgets._tips import apply_tip
 
 # The painted lines replace the base sheet's top border.
@@ -175,7 +173,7 @@ class FXStatusItem(QToolButton):
         # On a tint the feedback colour is the ground's own hue.
         if self.muted or not self._tone or (bar is not None and bar.tint()):
             return ink
-        tone = fxstyle.get_feedback_colors()[self._tone]["foreground"]
+        tone = getattr(fxstyle.colors(), f"feedback_{self._tone}_foreground")
         return fxstyle.readable_ink(ground, tone, _ICON_CONTRAST)
 
     def sizeHint(self) -> QSize:
@@ -219,14 +217,9 @@ class FXStatusItem(QToolButton):
         )
         painter.end()
 
-    def changeEvent(self, event: QEvent) -> None:
-        """Show or hide by the text once the item has a parent."""
-        super().changeEvent(event)
-        if event.type() == QEvent.ParentChange:
-            self._sync_visible()
-
     def _sync_visible(self) -> None:
-        # Shown without a parent, an item would open as its own window.
+        # Shown without a parent, an item would open as its own window; a
+        # parent's layout shows one with text as it takes it in.
         if self.parentWidget() is not None or not self.text():
             self.setVisible(bool(self.text()))
 
@@ -242,16 +235,12 @@ class FXStatusBar(QStatusBar):
     framed or not, so waiting moves no layout.
 
     Args:
-        parent (QWidget, optional): Parent widget. Defaults to `None`.
-        project (str, optional): Project name; `None` leaves it blank.
-            Defaults to `None`.
-        version (str, optional): Version information. Defaults to `None`.
-        company (str, optional): Company name. Defaults to `None`.
+        parent: Parent widget. Defaults to `None`.
+        project: The project item's text. Defaults to `None`, hidden.
+        version: The version item's text. Defaults to `None`, hidden.
+        company: The company item's text. Defaults to `None`, hidden.
 
     Attributes:
-        project (str): The project name.
-        version (str): The version string.
-        company (str): The company name.
         icon_label (QLabel): The icon label.
         message_label (QLabel): The message label.
         project_label (FXStatusItem): The project, plain until
@@ -273,21 +262,15 @@ class FXStatusBar(QStatusBar):
         # Line state; `None` colours read the theme when painted.
         self._line_wanted = True
         self._line_colors: Optional[Tuple[str, str]] = None
-        # The shown message's feedback key, and a caller's own tint.
+        # The shown message's feedback key.
         self._severity: Optional[str] = None
-        self._custom_tint: Optional[str] = None
         self._message = ""
-        self._right_items = 0
         self._busy = False
         self._busy_frame = 0
         self._busy_timer = QTimer(self)
         self._busy_timer.setInterval(_BUSY_FRAME_MS)
         self._busy_timer.timeout.connect(self._step_busy)
 
-        # Attributes
-        self.project = project or ""
-        self.version = version or "0.0.0"
-        self.company = company or "© Company"
         self.icon_label = FXIconLabel(size=ICON_SIZE)
         self.message_label = QLabel()
         self.message_label.setTextFormat(Qt.RichText)
@@ -306,9 +289,9 @@ class FXStatusBar(QStatusBar):
         self._left_row.addStretch(1)
         self.addPermanentWidget(self._left, 1)
 
-        self.project_label = FXStatusItem(self.project, clickable=False)
-        self.version_label = FXStatusItem(self.version, clickable=False)
-        self.company_label = FXStatusItem(self.company, clickable=False)
+        self.project_label = FXStatusItem(project or "", clickable=False)
+        self.version_label = FXStatusItem(version or "", clickable=False)
+        self.company_label = FXStatusItem(company or "", clickable=False)
         for item in (self.project_label, self.version_label, self.company_label):
             self.addPermanentWidget(item)
 
@@ -329,9 +312,11 @@ class FXStatusBar(QStatusBar):
             self._left_row.insertWidget(
                 self._left_row.indexOf(self.icon_label), item)
         elif side == "right":
-            # After the left group, the project and the version.
-            self.insertPermanentWidget(3 + self._right_items, item)
-            self._right_items += 1
+            # Taken off and put back last, the company stays at the end.
+            self.removeWidget(self.company_label)
+            self.addPermanentWidget(item)
+            self.addPermanentWidget(self.company_label)
+            self.company_label._sync_visible()
         else:
             raise ValueError(f"side is 'left' or 'right', not {side!r}")
 
@@ -341,11 +326,10 @@ class FXStatusBar(QStatusBar):
 
     def tint(self) -> Optional[str]:
         """Return the colour a message tints the bar now, or `None`."""
-        if self._custom_tint:
-            return self._custom_tint
         if self._severity:
-            feedback = fxstyle.get_feedback_colors()[self._severity]
-            return QColor(feedback["background"]).name()
+            return QColor(getattr(
+                fxstyle.colors(), f"feedback_{self._severity}_background"
+            )).name()
         return None
 
     def ground(self) -> str:
@@ -385,8 +369,6 @@ class FXStatusBar(QStatusBar):
         time: bool = True,
         logger: Optional[logging.Logger] = None,
         set_color: bool = True,
-        pixmap: Optional[QPixmap] = None,
-        background_color: Optional[str] = None,
     ):
         """Display a message in the status bar with a specified severity.
 
@@ -403,23 +385,17 @@ class FXStatusBar(QStatusBar):
                 Defaults to `None`.
             set_color (bool): Whether to tint the bar in the severity's
                 colors until the message goes. Defaults to `True`.
-            pixmap (QPixmap, optional): A custom pixmap to be displayed in the
-                status bar. Defaults to `None`.
-            background_color (str, optional): A custom background color for
-                the status bar. Defaults to `None`.
 
         Examples:
             To display a critical error message with a red background
             >>> self.showMessage(
             ...     "Critical error occurred!",
-            ...     severity_type=self.CRITICAL,
+            ...     severity_type=fxwidgets.CRITICAL,
             ...     duration=5,
             ...     logger=my_logger,
             ... )
 
         Note:
-            You can either use the `FXMainWindow` instance to retrieve the
-            verbosity constants, or the `fxwidgets` module.
             Overrides the base class method.
         """
 
@@ -431,12 +407,12 @@ class FXStatusBar(QStatusBar):
 
         kind = severity(severity_type)
         severity_prefix = kind.title
-        severity_icon = QIcon(pixmap) if pixmap else fxicons.get_icon(
+        severity_icon = fxicons.get_icon(
             kind.icon, color=f"feedback_{kind.feedback}_foreground")
 
         # Use inline style for bold as QSS can interfere with <b> tag rendering
         message_prefix = (
-            f"<b>{severity_prefix}</b>: {fxutils.get_formatted_time()} - "
+            f"<b>{severity_prefix}</b>: {datetime.now():%H:%M} - "
             if time
             else f"<b>{severity_prefix}</b>: "
         )
@@ -445,7 +421,7 @@ class FXStatusBar(QStatusBar):
         self.message_label.setText(self._message)
 
         if set_color:
-            self._set_tint(kind.feedback, background_color)
+            self._set_tint(kind.feedback)
 
         log(logger, severity_type, message)
 
@@ -469,24 +445,16 @@ class FXStatusBar(QStatusBar):
         self.message_label.clear()
         self.message_label.setVisible(False)
         self._message = ""
-        self._set_tint(None, None)
+        self._set_tint(None)
 
-    def _set_tint(self, key: Optional[str], custom: Optional[str]) -> None:
-        """Tint the bar for feedback `key`, in `custom` if a caller gave one.
+    def _set_tint(self, key: Optional[str]) -> None:
+        """Tint the bar for feedback `key`, or untint it for `None`.
 
-        The theme's tint is a registered rule on the `severity` property,
-        so a switch recolours it; a caller's colour is a sheet of its own.
+        The tint is a registered rule on the `severity` property, so a
+        switch recolours it.
         """
-        if custom or self._custom_tint:
-            self.setStyleSheet(
-                f"FXStatusBar {{ background: {custom}; }} "
-                f"FXStatusBar QLabel {{ color: {fxstyle.readable_ink(custom)}; }}"
-                if custom
-                else ""
-            )
         self._severity = key
-        self._custom_tint = QColor(custom).name() if custom else None
-        self.setProperty("severity", None if custom else key)
+        self.setProperty("severity", key)
         # A descendant rule is matched again only when the label is.
         for widget in [self, *self.findChildren(QLabel)]:
             fxutils.repolish(widget)
@@ -575,7 +543,7 @@ class FXStatusBar(QStatusBar):
             self.width(),
             1,
             QColor(
-                fxstyle.get_feedback_colors()[self._severity]["foreground"]
+                getattr(theme, f"feedback_{self._severity}_foreground")
                 if self._severity
                 else theme.border
             ),

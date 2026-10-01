@@ -1,14 +1,26 @@
 """FXMainWindow: Qt's own central widget, menus looked up, bars swappable."""
 
+# Built-in
+import inspect
+
 # Third-party
 import pytest
-from qtpy.QtWidgets import QLabel, QMenuBar, QStatusBar, QWidget
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QAction
+from qtpy.QtWidgets import (
+    QDialog,
+    QLabel,
+    QMenuBar,
+    QMessageBox,
+    QStatusBar,
+    QWidget,
+)
 
 # Internal
 from fxgui import _compat, fxstyle
-from fxgui.fxwidgets import FXMainWindow, FXStatusBar
+from fxgui.fxwidgets import FXMainWindow
 
-_MENUS = ("main_menu", "edit_menu", "window_menu", "theme_menu", "help_menu")
+_MENUS = ("main_menu", "window_menu", "theme_menu", "help_menu")
 
 
 def _window(qtbot, **kwargs):
@@ -39,18 +51,17 @@ def test_every_window_shows_its_name_in_the_corner(qtbot):
 
     assert window.menuBar().cornerWidget() is window.title_corner
     assert window.banner_label.text() == "probe"
-    window.use_corner_title()
-    assert window.menuBar().cornerWidget() is window.title_corner
 
 
 def test_the_menus_live_on_the_menu_bar(qtbot):
     window = _window(qtbot)
     bar = window.menuBar()
 
-    for name in ("main_menu", "edit_menu", "window_menu", "help_menu"):
+    for name in ("main_menu", "window_menu", "help_menu"):
         assert getattr(window, name).menuAction() in bar.actions(), name
     assert window.theme_menu.menuAction() in window.window_menu.actions()
-    assert window.menu_bar is bar
+    assert [action.text() for action in bar.actions()] == [
+        "File", "Window", "Help"]
 
 
 def test_a_new_menu_bar_gets_fxguis_menus_and_the_corner(qtbot, qapp):
@@ -62,7 +73,7 @@ def test_a_new_menu_bar_gets_fxguis_menus_and_the_corner(qtbot, qapp):
     qapp.processEvents()
 
     assert bar.cornerWidget() is corner
-    for name in ("main_menu", "edit_menu", "window_menu", "help_menu"):
+    for name in ("main_menu", "window_menu", "help_menu"):
         menu = getattr(window, name)
         assert _compat.is_valid(menu), name
         assert menu.menuAction() in bar.actions(), name
@@ -94,29 +105,114 @@ def test_status_bar_falls_back_to_qts_own(qtbot):
     assert isinstance(window.statusBar(), QStatusBar)
 
 
-def test_the_helpers_refuse_a_plain_status_bar_clearly(qtbot):
+def test_the_window_wraps_no_bar_and_no_theme_call():
+    for name in (
+        "menu_bar",
+        "status_bar",
+        "set_theme",
+        "get_available_themes",
+        "set_status_line_colors",
+        "hide_status_line",
+        "show_status_line",
+        "set_project_label",
+        "set_version_label",
+        "set_company_label",
+        "use_corner_title",
+        "set_ui_file",
+        "_theme_switched",
+    ):
+        assert not hasattr(FXMainWindow, name), name
+
+
+def test_the_window_holds_no_placeholder_action_and_no_edit_menu(qtbot):
+    window = _window(qtbot)
+
+    for name in (
+        "check_updates_action",
+        "hide_action",
+        "hide_others_action",
+        "settings_action",
+        "home_action",
+        "previous_action",
+        "next_action",
+        "toggle_theme_action",
+        "edit_menu",
+        "toolbar",
+        "theme_action_group",
+        "window_icon",
+        "window_title",
+        "window_size",
+        "project",
+        "version",
+        "company",
+    ):
+        assert not hasattr(window, name), name
+    for name in ("CRITICAL", "ERROR", "WARNING", "SUCCESS", "INFO", "DEBUG"):
+        assert not hasattr(FXMainWindow, name), name
+    for action in window.findChildren(QAction):
+        assert action.isEnabled() or action is window.open_documentation_action
+
+
+def test_the_window_takes_only_the_options_it_uses():
+    parameters = inspect.signature(FXMainWindow).parameters
+    for name in ("rich_tooltips", "toolbar", "set_stylesheet"):
+        assert name not in parameters, name
+
+
+def test_about_reads_the_bar_as_it_is_now(qtbot, monkeypatch):
+    window = _window(qtbot, project="Show", version="1.0", company="Studio")
+    bar = window.statusBar()
+    bar.project_label.setText("Other show")
+    bar.version_label.setText("2.0")
+    shown = []
+    monkeypatch.setattr(
+        QMessageBox, "about", lambda *args: shown.append(args[1:]))
+
+    window.about_action.trigger()
+
+    assert shown == [("About", "probe\nOther show\n2.0\nStudio")]
+    assert window.findChildren(QDialog) == []
+
+
+def test_about_on_a_plain_status_bar_names_the_window(qtbot):
     window = _window(qtbot)
     window.setStatusBar(QStatusBar())
 
-    window.hide_status_line()  # Nothing to hide: not an error.
-    for call in (
-        lambda: window.set_project_label("P"),
-        lambda: window.set_version_label("1"),
-        lambda: window.set_company_label("C"),
-        lambda: window.show_status_line(),
-        lambda: window.set_status_line_colors("#000000", "#ffffff"),
-    ):
-        with pytest.raises(TypeError, match="FXStatusBar"):
-            call()
+    assert window._about_text() == "probe"
 
 
-def test_the_helpers_still_drive_an_fxstatusbar(qtbot):
+def test_unset_project_version_and_company_show_nothing(qtbot):
     window = _window(qtbot)
+    bar = window.statusBar()
 
-    window.set_project_label("Show")
+    for item in (bar.project_label, bar.version_label, bar.company_label):
+        assert item.text() == ""
+        assert item.isHidden()
+    assert window._about_text() == "probe"
 
-    assert isinstance(window.statusBar(), FXStatusBar)
-    assert window.statusBar().project_label.text() == "Show"
+
+def test_always_on_top_is_one_checkable_entry(qtbot):
+    window = _window(qtbot)
+    action = window.window_on_top_action
+
+    action.trigger()
+    assert action.isChecked() and action.text() == "Always on Top"
+    assert window.windowFlags() & Qt.WindowStaysOnTopHint
+    action.trigger()
+    assert not action.isChecked() and action.text() == "Always on Top"
+    assert not window.windowFlags() & Qt.WindowStaysOnTopHint
+
+
+@pytest.mark.parametrize("url, valid", [
+    ("https://example.com/docs", True),
+    ("example.com", False),
+    ("http://[", False),
+    (None, False),
+])
+def test_documentation_is_enabled_only_for_a_url(qtbot, url, valid):
+    window = _window(qtbot, documentation=url)
+
+    assert window.open_documentation_action.isEnabled() is valid
 
 
 def test_the_theme_actions_follow_a_switch_without_the_mixin(qtbot):
@@ -174,11 +270,8 @@ def test_the_theme_actions_switch_the_theme(qtbot):
     assert fxstyle.get_theme() == "github_light"
 
     themes = fxstyle.get_available_themes()
-    window.toggle_theme_action.trigger()
-    assert fxstyle.get_theme() == themes[
+    assert window.toggle_theme() == fxstyle.get_theme() == themes[
         (themes.index("github_light") + 1) % len(themes)]
-    assert window.set_theme("dark") == "dark"
-    assert window.toggle_theme() == fxstyle.get_theme() != "dark"
 
 
 def test_center_on_screen_centres_on_the_primary_screen(qtbot):

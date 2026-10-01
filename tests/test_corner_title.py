@@ -10,12 +10,10 @@ from fxgui import fxstyle
 from fxgui.fxwidgets import FXMainWindow
 
 
-def _window(qtbot, corner=True, theme="dark"):
+def _window(qtbot, theme="dark"):
     fxstyle.apply_theme(theme)
     window = FXMainWindow(title="probe")
     window.set_banner_text("Probe")
-    if corner:
-        window.use_corner_title()
     window.body = QLabel("A label")
     window.setCentralWidget(window.body)
     window.resize(640, 360)
@@ -26,12 +24,12 @@ def _window(qtbot, corner=True, theme="dark"):
     return window
 
 
-def test_the_body_sits_under_the_toolbar_and_the_corner_shows(qtbot):
+def test_the_body_sits_under_the_menu_bar_and_the_corner_shows(qtbot):
     window = _window(qtbot)
     bar = window.menuBar()
     body_top = window.body.mapTo(window, QPoint(0, 0)).y()
 
-    assert body_top == window.toolbar.geometry().bottom() + 1
+    assert body_top == bar.geometry().bottom() + 1
     assert bar.cornerWidget() is window.title_corner
     assert window.title_corner.isVisible()
     assert window.title_corner.isAncestorOf(window.banner_label)
@@ -40,7 +38,7 @@ def test_the_body_sits_under_the_toolbar_and_the_corner_shows(qtbot):
 
 
 def test_a_corner_widget_sits_left_of_the_name_inside_the_bar(qtbot):
-    plain = _window(qtbot, corner=False)
+    plain = _window(qtbot)
     window = _window(qtbot)
     button = QToolButton()
     button.setText("B")
@@ -62,7 +60,7 @@ def test_a_corner_widget_sits_left_of_the_name_inside_the_bar(qtbot):
 
 
 def test_a_corner_widget_asks_for_the_corner_itself(qtbot):
-    window = _window(qtbot, corner=False)
+    window = _window(qtbot)
 
     window.add_corner_widget(QToolButton())
 
