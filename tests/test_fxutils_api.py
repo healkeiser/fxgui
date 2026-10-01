@@ -13,8 +13,9 @@ from fxgui import fxutils
 
 def test_create_action_takes_only_the_arguments_callers_pass(qtbot):
     parameters = inspect.signature(fxutils.create_action).parameters
-    for name in ("icon", "visible"):
-        assert name not in parameters, name
+    assert list(parameters) == [
+        "parent", "name", "trigger", "enable", "shortcut", "checkable",
+        "icon_name"]
 
     owner = QWidget()
     qtbot.addWidget(owner)
@@ -43,7 +44,7 @@ def test_add_shadow_casts_one_black_shadow(qtbot):
 
 
 def test_the_one_caller_helpers_are_gone():
-    assert "get_formatted_time" not in fxutils.__all__
+    assert not hasattr(fxutils, "get_formatted_time")
     assert "add_shadows" not in fxutils.__all__
 
 

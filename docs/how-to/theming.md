@@ -492,7 +492,7 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 | Kind | Examples | Frame | Shadow |
 |------|----------|-------|--------|
 | Popup: a window that closes when you click away | `QMenu`, a combo box list, `FXCommandPalette` | `@border`, `@button_radius` | The platform's own. Windows draws one under every popup window, and `fxutils.round_window_corners` asks Windows 11 for flyout corners. fxgui paints none. |
-| Floating card: a panel over the window that stays until it is done | `FXTooltip`, `FXNotificationBanner`, `FXProgressCard`, `FXFloatingDialog` | `@border`, `@card_radius` | One painted shadow: `fxutils.add_shadows(parent, card)` with its defaults, black at 80 of 255, 20 px blur, no offset |
+| Floating card: a panel over the window that stays until it is done | `FXTooltip`, `FXNotificationBanner`, `FXProgressCard`, `FXFloatingDialog` | `@border`, `@card_radius` | One painted shadow: `fxutils.add_shadow(card)` with its defaults, black at 80 of 255, 20 px blur, no offset |
 
 A shadow has no theme token. It is black at low opacity in every theme,
 as the platform's own popup shadow is.

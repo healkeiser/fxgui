@@ -272,8 +272,7 @@ class FXNotificationBanner(QFrame):
         self._dismissing = False
         self._slide_handler = None
 
-        # Setup drop shadow effect
-        self._shadow_effect = fxutils.add_shadows(self, self)
+        fxutils.add_shadow(self)
 
         # Auto-dismiss timer
         self._dismiss_timer = QTimer(self)
