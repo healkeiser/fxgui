@@ -1,41 +1,11 @@
 """Utility functions for the `fxgui` package.
 
-This module provides general-purpose utility functions for Qt-based
-applications including UI loading, action creation, widget effects
-and window corners.
-
-Functions:
-    load_ui: Load a Qt Designer UI file.
-    create_action: Create a QAction with common settings.
-    add_shadows: Apply drop shadow effect to a widget.
-    get_formatted_time: Get current time as formatted string.
-    repolish: Force re-evaluation of stylesheet rules for a widget.
-    round_window_corners: Ask Windows 11 for a flyout's rounded corners.
-    popup_menu: Show a menu without blocking, freed once it closes.
-    add_submenu: Add a submenu that outlives its Python wrapper.
-    children_of: Yield a tree item's children.
-    filter_tree: Hide the rows of a tree a text does not match.
-    fit_columns: Widen a tree's columns to every row, collapsed ones too.
-    TreeState: What is open, selected and current in a tree, by row text.
-    later: Run a call after a delay unless its owner died (PySide 6.5 safe).
-    rehome: Give a widget's PySide wrapper back to its own parent's.
-    focus_step: Step the focus chain without leaving wrappers to die.
+Qt helpers every widget and application shares: UI loading, actions,
+shadows, menus, trees, window corners and wrapper lifetimes.
 
 Examples:
-    Loading a UI file:
-
     >>> from fxgui.fxutils import load_ui
     >>> ui = load_ui(parent_widget, "path/to/ui_file.ui")
-
-    Creating an action:
-
-    >>> action = create_action(
-    ...     parent=window,
-    ...     name="Save",
-    ...     icon=get_icon("save"),
-    ...     trigger=save_callback,
-    ...     shortcut="Ctrl+S"
-    ... )
 """
 
 # Metadata
@@ -44,11 +14,13 @@ __email__ = "valentin.onze@gmail.com"
 
 # Built-in
 import ctypes
+import functools
+import html
 import os
+import re
 import sys
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Callable, Dict, Iterator, Optional, Tuple, Union
+from typing import Callable, Dict, Iterator, Optional, Tuple
 
 # Third-party
 from qtpy.QtWidgets import (
@@ -61,21 +33,22 @@ from qtpy.QtWidgets import (
     QWidget,
     QGraphicsDropShadowEffect,
 )
-from qtpy.QtGui import QIcon, QKeySequence
-from qtpy.QtCore import QFile, QModelIndex, QPoint
+from qtpy.QtGui import QColor, QKeySequence
+from qtpy.QtCore import QModelIndex, QPoint, QTimer
 
 # Internal
-from fxgui._compat import focus_step, later, rehome
+from fxgui._compat import created_by_python
 
 
 # Public API
 __all__ = [
     "load_ui",
     "create_action",
-    "add_shadows",
-    "get_formatted_time",
+    "add_shadow",
+    "markdown_to_plain_text",
     "repolish",
     "round_window_corners",
+    "set_app_user_model_id",
     "popup_menu",
     "add_submenu",
     "children_of",
@@ -88,185 +61,132 @@ __all__ = [
 ]
 
 # `DWMWA_WINDOW_CORNER_PREFERENCE` from `dwmapi.h`: which rounding the
-# compositor gives a window's corners. Windows 11 and up. An older build
-# does not ignore the attribute, it answers with a failure code, which is
-# the same answer `round_window_corners` hands back.
+# compositor gives a window's corners. Windows 11 and up; an older build
+# answers with a failure code.
 _DWMWA_WINDOW_CORNER_PREFERENCE = 33
 
-# `DWMWCP_ROUND`: the full radius the OS gives its own flyouts and
-# context menus, rather than `DWMWCP_ROUNDSMALL`'s tighter one, which is
-# drawn for controls inside a window rather than for a window.
+# `DWMWCP_ROUND`: the full radius the OS gives its own flyouts and menus.
 _DWMWCP_ROUND = 2
+
+_HTML_TAG = re.compile(r"<[^>]+>")
 
 
 def load_ui(parent: QWidget, ui_file: str) -> QWidget:
-    """Load a UI file and return the loaded UI as a QWidget.
-
-    Args:
-        parent (QWidget): Parent object.
-        ui_file (str): Path to the UI file.
-
-    Returns:
-        QWidget: The loaded UI.
+    """Load a Qt Designer UI file as a new widget parented to `parent`.
 
     Raises:
         FileNotFoundError: If the specified UI file doesn't exist.
 
-    Note:
-        `QUiLoader` lives in `QtUiTools`, which the PyQt bindings do not
-        ship. The import is therefore deferred to call time (a module-level
-        one made `import fxgui` fail outright under PyQt5/PyQt6) and falls
-        back to `qtpy.uic.loadUi`, which qtpy provides for every binding.
-
     Examples:
-        To load a UI file located in the same directory as the Python script
-        >>> from pathlib import Path
-        >>> ui_path = Path(__file__).with_suffix('.ui')
-        >>> loaded_ui = load_ui(self, ui_path)
+        >>> loaded_ui = load_ui(self, Path(__file__).with_suffix(".ui"))
     """
 
     if not os.path.isfile(ui_file):
         raise FileNotFoundError(f"UI file not found: {ui_file}")
 
     try:
+        # Not shipped by the PyQt bindings, hence the deferred import.
         from qtpy.QtUiTools import QUiLoader
     except ImportError:
-        # PyQt: load without a base instance so a *new* widget comes back,
-        # then parent it, matching the QUiLoader behavior below.
         from qtpy.uic import loadUi
 
         loaded_ui = loadUi(ui_file)
         loaded_ui.setParent(parent)
         return loaded_ui
-
-    handle = QFile(ui_file)
-    loaded_ui = QUiLoader().load(handle, parent)
-    handle.close()
-    return loaded_ui
+    return QUiLoader().load(str(ui_file), parent)
 
 
 def create_action(
     parent: QWidget,
     name: str,
-    icon: Union[str, QIcon] = None,
+    *_legacy,
     trigger: Optional[Callable] = None,
     enable: bool = True,
-    visible: bool = True,
     shortcut: Optional[str] = None,
     checkable: bool = False,
     icon_name: Optional[str] = None,
+    **_retired,
 ) -> QAction:
-    """Create a QAction with common settings.
+    """Create a QAction owned by `parent`.
 
     Args:
         parent: Parent widget for the action.
         name: Display name for the action.
-        icon: A QIcon, or the path of an icon file.
-        trigger: Callback function to execute when triggered. Defaults to None.
-        enable: Whether the action is enabled. Defaults to True.
-        visible: Whether the action is visible. Defaults to True.
-        shortcut: Keyboard shortcut (e.g., "Ctrl+S"). Defaults to None.
-        checkable: Whether the action is checkable. Defaults to False.
-        icon_name: An fxicons name, drawn in the theme's colours; wins over
-            `icon`.
-
-    Returns:
-        The created QAction.
+        trigger: Called when the action is triggered.
+        enable: Whether the action is enabled.
+        shortcut: Keyboard shortcut (e.g., "Ctrl+S").
+        checkable: Whether the action is checkable.
+        icon_name: An fxicons name, drawn in the theme's colours.
 
     Examples:
         >>> action = create_action(
-        ...     parent=window,
-        ...     name="Save",
-        ...     icon_name="save",
-        ...     trigger=lambda: print("Saved!"),
-        ...     shortcut="Ctrl+S"
-        ... )
+        ...     window, "Save", trigger=save, shortcut="Ctrl+S",
+        ...     icon_name="save")
     """
-    from fxgui import fxicons
-
-    action = QAction(name, parent or None)
-
+    # TODO: shim; drop `_legacy` (icon, trigger) and `_retired` (visible)
+    # once _system_tray.py:92 and _main_window.py:319-480 stop passing them.
+    legacy_icon = _legacy[0] if _legacy else None
+    if len(_legacy) > 1:
+        trigger = _legacy[1]
+    action = QAction(name, parent)
     if icon_name is not None:
-        fxicons.set_icon(action, icon_name)
-    elif icon is not None:
-        if isinstance(icon, QIcon):
-            action.setIcon(icon)
-        else:
-            action.setIcon(QIcon(icon))
+        from fxgui import fxicons
 
+        fxicons.set_icon(action, icon_name)
+    elif legacy_icon is not None:
+        action.setIcon(legacy_icon)
     if trigger is not None:
         action.triggered.connect(trigger)
     action.setEnabled(enable)
-    action.setVisible(visible)
     action.setCheckable(checkable)
     if shortcut is not None:
         action.setShortcut(QKeySequence(shortcut))
-
     return action
 
 
-def add_shadows(
-    parent: QWidget,
-    shadow_object: QWidget,
-    color: str = "#000000",
-    blur: float = 10,
-    offset: float = 0,
+def add_shadow(
+    widget: QWidget,
+    blur: float = 20,
+    offset: Tuple[float, float] = (0, 0),
+    alpha: int = 80,
 ) -> QGraphicsDropShadowEffect:
-    """Apply shadows to a widget.
+    """Cast a black drop shadow of `alpha` opacity (0-255) under `widget`.
 
-    Args:
-        parent (QWidget, optional): Parent object.
-        shadow_object (QWidget): Object to receive shadows.
-        color (str, optional): Color of the shadows. Defaults to `#000000`.
-        blur (float, optional): Blur level of the shadows. Defaults to `10`.
-        offset (float, optional): Offset of the shadow from the
-            `shadow_object`. Defaults to `0`.
-
-    Returns:
-        QGraphicsDropShadowEffect: The shadow object.
+    Black in every theme: a themed colour baked here would go stale on a
+    theme switch.
 
     Examples:
-        >>> # Apply shadows to `self.top_toolbar` widget
-        >>> add_shadows(self, self.top_toolbar, "#212121")
+        >>> fxutils.add_shadow(card, blur=24, offset=(0, 4), alpha=100)
     """
-
-    shadow = QGraphicsDropShadowEffect(parent)
+    shadow = QGraphicsDropShadowEffect()
     shadow.setBlurRadius(blur)
-    shadow.setOffset(offset)
-    shadow.setColor(color)
-    shadow_object.setGraphicsEffect(shadow)
-
+    shadow.setOffset(*offset)
+    shadow.setColor(QColor(0, 0, 0, alpha))
+    widget.setGraphicsEffect(shadow)
     return shadow
 
 
-# ' Misc
-def get_formatted_time(
-    display_seconds: bool = False, display_date: bool = False
-) -> str:
-    """Returns the current time as a formatted string.
+def add_shadows(parent, shadow_object):
+    """Cast the splash screen's shadow; use `add_shadow` instead."""
+    # TODO: shim; delete once _splash_screen.py:194 calls add_shadow.
+    return add_shadow(shadow_object, blur=10, alpha=255)
 
-    Args:
-        display_seconds (bool, optional): Whether to display the seconds.
-            Defaults to `False`.
-        display_date (bool, optional): Whether to display the date.
-            Defaults to `False`.
 
-    Returns:
-        str: The formatted current time.
+@functools.lru_cache(maxsize=1024)
+def markdown_to_plain_text(text: str) -> str:
+    """Return `text` with its Markdown formatting removed.
 
-    Examples:
-        >>> get_formatted_time()
-        '14:30'
-        >>> get_formatted_time(display_seconds=True)
-        '14:30:45'
-        >>> get_formatted_time(display_date=True)
-        '2025-12-29 14:30'
+    Without the optional `markdown` package the text is returned as is.
     """
-
-    format_string = "%H:%M:%S" if display_seconds else "%H:%M"
-    if display_date:
-        format_string = "%Y-%m-%d " + format_string
-    return datetime.now().strftime(format_string)
+    if not text or text == "-":
+        return text
+    try:
+        import markdown
+    except ImportError:
+        return text
+    rendered = markdown.markdown(text, extensions=["extra", "nl2br"])
+    plain = html.unescape(_HTML_TAG.sub("", rendered))
+    return " ".join(plain.split())
 
 
 def repolish(widget: QWidget) -> None:
@@ -293,40 +213,16 @@ def repolish(widget: QWidget) -> None:
 def round_window_corners(widget: QWidget) -> bool:
     """Give `widget`'s own window the corners and shadow of a flyout.
 
-    A tray flyout or a context menu on Windows 11 is a rounded rectangle
-    with the compositor's own shadow under it, and the platform draws
-    both for any window that asks. Asking is one
-    `DwmSetWindowAttribute` call, which is the whole reason this exists
-    rather than a paint event: rounding a window by hand needs a
-    translucent frameless widget and a paint event that agrees with it,
-    the shadow under that needs a transparent margin on every edge, and
-    a window seated by its own edges then has to subtract those margins
-    from every position it computes. The compositor's answer changes no
-    geometry at all -- the window keeps the rectangle it was given, and
-    the OS clips and shades it.
-
-    Nothing here raises. Off Windows 11 -- an older build, another
-    platform, the offscreen platform a test runs under -- the answer is
-    `False` and the window keeps its square corners, because a square
-    panel is still a panel and an application that refuses to open
-    because a compositor declined is not.
-
-    `ctypes` is stdlib, the platform guard below keeps it unused on
-    every system that is not Windows, and there is no Qt API for the
-    request.
+    One `DwmSetWindowAttribute` call on Windows 11: the compositor clips and
+    shades the window, and its geometry does not change. Nothing raises.
 
     Args:
-        widget: The window to round. Must already BE a window: this
-            reads its native handle, and asking a widget for one creates
-            it, so a child widget would be made native for nothing.
+        widget: A window; asking a child for its handle would make it native.
 
     Returns:
-        bool: Whether the compositor took the request. `False` is an
-        ordinary answer rather than a failure -- it is what every
-        platform without Windows 11's window rounding says.
+        bool: Whether the compositor took the request; False off Windows 11.
 
     Examples:
-        >>> panel.show()  # doctest: +SKIP
         >>> fxutils.round_window_corners(panel)  # doctest: +SKIP
         True
     """
@@ -466,9 +362,11 @@ def fit_columns(view: QTreeView) -> None:
     `resizeColumnToContents` measures only the rows that are expanded.
     """
     model, header = view.model(), view.header()
-    option = QStyleOptionViewItem()
-    option.font = view.font()
-    option.widget = view
+    if hasattr(view, "initViewItemOption"):
+        option = QStyleOptionViewItem()
+        view.initViewItemOption(option)
+    else:
+        option = view.viewOptions()  # Qt 5
     columns = range(model.columnCount())
     wanted = [header.sectionSizeHint(column) for column in columns]
     decorated = int(view.rootIsDecorated())
@@ -584,3 +482,52 @@ class TreeState:
         # The view lays out lazily; the scrollbar still has the old range.
         tree.doItemsLayout()
         tree.verticalScrollBar().setValue(self.scroll)
+
+
+def later(ms: int, owner, call) -> None:
+    """Run `call` once after `ms` milliseconds, unless `owner` died first.
+
+    Stands in for `QTimer.singleShot(ms, owner, call)`, which Houdini 21's
+    PySide6 6.5 lacks. Call it on `owner`'s thread: the timer is its child.
+    """
+    timer = QTimer(owner)
+    timer.setSingleShot(True)
+    timer.timeout.connect(call)
+    timer.timeout.connect(timer.deleteLater)
+    timer.start(ms)
+
+
+def rehome(widget):
+    """Give `widget`'s Python wrapper back to its own parent's; return it.
+
+    PySide files a widget a getter returns under the widget asked, and
+    kills that one's wrapped children when it dies. Qt skips a `setParent`
+    to the same parent; the binding files the wrapper back. A parent only
+    C++ made is filed first, up to one Python made.
+    """
+    if widget is not None and created_by_python is not None:
+        _file_back(widget)
+    return widget
+
+
+def _file_back(widget) -> bool:
+    """File `widget` under its parent's lasting wrapper; say if one lasts."""
+    parent = widget.parentWidget()
+    if parent is None:
+        if not created_by_python(widget):
+            # Python taking a host's window would delete it with the name.
+            return False
+        widget.setParent(None)
+        return True
+    if not (created_by_python(parent) or _file_back(parent)):
+        return False
+    widget.setParent(parent)
+    return True
+
+
+def focus_step(widget, forward: bool = True):
+    """Return the widget after `widget` in the focus chain, or before it."""
+    return rehome(
+        widget.nextInFocusChain() if forward
+        else widget.previousInFocusChain()
+    )
