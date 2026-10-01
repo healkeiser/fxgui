@@ -23,10 +23,11 @@ def test_the_version_is_the_installed_distributions():
     assert fxgui.__version__ == expected
 
 
-def test_fxdcc_is_not_part_of_the_package_api():
+def test_fxdcc_is_gone():
+    import importlib.util
+
     assert "fxdcc" not in fxgui.__all__
-    assert not hasattr(fxgui, "fxdcc") or not hasattr(
-        fxgui.fxdcc, "get_dcc_main_window")
+    assert importlib.util.find_spec("fxgui.fxdcc") is None
 
 
 def test_the_severity_levels_live_with_the_severities():
