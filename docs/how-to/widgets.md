@@ -247,7 +247,7 @@ The title is in the theme's primary text, the body dimmed, and the shortcut sits
 | A `QAction` | The tip is rebuilt when the action is hovered, before its tool button or menu shows it |
 | An item of a `QListWidget`, `QTreeWidget` or `QTableWidget` | The view builds the tip when it shows; a tree item gets it on every column. Add the item to its view first, or `apply_tip` raises `ValueError` |
 
-The HTML holds the colours of the theme in force, so rebuilding at show time is what makes a tip set in one theme show in the next. Every string is HTML-escaped, so a path holding `&` or `<` reaches the user as text. Qt's rich text draws no rounded background, so a keycap in a tooltip is square.
+The HTML holds the colours of the theme in force, so rebuilding at show time is what makes a tip set in one theme show in the next. Every string is HTML-escaped, so a path holding `&` or `<` reaches the user as text, and a newline in the body breaks the line. Qt's rich text draws no rounded background, so a keycap in a tooltip is square.
 
 Two lower-level helpers:
 
