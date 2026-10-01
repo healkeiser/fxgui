@@ -47,17 +47,24 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
     _LIGHT_STYLE = "friendly"
 
     def __init__(self, document: QTextDocument, language: str = "python"):
-        super().__init__(document)
+        super().__init__(None)
         self._language = language
         self._lexer = None
         self._formats = {}
-        self._lexed_text = None
+        self._lexed = False
         self._spans = []
         self._span_starts = []
 
         self._update_lexer(language)
         self._update_formats()
+        # Connected before setDocument, so it runs ahead of Qt's rehighlight.
+        document.contentsChange.connect(self._text_changed)
+        self.setParent(document)
+        self.setDocument(document)
         fxstyle.theme_changed.connect(self.refresh_formats)
+
+    def _text_changed(self, *_) -> None:
+        self._lexed = False
 
     def _update_lexer(self, language: str) -> None:
         """Update the Pygments lexer for the specified language.
@@ -73,7 +80,7 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
         except ClassNotFound:
             self._lexer = get_lexer_by_name("text", **options)
             self._language = "text"
-        self._lexed_text = None
+        self._lexed = False
 
     def set_language(self, language: str) -> None:
         """Change the syntax highlighting language.
@@ -133,10 +140,10 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
 
     def _lex_document(self) -> None:
         """Lex the document again if its text changed since the last lex."""
-        text = self.document().toPlainText()
-        if text == self._lexed_text:
+        if self._lexed:
             return
-        self._lexed_text = text
+        self._lexed = True
+        text = self.document().toPlainText()
         self._spans = []
         position = 0
         for token_type, value in lex(text, self._lexer) if text else ():

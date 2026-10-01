@@ -71,6 +71,27 @@ def test_one_change_is_lexed_once(qapp, monkeypatch):
     assert highlighter.language() == "python"
 
 
+def test_one_change_reads_the_document_once(qapp, monkeypatch):
+    """Reading the whole text per block made 8000 lines take seconds."""
+    from qtpy.QtGui import QTextDocument
+
+    reads = []
+    real = QTextDocument.toPlainText
+
+    def counting(self):
+        reads.append(1)
+        return real(self)
+
+    edit = QPlainTextEdit()
+    document = edit.document()
+    FXPygmentsHighlighter(document, "python")
+    qapp.processEvents()
+    monkeypatch.setattr(QTextDocument, "toPlainText", counting)
+    document.setPlainText("\n".join(f"x_{index} = {index}" for index in range(200)))
+    # setPlainText is two changes, a clear and an insert; not one per line.
+    assert len(reads) <= 2
+
+
 def test_a_theme_switch_rehighlights_a_code_block_once(qtbot, qapp):
     block = FXCodeBlock("x = 1\ny = 2")
     qtbot.addWidget(block)
