@@ -1,7 +1,8 @@
 """The window's command row, its menu bar corner, a parent, and the frame."""
 
 # Third-party
-from qtpy.QtCore import QEvent, QSize, Qt
+import pytest
+from qtpy.QtCore import QEvent, QPoint, QSize, Qt
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QApplication,
@@ -185,3 +186,25 @@ def test_an_unframed_window_leaves_its_buttons_alone(qtbot):
     QApplication.processEvents()
 
     assert button.property("fxRole") is None
+
+
+@pytest.mark.parametrize("framed", [False, True])
+@pytest.mark.parametrize("theme", ["dark", "github_light"])
+def test_corner_tools_show_the_menu_bar_through(qtbot, framed, theme):
+    fxstyle.apply_theme(theme)
+    window = FXMainWindow(framed=framed, toolbar=False)
+    tools = _corner_tools(qtbot, window)
+    idle = tools.addAction(fxicons.get_icon("play_arrow"), "Run")
+    idle.setEnabled(False)
+    _shown(qtbot, window)
+    bar = window.menuBar()
+    image = window.grab().toImage()
+
+    def seen(widget, point):
+        return QColor(image.pixel(widget.mapTo(window, point))).name()
+
+    ground = seen(bar, QPoint(bar.width() // 2, 2))
+    assert seen(tools, QPoint(0, 1)) == ground, "the toolbar has no fill"
+    button = tools.widgetForAction(idle)
+    assert seen(button, QPoint(1, button.height() // 2)) == ground, (
+        "a disabled tool keeps no fill of its own")

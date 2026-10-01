@@ -1758,6 +1758,20 @@ QWidget#fxMenuBarCorner > QLabel
     background-color: transparent;
 }
 
+/* Tools added with add_corner_widget show the menu bar through. */
+QWidget#fxMenuBarCorner QToolBar
+{
+    background: transparent;
+    border: none;
+    padding: 0px;
+    spacing: 0px;
+}
+
+QWidget#fxMenuBarCorner QToolButton:disabled
+{
+    background-color: transparent;
+}
+
 *[fxFrame="true"] > QToolButton:disabled,
 QMainWindow[fxFrame="true"] > QToolBar > QToolButton:disabled
 {
