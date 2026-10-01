@@ -65,7 +65,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 | Role | Purpose |
 |------|---------|
 | `border` | Standard borders - inputs, containers, menus, separators |
-| `border_light` | Subtle borders - tooltips, button borders, tab borders |
+| `border_light` | Subtle borders - button borders, tab borders |
 | `border_strong` | Emphasized borders - frames, separator lines |
 
 ### Text Colors
@@ -109,6 +109,7 @@ An omitted `text_on_accent_*` is black or white, whichever reads better on the a
 |------|---------|
 | `shadow` | Colour of a floating card's drop shadow, `#AARRGGBB` (dark `#50000000`, light `#28000000`) |
 | `shadow_blur` | Its blur radius in pixels (20) |
+| `scrim` | Fill dimming a pane behind `FXLoadingOverlay`, `#AARRGGBB` (`#80000000`) |
 
 ### Icon Color
 
@@ -118,7 +119,7 @@ An omitted `text_on_accent_*` is black or white, whichever reads better on the a
 
 ## Feedback Colors Reference
 
-Each theme has a `feedback:` block; a theme without one takes `dark`'s. Used by `FXNotificationBanner`, `FXLogWidget`, and other status widgets. `fxstyle.get_feedback_colors()` returns the current theme's block; one colour is `fxstyle.colors().feedback_error_foreground`.
+Each theme has a `feedback:` block; a theme without one takes `dark`'s. Used by `FXNotificationBanner`, `FXLogWidget`, and other status widgets. Each colour is a token, `feedback_<level>_<part>`: `fxstyle.colors().feedback_error_foreground`, or `fxstyle.qcolor("feedback_error_foreground")` for a QColor.
 
 | Level | Property | Usage |
 |-------|----------|-------|
@@ -233,11 +234,15 @@ window.show()
 # Apply your custom theme, everywhere
 fxstyle.apply_theme("monokai")
 
-app.exec_()
+app.exec()
 ```
 
 !!! note
     `FXApplication` is a themed root (see "Registering Themed Roots" further down), so `apply_theme()` reaches every window without you touching one.
+
+A file that cannot be read raises `OSError` (`FileNotFoundError` for a wrong
+path), and one that is no YAML raises `yaml.YAMLError`, both from
+`set_color_file` itself. The colours already loaded stay in force.
 
 ## Switching Themes at Runtime
 
@@ -376,8 +381,8 @@ reuses them, so it looks like it belongs.
 | Part | Value | Where it comes from |
 |------|-------|---------------------|
 | Height | 28 px at the 12 px body font | `fxstyle.control_height(widget)`: the font's line plus 5 px of padding and a 1 px border on each side |
-| Corner radius of a control, a row, a tab, a pane or a tooltip | 4 px | `fxstyle.BUTTON_RADIUS`, `@button_radius` in QSS |
-| Corner radius of a popup or a floating card (menu, combo list, completer list, banner, progress card, drop zone, `FXFloatingDialog`) | 8 px | `fxstyle.CARD_RADIUS`, `@card_radius` |
+| Corner radius of a control, a row, a tab or a pane | 4 px | `fxstyle.BUTTON_RADIUS`, `@button_radius` in QSS |
+| Corner radius of a popup or a floating card (menu, combo list, completer list, tooltip, banner, progress card, drop zone, `FXFloatingDialog`) | 8 px | `fxstyle.CARD_RADIUS`, `@card_radius` |
 | Menu row | 24 px at the 12 px body font | `QMenu::item` padding |
 | Tool button | a 22 px box around a 16 px icon | `QToolButton` margin 2 px, padding 2 px, a reserved 1 px edge |
 | Tab | one 4 px gap above, below and between pills | tab margin `4px 2px`, the same for `QTabBar` and QtAds tabs |
@@ -460,7 +465,13 @@ MyWidget[fxFocusVisible="true"]:focus { border-color: @accent_primary; }
 ```
 
 A widget that paints its own focus look asks
-`fxstyle.focus_visible(widget)` instead of `hasFocus()`.
+`fxstyle.focus_visible(widget)` instead of `hasFocus()`. The first call
+starts the focus watch, so ask once before the widget can take focus: in
+`paintEvent`, or once when it is built.
+
+A colour of your own can be a token name or a colour string:
+`fxstyle.qcolor(value)` returns the QColor for either, read from the theme
+in force, and an invalid QColor for anything else.
 
 Inside a host, the property reaches the host's own widgets too, but only
 fxgui's widgets are restyled when it changes.
@@ -497,11 +508,12 @@ two apart.
   Text on an accent fill is `@text_on_accent_primary`.
 - Icons take `color="icon"`; on an accent fill, `icon_on_accent_primary`.
 - A popup (a menu, a combo box's list, a completer's list,
-  `FXCommandPalette`) is `@surface` with a 1 px `@border` at
-  `@card_radius`, its rows inset 4 px. A menu row is 24 px tall and a
-  separator runs the menu's full width. A hovered menu item, combo row or
-  completer row is `@accent_primary` with `@text_on_accent_primary` text.
-  No state moves a row's text.
+  `FXCommandPalette`) and a tooltip are `@surface` with a 1 px `@border`
+  at `@card_radius`, their rows inset 4 px. A menu, combo or completer row
+  is its text plus 4 px above and below, 24 px at the 12 px body font, and
+  a separator runs the menu's full width. A hovered menu item, combo row
+  or completer row is `@accent_primary` with `@text_on_accent_primary`
+  text. No state moves a row's text.
 - A menu bar item keeps one box, at the button radius, in every state.
   At rest it is bare; hovered, `@state_hover`; with its menu open,
   `@state_pressed` with `@text`.
@@ -525,12 +537,11 @@ two apart.
 
 | Kind | Examples | Frame | Shadow |
 |------|----------|-------|--------|
-| Popup: a window that closes when you click away | `QMenu`, a combo box list, `FXCommandPalette`, a completer or calendar popup | `@border`, `@card_radius` | The platform's own. Windows draws one under every popup window. Every popup under a themed root asks Windows 11 for flyout corners (`fxutils.round_window_corners`) when it shows, which is the 8 px flyout radius. fxgui paints none. |
+| Popup: a window that closes when you click away, or a tooltip | `QMenu`, a combo box list, `FXCommandPalette`, a completer or calendar popup, a tooltip | `@border`, `@card_radius` | The platform's own. Windows draws one under every popup window. Every popup and tooltip under a themed root asks Windows 11 for flyout corners (`fxutils.round_window_corners`) when it shows, which is the 8 px flyout radius. fxgui paints none. |
 | Floating card: a panel over the window that stays until it is done | `FXNotificationBanner`, `FXProgressCard`, `FXFloatingDialog` | `@border`, `@card_radius` | One painted shadow: `fxutils.add_shadow(card)`, in the theme's `@shadow` and `@shadow_blur`, no offset unless you pass one |
 
 A shadow reads its colour and blur from the theme each time it draws, so
-it follows a switch with no call. A tooltip is no popup: the compositor
-does not round its window, so it keeps `@button_radius`.
+it follows a switch with no call.
 
 `FXCommandPalette` opens centred across its window. `position` puts it
 at `"top"` (under the menu bar and the command rows), `"center"` (the

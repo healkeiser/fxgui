@@ -34,48 +34,24 @@ fxicons.add_library(
     root=str(Path.home() / "Pictures" / "Icons"),
 )
 
-# Set the houdini library as the default
-fxicons.set_default_icon_library(library="houdini")
-
-# Override the defaults for the houdini library
-fxicons.set_icon_defaults(apply_to="houdini", color="red")
-
-# Apply the icon to a button
+# Ask for an icon of that library by name
 button = QPushButton()
-button.setIcon(fxicons.get_icon("crowd"))
+button.setIcon(fxicons.get_icon("crowd", library="houdini"))
 ```
 
-### Specify Library Per Icon
+The `defaults` you pass are that library's size, colour, style and
+extension: a `get_icon` call that leaves one out takes it from there.
 
-If you don't set a new default library, the `fxicons` module will use the "material" library as default. You can also specify the library when calling the `get_icon` function:
+### Name the library, the size and the colour per call
+
+Without `library`, `get_icon` looks in "material". Every other default can
+be overridden on the call itself:
 
 ```python
 from fxgui import fxicons
 
 icon = fxicons.get_icon("crowd", library="houdini")
-```
-
-### Global Icon Defaults
-
-If no argument `apply_to` is given to `set_icon_defaults`, it will apply to all libraries.
-
-```python
-from fxgui import fxicons
-
-# Set all icons to be red and 32x32
-fxicons.set_icon_defaults(color="red", width=32, height=32)
-```
-
-Arguments set on the `get_icon` function will override the defaults set by `set_icon_defaults`:
-
-```python
-from fxgui import fxicons
-
-# Set all icons to be red and 32x32
-fxicons.set_icon_defaults(color="red", width=32, height=32)
-
-# Get a blue icon
-icon = fxicons.get_icon("home", color="blue")
+small_red = fxicons.get_icon("home", width=32, height=32, color="red")
 ```
 
 ### A Name the Library Does Not Carry
@@ -110,17 +86,16 @@ A fallback that is not in the default library either still raises, since
 a second silent stand-in would hide a mistake in your code rather than
 in your data.
 
-### Superpose Icons
+### Badge an icon
 
-You can superpose as many icons as you want, from background to foreground:
+`badged` returns a copy of an icon with a filled dot at its lower right,
+for work in flight, such as a tray icon while a job runs. The dot is a
+theme token or a colour:
 
 ```python
 from fxgui import fxicons
 
-icon_a = fxicons.get_icon("home")
-icon_b = fxicons.get_icon("add")
-icon_c = fxicons.get_icon("settings", color="red")
-icon = fxicons.superpose_icons(icon_a, icon_b, icon_c)
+busy = fxicons.badged(fxicons.get_icon("cloud"), color="accent_primary")
 ```
 
 ## Icons Follow the Theme When Drawn
@@ -164,9 +139,9 @@ three that are not the resting one, each a token or a colour:
 | Mode | When Qt uses it | Default ink |
 |------|-----------------|-------------|
 | `color` (Normal) | At rest | The library's default, `"icon"` for material, fontawesome and simple |
-| `"active"` | A hovered tool button, a highlighted menu row; a focused push button | `"icon_on_accent_secondary"` |
+| `"active"` | A hovered tool button, a highlighted menu row; a focused push button | `"icon_on_accent_primary"` |
 | `"selected"` | A selected item-view row | `"icon_on_accent_primary"` |
-| `"disabled"` | A disabled widget | A muted grey |
+| `"disabled"` | A disabled widget | `"text_disabled"` |
 
 ```python
 icon = fxicons.get_icon(
@@ -176,9 +151,10 @@ icon = fxicons.get_icon(
 )
 ```
 
-Any other key in `inks` raises `ValueError`. `set_icon` gives a
-`QPushButton` an Active ink equal to its resting one, since Qt draws a
-focused push button's icon in Active mode on no accent fill.
+Any other key in `inks` raises `ValueError`. `set_icon` gives any button
+(a `QPushButton`, a `QToolButton`) an Active ink equal to its resting one,
+since Qt draws a hovered or focused button's icon in Active mode on no
+accent fill.
 
 A full-colour library (`dcc`, or one added with `recolor=False`) keeps its
 own pixels in every mode, whatever colour you ask for.
@@ -239,7 +215,7 @@ button = QPushButton("Network")
 button.setIcon(qta.icon("mdi.access-point-network"))
 window.setCentralWidget(button)
 window.show()
-application.exec_()
+application.exec()
 ```
 
 And the very cool features from this package, such as animated icons:
@@ -258,7 +234,7 @@ spin_icon = qta.icon("fa5s.spinner", color="red", animation=animation)
 button.setIcon(spin_icon)
 window.setCentralWidget(button)
 window.show()
-application.exec_()
+application.exec()
 ```
 
 !!! warning

@@ -68,7 +68,7 @@ style = window.style()
 # Use standard icons that are automatically themed
 print(style.standardIcon(QStyle.SP_MessageBoxCritical))
 window.show()
-application.exec_()
+application.exec()
 ```
 
 !!! note
@@ -105,7 +105,7 @@ layout.addWidget(splitter)
 
 window.setCentralWidget(body)
 window.show()
-application.exec_()
+application.exec()
 ```
 
 What changes in a framed window:

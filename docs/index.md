@@ -35,7 +35,7 @@ app = fxwidgets.FXApplication()
 window = fxwidgets.FXMainWindow(title="My App")
 window.show()
 
-app.exec_()
+app.exec()
 ```
 
 ## Modules Overview
