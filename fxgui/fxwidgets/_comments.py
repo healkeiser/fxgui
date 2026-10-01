@@ -87,7 +87,8 @@ class FXMentionEdit(QPlainTextEdit):
         self.completer.setCaseSensitivity(Qt.CaseInsensitive)
         self.completer.setFilterMode(Qt.MatchContains)
         self.completer.activated[QModelIndex].connect(self._chose)
-        self.setFixedHeight(self.fontMetrics().lineSpacing() * lines + 12)
+        self._lines = lines
+        self._fit_lines()
         # A text edit asks to grow tall; left so, a card stretches round it.
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         self.setTabChangesFocus(True)
@@ -141,6 +142,15 @@ class FXMentionEdit(QPlainTextEdit):
         """Empty the box and forget who was named."""
         self.clear()
         self._chosen.clear()
+
+    def changeEvent(self, event: QEvent) -> None:
+        """Hold the lines again in a font a sheet or a theme hands it."""
+        super().changeEvent(event)
+        if event.type() == QEvent.FontChange:
+            self._fit_lines()
+
+    def _fit_lines(self) -> None:
+        self.setFixedHeight(self.fontMetrics().lineSpacing() * self._lines + 12)
 
     def event(self, event: QEvent) -> bool:
         """Claim Escape from window shortcuts when the box closes on it."""

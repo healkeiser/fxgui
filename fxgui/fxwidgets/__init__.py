@@ -86,7 +86,7 @@ from fxgui.fxwidgets._status_dot import FXStatusDot
 from fxgui.fxwidgets._system_tray import FXSystemTray
 from fxgui.fxwidgets._tag_input import FXTagChip, FXTagInput
 from fxgui.fxwidgets._timeline_slider import FXTimelineSlider
-from fxgui.fxwidgets._tips import apply_tip, keycap, tip
+from fxgui.fxwidgets._tips import FXKeycap, apply_tip, keycap, tip
 from fxgui.fxwidgets._toggle_switch import FXToggleSwitch
 from fxgui.fxwidgets._tooltip import (
     FXTooltip,
@@ -142,6 +142,7 @@ __all__ = [
     "FXItemDelegate",
     "FXJoinedGroup",
     "FXKeyboardTree",
+    "FXKeycap",
     "FXLettersUnderscoreValidator",
     "FXLoadingOverlay",
     "FXLoadingSpinner",

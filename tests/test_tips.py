@@ -4,8 +4,16 @@
 import re
 
 # Third-party
-from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import QListWidgetItem, QPushButton
+import pytest
+from qtpy.QtCore import QEvent, QPoint
+from qtpy.QtGui import QHelpEvent, QImage, QKeySequence
+from qtpy.QtWidgets import (
+    QApplication,
+    QListWidgetItem,
+    QPushButton,
+    QToolTip,
+    QWidget,
+)
 
 # Internal
 from fxgui import fxstyle
@@ -15,6 +23,18 @@ from fxgui.fxwidgets import _tips
 def _strip_markup(html: str) -> str:
     """Return the text a user actually reads, with all tags removed."""
     return re.sub(r"<[^>]+>", "", html)
+
+
+@pytest.fixture
+def themed_app(qapp):
+    """The application as a themed root, as FXApplication makes it."""
+    sheet, font, palette = qapp.styleSheet(), qapp.font(), qapp.palette()
+    fxstyle.register_themed_root(qapp)
+    yield qapp
+    fxstyle._themed_roots.discard(qapp)
+    qapp.setStyleSheet(sheet)
+    qapp.setFont(font)
+    qapp.setPalette(palette)
 
 
 # ' HTML shape
@@ -93,7 +113,7 @@ def test_tooltip_grows_with_its_content(qtbot):
     assert title_only < 100
 
 
-def test_keycap_is_right_aligned(qtbot):
+def test_keycap_is_right_aligned(themed_app, qtbot):
     """The keycap must sit at the tooltip's right edge in both regimes,
     capped and shrink-to-content."""
     from qtpy.QtGui import QColor
@@ -102,7 +122,9 @@ def test_keycap_is_right_aligned(qtbot):
     from fxgui import fxstyle
 
     fxstyle.apply_theme("dark")
-    hover = QColor(fxstyle.get_theme_colors()["state_hover"]).rgb()
+    # The keycap's fill on the tooltip box, as the QToolTip rule paints it.
+    hover = QColor(fxstyle.colors().surface).rgb()
+    box = f"background: {fxstyle.colors().surface_sunken};"
 
     for args in (
         ("Save", "", "Ctrl+S"),
@@ -110,6 +132,7 @@ def test_keycap_is_right_aligned(qtbot):
         ("Publish", "word " * 200, "Ctrl+Shift+P"),
     ):
         label = QLabel(_tips.tip(*args))
+        label.setStyleSheet(box)
         label.setWordWrap(True)
         label.resize(label.sizeHint())
         label.show()
@@ -193,33 +216,77 @@ def test_keycap_falls_back_to_raw_string(qtbot):
 # ' Theme awareness
 
 
-def test_colors_come_from_the_active_theme(qtbot):
+def test_tips_name_palette_roles_not_colours(qtbot):
+    html = _tips.tip("Save", "Write the scene to disk", "Ctrl+S")
+
+    assert "#" not in html
+    assert "palette(placeholder-text)" in html
+
+
+def _shown_tip(widget) -> QImage:
+    point = QPoint(2, 2)
+    QApplication.sendEvent(
+        widget, QHelpEvent(QEvent.ToolTip, point, widget.mapToGlobal(point))
+    )
+    label = next(
+        top
+        for top in QApplication.topLevelWidgets()
+        if top.inherits("QTipLabel") and top.isVisible()
+    )
+    image = label.grab().toImage()
+    QToolTip.hideText()
+    return image
+
+
+def test_a_tip_set_in_one_theme_shows_in_the_theme_of_the_moment(
+    themed_app, qtbot
+):
+    button = QPushButton("Save")
+    qtbot.addWidget(button)
+    button.show()
     fxstyle.apply_theme("dark")
-    dark = _tips.tip("Save", "Write the scene to disk", "Ctrl+S")
+    button.setToolTip(_tips.tip("Save", "Write the scene to disk", "Ctrl+S"))
 
     fxstyle.apply_theme("light")
-    light = _tips.tip("Save", "Write the scene to disk", "Ctrl+S")
+    image = _shown_tip(button)
 
-    assert dark != light
-    for token in ("text", "text_muted", "state_hover"):
-        fxstyle.apply_theme("dark")
-        dark_value = fxstyle.get_theme_colors()[token]
-        fxstyle.apply_theme("light")
-        light_value = fxstyle.get_theme_colors()[token]
-
-        assert dark_value in dark
-        assert light_value in light
-        assert dark_value not in light
+    inks = {
+        image.pixelColor(x, y).name()
+        for x in range(image.width())
+        for y in range(image.height())
+    }
+    assert fxstyle.colors().text_muted.lower() in inks
+    fxstyle.apply_theme("dark")
+    assert fxstyle.colors().text_muted.lower() not in inks
 
 
-def test_tokens_used_exist_in_every_theme(qtbot):
-    """A missing token would raise a KeyError on hover, in a studio theme
-    nobody tested."""
-    for name in fxstyle.get_available_themes():
-        fxstyle.apply_theme(name)
-        colors = fxstyle.get_theme_colors()
-        for token in ("text", "text_muted", "state_hover"):
-            assert token in colors, f"{name} is missing {token}"
+def test_a_keycap_follows_a_switch_and_has_round_corners(qtbot):
+    host = QWidget()
+    qtbot.addWidget(host)
+    fxstyle.register_themed_root(host)
+    fxstyle.apply_theme("dark")
+    switched = _tips.FXKeycap("Ctrl+S", host)
+    fxstyle.apply_theme("light")
+    fresh = _tips.FXKeycap("Ctrl+S", host)
+    host.show()
+
+    images = [cap.grab().toImage() for cap in (switched, fresh)]
+
+    assert images[0] == images[1]
+    fill = images[1].pixelColor(images[1].width() // 2, 1).name()
+    assert images[1].pixelColor(0, 0).name() != fill
+
+
+def test_fxtooltip_draws_its_shortcut_as_a_keycap(qtbot):
+    from fxgui.fxwidgets import FXTooltip
+
+    anchor = QWidget()
+    tooltip = FXTooltip(parent=anchor, title="Save", shortcut="Ctrl+S")
+    try:
+        assert isinstance(tooltip._shortcut_label, _tips.FXKeycap)
+    finally:
+        tooltip.deleteLater()
+        anchor.deleteLater()
 
 
 # ' apply_tip
@@ -506,3 +573,25 @@ def test_icon_only_buttons_carry_a_name(qtbot):
     assert all(button.accessibleName() for button in picker.buttons())
     assert picker.buttons()[0].accessibleName() != picker.buttons()[0].text()
 
+
+
+def test_apply_tip_shows_the_theme_in_force_when_it_shows(qtbot):
+    from qtpy.QtCore import QEvent, QPoint
+    from qtpy.QtGui import QHelpEvent
+    from qtpy.QtWidgets import QApplication, QToolTip
+
+    button = QPushButton()
+    qtbot.addWidget(button)
+    button.show()
+    fxstyle.apply_theme("dark")
+    _tips.apply_tip(button, "Save", "Write the scene to disk", "Ctrl+S")
+    fxstyle.apply_theme("light")
+
+    point = QPoint(2, 2)
+    event = QHelpEvent(QEvent.ToolTip, point, button.mapToGlobal(point))
+    QApplication.sendEvent(button, event)
+
+    assert QToolTip.text() == _tips.tip(
+        "Save", "Write the scene to disk", "Ctrl+S"
+    )
+    QToolTip.hideText()

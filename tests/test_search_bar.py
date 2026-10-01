@@ -17,6 +17,7 @@ def _bar(qtbot):
     bar.show()
     qtbot.waitExposed(bar)
     bar.activateWindow()
+    qtbot.waitUntil(bar.isActiveWindow, timeout=1000)
     return bar
 
 
@@ -28,7 +29,9 @@ def test_set_focus_takes_a_reason_and_lands_in_the_field(qtbot, qapp):
 
 def test_focus_in_the_field_lights_the_container(qtbot, qapp):
     bar = _bar(qtbot)
-    bar.setFocus()
+    # Activation gave the field focus; it comes back by Tab.
+    bar._input.clearFocus()
+    bar.setFocus(Qt.TabFocusReason)
     qtbot.waitUntil(lambda: bar._input.hasFocus(), timeout=1000)
     assert bar._search_container.property("focused") is True
     bar._input.clearFocus()

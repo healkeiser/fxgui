@@ -82,6 +82,8 @@ _libraries_info = {
     },
     "dcc": {
         "recolor": False,
+        # Single-colour marks, drawn in the theme's icon ink.
+        "recolor_names": frozenset({"alembic", "3d_equalizer", "rez", "zbrush"}),
         "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
         "defaults": {
             "extension": "svg",
@@ -348,23 +350,26 @@ def _raster(
     return qpixmap
 
 
-def _resolved(library, width, height, color):
-    """Fill a library, size and colour left unset from the library defaults.
+def _resolved(library, width, height, color, icon_name):
+    """Fill a library, size and colour left unset; say if the icon recolours.
 
-    A full-colour library answers no colour, whatever was asked.
+    A full-colour icon answers no colour, whatever was asked; a single-colour
+    mark in a full-colour library defaults to the "icon" token.
     """
     library = library or _DEFAULT_LIBRARY
     info = _libraries_info[library]
     defaults = info["defaults"]
-    if not info["recolor"]:
+    recolors = info["recolor"] or icon_name in info.get("recolor_names", ())
+    if not recolors:
         color = None
     elif color is None:
-        color = defaults["color"]
+        color = defaults["color"] if info["recolor"] else "icon"
     return (
         library,
         defaults["width"] if width is None else width,
         defaults["height"] if height is None else height,
         color,
+        recolors,
     )
 
 
@@ -515,14 +520,13 @@ def _engine(icon_name, width, height, color, library, style, extension,
     unknown = set(inks) - set(_DEFAULT_INKS)
     if unknown:
         raise ValueError(f"No icon mode named {sorted(unknown)}.")
-    library, width, height, inks["normal"] = _resolved(
-        library, width, height, color)
+    library, width, height, inks["normal"], recolors = _resolved(
+        library, width, height, color, icon_name)
     path = get_icon_path(
         icon_name, library=library, style=style, extension=extension
     )
     return _ThemedIconEngine(
-        path, QSize(width, height), tuple(sorted(inks.items())),
-        _libraries_info[library]["recolor"],
+        path, QSize(width, height), tuple(sorted(inks.items())), recolors,
     )
 
 
@@ -740,6 +744,7 @@ def _icon_for_widget(widget: Any, icon_name: str, kwargs: Dict) -> QIcon:
         inks = dict(kwargs.pop("inks", None) or {})
         library = kwargs.get("library")
         inks.setdefault(
-            "active", _resolved(library, None, None, kwargs.get("color"))[3])
+            "active",
+            _resolved(library, None, None, kwargs.get("color"), icon_name)[3])
         kwargs["inks"] = inks
     return get_icon(icon_name, **kwargs)

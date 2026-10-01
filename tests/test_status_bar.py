@@ -82,8 +82,8 @@ def test_the_timeout_clears_the_tint(qtbot):
     bar = _bar(qtbot)
 
     bar.showMessage("boom", ERROR, duration=0.05)
-    assert bar.styleSheet()
-    qtbot.waitUntil(lambda: not bar.styleSheet(), timeout=2000)
+    assert bar.tint()
+    qtbot.waitUntil(lambda: bar.tint() is None, timeout=2000)
 
     assert not bar.message_label.isVisible()
     assert _pixel(bar, bar.width() // 2, bar.height() // 2) == (
@@ -104,10 +104,23 @@ def test_clear_message_runs_once(qtbot):
     bar.clearMessage()
 
     assert calls == [1]
-    assert not bar.styleSheet()
+    assert bar.tint() is None
 
 
 def test_the_bar_carries_no_sheet_of_its_own_untinted(qtbot):
     bar = _bar(qtbot)
 
     assert bar.styleSheet() == ""
+
+
+def test_a_long_message_does_not_widen_the_window(qtbot):
+    bar = _bar(qtbot)
+    host = bar.window()
+    width = host.width()
+
+    bar.showMessage("a long message " * 20, ERROR, duration=30)
+    # A switch lays the bar out again, which grew the window to the text.
+    fxstyle.apply_theme("light")
+    qtbot.wait(20)
+
+    assert host.width() == width

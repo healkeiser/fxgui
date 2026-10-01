@@ -1,11 +1,12 @@
-"""Tag chips wrap and stay shown, and the tags signal hands out a copy."""
+"""Tag chips wrap, stay shown and wear a border; the signal hands a copy."""
 
 # Third-party
+import pytest
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXFlowLayout, FXTagInput
+from fxgui.fxwidgets import FXFlowLayout, FXTagChip, FXTagInput
 
 
 def test_tags_changed_emits_a_copy(qtbot, qapp):
@@ -49,3 +50,29 @@ def test_chips_style_through_the_theme_sheet(qtbot, qapp):
     sheet = fxstyle.build_stylesheet()
     ink = fxstyle.colors().text_on_accent_primary
     assert f"FXTagChip QLabel {{\n    color: {ink};" in sheet
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+@pytest.mark.parametrize("removable", [False, True])
+def test_a_chip_has_a_border_at_the_theme_radius(qtbot, theme, removable):
+    fxstyle.apply_theme(theme)
+    window = QWidget()
+    fxstyle.register_themed_root(window)
+    chip = FXTagChip("comp", removable=removable)
+    QVBoxLayout(window).addWidget(chip)
+    qtbot.addWidget(window)
+    window.show()
+    qtbot.waitExposed(window)
+    image = chip.grab().toImage()
+    colors = fxstyle.colors()
+    radius = fxstyle.BUTTON_RADIUS
+
+    def at(x, y):
+        return image.pixelColor(x, y).name()
+
+    middle = chip.height() // 2
+    for edge in (at(radius + 2, 0), at(0, middle), at(chip.width() - 1, middle)):
+        assert edge == colors.border_light.lower()
+    # Rounded at the theme's radius: the corner pixel is not the border.
+    assert at(0, 0) != colors.border_light.lower()
+    assert at(radius + 2, middle) == colors.primary_button.lower()

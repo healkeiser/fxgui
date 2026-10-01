@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Third-party
 from qtpy.QtCore import QPoint, QRect, Qt, QTimer
-from qtpy.QtGui import QColor, QCursor
+from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -315,7 +315,7 @@ def _display_page() -> QWidget:
 
     plain = QPushButton("Native rich tooltip")
     fxwidgets.apply_tip(plain, "Save", "Write the scene to disk", "Ctrl+S")
-    keys = QLabel(f"Save {fxwidgets.keycap('Ctrl+S')}")
+    key = fxwidgets.FXKeycap("Ctrl+S")
     rich = QPushButton("FXTooltip")
     fxwidgets.set_tooltip(
         rich,
@@ -353,8 +353,8 @@ def _display_page() -> QWidget:
         _section("FXFlowLayout", flow_box),
         _section("FXThreadLine", _thread()),
         _section(
-            "FXTooltip / set_tooltip / apply_tip / tip / keycap",
-            _row(plain, rich, keys),
+            "FXTooltip / set_tooltip / apply_tip / tip / keycap / FXKeycap",
+            _row(plain, rich, key),
         ),
     )
 
@@ -405,7 +405,6 @@ def _containers_page() -> QWidget:
 def _thumbnail_tree() -> QTreeWidget:
     """Return an episode, sequence and shot tree drawn with thumbnails."""
     delegate = fxwidgets.FXThumbnailDelegate
-    feedback = fxstyle.get_feedback_colors()
     tree = QTreeWidget()
     tree.setHeaderLabels(["Name", "Frame range", "Status"])
     tree.setItemDelegate(delegate(tree))
@@ -416,6 +415,8 @@ def _thumbnail_tree() -> QTreeWidget:
         top.setIcon(0, get_icon("movie"))
         top.setData(0, delegate.DESCRIPTION_ROLE, "Episode")
         top.setData(0, delegate.STARRED_ROLE, episode == "ep101")
+        # A token name, so each card follows every theme switch.
+        top.setData(0, Qt.BackgroundRole, "surface")
         for shot, status, key in (
             ("sh0010", "WIP", "warning"),
             ("sh0020", "Approved", "success"),
@@ -423,10 +424,11 @@ def _thumbnail_tree() -> QTreeWidget:
             item = QTreeWidgetItem(top, [shot, "1001-1100", status])
             item.setIcon(0, get_icon("image"))
             item.setData(0, delegate.DESCRIPTION_ROLE, f"{episode}_{shot}")
+            item.setData(0, Qt.BackgroundRole, "surface_alt")
             item.setData(0, delegate.THUMBNAIL_VISIBLE_ROLE, True)
             item.setData(0, delegate.THUMBNAIL_PATH_ROLE, thumbnail)
             item.setData(0, delegate.STATUS_LABEL_TEXT_ROLE, status)
-            color = QColor(feedback[key]["foreground"])
+            color = f"feedback_{key}_foreground"
             item.setData(0, delegate.STATUS_DOT_COLOR_ROLE, color)
             item.setData(0, delegate.STATUS_LABEL_COLOR_ROLE, color)
     tree.setColumnWidth(0, 340)
@@ -484,7 +486,6 @@ def _lists_page() -> QWidget:
         icon_list.addItem(QListWidgetItem(get_icon(icon_name), text))
     icon_list.setFixedHeight(100)
 
-    feedback = fxstyle.get_feedback_colors()
     labels = QTreeWidget()
     labels.setHeaderHidden(True)
     labels.setRootIsDecorated(False)
@@ -492,9 +493,9 @@ def _lists_page() -> QWidget:
         fxwidgets.FXColorLabelDelegate(
             {
                 key: (
-                    QColor(feedback[key]["background"]),
-                    QColor(feedback[key]["foreground"]),
-                    QColor(feedback[key]["foreground"]),
+                    f"feedback_{key}_background",
+                    f"feedback_{key}_foreground",
+                    f"feedback_{key}_foreground",
                     get_icon(icon_name),
                     True,
                 )

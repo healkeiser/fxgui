@@ -223,6 +223,10 @@ DEPTH_CAP = 4
 # shape of their own read it here.
 BUTTON_RADIUS = 4
 
+# WCAG's least contrast for the parts of a control: an edge on its
+# surface, a thumb on its track. `@control_edge` is held to it.
+CONTROL_CONTRAST = 3.0
+
 # Least WCAG contrast between a pane (`surface`) and the `frame` around
 # it. github_light's own pair, #ffffff on #f6f8fa, is 1.065.
 FRAME_MIN_CONTRAST = 1.06
@@ -1015,6 +1019,12 @@ def _primary_button_fills(
     return rest, hover, pressed
 
 
+def control_height(widget: QWidget) -> int:
+    """Return the height a push button comes to in `widget`'s font."""
+    # QPushButton in style.qss: 5 px of padding and a 1 px border each side.
+    return widget.fontMetrics().height() + 12
+
+
 def mix(one_hex, two_hex, amount: float) -> str:
     """Return the hex colour `amount` (0 to 1) of the way from one to two.
 
@@ -1232,11 +1242,16 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     for key, value in _depth_colors(theme_data).items():
         tokens[f"@{key}"] = value
 
-    # Feedback colors flatten to @feedback_<level>_<part>.
+    # Feedback colors flatten to @feedback_<level>_<part>, plus
+    # @feedback_<level>_ink, a text colour that reads on the background.
     for level, pair in _feedback(theme_name).items():
         if isinstance(pair, dict):
             for part, value in pair.items():
                 tokens[f"@feedback_{level}_{part}"] = value
+            if "background" in pair:
+                tokens[f"@feedback_{level}_ink"] = readable_ink(
+                    pair["background"]
+                )
 
     # On-accent colors: theme value if defined, computed otherwise.
     accent_primary = theme_data.get("accent_primary", "#2196F3")
@@ -1271,6 +1286,13 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     for role, entries in _font_config(theme_name).items():
         tokens[f"@font_{role}"] = _resolve_font_stack(entries)
 
+    # No bundled border reads at 3:1 on its surface; a control whose edge
+    # is its only shape (a switch, a slider handle) wears this one.
+    tokens["@control_edge"] = readable_ink(
+        theme_data.get("surface", "#000000"),
+        theme_data.get("border_strong", "#808080"),
+        CONTROL_CONTRAST,
+    )
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
     tokens["@thin_scroll_radius"] = f"{THIN_SCROLL_WIDTH // 2}px"
     tokens["@thin_scroll"] = f"{THIN_SCROLL_WIDTH}px"
@@ -1815,9 +1837,9 @@ def register_themed_root(root: QObject) -> None:
     re-applied on every subsequent :func:`apply_theme` call. Qt cascades
     the sheet to all descendants, so children need no registration.
 
-    Standalone apps: ``FXApplication`` registers itself; nothing to do.
-    DCC-embedded windows: ``FXMainWindow`` registers itself when the
-    running QApplication is foreign, so the host app is never restyled.
+    A widget is not registered while the QApplication is a root: the
+    application's sheet already reaches it, and the next switch of that
+    sheet would hand the widget back the palette of the theme before.
 
     Roots are held weakly; destroyed widgets drop out automatically.
 
@@ -1825,9 +1847,12 @@ def register_themed_root(root: QObject) -> None:
         root: Any object with ``setStyleSheet`` (QWidget or QApplication).
     """
     _ensure_theme_loaded()
+    if isinstance(root, QWidget) and not _in_host(root):
+        return
     _themed_roots.add(root)
     if isinstance(root, QWidget):
         root.setProperty(ROOT_PROPERTY, True)
+    _watch_focus()
     _apply_to_root(root, build_stylesheet(), palette(), font())
 
 
@@ -1893,6 +1918,93 @@ def _host_rules(theme: Optional[str] = None) -> str:
     weight, _hinting = _shape(theme, "body")
     extra = f" font-weight: {weight};" if weight is not None else ""
     return resolve(_HOST_RULES.replace("@weight", extra), theme)
+
+
+# Set on the focused widget while its focus came by keyboard, as a
+# browser's :focus-visible; every focus look in fxgui keys off it.
+FOCUS_VISIBLE_PROPERTY = "fxFocusVisible"
+
+_KEYBOARD_REASONS = (
+    Qt.TabFocusReason,
+    Qt.BacktabFocusReason,
+    Qt.ShortcutFocusReason,
+)
+
+
+class _FocusVisibility(QObject):
+    """Mark a themed widget's focus visible when it came by keyboard."""
+
+    def __init__(self, parent: QObject):
+        super().__init__(parent)
+        self._by_keyboard = False
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Note the last input, and set the property on focus in and out."""
+        kind = event.type()
+        if kind == QEvent.KeyPress:
+            self._by_keyboard = True
+        elif kind in (QEvent.MouseButtonPress, QEvent.MouseButtonDblClick):
+            self._by_keyboard = False
+        elif kind in (QEvent.FocusIn, QEvent.FocusOut) and isinstance(
+            watched, QWidget
+        ):
+            self._mark(watched, kind == QEvent.FocusIn and self._visible(event))
+        return False
+
+    def _visible(self, event) -> bool:
+        reason = event.reason()
+        if reason in _KEYBOARD_REASONS:
+            return True
+        if reason == Qt.MouseFocusReason:
+            return False
+        # A popup closing, a window coming back, a setFocus() call: as the
+        # last input was.
+        return self._by_keyboard
+
+    @staticmethod
+    def _mark(widget: QWidget, visible: bool) -> None:
+        if bool(widget.property(FOCUS_VISIBLE_PROPERTY)) == visible:
+            return
+        widget.setProperty(FOCUS_VISIBLE_PROPERTY, visible)
+        # Only fxgui's own sheet reads it; a host's widgets keep their polish.
+        if _is_themed(widget):
+            fxutils.repolish(widget)
+
+
+_focus_visibility: Optional[_FocusVisibility] = None
+
+
+def _watch_focus() -> None:
+    """Install the one focus watcher on the running application.
+
+    A themed root installs it, and so does a widget that paints its own
+    focus look, since it may live outside any root.
+    """
+    global _focus_visibility
+    app = QApplication.instance()
+    if app is None:
+        return
+    if _focus_visibility is not None and _compat.is_valid(_focus_visibility):
+        if _focus_visibility.parent() is app:
+            return
+    _focus_visibility = _FocusVisibility(app)
+    app.installEventFilter(_focus_visibility)
+
+
+def _is_themed(widget: QWidget) -> bool:
+    """Return whether fxgui themes `widget`: the app, or a root above it."""
+    if QApplication.instance() in _themed_roots:
+        return True
+    while widget is not None:
+        if widget.property(ROOT_PROPERTY):
+            return True
+        widget = widget.parentWidget()
+    return False
+
+
+def focus_visible(widget: QWidget) -> bool:
+    """Return whether `widget` has focus that came by keyboard."""
+    return widget.hasFocus() and bool(widget.property(FOCUS_VISIBLE_PROPERTY))
 
 
 def _in_host(root: QObject) -> bool:

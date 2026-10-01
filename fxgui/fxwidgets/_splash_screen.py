@@ -31,7 +31,6 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxconstants, fxstyle, fxutils
-from fxgui.fxwidgets._application import FXApplication
 from fxgui.fxwidgets._labels import FXElidedLabel
 
 
@@ -143,9 +142,7 @@ class FXSplashScreen(QSplashScreen):
         self._create_border_overlay()
 
         # A top-level splash under a DCC host gets no application sheet.
-        if set_stylesheet and not isinstance(
-            QApplication.instance(), FXApplication
-        ):
+        if set_stylesheet:
             fxstyle.register_themed_root(self)
 
         # The overlay's translucent surface cannot be a QSS token.

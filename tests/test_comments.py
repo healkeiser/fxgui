@@ -186,3 +186,14 @@ def test_the_line_wears_the_theme_s_border_after_a_switch(qtbot):
 
     assert pixel == QColor(fxstyle.get_theme_colors()["border"])
     assert drawn.testAttribute(Qt.WA_TransparentForMouseEvents)
+
+
+def test_the_box_holds_its_lines_in_the_font_it_is_given_later(qtbot):
+    box = FXMentionEdit(lines=3)
+    qtbot.addWidget(box)
+    font = box.font()
+    font.setPixelSize(30)
+
+    box.setFont(font)
+
+    assert box.height() == box.fontMetrics().lineSpacing() * 3 + 12

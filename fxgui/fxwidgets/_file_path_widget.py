@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons
+from fxgui import fxicons, fxstyle
 from fxgui._compat import is_valid as is_valid_object
 from fxgui.fxwidgets._tips import apply_tip
 
@@ -150,7 +150,9 @@ class FXFilePathWidget(QWidget):
         else:
             fxicons.set_icon(self._browse_btn, "file_open")
 
-        self._browse_btn.setFixedSize(32, 32)
+        # A square as tall as a push button, beside a line edit as tall.
+        side = fxstyle.control_height(self._browse_btn)
+        self._browse_btn.setFixedSize(side, side)
         self._browse_btn.clicked.connect(self._browse)
         apply_tip(
             self._browse_btn,

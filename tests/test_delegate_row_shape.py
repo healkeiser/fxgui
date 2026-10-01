@@ -54,9 +54,9 @@ def test_the_first_cell_rounds_its_outer_corners_only(qtbot):
 
 def test_a_middle_cell_draws_both_separators(qtbot):
     image = _paint(qtbot, "card", (False, False))
-    border = _FILL.lighter(160)
-    assert _near(image.pixelColor(0, 15), border)
-    assert _near(image.pixelColor(59, 15), border)
+    border = QColor(fxstyle.colors().border_light)
+    assert image.pixelColor(0, 15) == border
+    assert image.pixelColor(59, 15) == border
     assert image.pixelColor(0, 1) != _BLANK
 
 

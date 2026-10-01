@@ -90,9 +90,9 @@ QGroupBox::indicator:unchecked:hover
     height: 18px;
 }
 
-QCheckBox::indicator:unchecked:focus,
+QCheckBox[fxFocusVisible="true"]::indicator:unchecked:focus,
 QCheckBox::indicator:unchecked:pressed,
-QGroupBox::indicator:unchecked:focus,
+QGroupBox[fxFocusVisible="true"]::indicator:unchecked:focus,
 QGroupBox::indicator:unchecked:pressed
 {
   border: none;
@@ -111,9 +111,9 @@ QGroupBox::indicator:checked:hover
     height: 18px;
 }
 
-QCheckBox::indicator:checked:focus,
+QCheckBox[fxFocusVisible="true"]::indicator:checked:focus,
 QCheckBox::indicator:checked:pressed,
-QGroupBox::indicator:checked:focus,
+QGroupBox[fxFocusVisible="true"]::indicator:checked:focus,
 QGroupBox::indicator:checked:pressed
 {
   border: none;
@@ -134,8 +134,8 @@ QGroupBox::indicator:indeterminate:pressed
     height: 18px;
 }
 
-QCheckBox::indicator:indeterminate:focus,
-QGroupBox::indicator:indeterminate:focus
+QCheckBox[fxFocusVisible="true"]::indicator:indeterminate:focus,
+QGroupBox[fxFocusVisible="true"]::indicator:indeterminate:focus
 {
     image: url(~icons/checkbox_indeterminate_focus.svg);
     width: 18px;
@@ -188,7 +188,7 @@ QRadioButton::indicator:unchecked:hover
     height: 18px;
 }
 
-QRadioButton::indicator:unchecked:focus,
+QRadioButton[fxFocusVisible="true"]::indicator:unchecked:focus,
 QRadioButton::indicator:unchecked:pressed
 {
   border: none;
@@ -208,7 +208,7 @@ QRadioButton::indicator:checked:hover
     height: 18px;
 }
 
-QRadioButton::indicator:checked:focus,
+QRadioButton[fxFocusVisible="true"]::indicator:checked:focus,
 QRadioButton::indicator:checked:pressed
 {
   border: none;
@@ -249,29 +249,28 @@ QMenuBar
     border-bottom: 1px solid @scrollbar_track;
 }
 
+/* One box in every state, so an item never changes shape: hover is the
+   hover fill, and only an open menu wears the accent. `:enabled` lifts
+   these over the `QWidget:item:selected` rule above. */
 QMenuBar::item
 {
     background: transparent;
-    padding: 10px;
+    margin: 5px;
+    padding: 5px;
+    border-radius: @button_radius;
 }
 
-QMenuBar::item:selected
+QMenuBar::item:selected:enabled,
+QMenuBar::item:hover:enabled
+{
+    color: @text;
+    background-color: @state_hover;
+}
+
+QMenuBar::item:pressed:enabled
 {
     color: @text_on_accent_primary;
     background-color: @accent_primary;
-    border-radius: 2px;
-    margin: 5px;
-    /* background: transparent; */
-    /* border: 1px solid @border; */
-}
-
-/* The selected shape, so a release does not flash edge to edge. */
-QMenuBar::item:pressed
-{
-    background-color: @accent_secondary;
-    color: @text_on_accent_secondary;
-    border-radius: 2px;
-    margin: 5px;
 }
 
 QMenu
@@ -303,7 +302,7 @@ QMenu::icon:checked
 QMenu::item
 {
     background-color: @surface_sunken;
-    border-radius: 2px;
+    border-radius: @button_radius;
     padding: 5px 25px 5px 25px;
     border: 3px transparent;
 }
@@ -311,6 +310,7 @@ QMenu::item
 QMenu::item:selected
 {
     color: @text_on_accent_primary;
+    background-color: @accent_primary;
 }
 
 QMenu::item:pressed
@@ -904,7 +904,7 @@ QComboBox::down-arrow
 
 QComboBox::down-arrow:on,
 QComboBox::down-arrow:hover,
-QComboBox::down-arrow:focus
+QComboBox[fxFocusVisible="true"]::down-arrow:focus
 {
     image: url(~icons/down_arrow.svg);
 }
@@ -1394,6 +1394,8 @@ QTreeView::item:selected:hover {
     color: @text_on_accent_primary;
 }
 
+/* A slider is a sunken well, an accent span and a handle whose edge reads
+   at 3:1 on the surface. Hover lifts the fill; focus is at the end. */
 QSlider::groove:horizontal {
     border: none;
     height: 6px;
@@ -1404,11 +1406,11 @@ QSlider::groove:horizontal {
 
 QSlider::handle:horizontal {
     background: @slider_thumb;
-    border: 1px solid @state_hover;
+    border: 1px solid @control_edge;
     width: 14px;
     height: 14px;
     margin: -4px 0;
-    border-radius: 4px;
+    border-radius: @button_radius;
 }
 
 QSlider::handle:horizontal:hover,
@@ -1419,9 +1421,20 @@ QSlider::handle:horizontal:pressed {
 QSlider::sub-page:horizontal {
     border: none;
     height: 6px;
-    background: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 @accent_secondary, stop:1 @accent_primary);
+    background: @accent_primary;
     margin: 2px 0;
     border-radius: 3px;
+}
+
+QSlider::handle:horizontal:disabled,
+QSlider::handle:vertical:disabled {
+    background: @surface;
+    border-color: @border;
+}
+
+QSlider::sub-page:horizontal:disabled,
+QSlider::sub-page:vertical:disabled {
+    background: @border_strong;
 }
 
 QSlider::groove:vertical {
@@ -1434,11 +1447,11 @@ QSlider::groove:vertical {
 
 QSlider::handle:vertical {
     background: @slider_thumb;
-    border: 1px solid @state_hover;
+    border: 1px solid @control_edge;
     width: 14px;
     height: 14px;
     margin: 0 -4px;
-    border-radius: 4px;
+    border-radius: @button_radius;
 }
 
 QSlider::handle:vertical:hover,
@@ -1449,7 +1462,7 @@ QSlider::handle:vertical:pressed {
 QSlider::sub-page:vertical {
     border: none;
     width: 6px;
-    background: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 @accent_primary, stop:1 @accent_secondary);
+    background: @accent_primary;
     margin: 0 0px;
     border-radius: 3px;
 }
@@ -1459,7 +1472,8 @@ QSlider::sub-page:vertical {
    QPushButtons — see the popupMode="1" overrides below. */
 QToolButton {
     background-color: transparent;
-    border: 1px transparent @border_light;
+    /* Reserved for the hover and focus edges, so neither moves the icon. */
+    border: 1px solid transparent;
     border-radius: 2px;
     margin: 3px;
     padding: 3px;
@@ -1469,10 +1483,10 @@ QToolButton[popupMode="1"] { /* MenuButtonPopup: QPushButton look */
     color: @text;
     background-color: @surface;
     border: 1px solid @border_light;
-    border-radius: 4px;
+    border-radius: @button_radius;
     margin: 0px;
-    padding: 5px 6px;
-    padding-right: 18px; /* room for the menu-button section */
+    padding: 5px 10px;
+    padding-right: 22px; /* room for the menu-button section */
     outline: none;
 }
 
@@ -1496,10 +1510,16 @@ QToolButton::menu-button:hover {
     color: @text_on_accent_secondary;
 }
 
+/* A split button hovers as a QPushButton, its arrow part included. */
 QToolButton[popupMode="1"]:hover {
     border: 1px solid @accent_primary;
-    background-color: @accent_secondary;
-    color: @text_on_accent_secondary;
+    background-color: @state_hover;
+    color: @text;
+}
+
+/* The button's own fill shows through, and its border stays whole. */
+QToolButton[popupMode="1"]::menu-button:hover {
+    background-color: transparent;
 }
 
 QToolButton:checked,
@@ -1523,8 +1543,8 @@ QToolButton::menu-indicator {
 QToolButton::menu-button {
     border: none;
     border-left: 1px solid @border_light;
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
+    border-top-right-radius: @button_radius;
+    border-bottom-right-radius: @button_radius;
     width: 12px;
     outline: none;
 }
@@ -1538,6 +1558,10 @@ QToolButton::menu-arrow {
     image: url(~icons/down_arrow.svg);
     width: 8px;
     height: 8px;
+}
+
+QToolButton::menu-arrow:disabled {
+    image: url(~icons/down_arrow_disabled.svg);
 }
 
 QToolButton::menu-arrow:open {
@@ -1857,21 +1881,21 @@ QPushButton[fxRole="flat"]:pressed
    backgrounds with.
    ========================================================================== */
 
-QLineEdit:focus,
-QTextEdit:focus,
-QTextBrowser:focus,
-QPlainTextEdit:focus,
-QComboBox:focus,
-QAbstractSpinBox:focus,
-QPushButton:focus,
-QGroupBox:focus,
-QAbstractItemView:focus,
-QTreeView:focus,
-QTreeWidget:focus,
-QListView:focus,
-QListWidget:focus,
-QTableView:focus,
-QTableWidget:focus
+QLineEdit[fxFocusVisible="true"]:focus,
+QTextEdit[fxFocusVisible="true"]:focus,
+QTextBrowser[fxFocusVisible="true"]:focus,
+QPlainTextEdit[fxFocusVisible="true"]:focus,
+QComboBox[fxFocusVisible="true"]:focus,
+QAbstractSpinBox[fxFocusVisible="true"]:focus,
+QPushButton[fxFocusVisible="true"]:focus,
+QGroupBox[fxFocusVisible="true"]:focus,
+QAbstractItemView[fxFocusVisible="true"]:focus,
+QTreeView[fxFocusVisible="true"]:focus,
+QTreeWidget[fxFocusVisible="true"]:focus,
+QListView[fxFocusVisible="true"]:focus,
+QListWidget[fxFocusVisible="true"]:focus,
+QTableView[fxFocusVisible="true"]:focus,
+QTableWidget[fxFocusVisible="true"]:focus
 {
     border-color: @accent_primary;
 }
@@ -1879,9 +1903,9 @@ QTableWidget:focus
 /* A plain QToolButton reserves a 1px border it does not paint, so the ring
    has to name a style as well as a colour. The width is unchanged, so the
    icon does not move. */
-QToolButton:focus,
-QToolButton[popupMode="1"]:focus,
-QToolButton[popupMode="2"]:focus
+QToolButton[fxFocusVisible="true"]:focus,
+QToolButton[popupMode="1"][fxFocusVisible="true"]:focus,
+QToolButton[popupMode="2"][fxFocusVisible="true"]:focus
 {
     border: 1px solid @accent_primary;
 }
@@ -1903,8 +1927,8 @@ QToolButton[popupMode="2"]:focus
    indistinguishable from a hovered one. The border carries the accent so the
    two states stay apart, and it is the one theme where the fill cannot
    change, light, whose handle is already white. */
-QSlider::handle:horizontal:focus,
-QSlider::handle:vertical:focus
+QSlider[fxFocusVisible="true"]::handle:horizontal:focus,
+QSlider[fxFocusVisible="true"]::handle:vertical:focus
 {
     background: @text_on_accent_primary;
     border-color: @accent_primary;
@@ -1915,22 +1939,22 @@ QSlider::handle:vertical:focus
    deliberately merged into the pane by the rules above, and lighting it would
    cut the selected tab away from its own content. Every orientation already
    carries 1px there, so nothing moves. */
-QTabBar::tab:top:focus
+QTabBar[fxFocusVisible="true"]::tab:top:focus
 {
     border-top-color: @accent_primary;
 }
 
-QTabBar::tab:bottom:focus
+QTabBar[fxFocusVisible="true"]::tab:bottom:focus
 {
     border-bottom-color: @accent_primary;
 }
 
-QTabBar::tab:left:focus
+QTabBar[fxFocusVisible="true"]::tab:left:focus
 {
     border-left-color: @accent_primary;
 }
 
-QTabBar::tab:right:focus
+QTabBar[fxFocusVisible="true"]::tab:right:focus
 {
     border-right-color: @accent_primary;
 }
@@ -1938,19 +1962,19 @@ QTabBar::tab:right:focus
 /* A checkbox and a radio button have no border of their own to recolour, so
    both states declare one and only the colour differs. The indicator's own
    focus artwork stays as it is; this ring is what carries the label. */
-QCheckBox:focus,
-QRadioButton:focus
+QCheckBox[fxFocusVisible="true"]:focus,
+QRadioButton[fxFocusVisible="true"]:focus
 {
     border-color: @accent_primary;
 }
 
 /* A primary button is filled with the accent, so its ring is the text. */
-QPushButton[fxRole="primary"]:focus
+QPushButton[fxRole="primary"][fxFocusVisible="true"]:focus
 {
     border-color: @text;
 }
 
-QPushButton[fxRole="flat"]:focus
+QPushButton[fxRole="flat"][fxFocusVisible="true"]:focus
 {
     border-color: @accent_primary;
 }

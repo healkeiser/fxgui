@@ -5,7 +5,7 @@ import math
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject, Qt, QTimer
+from qtpy.QtCore import QEvent, QObject, QPointF, QRectF, Qt, QTimer
 from qtpy.QtGui import QColor, QPainter, QPen
 from qtpy.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 
@@ -32,9 +32,11 @@ class FXLoadingSpinner(QWidget):
 
     Args:
         parent: Parent widget.
-        size: Size of the spinner in pixels.
-        line_width: Width of the spinner lines.
-        color: Spinner color. If None, uses theme accent.
+        size: Size of the spinner in pixels. Defaults to a button's height.
+        line_width: Width of the spinner lines. Defaults to a tenth of
+            `size`, 2 px at least.
+        color: The moving part's color. If None, the theme accent; the
+            rest is the muted ``border_light``.
         style: Animation style ('spinner', 'dots', 'pulse').
 
     Examples:
@@ -47,16 +49,16 @@ class FXLoadingSpinner(QWidget):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        size: int = 32,
-        line_width: int = 3,
+        size: Optional[int] = None,
+        line_width: Optional[int] = None,
         color: Optional[str] = None,
         style: str = "spinner",
     ):
         super().__init__(parent)
 
         # Properties
-        self._size = size
-        self._line_width = line_width
+        self._size = size or fxstyle.control_height(self)
+        self._line_width = line_width or max(2, round(self._size / 10))
         self._custom_color = color  # Store custom color (None means use theme)
         self._style = style
         self._angle = 0
@@ -67,7 +69,7 @@ class FXLoadingSpinner(QWidget):
         self._timer.timeout.connect(self._rotate)
 
         # Setup widget
-        self.setFixedSize(size, size)
+        self.setFixedSize(self._size, self._size)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
     def start(self) -> None:
@@ -142,112 +144,54 @@ class FXLoadingSpinner(QWidget):
 
         painter.end()
 
-    def _paint_spinner(self, painter: QPainter) -> None:
-        """Paint the spinner style."""
-
-        # Get current color (theme-aware)
-        color = self._get_color()
-
-        # Create gradient arc
-        pen = QPen(color)
+    def _pen(self, color: str) -> QPen:
+        pen = QPen(QColor(color))
         pen.setWidth(self._line_width)
         pen.setCapStyle(Qt.RoundCap)
-        painter.setPen(pen)
+        return pen
 
-        # Draw arc segments with varying opacity
-        num_segments = 12
-        segment_angle = 360 // num_segments
+    def _ring(self) -> QRectF:
+        inset = self._line_width / 2 + 1
+        return QRectF(self.rect()).adjusted(inset, inset, -inset, -inset)
 
-        for i in range(num_segments):
-            # Calculate opacity based on segment position
-            opacity = (i + 1) / num_segments
-            segment_color = QColor(color)
-            segment_color.setAlphaF(opacity)
-
-            pen.setColor(segment_color)
-            painter.setPen(pen)
-
-            # Calculate start angle for this segment
-            start_angle = (self._angle + i * segment_angle) % 360
-
-            # Draw arc segment
-            painter.drawArc(
-                self._line_width,
-                self._line_width,
-                self._size - self._line_width * 2,
-                self._size - self._line_width * 2,
-                start_angle * 16,
-                segment_angle * 16,
-            )
+    def _paint_spinner(self, painter: QPainter) -> None:
+        """Paint a quarter arc of the accent running round a muted ring."""
+        painter.setPen(self._pen(fxstyle.colors().border_light))
+        painter.drawEllipse(self._ring())
+        painter.setPen(self._pen(self._get_color().name()))
+        painter.drawArc(self._ring(), -self._angle * 16, 90 * 16)
 
     def _paint_dots(self, painter: QPainter) -> None:
-        """Paint the dots style."""
-        center = self._size // 2
-        radius = center - 6
-        num_dots = 8
-        dot_radius = 3
-
-        # Get current color (theme-aware)
-        color = self._get_color()
-
-        for i in range(num_dots):
-            # Calculate dot position
-            angle_rad = math.radians(self._angle + i * (360 / num_dots))
-            x = center + radius * math.cos(angle_rad)
-            y = center + radius * math.sin(angle_rad)
-
-            # Calculate opacity based on position
-            opacity = (i + 1) / num_dots
-            dot_color = QColor(color)
-            dot_color.setAlphaF(opacity)
-
-            painter.setBrush(dot_color)
-            painter.setPen(Qt.NoPen)
+        """Paint a ring of dots, muted, the leading one in the accent."""
+        center = self._size / 2
+        dot = max(2.0, self._line_width * 0.9)
+        radius = center - dot - 1
+        count = 8
+        track, accent = fxstyle.colors().border_light, self._get_color().name()
+        painter.setPen(Qt.NoPen)
+        for i in range(count):
+            angle = math.radians(self._angle + i * 360 / count)
+            # Opaque steps from the track to the accent, so no dot is a
+            # see-through accent that loses its contrast on the surface.
+            painter.setBrush(QColor(fxstyle.mix(track, accent, i / (count - 1))))
             painter.drawEllipse(
-                int(x - dot_radius),
-                int(y - dot_radius),
-                dot_radius * 2,
-                dot_radius * 2,
+                QPointF(
+                    center + radius * math.cos(angle),
+                    center + radius * math.sin(angle),
+                ),
+                dot,
+                dot,
             )
 
     def _paint_pulse(self, painter: QPainter) -> None:
-        """Paint the pulse style."""
-        center = self._size // 2
-
-        # Get current color (theme-aware)
-        color = self._get_color()
-
-        # Calculate pulse scale based on angle
-        scale = 0.5 + 0.5 * abs(math.sin(math.radians(self._angle * 2)))
-        radius = int((center - self._line_width) * scale)
-
-        # Calculate opacity (inverse of scale for breathing effect)
-        opacity = 1.0 - scale * 0.5
-
-        pulse_color = QColor(color)
-        pulse_color.setAlphaF(opacity)
-
-        pen = QPen(pulse_color)
-        pen.setWidth(self._line_width)
-        painter.setPen(pen)
-        painter.setBrush(Qt.NoBrush)
-
-        painter.drawEllipse(
-            center - radius, center - radius, radius * 2, radius * 2
-        )
-
-        # Inner circle
-        inner_radius = int(radius * 0.5)
-        inner_color = QColor(color)
-        inner_color.setAlphaF(opacity * 0.5)
-        painter.setBrush(inner_color)
-        painter.setPen(Qt.NoPen)
-        painter.drawEllipse(
-            center - inner_radius,
-            center - inner_radius,
-            inner_radius * 2,
-            inner_radius * 2,
-        )
+        """Paint an accent ring breathing inside a muted one."""
+        painter.setPen(self._pen(fxstyle.colors().border_light))
+        ring = self._ring()
+        painter.drawEllipse(ring)
+        scale = 0.35 + 0.65 * abs(math.sin(math.radians(self._angle * 2)))
+        inset = ring.width() * (1 - scale) / 2
+        painter.setPen(self._pen(self._get_color().name()))
+        painter.drawEllipse(ring.adjusted(inset, inset, -inset, -inset))
 
 
 class FXLoadingOverlay(QWidget):

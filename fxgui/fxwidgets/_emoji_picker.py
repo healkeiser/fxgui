@@ -96,7 +96,7 @@ FXEmojiPicker QToolButton {
     font-size: 18px;
 }
 FXEmojiPicker QToolButton:hover,
-FXEmojiPicker QToolButton:focus {
+FXEmojiPicker QToolButton[fxFocusVisible="true"]:focus {
     background-color: @state_hover;
     border: 1px solid @accent_primary;
 }

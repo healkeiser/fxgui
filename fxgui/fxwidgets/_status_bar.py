@@ -26,7 +26,7 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._constants import INFO
 from fxgui.fxwidgets._labels import FXIconLabel
-from fxgui.fxwidgets._severity import log, severity
+from fxgui.fxwidgets._severity import SEVERITIES, log, severity
 from fxgui.fxwidgets._tips import apply_tip
 
 # The painted lines replace the base sheet's top border.
@@ -36,6 +36,19 @@ fxstyle.register_widget_style(
         border: none;
     }
     """
+)
+
+# A message's tint, by the `severity` property `showMessage` sets. The
+# second selector outranks the frame's own fill of a bar on the frame.
+fxstyle.register_widget_style(
+    " ".join(
+        f'FXStatusBar[severity="{key}"], '
+        f'QMainWindow[fxFrame="true"] > FXStatusBar[severity="{key}"] '
+        f"{{ background: @feedback_{key}_background; }} "
+        f'FXStatusBar[severity="{key}"] QLabel '
+        f"{{ color: @feedback_{key}_ink; }}"
+        for key in sorted({kind.feedback for kind in SEVERITIES.values()})
+    )
 )
 
 # Accent line height, then the border line under it.
@@ -260,8 +273,9 @@ class FXStatusBar(QStatusBar):
         # Line state; `None` colours read the theme when painted.
         self._line_wanted = True
         self._line_colors: Optional[Tuple[str, str]] = None
-        self._tint: Optional[str] = None
-        self._tint_border: Optional[str] = None
+        # The shown message's feedback key, and a caller's own tint.
+        self._severity: Optional[str] = None
+        self._custom_tint: Optional[str] = None
         self._message = ""
         self._right_items = 0
         self._busy = False
@@ -277,6 +291,8 @@ class FXStatusBar(QStatusBar):
         self.icon_label = FXIconLabel(size=ICON_SIZE)
         self.message_label = QLabel()
         self.message_label.setTextFormat(Qt.RichText)
+        # A long message is cut at the bar's end, never widens the window.
+        self.message_label.setMinimumWidth(1)
 
         # Permanent, so no message hides the items; the message follows.
         self._left = QWidget()
@@ -297,7 +313,6 @@ class FXStatusBar(QStatusBar):
             self.addPermanentWidget(item)
 
         self.messageChanged.connect(self._on_status_message_changed)
-        fxstyle.theme_changed.connect(self._theme_switched)
 
     def add_item(self, item: FXStatusItem, side: str = "left") -> None:
         """Put `item` on the bar, after the items already on that side.
@@ -326,12 +341,18 @@ class FXStatusBar(QStatusBar):
 
     def tint(self) -> Optional[str]:
         """Return the colour a message tints the bar now, or `None`."""
-        return self._tint
+        if self._custom_tint:
+            return self._custom_tint
+        if self._severity:
+            feedback = fxstyle.get_feedback_colors()[self._severity]
+            return QColor(feedback["background"]).name()
+        return None
 
     def ground(self) -> str:
         """Return the colour the bar is painted now: a tint, or its own."""
-        if self._tint:
-            return self._tint
+        tint = self.tint()
+        if tint:
+            return tint
         theme = fxstyle.colors()
         if self.property(fxstyle.FRAME_PROPERTY):
             return theme.frame
@@ -409,12 +430,9 @@ class FXStatusBar(QStatusBar):
         self.message_label.setVisible(True)
 
         kind = severity(severity_type)
-        feedback = fxstyle.get_colors()["feedback"][kind.feedback]
         severity_prefix = kind.title
         severity_icon = QIcon(pixmap) if pixmap else fxicons.get_icon(
             kind.icon, color=f"feedback_{kind.feedback}_foreground")
-        status_bar_color = background_color or feedback["background"]
-        status_bar_border_color = feedback["foreground"]
 
         # Use inline style for bold as QSS can interfere with <b> tag rendering
         message_prefix = (
@@ -427,18 +445,7 @@ class FXStatusBar(QStatusBar):
         self.message_label.setText(self._message)
 
         if set_color:
-            # The bar's own sheet is the tint and nothing else.
-            self._tint = QColor(status_bar_color).name()
-            self._tint_border = status_bar_border_color
-            self.setStyleSheet(
-                f"""FXStatusBar {{
-                    background: {status_bar_color};
-                }}
-                FXStatusBar QLabel {{
-                    color: {fxstyle.readable_ink(status_bar_color)};
-                }}"""
-            )
-            self._repaint_items()
+            self._set_tint(kind.feedback, background_color)
 
         log(logger, severity_type, message)
 
@@ -462,9 +469,27 @@ class FXStatusBar(QStatusBar):
         self.message_label.clear()
         self.message_label.setVisible(False)
         self._message = ""
-        self._tint = None
-        self._tint_border = None
-        self.setStyleSheet("")
+        self._set_tint(None, None)
+
+    def _set_tint(self, key: Optional[str], custom: Optional[str]) -> None:
+        """Tint the bar for feedback `key`, in `custom` if a caller gave one.
+
+        The theme's tint is a registered rule on the `severity` property,
+        so a switch recolours it; a caller's colour is a sheet of its own.
+        """
+        if custom or self._custom_tint:
+            self.setStyleSheet(
+                f"FXStatusBar {{ background: {custom}; }} "
+                f"FXStatusBar QLabel {{ color: {fxstyle.readable_ink(custom)}; }}"
+                if custom
+                else ""
+            )
+        self._severity = key
+        self._custom_tint = QColor(custom).name() if custom else None
+        self.setProperty("severity", None if custom else key)
+        # A descendant rule is matched again only when the label is.
+        for widget in [self, *self.findChildren(QLabel)]:
+            fxutils.repolish(widget)
         self._repaint_items()
 
     def _repaint_items(self) -> None:
@@ -477,15 +502,6 @@ class FXStatusBar(QStatusBar):
     def _on_status_message_changed(self, message: str) -> None:
         """Clear the labels and tint when Qt's timeout empties the message."""
         if not message:
-            self._clear()
-
-    def _theme_switched(self, _theme_name: str) -> None:
-        """Call `_on_theme_changed` without the theme name."""
-        self._on_theme_changed()
-
-    def _on_theme_changed(self, _theme_name: Optional[str] = None) -> None:
-        """Drop a tint drawn in the old theme's colors; override to extend."""
-        if self._tint is not None:
             self._clear()
 
     def set_status_line_colors(self, color_a: str, color_b: str) -> None:
@@ -558,7 +574,11 @@ class FXStatusBar(QStatusBar):
             STATUS_LINE_HEIGHT,
             self.width(),
             1,
-            QColor(self._tint_border or theme.border),
+            QColor(
+                fxstyle.get_feedback_colors()[self._severity]["foreground"]
+                if self._severity
+                else theme.border
+            ),
         )
         painter.end()
 

@@ -237,9 +237,12 @@ class FXTagInput(QWidget):
 
 
 fxstyle.register_widget_style("""
+/* A primary button's fill, so its text reads at 4.5:1, and a button's
+   edge, so it still reads on an accent row. */
 FXTagChip {
-    background-color: @accent_primary;
-    border-radius: 12px;
+    background-color: @primary_button;
+    border: 1px solid @border_light;
+    border-radius: @button_radius;
     padding: 2px 4px;
 }
 FXTagChip QLabel {
@@ -253,15 +256,6 @@ FXTagChip QPushButton {
     border-radius: 8px;
 }
 FXTagChip QPushButton:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-FXTagInput QLineEdit#fx_tag_input_field {
-    background-color: @surface_sunken;
-    border: 1px solid @border;
-    border-radius: 4px;
-    padding: 6px 8px;
-}
-FXTagInput QLineEdit#fx_tag_input_field:focus {
-    border-color: @accent_primary;
+    background: @primary_button_hover;
 }
 """)

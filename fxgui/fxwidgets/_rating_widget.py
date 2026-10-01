@@ -89,6 +89,7 @@ class FXRatingWidget(QWidget):
 
         # Keyboard: arrow keys adjust, digits set, Delete/Backspace clears
         self.setFocusPolicy(Qt.StrongFocus)
+        fxstyle._watch_focus()
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
@@ -218,7 +219,7 @@ class FXRatingWidget(QWidget):
     def paintEvent(self, event) -> None:
         """Paint a focus indicator under the star labels when focused."""
         super().paintEvent(event)
-        if self.hasFocus():
+        if fxstyle.focus_visible(self):
             painter = QPainter(self)
             painter.setRenderHint(QPainter.Antialiasing)
             pen = QPen(QColor(fxstyle.colors().accent_primary))

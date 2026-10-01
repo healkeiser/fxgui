@@ -53,6 +53,8 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle
 from fxgui._compat import is_valid
 from fxgui.fxwidgets._delegates import FXThumbnailDelegate
+from fxgui.fxwidgets._labels import FXIconLabel
+from fxgui.fxwidgets._tips import FXKeycap
 
 fxstyle.register_widget_style(
     """
@@ -71,14 +73,6 @@ fxstyle.register_widget_style(
     FXTooltip #FXTooltipDescription {
         color: @text_muted;
         font-size: 12px;
-    }
-    FXTooltip #FXTooltipShortcut {
-        background-color: @border;
-        color: @text_muted;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-family: monospace;
     }
     FXTooltip #FXTooltipAction {
         background-color: transparent;
@@ -310,7 +304,7 @@ class FXTooltip(QFrame):
 
             # Icon
             if self._icon_name:
-                self._icon_label = QLabel()
+                self._icon_label = FXIconLabel(size=20)
                 self._icon_label.setFixedSize(20, 20)
                 header_layout.addWidget(self._icon_label)
 
@@ -327,8 +321,7 @@ class FXTooltip(QFrame):
 
             # Shortcut badge
             if self._shortcut:
-                self._shortcut_label = QLabel(self._shortcut)
-                self._shortcut_label.setObjectName("FXTooltipShortcut")
+                self._shortcut_label = FXKeycap(self._shortcut)
                 header_layout.addWidget(self._shortcut_label)
 
             content_layout.addLayout(header_layout)
@@ -369,13 +362,11 @@ class FXTooltip(QFrame):
         self._refresh_icon()
 
     def _refresh_icon(self) -> None:
-        """Render the header icon in the current accent color."""
+        """Give the header its icon, inked with the accent when drawn."""
         if self._icon_name and hasattr(self, "_icon_label"):
-            accent = fxstyle.colors().accent_primary
-            pixmap = fxicons.get_icon(self._icon_name, color=accent).pixmap(
-                20, 20
+            self._icon_label.setIcon(
+                fxicons.get_icon(self._icon_name, color="accent_primary")
             )
-            self._icon_label.setPixmap(pixmap)
 
     def eventFilter(self, watched, event) -> bool:
         """Handle hover events on anchor widget and click-outside detection."""
@@ -701,7 +692,6 @@ class FXTooltip(QFrame):
 
     def _do_show(self) -> None:
         """Actually show the tooltip."""
-        self._refresh_icon()
         self._fade_in_at(self._place(self._anchor_rect(), self._position))
 
     def _do_hide(self) -> None:
@@ -815,7 +805,6 @@ class FXTooltip(QFrame):
         """
         self._hide_timer.stop()
         self._show_timer.stop()
-        self._refresh_icon()
         if position is None:
             position = self._position
         self._fade_in_at(self._place(rect, position))
