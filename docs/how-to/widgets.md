@@ -116,14 +116,14 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXNotificationBanner` | Card with a message that slides in from a window's right edge |
 | `FXOutputLogHandler` | Logging handler that writes records into an `FXOutputLogWidget` |
 | `FXOutputLogWidget` | Read-only log display with search |
-| `FXPasswordLineEdit` | Password field with a show/hide button |
+| `FXPasswordLineEdit` | Password field with a show/hide eye icon |
 | `FXPrimaryButton` | The main action of a form, on the theme's accent |
 | `FXProgressCard` | Card showing a task's progress and status |
 | `FXPygmentsHighlighter` | Pygments syntax highlighter for any `QTextDocument` |
 | `FXRangeSlider` | Slider with two handles for a low and a high value |
 | `FXRatingWidget` | Star rating input, halves optional |
 | `FXResizedScrollArea` | Scroll area that says when it is resized and can fit its content |
-| `FXSearchBar` | Search field with an optional filter dropdown |
+| `FXSearchBar` | Search field with a clear button and a debounced search signal |
 | `FXSeating` | Seats a tray panel off its icon or the pointer and slides it in |
 | `FXSingleInstance` | Lock on a local socket name; a second start wakes the first |
 | `FXSingleton` | Metaclass for Qt classes that have one instance |
