@@ -64,9 +64,11 @@ class FXLoadingSpinner(QWidget):
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
     def start(self) -> None:
-        """Start the animation, and show the spinner."""
+        """Start the animation, and show the spinner if it has a parent."""
         self._is_spinning = True
-        self.show()
+        # Parentless, show() would open the spinner as a window of its own.
+        if self.parentWidget() is not None:
+            self.show()
         self._run_timer()
 
     def stop(self) -> None:
