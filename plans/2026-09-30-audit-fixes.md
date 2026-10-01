@@ -211,6 +211,11 @@ leave `FXThemeAware`.
 - Reviewers check f3d273d2 (theme reapply no longer walks
   allWidgets(); the CI segfault's root cause was never reproduced) and
   why one random-seed run took 533 s instead of ~60 s.
+- Owner ruling: FXTooltip is not needed. Delete fxgui/fxwidgets/_tooltip.py
+  (FXTooltip, FXTooltipManager, set_tooltip, the item tooltip handler) and
+  FXMainWindow's rich_tooltips; `apply_tip` (rich native tooltip with
+  title, body, keys) is the one tooltip mechanism, and covers item views.
+- Delegate hover: one look, @accent_secondary as plain lists use.
 - ruff F841 in tests/test_collapsible_geometry.py and
   tests/test_style_cascade.py; run `ruff check --select F,B,BLE` over the
   whole repo and the suite under pytest-randomly before release.
