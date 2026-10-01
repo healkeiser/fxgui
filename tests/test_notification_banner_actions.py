@@ -9,6 +9,9 @@ An action now carries its callback, cancels the auto-dismiss on the way in,
 and closes the banner on the way out.
 """
 
+# Built-in
+import inspect
+
 # Third-party
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QWidget
@@ -16,7 +19,7 @@ from qtpy.QtWidgets import QWidget
 # Internal
 from fxgui import _compat
 from fxgui.fxwidgets import FXNotificationBanner
-from fxgui.fxwidgets._constants import ERROR
+from fxgui.fxwidgets._severity import ERROR
 
 
 def _host(qtbot):
@@ -75,16 +78,12 @@ def test_actions_keep_their_declared_order(qtbot):
     assert labels == ["Overwrite", "Keep both"]
 
 
-def test_action_text_still_emits_action_clicked(qtbot):
-    """The old single-button API keeps working, on top of the new one."""
-    parent = _host(qtbot)
-    banner = FXNotificationBanner(
-        parent=parent, message="File saved.", action_text="Undo"
-    )
-    banner.show()
+def test_actions_is_the_one_way_to_add_buttons():
+    parameters = inspect.signature(FXNotificationBanner).parameters
 
-    with qtbot.waitSignal(banner.action_clicked, timeout=1000):
-        banner._action_buttons[0].click()
+    assert "action_text" not in parameters
+    assert not hasattr(FXNotificationBanner, "action_clicked")
+    assert not hasattr(FXNotificationBanner, "SEVERITY_ICONS")
 
 
 def test_a_plain_banner_grows_no_action_row(qtbot):
