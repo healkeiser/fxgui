@@ -1151,7 +1151,7 @@ def test_unusable_color_roles_hide_without_raising(qtbot, role_value):
 def _focus_ring_pixels(qtbot, *, selected):
     """What `_draw_focus_indicator` puts on a blank canvas.
 
-    `option.widget` is left `None` on purpose. `_is_focus_row` reads the
+    `option.widget` is left `None` on purpose. `has_focus_ring` reads the
     view's own `hasFocus()` when it has one, and under
     `QT_QPA_PLATFORM=offscreen` a shown widget never becomes active --
     so a test that handed it a real tree painted no ring at all and

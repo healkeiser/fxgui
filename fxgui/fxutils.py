@@ -11,6 +11,12 @@ Functions:
     get_formatted_time: Get current time as formatted string.
     repolish: Force re-evaluation of stylesheet rules for a widget.
     round_window_corners: Ask Windows 11 for a flyout's rounded corners.
+    popup_menu: Show a menu without blocking, freed once it closes.
+    add_submenu: Add a submenu that outlives its Python wrapper.
+    children_of: Yield a tree item's children.
+    filter_tree: Hide the rows of a tree a text does not match.
+    fit_columns: Widen a tree's columns to every row, collapsed ones too.
+    TreeState: What is open, selected and current in a tree, by row text.
 
 Examples:
     Loading a UI file:
@@ -37,17 +43,23 @@ __email__ = "valentin.onze@gmail.com"
 import ctypes
 import os
 import sys
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Optional, Union
+from typing import Callable, Dict, Iterator, Optional, Tuple, Union
 
 # Third-party
 from qtpy.QtWidgets import (
     QAction,
+    QMenu,
+    QStyleOptionViewItem,
+    QTreeView,
+    QTreeWidget,
+    QTreeWidgetItem,
     QWidget,
     QGraphicsDropShadowEffect,
 )
 from qtpy.QtGui import QIcon, QKeySequence
-from qtpy.QtCore import QFile
+from qtpy.QtCore import QFile, QModelIndex, QPoint
 
 
 # Public API
@@ -58,6 +70,12 @@ __all__ = [
     "get_formatted_time",
     "repolish",
     "round_window_corners",
+    "popup_menu",
+    "add_submenu",
+    "children_of",
+    "filter_tree",
+    "fit_columns",
+    "TreeState",
 ]
 
 # `DWMWA_WINDOW_CORNER_PREFERENCE` from `dwmapi.h`: which rounding the
@@ -337,3 +355,195 @@ def round_window_corners(widget: QWidget) -> bool:
     except (AttributeError, ImportError, OSError, ValueError):
         return False
     return bool(result == 0)
+
+
+def popup_menu(menu: QMenu, at: QPoint) -> None:
+    """Show `menu` at global position `at`, freeing it once it closes.
+
+    `popup` rather than `exec`, whose own event loop no key-driven test can
+    step through; a parented menu is never freed, so `aboutToHide` frees it.
+    """
+    menu.aboutToHide.connect(menu.deleteLater)
+    menu.popup(at)
+
+
+def add_submenu(menu: QMenu, label: str) -> QMenu:
+    """Add and return a submenu titled `label`, owned by `menu` in C++.
+
+    `menu.addMenu(label)` makes one that dies with the first dropped Python
+    wrapper of its action.
+    """
+    sub = QMenu(label, menu)
+    menu.addMenu(sub)
+    return sub
+
+
+def children_of(item: QTreeWidgetItem) -> Iterator[QTreeWidgetItem]:
+    """Yield every child row of `item`."""
+    for index in range(item.childCount()):
+        child = item.child(index)
+        if child is not None:
+            yield child
+
+
+def _hide_unless(item: QTreeWidgetItem, keep: bool) -> None:
+    item.setHidden(not keep)
+
+
+def filter_tree(
+    tree: QTreeWidget,
+    text: str,
+    mark: Callable[[QTreeWidgetItem, bool], None] = _hide_unless,
+) -> None:
+    """Tell `mark` for every row of `tree` whether `text` keeps it.
+
+    A row matches when any column holds `text`, ignoring case; empty text
+    matches every row. A match keeps its whole subtree and its ancestors.
+
+    Args:
+        tree: The tree to walk, top level down.
+        text: The text to find.
+        mark: Called with each row and its verdict; the default hides the
+            rows the text drops.
+    """
+    query = text.strip().lower()
+
+    def walk(item: QTreeWidgetItem, ancestor_matched: bool) -> bool:
+        matched = ancestor_matched or not query or any(
+            query in item.text(column).lower()
+            for column in range(item.columnCount())
+        )
+        # A list, so every child is walked and marked.
+        below = [walk(child, matched) for child in children_of(item)]
+        keep = matched or any(below)
+        mark(item, keep)
+        return keep
+
+    for item in children_of(tree.invisibleRootItem()):
+        walk(item, False)
+
+
+def fit_columns(view: QTreeView) -> None:
+    """Widen each column to its widest row, collapsed rows too; never narrow.
+
+    `resizeColumnToContents` measures only the rows that are expanded.
+    """
+    model, header = view.model(), view.header()
+    option = QStyleOptionViewItem()
+    option.font = view.font()
+    option.widget = view
+    columns = range(model.columnCount())
+    wanted = [header.sectionSizeHint(column) for column in columns]
+    decorated = int(view.rootIsDecorated())
+    parents = [(QModelIndex(), 0)]
+    while parents:
+        parent, depth = parents.pop()
+        for row in range(model.rowCount(parent)):
+            for column in columns:
+                index = model.index(row, column, parent)
+                # Qt 5 names it `itemDelegate(index)`.
+                delegate = getattr(
+                    view, "itemDelegateForIndex", view.itemDelegate
+                )(index)
+                width = delegate.sizeHint(option, index).width()
+                if column == 0:
+                    width += view.indentation() * (depth + decorated)
+                wanted[column] = max(wanted[column], width)
+            parents.append((model.index(row, 0, parent), depth + 1))
+    for column in columns:
+        if wanted[column] > header.sectionSize(column):
+            header.resizeSection(column, wanted[column])
+
+
+# A unit separator, which no row's text holds.
+_FIELD = "\x1f"
+
+_RowPath = Tuple[str, ...]
+
+
+def _every_item(tree: QTreeWidget) -> Iterator[QTreeWidgetItem]:
+    stack = list(children_of(tree.invisibleRootItem()))
+    while stack:
+        item = stack.pop()
+        yield item
+        stack.extend(children_of(item))
+
+
+def _name_path(item: Optional[QTreeWidgetItem]) -> _RowPath:
+    """Name `item` and each ancestor by column 0 alone."""
+    levels = []
+    while item is not None:
+        levels.append(item.text(0))
+        item = item.parent()
+    return tuple(reversed(levels))
+
+
+def _row_path(item: QTreeWidgetItem, columns: int) -> _RowPath:
+    """Name `item` by every column, its ancestors by column 0.
+
+    Two rows of one name, such as versions, differ in their other columns.
+    """
+    return (
+        *_name_path(item.parent()),
+        _FIELD.join(item.text(column) for column in range(columns)),
+    )
+
+
+@dataclass(frozen=True)
+class TreeState:
+    """What is open, selected and current in a tree, named by row text.
+
+    Text survives a tree that is cleared and refilled; items do not.
+
+    Examples:
+        >>> state = fxutils.TreeState.of(tree)  # doctest: +SKIP
+        >>> refill(tree)  # doctest: +SKIP
+        >>> state.restore(tree)  # doctest: +SKIP
+    """
+
+    expanded: Tuple[_RowPath, ...] = ()
+    selected: Tuple[_RowPath, ...] = ()
+    current: Optional[_RowPath] = None
+    scroll: int = 0
+
+    @classmethod
+    def of(cls, tree: QTreeWidget) -> "TreeState":
+        """Return what is open, selected and current in `tree` now."""
+        columns = tree.columnCount()
+        current = tree.currentItem()
+        return cls(
+            expanded=tuple(
+                _name_path(item)
+                for item in _every_item(tree)
+                if item.isExpanded()
+            ),
+            selected=tuple(
+                _row_path(item, columns) for item in tree.selectedItems()
+            ),
+            current=None if current is None else _row_path(current, columns),
+            scroll=tree.verticalScrollBar().value(),
+        )
+
+    def restore(self, tree: QTreeWidget) -> None:
+        """Put this state back on `tree`, skipping rows it no longer has.
+
+        Focus goes before selection, since Qt selects what it focuses, and
+        scroll goes last, since focusing scrolls.
+        """
+        columns = tree.columnCount()
+        by_name: Dict[_RowPath, QTreeWidgetItem] = {}
+        by_row: Dict[_RowPath, QTreeWidgetItem] = {}
+        for item in _every_item(tree):
+            by_name.setdefault(_name_path(item), item)
+            by_row.setdefault(_row_path(item, columns), item)
+        for path in self.expanded:
+            if path in by_name:
+                by_name[path].setExpanded(True)
+        if self.current in by_row:
+            tree.setCurrentItem(by_row[self.current])
+        for path in self.selected:
+            if path in by_row:
+                by_row[path].setSelected(True)
+        # The view lays out lazily; the scrollbar still has the old range.
+        tree.doItemsLayout()
+        tree.verticalScrollBar().setValue(self.scroll)

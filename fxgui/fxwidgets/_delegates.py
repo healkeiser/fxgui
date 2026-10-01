@@ -37,6 +37,7 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import (
     QApplication,
     QMenu,
+    QProxyStyle,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -370,6 +371,27 @@ class FXColorLabelDelegate(QStyledItemDelegate):
         return QSize(width, height)
 
 
+class _DelegateOwnsTheRow(QProxyStyle):
+    """A style that leaves the row panel and focus rect to the delegate.
+
+    Windows 11 paints an accent pill and a focus rectangle there, under the
+    delegate's own ring, and no stylesheet rule reaches either.
+    """
+
+    _SKIP = frozenset(
+        {
+            QStyle.PrimitiveElement.PE_FrameFocusRect,
+            QStyle.PrimitiveElement.PE_PanelItemViewRow,
+        }
+    )
+
+    def drawPrimitive(self, element, option, painter, widget=None):
+        """Draw `element` unless the delegate owns it."""
+        if element in self._SKIP:
+            return
+        super().drawPrimitive(element, option, painter, widget)
+
+
 class FXThumbnailDelegate(QStyledItemDelegate):
     """Custom item delegate for showing thumbnails in tree/list views.
 
@@ -478,7 +500,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     # The first item-data role this delegate does not claim. Derive your
     # own roles from it; roles added here go below and move it up.
-    FIRST_FREE_ROLE = Qt.UserRole + 16
+    # `Qt.UserRole + 16` is `FXSortedTreeWidgetItem.SORT_ROLE`.
+    FIRST_FREE_ROLE = Qt.UserRole + 17
 
     #: A viewer chose a value from a row's picker. The delegate writes
     #: nothing: what a choice means belongs to whoever put the choices
@@ -531,6 +554,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     # Pills and badges, one derived font per base font key
     _badge_fonts: Dict[str, QFont] = {}
 
+    _FOCUS_RINGS = ("row", "cell")
+
     def __init__(self, parent: Optional[QWidget] = None):
         """Initialize the thumbnail delegate.
 
@@ -549,6 +574,21 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         # the same column on every row, and a per-row answer is only a
         # way to disagree with itself.
         self._picker_column = -1
+        self._focus_ring = "row"
+        #: Whether a selected row is filled with the accent. Off, only the
+        #: focus ring marks the current cell.
+        self.paint_selection = True
+
+    @property
+    def focus_ring(self) -> str:
+        """Whether the ring outlines the current `"row"` or `"cell"`."""
+        return self._focus_ring
+
+    @focus_ring.setter
+    def focus_ring(self, mode: str) -> None:
+        if mode not in self._FOCUS_RINGS:
+            raise ValueError(f"focus_ring is 'row' or 'cell', not {mode!r}")
+        self._focus_ring = mode
 
     @property
     def show_thumbnail(self) -> bool:
@@ -675,9 +715,18 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         Call this on QTreeView/QTreeWidget instances that use custom
         backgrounds with FXThumbnailDelegate.
 
+        It also installs a style that skips the native row panel and focus
+        rect, which Windows 11 draws under the delegate's ring.
+
         Args:
             view: The tree view widget to apply transparent selection to.
         """
+        if view.findChild(_DelegateOwnsTheRow) is None:
+            # No base on purpose: `QProxyStyle(view.style())` takes the shared
+            # app style. Parented, since a style freed before its view crashes.
+            style = _DelegateOwnsTheRow()
+            style.setParent(view)
+            view.setStyle(style)
         current_style = view.styleSheet()
         if FXThumbnailDelegate.TRANSPARENT_SELECTION_STYLE in current_style:
             return
@@ -687,7 +736,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     @classmethod
     def apply_minimum_thumbnail_width(
-        cls, view: QWidget, column: int = 0
+        cls, view: QWidget, column: int = 0, floor: int = 0
     ) -> None:
         """Keep one column from shrinking below what its content needs.
 
@@ -713,6 +762,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         Args:
             view: The tree view whose header should be constrained.
             column: The column to constrain. Defaults to 0.
+            floor: A width in pixels the column never goes below, even on an
+                empty view; the content's own floor wins when it is wider.
 
         Examples:
             >>> from fxgui import fxwidgets
@@ -734,7 +785,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         def _floor() -> int:
             if state["floor"] is None:
-                state["floor"] = cls._measure_minimum_width(view, column)
+                state["floor"] = max(
+                    floor, cls._measure_minimum_width(view, column)
+                )
             return state["floor"]
 
         def _stale(*_args) -> None:
@@ -782,9 +835,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             signal.connect(slot)
         installed[column] = signals
 
-        floor = _floor()
-        if floor and header.sectionSize(column) < floor:
-            header.resizeSection(column, floor)
+        if _floor() and header.sectionSize(column) < _floor():
+            header.resizeSection(column, _floor())
 
     @classmethod
     def _measure_minimum_width(cls, view: QWidget, column: int) -> int:
@@ -1699,11 +1751,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.drawPath(path)
         painter.restore()
 
-    @staticmethod
-    def _is_focus_row(
-        option: QStyleOptionViewItem, index: QModelIndex
+    def has_focus_ring(
+        self, option: QStyleOptionViewItem, index: QModelIndex
     ) -> bool:
-        """Whether this cell belongs to the row the keyboard is on.
+        """Whether the focus ring is drawn on this cell.
 
         `State_HasFocus` is only set on the view's current cell, never on the
         rest of that row, so a ring drawn from it alone would stop at the
@@ -1717,7 +1768,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         Returns:
             True when the view holds keyboard focus and the cell sits in its
-            current row.
+            current row, or is its current cell with `focus_ring` "cell".
         """
 
         view = option.widget
@@ -1728,6 +1779,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             return False
 
         current = view.currentIndex()
+        if self._focus_ring == "cell":
+            return current == index
         # Row numbers repeat under different parents, so the parent has to
         # match as well
         return (
@@ -1764,7 +1817,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             column_position: Optional pre-computed (is_first, is_last) tuple.
         """
 
-        if not self._is_focus_row(option, index):
+        if not self.has_focus_ring(option, index):
             return
 
         # A selected row needs no ring: the accent fill already marks it,
@@ -1774,7 +1827,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         ring_color = QColor(fxstyle.colors().accent_primary)
 
-        if column_position is None:
+        if self._focus_ring == "cell":
+            is_first_column = is_last_column = True
+        elif column_position is None:
             is_first_column, is_last_column = self._get_column_position(
                 option, index
             )
@@ -2675,6 +2730,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         # Initialize style option properly to get consistent font/state
         opt = QStyleOptionViewItem(option)
         self.initStyleOption(opt, index)
+        if not self.paint_selection:
+            opt.state &= ~QStyle.State_Selected
 
         # The check box narrows opt.rect below; the row keeps this one
         row_rect = QRect(opt.rect)

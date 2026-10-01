@@ -83,6 +83,11 @@ from fxgui.fxwidgets._validators import (
     FXLowerCaseValidator,
 )
 from fxgui.fxwidgets._widget import FXWidget
+from fxgui.fxwidgets._keyboard import (
+    FXFilteredTree,
+    FXKeyboardTree,
+    FXSplitButton,
+)
 
 
 __all__ = [
@@ -153,4 +158,7 @@ __all__ = [
     "FXValidatedLineEdit",
     "FXWidget",
     "theme_manager",
+    "FXFilteredTree",
+    "FXKeyboardTree",
+    "FXSplitButton",
 ]
