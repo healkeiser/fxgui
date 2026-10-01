@@ -2,7 +2,7 @@
 
 # Third-party
 from qtpy.QtCore import QPoint, Qt
-from qtpy.QtGui import QColor
+from qtpy.QtGui import QColor, QCursor
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
     QApplication,
@@ -99,6 +99,9 @@ def shown(qtbot, widget: QWidget, size=None) -> QWidget:
         qtbot.addWidget(widget)
     if size is not None:
         widget.resize(*size)
+    # A window opened under the pointer marks a widget under it that no
+    # later move clears, so the pointer goes off every screen first.
+    QCursor.setPos(-1000, -1000)
     widget.show()
     qtbot.waitExposed(widget)
     return widget
