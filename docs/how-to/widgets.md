@@ -113,6 +113,7 @@ The [fxwidgets](../technical/fxwidgets/index.md) module provides many pre-styled
 | `FXResizedScrollArea` | Smooth-scrolling scroll area |
 | `FXSearchBar` | Search input with filtering |
 | `FXSplashScreen` | Customizable splash screen |
+| `FXStatusDot` | Small clickable circle in a feedback colour, grey for no state |
 | `FXStatusBar` | Themed status bar |
 | `FXSystemTray` | System tray icon with menu |
 | `FXTagInput` | Tag/chip input widget |
