@@ -963,3 +963,23 @@ def test_a_clear_top_leaves_every_pane_title_bar_clear(qtbot, width):
     for bar in bars:
         box = QRect(bar.mapTo(docks, bar.rect().topLeft()), bar.size())
         assert not placed.intersects(box), bar
+
+
+def test_a_burst_of_tree_signals_sweeps_once(qtbot, monkeypatch):
+    window = _three(qtbot)
+    docks = window.docks
+    swept = []
+    monkeypatch.setattr(docks, "_sweep", lambda: swept.append(1))
+
+    for _ in range(5):
+        docks._resweep()
+    qtbot.wait(20)
+
+    assert swept == [1]
+
+
+def test_the_shim_paths_are_gone():
+    from fxgui import _compat
+
+    for name in ("later", "rehome", "focus_step"):
+        assert not hasattr(_compat, name), name
