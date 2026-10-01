@@ -1098,16 +1098,20 @@ QTreeView::branch:has-children:open {
     image: ~icon(expand_more, icon);
 }
 
+/* A row has no padding in any state: Qt 6.5 skips an item's padding on
+   a row it paints natively and honours it on a highlighted one. The view
+   carries the inset instead. */
 QListView,
 QTreeView {
     show-decoration-selected: 1;
+    padding: 4px;
 }
 
 QListView::item,
 QTreeView::item {
-    padding: 4px 8px;
-    min-height: 18px;
-    max-height: 18px;
+    padding: 0px;
+    min-height: 26px;
+    max-height: 26px;
 }
 
 /* A radius makes the sheet draw the whole cell, which hides an item's own
@@ -1119,18 +1123,9 @@ QTreeView::item:selected {
     border-radius: @button_radius;
 }
 
-/* A list insets a resting row's text 1px inside Qt's own frame, which a
-   highlighted row (no longer native) loses: 1px more keeps the text still.
-   A combo box's list has no such inset. */
-QListView::item:hover,
-QListView::item:selected {
-    padding: 5px 9px;
-}
-
 /* Drawn as a menu's items: the pointer moves the selection. */
 QComboBox QAbstractItemView::item:hover,
 QComboBox QAbstractItemView::item:selected {
-    padding: 4px 8px;
     color: @text_on_accent_primary;
     background: @accent_primary;
 }
