@@ -245,3 +245,16 @@ def test_a_name_list_outlives_the_theme_looking_at_it(qtbot):
     assert _compat.is_valid(box.completer.popup())
     QTest.keyClicks(box, "n")
     assert box.completer.currentCompletion() == "Anne Martin"
+
+
+def test_a_deleted_reply_leaves_the_line_drawable(qtbot):
+    from fxgui import _compat
+
+    thread, drawn, _head, faces = _thread(qtbot)
+    row = faces[-1].parentWidget()
+    row.setParent(None)
+    row.deleteLater()
+    qtbot.waitUntil(lambda: not _compat.is_valid(faces[-1]))
+
+    assert not drawn.path().isEmpty()
+    drawn.grab()
