@@ -1548,6 +1548,12 @@ class FXProxyStyle(QProxyStyle):
         if element != QStyle.PE_FrameFocusRect:
             super().drawPrimitive(element, option, painter, widget)
 
+    def pixelMetric(self, metric, option=None, widget=None):
+        """Return `metric`; a list view's icons take a tree's 16 px box."""
+        if metric == QStyle.PM_ListViewIconSize:
+            metric = QStyle.PM_SmallIconSize
+        return super().pixelMetric(metric, option, widget)
+
     def polish(self, widget):
         """Lay an item view's rows out again once the sheet has styled them."""
         super().polish(widget)

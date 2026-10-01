@@ -1075,7 +1075,12 @@ QTreeView::branch:!selected:hover {
     background: @surface_sunken;
 }
 
-/* No branch lines; a parent shows the accordion's chevron. */
+/* No branch lines; a parent shows the accordion's chevron, in the 16 px
+   box of an item's icon: 2 px in from Qt's 20 px indentation. */
+QTreeView::branch:has-children {
+    padding: 2px;
+}
+
 QTreeView::branch:has-children:closed {
     image: ~icon(chevron_right, icon);
 }
