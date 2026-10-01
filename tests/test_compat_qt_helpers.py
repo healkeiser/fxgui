@@ -106,3 +106,11 @@ def test_rehome_never_files_a_wrapper_under_one_about_to_go(qtbot):
     gc.collect()
 
     assert Shiboken.isValid(bar)
+
+
+def test_the_helpers_are_public_in_fxutils_with_one_definition():
+    from fxgui import fxutils
+
+    for name in ("later", "rehome", "focus_step"):
+        assert name in fxutils.__all__, name
+        assert getattr(fxutils, name) is getattr(_compat, name), name

@@ -11,6 +11,9 @@ Functions:
     get_formatted_time: Get current time as formatted string.
     repolish: Force re-evaluation of stylesheet rules for a widget.
     round_window_corners: Ask Windows 11 for a flyout's rounded corners.
+    later: Run a call after a delay unless its owner died (PySide 6.5 safe).
+    rehome: Give a widget's PySide wrapper back to its own parent's.
+    focus_step: Step the focus chain without leaving wrappers to die.
 
 Examples:
     Loading a UI file:
@@ -49,6 +52,9 @@ from qtpy.QtWidgets import (
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtCore import QFile
 
+# Internal
+from fxgui._compat import focus_step, later, rehome
+
 
 # Public API
 __all__ = [
@@ -58,6 +64,9 @@ __all__ = [
     "get_formatted_time",
     "repolish",
     "round_window_corners",
+    "later",
+    "rehome",
+    "focus_step",
 ]
 
 # `DWMWA_WINDOW_CORNER_PREFERENCE` from `dwmapi.h`: which rounding the
