@@ -16,6 +16,8 @@ from qtpy.QtGui import QAction, QColor, QKeySequence  # noqa: E402
 from qtpy.QtTest import QTest  # noqa: E402
 from qtpy.QtWidgets import (  # noqa: E402
     QAbstractButton,
+    QMainWindow,
+    QTreeWidget,
     QApplication,
     QLabel,
     QLineEdit,
@@ -1003,3 +1005,127 @@ def test_a_burst_of_tree_signals_sweeps_once(qtbot, monkeypatch):
     qtbot.wait(20)
 
     assert swept == [1]
+
+
+def test_a_window_holding_a_dock_area_hosts_its_banner_on_the_area(qtbot):
+    window = _window(qtbot, show=False)
+
+    assert fxdocking.banner_host(window) is window.docks
+
+
+def test_an_embedded_window_hosts_its_banner_on_its_own_area(qtbot):
+    host = QWidget()
+    qtbot.addWidget(host)
+    fxdocking.FXDockArea(host)
+    window = _window(qtbot, show=False)
+    window.setParent(host)
+
+    assert fxdocking.banner_host(window) is window.docks
+    assert fxdocking.banner_host(window.panes["side"]) is window.docks
+
+
+def test_an_embedded_window_s_key_answers_in_its_floating_pane(qtbot):
+    host = QMainWindow()
+    qtbot.addWidget(host)
+    hosted = QAction("Host", host)
+    hosted.setShortcut(QKeySequence("Ctrl+Shift+U"))
+    host.addAction(hosted)
+    window = _window(qtbot, show=False)
+    host.setCentralWidget(window)
+    field = QLineEdit()
+    window.docks.add_dock("field", "Field", field, "right")
+    ran = []
+    act = QAction("Run", window)
+    act.setShortcut(QKeySequence("Ctrl+Shift+Y"))
+    act.setShortcutContext(Qt.WidgetWithChildrenShortcut)
+    act.triggered.connect(lambda _c=False: ran.append("window"))
+    window.addAction(act)
+    _activated(qtbot, host)
+    held = window.docks.manager().findDockWidget("field")
+    held.setFloating()
+    floating = held.floatingDockContainer()
+    qtbot.waitExposed(floating)
+    floating.activateWindow()
+    field.setFocus()
+    qtbot.waitUntil(field.hasFocus)
+
+    QTest.keyClick(field, Qt.Key_Y, Qt.ControlModifier | Qt.ShiftModifier)
+
+    qtbot.waitUntil(lambda: ran == ["window"])
+    assert hosted not in floating.actions()
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_list_header_in_a_pane_sits_on_the_pane(qtbot, theme):
+    fxstyle.apply_theme(theme)
+    window = _window(qtbot, show=False)
+    tree = QTreeWidget()
+    tree.setHeaderLabels([""])
+    tree.header().setStretchLastSection(False)
+    tree.setColumnWidth(0, 80)
+    window.docks.add_dock("tree", "Tree", tree, "right")
+    _activated(qtbot, window)
+    header = tree.header()
+    middle = header.height() // 2
+
+    surface = QColor(fxstyle.colors().surface).name()
+    assert pixel(window, header, 40, middle) == surface
+    assert pixel(window, header, header.width() - 10, middle) == surface
+    line = QColor(fxstyle.colors().border).name()
+    assert pixel(window, header, 40, header.height() - 1) == line
+
+
+class _Restoring(FXMainWindow):
+    """Restore a geometry and a pane layout in the first show, as apps do."""
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self.saved is not None:
+            geometry, state = self.saved
+            self.saved = None
+            self.restoreGeometry(geometry)
+            self.docks.restore_state(state)
+
+
+def _fitted(qtbot, saved=None, before_show=False):
+    window = _Restoring(title="Fitted", framed=True, fit_to_contents=True)
+    window.saved = None if before_show else saved
+    docks = fxdocking.FXDockArea(gap=GAP)
+    window.setCentralWidget(docks)
+    window.docks = docks
+    body = QLabel("body")
+    body.setMinimumSize(500, 350)
+    docks.set_central(body)
+    docks.add_dock("side", "Side", QLabel("side"), "left")
+    docks.add_dock("low", "Low", QLabel("low"), "bottom", beside="side")
+    qtbot.addWidget(window)
+    window.resize(300, 200)
+    if before_show:
+        window.restoreGeometry(saved[0])
+        docks.restore_state(saved[1])
+    window.show()
+    qtbot.waitExposed(window)
+    qtbot.wait(50)
+    return window
+
+
+def _splits(window):
+    return [splitter.sizes() for splitter in window.docks.manager().findChildren(
+        ads.CDockSplitter) if splitter.isVisible()]
+
+
+@pytest.mark.parametrize("before_show", [False, True])
+def test_a_saved_layout_comes_back_exactly_in_a_grown_window(
+        qtbot, before_show):
+    first = _fitted(qtbot)
+    root = first.docks.manager().rootSplitter()
+    sizes = root.sizes()
+    root.setSizes([sizes[0] + 120, sizes[1] - 120])
+    qtbot.wait(20)
+    saved = (first.saveGeometry(), first.docks.save_state())
+    want = (first.size(), _splits(first))
+    first.close()
+
+    second = _fitted(qtbot, saved, before_show)
+
+    assert (second.size(), _splits(second)) == want

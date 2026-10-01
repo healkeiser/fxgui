@@ -28,7 +28,13 @@ from qtpy.QtCore import (
     qUncompress,
 )
 from qtpy.QtGui import QAction, QColor, QIcon, QShortcut
-from qtpy.QtWidgets import QSizePolicy, QSplitter, QVBoxLayout, QWidget
+from qtpy.QtWidgets import (
+    QMainWindow,
+    QSizePolicy,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 
 # Internal
 from fxgui import _compat, fxicons, fxstyle
@@ -62,6 +68,8 @@ fxstyle.register_widget_style(
 #fxDocks ads--CDockAreaWidget QAbstractItemView,
 #fxDocks ads--CDockAreaWidget QPlainTextEdit,
 #fxDocks ads--CDockAreaWidget QTextEdit { background-color: @well; }
+/* A header is an item view too, but sits on the pane above its well. */
+#fxDocks ads--CDockAreaWidget QHeaderView { background-color: @surface; }
 #fxDocks ads--CDockAreaWidget QTreeView::branch,
 #fxDocks ads--CDockAreaWidget QTreeView::branch:selected,
 #fxDocks ads--CDockAreaWidget QTreeView::branch:!selected:hover {
@@ -235,18 +243,31 @@ def restorable(state: bytes, built: bytes) -> bool:
     )
 
 
+def _app_window(widget: QWidget) -> QWidget:
+    """Return `widget`'s app window: its nearest main window, or its window.
+
+    A main window embedded in a host is not a window, so `window()` is the
+    host's.
+    """
+    found = widget
+    while not found.isWindow() and not isinstance(found, QMainWindow):
+        found = found.parentWidget()
+    return found
+
+
 def banner_host(widget: QWidget) -> QWidget:
     """Return where a banner about `widget` goes: its app's dock area.
 
     A floating pane's widget finds the area of the window it floats from.
-    Without one, the widget's own window.
+    Without one, the dock area in the widget's app window, else that window.
     """
     found = widget
     while found is not None:
         if isinstance(found, FXDockArea):
             return found
         found = rehome(_compat.parent_widget(found))
-    return widget.window()
+    window = _app_window(widget)
+    return window.findChild(FXDockArea) or window
 
 
 class FXDockArea(QWidget):
@@ -600,7 +621,7 @@ class FXDockArea(QWidget):
         A floating pane is a window of its own, where a window key is dead.
         A widget's own key stays its own.
         """
-        window = self.window()
+        window = _app_window(self)
         own = [
             action
             for action in window.actions()
