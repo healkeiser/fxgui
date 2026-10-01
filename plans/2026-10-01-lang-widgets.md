@@ -66,16 +66,24 @@ Already in the language, unchanged: `FXStatusItem` (hover `@state_hover`),
 3. `tests/test_toolbutton_hover.py` pins a hovered `QToolButton` on
    `@accent_secondary` (spec 5.2).
 
-## For the lead (no owner)
+## fxicons (taken on after the first report)
 
-`fxicons._DEFAULT_INKS["active"]` is `icon_on_accent_secondary`, and
-`fxicons._icon_for_widget` gives the normal ink to push buttons only. Once a
-hovered `QToolButton` is `@state_hover` (spec 5.2), every tool button icon
-set through `fxicons.set_icon` hovers in the on-accent ink on a grey fill.
-A menu row is the reverse: it hovers on `@accent_primary`, but its icon's
-Active ink is the secondary one. Proposed: `_icon_for_widget` gives every
-`QAbstractButton` its normal ink for Active, and the Active default becomes
-`icon_on_accent_primary`. Sent to the lead; not done here.
+- `_DEFAULT_INKS["active"]` is `icon_on_accent_primary`: a current menu or
+  combo row, the one hover left on the accent.
+- `_icon_for_widget` gives every `QAbstractButton`, tool buttons included,
+  its normal ink for Active: a hovered button sits on `@state_hover`.
+- `FXIconButton` checked names its Active ink, `icon_on_accent_secondary`,
+  since a checked one hovers on `@primary_button_hover`.
+- `FXPrimaryButton`'s hover icon (`_buttons.py:58`) stays
+  `icon_on_accent_secondary`: lang-sheet keeps the primary hover on
+  `@primary_button_hover` with `@text_on_accent_secondary`.
+- Tests (`test_fxicons.py`): a hovered tool button's Active icon equals its
+  normal one; a menu action's Active ink is `icon_on_accent_primary` (a
+  patched theme whose two on-accent inks differ); the menu row icon reads
+  at 3:1 on `@accent_primary` in every bundled theme. The dcc mark tests
+  pass unchanged.
+- Full suite after it: 2348 passed, 6 skipped. 6.5.3, icon and button
+  files: 325 passed.
 
 ## ls-pipeline call sites
 

@@ -157,12 +157,13 @@ class FXIconButton(QToolButton):
         )
         if tip:
             apply_tip(self, tip)
-        # Unchecked it hovers on state_hover, so Active keeps the plain ink;
-        # checked it sits on the accent. Active is a hovered tool button.
+        # Active is a hovered tool button: unchecked on state_hover, so the
+        # plain ink; checked on primary_button_hover, the secondary ink.
         self._icons = {
             False: fxicons.get_icon(icon, inks={"active": "icon"}),
             True: fxicons.get_icon(
-                checked_icon or icon, color="icon_on_accent_primary"),
+                checked_icon or icon, color="icon_on_accent_primary",
+                inks={"active": "icon_on_accent_secondary"}),
         }
         self.toggled.connect(self._show_icon)
         self._show_icon(self.isChecked())
