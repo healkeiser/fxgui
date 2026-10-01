@@ -61,6 +61,15 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
         for widget in app.topLevelWidgets():
             if widget.isVisible():
                 widget.close()
+        # A deleteLater() pending from this test runs now, not in the next.
+        from qtpy.QtCore import QEvent
+
+        QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+    # A key pressed in this test must not make the next one's focus visible.
+    if fxstyle._focus_visibility is not None:
+        fxstyle._focus_visibility._by_keyboard = False
+    fxstyle._colors = None
+    fxstyle._color_file = None
     fxstyle._theme = None
     fxstyle._default_theme = fxstyle._DEFAULT_THEME
     fxstyle._theme_namespace = None

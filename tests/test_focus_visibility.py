@@ -242,7 +242,7 @@ def test_focus_gains_accent_pixels(qtbot, themed, name, factory):
 
     # A slider handle's edge is already the accent; focus draws it in text.
     ink = "text" if name == "slider" else "accent_primary"
-    accent = QColor(fxstyle.get_theme_colors()[ink])
+    accent = QColor(getattr(fxstyle.colors(), ink))
     widget = factory()
     # The window owns the widget, so it has to outlive the measurement
     window, _ = _hosted(qtbot, widget)
@@ -341,7 +341,7 @@ def test_delegate_outlines_the_current_row(qtbot, themed):
     whether a tree can be navigated by keyboard at all.
     """
 
-    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
+    accent = QColor(fxstyle.colors().accent_primary)
     tree, index = _delegate_tree(qtbot, selected=False)
 
     before = tree.viewport().grab().toImage()
@@ -377,7 +377,7 @@ def test_no_ring_is_drawn_on_a_selected_row(qtbot, themed):
     `test_delegate_ring_shows_the_current_row_without_selection` covers.
     """
 
-    theme = fxstyle.get_theme_colors()
+    theme = dict(vars(fxstyle.colors()))
     on_accent = QColor(theme["text_on_accent_primary"])
     tree, index = _delegate_tree(qtbot, selected=True)
 
@@ -401,7 +401,7 @@ def test_delegate_ring_spans_the_whole_row(qtbot, themed):
     which would draw a line down that boundary.
     """
 
-    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
+    accent = QColor(fxstyle.colors().accent_primary)
     tree, index = _delegate_tree(qtbot, selected=False)
     _focus(tree)
     image = tree.viewport().grab().toImage()
@@ -435,7 +435,7 @@ def test_delegate_draws_no_ring_without_focus(qtbot, themed):
     """The ring means the keyboard is here, so a view nobody is on must not
     draw one even though it still has a current row."""
 
-    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
+    accent = QColor(fxstyle.colors().accent_primary)
     tree, index = _delegate_tree(qtbot, selected=False)
     image = tree.viewport().grab().toImage()
 
@@ -548,7 +548,7 @@ def test_ring_paints_on_every_shipped_theme(qtbot, qapp):
             fxstyle._theme = theme_name
             fxstyle._invalidate_theme_namespace()
             fxstyle.register_themed_root(qapp)
-            accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
+            accent = QColor(fxstyle.colors().accent_primary)
 
             tree, index = _delegate_tree(qtbot, selected=False)
             row = tree.visualRect(index)
@@ -620,7 +620,7 @@ def _focused_tab_bar(qtbot):
 def _ring_rows(bar) -> set:
     """Return the rows where the accent runs most of the current pill."""
 
-    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
+    accent = QColor(fxstyle.colors().accent_primary)
     tab = bar.tabRect(bar.currentIndex())
     rows = _accent_rows(bar.grab().toImage(), accent)
     return {
@@ -650,7 +650,7 @@ def test_qt_focus_rectangle_is_off_for_the_group_box(qtbot, themed):
     """The other class Qt boxed. Its own border carries focus now, so the
     accent belongs on the group box's outline, not floating by its title."""
 
-    accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
+    accent = QColor(fxstyle.colors().accent_primary)
     widget = _group()
     window, _ = _hosted(qtbot, widget)
     before = _count(widget.grab().toImage(), accent)
@@ -670,7 +670,7 @@ def test_qt_focus_rectangle_is_off_for_the_group_box(qtbot, themed):
 def test_a_focused_slider_rings_its_handle_in_text(qtbot, themed):
     """The handle's accent edge turns `@text`, so focus differs from hover."""
 
-    theme = fxstyle.get_theme_colors()
+    theme = dict(vars(fxstyle.colors()))
     text = QColor(theme["text"])
     accent = QColor(theme["accent_primary"])
 

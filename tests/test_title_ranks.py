@@ -63,7 +63,7 @@ def test_each_rank_takes_its_size_and_weight(qtbot, request, where):
 
 
 def test_a_rank_wears_the_title_family(qapp):
-    sheet = fxstyle.build_stylesheet("dark")
+    sheet = fxstyle._build_stylesheet("dark")
     start = sheet.index(f'[{fxstyle.TITLE_PROPERTY}="true"]')
     rule = sheet[start:sheet.index("}", start)]
     assert f'[{fxstyle.TITLE_PROPERTY}="section"]' in rule

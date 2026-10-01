@@ -132,5 +132,5 @@ def test_the_title_is_a_section_title_in_the_theme_font(qtbot):
     banner = FXNotificationBanner(parent, "sent", severity_type=INFO)
 
     assert banner._title_label.property(fxstyle.TITLE_PROPERTY) == "section"
-    assert "font-size" not in fxstyle.build_stylesheet().split(
+    assert "font-size" not in fxstyle._build_stylesheet().split(
         "FXNotificationBanner QLabel#fxBannerTitle {")[1].split("}")[0]

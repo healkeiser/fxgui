@@ -90,7 +90,10 @@ def _host(qtbot, sheet):
 
 
 def _shown(qtbot, window, size=(1100, 800)):
-    qtbot.addWidget(window)
+    # A child goes with its registered parent: pytest-qt deletes that parent
+    # first, and closing the child after raises on PySide6 6.5.
+    if window.parentWidget() is None:
+        qtbot.addWidget(window)
     window.resize(*size)
     window.show()
     qtbot.waitExposed(window)
@@ -336,7 +339,7 @@ def test_selection_and_hover_wear_the_theme_under_a_host_s_sheet(
     theme = fxstyle.colors()
     assert fill(items[0]) == "#aa3333", "an unselected cell keeps its own"
     assert fill(items[1]) == QColor(theme.accent_primary).name()
-    assert fill(items[2]) == QColor(theme.accent_secondary).name()
+    assert fill(items[2]) == QColor(theme.state_hover).name()
     other = QMainWindow()
     qtbot.addWidget(other)
     other.show()

@@ -1,9 +1,7 @@
 """Tests for `fxgui.fxstyle` theming engine fixes.
 
-Each test reproduces a defect found in the 2026-07 audit:
-- `extra` stylesheet content was appended twice by load_stylesheet.
-- A missing style file returned the literal string "None".
-- Token replacement corrupted longer keys (@border ate @border_light).
+Token replacement must not corrupt longer keys (@border eating
+@border_light), and the namespace must be cached.
 """
 
 # Third-party
@@ -12,30 +10,9 @@ import pytest
 # Internal
 from fxgui import fxstyle
 
-EXTRA_MARKER = "/*FXGUI-EXTRA-MARKER*/"
-
-
-def test_load_stylesheet_appends_extra_exactly_once(qapp):
-    sheet = fxstyle.load_stylesheet(extra=EXTRA_MARKER)
-    assert sheet.count(EXTRA_MARKER) == 1
-
-
-def test_load_stylesheet_missing_file_returns_empty_string(qapp):
-    assert fxstyle.load_stylesheet(style_file="does_not_exist.qss") == ""
-
-
-def test_load_stylesheet_resolves_all_tokens(qapp):
-    sheet = fxstyle.load_stylesheet()
-    # No placeholder may survive replacement (corrupted tokens would)
-    assert "@surface" not in sheet
-    assert "@border" not in sheet
-    assert "@text" not in sheet
-
-
-def test_replace_colors_longest_key_first():
-    colors = {"border": "#111111", "border_light": "#222222"}
-    qss = "a { x: @border; y: @border_light; }"
-    out = fxstyle.replace_colors(qss, colors)
+def test_token_replacement_takes_the_longest_key_first():
+    tokens = {"@border": "#111111", "@border_light": "#222222"}
+    out = fxstyle._substitute("a { x: @border; y: @border_light; }", tokens)
     assert "#222222" in out
     assert "#111111_light" not in out
     assert "@" not in out
@@ -61,8 +38,7 @@ def test_apply_theme_switches_and_invalidates_cache(qtbot):
 
 
 def test_standard_icon_map_uses_feedback_fallbacks(qapp):
-    """The standard icon map must build from get_feedback_colors() (the
-    top-level "feedback" YAML block is deprecated and may be absent)."""
+    """The standard icon map builds from each theme's own feedback block."""
     fxstyle._standard_icon_map = None
     icon_map = fxstyle._get_standard_icon_map()
     assert icon_map  # Built without KeyError

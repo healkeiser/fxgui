@@ -99,6 +99,6 @@ def test_the_hint_wears_the_theme_s_error_ink(qtbot):
 
     ink = dialog.hint.palette().color(dialog.hint.foregroundRole())
 
-    error = fxstyle.get_theme_colors()["feedback_error_foreground"]
+    error = fxstyle.colors().feedback_error_foreground
     assert ink == QColor(error)
     assert dialog.hint.styleSheet() == ""

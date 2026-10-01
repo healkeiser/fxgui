@@ -57,7 +57,7 @@ def test_drag_state_is_a_property_the_theme_sheet_styles(qtbot, qapp, tmp_path):
     zone.dragEnterEvent(event)
     assert zone._drop_area.property("dropState") == "drag"
     assert zone._drop_area.styleSheet() == ""
-    assert 'FXDropZoneArea[dropState="drag"]' in fxstyle.build_stylesheet()
+    assert 'FXDropZoneArea[dropState="drag"]' in fxstyle._build_stylesheet()
 
 
 def test_a_drop_on_the_zone_adds_one_file_in_single_mode(qtbot, qapp, tmp_path):
@@ -188,7 +188,7 @@ def test_the_size_column_is_qt_s_own_format(qtbot, qapp, tmp_path):
 
 
 def test_the_labels_take_the_root_font_size():
-    sheet = fxstyle.build_stylesheet()
+    sheet = fxstyle._build_stylesheet()
     zone_rules = sheet[sheet.index("FXDropZone QWidget#FXDropZoneArea"):]
     zone_rules = zone_rules[: zone_rules.index("FXDropZoneCount")]
 

@@ -55,7 +55,7 @@ def _pixel(window, widget, x, y):
 
 
 def _frame():
-    return QColor(fxstyle.get_theme_colors()["frame"]).name()
+    return QColor(fxstyle.colors().frame).name()
 
 
 def test_a_framed_body_sits_under_the_toolbar(qtbot):
@@ -185,7 +185,7 @@ def test_a_label_in_a_plain_window_keeps_the_surface(qtbot):
     window = _window(qtbot, framed=False)
 
     assert _pixel(window, window.label, window.label.width() - 2, 1) == (
-        QColor(fxstyle.get_theme_colors()["surface"]).name())
+        QColor(fxstyle.colors().surface).name())
 
 
 def test_mark_as_frame_paints_a_band_of_your_own(qtbot):
@@ -229,9 +229,9 @@ def test_a_plain_status_bar_keeps_its_accent_and_the_line_under_it(qtbot):
     bar = window.statusBar()
 
     assert _pixel(window, bar, 0, 2) == QColor(
-        fxstyle.get_theme_colors()["accent_primary"]).name()
+        fxstyle.colors().accent_primary).name()
     assert _pixel(window, bar, bar.width() // 2, 3) == QColor(
-        fxstyle.get_theme_colors()["border"]).name()
+        fxstyle.colors().border).name()
 
 
 def test_a_status_bar_leaving_the_frame_gets_its_accent_back(qtbot):
@@ -241,7 +241,7 @@ def test_a_status_bar_leaving_the_frame_gets_its_accent_back(qtbot):
     qtbot.wait(10)
 
     assert _pixel(window, bar, 0, 1) == QColor(
-        fxstyle.get_theme_colors()["accent_primary"]).name()
+        fxstyle.colors().accent_primary).name()
 
 
 def test_a_hidden_accent_stays_hidden_when_the_bar_leaves_the_frame(qtbot):
@@ -252,9 +252,9 @@ def test_a_hidden_accent_stays_hidden_when_the_bar_leaves_the_frame(qtbot):
     qtbot.wait(10)
 
     assert _pixel(window, bar, 0, 1) != QColor(
-        fxstyle.get_theme_colors()["accent_primary"]).name()
+        fxstyle.colors().accent_primary).name()
     assert _pixel(window, bar, bar.width() // 2, 3) != QColor(
-        fxstyle.get_theme_colors()["border"]).name()
+        fxstyle.colors().border).name()
 
 
 def test_a_status_bar_set_later_is_framed_too(qtbot):

@@ -1,25 +1,21 @@
 """Tests pinning the behaviour the core modules keep after simplification."""
 
 # Built-in
-import inspect
 from pathlib import Path
 
 # Internal
 from fxgui import fxconfig, fxicons, fxstyle
 
 
-def test_the_theme_manager_is_a_plain_signal_holder(qapp):
-    received = []
-    fxstyle.theme_changed.connect(received.append)
-    try:
-        fxstyle.theme_manager.notify_theme_changed("light")
-    finally:
-        fxstyle.theme_changed.disconnect(received.append)
-
-    assert received == ["light"]
-    assert fxstyle.theme_changed is fxstyle.theme_manager.theme_changed
-    for name in ("_instance", "_initialized", "current_theme"):
-        assert not hasattr(fxstyle.FXThemeManager, name), name
+def test_one_name_per_job_in_fxstyle():
+    for name in (
+        "theme_manager", "FXThemeManager", "get_theme_colors",
+        "get_accent_colors", "get_icon_color", "get_icon_on_accent_primary",
+        "get_icon_on_accent_secondary", "replace_colors", "load_stylesheet",
+        "build_stylesheet", "set_widget_style", "WIDGET_STYLE_PROPERTY",
+        "get_contrast_text_color",
+    ):
+        assert not hasattr(fxstyle, name), name
 
 
 def test_a_theme_switch_and_a_colour_change_share_one_path(qapp, monkeypatch):
@@ -32,17 +28,12 @@ def test_a_theme_switch_and_a_colour_change_share_one_path(qapp, monkeypatch):
     assert fxstyle.get_theme() == "light"
 
 
-def test_load_stylesheet_carries_registered_fragments(qapp):
+def test_the_sheet_carries_registered_fragments(qapp):
     fxstyle.register_widget_style("FXProbeWidget { color: @accent_primary; }")
-    sheet = fxstyle.load_stylesheet(theme="dark")
+    sheet = fxstyle._build_stylesheet("dark")
 
     assert "FXProbeWidget" in sheet
-    assert sheet.endswith(fxstyle.build_stylesheet("dark"))
-    assert "background-color: transparent" in sheet[:200]
-
-
-def test_replace_colors_takes_no_prefix():
-    assert "prefix" not in inspect.signature(fxstyle.replace_colors).parameters
+    assert "@accent_primary" not in sheet
 
 
 def test_luminance_reads_any_colour_qt_reads(qapp):
@@ -68,16 +59,6 @@ def test_primary_button_fills_read_in_every_theme(qapp):
             assert ratio >= 4.5, (theme, fill)
         assert tokens["@primary_button"] != tokens["@primary_button_hover"]
         assert tokens["@primary_button_pressed"] != tokens["@primary_button"]
-
-
-def test_accent_getters_read_the_cache(qapp):
-    colors = fxstyle.colors()
-    assert fxstyle.get_accent_colors() == {
-        "primary": colors.accent_primary,
-        "secondary": colors.accent_secondary,
-    }
-    assert fxstyle.get_icon_color() == colors.icon
-    assert fxstyle.get_icon_on_accent_primary() == colors.icon_on_accent_primary
 
 
 def test_unused_icon_and_config_helpers_are_gone():

@@ -54,7 +54,7 @@ def test_matcher_is_per_instance(qapp):
 def test_match_color_is_theme_aware_not_red_green(qapp):
     """Match quality color: theme disabled-text to accent interpolation, not
     the colorblind-hostile pure red/green gradient."""
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
     poor = FXSortFilterProxyModel._match_color(0.0)
     good = FXSortFilterProxyModel._match_color(1.0)
 

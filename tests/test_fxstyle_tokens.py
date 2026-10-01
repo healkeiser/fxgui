@@ -1,5 +1,7 @@
 """Unit tests for the unified token pass in fxstyle."""
 
+import pytest
+
 from fxgui import fxstyle
 
 
@@ -65,8 +67,29 @@ def test_token_map_computes_on_accent_when_theme_omits_them(qapp, monkeypatch):
     }
     monkeypatch.setattr(fxstyle, "_colors", {**colors, "themes": themes})
     tokens = fxstyle._token_map("dark")
-    expected = fxstyle.get_contrast_text_color(
-        themes["dark"]["accent_primary"]
-    )
+    expected = fxstyle._pole_from(themes["dark"]["accent_primary"])
     assert tokens["@text_on_accent_primary"] == expected
     assert tokens["@icon_on_accent_primary"] == expected
+
+
+_TEXT_GROUNDS = ("surface", "surface_sunken", "surface_alt", "well", "frame",
+                 "tooltip", "state_hover")
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+def test_every_text_ink_reads_on_every_surface_it_sits_on(qapp, theme):
+    colors = fxstyle._colour_tokens(theme)
+    ratio = fxstyle.get_contrast_ratio
+    for ground in _TEXT_GROUNDS:
+        assert ratio(colors["text"], colors[ground]) >= 4.5, ground
+        assert ratio(colors["text_muted"], colors[ground]) >= 4.5, ground
+    # A pressed or checked fill carries text, never muted text.
+    assert ratio(colors["text"], colors["state_pressed"]) >= 4.5
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+def test_a_pressed_fill_stands_off_the_hover_fill(qapp, theme):
+    colors = fxstyle._colour_tokens(theme)
+    assert fxstyle.get_contrast_ratio(
+        colors["state_pressed"], colors["state_hover"]
+    ) >= fxstyle.STATE_MIN_CONTRAST

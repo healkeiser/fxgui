@@ -33,7 +33,7 @@ def _hex(*colours: str) -> set:
 
 
 def _receivers() -> int:
-    return fxstyle.theme_manager.receivers(SIGNAL("theme_changed(QString)"))
+    return fxstyle._signals.receivers(SIGNAL("theme_changed(QString)"))
 
 
 def test_a_token_ink_is_read_when_the_icon_is_drawn(qapp):

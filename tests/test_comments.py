@@ -184,7 +184,7 @@ def test_the_line_wears_the_theme_s_border_after_a_switch(qtbot):
     fxstyle.apply_theme("light")
     pixel = drawn.grab().toImage().pixelColor(x, y)
 
-    assert pixel == QColor(fxstyle.get_theme_colors()["border"])
+    assert pixel == QColor(fxstyle.colors().border)
     assert drawn.testAttribute(Qt.WA_TransparentForMouseEvents)
 
 

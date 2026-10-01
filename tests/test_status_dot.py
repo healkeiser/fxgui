@@ -14,7 +14,7 @@ FEEDBACK = ("success", "warning", "error", "info", "debug")
 
 
 def _ink(key):
-    return QColor(fxstyle.get_theme_colors()[f"feedback_{key}_foreground"])
+    return QColor(dict(vars(fxstyle.colors()))[f"feedback_{key}_foreground"])
 
 
 def _grayed(dot):

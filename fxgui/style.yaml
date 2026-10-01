@@ -15,35 +15,6 @@
 # =============================================================================
 
 # =============================================================================
-# FEEDBACK COLORS
-# =============================================================================
-# Status and notification colors used by FXNotificationBanner, FXLogWidget,
-# and other feedback-related widgets.
-#
-# Each level has two colors:
-#   - foreground: Text/icon color for the message
-#   - background: Background color for the notification/log entry
-#
-# ! Deprecated, these are now defined within each theme
-
-feedback:
-  debug:
-    foreground: "#26C6DA"
-    background: "#006064"
-  info:
-    foreground: "#7661f6"
-    background: "#372d75"
-  success:
-    foreground: "#8ac549"
-    background: "#466425"
-  warning:
-    foreground: "#ffbb33"
-    background: "#7b5918"
-  error:
-    foreground: "#ff4444"
-    background: "#7b2323"
-
-# =============================================================================
 # DCC INTEGRATION COLORS
 # =============================================================================
 # Branding colors for Digital Content Creation software.
@@ -58,8 +29,6 @@ dcc:
   blender: "#eb7a08"
   cinema4d: "#6796fa"
   redshift: "#f94067"
-  # Deprecated alias (typo), kept for backward compatibility
-  redshit: "#f94067"
 
 
 # =============================================================================
@@ -120,8 +89,8 @@ fonts:
 # COLOR REFERENCE:
 #
 # Accent Colors:
-#   accent_primary    - Primary interactive color (hover borders, selections, progress bars)
-#   accent_secondary  - Secondary interactive color (gradients, item hovers)
+#   accent_primary    - Selection, keyboard focus, the current item, the primary action
+#   accent_secondary  - A primary button's hover fill and a pressed menu item
 #
 # Surface Colors (Backgrounds):
 #   surface           - Main widget/window backgrounds
@@ -139,15 +108,19 @@ fonts:
 #   border_strong     - Emphasized borders (frames, separators)
 #
 # Text Colors:
-#   text              - Primary text
-#   text_muted        - Secondary/de-emphasized text
+#   text              - Primary text; darkened or lightened to 4.5:1 on every surface and state fill
+#   text_muted        - Secondary text and inactive tabs; held to 4.5:1 as text is, except on state_pressed
 #   text_disabled     - Disabled widget text
 #   text_on_accent_primary   - (Optional) Text on accent_primary backgrounds, auto-computed if omitted
 #   text_on_accent_secondary - (Optional) Text on accent_secondary backgrounds, auto-computed if omitted
 #
 # Interactive State Colors:
-#   state_hover       - Hover state backgrounds
-#   state_pressed     - Pressed/checked/active backgrounds
+#   state_hover       - Hover fill of rows, buttons and tool buttons; the current tab
+#   state_pressed     - Pressed and checked fills; pushed to 1.2:1 from state_hover
+#
+# Shadow:
+#   shadow            - Colour of a floating card's drop shadow, #AARRGGBB
+#   shadow_blur       - Its blur radius in pixels
 #
 # Scrollbar Colors:
 #   scrollbar_track       - Scrollbar track/gutter
@@ -156,11 +129,6 @@ fonts:
 #
 # Layout Colors:
 #   grid              - Table/header gridlines
-#   separator         - Separator/splitter hover backgrounds
-#
-# Slider Colors:
-#   slider_thumb       - Slider handle color
-#   slider_thumb_hover - Slider handle hover/pressed
 #
 # Icon Colors:
 #   icon                     - Tint color for monochrome icons
@@ -206,11 +174,11 @@ themes:
 
     # Layout
     grid: "#4a4949"
-    separator: "#787876"
 
-    # Slider
-    slider_thumb: "#bbbbbb"
-    slider_thumb_hover: "#ffffff"
+
+    # Shadow
+    shadow: "#50000000"
+    shadow_blur: 20
 
     # Icon colors
     icon: "#b4b4b4"
@@ -271,11 +239,11 @@ themes:
 
     # Layout
     grid: "#bdbdbd"
-    separator: "#424242"
 
-    # Slider
-    slider_thumb: "#ffffff"
-    slider_thumb_hover: "#616161"
+
+    # Shadow
+    shadow: "#28000000"
+    shadow_blur: 20
 
     # Icon colors
     icon: "#424242"
@@ -340,11 +308,7 @@ themes:
 
     # Override layout
     grid: "#6272a4"
-    separator: "#6272a4"
 
-    # Override slider
-    slider_thumb: "#f8f8f2"
-    slider_thumb_hover: "#ffffff"
 
     # Override icon colors
     icon: "#f8f8f2"
@@ -391,11 +355,7 @@ themes:
 
     # Override layout
     grid: "#4b5263"
-    separator: "#5c6370"
 
-    # Override slider
-    slider_thumb: "#abb2bf"
-    slider_thumb_hover: "#d7dae0"
 
     # Override icon colors
     icon: "#abb2bf"
@@ -442,11 +402,7 @@ themes:
 
     # Override layout
     grid: "#30363d"
-    separator: "#484f58"
 
-    # Override slider
-    slider_thumb: "#8b949e"
-    slider_thumb_hover: "#e6edf3"
 
     # Override icon colors
     icon: "#8b949e"
@@ -493,11 +449,7 @@ themes:
 
     # Override layout
     grid: "#d0d7de"
-    separator: "#afb8c1"
 
-    # Override slider
-    slider_thumb: "#656d76"
-    slider_thumb_hover: "#1f2328"
 
     # Override icon colors
     icon: "#656d76"
@@ -544,11 +496,7 @@ themes:
 
     # Override layout
     grid: "#45475a"
-    separator: "#585b70"
 
-    # Override slider
-    slider_thumb: "#a6adc8"
-    slider_thumb_hover: "#cdd6f4"
 
     # Override icon colors
     icon: "#cdd6f4"
@@ -595,11 +543,7 @@ themes:
 
     # Override layout
     grid: "#bcc0cc"
-    separator: "#9ca0b0"
 
-    # Override slider
-    slider_thumb: "#6c6f85"
-    slider_thumb_hover: "#4c4f69"
 
     # Override icon colors
     icon: "#4c4f69"
@@ -646,11 +590,7 @@ themes:
 
     # Override layout
     grid: "#434c5e"
-    separator: "#4c566a"
 
-    # Override slider
-    slider_thumb: "#d8dee9"
-    slider_thumb_hover: "#eceff4"
 
     # Override icon colors
     icon: "#d8dee9"
@@ -697,11 +637,7 @@ themes:
 
     # Override layout
     grid: "#424242"
-    separator: "#546e7a"
 
-    # Override slider
-    slider_thumb: "#b0bec5"
-    slider_thumb_hover: "#eeffff"
 
     # Override icon colors
     icon: "#b0bec5"
@@ -739,7 +675,7 @@ themes:
 
     # Override interactive states
     state_hover: "#eee8d5"
-    state_pressed: "#93a1a1"
+    state_pressed: "#ddd6c1"
 
     # Override scrollbar
     scrollbar_track: "#eee8d5"
@@ -748,11 +684,7 @@ themes:
 
     # Override layout
     grid: "#93a1a1"
-    separator: "#839496"
 
-    # Override slider
-    slider_thumb: "#839496"
-    slider_thumb_hover: "#657b83"
 
     # Override icon colors
     icon: "#657b83"

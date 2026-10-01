@@ -16,7 +16,7 @@ class _Listener(QWidget):
 
 
 def _receivers() -> int:
-    return fxstyle.theme_manager.receivers(SIGNAL("theme_changed(QString)"))
+    return fxstyle._signals.receivers(SIGNAL("theme_changed(QString)"))
 
 
 def _settled() -> int:

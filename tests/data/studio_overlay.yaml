@@ -27,8 +27,6 @@ themes:
     scrollbar_thumb_hover: "#6A7689"
     grid: "#3D444F"
     separator: "#6A7689"
-    slider_thumb: "#9AA3B0"
-    slider_thumb_hover: "#E4E6EA"
     icon: "#9AA3B0"
     feedback:
       debug:
