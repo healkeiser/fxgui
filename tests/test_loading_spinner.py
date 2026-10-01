@@ -1,9 +1,12 @@
-"""FXLoadingSpinner idles while hidden; FXLoadingOverlay follows its parent."""
+"""FXLoadingSpinner idles while hidden and reads in every theme; the overlay
+follows its parent."""
 
 # Third-party
-from qtpy.QtWidgets import QWidget
+import pytest
+from qtpy.QtWidgets import QPushButton, QWidget
 
 # Internal
+from fxgui import fxstyle
 from fxgui.fxwidgets import FXLoadingOverlay, FXLoadingSpinner
 
 
@@ -148,3 +151,37 @@ def test_the_overlay_spinner_takes_a_size(qtbot):
     overlay = FXLoadingOverlay(parent, size=32)
 
     assert overlay._spinner.size().width() == 32
+
+
+def _inks(spinner):
+    """Return every opaque colour the spinner draws, by count."""
+    image = spinner.grab().toImage()
+    found = {}
+    for y in range(image.height()):
+        for x in range(image.width()):
+            color = image.pixelColor(x, y)
+            if color.alpha() == 255:
+                found[color.name()] = found.get(color.name(), 0) + 1
+    return found
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+@pytest.mark.parametrize("style", ["spinner", "dots", "pulse"])
+def test_the_spinner_moves_in_the_accent_over_a_muted_track(qtbot, theme, style):
+    fxstyle.apply_theme(theme)
+    spinner = FXLoadingSpinner(style=style)
+    qtbot.addWidget(spinner)
+    inks = _inks(spinner)
+    colors = fxstyle.colors()
+    assert inks.get(colors.accent_primary.lower(), 0) > 0, "no accent part"
+    assert inks.get(colors.border_light.lower(), 0) > 0, "no muted track"
+    # The moving part reads on the surface at a control's 3:1.
+    ratio = fxstyle.get_contrast_ratio(colors.accent_primary, colors.surface)
+    assert ratio >= fxstyle.CONTROL_CONTRAST
+
+
+def test_the_spinner_is_as_tall_as_a_button_by_default(qtbot):
+    spinner, button = FXLoadingSpinner(), QPushButton("x")
+    qtbot.addWidget(spinner)
+    qtbot.addWidget(button)
+    assert spinner.height() == fxstyle.control_height(button)
