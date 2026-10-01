@@ -222,7 +222,12 @@ leave `FXThemeAware`.
 - Delegate hover: one look, @accent_secondary as plain lists use.
 - Order hang: `pytest -p no:randomly tests/test_gallery.py
   tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
-  533 s slow seed. Fix in the test clean-up group, at its cause.
+  533 s slow seed. Fix in the test clean-up group, at its cause. Lead:
+  deleteLater does nothing without an event loop, so closed windows pile
+  up and every later theme switch restyles them (t5c-switch measured
+  ~1,600 leftover widgets per gallery; 23b68dfa fixed its own file with
+  sendPostedEvents(None, QEvent.DeferredDelete)). conftest should flush
+  deferred deletes after every test.
 - ruff F841 in tests/test_collapsible_geometry.py and
   tests/test_style_cascade.py; run `ruff check --select F,B,BLE` over the
   whole repo and the suite under pytest-randomly before release.
