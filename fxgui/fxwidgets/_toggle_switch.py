@@ -139,13 +139,13 @@ class FXToggleSwitch(QAbstractButton):
         on = self._custom_on_color or reads(
             theme.primary_button_hover if hovered else theme.accent_primary
         )
-        off = self._custom_off_color or theme.surface_sunken
+        off = self._custom_off_color or (
+            theme.state_hover if hovered else theme.surface_sunken
+        )
         position = self._position
         fill = fxstyle.mix(off, on, position)
         if fxstyle.focus_visible(self):
             edge = theme.text if self.isChecked() else reads(theme.accent_primary)
-        elif hovered and not self.isChecked():
-            edge = reads(theme.accent_primary)
         else:
             edge = fxstyle.mix(theme.control_edge, on, position)
         thumb = self._custom_thumb_color or fxstyle.mix(

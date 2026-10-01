@@ -113,6 +113,18 @@ def test_the_description_font_is_one_step_smaller_in_pixels(qtbot):
     assert delegate._description_font(option).pixelSize() == 19
 
 
+
+def test_the_delegate_s_type_is_the_body_weight_and_600_only(qtbot):
+    """Title 600; metadata one step, 11 px at 12; badge 10 px at 12, 600."""
+    option = QStyleOptionViewItem()
+    font = QFont()
+    font.setPixelSize(12)
+    option.font = font
+    FXThumbnailDelegate._badge_fonts.clear()
+    assert FXThumbnailDelegate._title_font(option).weight() == QFont.DemiBold
+    assert FXThumbnailDelegate._description_font(option).pixelSize() == 11
+    badge = FXThumbnailDelegate._badge_font(option)
+    assert (badge.pixelSize(), badge.weight()) == (10, QFont.DemiBold)
 def test_every_role_is_claimed_once_from_one_table():
     from fxgui.fxwidgets import _roles
 
@@ -254,24 +266,52 @@ def test_a_status_label_ink_reads_on_its_fill(qtbot):
     assert best >= 4.5
 
 
-def test_a_hovered_row_wears_the_one_hover_look(qtbot):
+def _paint_row(qtbot, state, text="Asset"):
+    """Paint one plain row in `state` and return the canvas and the tree."""
     tree, delegate = _tree(qtbot)
-    item = QTreeWidgetItem(tree, ["Asset"])
+    item = QTreeWidgetItem(tree, [text])
     item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, False)
-    index = tree.model().index(0, 0)
     option = QStyleOptionViewItem()
     option.rect = QRect(0, 0, 120, 28)
-    option.state = QStyle.State_Enabled | QStyle.State_MouseOver
+    option.state = QStyle.State_Enabled | state
     option.widget = tree
+    option.palette = tree.palette()
     canvas = QImage(120, 28, QImage.Format_RGB32)
+    canvas.fill(QColor("#123456"))
     painter = QPainter(canvas)
     try:
-        delegate.paint(painter, option, index)
+        delegate.paint(painter, option, tree.model().index(0, 0))
     finally:
         painter.end()
+    return canvas, tree
+
+
+def test_a_hovered_row_is_the_neutral_hover_fill_not_an_accent(qtbot):
+    canvas, _ = _paint_row(qtbot, QStyle.State_MouseOver, text="")
+    colors = fxstyle.colors()
+    seen = canvas.pixelColor(110, 14).name()
+    assert seen == QColor(colors.state_hover).name()
+    assert seen not in (
+        QColor(colors.accent_primary).name(),
+        QColor(colors.accent_secondary).name(),
+    )
+
+
+def test_a_hovered_row_keeps_its_text_ink():
+    option = QStyleOptionViewItem()
+    option.state = QStyle.State_Enabled | QStyle.State_MouseOver
+    assert (
+        FXThumbnailDelegate._text_color(option).name()
+        == option.palette.text().color().name()
+    )
+
+
+def test_a_selected_row_keeps_the_accent_in_a_view_without_focus(qtbot):
+    canvas, tree = _paint_row(qtbot, QStyle.State_Selected, text="")
+    assert not tree.hasFocus()
     assert (
         canvas.pixelColor(110, 14).name()
-        == QColor(fxstyle.colors().accent_secondary).name()
+        == QColor(fxstyle.colors().accent_primary).name()
     )
 
 

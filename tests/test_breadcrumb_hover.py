@@ -115,8 +115,10 @@ def test_the_segment_the_path_is_already_at_promises_nothing(qtbot, qapp):
     assert _corner(last, True) == _corner(last, False)
 
 
-def test_the_tint_is_the_themes_accent_rather_than_a_hex(qtbot, qapp):
-    """A studio theme governs what a hovered segment looks like."""
+def test_the_tint_is_a_neutral_theme_ink_rather_than_a_hex(qtbot, qapp):
+    """A hovered segment is a neutral tint of the theme's text, never the
+    accent, which marks focus and selection."""
+    assert FXBreadcrumb.SEGMENT_HOVER_TOKEN == "text"
     crumb = _crumb(qtbot)
     colors = fxstyle.get_theme_colors()
     expected = _tinted(

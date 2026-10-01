@@ -25,7 +25,6 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
-from fxgui.fxwidgets._delegates import FXItemDelegate
 from fxgui.fxwidgets._labels import FXIconLabel
 
 
@@ -145,7 +144,7 @@ class FXDropZone(QWidget):
         self._drop_area.setProperty("dropState", "idle")
 
         drop_layout = QVBoxLayout(self._drop_area)
-        drop_layout.setContentsMargins(20, 20, 20, 20)
+        drop_layout.setContentsMargins(16, 16, 16, 16)
         drop_layout.setSpacing(8)
         drop_layout.addStretch(1)
 
@@ -191,7 +190,6 @@ class FXDropZone(QWidget):
             header.setSectionResizeMode(0, QHeaderView.Stretch)
             header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-            self._file_tree.setItemDelegate(FXItemDelegate(self._file_tree))
             self._file_tree.setVisible(False)
             self._file_tree.setContextMenuPolicy(Qt.CustomContextMenu)
             self._file_tree.customContextMenuRequested.connect(
@@ -544,7 +542,7 @@ FXDropZone QLabel#FXDropZoneIcon {
 }
 FXDropZone QLabel#FXDropZoneTitle {
     color: @text;
-    font-weight: bold;
+    font-weight: 600;
     background: transparent;
     border: none;
 }

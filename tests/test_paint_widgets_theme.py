@@ -65,3 +65,25 @@ def test_rating_hover_redraws_only_when_the_star_changes(qtbot, monkeypatch):
         ))
 
     assert len(drawn) == 1
+
+
+def test_a_rating_s_hover_preview_is_drawn_in_text_not_an_accent(
+    qtbot, monkeypatch
+):
+    """The accent marks the set value; a preview under the pointer is the
+    neutral ink."""
+    from fxgui import fxicons
+
+    rating = FXRatingWidget(initial_rating=1, icon_size=20)
+    qtbot.addWidget(rating)
+    inks = []
+    real = fxicons.get_icon
+    monkeypatch.setattr(
+        fxicons, "get_icon",
+        lambda name, **kw: (inks.append(kw.get("color")), real(name, **kw))[1],
+    )
+    rating._hover(3)
+    assert inks[:3] == ["text"] * 3
+    inks.clear()
+    rating._hover(None)
+    assert inks[0] == "accent_primary"

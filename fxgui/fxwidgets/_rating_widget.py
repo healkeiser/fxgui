@@ -126,11 +126,8 @@ class FXRatingWidget(QWidget):
             if self._hover_rating is not None
             else self._rating
         )
-        color = (
-            "accent_secondary"
-            if self._hover_rating is not None
-            else "accent_primary"
-        )
+        # The accent is the set value; a preview under the pointer is not.
+        color = "text" if self._hover_rating is not None else "accent_primary"
 
         for i, star in enumerate(self._stars):
             star_value = i + 1

@@ -15,10 +15,7 @@ from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 from fxgui.fxwidgets._command_palette import FXCommand, FXCommandPalette
 from fxgui.fxwidgets._comments import FXMentionEdit, FXThreadLine
 from fxgui.fxwidgets._confirm_delete import FXConfirmDeleteDialog
-from fxgui.fxwidgets._delegates import (
-    FXItemDelegate,
-    FXThumbnailDelegate,
-)
+from fxgui.fxwidgets._delegates import FXThumbnailDelegate
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
 from fxgui.fxwidgets._drop_zone import FXDropZone
 from fxgui.fxwidgets._emoji_picker import (
@@ -119,7 +116,6 @@ __all__ = [
     "FXIconButton",
     "FXIconLabel",
     "FXIconLineEdit",
-    "FXItemDelegate",
     "FXJoinedGroup",
     "FXKeyboardTree",
     "FXKeycap",

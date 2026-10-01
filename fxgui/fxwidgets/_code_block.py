@@ -261,7 +261,6 @@ class FXCodeBlock(QWidget):
 fxstyle.register_widget_style("""
 FXCodeBlock QTextEdit {
     font-family: @font_mono;
-    font-size: 9pt;
     padding: 8px;
 }
 """)

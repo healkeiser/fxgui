@@ -86,9 +86,9 @@ def _emoji_name(emoji: str) -> str:
 
 fxstyle.register_widget_style(f"""
 FXEmojiPicker {{
-    background-color: @surface_sunken;
+    background-color: @surface;
     border: 1px solid @border;
-    border-radius: @button_radius;
+    border-radius: @card_radius;
 }}
 FXEmojiPicker QToolButton {{
     border: 1px solid transparent;
@@ -97,9 +97,11 @@ FXEmojiPicker QToolButton {{
     padding: 0px;
     font-size: {_EMOJI_PIXELS}px;
 }}
-FXEmojiPicker QToolButton:hover,
-FXEmojiPicker QToolButton[fxFocusVisible="true"]:focus {{
+FXEmojiPicker QToolButton:hover {{
     background-color: @state_hover;
+    border-color: transparent;
+}}
+FXEmojiPicker QToolButton[fxFocusVisible="true"]:focus {{
     border: 1px solid @accent_primary;
 }}
 """)

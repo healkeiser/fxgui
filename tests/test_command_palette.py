@@ -269,8 +269,9 @@ def test_the_palette_wears_a_popup_frame(qtbot, theme):
     middle = palette.height() // 2
     assert image.pixelColor(palette.width() // 2, 0).name() == border
     assert image.pixelColor(0, middle).name() == border
-    # Rounded at the radius: the corner pixel is not the edge.
-    assert image.pixelColor(fxstyle.BUTTON_RADIUS + 1, 0).name() == border
+    # Rounded at the card radius, a popup's: the corner pixel is not the edge.
+    assert image.pixelColor(fxstyle.CARD_RADIUS + 1, 0).name() == border
+    assert image.pixelColor(fxstyle.BUTTON_RADIUS, 0).name() != border
     assert image.pixelColor(0, 0).name() != border
 
 

@@ -98,7 +98,6 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXIconButton` | Round icon button; checkable, filled with the accent when checked |
 | `FXIconLabel` | Label that draws an icon in the theme's colours at paint time |
 | `FXIconLineEdit` | Line edit with an icon on the left or right |
-| `FXItemDelegate` | Item delegate that switches icons to their hover and selected looks |
 | `FXJoinedGroup` | Widgets side by side in one pill outline, such as a status and a Post button |
 | `FXKeyboardTree` | Tree whose row menus, Enter and typing work from the keyboard |
 | `FXKeycap` | A shortcut drawn as keys, one cap per key, round at the button radius; follows every theme switch |

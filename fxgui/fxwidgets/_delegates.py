@@ -90,14 +90,26 @@ def _style(widget: Optional[QWidget]) -> QStyle:
     return widget.style() if widget is not None else QApplication.style()
 
 
+def _smaller(font: QFont, pixels: int) -> QFont:
+    """Return `font` `pixels` px smaller, in its own unit, 8 px at least."""
+    font = QFont(font)
+    if font.pointSizeF() > 0:
+        # 96 dpi: 1 px is 0.75 pt.
+        font.setPointSizeF(max(6.0, font.pointSizeF() - 0.75 * pixels))
+    else:
+        font.setPixelSize(max(8, font.pixelSize() - pixels))
+    return font
+
+
 def _paint_icon(
     painter: QPainter, icon: QIcon, rect: QRect, state
 ) -> None:
-    """Paint an icon in the mode its row's selection or hover asks for."""
+    """Paint an icon in Selected mode on a selected row, else Normal.
+
+    A hovered row keeps its Normal ink: its fill is neutral, not an accent.
+    """
     if state & QStyle.State_Selected:
         icon.paint(painter, rect, Qt.AlignCenter, QIcon.Selected, QIcon.On)
-    elif state & QStyle.State_MouseOver:
-        icon.paint(painter, rect, Qt.AlignCenter, QIcon.Active, QIcon.On)
     else:
         icon.paint(painter, rect)
 
@@ -125,43 +137,6 @@ def _fallback_source() -> QPixmap:
 def _mark(name: str, token: str) -> QIcon:
     """Return a check box mark; its token is read each time it is drawn."""
     return fxicons.get_icon(name, color=token)
-
-
-class FXItemDelegate(QStyledItemDelegate):
-    """A drop-in item delegate whose icons switch to Active on hover.
-
-    Qt's own painting only uses `QIcon.Selected`, for selected items.
-
-    Examples:
-        >>> list_widget = QListWidget()
-        >>> list_widget.setItemDelegate(fxwidgets.FXItemDelegate())
-    """
-
-    def paint(
-        self,
-        painter: QPainter,
-        option: QStyleOptionViewItem,
-        index: QModelIndex,
-    ) -> None:
-        icon = index.data(Qt.DecorationRole)
-        if (
-            icon is None
-            or icon.isNull()
-            or not option.state & (QStyle.State_Selected | QStyle.State_MouseOver)
-        ):
-            super().paint(painter, option, index)
-            return
-
-        opt = QStyleOptionViewItem(option)
-        self.initStyleOption(opt, index)
-        style = _style(opt.widget)
-        # Everything but the icon, which is painted below in its mode.
-        opt.icon = QIcon()
-        style.drawControl(QStyle.CE_ItemViewItem, opt, painter, opt.widget)
-        icon_rect = style.subElementRect(
-            QStyle.SE_ItemViewItemDecoration, opt, opt.widget
-        )
-        _paint_icon(painter, icon, icon_rect, option.state)
 
 
 class _DelegateOwnsTheRow(QProxyStyle):
@@ -542,29 +517,22 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     @staticmethod
     def _text_color(option: QStyleOptionViewItem) -> QColor:
-        """Return the text colour for the row's selection or hover."""
+        """Return the text colour for the row's selection; hover keeps it."""
         if option.state & QStyle.State_Selected:
             return option.palette.highlightedText().color()
-        if option.state & QStyle.State_MouseOver:
-            return QColor(fxstyle.colors().text_on_accent_secondary)
         return option.palette.text().color()
 
     @staticmethod
     def _title_font(option: QStyleOptionViewItem) -> QFont:
-        """Return the bold variant of the item's font."""
+        """Return the item's font at weight 600."""
         font = QFont(option.font)
-        font.setBold(True)
+        font.setWeight(QFont.DemiBold)
         return font
 
     @staticmethod
     def _description_font(option: QStyleOptionViewItem) -> QFont:
-        """Return the item's font one step smaller, in its own unit."""
-        font = QFont(option.font)
-        if font.pointSizeF() > 0:
-            font.setPointSizeF(max(8.0, font.pointSizeF() - 1))
-        else:
-            font.setPixelSize(max(10, font.pixelSize() - 1))
-        return font
+        """Return the item's font 1 px smaller, the metadata rank."""
+        return _smaller(option.font, 1)
 
     def _description(self, index: QModelIndex) -> str:
         """Return the row's description as plain text, or ""."""
@@ -663,17 +631,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     @classmethod
     def _badge_font(cls, option: QStyleOptionViewItem) -> QFont:
-        """Return the item's font two points smaller and bold, cached per font."""
+        """Return the item's font 2 px smaller at 600, cached per font."""
         base = option.font
         key = base.key()
         font = cls._badge_fonts.get(key)
         if font is None:
-            font = QFont(base)
-            font.setBold(True)
-            if base.pointSizeF() > 0:
-                font.setPointSizeF(max(6.0, base.pointSizeF() - 2))
-            else:
-                font.setPixelSize(max(8, base.pixelSize() - 3))
+            font = _smaller(base, 2)
+            font.setWeight(QFont.DemiBold)
             cls._badge_fonts[key] = font
         return font
 
@@ -994,11 +958,11 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         ends: Tuple[bool, bool],
     ) -> None:
         """Fill a selected cell with `accent_primary`, a hovered one with
-        `accent_secondary`, as the stylesheet does for plain item views."""
+        `state_hover`, as the stylesheet does for plain item views."""
         if option.state & QStyle.State_Selected:
             fill = QColor(fxstyle.colors().accent_primary)
         elif option.state & QStyle.State_MouseOver:
-            fill = QColor(fxstyle.colors().accent_secondary)
+            fill = QColor(fxstyle.colors().state_hover)
         else:
             return
         rect_f = QRectF(rect)
