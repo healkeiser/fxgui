@@ -38,9 +38,9 @@ def test_the_sort_column_s_own_key_is_read(qtbot):
     assert _sorted(qtbot, rows, column=1) == ["small", "big"]
 
 
-def test_a_row_without_a_key_falls_back_to_text(qtbot):
-    rows = [(["b", ""], 1), (["a", ""], None)]
-    assert _sorted(qtbot, rows) == ["a", "b"]
+def test_rows_without_a_key_sort_after_the_keyed_ones_by_text(qtbot):
+    rows = [(["d", ""], None), (["b", ""], 1), (["c", ""], None)]
+    assert _sorted(qtbot, rows) == ["b", "c", "d"]
 
 
 def test_an_item_outside_a_tree_compares_column_zero():

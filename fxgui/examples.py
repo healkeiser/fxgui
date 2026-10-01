@@ -453,7 +453,6 @@ def _thumbnail_tree() -> QTreeWidget:
         top = QTreeWidgetItem(tree, [episode, "", "In progress"])
         top.setIcon(0, get_icon("movie"))
         top.setData(0, delegate.DESCRIPTION_ROLE, "Episode")
-        top.setData(0, delegate.STARRED_ROLE, episode == "ep101")
         # A token name, so each card follows every theme switch.
         top.setData(0, Qt.BackgroundRole, "surface")
         for shot, status, key in (
@@ -477,13 +476,9 @@ def _thumbnail_tree() -> QTreeWidget:
 
 
 def _lists_page() -> QWidget:
-    fuzzy_list = fxwidgets.FXFuzzySearchList(
-        placeholder="Search shots...", show_ratio_slider=True
+    fuzzy_tree = fxwidgets.FXFuzzySearchTree(
+        placeholder="Search assets...", show_ratio_slider=True
     )
-    fuzzy_list.set_items([f"sh{number:04d}" for number in range(10, 200, 10)])
-    fuzzy_list.setMinimumHeight(180)
-
-    fuzzy_tree = fxwidgets.FXFuzzySearchTree(placeholder="Search assets...")
     for category, assets in (
         ("Characters", ("hero_body", "hero_head", "villain")),
         ("Vehicles", ("car_sports", "truck_pickup")),
@@ -525,41 +520,12 @@ def _lists_page() -> QWidget:
         icon_list.addItem(QListWidgetItem(get_icon(icon_name), text))
     icon_list.setFixedHeight(100)
 
-    labels = QTreeWidget()
-    labels.setHeaderHidden(True)
-    labels.setRootIsDecorated(False)
-    labels.setItemDelegate(
-        fxwidgets.FXColorLabelDelegate(
-            {
-                key: (
-                    f"feedback_{key}_background",
-                    f"feedback_{key}_foreground",
-                    f"feedback_{key}_foreground",
-                    get_icon(icon_name),
-                    True,
-                )
-                for key, icon_name in (
-                    ("success", "check_circle"),
-                    ("warning", "warning"),
-                    ("error", "error"),
-                    ("info", "info"),
-                )
-            },
-            labels,
-        )
-    )
-    for text in ("Success", "Warning", "Error", "Info", "Unknown"):
-        QTreeWidgetItem(labels, [text])
-    labels.setFixedHeight(140)
-
     return _page(
-        _section("FXFuzzySearchList", fuzzy_list),
         _section("FXFuzzySearchTree", fuzzy_tree),
         _section("FXFilteredTree / FXKeyboardTree", filtered),
         _section("FXSortedTreeWidgetItem", sorted_tree),
         _section("FXThumbnailDelegate", _thumbnail_tree()),
         _section("FXItemDelegate", icon_list),
-        _section("FXColorLabelDelegate", labels),
     )
 
 

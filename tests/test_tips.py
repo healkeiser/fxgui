@@ -365,7 +365,7 @@ def test_migrated_widgets_use_native_tooltips(qtbot):
     from fxgui.fxwidgets import (
         FXBreadcrumb,
         FXFilePathWidget,
-        FXFuzzySearchList,
+        FXFuzzySearchTree,
     )
 
     breadcrumb = FXBreadcrumb(show_navigation=True)
@@ -378,7 +378,7 @@ def test_migrated_widgets_use_native_tooltips(qtbot):
     qtbot.addWidget(path_widget)
     assert "<b>Browse</b>" in path_widget._browse_btn.toolTip()
 
-    search_list = FXFuzzySearchList(show_ratio_slider=True)
+    search_list = FXFuzzySearchTree(show_ratio_slider=True)
     qtbot.addWidget(search_list)
     assert "<b>Sensitivity</b>" in search_list._ratio_icon.toolTip()
     assert "<b>Match Threshold</b>" in search_list._ratio_slider.toolTip()
@@ -393,7 +393,6 @@ def test_no_widget_owns_both_a_native_and_an_fxtooltip(qtbot):
     from fxgui.fxwidgets import (
         FXBreadcrumb,
         FXFilePathWidget,
-        FXFuzzySearchList,
         FXFuzzySearchTree,
         FXOutputLogWidget,
         FXTimelineSlider,
@@ -402,7 +401,6 @@ def test_no_widget_owns_both_a_native_and_an_fxtooltip(qtbot):
     roots = [
         FXBreadcrumb(show_navigation=True),
         FXFilePathWidget(),
-        FXFuzzySearchList(show_ratio_slider=True),
         FXFuzzySearchTree(show_ratio_slider=True),
         FXOutputLogWidget(),
         FXTimelineSlider(
@@ -449,7 +447,6 @@ def test_every_migrated_tooltip_kept_its_wording(qtbot):
     from fxgui.fxwidgets import (
         FXBreadcrumb,
         FXFilePathWidget,
-        FXFuzzySearchList,
         FXFuzzySearchTree,
         FXOutputLogWidget,
         FXTimelineSlider,
@@ -465,14 +462,6 @@ def test_every_migrated_tooltip_kept_its_wording(qtbot):
         ],
         "FXFilePathWidget": [
             ("Browse", "Open file browser to select a path"),
-        ],
-        "FXFuzzySearchList": [
-            ("Sensitivity", "Adjust fuzzy matching sensitivity"),
-            (
-                "Match Threshold",
-                "Lower = more results (looser match), Higher = fewer "
-                "results (stricter match)",
-            ),
         ],
         "FXFuzzySearchTree": [
             ("Sensitivity", "Adjust fuzzy matching sensitivity"),
@@ -513,7 +502,6 @@ def test_every_migrated_tooltip_kept_its_wording(qtbot):
     roots = {
         "FXBreadcrumb": FXBreadcrumb(show_navigation=True),
         "FXFilePathWidget": FXFilePathWidget(),
-        "FXFuzzySearchList": FXFuzzySearchList(show_ratio_slider=True),
         "FXFuzzySearchTree": FXFuzzySearchTree(show_ratio_slider=True),
         "FXOutputLogWidget": FXOutputLogWidget(),
         "FXTimelineSlider": FXTimelineSlider(

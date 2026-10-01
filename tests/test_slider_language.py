@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXFuzzySearchList, FXFuzzySearchTree
+from fxgui.fxwidgets import FXFuzzySearchTree
 
 
 def _plain():
@@ -64,8 +64,8 @@ def _parts(qtbot, theme, enabled=True, make=_plain):
 @pytest.mark.parametrize("theme", fxstyle.get_available_themes())
 @pytest.mark.parametrize(
     "make",
-    [_plain, _in(FXFuzzySearchList), _in(FXFuzzySearchTree)],
-    ids=["QSlider", "FXFuzzySearchList", "FXFuzzySearchTree"],
+    [_plain, _in(FXFuzzySearchTree)],
+    ids=["QSlider", "FXFuzzySearchTree"],
 )
 def test_a_slider_reads_in_every_theme(qtbot, theme, make):
     parts = _parts(qtbot, theme, make=make)

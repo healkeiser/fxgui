@@ -145,7 +145,7 @@ def test_the_dead_icon_api_is_gone():
     ):
         assert not hasattr(fxicons, name), name
         assert name not in fxicons.__all__, name
-    assert "change_pixmap_color" not in fxicons.__all__
+    assert not hasattr(fxicons, "change_pixmap_color")
     assert "badged" in fxicons.__all__
 
 

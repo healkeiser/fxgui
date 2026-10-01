@@ -26,7 +26,7 @@ def _paint(qtbot, draw, position):
     try:
         if draw == "card":
             delegate._draw_background_and_border(
-                painter, option, QModelIndex(), _FILL, position
+                painter, option, _FILL, position
             )
         else:
             delegate._draw_focus_indicator(

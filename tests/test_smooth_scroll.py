@@ -22,7 +22,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXDropZone, FXFuzzySearchList, FXFuzzySearchTree
+from fxgui.fxwidgets import FXDropZone, FXFuzzySearchTree
 
 PIXEL = QAbstractItemView.ScrollMode.ScrollPerPixel
 ITEM = QAbstractItemView.ScrollMode.ScrollPerItem
@@ -72,7 +72,7 @@ def test_any_item_view_scrolls_by_the_pixel(root, build):
 
 
 @pytest.mark.parametrize(
-    "build", [FXFuzzySearchList, FXFuzzySearchTree, FXDropZone]
+    "build", [FXFuzzySearchTree, FXDropZone]
 )
 def test_fxgui_views_scroll_by_the_pixel(root, build):
     widget = _held(root, build())

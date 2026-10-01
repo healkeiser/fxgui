@@ -85,7 +85,6 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXCheckableComboBox` | Combo box whose popup stays open while several rows are ticked |
 | `FXCodeBlock` | Read-only code with syntax highlighting |
 | `FXCollapsibleWidget` | A titled section that opens and shuts its content |
-| `FXColorLabelDelegate` | Item delegate drawing each row as a coloured label chosen by its text |
 | `FXCommand` | One row of an `FXCommandPalette`: a label, a callable, keys, a section |
 | `FXCommandPalette` | Popup search over a window's commands, or over rows to go to |
 | `FXCommandRow` | A toolbar fixed in place, whose margins survive style changes |
@@ -98,8 +97,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXFilteredTree` | An `FXKeyboardTree` under a filter bar, with expand-all and collapse-all |
 | `FXFloatingDialog` | Dialog that opens at the pointer |
 | `FXFlowLayout` | Layout that wraps its widgets onto new lines, like words |
-| `FXFuzzySearchList` | List with a search field that matches loosely |
-| `FXFuzzySearchTree` | Tree with a search field that matches loosely |
+| `FXFuzzySearchTree` | Tree, or flat list, with a search field that matches loosely |
 | `FXIconButton` | Round icon button; checkable, filled with the accent when checked |
 | `FXIconLabel` | Label that draws an icon in the theme's colours at paint time |
 | `FXIconLineEdit` | Line edit with an icon on the left or right |
@@ -209,7 +207,8 @@ disappears.
 ## Your Own Item-Data Roles
 
 `FXThumbnailDelegate` reads item-data roles of its own off the items it
-paints, from `Qt.UserRole + 1` up to `FIRST_FREE_ROLE`. A view that puts
+paints, from `Qt.UserRole + 1` up to `FIRST_FREE_ROLE`, and
+`FXSortedTreeWidgetItem.SORT_ROLE` sits in the same range. A view that puts
 roles of its own on the same items derives them from `FIRST_FREE_ROLE`:
 
 ``` python
@@ -220,9 +219,10 @@ ROW_COLOR_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 1
 ```
 
 !!! warning
-    Do not guess a margin instead. `Qt.UserRole + 10` is
-    `CHILD_COUNT_VISIBLE_ROLE`: a view storing its own value there gets a
-    child count drawn on rows with no children.
+    Do not guess a number instead. Every number below `FIRST_FREE_ROLE`
+    is one the delegate reads: a view storing its own value on
+    `CHILD_COUNT_VISIBLE_ROLE`'s number gets a child count drawn on rows
+    with no children.
 
 A role added to the delegate moves `FIRST_FREE_ROLE` up, and every role
 derived from it moves too.

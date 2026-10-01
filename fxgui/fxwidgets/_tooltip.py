@@ -1099,7 +1099,7 @@ class FXTooltipManager(QObject):
             if entity_type:
                 header += f" ({html.escape(str(entity_type))})"
             if description and description != "-":
-                plain = FXThumbnailDelegate.markdown_to_plain_text(
+                plain = fxutils.markdown_to_plain_text(
                     str(description)
                 )
                 parts.append(f"{header}<br>{html.escape(plain)}")

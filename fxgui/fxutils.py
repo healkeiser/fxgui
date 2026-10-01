@@ -39,6 +39,11 @@ from qtpy.QtCore import QModelIndex, QPoint, QTimer
 # Internal
 from fxgui._compat import created_by_python
 
+try:
+    import markdown as _markdown
+except ImportError:  # optional; asked once, not on every call
+    _markdown = None
+
 
 # Public API
 __all__ = [
@@ -188,13 +193,9 @@ def markdown_to_plain_text(text: str) -> str:
 
     Without the optional `markdown` package the text is returned as is.
     """
-    if not text or text == "-":
+    if not text or text == "-" or _markdown is None:
         return text
-    try:
-        import markdown
-    except ImportError:
-        return text
-    rendered = markdown.markdown(text, extensions=["extra", "nl2br"])
+    rendered = _markdown.markdown(text, extensions=["extra", "nl2br"])
     plain = html.unescape(_HTML_TAG.sub("", rendered))
     return " ".join(plain.split())
 

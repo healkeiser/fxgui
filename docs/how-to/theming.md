@@ -515,7 +515,7 @@ The switch's fills are pushed to 3:1 on `@surface` when a theme's own
 accent misses it.
 
 Every `QSlider` gets these rules from the base sheet, the threshold
-slider of `FXFuzzySearchList` and `FXFuzzySearchTree` included.
+slider of `FXFuzzySearchTree` included.
 
 ### Cards in item views
 
@@ -529,6 +529,11 @@ item.setData(0, Qt.BackgroundRole, "surface")
 
 The card's edge is `@border_light`. A selected card is filled and edged
 with `@accent_primary`. A row with no background has no card.
+
+A hovered row is filled with `@accent_secondary` and its text is
+`@text_on_accent_secondary`, as in a plain list. Call
+`FXThumbnailDelegate.apply_transparent_selection(view)` on the view so
+Qt's own highlight does not show under the delegate's.
 
 ## Registering Your Own Widget Styles
 
