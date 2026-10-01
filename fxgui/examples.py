@@ -332,9 +332,7 @@ def _display_page() -> QWidget:
 
     spinners = []
     for style in ("spinner", "dots", "pulse"):
-        spinner = fxwidgets.FXLoadingSpinner(size=28, style=style)
-        spinner.start()
-        spinners.append(spinner)
+        spinners.append(fxwidgets.FXLoadingSpinner(size=28, style=style))
     covered = QTextEdit("Content under an overlay.")
     covered.setFixedHeight(80)
     overlay = fxwidgets.FXLoadingOverlay(covered, message="Loading...")
@@ -364,7 +362,7 @@ def _display_page() -> QWidget:
         shortcut="Ctrl+S",
     )
 
-    return _page(
+    page = _page(
         _section("FXAvatar", _row(*avatars)),
         _section("FXStatusDot", _row(*dots)),
         _section("FXIconLabel", _row(*icons)),
@@ -396,6 +394,10 @@ def _display_page() -> QWidget:
             _row(plain, rich, key),
         ),
     )
+    # start() shows the spinner: on one not yet in a layout, a window.
+    for spinner in spinners:
+        spinner.start()
+    return page
 
 
 def _containers_page() -> QWidget:
