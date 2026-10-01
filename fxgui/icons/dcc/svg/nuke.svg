@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="uuid-83414d74-3f1b-4ef5-a65c-adf25276fb31" xmlns="http://www.w3.org/2000/svg" width="48"
-    height="48" viewBox="0 0 48 48">
+<svg width="48" height="48" viewBox="0.078 0.078 47.843 47.843" id="uuid-83414d74-3f1b-4ef5-a65c-adf25276fb31" xmlns="http://www.w3.org/2000/svg">
     <circle cx="24" cy="24" r="21.5" style="fill:#181a1b; stroke-width:0px;" />
     <path
         d="M24,46c-12.1284,0-22-9.8716-22-22S11.8716,2,24,2s22,9.8716,22,22-9.8716,22-22,22h0ZM24,4.3755C13.1782,4.3755,4.3755,13.1782,4.3755,24s8.8026,19.6245,19.6245,19.6245,19.6245-8.8026,19.6245-19.6245S34.8218,4.3755,24,4.3755h0Z"
