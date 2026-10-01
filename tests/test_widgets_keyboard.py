@@ -72,23 +72,23 @@ def test_range_slider_keyboard(qtbot):
 
     # Low handle is active by default
     qtbot.keyClick(slider, Qt.Key_Right)
-    assert slider.low == 11
+    assert slider.low() == 11
 
     # Space switches to the high handle
     qtbot.keyClick(slider, Qt.Key_Space)
     qtbot.keyClick(slider, Qt.Key_Left)
-    assert slider.high == 89
+    assert slider.high() == 89
 
     qtbot.keyClick(slider, Qt.Key_PageUp)
-    assert slider.high == 99
+    assert slider.high() == 99
 
     qtbot.keyClick(slider, Qt.Key_End)
-    assert slider.high == 100
+    assert slider.high() == 100
 
     # Back to the low handle
     qtbot.keyClick(slider, Qt.Key_Space)
     qtbot.keyClick(slider, Qt.Key_Home)
-    assert slider.low == 0
+    assert slider.low() == 0
 
 
 def test_range_slider_keyboard_clamps(qtbot):
@@ -100,5 +100,5 @@ def test_range_slider_keyboard_clamps(qtbot):
     # Low handle cannot cross the high handle
     for _ in range(5):
         qtbot.keyClick(slider, Qt.Key_Right)
-    assert slider.low == 6
-    assert slider.high == 6
+    assert slider.low() == 6
+    assert slider.high() == 6

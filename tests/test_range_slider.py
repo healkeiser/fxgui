@@ -36,8 +36,8 @@ def test_stacked_handles_split_toward_the_drag(qtbot, qapp):
     QTest.mouseMove(slider, QPoint(x - 40, y))
     QTest.mouseRelease(slider, Qt.LeftButton, Qt.NoModifier, QPoint(x - 40, y))
 
-    assert slider.low < 50
-    assert slider.high == 50
+    assert slider.low() < 50
+    assert slider.high() == 50
 
 
 def _parts(qtbot, theme, state=""):
@@ -123,3 +123,34 @@ def test_the_range_slider_states_wear_the_slider_tokens(qtbot, theme):
     assert disabled["edge"] == colors().border.lower()
     assert disabled["fill"] == colors().surface.lower()
     assert disabled["span"] == colors().border_strong.lower()
+
+
+def test_one_accessor_pair_per_value(qtbot):
+    slider = FXRangeSlider(minimum=0, maximum=100)
+    qtbot.addWidget(slider)
+    seen = []
+    slider.range_changed.connect(lambda low, high: seen.append((low, high)))
+
+    slider.set_low(30)
+    slider.set_high(20)
+    slider.set_values(10, 90)
+
+    assert (slider.low(), slider.high()) == (10, 90)
+    assert seen == [(30, 100), (30, 30), (10, 90)]
+    assert not hasattr(slider, "set_range")
+
+
+def test_the_height_follows_the_font(qtbot):
+    slider = FXRangeSlider()
+    bare = FXRangeSlider(show_values=False)
+    qtbot.addWidget(slider)
+    qtbot.addWidget(bare)
+    small = slider.sizeHint().height()
+    font = slider.font()
+    font.setPixelSize(font.pixelSize() * 2 if font.pixelSize() > 0 else 24)
+    slider.setFont(font)
+
+    assert slider.sizeHint().height() > small
+    assert slider.minimumSizeHint().height() == slider.sizeHint().height()
+    assert bare.sizeHint().height() == 2 * bare._handle_radius
+    assert slider.minimumHeight() == 0

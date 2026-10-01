@@ -19,6 +19,10 @@ from qtpy.QtWidgets import QSizePolicy, QWidget
 from fxgui import fxstyle
 
 
+# Pixels between a handle and its value line.
+_LABEL_GAP = 4
+
+
 class FXRangeSlider(QWidget):
     """A slider with two handles for selecting a min/max range.
 
@@ -41,7 +45,7 @@ class FXRangeSlider(QWidget):
     Examples:
         >>> slider = FXRangeSlider(minimum=0, maximum=100)
         >>> slider.range_changed.connect(lambda l, h: print(f"Range: {l}-{h}"))
-        >>> slider.set_range(25, 75)
+        >>> slider.set_values(25, 75)
     """
 
     range_changed = Signal(int, int)
@@ -86,7 +90,6 @@ class FXRangeSlider(QWidget):
 
         # Setup widget
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.setMinimumHeight(70)
         self.setMouseTracking(True)
         self.setCursor(Qt.PointingHandCursor)
         # Keyboard: arrows adjust the active handle, Space switches handle
@@ -95,20 +98,25 @@ class FXRangeSlider(QWidget):
 
     def sizeHint(self):
         """Return the preferred size."""
-        return QSize(200, 70)
+        return QSize(200, self._height())
 
     def minimumSizeHint(self):
         """Return the minimum size."""
-        return QSize(100, 70)
+        return QSize(100, self._height())
 
-    @property
+    def _height(self) -> int:
+        """Return the handle's height, plus a value line above and below."""
+        height = self._handle_radius * 2
+        if self._show_values:
+            height += 2 * (_LABEL_GAP + QFontMetrics(self.font()).height())
+        return height
+
     def low(self) -> int:
         """Return the low value."""
         return self._low
 
-    @low.setter
-    def low(self, value: int) -> None:
-        """Set the low value."""
+    def set_low(self, value: int) -> None:
+        """Set the low value, held between the minimum and the high value."""
         value = max(self._minimum, min(value, self._high))
         if value != self._low:
             self._low = value
@@ -116,14 +124,12 @@ class FXRangeSlider(QWidget):
             self.range_changed.emit(self._low, self._high)
             self.update()
 
-    @property
     def high(self) -> int:
         """Return the high value."""
         return self._high
 
-    @high.setter
-    def high(self, value: int) -> None:
-        """Set the high value."""
+    def set_high(self, value: int) -> None:
+        """Set the high value, held between the low value and the maximum."""
         value = max(self._low, min(value, self._maximum))
         if value != self._high:
             self._high = value
@@ -131,7 +137,7 @@ class FXRangeSlider(QWidget):
             self.range_changed.emit(self._low, self._high)
             self.update()
 
-    def set_range(self, low: int, high: int) -> None:
+    def set_values(self, low: int, high: int) -> None:
         """Set both low and high values.
 
         Args:
@@ -155,14 +161,14 @@ class FXRangeSlider(QWidget):
         """Set the minimum value."""
         self._minimum = minimum
         if self._low < minimum:
-            self.low = minimum
+            self.set_low(minimum)
         self.update()
 
     def set_maximum(self, maximum: int) -> None:
         """Set the maximum value."""
         self._maximum = maximum
         if self._high > maximum:
-            self.high = maximum
+            self.set_high(maximum)
         self.update()
 
     def _value_to_position(self, value: int) -> float:
@@ -275,7 +281,7 @@ class FXRangeSlider(QWidget):
         if self._show_values:
             metrics = QFontMetrics(self.font())
             painter.setPen(QColor(theme.text if enabled else theme.text_disabled))
-            gap = 4
+            gap = _LABEL_GAP
             # Low label above its handle, high label below its own.
             for value, x, y in (
                 (self._low, low_x, middle - self._handle_radius - gap
@@ -304,9 +310,9 @@ class FXRangeSlider(QWidget):
 
         def _adjust(delta: int) -> None:
             if self._active_handle == self.HANDLE_HIGH:
-                self.high = self._high + delta
+                self.set_high(self._high + delta)
             else:
-                self.low = self._low + delta
+                self.set_low(self._low + delta)
 
         if key in (Qt.Key_Right, Qt.Key_Up):
             _adjust(1)
@@ -318,14 +324,14 @@ class FXRangeSlider(QWidget):
             _adjust(-big_step)
         elif key == Qt.Key_Home:
             if self._active_handle == self.HANDLE_HIGH:
-                self.high = self._low
+                self.set_high(self._low)
             else:
-                self.low = self._minimum
+                self.set_low(self._minimum)
         elif key == Qt.Key_End:
             if self._active_handle == self.HANDLE_HIGH:
-                self.high = self._maximum
+                self.set_high(self._maximum)
             else:
-                self.low = self._high
+                self.set_low(self._high)
         elif key == Qt.Key_Space:
             self._active_handle = (
                 self.HANDLE_HIGH
@@ -337,16 +343,6 @@ class FXRangeSlider(QWidget):
             super().keyPressEvent(event)
             return
         event.accept()
-
-    def focusInEvent(self, event) -> None:
-        """Repaint to show the focus indicator."""
-        super().focusInEvent(event)
-        self.update()
-
-    def focusOutEvent(self, event) -> None:
-        """Repaint to hide the focus indicator."""
-        super().focusOutEvent(event)
-        self.update()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press."""
@@ -374,9 +370,9 @@ class FXRangeSlider(QWidget):
         if self._pressed_handle != self.HANDLE_NONE:
             value = self._position_to_value(x)
             if self._pressed_handle == self.HANDLE_LOW:
-                self.low = min(value, self._high)
+                self.set_low(min(value, self._high))
             else:
-                self.high = max(value, self._low)
+                self.set_high(max(value, self._low))
         else:
             # Update hover state
             new_hover = self._handle_at_position(x)
