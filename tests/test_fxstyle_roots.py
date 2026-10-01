@@ -39,3 +39,24 @@ def test_dead_roots_drop_out(qtbot):
     assert len(fxstyle._themed_roots) < count_before
     # Must not raise on dead entries either:
     fxstyle._reapply_to_roots()
+
+
+
+def test_a_root_switched_before_its_first_show_wears_the_new_theme(qtbot):
+    from qtpy.QtWidgets import QLabel, QVBoxLayout
+
+    from fxgui.fxwidgets import FXKeycap
+
+    fxstyle.apply_theme("dark")
+    root = QWidget()
+    qtbot.addWidget(root)
+    layout = QVBoxLayout(root)
+    layout.addWidget(FXKeycap("Ctrl+S"))
+    layout.addWidget(QLabel("child"))
+    fxstyle.register_themed_root(root)
+    fxstyle.apply_theme("light")
+    root.resize(120, 80)
+    root.show()
+    qtbot.waitExposed(root)
+    image = root.grab().toImage()
+    assert image.pixelColor(1, 1).name() == fxstyle.colors().surface.lower()

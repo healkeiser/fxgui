@@ -118,7 +118,7 @@ def test_the_segment_the_path_is_already_at_promises_nothing(qtbot, qapp):
 def test_the_tint_is_the_themes_accent_rather_than_a_hex(qtbot, qapp):
     """A studio theme governs what a hovered segment looks like."""
     crumb = _crumb(qtbot)
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
     expected = _tinted(
         crumb._colors()[0],
         colors[FXBreadcrumb.SEGMENT_HOVER_TOKEN],
@@ -143,7 +143,7 @@ def test_a_subclass_can_name_its_own_tokens(qtbot, qapp):
     crumb.set_path(PATH)
     crumb.show()
     qtbot.waitExposed(crumb)
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
 
     assert crumb._colors()[0] == colors["surface_alt"]
     expected = _tinted(colors["surface_alt"], colors["accent_secondary"], 120)
@@ -153,7 +153,7 @@ def test_a_subclass_can_name_its_own_tokens(qtbot, qapp):
 def test_the_strip_is_never_the_window_s_own_colour(qtbot, qapp):
     """A strip painted in `surface` is a strip nobody can see: in every
     theme fxgui ships that token is the window's colour to the byte."""
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
 
     assert colors[FXBreadcrumb.STRIP_RESTING_TOKEN] != colors["surface"]
     assert colors[FXBreadcrumb.STRIP_HOVERED_TOKEN] != colors["surface"]

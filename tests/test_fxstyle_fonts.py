@@ -88,13 +88,11 @@ def test_generic_keyword_is_terminal_and_unquoted(qapp):
 
 
 def test_stylesheet_leaves_no_font_token_unresolved(qapp):
-    assert "@font_" not in fxstyle.build_stylesheet("dark")
+    assert "@font_" not in fxstyle._build_stylesheet("dark")
 
 
-def test_load_stylesheet_also_resolves_font_tokens(qapp):
-    # The legacy entry point prepended the font block *after* the token
-    # pass, which would now ship a literal @font_body to Qt.
-    assert "@font_" not in fxstyle.load_stylesheet(theme="dark")
+def test_host_rules_resolve_font_tokens(qapp):
+    assert "@font_" not in fxstyle._host_rules("dark")
 
 
 ###### Reading roles from the color file
@@ -200,7 +198,7 @@ def test_unmarking_clears_the_property(qtbot):
 
 
 def test_title_selector_is_in_the_stylesheet(qapp):
-    sheet = fxstyle.build_stylesheet("dark")
+    sheet = fxstyle._build_stylesheet("dark")
     assert f'[{fxstyle.TITLE_PROPERTY}="true"]' in sheet
 
 

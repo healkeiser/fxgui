@@ -222,7 +222,7 @@ def test_owning_the_row_is_one_registered_rule(qtbot):
     FXThumbnailDelegate.apply_transparent_selection(tree)
     assert tree.styleSheet() == "QTreeWidget { color: red; }"
     assert tree.property("fxOwnsRow") is True
-    assert 'fxOwnsRow="true"' in fxstyle.build_stylesheet()
+    assert 'fxOwnsRow="true"' in fxstyle._build_stylesheet()
 
 
 def _contrast(one: QColor, two: QColor) -> float:

@@ -2,19 +2,11 @@
 
 from pathlib import Path
 
-import pytest
 import yaml
 
 from fxgui import fxstyle
 
 _OVERLAY = Path(__file__).parent / "data" / "studio_overlay.yaml"
-
-
-@pytest.fixture
-def fresh_colors(monkeypatch):
-    """Load colour files from scratch; the originals come back after."""
-    monkeypatch.setattr(fxstyle, "_colors", None)
-    monkeypatch.setattr(fxstyle, "_color_file", None)
 
 
 def _full_copy(tmp_path) -> Path:
@@ -38,7 +30,7 @@ def _full_copy(tmp_path) -> Path:
 def _resolved():
     """Return the lotchi colours and every theme's font roles."""
     fxstyle.apply_theme("lotchi")
-    colours = fxstyle.get_theme_colors()
+    colours = dict(vars(fxstyle.colors()))
     fonts = {
         theme: fxstyle._font_config(theme)
         for theme in fxstyle.get_available_themes()
@@ -46,8 +38,7 @@ def _resolved():
     return colours, fonts
 
 
-def test_the_overlay_resolves_like_the_whole_copy(qapp, tmp_path,
-                                                  fresh_colors):
+def test_the_overlay_resolves_like_the_whole_copy(qapp, tmp_path):
     fxstyle.set_color_file(_full_copy(tmp_path))
     copied = _resolved()
     assert copied[0]["accent_primary"] == "#FF4200"

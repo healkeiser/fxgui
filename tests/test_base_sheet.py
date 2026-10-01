@@ -85,7 +85,7 @@ def _label_fill(root, label) -> str:
 
 
 def test_the_base_sheet_sets_no_background_or_font():
-    sheet = fxstyle.build_stylesheet("dark")
+    sheet = fxstyle._build_stylesheet("dark")
     start = sheet.index("QWidget\n{")
     rule = sheet[start:sheet.index("}", start)]
     for prop in ("\n    background-color:", "font-size:", "font-family:"):

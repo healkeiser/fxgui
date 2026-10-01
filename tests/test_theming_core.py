@@ -11,14 +11,6 @@ from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxcore import FXSortFilterProxyModel
 
 
-@pytest.fixture
-def own_colors(monkeypatch):
-    """Restore the loaded colour file after a test swaps it."""
-    monkeypatch.setattr(fxstyle, "_colors", None)
-    monkeypatch.setattr(fxstyle, "_color_file", None)
-    yield
-
-
 def _count_calls(monkeypatch, module, name):
     calls = []
     original = getattr(module, name)
@@ -37,24 +29,23 @@ def _yaml(tmp_path, text):
     return path
 
 
-# load_stylesheet
+# the sheet
 
 
-def test_load_stylesheet_leaves_the_current_theme_alone(qapp, monkeypatch):
-    fxstyle.save_theme("dark")
+def test_building_another_themes_sheet_leaves_the_current_one(qapp):
     fxstyle._theme = "light"
 
-    sheet = fxstyle.load_stylesheet()
+    sheet = fxstyle._build_stylesheet("dark")
 
     assert fxstyle.get_theme() == "light"
-    assert fxstyle.get_colors()["themes"]["light"]["surface"] in sheet
+    assert fxstyle.get_colors()["themes"]["dark"]["surface"] in sheet
 
 
-# get_theme_colors / colors()
+# colors()
 
 
 def test_theme_colors_are_the_resolved_token_map(qapp):
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
     tokens = fxstyle._token_map(fxstyle.get_theme())
 
     assert colors == {
@@ -69,70 +60,54 @@ def test_theme_colors_load_the_saved_theme(qapp):
     fxstyle._theme = None
 
     light = fxstyle.get_colors()["themes"]["light"]["surface"]
-    assert fxstyle.get_theme_colors()["surface"] == light
+    assert fxstyle.colors().surface == light
 
 
 def test_theme_colors_and_namespace_share_one_cache(qapp, monkeypatch):
-    fxstyle.get_theme_colors()
+    dict(vars(fxstyle.colors()))
     depth = _count_calls(monkeypatch, fxstyle, "_depth_colors")
 
     for _ in range(5):
-        fxstyle.get_theme_colors()
+        dict(vars(fxstyle.colors()))
         fxstyle.colors()
 
     assert depth == []
-    assert fxstyle.colors().surface == fxstyle.get_theme_colors()["surface"]
+    assert fxstyle.colors().surface == fxstyle.colors().surface
 
 
-def test_a_colour_file_without_dark_fills_from_the_default(
-    qapp, tmp_path, own_colors
-):
+def test_a_colour_file_without_dark_fills_from_the_default(qapp, tmp_path):
     path = _yaml(tmp_path, "themes:\n  studio:\n    surface: '#101010'\n")
     fxstyle.set_color_file(path)
     fxstyle._theme = "studio"
 
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
 
     default_dark = fxstyle._builtin_theme()
     assert colors["surface"] == "#101010"
-    assert colors["text"] == default_dark["text"]
+    assert colors["accent_primary"] == default_dark["accent_primary"]
 
 
-# resolve / replace_colors
+# resolve
 
 
 def test_resolve_knows_every_token_family(qapp):
     qss = (
-        "a { r: @radiuspx; b: @button_radius; f: @font_body; "
-        "e: @feedback_error_foreground; p: @primary_button; }"
+        "a { b: @button_radius; c: @card_radius; f: @font_body; "
+        "e: @feedback_error_foreground; p: @primary_button; s: @shadow; }"
     )
     out = fxstyle.resolve(qss)
 
     assert "@" not in out
-    assert f"r: {fxstyle.BUTTON_RADIUS}px;" in out
     assert f"b: {fxstyle.BUTTON_RADIUS}px;" in out
-
-
-def test_replace_colors_without_a_dict_resolves_like_the_sheet(qapp):
-    qss = "a { b: @button_radius; e: @feedback_error_background; }"
-    assert fxstyle.replace_colors(qss) == fxstyle.resolve(qss)
-
-
-def test_replace_colors_with_theme_colors_resolves_radius(qapp):
-    out = fxstyle.replace_colors(
-        "a { r: @radiuspx; }", fxstyle.get_theme_colors()
-    )
-    assert out == f"a {{ r: {fxstyle.BUTTON_RADIUS}px; }}"
+    assert f"c: {fxstyle.CARD_RADIUS}px;" in out
 
 
 # overlay_color_file / set_color_file
 
 
-def test_overlay_sets_a_few_keys_and_keeps_the_rest(
-    qapp, tmp_path, own_colors
-):
+def test_overlay_sets_a_few_keys_and_keeps_the_rest(qapp, tmp_path):
     fxstyle._theme = "dark"
-    default_text = fxstyle.get_theme_colors()["text"]
+    default_text = fxstyle.colors().text
     path = _yaml(
         tmp_path,
         "themes:\n"
@@ -143,7 +118,7 @@ def test_overlay_sets_a_few_keys_and_keeps_the_rest(
 
     fxstyle.overlay_color_file(path)
 
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
     assert colors["accent_primary"] == "#ff0000"
     assert colors["text"] == default_text
     assert {"dark", "light", "dracula", "studio"} <= set(
@@ -155,7 +130,7 @@ def test_overlay_sets_a_few_keys_and_keeps_the_rest(
 
 @pytest.mark.parametrize("change", ["overlay", "replace"])
 def test_a_colour_file_change_reaches_roots_and_signal(
-    qtbot, tmp_path, own_colors, change
+    qtbot, tmp_path, change
 ):
     fxstyle._theme = "dark"
     root = QWidget()

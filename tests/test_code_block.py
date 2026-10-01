@@ -93,7 +93,7 @@ def test_code_block_sets_no_stylesheet_of_its_own(qtbot, qapp):
     block = FXCodeBlock("x = 1")
     qtbot.addWidget(block)
     assert block._text_edit.styleSheet() == ""
-    assert "FXCodeBlock" in fxstyle.build_stylesheet()
+    assert "FXCodeBlock" in fxstyle._build_stylesheet()
 
 
 def test_the_highlighter_is_public():
@@ -124,7 +124,7 @@ def test_a_class_rule_gives_an_editor_the_mono_face_inside_a_host(qtbot):
 
 
 def test_the_code_block_rule_adds_only_what_the_base_sheet_lacks():
-    rule = fxstyle.build_stylesheet().split("FXCodeBlock QTextEdit {")[1]
+    rule = fxstyle._build_stylesheet().split("FXCodeBlock QTextEdit {")[1]
     rule = rule.split("}")[0]
 
     for repeated in ("background-color", "border", "selection", "color:"):

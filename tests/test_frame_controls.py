@@ -27,7 +27,7 @@ GAP = 6
 
 
 def _color(role):
-    return QColor(fxstyle.get_theme_colors()[role]).name()
+    return QColor(getattr(fxstyle.colors(), role)).name()
 
 
 def _splitter(qtbot, orientation, theme="dark", gap=GAP):
@@ -129,7 +129,7 @@ host.show()
 for _ in range(5):
     app.processEvents()
 image = splitter.handle(1).grab().toImage()
-frame = fxstyle.get_theme_colors()["frame"].lower()
+frame = fxstyle.colors().frame.lower()
 ink = [(x, y) for x in range(image.width()) for y in range(image.height())
        if image.pixelColor(x, y).name() != frame]
 xs, ys = [p[0] for p in ink], [p[1] for p in ink]
@@ -198,7 +198,7 @@ def test_marking_writes_no_file(qtbot, tmp_path, monkeypatch):
         if path.is_file() and path.parent.name != "sheet_icons"
     ]
     assert written == []
-    assert "splitter_mark" not in fxstyle.build_stylesheet()
+    assert "splitter_mark" not in fxstyle._build_stylesheet()
 
 
 def test_the_mark_follows_a_theme_switch(qtbot):

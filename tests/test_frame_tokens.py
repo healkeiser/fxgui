@@ -12,7 +12,7 @@ THEMES = fxstyle.get_available_themes()
 
 def _colors(monkeypatch, theme):
     monkeypatch.setattr(fxstyle, "_theme", theme)
-    return fxstyle.get_theme_colors()
+    return dict(vars(fxstyle.colors()))
 
 
 @pytest.mark.parametrize("theme", THEMES)
@@ -82,7 +82,7 @@ def test_a_theme_that_states_its_frame_keeps_it(qapp, monkeypatch):
         "frame": "#123456", "well": "#654321",
     })
 
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
     tokens = fxstyle._token_map("_custom")
 
     assert colors["frame"] == tokens["@frame"] == "#123456"
@@ -94,7 +94,7 @@ def test_a_stated_frame_moves_the_computed_well(qapp, monkeypatch):
         "surface": "#303030", "surface_sunken": "#202020", "frame": "#000000",
     })
 
-    assert fxstyle.get_theme_colors()["well"] == "#181818"
+    assert fxstyle.colors().well == "#181818"
 
 
 def test_a_light_theme_whose_sunken_is_lighter_gets_a_darker_frame(
@@ -105,7 +105,7 @@ def test_a_light_theme_whose_sunken_is_lighter_gets_a_darker_frame(
         "surface": "#f0f0f0", "surface_sunken": "#ffffff",
     })
 
-    frame = fxstyle.get_theme_colors()["frame"]
+    frame = fxstyle.colors().frame
 
     assert fxstyle.get_luminance(frame) < fxstyle.get_luminance("#f0f0f0")
     assert (
@@ -121,7 +121,7 @@ def test_a_darkened_frame_keeps_the_panes_hue(qapp, monkeypatch):
         "accent_primary": "#268bd2",
     })
 
-    frame = QColor(fxstyle.get_theme_colors()["frame"])
+    frame = QColor(fxstyle.colors().frame)
     pane = QColor("#fdf6e3")
 
     assert abs(frame.hsvHue() - pane.hsvHue()) <= 2
@@ -150,7 +150,7 @@ def test_a_faint_border_is_pushed_away_from_the_frame(qapp, monkeypatch):
         "surface": "#f0f0f0", "surface_sunken": "#ffffff",
         "border": "#e0e0e0",
     })
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
 
     assert fxstyle.get_luminance(colors["pane_border"]) < (
         fxstyle.get_luminance("#e0e0e0"))
@@ -162,7 +162,7 @@ def test_a_theme_that_states_its_pane_border_keeps_it(qapp, monkeypatch):
         "pane_border": "#abcdef",
     })
 
-    assert fxstyle.get_theme_colors()["pane_border"] == "#abcdef"
+    assert fxstyle.colors().pane_border == "#abcdef"
 
 
 @pytest.mark.parametrize("theme", THEMES)
@@ -197,7 +197,7 @@ def test_a_pane_at_either_end_still_gets_a_frame_and_a_well(
 ):
     """A black pane cannot be darkened: its frame is lighter instead."""
     _with_theme(monkeypatch, {"surface": pane, "surface_sunken": pane})
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
     frame, well = colors["frame"], colors["well"]
 
     assert frame != pane

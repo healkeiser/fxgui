@@ -76,7 +76,7 @@ def test_toolbutton_icon_keeps_the_accent_recolor(qtbot):
     fxicons.set_icon(button, "check", width=48, height=48)
     assert not _active_matches_normal(button.icon())
     assert _ink(button.icon(), QIcon.Active) == (
-        fxstyle.get_icon_on_accent_secondary().lower())
+        fxstyle.colors().icon_on_accent_secondary.lower())
 
 
 def _ink(icon: QIcon, mode) -> str:

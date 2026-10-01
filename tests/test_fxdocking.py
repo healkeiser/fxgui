@@ -72,7 +72,7 @@ def _pixel(window, widget, x, y):
 
 
 def _frame():
-    return QColor(fxstyle.get_theme_colors()["frame"]).name()
+    return QColor(fxstyle.colors().frame).name()
 
 
 def _areas(window):
@@ -471,7 +471,7 @@ def test_every_pane_is_a_rounded_card_on_the_frame(qtbot, theme):
 
     _corners_are_frame(window)
     area = _areas(window)[0]
-    edge = QColor(fxstyle.get_theme_colors()["pane_border"]).name()
+    edge = QColor(fxstyle.colors().pane_border).name()
     radius = fxstyle.BUTTON_RADIUS
     assert _pixel(window, area, area.width() // 2, 0) == edge
     assert _pixel(window, area, 0, area.height() // 2) == edge
@@ -509,7 +509,7 @@ def test_the_current_tab_pill_follows_a_theme_change(qtbot):
     for theme in ("dark", "light"):
         fxstyle.apply_theme(theme)
         qtbot.wait(20)
-        fill = QColor(fxstyle.get_theme_colors()["state_hover"]).name()
+        fill = QColor(fxstyle.colors().state_hover).name()
         # Inside the pill's edge, left of its text.
         assert _pixel(window, tab, 5, tab.height() // 2) == fill, theme
 
@@ -687,7 +687,7 @@ def test_the_drop_targets_wear_the_theme_in_force(qtbot):
 
     for theme in ("dark", "light"):
         fxstyle.apply_theme(theme)
-        accent = QColor(fxstyle.get_theme_colors()["accent_primary"]).name()
+        accent = QColor(fxstyle.colors().accent_primary).name()
         for cross in crosses:
             assert cross.iconColor(part).name() == accent, theme
 
@@ -714,8 +714,8 @@ for _ in range(20):
 import PySide6QtAds as ads
 image = window.grab().toImage()
 ratio = image.devicePixelRatio()
-frame = QColor(fxstyle.get_theme_colors()["frame"]).name()
-ink = QColor(fxstyle.get_theme_colors()["splitter_mark"]).name()
+frame = QColor(fxstyle.colors().frame).name()
+ink = QColor(fxstyle.colors().splitter_mark).name()
 areas = [a for a in docks.manager().findChildren(ads.CDockAreaWidget)
          if a.isVisible()]
 for area in areas:

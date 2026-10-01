@@ -39,11 +39,10 @@ def test_all_themes_text_on_surface_contrast():
         assert ratio >= minimum, f"{name}: {ratio:.2f} < {minimum}"
 
 
-def test_dcc_colors_redshift_typo_fixed_with_alias():
+def test_dcc_colors_name_redshift_once():
     dcc = fxstyle.get_colors()["dcc"]
     assert "redshift" in dcc
-    # Deprecated alias kept for backward compatibility
-    assert dcc.get("redshit") == dcc["redshift"]
+    assert "redshit" not in dcc
 
 
 def test_qss_qwidget_block_disables_qt_focus_rectangle():

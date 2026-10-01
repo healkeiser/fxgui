@@ -36,6 +36,7 @@ from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 # Third-party
 import yaml
+from qtpy import QT_VERSION
 from qtpy.QtCore import QEvent, QObject, Qt, Signal
 from qtpy.QtGui import (
     QColor,
@@ -69,15 +70,10 @@ from fxgui import _compat, fxconfig, fxicons, fxutils
 
 
 class FXThemeColors:
-    """Namespace for accessing theme colors with dot notation.
-
-    This class provides a convenient way to access theme colors using
-    attribute access instead of dictionary lookup.
+    """A theme's resolved colours, one attribute per role; `colors` returns it.
 
     Examples:
-        >>> colors = FXThemeColors(fxstyle.get_theme_colors())
-        >>> colors.surface  # "#302f2f"
-        >>> colors.accent_primary  # "#2196F3"
+        >>> fxstyle.colors().surface  # "#302f2f"
     """
 
     def __init__(self, colors_dict: dict):
@@ -102,22 +98,16 @@ class FXThemeColors:
         return f"FXThemeColors({attrs})"
 
 
-class FXThemeManager(QObject):
+class _Signals(QObject):
     """Hold the `theme_changed(str)` signal `apply_theme` emits."""
 
     theme_changed = Signal(str)
 
-    def notify_theme_changed(self, theme_name: str) -> None:
-        """Emit `theme_changed` with the theme now applied."""
-        self.theme_changed.emit(theme_name)
 
+_signals = _Signals()
 
-# Global singleton instance
-theme_manager = FXThemeManager()
-
-# Canonical module-level alias: connect side-effect widgets to
-# fxstyle.theme_changed without going through the manager object.
-theme_changed = theme_manager.theme_changed
+# Emitted with the theme's name after every switch.
+theme_changed = _signals.theme_changed
 
 
 ###### Public API
@@ -125,10 +115,8 @@ theme_changed = theme_manager.theme_changed
 __all__ = [
     # Classes
     "FXProxyStyle",
-    "FXThemeManager",
     "FXThemeColors",
-    # Singleton
-    "theme_manager",
+    # Signal
     "theme_changed",
     # Constants
     "STYLE_FILE",
@@ -139,18 +127,12 @@ __all__ = [
     "ROOT_PROPERTY",
     "THIN_SCROLL_PROPERTY",
     "THIN_SCROLL_WIDTH",
-    "WIDGET_STYLE_PROPERTY",
     # Color configuration
     "colors",
     "get_colors",
     "set_color_file",
     "overlay_color_file",
-    "get_accent_colors",
     "get_feedback_colors",
-    "get_theme_colors",
-    "get_icon_color",
-    "get_icon_on_accent_primary",
-    "get_icon_on_accent_secondary",
     # Font configuration
     "register_fonts",
     "get_fonts",
@@ -161,18 +143,15 @@ __all__ = [
     # Theme functions
     "get_available_themes",
     "get_theme",
+    "is_light_theme",
     "apply_theme",
     "save_theme",
     "load_saved_theme",
     # Style functions
     "set_style",
     # Stylesheet functions
-    "load_stylesheet",
-    "replace_colors",
     "resolve",
-    "build_stylesheet",
     "register_widget_style",
-    "set_widget_style",
     "set_default_theme",
     "get_default_theme",
     "register_themed_root",
@@ -180,7 +159,6 @@ __all__ = [
     "font",
     # Utility functions
     "get_luminance",
-    "get_contrast_text_color",
     "get_contrast_ratio",
     "readable_ink",
     "mix",
@@ -253,19 +231,31 @@ PANE_BORDER_MIN_CONTRAST = 1.3
 # Least contrast between the splitter mark's dots and the frame.
 SPLITTER_MARK_MIN_CONTRAST = 1.3
 
-# CSS generic keywords rather than family names: emitted unquoted, never
-# looked up in the font database, and terminal, so nothing is appended
-# after one.
+# Least contrast between a hovered fill and a pressed or checked one, so a
+# hovered row beside a checked button reads as two states.
+STATE_MIN_CONTRAST = 1.2
+
+# WCAG AA for body text: every text ink reaches it on each ground it sits on.
+TEXT_CONTRAST = 4.5
+
+# A spin box's padding that makes it a line edit's height: PySide6 6.5 sizes
+# one 3 px shorter than later Qt for the same padding.
+# ponytail: measured on 6.5.3 and 6.11.2 only; move the bound if a version
+# between them measures otherwise.
+_SPIN_PADDING = (
+    "4px 0px" if tuple(map(int, QT_VERSION.split(".")[:2])) < (6, 6)
+    else "3px 0px 2px 0px"
+)
+
 # The body text size, in pixels, of every themed root.
 FONT_SIZE = 12
 
 # The dynamic property a widget registered as a themed root carries.
 ROOT_PROPERTY = "fxThemedRoot"
 
-# The dynamic property holding the unresolved sheet `set_widget_style` gave.
-# On the C++ object, so a label Qt made keeps it when its wrapper is gone.
-WIDGET_STYLE_PROPERTY = "fxWidgetStyle"
-
+# CSS generic keywords rather than family names: emitted unquoted, never
+# looked up in the font database, and terminal, so nothing is appended
+# after one.
 _GENERIC_FONT_FAMILIES = frozenset(
     {"cursive", "fantasy", "monospace", "sans-serif", "serif"}
 )
@@ -316,44 +306,32 @@ _theme = None  # Will be loaded from settings on first access
 _default_theme = _DEFAULT_THEME  # What load_saved_theme() falls back to
 _standard_icon_map = None  # Lazy-loaded icon map cache
 _theme_namespace = None  # Cached FXThemeColors for the current theme
-_theme_namespace_key = None  # (theme, colour dict id) the cache was built for
 _widget_fragments: "OrderedDict[str, str]" = OrderedDict()
 _themed_roots: "weakref.WeakSet" = weakref.WeakSet()
-# id -> widget given a sheet by `set_widget_style`, until it is destroyed.
-_styled_widgets: dict = {}
-
-_DEFAULT_FEEDBACK = {
-    "debug": {"foreground": "#26C6DA", "background": "#006064"},
-    "info": {"foreground": "#7661f6", "background": "#372d75"},
-    "success": {"foreground": "#8ac549", "background": "#466425"},
-    "warning": {"foreground": "#ffbb33", "background": "#7b5918"},
-    "error": {"foreground": "#ff4444", "background": "#7b2323"},
-}
 
 
 def _invalidate_theme_namespace() -> None:
-    """Drop the cached FXThemeColors snapshot (theme or colors changed)."""
+    """Drop the cached colours; every change of theme, file or font calls it."""
     global _theme_namespace
     _theme_namespace = None
 
 
 def _get_theme_namespace() -> "FXThemeColors":
-    """Return the cached resolved colours of the current theme.
-
-    Keyed on the colour dict too, so a swapped `_colors` never serves the
-    old file's colours.
-    """
-    global _theme_namespace, _theme_namespace_key
+    """Return the cached resolved colours of the current theme."""
+    global _theme_namespace
     _ensure_theme_loaded()
-    key = (_theme, id(get_colors()))
-    if _theme_namespace is None or _theme_namespace_key != key:
-        _theme_namespace = FXThemeColors({
-            name[1:]: value
-            for name, value in _token_map(_theme).items()
-            if name.startswith("@")
-        })
-        _theme_namespace_key = key
+    if _theme_namespace is None:
+        _theme_namespace = FXThemeColors(_colour_tokens(_theme))
     return _theme_namespace
+
+
+def _colour_tokens(theme_name: str) -> Dict[str, str]:
+    """Return a theme's ``@`` tokens without the ``@``."""
+    return {
+        name[1:]: value
+        for name, value in _token_map(theme_name).items()
+        if name.startswith("@")
+    }
 
 
 ###### Private Helper Functions
@@ -409,8 +387,7 @@ def _colors_changed() -> None:
     """Re-apply the current theme after the theme or colour file changed."""
     _invalidate_theme_namespace()
     _reapply_to_roots()
-    _reapply_widget_styles()
-    theme_manager.notify_theme_changed(get_theme())
+    theme_changed.emit(get_theme())
 
 
 ###### Color Configuration
@@ -451,107 +428,43 @@ def overlay_color_file(color_file: str) -> None:
 
 
 def get_colors() -> dict:
-    """Get the cached color configuration dictionary.
+    """Return the loaded colour file as written, before any token is derived.
 
-    This is the preferred way to access colors throughout the application.
-    Colors are loaded once from the YAML file and cached for subsequent calls.
-
-    Returns:
-        The complete color configuration containing 'feedback', 'dcc', and
-        'themes' sections.
+    For the file's own sections (``dcc``, ``fonts``, each theme's raw
+    values); a theme's resolved colours are `colors`.
 
     Examples:
-        >>> colors = fxstyle.get_colors()
-        >>> error_color = colors["feedback"]["error"]["foreground"]
-        >>> dark_surface = colors["themes"]["dark"]["surface"]
+        >>> fxstyle.get_colors()["dcc"]["houdini"]
+        '#ff6600'
     """
     return _load_colors_from_yaml()
 
 
-def get_accent_colors() -> dict:
-    """Get the accent colors for the current theme.
-
-    Accent colors are used for interactive elements:
-
-    - **primary**: Hover borders on input widgets (QLineEdit, QComboBox, etc.),
-      selection backgrounds, progress bar/slider gradients (end color),
-      menu bar selections, pressed/selected items in item views.
-
-    - **secondary**: Progress bar/slider gradients (start color),
-      widget item hover backgrounds, menu pressed backgrounds,
-      list/tree item hover highlights.
-
-    Returns:
-        Dictionary containing 'primary' and 'secondary' accent colors
-        from the current theme.
-
-    Examples:
-        >>> colors = get_accent_colors()
-        >>> primary = colors["primary"]  # "#2196F3" for dark theme
-        >>> secondary = colors["secondary"]  # "#1976D2" for dark theme
-    """
-    theme = colors()
-    return {"primary": theme.accent_primary, "secondary": theme.accent_secondary}
-
-
 def get_feedback_colors() -> dict:
-    """Get the feedback/status colors for notifications and logging.
+    """Return the current theme's feedback levels, as the colour file names them.
 
-    These colors are used by ``FXNotificationBanner``, ``FXLogWidget``,
-    and other status/feedback widgets.
-
-    Each level provides both a ``foreground`` (text/icon) and ``background``
-    color designed to work together with appropriate contrast.
-
-    The function first checks for theme-specific feedback colors (defined
-    within the current theme), then falls back to the global feedback colors
-    for backward compatibility.
-
-    Returns:
-        Dictionary with keys: 'debug', 'info', 'success', 'warning', 'error'.
-        Each value is a dict with 'foreground' and 'background' keys.
+    One entry per level ("debug", "info", "success", "warning", "error"),
+    each a ``foreground`` and a ``background``. For one colour, read
+    ``colors().feedback_<level>_<part>``.
 
     Examples:
-        >>> colors = fxstyle.get_feedback_colors()
-        >>> colors["error"]["foreground"]  # "#ff4444"
-        >>> colors["error"]["background"]  # "#7b2323"
-        >>> colors["success"]["foreground"]  # "#8ac549"
+        >>> list(fxstyle.get_feedback_colors())
+        ['debug', 'info', 'success', 'warning', 'error']
     """
     return _feedback(get_theme())
 
 
 def _feedback(theme_name: str) -> dict:
-    """Return a theme's feedback block: its own, dark's, the file's, built-in."""
-    colors_dict = get_colors()
-    themes = colors_dict.get("themes", {})
+    """Return a theme's feedback block: its own, the file's dark, built-in."""
+    themes = get_colors().get("themes", {})
     for source in (
         themes.get(theme_name, {}),
         themes.get(_DEFAULT_THEME, {}),
-        colors_dict,
         _builtin_theme(),
     ):
         if isinstance(source.get("feedback"), dict):
             return source["feedback"]
-    return _DEFAULT_FEEDBACK
-
-
-def get_theme_colors() -> dict:
-    """Get the resolved colours of the current theme, one key per role.
-
-    The roles are listed at the top of ``style.yaml``'s ``themes:`` section.
-
-    Returns:
-        Every ``@token`` of the theme sheet, without the ``@``: a copy of
-        the cache `colors` reads, with keys the theme omits filled from
-        the default theme.
-
-    Examples:
-        >>> colors = get_theme_colors()
-        >>> bg = colors["surface"]  # "#302f2f" for dark
-        >>> sunken = colors["surface_sunken"]  # Input/list backgrounds
-        >>> text = colors["text"]  # Primary text color
-    """
-    return dict(vars(_get_theme_namespace()))
+    return {}
 
 
 def get_available_themes() -> list:
@@ -566,61 +479,6 @@ def get_available_themes() -> list:
     """
     colors_dict = get_colors()
     return list(colors_dict.get("themes", {}).keys())
-
-
-def get_icon_color() -> str:
-    """Get the icon color for the current theme.
-
-    This color is used to tint monochrome SVG icons so they match the theme.
-    It's applied by ``fxicons.get_icon()`` and ``FXProxyStyle`` for standard
-    Qt icons.
-
-    Returns:
-        The icon color as a hex string from the current theme's configuration.
-
-    Examples:
-        >>> color = fxstyle.get_icon_color()
-        >>> print(color)  # "#b4b4b4" for dark, "#424242" for light
-    """
-    return colors().icon
-
-
-def get_icon_on_accent_primary() -> str:
-    """Get the icon color for accent_primary backgrounds.
-
-    This color should be used for icons displayed on selected items or other
-    elements that use the accent_primary color as their background.
-
-    If not explicitly defined in the theme, falls back to text_on_accent_primary,
-    which is auto-computed based on the accent_primary color's luminance.
-
-    Returns:
-        The icon color as a hex string for use on accent_primary backgrounds.
-
-    Examples:
-        >>> color = fxstyle.get_icon_on_accent_primary()
-        >>> print(color)  # "#ffffff" for dark theme with blue accent
-    """
-    return colors().icon_on_accent_primary
-
-
-def get_icon_on_accent_secondary() -> str:
-    """Get the icon color for accent_secondary backgrounds.
-
-    This color should be used for icons displayed on hovered items or other
-    elements that use the accent_secondary color as their background.
-
-    If not explicitly defined in the theme, falls back to text_on_accent_secondary,
-    which is auto-computed based on the accent_secondary color's luminance.
-
-    Returns:
-        The icon color as a hex string for use on accent_secondary backgrounds.
-
-    Examples:
-        >>> color = fxstyle.get_icon_on_accent_secondary()
-        >>> print(color)  # "#ffffff" for dark theme with blue accent
-    """
-    return colors().icon_on_accent_secondary
 
 
 ###### Font Configuration
@@ -679,37 +537,49 @@ def register_fonts(
             results[key] = QFontDatabase.applicationFontFamilies(font_id)
 
     if any(results.values()):
+        _invalidate_theme_namespace()
         _reapply_to_roots()
-        _reapply_widget_styles()
     return results
 
 
-def _font_config(theme_name: str) -> dict:
-    """Return the raw font role definitions for a theme.
+def _fonts_block(theme_name: str) -> dict:
+    """Return a theme's ``fonts:`` block, merged role by role and rank by rank.
 
-    Precedence, lowest first: the built-in defaults, the color file's
-    top-level ``fonts:`` block, then a ``fonts:`` block inside the
-    theme. Merging is per role, so a file or theme naming only ``title``
-    keeps the other roles.
-
-    Args:
-        theme_name: Theme to resolve.
-
-    Returns:
-        Mapping of role name to its configured family list or string.
+    Lowest first: the built-in defaults, the colour file's top-level block,
+    then the theme's own.
     """
-    fonts = dict(_DEFAULT_FONTS)
+    fonts = {**_DEFAULT_FONTS, "ranks": dict(_DEFAULT_RANKS)}
     theme_fonts = _theme_data(theme_name).get("fonts")
     for source in (get_colors().get("fonts"), theme_fonts):
-        if isinstance(source, dict):
-            fonts.update(source)
-    fonts.pop("ranks", None)
+        if not isinstance(source, dict):
+            continue
+        for key, value in source.items():
+            if key == "ranks":
+                if isinstance(value, dict):
+                    fonts["ranks"].update(value)
+            else:
+                fonts[key] = value
     return fonts
 
 
-def _families(entry):
-    """Return a role's families: the entry itself, or its `family` key."""
-    return entry.get("family") if isinstance(entry, dict) else entry
+def _font_config(theme_name: str) -> dict:
+    """Return a theme's font roles, each a family list or a mapping."""
+    fonts = _fonts_block(theme_name)
+    del fonts["ranks"]
+    return fonts
+
+
+def _ranks(theme_name: str) -> Dict[str, dict]:
+    """Return a theme's title ranks, each a size and a weight."""
+    return _fonts_block(theme_name)["ranks"]
+
+
+def _check_weight(weight, what: str) -> None:
+    """Raise ValueError unless `weight` is None or on the CSS scale."""
+    if weight is not None and weight not in _WEIGHTS:
+        raise ValueError(
+            f"Font weight {weight!r} for {what} is not one of "
+            f"{sorted(_WEIGHTS)}")
 
 
 def _shape(theme_name: str, role: str) -> Tuple[Optional[int], Optional[str]]:
@@ -718,10 +588,7 @@ def _shape(theme_name: str, role: str) -> Tuple[Optional[int], Optional[str]]:
     if not isinstance(entry, dict):
         return None, None
     weight, hinting = entry.get("weight"), entry.get("hinting")
-    if weight is not None and weight not in _WEIGHTS:
-        raise ValueError(
-            f"Font weight {weight!r} for '{role}' is not one of "
-            f"{sorted(_WEIGHTS)}")
+    _check_weight(weight, f"'{role}'")
     if hinting is not None and hinting not in _HINTING:
         raise ValueError(
             f"Font hinting {hinting!r} for '{role}' is not one of "
@@ -729,28 +596,19 @@ def _shape(theme_name: str, role: str) -> Tuple[Optional[int], Optional[str]]:
     return weight, hinting
 
 
-def _resolve_font_stack(entries) -> str:
-    """Turn one role's configured families into a QSS ``font-family``.
+def _font_families(entries) -> list:
+    """Return one role's installed families, generics lowercased, never empty.
 
-    An empty value yields the platform default alone, which is what the
-    single hardcoded font block emitted before roles existed.
-
-    Families the running Qt does not have are dropped rather than named.
-    Naming an absent family is not a loud failure: Qt answers by
-    substituting whichever family sorts first, so the stylesheet and
-    :func:`get_fonts` would both claim a face that is not being drawn.
-    The platform default is appended so a role can never resolve to
-    nothing, unless the stack already ends in a CSS generic, which is
-    terminal on its own.
+    A family the running Qt lacks is dropped: Qt would draw whichever family
+    sorts first instead. The platform default closes the list unless it
+    already ends in a CSS generic, which is terminal.
 
     Args:
-        entries: A family name, an iterable of them in preference order,
-            or an empty value.
-
-    Returns:
-        A comma-separated QSS value, quoted except for CSS generics.
+        entries: A family name, a list of them, a mapping with a ``family``
+            key, or an empty value.
     """
-    entries = _families(entries)
+    if isinstance(entries, dict):
+        entries = entries.get("family")
     if not entries:
         entries = []
     elif isinstance(entries, str):
@@ -760,18 +618,24 @@ def _resolve_font_stack(entries) -> str:
     available = (
         set(QFontDatabase.families()) if QGuiApplication.instance() else set()
     )
-
-    stack = []
+    families = []
     for entry in entries:
         name = str(entry).strip()
         if name.lower() in _GENERIC_FONT_FAMILIES:
-            stack.append(name.lower())
+            families.append(name.lower())
         elif name in available:
-            stack.append(f'"{name}"')
+            families.append(name)
+    if not families or families[-1] not in _GENERIC_FONT_FAMILIES:
+        families.append(_platform_default_font())
+    return families
 
-    if not stack or stack[-1] not in _GENERIC_FONT_FAMILIES:
-        stack.append(f'"{_platform_default_font()}"')
-    return ", ".join(stack)
+
+def _resolve_font_stack(entries) -> str:
+    """Return one role's families as a QSS ``font-family``, generics unquoted."""
+    return ", ".join(
+        name if name in _GENERIC_FONT_FAMILIES else f'"{name}"'
+        for name in _font_families(entries)
+    )
 
 
 def get_fonts(theme: Optional[str] = None) -> Dict[str, str]:
@@ -814,16 +678,6 @@ def get_font_family(role: str = "body", theme: Optional[str] = None) -> str:
     """
     fonts = get_fonts(theme)
     return fonts.get(role) or fonts["body"]
-
-
-def _ranks(theme_name: str) -> Dict[str, dict]:
-    """Return a theme's title ranks: built-in, the file's, then the theme's."""
-    ranks = dict(_DEFAULT_RANKS)
-    theme_fonts = _theme_data(theme_name).get("fonts")
-    for source in (get_colors().get("fonts"), theme_fonts):
-        if isinstance(source, dict) and isinstance(source.get("ranks"), dict):
-            ranks.update(source["ranks"])
-    return ranks
 
 
 def mark_as_title(
@@ -921,31 +775,15 @@ def get_luminance(hex_color: str) -> float:
     Returns:
         The relative luminance value between 0 (black) and 1 (white).
     """
-    color = QColor(hex_color if hex_color[:1] == "#" else f"#{hex_color}")
+    color = QColor(hex_color)
     if not color.isValid():
-        color = QColor(hex_color)
+        color = QColor(f"#{hex_color}")
 
     def gamma(c):
         return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
 
     r, g, b = color.redF(), color.greenF(), color.blueF()
     return 0.2126 * gamma(r) + 0.7152 * gamma(g) + 0.0722 * gamma(b)
-
-
-def get_contrast_text_color(background_hex: str) -> str:
-    """Determine whether to use white or black text on a given background.
-
-    Uses WCAG luminance calculation to ensure readable contrast.
-
-    Args:
-        background_hex: The background color as a hex string.
-
-    Returns:
-        "#FFFFFF" for dark backgrounds, "#000000" for light backgrounds.
-    """
-    luminance = get_luminance(background_hex)
-    # Use white text on dark backgrounds, black on light
-    return "#FFFFFF" if luminance < 0.5 else "#000000"
 
 
 def get_contrast_ratio(one_hex: str, two_hex: str) -> float:
@@ -971,11 +809,15 @@ def readable_ink(
     """
     ground = QColor(background).name()
     start = QColor(preferred or "#ffffff").name()
-    toward = max(
+    return step_toward(start, _pole_from(ground), _reads(ground, floor))
+
+
+def _pole_from(ground: str) -> str:
+    """Return black or white, whichever stands further from `ground`."""
+    return max(
         ("#000000", "#ffffff"),
         key=lambda pole: get_contrast_ratio(pole, ground),
     )
-    return step_toward(start, toward, _reads(ground, floor))
 
 
 def _visibly_differ(one_hex: str, two_hex: str) -> bool:
@@ -989,12 +831,6 @@ def _visibly_differ(one_hex: str, two_hex: str) -> bool:
         abs(one.blue() - two.blue()),
     )
     return get_contrast_ratio(one_hex, two_hex) >= 1.1 or delta >= 48
-
-
-def _away_from(ink_hex: str, fill_hex: str) -> str:
-    """Return the pole a fill moves to for more contrast with `ink_hex`."""
-    light_ink = get_luminance(ink_hex) > get_luminance(fill_hex)
-    return "#000000" if light_ink else "#ffffff"
 
 
 def _primary_button_fills(
@@ -1013,7 +849,7 @@ def _primary_button_fills(
 
     def shifted(fill, ink, *apart):
         reads = _reads(ink, 4.5)
-        return step_toward(fill, _away_from(ink, fill), lambda color: (
+        return step_toward(fill, _pole_from(ink), lambda color: (
             reads(color) and all(_visibly_differ(color, o) for o in apart)
         ))
 
@@ -1090,11 +926,11 @@ def depth_shade(base: Union[str, QColor], depth: int) -> str:
     base = QColor(base).name()
     if depth <= 0:
         return base
-    colors = get_theme_colors()
-    text = colors["text"]
-    floor = min(4.5, get_contrast_ratio(text, base))
+    theme = colors()
+    text = theme.text
+    floor = min(TEXT_CONTRAST, get_contrast_ratio(text, base))
     deepest = mix(
-        base, colors["border_light"], min(depth, DEPTH_CAP) * DEPTH_STEP)
+        base, theme.border_light, min(depth, DEPTH_CAP) * DEPTH_STEP)
     return step_toward(deepest, base, _reads(text, floor))
 
 
@@ -1223,13 +1059,52 @@ class _SplitterMark(QObject):
         painter.end()
 
 
+def _readable_states(theme_data: dict) -> Dict[str, str]:
+    """Return a theme's pressed fill and text inks, each held to its floor.
+
+    - ``state_pressed``: stepped away from ``surface`` until it differs from
+      ``state_hover`` by `STATE_MIN_CONTRAST`.
+    - ``text``: stepped toward black or white until it reads at
+      `TEXT_CONTRAST` on every ground it sits on, the hover and pressed
+      fills included.
+    - ``text_muted``: the same on every ground but a pressed fill, which
+      carries ``text``.
+    """
+    surface = theme_data["surface"]
+    pole = _pole_from(surface)
+    hover = theme_data.get("state_hover", surface)
+    pressed = step_toward(
+        theme_data.get("state_pressed", hover), pole,
+        _reads(hover, STATE_MIN_CONTRAST))
+    grounds = [
+        theme_data.get(key, surface)
+        for key in ("surface", "surface_sunken", "surface_alt", "well",
+                    "frame", "tooltip", "state_hover")
+    ]
+
+    def reading(ink: str, on: list) -> str:
+        return step_toward(QColor(ink).name(), pole, lambda color: all(
+            get_contrast_ratio(color, ground) >= TEXT_CONTRAST
+            for ground in on))
+
+    return {
+        "state_pressed": pressed,
+        "text": reading(theme_data["text"], grounds + [pressed]),
+        "text_muted": reading(theme_data["text_muted"], grounds),
+    }
+
+
+def _is_light(surface: str) -> bool:
+    """Return whether a theme whose pane is `surface` is a light one."""
+    return QColor(surface).lightness() > 128
+
+
 def _token_map(theme_name: str) -> Dict[str, str]:
     """Build the ``@token`` -> value map for a theme.
 
-    Single source of truth for stylesheet token resolution. Includes:
-    flat theme color roles, flattened feedback colors
-    (``@feedback_<level>_<part>``), computed on-accent colors, and the
-    ``~icons`` folder path.
+    The one token resolver: the theme's roles, the derived ones (depth,
+    states, text inks, on-accent, primary fills, control edge), the
+    flattened feedback colours, font stacks, sizes and the ``~icons`` path.
 
     Args:
         theme_name: Theme to resolve. Keys it omits come from the file's
@@ -1239,14 +1114,14 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         Mapping of placeholder (including the ``@``/``~`` prefix) to value.
     """
     theme_data = _theme_data(theme_name)
+    theme_data.update(_depth_colors(theme_data))
+    theme_data.update(_readable_states(theme_data))
 
     tokens: Dict[str, str] = {
-        f"@{key}": value
+        f"@{key}": str(value)
         for key, value in theme_data.items()
-        if isinstance(value, str)
+        if isinstance(value, (str, int)) and not isinstance(value, bool)
     }
-    for key, value in _depth_colors(theme_data).items():
-        tokens[f"@{key}"] = value
 
     # Feedback colors flatten to @feedback_<level>_<part>, plus
     # @feedback_<level>_ink, a text colour that reads on the background.
@@ -1259,17 +1134,13 @@ def _token_map(theme_name: str) -> Dict[str, str]:
                     pair["background"]
                 )
 
-    # On-accent colors: theme value if defined, computed otherwise.
-    accent_primary = theme_data.get("accent_primary", "#2196F3")
-    accent_secondary = theme_data.get("accent_secondary", "#1976D2")
-    tokens.setdefault("@accent_primary", accent_primary)
-    tokens.setdefault("@accent_secondary", accent_secondary)
+    # On-accent inks: the theme's, else the pole that reads best.
+    accent_primary = theme_data["accent_primary"]
+    accent_secondary = theme_data["accent_secondary"]
     text_on_primary = theme_data.get(
-        "text_on_accent_primary", get_contrast_text_color(accent_primary)
-    )
+        "text_on_accent_primary") or _pole_from(accent_primary)
     text_on_secondary = theme_data.get(
-        "text_on_accent_secondary", get_contrast_text_color(accent_secondary)
-    )
+        "text_on_accent_secondary") or _pole_from(accent_secondary)
     tokens["@text_on_accent_primary"] = text_on_primary
     tokens["@text_on_accent_secondary"] = text_on_secondary
     tokens["@icon_on_accent_primary"] = theme_data.get(
@@ -1295,29 +1166,22 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     # No bundled border reads at 3:1 on its surface; a control whose edge
     # is its only shape (a switch, a slider handle) wears this one.
     tokens["@control_edge"] = readable_ink(
-        theme_data.get("surface", "#000000"),
+        theme_data["surface"],
         theme_data.get("border_strong", "#808080"),
         CONTROL_CONTRAST,
-    )
-    # An inactive tab's text, pushed to 4.5:1 on the surface its strip is.
-    tokens["@tab_muted"] = readable_ink(
-        theme_data.get("surface", "#000000"),
-        theme_data.get("text_muted", "#808080"),
-        4.5,
     )
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
     tokens["@card_radius"] = f"{CARD_RADIUS}px"
     tokens["@indicator_size"] = f"{INDICATOR_SIZE}px"
     tokens["@thin_scroll_radius"] = f"{THIN_SCROLL_WIDTH // 2}px"
     tokens["@thin_scroll"] = f"{THIN_SCROLL_WIDTH}px"
-    # A bare number, for a sheet that writes its own unit: `@radiuspx`.
-    tokens["@radius"] = str(BUTTON_RADIUS)
+    tokens["@spin_padding"] = _SPIN_PADDING
 
-    # Icon folder path used by url(~icons/...) in QSS, chosen by the
-    # target theme's surface lightness (not the globally current theme).
-    surface = QColor(theme_data.get("surface", "#000000"))
+    # url(~icons/...) in QSS: the folder of the theme being resolved, which
+    # need not be the current one.
     icon_folder = (
-        "stylesheet_light" if surface.lightness() > 128 else "stylesheet_dark"
+        "stylesheet_light" if _is_light(theme_data["surface"])
+        else "stylesheet_dark"
     )
     tokens["~icons"] = str(_parent_directory / "icons" / icon_folder).replace(
         os.sep, "/"
@@ -1375,22 +1239,8 @@ def resolve(qss: str, theme: Optional[str] = None) -> str:
 
 
 def is_light_theme() -> bool:
-    """Check if the current theme is a light theme.
-
-    Determines theme brightness by analyzing the surface color's lightness.
-    This is more reliable than checking the theme name since it works with
-    any custom theme.
-
-    Returns:
-        True if the current theme is light, False if dark.
-
-    Examples:
-        >>> if fxstyle.is_light_theme():
-        ...     use_dark_icons()
-        ... else:
-        ...     use_light_icons()
-    """
-    return QColor(colors().surface).lightness() > 128
+    """Return whether the current theme is light, judged by its surface."""
+    return _is_light(colors().surface)
 
 
 ###### Theme Functions
@@ -1666,16 +1516,7 @@ def _get_standard_icon_map() -> dict:
 
 
 class FXProxyStyle(QProxyStyle):
-    """A custom style class that extends QProxyStyle to provide custom icons.
-
-    This style provides theme-aware standard icons (file dialogs, message boxes,
-    etc.) using Material Design icons from the fxicons library.
-
-    Note:
-        Qt stylesheets bypass QProxyStyle's drawControl() method, which means
-        icon colorization for item views (lists, trees) and menus cannot be
-        handled here when stylesheets are applied. Use ``FXIconColorDelegate``
-        from fxwidgets for icon colorization in item views instead.
+    """Give Qt's standard icons (dialogs, message boxes) fxgui's themed icons.
 
     Examples:
         >>> from fxgui import fxstyle
@@ -1720,36 +1561,6 @@ class FXProxyStyle(QProxyStyle):
 ###### Stylesheet Functions
 
 
-def replace_colors(stylesheet: str, colors_dict: Optional[dict] = None) -> str:
-    """Replace color placeholders in a stylesheet with actual color values.
-
-    Placeholders are `@key`; the longest key is replaced first.
-
-    Args:
-        stylesheet: The stylesheet string containing color placeholders.
-        colors_dict: Dictionary containing color definitions. Only top-level
-            non-dict values are used. Defaults to every token of the
-            current theme, as `resolve` substitutes them.
-
-    Returns:
-        The stylesheet with all matching placeholders replaced.
-
-    Examples:
-        >>> colors = {"primary": "#FF5722", "secondary": "#E64A19"}
-        >>> qss = "color: @primary; background: @secondary;"
-        >>> result = replace_colors(qss, colors)
-        >>> print(result)
-        'color: #FF5722; background: #E64A19;'
-    """
-    if colors_dict is None:
-        return resolve(stylesheet)
-    return _substitute(stylesheet, {
-        f"@{key}": str(value)
-        for key, value in colors_dict.items()
-        if not isinstance(value, dict)
-    })
-
-
 def _font_stylesheet(theme: Optional[str] = None) -> str:
     """Return the title rules: the title family, then each rank's size.
 
@@ -1766,11 +1577,8 @@ def _font_stylesheet(theme: Optional[str] = None) -> str:
         if shape.get("size") is not None:
             declarations.append(f"font-size: {int(shape['size'])}px;")
         weight = shape.get("weight")
+        _check_weight(weight, f"rank '{rank}'")
         if weight is not None:
-            if weight not in _WEIGHTS:
-                raise ValueError(
-                    f"Font weight {weight!r} for rank '{rank}' is not one "
-                    f"of {sorted(_WEIGHTS)}")
             declarations.append(f"font-weight: {weight};")
         if declarations:
             rules.append(
@@ -1778,28 +1586,9 @@ def _font_stylesheet(theme: Optional[str] = None) -> str:
     return "\n".join(rules) + "\n"
 
 
-def build_stylesheet(theme: Optional[str] = None) -> str:
-    """Build the complete theme stylesheet.
-
-    Concatenates the platform font block, the base ``style.qss``, and all
-    fragments registered via :func:`register_widget_style`, then resolves
-    every ``@token`` in a single pass. Pure: no global state is modified.
-
-    Args:
-        theme: Theme name. Defaults to the current theme.
-
-    Returns:
-        The ready-to-apply stylesheet string.
-    """
-    return _build(STYLE_FILE, theme)
-
-
-def _build(style_file, theme: Optional[str]) -> str:
-    """Resolve the font block, `style_file` and every registered fragment."""
-    parts = [_font_stylesheet(theme)]
-    if os.path.exists(style_file):
-        with open(style_file, "r", encoding="utf-8") as in_file:
-            parts.append(in_file.read())
+def _build_stylesheet(theme: Optional[str] = None) -> str:
+    """Return the title rules, `STYLE_FILE` and every fragment, resolved."""
+    parts = [_font_stylesheet(theme), STYLE_FILE.read_text(encoding="utf-8")]
     parts.extend(_widget_fragments.values())
     return resolve("\n".join(parts), theme)
 
@@ -1829,47 +1618,6 @@ def register_widget_style(qss: str) -> None:
     _reapply_to_roots()
 
 
-def set_widget_style(widget: QWidget, qss: str) -> None:
-    """Give one widget a stylesheet whose ``@tokens`` follow every switch.
-
-    For a look one widget alone has; a look every widget of a class
-    shares belongs in `register_widget_style`. The widget's sheet is this
-    one from now on: a later ``setStyleSheet`` is overwritten at the next
-    switch, unless ``set_widget_style(widget, "")`` stopped it first.
-
-    Args:
-        widget: The widget to style.
-        qss: Declarations or rules, with any ``@token``. Empty stops.
-
-    Examples:
-        >>> fxstyle.set_widget_style(hint, "color: @text_muted;")
-    """
-    widget.setProperty(WIDGET_STYLE_PROPERTY, qss or None)
-    widget.setStyleSheet(resolve(qss) if qss else "")
-    key = id(widget)
-    if not qss:
-        _styled_widgets.pop(key, None)
-    elif key not in _styled_widgets:
-        # Held, not weak: a wrapper Qt made is collected while its widget
-        # lives on. The widget's own end drops it.
-        _styled_widgets[key] = widget
-        widget.destroyed.connect(lambda *_: _styled_widgets.pop(key, None))
-
-
-def _reapply_widget_styles() -> None:
-    """Resolve every `set_widget_style` sheet again in the current theme."""
-    # Only these: wrapping every widget of the app, a host's or a
-    # library's own included, crashed PySide on a class it half knows.
-    tokens = None
-    for widget in list(_styled_widgets.values()):
-        if not _compat.is_valid(widget):
-            continue
-        qss = widget.property(WIDGET_STYLE_PROPERTY)
-        if qss:
-            tokens = tokens or _token_map(get_theme())
-            widget.setStyleSheet(_substitute(qss, tokens))
-
-
 def register_themed_root(root: QObject) -> None:
     """Register a widget (or QApplication) as a themed root.
 
@@ -1893,14 +1641,14 @@ def register_themed_root(root: QObject) -> None:
     if isinstance(root, QWidget):
         root.setProperty(ROOT_PROPERTY, True)
     _watch_focus()
-    _apply_to_root(root, build_stylesheet(), palette(), font())
+    _apply_to_root(root, _build_stylesheet(), palette(), font())
 
 
 def _reapply_to_roots() -> None:
     """Re-apply the current theme palette, font and sheet to all live roots."""
     if not _themed_roots:
         return
-    sheet = build_stylesheet()
+    sheet = _build_stylesheet()
     theme_palette = palette()
     theme_font = font()
     for root in list(_themed_roots):
@@ -1922,7 +1670,7 @@ QWidget {{
 }}
 /* Undo what a host's sheet on the parent (Houdini's base.qss) sets and
    the base sheet leaves open; -1px is Qt's own unset size. */
-QWidget {{ margin: 0px; outline: none; }}
+QWidget {{ margin: 0px; }}
 QToolButton {{ width: -1px; height: -1px; }}
 QLineEdit {{ height: -1px; }}
 QMenu::separator {{ margin: 0px; }}
@@ -1971,10 +1719,38 @@ _KEYBOARD_REASONS = (
 )
 
 
+class _NoFocusRect(QProxyStyle):
+    """Draw everything but Qt's focus rectangle, which fxgui never shows.
+
+    PySide6 6.5's Fusion and Windows 11 draw it on an item view's current
+    cell whatever the sheet's ``outline`` says, tinting its BackgroundRole.
+    """
+
+    def drawPrimitive(self, element, option, painter, widget=None):
+        """Draw `element` unless it is the focus rectangle."""
+        if element != QStyle.PE_FrameFocusRect:
+            super().drawPrimitive(element, option, painter, widget)
+
+
+def _drop_focus_rect(view: QAbstractItemView) -> None:
+    """Give a themed view a style without the focus rectangle, once."""
+    # Any proxy already on the view (a delegate's) has its own say.
+    if not _is_themed(view) or view.findChild(
+        QProxyStyle, "", Qt.FindDirectChildrenOnly
+    ) is not None:
+        return
+    # No base: it takes the application's style. Parented, since a style
+    # freed before its view crashes.
+    style = _NoFocusRect()
+    style.setParent(view)
+    view.setStyle(style)
+
+
 class _FocusVisibility(QObject):
     """Mark a themed widget's focus visible when it came by keyboard.
 
-    It also gives every themed popup, Qt's own included, flyout corners.
+    It also gives every themed popup, Qt's own included, flyout corners,
+    and every themed item view a style without Qt's focus rectangle.
     """
 
     def __init__(self, parent: QObject):
@@ -1998,6 +1774,8 @@ class _FocusVisibility(QObject):
             and watched.windowType() == Qt.Popup
         ):
             self._dress_popup(watched)
+        elif kind == QEvent.Polish and isinstance(watched, QAbstractItemView):
+            _drop_focus_rect(watched)
         return False
 
     @staticmethod
@@ -2096,11 +1874,21 @@ def _in_host(root: QObject) -> bool:
 
 
 def _apply_to_root(root, sheet: str, theme_palette, theme_font) -> None:
-    root.setPalette(theme_palette)
-    root.setFont(theme_font)
+    """Put a theme's sheet, palette and font on `root`."""
+    if isinstance(root, QApplication):
+        # The application's sheet restores, on every widget, the palette
+        # in force when it is set, so that palette goes first.
+        root.setPalette(theme_palette)
+        root.setFont(theme_font)
+        root.setStyleSheet(sheet)
+        return
+    # A widget's sheet change restores the palette its stylesheet style
+    # saved at an earlier polish; the palette set after it wins.
     if _in_host(root):
         sheet = _host_rules() + sheet
     root.setStyleSheet(sheet)
+    root.setPalette(theme_palette)
+    root.setFont(theme_font)
 
 
 # Palette role -> token, for every colour group; then the Disabled group.
@@ -2145,10 +1933,7 @@ def palette(theme: Optional[str] = None) -> QPalette:
     if theme is None or theme == get_theme():
         tokens = vars(_get_theme_namespace())
     else:
-        tokens = {
-            name[1:]: value for name, value in _token_map(theme).items()
-            if name.startswith("@")
-        }
+        tokens = _colour_tokens(theme)
     result = QPalette()
     for roles, group in (
         (_PALETTE_ROLES, QPalette.All),
@@ -2180,10 +1965,8 @@ def font(theme: Optional[str] = None, role: str = "body") -> QFont:
         >>> item.setFont(fxstyle.font(role="mono"))
     """
     theme = theme or get_theme()
-    families = [
-        name.strip().strip('"')
-        for name in get_font_family(role, theme).split(",")
-    ]
+    roles = _font_config(theme)
+    families = _font_families(roles.get(role, roles["body"]))
     result = QFont()
     named = [name for name in families if name not in _GENERIC_FONT_FAMILIES]
     result.setFamilies(named)
@@ -2197,26 +1980,3 @@ def font(theme: Optional[str] = None, role: str = "body") -> QFont:
         result.setHintingPreference(_HINTING[hinting])
     return result
 
-
-def load_stylesheet(
-    style_file: str = STYLE_FILE,
-    extra: Optional[str] = None,
-    theme: Optional[str] = None,
-) -> str:
-    """Return `build_stylesheet` over another QSS file; changes nothing.
-
-    For styling a DCC window by hand: it carries the host rules a widget
-    root needs, and the window wants `palette()` and `font()` set too.
-
-    Args:
-        style_file: The path to the QSS file. Defaults to `STYLE_FILE`.
-        extra: Extra stylesheet content to append. Defaults to None.
-        theme: The theme to use. Defaults to the current theme.
-
-    Returns:
-        The resolved stylesheet, or "" when `style_file` does not exist.
-    """
-    if not os.path.exists(style_file):
-        return ""
-    host = _host_rules(theme)
-    return host + _build(style_file, theme) + (extra or "")

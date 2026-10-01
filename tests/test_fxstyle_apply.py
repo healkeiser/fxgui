@@ -30,10 +30,10 @@ def test_unknown_theme_raises(qtbot):
 
 def test_theme_changed_signal_still_fires(qtbot):
     received = []
-    fxstyle.theme_manager.theme_changed.connect(received.append)
+    fxstyle.theme_changed.connect(received.append)
     try:
         fxstyle.apply_theme("light")
     finally:
-        fxstyle.theme_manager.theme_changed.disconnect(received.append)
+        fxstyle.theme_changed.disconnect(received.append)
     assert received == ["light"]
 

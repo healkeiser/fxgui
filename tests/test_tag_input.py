@@ -47,7 +47,7 @@ def test_chips_style_through_the_theme_sheet(qtbot, qapp):
     chip = tags._tags_layout.itemAt(0).widget()
     assert chip.styleSheet() == "" and chip.label.styleSheet() == ""
     assert tags._input.styleSheet() == ""
-    sheet = fxstyle.build_stylesheet()
+    sheet = fxstyle._build_stylesheet()
     ink = fxstyle.colors().text_on_accent_primary
     assert f"FXTagChip QLabel {{\n    color: {ink};" in sheet
 
@@ -130,5 +130,5 @@ def test_a_bulk_set_says_tags_changed_once(qtbot, qapp):
 
 
 def test_the_chip_label_takes_the_root_font_size(qtbot, qapp):
-    assert "font-size" not in fxstyle.build_stylesheet().split(
+    assert "font-size" not in fxstyle._build_stylesheet().split(
         "FXTagChip QLabel")[1].split("}")[0]

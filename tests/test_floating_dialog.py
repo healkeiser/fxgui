@@ -116,7 +116,7 @@ def test_the_dialog_keeps_no_dead_state_and_no_host_look(qtbot):
 
     for name in ("dialog_icon", "dialog_title", "parent_package"):
         assert not hasattr(dialog, name), name
-    assert "houdini" not in fxstyle.build_stylesheet()
+    assert "houdini" not in fxstyle._build_stylesheet()
 
 
 def _shown(qtbot, theme):

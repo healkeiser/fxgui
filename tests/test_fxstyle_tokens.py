@@ -65,8 +65,6 @@ def test_token_map_computes_on_accent_when_theme_omits_them(qapp, monkeypatch):
     }
     monkeypatch.setattr(fxstyle, "_colors", {**colors, "themes": themes})
     tokens = fxstyle._token_map("dark")
-    expected = fxstyle.get_contrast_text_color(
-        themes["dark"]["accent_primary"]
-    )
+    expected = fxstyle._pole_from(themes["dark"]["accent_primary"])
     assert tokens["@text_on_accent_primary"] == expected
     assert tokens["@icon_on_accent_primary"] == expected

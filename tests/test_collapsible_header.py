@@ -38,7 +38,7 @@ def test_expanded_header_is_a_property_the_theme_sheet_styles(qtbot, qapp):
     assert section._header.property("expanded") is True
     assert section._header.styleSheet() == ""
     assert section._title_label.styleSheet() == ""
-    assert 'fx_collapsible_header[expanded="true"]' in fxstyle.build_stylesheet()
+    assert 'fx_collapsible_header[expanded="true"]' in fxstyle._build_stylesheet()
 
 
 def test_a_named_title_icon_follows_the_theme(qtbot, qapp):

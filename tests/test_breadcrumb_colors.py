@@ -25,7 +25,7 @@ THEMES = fxstyle.get_available_themes()
 @pytest.mark.parametrize("theme", THEMES)
 def test_the_strip_reads_on_its_ground_in_every_theme(qapp, theme, ground):
     fxstyle.apply_theme(theme)
-    colors = fxstyle.get_theme_colors()
+    colors = dict(vars(fxstyle.colors()))
     rest, hover, edge, ink = _strip_colors(
         ground,
         FXBreadcrumb.STRIP_RESTING_TOKEN,
@@ -104,7 +104,7 @@ def test_a_theme_switch_repaints_the_strip_without_a_rebuild(qtbot):
 
 
 def test_the_breadcrumb_holds_no_theme_hook(qtbot):
-    count = lambda: fxstyle.theme_manager.receivers(  # noqa: E731
+    count = lambda: fxstyle._signals.receivers(  # noqa: E731
         SIGNAL("theme_changed(QString)")
     )
     before = count()
@@ -132,7 +132,7 @@ def test_a_segment_writes_in_the_strip_s_ink(qtbot):
     }
 
     assert ink in inked
-    assert QColor(fxstyle.get_theme_colors()["text"]).name() != ink, (
+    assert QColor(fxstyle.colors().text).name() != ink, (
         "solarized_light's own text does not read on the strip"
     )
 

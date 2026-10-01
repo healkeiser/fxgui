@@ -1212,7 +1212,7 @@ def test_a_selected_row_is_not_outlined_by_the_focus_ring(qtbot):
     from fxgui import fxstyle
 
     painted = _focus_ring_pixels(qtbot, selected=True)
-    dark = QColor(fxstyle.get_theme_colors()["text_on_accent_primary"]).name()
+    dark = QColor(fxstyle.colors().text_on_accent_primary).name()
     assert dark not in painted
     # Nothing at all was drawn, which is the whole of the fix.
     assert painted == {"#ff00ff"}
@@ -1225,5 +1225,5 @@ def test_an_unselected_current_row_still_gets_its_ring(qtbot):
     from fxgui import fxstyle
 
     painted = _focus_ring_pixels(qtbot, selected=False)
-    accent = QColor(fxstyle.get_theme_colors()["accent_primary"]).name()
+    accent = QColor(fxstyle.colors().accent_primary).name()
     assert accent in painted

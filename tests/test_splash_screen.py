@@ -62,7 +62,8 @@ def test_the_panel_paints_the_surface_after_a_switch(qtbot):
     assert image.pixelColor(panel.width() - 3, panel.height() // 2).name() == (
         QColor(fxstyle.colors().surface).name())
     assert panel.styleSheet() == ""
-    assert splash.styleSheet() == fxstyle.load_stylesheet()
+    assert splash.styleSheet() == (
+        fxstyle._host_rules() + fxstyle._build_stylesheet())
 
 
 def test_the_border_reads_the_theme_by_default(qtbot):

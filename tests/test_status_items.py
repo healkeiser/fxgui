@@ -101,7 +101,7 @@ def test_a_message_keeps_the_items_shown_and_readable(qtbot, any_theme):
         assert bar.message_label.isVisible()
         ground = bar.ground()
         assert bar.tint() == ground
-        assert ground != fxstyle.get_theme_colors()["frame"], "tinted"
+        assert ground != fxstyle.colors().frame, "tinted"
         spot = QPoint(bar.width() // 2, bar.height() - 2)
         assert _pixel(window, bar, spot) == QColor(ground).name(), (
             "the ink is chosen against the tint painted")
@@ -111,7 +111,7 @@ def test_a_message_keeps_the_items_shown_and_readable(qtbot, any_theme):
     bar.clearMessage()
     qtbot.wait(20)
     assert bar.tint() is None
-    assert bar.ground() == fxstyle.get_theme_colors()["frame"]
+    assert bar.ground() == fxstyle.colors().frame
 
 
 @pytest.mark.parametrize("theme", ["catppuccin_latte", "dracula"])
@@ -212,7 +212,7 @@ def test_a_tip_over_a_message_gives_the_message_back(qtbot):
 def test_a_clickable_item_lights_under_the_mouse(qtbot):
     window = _window(qtbot)
     item = window.statusBar().artist
-    hover = QColor(fxstyle.get_theme_colors()["state_hover"]).name()
+    hover = QColor(fxstyle.colors().state_hover).name()
 
     QTest.mouseMove(window, window.rect().center())
     QTest.mouseMove(item, item.rect().center())

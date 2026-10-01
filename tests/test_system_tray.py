@@ -15,7 +15,8 @@ def test_the_menu_follows_a_theme_switch(qtbot):
 
     fxstyle.apply_theme("github_light")
 
-    assert tray.contextMenu().styleSheet() == fxstyle.load_stylesheet()
+    assert tray.contextMenu().styleSheet() == (
+        fxstyle._host_rules() + fxstyle._build_stylesheet())
 
 
 def test_quit_leaves_a_host_application_running(qtbot, monkeypatch):
