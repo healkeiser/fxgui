@@ -268,6 +268,11 @@ leave `FXThemeAware`.
   non-native, dock title bars, menu tear-off) opened in every bundled
   theme; each one's background must be a theme colour. The test stays,
   so a widget added later can't slip through unstyled.
+- Owner rulings (2026-10-01): tabs are option B, bare muted text with
+  the selected tab a rounded pill (@state_hover, @control_edge edge), for
+  QTabBar and QtAds tabs alike. 13.0.0 ships a VS Code-style language for
+  every control, spec in plans/2026-10-01-vscode-language.md, references
+  fxgui docking and the ls-pipeline Hub, gaps filled from VS Code's CSS.
 - Delegate hover: one look, @accent_secondary as plain lists use.
 - Order hang: `pytest -p no:randomly tests/test_gallery.py
   tests/test_focus_visibility.py` stalls (already at 0b615da4); likely the
