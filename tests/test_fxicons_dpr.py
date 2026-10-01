@@ -56,3 +56,12 @@ def test_icon_states_survive_dpr(qapp, monkeypatch):
     size = QSize(48, 48)
     normal = icon.pixmap(size, QIcon.Normal).toImage()
     assert icon.pixmap(size, QIcon.Disabled).toImage() != normal
+
+
+def test_a_pixmap_asked_at_a_ratio_has_that_ratio(qapp):
+    """Qt before 6.8 hands the engine a device size, later ones a logical."""
+    from qtpy.QtCore import QSize
+
+    pixmap = fxicons.get_icon("check").pixmap(QSize(16, 16), 2.0)
+    assert pixmap.size() == QSize(32, 32)
+    assert pixmap.devicePixelRatio() == 2.0

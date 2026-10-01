@@ -33,7 +33,7 @@ from qtpy.QtGui import (
     QPixmap,
     QPixmapCache,
 )
-from qtpy.QtCore import Qt, QRect, QRectF, QSize
+from qtpy.QtCore import Qt, QRect, QRectF, QSize, qVersion
 
 # Internal
 from fxgui import _compat, fxconstants
@@ -63,6 +63,10 @@ _DEFAULT_INKS = {
     "selected": "icon_on_accent_primary",
     "disabled": "text_disabled",
 }
+
+# Before Qt 6.8, QIcon hands scaledPixmap a device size and sets the
+# returned pixmap's ratio itself; measured on 6.5.3, 6.7.3 and 6.8.3.
+_DEVICE_SIZED = tuple(int(part) for part in qVersion().split(".")[:2]) < (6, 8)
 
 # Opacity of a disabled full-colour icon.
 _DISABLED_ALPHA = 0.35
@@ -410,7 +414,7 @@ def get_pixmap(
                      extension, None)
     # A copy: one shares the pixels until written, so a caller changing it
     # leaves the cached one alone.
-    return QPixmap(engine.scaledPixmap(
+    return QPixmap(engine._safe(
         QSize(engine._size), QIcon.Normal, QIcon.Off,
         _screen_dpr() if dpr is None else float(dpr),
     ))
@@ -469,6 +473,14 @@ class _ThemedIconEngine(QIconEngine):
 
     def scaledPixmap(self, size: QSize, mode, state, scale: float) -> QPixmap:
         """Return the icon drawn for `mode` at `size` and pixel ratio `scale`."""
+        if not _DEVICE_SIZED:
+            return self._safe(size, mode, state, scale)
+        pixmap = QPixmap(self._safe(size / scale, mode, state, scale))
+        pixmap.setDevicePixelRatio(1.0)
+        return pixmap
+
+    def _safe(self, size: QSize, mode, state, scale: float) -> QPixmap:
+        """Return the drawing at logical `size`, or a blank one on an error."""
         # An exception escaping a Qt virtual kills the process on PySide6.
         try:
             return self._drawn(size, mode, state, scale)
@@ -496,13 +508,13 @@ class _ThemedIconEngine(QIconEngine):
 
     def pixmap(self, size: QSize, mode, state) -> QPixmap:
         """Return the icon drawn for `mode` at the screen's pixel ratio."""
-        return self.scaledPixmap(size, mode, state, _screen_dpr())
+        return self._safe(size, mode, state, _screen_dpr())
 
     def paint(self, painter: QPainter, rect: QRect, mode, state) -> None:
         """Draw the icon centred in `rect`."""
         device = painter.device()
         scale = device.devicePixelRatioF() if device is not None else 1.0
-        pixmap = self.scaledPixmap(rect.size(), mode, state, scale)
+        pixmap = self._safe(rect.size(), mode, state, scale)
         logical = pixmap.size() / pixmap.devicePixelRatio()
         x = rect.x() + (rect.width() - logical.width()) // 2
         y = rect.y() + (rect.height() - logical.height()) // 2

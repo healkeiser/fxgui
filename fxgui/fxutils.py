@@ -215,7 +215,8 @@ def repolish(widget: QWidget) -> None:
     style = widget.style()
     style.unpolish(widget)
     style.polish(widget)
-    widget.update()
+    # PySide6 6.5 hides QWidget.update() behind an item view's update(index).
+    QWidget.update(widget)
 
 
 def round_window_corners(widget: QWidget) -> bool:
