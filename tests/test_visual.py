@@ -9,6 +9,9 @@ frames as PNGs for human inspection.
 # Built-in
 import os
 
+# Third-party
+from qtpy.QtCore import Qt
+
 # Internal
 from fxgui.fxwidgets import FXRangeSlider, FXRatingWidget, FXToggleSwitch
 
@@ -30,12 +33,13 @@ def _focused_vs_unfocused(qtbot, widget, name: str):
     widget.show()
     qtbot.waitExposed(widget)
     widget.activateWindow()
+    qtbot.waitUntil(widget.isActiveWindow, timeout=2000)
 
     widget.clearFocus()
     unfocused = _grab(widget)
     _save(unfocused, f"{name}_unfocused.png")
 
-    widget.setFocus()
+    widget.setFocus(Qt.TabFocusReason)
     qtbot.waitUntil(widget.hasFocus, timeout=2000)
     focused = _grab(widget)
     _save(focused, f"{name}_focused.png")

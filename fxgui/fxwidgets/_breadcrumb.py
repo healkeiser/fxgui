@@ -40,7 +40,7 @@ fxstyle.register_widget_style(
         border-radius: 4px;
         padding: 3px 5px;
     }
-    QPushButton#fxBreadcrumbSegment:focus
+    QPushButton#fxBreadcrumbSegment[fxFocusVisible="true"]:focus
     {
         border-color: @accent_primary;
     }

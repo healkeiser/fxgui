@@ -570,6 +570,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         super().__init__(parent)
         self._show_thumbnail = True
+        fxstyle._watch_focus()
         self._show_status_dot = True
         self._show_status_label = True
         self._show_child_count = True
@@ -1801,7 +1802,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         if view is None or not hasattr(view, "currentIndex"):
             return bool(option.state & QStyle.State_HasFocus)
 
-        if not view.hasFocus():
+        if not fxstyle.focus_visible(view):
             return False
 
         current = view.currentIndex()

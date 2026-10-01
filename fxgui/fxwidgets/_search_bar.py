@@ -124,6 +124,7 @@ class FXSearchBar(QWidget):
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setFocusProxy(self._input)
+        fxstyle._watch_focus()
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Light the container while the field has focus."""
@@ -133,7 +134,9 @@ class FXSearchBar(QWidget):
         ):
             # QSS has no :focus-within, so a property carries it.
             self._search_container.setProperty(
-                "focused", event.type() == QEvent.FocusIn
+                "focused",
+                event.type() == QEvent.FocusIn
+                and bool(watched.property(fxstyle.FOCUS_VISIBLE_PROPERTY)),
             )
             fxutils.repolish(self._search_container)
         return super().eventFilter(watched, event)

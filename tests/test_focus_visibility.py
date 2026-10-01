@@ -78,16 +78,21 @@ def themed(qapp):
     """Apply the dark theme's stylesheet for the duration of one test."""
 
     previous = qapp.styleSheet()
+    palette, font = qapp.palette(), qapp.font()
     fxstyle._theme = "dark"
     fxstyle._invalidate_theme_namespace()
-    qapp.setStyleSheet(fxstyle.load_stylesheet(theme="dark"))
+    # A themed application, as FXApplication is: the focus look needs it.
+    fxstyle.register_themed_root(qapp)
     # A caret is not a focus indicator, and a blinking one makes a grab
     # depend on when it was taken
     flash = qapp.cursorFlashTime()
     qapp.setCursorFlashTime(0)
     yield qapp
     qapp.setCursorFlashTime(flash)
+    fxstyle._themed_roots.discard(qapp)
     qapp.setStyleSheet(previous)
+    qapp.setPalette(palette)
+    qapp.setFont(font)
 
 
 def _count(image, color: QColor) -> int:
@@ -532,6 +537,7 @@ def test_ring_paints_on_every_shipped_theme(qtbot, qapp):
     """
 
     previous = qapp.styleSheet()
+    palette, font = qapp.palette(), qapp.font()
     themes = fxstyle.get_available_themes()
     assert len(themes) == 11, f"theme count changed: {themes}"
 
@@ -539,7 +545,7 @@ def test_ring_paints_on_every_shipped_theme(qtbot, qapp):
         for theme_name in themes:
             fxstyle._theme = theme_name
             fxstyle._invalidate_theme_namespace()
-            qapp.setStyleSheet(fxstyle.load_stylesheet(theme=theme_name))
+            fxstyle.register_themed_root(qapp)
             accent = QColor(fxstyle.get_theme_colors()["accent_primary"])
 
             tree, index = _delegate_tree(qtbot, selected=False)
@@ -574,7 +580,10 @@ def test_ring_paints_on_every_shipped_theme(qtbot, qapp):
                 window.close()
             QApplication.processEvents()
     finally:
+        fxstyle._themed_roots.discard(qapp)
         qapp.setStyleSheet(previous)
+        qapp.setPalette(palette)
+        qapp.setFont(font)
         fxstyle._theme = None
         fxstyle._invalidate_theme_namespace()
 

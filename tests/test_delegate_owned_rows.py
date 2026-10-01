@@ -2,7 +2,7 @@
 
 # Third-party
 import pytest
-from qtpy.QtCore import QModelIndex, QRect
+from qtpy.QtCore import QModelIndex, QRect, Qt
 from qtpy.QtGui import QColor, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QApplication,
@@ -52,7 +52,10 @@ def _themed_tree(qtbot):
     root.resize(300, 200)
     root.show()
     qtbot.waitExposed(root)
-    tree.setFocus()
+    root.activateWindow()
+    qtbot.waitUntil(root.isActiveWindow, timeout=1000)
+    tree.clearFocus()
+    tree.setFocus(Qt.TabFocusReason)
     tree.setCurrentItem(child)
     child.setSelected(True)
     QApplication.processEvents()

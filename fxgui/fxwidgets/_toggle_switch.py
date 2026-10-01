@@ -70,6 +70,7 @@ class FXToggleSwitch(QAbstractButton):
         # Keyboard: focusable via Tab and mouse; QAbstractButton then
         # handles Space to toggle.
         self.setFocusPolicy(Qt.StrongFocus)
+        fxstyle._watch_focus()
 
         # Connect signals
         self.toggled.connect(self._on_toggled)
@@ -147,7 +148,7 @@ class FXToggleSwitch(QAbstractButton):
         off = self._custom_off_color or theme.surface_sunken
         position = self._position
         fill = fxstyle.mix(off, on, position)
-        if self.hasFocus():
+        if fxstyle.focus_visible(self):
             edge = theme.text if self.isChecked() else reads(theme.accent_primary)
         elif hovered and not self.isChecked():
             edge = reads(theme.accent_primary)

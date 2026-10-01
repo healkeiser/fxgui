@@ -412,6 +412,35 @@ A push button, `FXPrimaryButton`, a line edit, a combo box,
 Focus never draws a box around a control. It recolours the edge the
 control already has, so nothing moves.
 
+### Focus shows only after the keyboard
+
+A control wears its focus look only when focus came by keyboard: Tab,
+Shift+Tab, or a shortcut. A click still gives the control focus, but it
+looks as it does at rest once the pointer leaves. This is a browser's
+`:focus-visible`.
+
+| Focus came from | Focus look |
+|-----------------|------------|
+| Tab, Shift+Tab, a shortcut | Shown |
+| A mouse click | Hidden |
+| A menu closing, a window coming back, a `setFocus()` call | As the last input was: shown after a key, hidden after a click |
+
+fxgui sets the `fxFocusVisible` property (`fxstyle.FOCUS_VISIBLE_PROPERTY`)
+on the focused widget, true only for keyboard focus, and clears it when
+focus leaves. A themed root turns this on for every widget under it,
+including widgets made later and widgets inside a host. For your own
+rules, select on the property, not on `:focus` alone:
+
+```css
+MyWidget[fxFocusVisible="true"]:focus { border-color: @accent_primary; }
+```
+
+A widget that paints its own focus look asks
+`fxstyle.focus_visible(widget)` instead of `hasFocus()`.
+
+Inside a host, the property reaches the host's own widgets too, but only
+fxgui's widgets are restyled when it changes.
+
 ### Parts that must be seen
 
 The bundled `@border` tokens sit close to the surface (about 1.2:1).

@@ -105,10 +105,10 @@ FXIconButton:checked:pressed {
     background-color: @primary_button_pressed;
     border: 1px solid @primary_button_pressed;
 }
-FXIconButton:focus {
+FXIconButton[fxFocusVisible="true"]:focus {
     border: 1px solid @accent_primary;
 }
-FXIconButton:checked:focus {
+FXIconButton[fxFocusVisible="true"]:checked:focus {
     border: 1px solid @text;
 }
 """)
@@ -267,6 +267,7 @@ class FXJoinedGroup(QFrame):
         layout.setSpacing(0)
         self._widgets: List[QWidget] = []
         QApplication.instance().focusChanged.connect(self._on_focus_changed)
+        fxstyle._watch_focus()
 
     def add_widget(self, widget: QWidget) -> None:
         """Append `widget` at the right end of the group."""
@@ -315,7 +316,11 @@ class FXJoinedGroup(QFrame):
         return super().event(event)
 
     def _on_focus_changed(self, _old, new) -> None:
-        inside = new is not None and self.isAncestorOf(new)
+        inside = (
+            new is not None
+            and self.isAncestorOf(new)
+            and fxstyle.focus_visible(new)
+        )
         if (self.property("fxFocus") == "true") != inside:
             self.setProperty("fxFocus", "true" if inside else "false")
             fxutils.repolish(self)
