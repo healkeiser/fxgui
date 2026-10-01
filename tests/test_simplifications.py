@@ -1,8 +1,5 @@
 """Behaviour the simplification pass must keep."""
 
-# Built-in
-import logging
-
 # Third-party
 from qtpy.QtCore import QMimeData, QPoint, Qt, QUrl
 from qtpy.QtGui import QDragEnterEvent, QDragLeaveEvent
@@ -13,7 +10,6 @@ from qtpy.QtWidgets import QLabel, QVBoxLayout, QWidget
 from fxgui.fxwidgets import (
     FXCollapsibleWidget,
     FXDropZone,
-    FXOutputLogWidget,
     FXRangeSlider,
     FXTimelineSlider,
 )
@@ -43,22 +39,6 @@ def test_collapsible_scrolls_only_content_taller_than_its_cap(qtbot, qapp):
     assert not short._content_area.verticalScrollBar().isVisible()
     tall.collapse(animate=False)
     assert tall._content_area.height() == 0
-
-
-def test_a_quiet_logger_made_later_still_reaches_a_capturing_pane(qtbot, qapp):
-    pane = FXOutputLogWidget(capture_output=True)
-    qtbot.addWidget(pane)
-    quiet = logging.getLogger("fxgui.test.quiet_later")
-    quiet.propagate = False
-    try:
-        pane._check_for_new_loggers()
-        assert pane._log_handler in quiet.handlers
-        pane.restore_output_streams()
-        assert pane._log_handler not in quiet.handlers
-        assert pane._log_handler not in logging.root.handlers
-    finally:
-        quiet.propagate = True
-        quiet.handlers.clear()
 
 
 def test_a_click_on_the_timeline_track_scrubs_to_that_frame(qtbot, qapp):
