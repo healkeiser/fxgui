@@ -59,7 +59,14 @@ class _RegionGrabOverlay(QWidget):
         self._band.hide()
         picked = None
         if rect.width() > 2 and rect.height() > 2:
-            picked = self._pixmap.copy(rect)
+            # The rect is logical; the grabbed screen is in device pixels.
+            ratio = self._pixmap.devicePixelRatio()
+            picked = self._pixmap.copy(QRect(
+                round(rect.x() * ratio),
+                round(rect.y() * ratio),
+                round(rect.width() * ratio),
+                round(rect.height() * ratio),
+            ))
         self._on_result(picked)
         self.close()
 

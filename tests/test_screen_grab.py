@@ -134,3 +134,28 @@ def test_the_grab_never_quits_a_running_app(qtbot):
 
     assert state["survived"], "the overlay's close quit the application"
     assert state["flag_after"] is True
+
+
+def test_a_high_dpi_screen_crops_the_dragged_region(qtbot):
+    from qtpy.QtGui import QColor, QPainter, QPixmap
+
+    # 200 device pixels wide at ratio 2 is 100 logical pixels.
+    screen = QPixmap(200, 200)
+    screen.fill(QColor("#000000"))
+    painter = QPainter(screen)
+    painter.fillRect(100, 100, 100, 100, QColor("#ff0000"))
+    painter.end()
+    screen.setDevicePixelRatio(2.0)
+    picked = []
+    overlay = _screen_grab._RegionGrabOverlay(screen, picked.append)
+    for kind, at in (
+        (QEvent.MouseButtonPress, QPoint(50, 50)),
+        (QEvent.MouseButtonRelease, QPoint(99, 99)),
+    ):
+        QApplication.sendEvent(overlay, QMouseEvent(
+            kind, at, at, Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+
+    image = picked[0].toImage()
+    assert image.size().width() == 100
+    assert image.pixelColor(0, 0).name() == "#ff0000"
+    assert image.pixelColor(99, 99).name() == "#ff0000"
