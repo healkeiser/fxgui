@@ -64,6 +64,8 @@ zensical = [
 test = [
     "pytest>=7.0",
     "pytest-qt>=4.2",
+    # Every run shuffles the order, so a test leaning on another fails.
+    "pytest-randomly>=3.0",
     # A Qt binding is needed to run the tests; PySide6 is the default target.
     "PySide6",
 ]
