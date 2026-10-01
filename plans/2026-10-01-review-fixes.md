@@ -247,3 +247,36 @@ uses FXFuzzySearchTree, FXFilteredTree, `FXMainWindow.documentation`, or a
 markup message to `showMessage` / `show_tip`. Move-d item 50
 (widgets/rows.py:345 fold_buttons, :366 filtered_tree_panel ->
 `FXFilteredTree(tree)`) still holds.
+
+## Group r3: what reviewer B found beyond r1 and r2
+
+Base: `audit-fixes` at b7ccd01a (r1 and r2 merged). Same rules.
+
+- B-2 a hovered toolbar button (any QAction icon in a QToolBar, or a
+  plain get_icon on a non-QAbstractButton) draws its icon in
+  icon_on_accent_primary, white on the grey hover fill (1.4:1 on
+  light). Make Active default to the Normal ink everywhere; give the
+  on-accent ink only where a row is drawn on the accent (menu current
+  row, combo/completer current row). A test that hovers a real QToolBar
+  action through tests/_helpers.hover and reads the icon pixel.
+- B-9 docs residue: icons.md:167 states the Active ink default (fix to
+  the code after B-2); theming.md:121 FXLogWidget -> FXOutputLogWidget;
+  widgets.md:187 example sets SEGMENT_HOVER_TOKEN = "accent_secondary",
+  which breaks "hover is never the accent": show a valid example. Run
+  every Python block of docs/how-to/*.md and fix any that fails.
+- B-16 one public name per job for a role's font: keep fxstyle.font(role=...),
+  delete get_fonts and get_font_family (callers, docs, removed-names
+  table). Put control_height and focus_visible in fxstyle.__all__ if they
+  are public, so the API page lists them.
+- B-17 fxgui has no test running its >>> examples: add one (doctest over
+  every fxgui module, examples that state an output must pass; fragments
+  without stated output may stay). Fix fxstyle.py depth_shade example
+  (`colors()["surface"]` -> `colors().surface`).
+- B-18 packaging: `import fxgui` refuses a binding below PySide6 6.5 with
+  a clear error; the docking extra pins PySide6-QtAds so it cannot swap
+  the PySide6 binding (check what its wheels pin; say plainly if no pin
+  works); release.yml publish-pypi does not run when create-release
+  fails. Add a docs page "Moving from 12.x" listing every removed or
+  renamed name with its 13.0.0 replacement (from
+  tests/test_removed_names.py and the plans' replacement tables), in
+  the docs' student style.
