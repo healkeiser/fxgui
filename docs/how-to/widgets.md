@@ -159,7 +159,7 @@ And these functions and constants:
 ``` python
 from fxgui.fxwidgets import FXBreadcrumb
 
-crumb = FXBreadcrumb(home_icon="", segments_focusable=False)
+crumb = FXBreadcrumb(home_icon="", tab_stops=False)
 crumb.set_path(["pilot", "sq010", "sh0040", "comp"])
 crumb.set_edit_placeholder("Type a shot")
 ```
@@ -176,8 +176,8 @@ crumb.set_edit_placeholder("Type a shot")
   surface anywhere else. The text reads at 4.5:1 on both fills and the
   edge shows at 1.3:1 against the ground and both fills, in every
   bundled theme. A theme switch needs no call.
-- `segments_focusable=False` takes the segments out of the Tab order.
-  The back and forward buttons and the path editor keep their stops.
+- `tab_stops=False` takes the segments and the back and forward
+  buttons out of the Tab order. The path editor keeps its stop.
 
 The starting colours are class attributes, so a subclass names its own
 tokens:

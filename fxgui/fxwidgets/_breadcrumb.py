@@ -188,9 +188,9 @@ class FXBreadcrumb(QWidget):
         path_separator: Character used to join path segments in edit mode.
         home_path: Path segments to navigate to when home is clicked.
             If None, navigates to the first segment only.
-        segments_focusable: Whether each segment takes a Tab stop. False
-            leaves the path to the mouse; the back and forward buttons and
-            the path editor keep theirs.
+        tab_stops: Whether the segments and the back and forward buttons
+            take Tab stops. False leaves them to the mouse; the path editor
+            keeps its own.
 
     Signals:
         segment_clicked: Emitted when a segment is clicked (index, path list).
@@ -233,10 +233,10 @@ class FXBreadcrumb(QWidget):
         show_navigation: bool = False,
         path_separator: str = "/",
         home_path: Optional[List[str]] = None,
-        segments_focusable: bool = True,
+        tab_stops: bool = True,
     ):
         super().__init__(parent)
-        self._segments_focusable = segments_focusable
+        self._tab_stops = tab_stops
         self._lit = False
 
         self._path: List[str] = []
@@ -282,8 +282,10 @@ class FXBreadcrumb(QWidget):
                 "Navigate to next location",
             )
 
-            main_layout.addWidget(self._back_button)
-            main_layout.addWidget(self._forward_button)
+            for button in (self._back_button, self._forward_button):
+                if not tab_stops:
+                    button.setFocusPolicy(Qt.NoFocus)
+                main_layout.addWidget(button)
 
         # Stacked widget to switch between breadcrumb and edit mode
         self._stacked = QStackedWidget()
@@ -571,7 +573,7 @@ class FXBreadcrumb(QWidget):
         button.setCursor(
             Qt.PointingHandCursor if not is_last else Qt.ArrowCursor
         )
-        if not self._segments_focusable:
+        if not self._tab_stops:
             button.setFocusPolicy(Qt.NoFocus)
 
         if is_home and self._home_icon:

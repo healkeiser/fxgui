@@ -137,26 +137,28 @@ def test_a_segment_writes_in_the_strip_s_ink(qtbot):
     )
 
 
-def test_segments_can_take_no_tab_stops(qtbot):
-    crumb = FXBreadcrumb(segments_focusable=False)
+def test_a_breadcrumb_can_take_no_tab_stops(qtbot):
+    crumb = FXBreadcrumb(show_navigation=True, tab_stops=False)
     qtbot.addWidget(crumb)
     crumb.set_path(PATH)
     fxstyle.apply_theme("light")
     crumb.set_path(PATH[:2])
 
-    for segment in crumb._container.findChildren(QPushButton):
-        assert segment.focusPolicy() == Qt.NoFocus
+    buttons = crumb.findChildren(QPushButton)
+    assert crumb._back_button in buttons and crumb._forward_button in buttons
+    for button in buttons:
+        assert button.focusPolicy() == Qt.NoFocus
     assert crumb._line_edit.focusPolicy() != Qt.NoFocus, "the editor types"
 
 
-def test_segments_take_tab_stops_by_default(qtbot):
-    crumb = FXBreadcrumb()
+def test_a_breadcrumb_takes_tab_stops_by_default(qtbot):
+    crumb = FXBreadcrumb(show_navigation=True)
     qtbot.addWidget(crumb)
     crumb.set_path(PATH)
 
     assert all(
         s.focusPolicy() != Qt.NoFocus
-        for s in crumb._container.findChildren(QPushButton)
+        for s in crumb.findChildren(QPushButton)
     )
 
 
