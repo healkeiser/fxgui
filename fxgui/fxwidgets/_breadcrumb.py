@@ -215,11 +215,11 @@ class FXBreadcrumb(QWidget):
     # fxgui ships that is the window's own colour.
     STRIP_RESTING_TOKEN = "state_hover"
     STRIP_HOVERED_TOKEN = "border_light"
-    SEGMENT_HOVER_TOKEN = "accent_primary"
+    SEGMENT_HOVER_TOKEN = "text"
 
-    # A hovered segment's accent opacity, 0-255: a tint, which unlike a
+    # A hovered segment's tint opacity, 0-255: a tint, which unlike a
     # border or a bolder weight shifts nothing beside it.
-    SEGMENT_HOVER_ALPHA = 80
+    SEGMENT_HOVER_ALPHA = 36
 
     def __init__(
         self,

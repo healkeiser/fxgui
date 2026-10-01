@@ -97,9 +97,10 @@ FXEmojiPicker QToolButton {{
     padding: 0px;
     font-size: {_EMOJI_PIXELS}px;
 }}
-FXEmojiPicker QToolButton:hover,
-FXEmojiPicker QToolButton[fxFocusVisible="true"]:focus {{
+FXEmojiPicker QToolButton:hover {{
     background-color: @state_hover;
+}}
+FXEmojiPicker QToolButton[fxFocusVisible="true"]:focus {{
     border: 1px solid @accent_primary;
 }}
 """)
