@@ -43,6 +43,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+docking = ["PySide6-QtAds"]
 mkdocs = [
     "mkdocs-material",
     "mkdocs-gen-files",
