@@ -269,13 +269,16 @@ QMenuBar::item:pressed:enabled
     background-color: @accent_primary;
 }
 
+/* One popup look for a menu, a combo box's list and the command palette:
+   @surface, the popup border, items inset in it. fxstyle asks the platform
+   for flyout corners when a themed popup shows. */
 QMenu
 {
     border: 1px solid @border;
     border-radius: @button_radius;
     color: @text;
-    /* margin: 2px; */
-    background-color: @surface_sunken;
+    background-color: @surface;
+    padding: 4px;
 }
 
 QMenu::icon
@@ -297,7 +300,7 @@ QMenu::icon:checked
 
 QMenu::item
 {
-    background-color: @surface_sunken;
+    background-color: transparent;
     border-radius: @button_radius;
     padding: 5px 25px 5px 25px;
     border: 3px transparent;
@@ -711,23 +714,16 @@ QPushButton:hover
 }
 
 
+/* Qt's sheet never reaches the frame around a combo box's list; fxstyle
+   edges it when it shows, and the list fills it square. */
 QComboBox QAbstractItemView
 {
-    background-color: @surface_sunken;
-    border: 1px solid @border_strong;
-    selection-background-color: @accent_primary;
-    padding: 0px;
+    background-color: @surface;
+    border: none;
+    border-radius: 0px;
+    padding: 4px;
     margin: 0px;
     outline: none;
-}
-
-QComboBox QFrame
-{
-    background-color: @surface_sunken;
-    border: 1px solid @border_strong;
-    border-radius: 0px;
-    padding: 0px;
-    margin: 0px;
 }
 
 /* Every arrow is the accordion's chevron in @icon: here, on a spin box,
@@ -1090,9 +1086,12 @@ QListView::item:selected {
     padding: 5px 9px;
 }
 
+/* Drawn as a menu's items: the pointer moves the selection. */
 QComboBox QAbstractItemView::item:hover,
 QComboBox QAbstractItemView::item:selected {
     padding: 4px 8px;
+    color: @text_on_accent_primary;
+    background: @accent_primary;
 }
 
 QListView::item:!selected:hover,

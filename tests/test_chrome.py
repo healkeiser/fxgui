@@ -29,7 +29,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxstyle
+from fxgui import fxstyle, fxutils
 
 THEMES = pytest.mark.parametrize("theme", fxstyle.get_available_themes())
 
@@ -435,3 +435,93 @@ def test_a_view_row_keeps_its_text_still(qtbot, theme, kind):
     ).name()
     starts = _starts(image, rows)
     assert len(set(starts)) == 1, starts
+
+
+# (8) One popup look: menus, combo lists and the palette, rounded by the
+# platform.
+
+
+def _blend_of(pixel, inks, slack=3):
+    """Return whether `pixel` is one of `inks` or an antialiased mix of two."""
+    target = QColor(pixel)
+    p = (target.red(), target.green(), target.blue())
+    colors = [QColor(ink) for ink in inks]
+    for a in colors:
+        for b in colors:
+            first = (a.red(), a.green(), a.blue())
+            second = (b.red(), b.green(), b.blue())
+            for step in range(33):
+                t = step / 32
+                mix = [x + (y - x) * t for x, y in zip(first, second)]
+                if all(abs(c - m) <= slack for c, m in zip(p, mix)):
+                    return True
+    return False
+
+
+def _foreign(image, inks):
+    """Return the pixels of `image` that no theme ink accounts for."""
+    seen = {}
+    for x in range(image.width()):
+        for y in range(image.height()):
+            name = image.pixelColor(x, y).name()
+            if name not in seen:
+                seen[name] = _blend_of(name, inks)
+    return {name for name, known in seen.items() if not known}
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_combo_popup_is_the_popup_look_edge_to_edge(qtbot, theme):
+    combo = QComboBox()
+    # No text, so every pixel is fill, edge or the selected row.
+    combo.addItems(["", "", ""])
+    window = _shown(qtbot, theme, combo)
+    combo.showPopup()
+    qtbot.waitUntil(lambda: combo.view().isVisible())
+    popup = combo.view().window()
+    image = popup.grab().toImage()
+    combo.hidePopup()
+    colors = fxstyle.colors()
+    inks = (colors.surface, colors.border, colors.accent_primary)
+    assert not _foreign(image, inks)
+    middle = image.height() // 2
+    assert image.pixelColor(0, middle).name() == colors.border.lower()
+    assert image.pixelColor(2, middle).name() == colors.surface.lower()
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_menu_wears_the_same_popup_look(qtbot, theme):
+    window = _shown(qtbot, theme, QWidget())
+    menu = QMenu(window)
+    actions = [menu.addAction("") for _ in range(3)]
+    menu.popup(window.mapToGlobal(QPoint(10, 10)))
+    qtbot.waitExposed(menu)
+    menu.setActiveAction(actions[1])
+    QApplication.processEvents()
+    image = menu.grab().toImage()
+    menu.close()
+    colors = fxstyle.colors()
+    inks = (colors.surface, colors.border, colors.accent_primary)
+    assert not _foreign(image, inks)
+    middle = image.height() // 2
+    assert image.pixelColor(0, middle).name() == colors.border.lower()
+    assert image.pixelColor(2, middle).name() == colors.surface.lower()
+
+
+def test_every_themed_popup_asks_for_flyout_corners(qtbot, monkeypatch):
+    rounded = []
+    monkeypatch.setattr(fxutils, "round_window_corners", rounded.append)
+    combo = QComboBox()
+    combo.addItems(["one", "two"])
+    window = _shown(qtbot, "dark", combo)
+    combo.showPopup()
+    qtbot.waitUntil(lambda: combo.view().isVisible())
+    popup = combo.view().window()
+    combo.hidePopup()
+    menu = QMenu(window)
+    menu.addAction("one")
+    menu.popup(window.mapToGlobal(QPoint(10, 10)))
+    qtbot.waitExposed(menu)
+    menu.close()
+    assert popup in rounded
+    assert menu in rounded
+    assert window not in rounded

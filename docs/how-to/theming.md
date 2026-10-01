@@ -481,8 +481,10 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 - Text is `@text`. Secondary text and placeholders are `@text_muted`.
   Text on an accent fill is `@text_on_accent_primary`.
 - Icons take `color="icon"`; on an accent fill, `icon_on_accent_primary`.
-- A menu is `@surface_sunken` with a 1 px `@border`. Its hovered item is
-  `@accent_primary` with `@text_on_accent_primary` text.
+- A popup (a menu, a combo box's list, `FXCommandPalette`) is `@surface`
+  with a 1 px `@border`, its rows inset 4 px. A hovered menu item or combo
+  row is `@accent_primary` with `@text_on_accent_primary` text. No state
+  moves a row's text.
 - A menu bar item keeps one box, at the button radius, in every state.
   At rest it is bare; hovered, `@state_hover`; with its menu open,
   `@accent_primary` with `@text_on_accent_primary` text.
@@ -491,7 +493,7 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 
 | Kind | Examples | Frame | Shadow |
 |------|----------|-------|--------|
-| Popup: a window that closes when you click away | `QMenu`, a combo box list, `FXCommandPalette` | `@border`, `@button_radius` | The platform's own. Windows draws one under every popup window, and `fxutils.round_window_corners` asks Windows 11 for flyout corners. fxgui paints none. |
+| Popup: a window that closes when you click away | `QMenu`, a combo box list, `FXCommandPalette`, a completer or calendar popup | `@border`, `@button_radius` | The platform's own. Windows draws one under every popup window. Every popup under a themed root asks Windows 11 for flyout corners (`fxutils.round_window_corners`) when it shows. fxgui paints none. |
 | Floating card: a panel over the window that stays until it is done | `FXTooltip`, `FXNotificationBanner`, `FXProgressCard`, `FXFloatingDialog` | `@border`, `@card_radius` | One painted shadow: `fxutils.add_shadows(parent, card)` with its defaults, black at 80 of 255, 20 px blur, no offset |
 
 A shadow has no theme token. It is black at low opacity in every theme,

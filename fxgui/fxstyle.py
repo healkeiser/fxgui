@@ -51,6 +51,8 @@ from qtpy.QtWidgets import (
     QAbstractItemView,
     QAbstractScrollArea,
     QApplication,
+    QComboBox,
+    QFrame,
     QProxyStyle,
     QSplitter,
     QStyle,
@@ -1964,7 +1966,10 @@ _KEYBOARD_REASONS = (
 
 
 class _FocusVisibility(QObject):
-    """Mark a themed widget's focus visible when it came by keyboard."""
+    """Mark a themed widget's focus visible when it came by keyboard.
+
+    It also gives every themed popup, Qt's own included, flyout corners.
+    """
 
     def __init__(self, parent: QObject):
         super().__init__(parent)
@@ -1981,6 +1986,15 @@ class _FocusVisibility(QObject):
             watched, QWidget
         ):
             self._mark(watched, kind == QEvent.FocusIn and self._visible(event))
+        elif (
+            kind == QEvent.Show
+            and isinstance(watched, QWidget)
+            and watched.windowType() == Qt.Popup
+            and _is_themed(watched)
+        ):
+            if isinstance(watched.parentWidget(), QComboBox):
+                _frame_combo_popup(watched)
+            fxutils.round_window_corners(watched)
         return False
 
     def _visible(self, event) -> bool:
@@ -2004,6 +2018,25 @@ class _FocusVisibility(QObject):
 
 
 _focus_visibility: Optional[_FocusVisibility] = None
+
+_POPUP_FRAME = QFrame.Box | QFrame.Plain
+
+
+def _frame_combo_popup(popup: QFrame) -> None:
+    """Edge a combo box's popup frame in `@border` over `@surface`.
+
+    Qt's sheet never styles that frame, and it wears the combo's palette.
+    """
+    colors = _get_theme_namespace()
+    theme_palette = popup.palette()
+    theme_palette.setColor(QPalette.Window, QColor(colors.surface))
+    theme_palette.setColor(QPalette.WindowText, QColor(colors.border))
+    popup.setPalette(theme_palette)
+    if popup.frameStyle() != _POPUP_FRAME:
+        # The list was sized before the edge took its pixels.
+        popup.setFrameStyle(_POPUP_FRAME)
+        popup.setLineWidth(1)
+        popup.resize(popup.width(), popup.height() + 2 * popup.frameWidth())
 
 
 def _watch_focus() -> None:
