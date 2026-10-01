@@ -44,6 +44,19 @@ def test_busy_paints_a_line_across_the_top_and_moves_nothing(qtbot):
     assert below == QColor(bar.ground()).name(), "only the top band changes"
 
 
+
+def test_the_busy_line_is_one_flat_accent_like_a_progress_chunk(qtbot):
+    from fxgui import fxstyle
+
+    window = _window(qtbot)
+    bar = window.statusBar()
+    bar.set_busy(True)
+    qtbot.wait(120)
+
+    assert _top_row(bar) <= {
+        QColor(bar.ground()).name(),
+        QColor(fxstyle.colors().accent_primary).name(),
+    }
 def test_the_line_moves_while_busy(qtbot):
     window = _window(qtbot)
     bar = window.statusBar()

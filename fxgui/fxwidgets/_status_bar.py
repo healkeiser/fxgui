@@ -546,18 +546,16 @@ class FXStatusBar(QStatusBar):
         painter.end()
 
     def _paint_busy(self) -> None:
-        """Paint a run of the accent gradient across the bar's top band."""
-        theme = fxstyle.colors()
+        """Paint a flat accent run across the bar's top band, as a chunk."""
         span = int(self.width() * _BUSY_SPAN)
         # From fully off the left edge to fully off the right one.
         left = -span + (self.width() + span) * self._busy_frame // _BUSY_FRAMES
-        gradient = QLinearGradient(left, 0, left + span, 0)
-        gradient.setColorAt(0, QColor(theme.accent_secondary))
-        gradient.setColorAt(1, QColor(theme.accent_primary))
         painter = QPainter(self)
         painter.fillRect(
             0, 0, self.width(), STATUS_LINE_HEIGHT, QColor(self.ground()))
-        painter.fillRect(left, 0, span, STATUS_LINE_HEIGHT, gradient)
+        painter.fillRect(
+            left, 0, span, STATUS_LINE_HEIGHT,
+            QColor(fxstyle.colors().accent_primary))
         painter.end()
 
     def event(self, event: QEvent) -> bool:
