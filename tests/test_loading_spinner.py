@@ -209,3 +209,48 @@ def test_the_spinner_has_one_look():
     assert "style" not in inspect.signature(FXLoadingSpinner).parameters
     for name in ("set_style", "_paint_dots", "_paint_pulse"):
         assert not hasattr(FXLoadingSpinner, name), name
+
+
+def _windows_shown_during(qtbot, build):
+    from qtpy.QtCore import QEvent, QObject
+    from qtpy.QtWidgets import QApplication
+
+    shown = []
+
+    class _Spy(QObject):
+        def eventFilter(self, watched, event):
+            if (
+                event.type() == QEvent.Show
+                and isinstance(watched, QWidget)
+                and watched.isWindow()
+            ):
+                shown.append(type(watched).__name__)
+            return False
+
+    spy = _Spy()
+    QApplication.instance().installEventFilter(spy)
+    try:
+        kept = build()
+        QApplication.processEvents()
+    finally:
+        QApplication.instance().removeEventFilter(spy)
+    return kept, shown
+
+
+def test_building_the_chrome_widgets_opens_no_window(qtbot):
+    from fxgui.fxwidgets import FXProgressCard, FXSplashScreen
+
+    def build():
+        spinner = FXLoadingSpinner()
+        spinner.start()
+        return (
+            spinner,
+            FXProgressCard(title="Render", description="Frame 1"),
+            FXSplashScreen(show_progress_bar=True),
+        )
+
+    kept, shown = _windows_shown_during(qtbot, build)
+    for widget in kept:
+        qtbot.addWidget(widget)
+
+    assert shown == []

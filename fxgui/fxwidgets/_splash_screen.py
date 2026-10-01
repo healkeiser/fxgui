@@ -226,8 +226,8 @@ class FXSplashScreen(QSplashScreen):
         layout.addStretch()
 
         self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(show_progress_bar)
         layout.addWidget(self.progress_bar)
+        self.progress_bar.setVisible(show_progress_bar)
         layout.addStretch()
 
         self.copyright_label = QLabel(copyright_line)

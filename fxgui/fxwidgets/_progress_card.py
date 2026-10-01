@@ -130,7 +130,8 @@ class FXProgressCard(QFrame):
         main_layout.addLayout(header_layout)
 
         # Description
-        self._description_label = QLabel(description or "")
+        # Parented first: shown parentless, it would flash as a window.
+        self._description_label = QLabel(description or "", self)
         self._description_label.setObjectName("fxProgressCardDescription")
         self._description_label.setWordWrap(True)
         self._description_label.setVisible(bool(description))
