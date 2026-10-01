@@ -107,3 +107,64 @@ def test_the_close_button_rejects_and_deletes_the_dialog(qtbot):
         dialog.button_close.click()
 
     qtbot.waitUntil(lambda: not _compat.is_valid(dialog), timeout=1000)
+
+
+def _shown(qtbot, theme):
+    fxstyle.apply_theme(theme)
+    dialog = _dialog(qtbot, title="Publish")
+    dialog.main_layout.addWidget(QLabel("Three files will be written."))
+    dialog.resize(280, 180)
+    dialog.show()
+    qtbot.waitExposed(dialog)
+    return dialog
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+def test_the_frame_wears_the_border_at_the_button_radius(qtbot, theme):
+    dialog = _shown(qtbot, theme)
+    frame = dialog._container
+    image = frame.grab().toImage()
+    border = QColor(fxstyle.colors().border).name()
+    radius = fxstyle.BUTTON_RADIUS
+    middle = frame.height() // 2
+    assert image.pixelColor(0, middle).name() == border
+    assert image.pixelColor(frame.width() - 1, middle).name() == border
+    assert image.pixelColor(frame.width() // 2, frame.height() - 1).name() == (
+        border
+    )
+    # Rounded at the radius: just past it the edge is straight.
+    assert image.pixelColor(radius + 1, frame.height() - 1).name() == border
+    assert image.pixelColor(0, frame.height() - 1).name() != border
+
+
+def test_the_title_is_a_section_title(qtbot):
+    dialog = _shown(qtbot, "dark")
+    label = dialog.title_label
+    assert label.property(fxstyle.TITLE_PROPERTY) == "section"
+    assert label.font().pixelSize() == 15
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_the_buttons_are_the_theme_s_push_buttons(qtbot, theme):
+    dialog = _shown(qtbot, theme)
+    button = dialog.button_close
+    assert button.height() == fxstyle.control_height(button)
+    qtbot.mouseMove(dialog, QPoint(1, 1))
+    qtbot.mouseMove(button, button.rect().center())
+    qtbot.wait(20)
+    image = button.grab().toImage()
+    colors = fxstyle.colors()
+    assert image.pixelColor(4, button.height() // 2).name() == (
+        QColor(colors.state_hover).name()
+    )
+    assert image.pixelColor(button.width() // 2, 0).name() == (
+        QColor(colors.accent_primary).name()
+    )
+
+
+def test_title_body_and_buttons_share_one_left_edge(qtbot):
+    dialog = _shown(qtbot, "dark")
+    title = dialog.title_layout.contentsMargins().left()
+    body = dialog.main_layout.contentsMargins().left()
+    buttons = dialog.button_box.contentsMargins().left()
+    assert title == body == buttons
