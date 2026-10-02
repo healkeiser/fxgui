@@ -390,3 +390,87 @@ scratchpad: `r3/icons/{before,after}_crop_{dark,light}.png` and
     (`STATE_MIN_CONTRAST` is 1.2) and text on it at least 4.5:1.
   - The tab tests now find the pill by its fill: 16 of them fail on the old
     sheet. A new test covers a hovered current tab.
+
+## Switch-over gaps
+
+Branch `fix-gaps` from `audit-fixes` 98a2523c. ls paths are in the
+fxgui13-w1 / fxgui13-w2 worktrees.
+
+1. A floating pane in an embedded window got the host's keys.
+   - Cause: `FXDockArea._key_the_float` read `self.window()`. For a main
+     window embedded in a host, that is the host's window.
+   - Fix: the new `_app_window` returns the nearest QMainWindow, else
+     the window. Keys are copied from it.
+   - Commit: 6d00d752.
+   - ls can delete: `AppWindow._key_the_float` (w1 apps/window.py:738-753)
+     and its connect (window.py:236-237).
+2. A list header inside a pane drew on the well colour.
+   - Cause: QHeaderView is a QAbstractItemView, so the
+     `#fxDocks ... QAbstractItemView { @well }` rule matched it.
+   - Fix: one rule, `#fxDocks ads--CDockAreaWidget QHeaderView
+     { background-color: @surface; }`. The base sheet's sections stay
+     transparent with their `@border` line under.
+   - Tested by pixel reads, dark and light.
+   - Commit: 6d00d752.
+   - ls can delete: the registered header rules (w1 apps/window.py:114-119).
+3. `banner_host(window)` for a window holding an FXDockArea now returns
+   that area.
+   - Cause: `banner_host` only walked up from the widget.
+   - Fix: when the walk up finds no area, it looks down from the widget's
+     app window (`_app_window`, as in item 1).
+   - This also covers an embedded window: its banner goes on its own area,
+     not on the host's.
+   - Commit: 6d00d752.
+   - ls can delete: the `findChild` fallback (w2 apps/widgets/banner.py:38-41).
+4. Breadcrumb Tab stops.
+   - Change: `segments_focusable` is renamed `tab_stops`. False takes the
+     segments and the back and forward buttons off the Tab chain. The
+     path editor keeps its stop.
+   - Docs: widgets.md is updated.
+   - Commit: 7e4af7bd.
+   - ls change: w2 apps/views/breadcrumb.py:31 becomes
+     `segments_focusable=False` -> `tab_stops=False`. Delete its NoFocus
+     loop (breadcrumb.py:33-35).
+5. Corner toolbar and footer.
+   - Corner: this is generic chrome, and fxgui already does it.
+     `QWidget#fxMenuBarCorner QToolBar` is transparent, with no border,
+     padding or spacing. Its disabled tool buttons have no fill.
+     `test_corner_tools_show_the_menu_bar_through` covers both, framed and
+     not. ls can delete the `setStyleSheet` (w1 apps/window.py:294-297) and
+     the `mark_as_frame(corner)` (window.py:298-299).
+   - Footer flattening: this is a studio choice, so it stays in ls.
+     fxgui flattens icon-only push buttons only on bars it knows are bars:
+     the window's own toolbars, status bar and menu bar.
+   - Why not `mark_as_frame`: it also marks containers such as FXDockArea
+     itself, splitters and a dock column. Flattening under every marked
+     widget would flatten the buttons inside panes. The footer under the
+     panes is ls's own layout.
+   - One gap in ls: `_on_the_frame` (window.py:125-131) overwrites a role
+     a button already carries. fxgui keeps it.
+6. DependencyPage native crash: NOT reproduced, so no fxgui change.
+   - Tried, no crash:
+     - `FXMainWindow().setCentralWidget(DependencyPage())` 15 times in a
+       loop, with fix-gaps fxgui and the fxgui13 tree.
+     - The offscreen and windows platforms, shown and not shown.
+     - test_command_row/framed_panes/workflow_window/dependency_page with
+       -n 8, twice.
+   - The w1 tree no longer builds DependencyPage on current fxgui:
+     view.py:92 calls `fxstyle.get_font_family`, which ba06544a removed.
+   - The only crashes on record are in w1-run.txt (01:20), two kinds:
+     - inside QtAds `addDockWidget`, from
+       ProjectSettingsWindow.add_dock("page")
+     - in Workflows `show_workflow`, at `tabs.setCurrentIndex`
+   - Both spots hold a GraphCanvas, and both crashed only under xdist.
+   - Open: the cause is not known. A repro command was asked for.
+7. Pane sizes against a restore: correct as built, now tested.
+   - Order on the first show: Qt shows the children first, so the area
+     splits by weight at the size before the window grows. The weights
+     are also stretch factors, so the grow keeps the proportions. A layout
+     restored before the show waits for it. A layout restored in the
+     window's showEvent, after the grow, applies at once.
+   - Test: `test_a_saved_layout_comes_back_exactly_in_a_grown_window` runs
+     both orders, with fit_to_contents and restoreGeometry. It checks that
+     the window size and every splitter size match. It passed before any
+     change.
+
+Full suite: 2512 passed, 6 skipped. ruff F,B,BLE clean.
