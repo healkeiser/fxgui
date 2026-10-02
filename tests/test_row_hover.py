@@ -32,7 +32,7 @@ def _hovered_fill(qtbot, window, tree, item):
     return window.grab().toImage().pixelColor(point).name()
 
 
-@pytest.mark.parametrize("theme", ["dark", "light"])
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
 def test_a_hovered_card_row_reads_off_its_own_card_at_every_depth(
         qtbot, theme):
     tree = QTreeWidget()
