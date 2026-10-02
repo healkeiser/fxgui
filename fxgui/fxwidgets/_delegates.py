@@ -27,6 +27,7 @@ from qtpy.QtGui import (
     QIcon,
     QPainter,
     QPainterPath,
+    QPalette,
     QPen,
     QPixmap,
     QPixmapCache,
@@ -1534,8 +1535,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         painter.save()
         painter.setClipRect(row_rect)
-        # Also covers any selection Qt drew before calling the delegate
-        painter.fillRect(row_rect, QColor(fxstyle.colors().surface_sunken))
+        # Also covers any selection Qt drew before calling the delegate, in
+        # the view's own well, so the card's corners show nothing square.
+        painter.fillRect(row_rect, opt.palette.color(QPalette.Base))
         ends = self._row_ends(opt, index)
         card = self._custom_background(index)
         rect = row_rect

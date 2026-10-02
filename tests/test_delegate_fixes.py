@@ -241,6 +241,8 @@ def test_badges_follow_the_view_font(qtbot):
 
 def test_a_theme_switch_repaints_with_the_new_colors(qtbot):
     tree, _ = _tree(qtbot)
+    # A row's ground is its view's well, which a themed root's sheet sets.
+    fxstyle.register_themed_root(tree)
     QTreeWidgetItem(tree, ["Row"])
     index = tree.model().index(0, 0)
     rect = tree.visualRect(index)
