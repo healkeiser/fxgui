@@ -38,9 +38,11 @@ from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 import yaml
 from qtpy.QtCore import QEvent, QObject, QRect, QRectF, QSize, Qt, Signal
 from qtpy.QtGui import (
+    QAction,
     QColor,
     QFont,
     QFontDatabase,
+    QFontMetrics,
     QGuiApplication,
     QIcon,
     QPainter,
@@ -55,6 +57,7 @@ from qtpy.QtWidgets import (
     QComboBox,
     QFrame,
     QHeaderView,
+    QMenu,
     QProxyStyle,
     QSplitter,
     QStyle,
@@ -1627,6 +1630,92 @@ class FXProxyStyle(QProxyStyle):
         # pane does; Qt draws a sheet box on it only with this.
         if isinstance(widget, QTabWidget):
             widget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        if isinstance(widget, QMenu):
+            widget.installEventFilter(_menu_badges())
+
+
+#: Set on a menu action by `set_menu_badge`: the text of its pill.
+BADGE_PROPERTY = "fxBadge"
+
+# The pill's height and side padding; the QMenu::item rule's right padding.
+_BADGE_HEIGHT = 18
+_BADGE_PADDING = 7
+_MENU_ITEM_PADDING = 24
+
+# Reserves the pill's width in the key-hint column without drawing a glyph.
+_BADGE_ROOM = " "
+
+
+def _badge_font() -> QFont:
+    """Return a badge's font: a step under the body size, bold."""
+    shape = font()
+    shape.setPixelSize(FONT_SIZE - 1)
+    shape.setBold(True)
+    return shape
+
+
+def _badge_width(text: str) -> int:
+    """Return how wide `text`'s pill stands."""
+    return QFontMetrics(_badge_font()).horizontalAdvance(text) + (
+        2 * _BADGE_PADDING)
+
+
+def set_menu_badge(action: QAction, text: str) -> None:
+    """Show `text` as a pill at the right of `action`'s menu item.
+
+    The pill stands in the key-hint column, so the item shows no shortcut
+    text; the action keeps its shortcut.
+
+    Examples:
+        >>> fxstyle.set_menu_badge(delete_action, "Admin")
+    """
+    label = action.text().split("\t", 1)[0]
+    space = max(QFontMetrics(font()).horizontalAdvance(_BADGE_ROOM), 1)
+    room = -(-_badge_width(text) // space)
+    action.setText(f"{label}\t{_BADGE_ROOM * room}")
+    action.setProperty(BADGE_PROPERTY, text)
+
+
+class _MenuBadges(QObject):
+    """Paints every badged item's pill over a menu Qt has just drawn."""
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Draw the menu, then its pills, on a menu holding a badge."""
+        if event.type() != QEvent.Paint or not isinstance(watched, QMenu):
+            return False
+        badged = [
+            (action, action.property(BADGE_PROPERTY))
+            for action in watched.actions()
+            if action.isVisible() and action.property(BADGE_PROPERTY)
+        ]
+        if not badged:
+            return False
+        QMenu.paintEvent(watched, event)
+        colors = _get_theme_namespace()
+        painter = QPainter(watched)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setFont(_badge_font())
+        for action, text in badged:
+            item = watched.actionGeometry(action)
+            width = _badge_width(str(text))
+            pill = QRectF(
+                item.right() + 1 - _MENU_ITEM_PADDING + _BADGE_PADDING - width,
+                item.center().y() + 1 - _BADGE_HEIGHT / 2,
+                width, _BADGE_HEIGHT)
+            painter.setOpacity(1.0 if action.isEnabled() else 0.6)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(colors.feedback_warning_background))
+            painter.drawRoundedRect(pill, _BADGE_HEIGHT / 2, _BADGE_HEIGHT / 2)
+            painter.setPen(QColor(colors.feedback_warning_foreground))
+            painter.drawText(pill, Qt.AlignCenter, str(text))
+        painter.end()
+        return True
+
+
+@lru_cache(maxsize=1)
+def _menu_badges() -> _MenuBadges:
+    """Return the one badge painter every menu shares."""
+    return _MenuBadges()
 
 
 def _close_room(bar: QTabBar) -> int:
