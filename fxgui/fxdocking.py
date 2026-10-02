@@ -151,13 +151,12 @@ def _recross(docks: "ads.CDockManager") -> None:
 
 
 def _inset(area: "ads.CDockAreaWidget") -> None:
-    """Inset `area`'s buttons off its round right corner.
-
-    The tabs start at the pane's edge, as a tab bar's do at its own: a
-    tab's margin already clears the corner.
-    """
+    """Inset `area`'s buttons off its round right corner, its tabs 2 px."""
     bar = area.titleBar()
     bar.layout().setContentsMargins(0, 0, fxstyle.BUTTON_RADIUS, 0)
+    # With a tab's 2 px side margin, the first pill sits 4 px in, as it
+    # sits 4 px down: the sheet's QTabBar::tab:first.
+    bar.tabBar().widget().layout().setContentsMargins(2, 0, 0, 0)
     # The tabs set the bar's height; a button takes it, its margin inside.
     for button in bar.findChildren(ads.CTitleBarButton):
         policy = button.sizePolicy()

@@ -672,7 +672,8 @@ def test_a_tab_is_its_text_plus_the_padding_in_every_state(qtbot):
 
     assert bar.elideMode() == Qt.ElideNone
     rest = widths()
-    assert rest == [_TAB_FRAME] * 6, rest
+    # The first QTabBar tab adds the 2 px lead its :first margin carries.
+    assert rest == [_TAB_FRAME + 2] + [_TAB_FRAME] * 5, rest
     hover(qtbot, bar, bar.tabRect(1).center())
     assert widths() == rest
     hover(qtbot, dock_tabs[0], dock_tabs[0].rect().center())
@@ -939,6 +940,46 @@ def test_the_gaps_around_and_between_tab_pills_are_one_size(qtbot):
                 dock_between=dock_between)
     assert len(set(gaps.values())) == 1, gaps
     assert one.height() == height
+
+
+def _start_and_top_gaps(image, pill, left, top):
+    """Return the strip columns before and rows above the current `pill`.
+
+    `left` and `top` are the strip's first column and row, inside any edge.
+    """
+    row = [image.pixelColor(x, pill.center().y()).name()
+           for x in range(left, pill.right() + 1)]
+    column = [image.pixelColor(pill.center().x(), y).name()
+              for y in range(top, pill.bottom() + 1)]
+    return _pill_run(row)[0], _pill_run(column)[0]
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_the_first_tab_pill_starts_as_far_in_as_it_sits_down(qtbot, theme):
+    if fxdocking is None:
+        pytest.skip("needs PySide6-QtAds")
+    tabs = QTabWidget()
+    tabs.addTab(QLabel("x"), "Render")
+    tabs.addTab(QLabel("y"), "Comp")
+    docks = fxdocking.FXDockArea()
+    docks.set_central(QLabel("central"))
+    docks.add_dock("one", "Task", QLabel("one"), "left")
+    window = themed_window(qtbot, theme, tabs, docks, size=(600, 500))
+    QApplication.processEvents()
+    image = window.grab().toImage()
+    bar = tabs.tabBar()
+    origin = bar.mapTo(window, QPoint())
+    # Inside the pane's 1 px edge, which the bar starts past.
+    bar_gaps = _start_and_top_gaps(
+        image, bar.tabRect(0).translated(origin),
+        tabs.mapTo(window, QPoint()).x() + 1, origin.y())
+    tab = docks.manager().findDockWidget("one").tabWidget()
+    area = tab.dockAreaWidget().mapTo(window, QPoint())
+    dock_gaps = _start_and_top_gaps(
+        image, tab.rect().translated(tab.mapTo(window, QPoint())),
+        area.x() + 1, area.y() + 1)
+    assert bar_gaps[0] == bar_gaps[1], bar_gaps
+    assert dock_gaps == bar_gaps, (dock_gaps, bar_gaps)
 
 
 def test_a_hovered_title_bar_button_is_a_tab_pill_tall(qtbot):
