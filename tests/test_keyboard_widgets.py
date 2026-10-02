@@ -5,6 +5,8 @@ from qtpy.QtCore import Qt
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
     QApplication,
+    QHBoxLayout,
+    QPushButton,
     QLineEdit,
     QMenu,
     QToolButton,
@@ -224,3 +226,15 @@ def test_keypad_enter_clicks_a_split_button(qtbot):
     button.clicked.connect(lambda: clicks.append(True))
     _press(Qt.Key_Enter, Qt.KeypadModifier)
     assert clicks == [True]
+
+
+def test_a_filtered_tree_holds_a_row_of_actions_under_its_tree(qtbot):
+    actions = QHBoxLayout()
+    run = QPushButton("Run")
+    actions.addWidget(run)
+    panel = FXFilteredTree(actions=actions)
+    _window = _shown(qtbot, panel)
+
+    tree = panel.tree.geometry()
+    assert run.isVisible()
+    assert run.mapTo(panel, run.rect().topLeft()).y() > tree.bottom()

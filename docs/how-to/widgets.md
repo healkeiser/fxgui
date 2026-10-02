@@ -91,7 +91,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXEmojiButton` | Round icon button that opens an `FXEmojiPicker` and can insert into an editor |
 | `FXEmojiPicker` | Popup grid of emoji, keyboard navigable |
 | `FXFilePathWidget` | File or folder path field with a browse button |
-| `FXFilteredTree` | An `FXKeyboardTree` under a filter bar, with expand-all and collapse-all |
+| `FXFilteredTree` | An `FXKeyboardTree` under a filter bar, with expand-all and collapse-all; `actions=` puts a row of buttons under the tree |
 | `FXFloatingDialog` | Dialog that opens at the pointer |
 | `FXFlowLayout` | Layout that wraps its widgets onto new lines, like words |
 | `FXIconButton` | Round icon button; checkable, filled with the accent when checked |

@@ -8,6 +8,7 @@ from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QKeyEvent, QKeySequence
 from qtpy.QtWidgets import (
     QHBoxLayout,
+    QLayout,
     QLineEdit,
     QToolButton,
     QTreeWidget,
@@ -179,6 +180,7 @@ class FXFilteredTree(QWidget):
     Args:
         tree: The tree to wrap; a new `FXKeyboardTree` when omitted.
         placeholder: What the empty filter bar says.
+        actions: A row of buttons under the tree, if any.
         parent: The parent widget.
     """
 
@@ -186,6 +188,7 @@ class FXFilteredTree(QWidget):
         self,
         tree: Optional[FXKeyboardTree] = None,
         placeholder: str = "Filter...",
+        actions: Optional[QLayout] = None,
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
@@ -207,6 +210,8 @@ class FXFilteredTree(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addLayout(bar)
         layout.addWidget(self.tree, 1)
+        if actions is not None:
+            layout.addLayout(actions)
 
     def _filter(self, text: str) -> None:
         fxutils.filter_tree(self.tree, text)
