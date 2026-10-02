@@ -117,7 +117,7 @@ fonts:
 #   text_on_accent_secondary - (Optional) Text on accent_secondary backgrounds, auto-computed if omitted
 #
 # Interactive State Colors:
-#   state_hover       - Hover fill of rows, buttons and tool buttons; the current tab
+#   state_hover       - Hover fill of rows, buttons, tool buttons and tabs; held to 1.2:1 on surface, surface_sunken and well
 #   state_pressed     - Pressed and checked fills; pushed to 1.2:1 from state_hover
 #
 # Shadow:

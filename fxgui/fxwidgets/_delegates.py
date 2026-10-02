@@ -72,6 +72,24 @@ fxstyle.register_widget_style(
 )
 
 
+def _hover_on(card: Optional[QColor]) -> str:
+    """Return the hover fill that reads on `card`, or on the view for None."""
+    hover = fxstyle.colors().state_hover
+    if card is None:
+        return hover
+    ground = card.name()
+
+    def reads(color: str) -> bool:
+        return fxstyle.get_contrast_ratio(color, ground) >= (
+            fxstyle.STATE_MIN_CONTRAST)
+
+    if reads(hover):
+        return hover
+    pole = max(("#000000", "#ffffff"),
+               key=lambda end: fxstyle.get_contrast_ratio(end, ground))
+    return fxstyle.step_toward(ground, pole, reads)
+
+
 def _mtime(path: str) -> Optional[float]:
     """Return a file's mtime, asking the disk at most once per window."""
     now = time.monotonic()
@@ -940,13 +958,18 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         rect: QRect,
         option: QStyleOptionViewItem,
         ends: Tuple[bool, bool],
+        card: Optional[QColor] = None,
     ) -> None:
         """Fill a selected cell with `accent_primary`, a hovered one with
-        `state_hover`, as the stylesheet does for plain item views."""
+        `state_hover`, as the stylesheet does for plain item views.
+
+        On a `card` too near `state_hover`, as a deep row's shade comes, the
+        hover is the card stepped off it by `fxstyle.STATE_MIN_CONTRAST`.
+        """
         if option.state & QStyle.State_Selected:
             fill = QColor(fxstyle.colors().accent_primary)
         elif option.state & QStyle.State_MouseOver:
-            fill = QColor(fxstyle.colors().state_hover)
+            fill = QColor(_hover_on(card))
         else:
             return
         rect_f = QRectF(rect)
@@ -1517,7 +1540,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         rect = row_rect
         if card is not None:
             rect = self._draw_background_and_border(painter, opt, card, ends)
-        self._draw_hover_selection(painter, rect, opt, ends)
+        self._draw_hover_selection(painter, rect, opt, ends, card)
         painter.restore()
 
         painter.save()
