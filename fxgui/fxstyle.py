@@ -206,6 +206,10 @@ DEPTH_STEP = 0.12
 # tree that nests deeper and needs telling apart.
 DEPTH_CAP = 4
 
+# A tree's indentation: the 16 px box of an icon or branch chevron, 2 px in
+# from each side, as the sheet's ::branch padding sets it.
+_TREE_INDENTATION = 20
+
 # Styles QPushButton through @button_radius; widgets that draw a button
 # shape of their own read it here.
 BUTTON_RADIUS = 4
@@ -1562,9 +1566,16 @@ class FXProxyStyle(QProxyStyle):
             super().drawPrimitive(element, option, painter, widget)
 
     def pixelMetric(self, metric, option=None, widget=None):
-        """Return `metric`; a list view's icons take a tree's 16 px box."""
+        """Return `metric`; a list view's icons take a tree's 16 px box.
+
+        A tree indents 20 px under any platform style: the
+        sheet's branch chevron scales to the indentation, and Windows 11's
+        30 px drew it half as large again.
+        """
         if metric == QStyle.PM_ListViewIconSize:
             metric = QStyle.PM_SmallIconSize
+        elif metric == QStyle.PM_TreeViewIndentation:
+            return _TREE_INDENTATION
         return super().pixelMetric(metric, option, widget)
 
     def polish(self, widget):

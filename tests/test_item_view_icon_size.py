@@ -2,10 +2,12 @@
 
 # Third-party
 import pytest
-from qtpy.QtCore import QRect, QSize
-from qtpy.QtGui import QImage, QPainter
+from qtpy.QtCore import QPoint, QRect, QSize
+from qtpy.QtGui import QImage, QPainter, QRegion
 from qtpy.QtWidgets import (
     QListWidget,
+    QProxyStyle,
+    QStyle,
     QListWidgetItem,
     QTreeWidget,
     QTreeWidgetItem,
@@ -105,3 +107,70 @@ def test_a_completer_list_in_a_host_window_takes_the_16_px_box(qtbot, host_root)
     qtbot.waitUntil(popup.isVisible)
     assert popup.iconSize() == QSize(_BOX, _BOX)
     popup.hide()
+
+
+class _TallRows(fxwidgets.FXThumbnailDelegate):
+    """A thumbnail delegate whose rows are `height` pixels tall."""
+
+    height = 50
+
+    def sizeHint(self, option, index):
+        return QSize(super().sizeHint(option, index).width(), self.height)
+
+
+class _WideIndent(QProxyStyle):
+    """A platform style that indents a tree 30 px, as Windows 11's does."""
+
+    def pixelMetric(self, metric, option=None, widget=None):
+        if metric == QStyle.PM_TreeViewIndentation:
+            return 30
+        return super().pixelMetric(metric, option, widget)
+
+
+def _chevron(qtbot, theme, ratio, height=None, wide=False):
+    """Return the ink extent and centre offset of a parent row's chevron.
+
+    `height` gives the tree thumbnail rows that tall; `wide` puts it under a
+    platform style indenting 30 px, under fxgui's own, as a host window does.
+    """
+    tree = QTreeWidget()
+    tree.setHeaderHidden(True)
+    if wide:
+        style = fxstyle.FXProxyStyle(_WideIndent())
+        style.setParent(tree)
+        tree.setStyle(style)
+    if height is not None:
+        delegate = _TallRows(tree)
+        delegate.height = height
+        tree.setItemDelegate(delegate)
+    parent = QTreeWidgetItem(tree, ["houdini"])
+    QTreeWidgetItem(parent, ["test"])
+    tree.expandAll()
+    window = themed_window(qtbot, theme, tree, size=(400, 300))
+    row = tree.visualRect(tree.model().index(0, 0))
+    if height is not None:
+        assert row.height() == height
+    branch = QRect(0, row.top(), row.left(), row.height())
+    image = QImage(branch.size() * ratio, QImage.Format_ARGB32)
+    image.setDevicePixelRatio(ratio)
+    image.fill(0)
+    tree.viewport().render(image, QPoint(), QRegion(branch))
+    window.close()
+    ink = fxstyle.colors().icon
+    ys = [y for x in range(image.width()) for y in range(image.height())
+          if near(image.pixelColor(x, y), ink, 24)]
+    offset = (min(ys) + max(ys)) / 2 - (image.height() - 1) / 2
+    return _extent(image, ink), offset
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+@pytest.mark.parametrize("height", [24, 50, 80])
+@pytest.mark.parametrize("wide", [False, True])
+@pytest.mark.parametrize("ratio", [1.0, 1.5])
+def test_a_branch_chevron_stays_16_px_in_a_tall_thumbnail_row(
+        qtbot, theme, height, wide, ratio):
+    browse, _offset = _chevron(qtbot, theme, ratio)
+    drawn, offset = _chevron(qtbot, theme, ratio, height, wide)
+    assert _same_box(drawn, browse), (drawn, browse)
+    # Centred down the row, to a device pixel.
+    assert abs(offset) <= 1, offset

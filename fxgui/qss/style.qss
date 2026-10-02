@@ -1082,7 +1082,9 @@ QTreeView::branch:!selected:hover {
 }
 
 /* No branch lines; a parent shows the accordion's chevron, in the 16 px
-   box of an item's icon: 2 px in from Qt's 20 px indentation. */
+   box of an item's icon: 2 px in from the 20 px indentation FXProxyStyle
+   holds under any platform style. The box is the indentation's width, and
+   a tall row's height does not grow it. */
 QTreeView::branch:has-children {
     padding: 2px;
 }
