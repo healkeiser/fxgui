@@ -68,6 +68,21 @@ def test_a_unique_banner_already_standing_shows_no_second_card(qtbot):
     assert [b for b in standing if not b.isHidden()][0].message() == "offline"
 
 
+def test_a_shown_banner_refused_as_a_repeat_leaves_at_once(qtbot):
+    parent = _host(qtbot)
+    first = FXNotificationBanner(parent, "offline", timeout=0)
+    first.show()
+    repeat = FXNotificationBanner(parent, "offline", timeout=0)
+    repeat.show()
+
+    assert repeat.show(unique=True) is False
+    assert repeat.isHidden()
+    after = FXNotificationBanner(parent, "back online", timeout=0)
+    after.show()
+    assert after._target_pos.y() == (
+        first._target_pos.y() + first.height() + first._spacing)
+
+
 def test_a_unique_banner_with_new_words_shows(qtbot):
     parent = _host(qtbot)
     FXNotificationBanner(parent, "offline", timeout=0).show()

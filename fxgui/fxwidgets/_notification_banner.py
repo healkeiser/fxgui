@@ -385,6 +385,8 @@ class FXNotificationBanner(QFrame):
             other is not self and other._message == self._message
             for other in _staying(parent)
         ):
+            # Hidden now: a card waiting for its delete still stacks.
+            self.hide()
             self.deleteLater()
             return False
 
