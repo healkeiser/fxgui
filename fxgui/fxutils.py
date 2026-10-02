@@ -25,6 +25,7 @@ from typing import Callable, Dict, Iterator, Optional, Tuple
 # Third-party
 from qtpy.QtWidgets import (
     QAction,
+    QApplication,
     QMenu,
     QStyleOptionViewItem,
     QTreeView,
@@ -34,7 +35,7 @@ from qtpy.QtWidgets import (
     QGraphicsDropShadowEffect,
 )
 from qtpy.QtGui import QColor, QKeySequence
-from qtpy.QtCore import QModelIndex, QPoint, QTimer
+from qtpy.QtCore import QEvent, QModelIndex, QPoint, QTimer
 
 # Internal
 from fxgui._compat import created_by_python, parent_widget
@@ -212,6 +213,8 @@ def repolish(widget: QWidget) -> None:
     style = widget.style()
     style.unpolish(widget)
     style.polish(widget)
+    # A frame re-reads its width, padding included, only on a style change.
+    QApplication.sendEvent(widget, QEvent(QEvent.StyleChange))
     # PySide6 6.5 hides QWidget.update() behind an item view's update(index).
     QWidget.update(widget)
 

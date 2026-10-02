@@ -84,3 +84,15 @@ def test_row_text_stays_put_in_every_state(qtbot, theme):
         for row in rows
     ]
     assert len(set(starts)) == 1, starts
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_the_inset_follows_a_header_hidden_or_shown_after_the_show(
+        qtbot, theme):
+    tree = _tree()
+    _window = themed_window(qtbot, theme, tree)
+    assert tree.viewport().geometry().left() == _EDGE
+    tree.setHeaderHidden(True)
+    qtbot.waitUntil(lambda: tree.viewport().geometry().left() > _EDGE)
+    tree.setHeaderHidden(False)
+    qtbot.waitUntil(lambda: tree.header().geometry().left() == _EDGE)

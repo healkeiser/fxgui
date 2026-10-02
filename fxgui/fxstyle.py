@@ -59,6 +59,7 @@ from qtpy.QtWidgets import (
     QStyle,
     QStyleFactory,
     QStyleOption,
+    QTreeView,
     QWidget,
 )
 
@@ -1766,6 +1767,8 @@ _FOCUS_EVENTS = frozenset((
     QEvent.FocusOut,
     QEvent.Polish,
     QEvent.Show,
+    QEvent.ShowToParent,
+    QEvent.HideToParent,
 ))
 
 
@@ -1773,8 +1776,8 @@ class _FocusVisibility(QObject):
     """Mark a themed widget's focus visible when it came by keyboard.
 
     It also gives every themed popup and tooltip, Qt's own included,
-    flyout corners, and an item view in a host window a style without the
-    focus rect.
+    flyout corners, an item view in a host window a style without the
+    focus rect, and a tree whose header hides or shows its padding again.
     """
 
     def __init__(self, parent: QObject):
@@ -1802,6 +1805,12 @@ class _FocusVisibility(QObject):
                 and watched.windowType() == Qt.Popup
             ):
                 self._adopt(watched)
+        elif kind in (QEvent.ShowToParent, QEvent.HideToParent):
+            # The sheet pads a tree by its headerHidden property.
+            view = _compat.parent_widget(watched) if isinstance(
+                watched, QHeaderView) else None
+            if isinstance(view, QTreeView) and _is_themed(view):
+                fxutils.repolish(view)
         elif kind == QEvent.Show and isinstance(watched, QWidget):
             if watched.windowType() in (Qt.Popup, Qt.ToolTip):
                 self._dress_popup(watched)
