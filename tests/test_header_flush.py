@@ -4,6 +4,7 @@
 import pytest
 from qtpy.QtCore import QPoint
 from qtpy.QtWidgets import (
+    QListWidget,
     QTableWidget,
     QTreeWidget,
     QTreeWidgetItem,
@@ -16,6 +17,9 @@ from _helpers import hover, themed_window
 
 # The sheet's 1 px edge around every item view.
 _EDGE = 1
+
+# A list's or headerless tree's inset above its first row.
+_TOP = 4
 
 
 def _tree(header=True):
@@ -52,7 +56,7 @@ def test_a_tree_with_no_header_keeps_its_rows_off_the_top(qtbot, theme):
     tree = _tree(header=False)
     _window = themed_window(qtbot, theme, tree)
     viewport = tree.viewport().geometry()
-    assert viewport.top() > _EDGE
+    assert viewport.top() == _EDGE + _TOP
 
 
 def _text_left(image, origin, y, right):
@@ -69,18 +73,25 @@ def _text_left(image, origin, y, right):
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
-def test_row_text_stays_put_in_every_state(qtbot, theme):
-    tree = _tree()
-    window = themed_window(qtbot, theme, tree)
-    rows = [tree.topLevelItem(index) for index in range(3)]
+@pytest.mark.parametrize("kind", ["headed tree", "tree"])
+def test_row_text_stays_put_in_every_state(qtbot, theme, kind):
+    if kind == "list":
+        view = QListWidget()
+        view.addItems([f"Row{index}" for index in range(3)])
+        rows = [view.item(index) for index in range(3)]
+        right = 150
+    else:
+        view = _tree(header=kind == "headed tree")
+        rows = [view.topLevelItem(index) for index in range(3)]
+        right = view.columnWidth(0) - 10
+    window = themed_window(qtbot, theme, view)
     rows[2].setSelected(True)
-    hover(qtbot, tree.viewport(), tree.visualItemRect(rows[1]).center())
+    hover(qtbot, view.viewport(), view.visualItemRect(rows[1]).center())
     image = window.grab().toImage()
-    origin = tree.mapTo(window, QPoint())
-    right = origin.x() + tree.columnWidth(0) - 10
+    origin = view.mapTo(window, QPoint())
     starts = [
-        _text_left(image, origin, tree.viewport().mapTo(
-            window, tree.visualItemRect(row).center()).y(), right)
+        _text_left(image, origin, view.viewport().mapTo(
+            window, view.visualItemRect(row).center()).y(), origin.x() + right)
         for row in rows
     ]
     assert len(set(starts)) == 1, starts
@@ -96,3 +107,11 @@ def test_the_inset_follows_a_header_hidden_or_shown_after_the_show(
     qtbot.waitUntil(lambda: tree.viewport().geometry().top() > _EDGE)
     tree.setHeaderHidden(False)
     qtbot.waitUntil(lambda: tree.header().geometry().top() == _EDGE)
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_list_keeps_its_rows_off_the_top(qtbot, theme):
+    view = QListWidget()
+    view.addItems(["Row0", "Row1"])
+    _window = themed_window(qtbot, theme, view)
+    assert view.viewport().geometry().top() == _EDGE + _TOP
