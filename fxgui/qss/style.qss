@@ -1104,6 +1104,14 @@ QTreeView {
     padding: 4px;
 }
 
+/* Qt lays a header over the viewport, so any view padding insets it off the
+   frame: a view with a header has none. Its rows run edge to edge; the text
+   keeps Qt's own margin. */
+QTreeView[headerHidden="false"],
+QTableView {
+    padding: 0px;
+}
+
 QListView::item,
 QTreeView::item {
     padding: 0px;
