@@ -22,6 +22,7 @@ from qtpy.QtWidgets import (
     QStyleOptionSlider,
     QStyleOptionSpinBox,
     QTableWidget,
+    QTabBar,
     QTabWidget,
     QTreeWidget,
     QTreeWidgetItem,
@@ -808,6 +809,49 @@ def test_a_hovered_current_tab_keeps_its_own_fill(qtbot, theme):
     inside, _corner, _inks = _hovered_tab(window.grab().toImage(), current)
 
     assert inside == fxstyle.colors().state_pressed.lower()
+
+
+def _pill_leads(image, rect, fill):
+    """Return the gaps from a filled pill's sides to its first and last ink."""
+    middle = rect.center().y()
+    columns = [
+        x for x in range(rect.left(), rect.right() + 1)
+        if image.pixelColor(x, middle).name() == fill.lower()
+    ]
+    left, right = min(columns), max(columns)
+    ink = [
+        x for x in range(left, right + 1)
+        for y in range(rect.top(), rect.bottom() + 1)
+        if _distance(image.pixelColor(x, y).name(), fill) > 60
+    ]
+    return min(ink) - left, right - max(ink)
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_close_button_stands_as_far_in_as_the_text(qtbot, theme):
+    tabs = QTabWidget()
+    tabs.setTabsClosable(True)
+    for name in ("Untitled", "Other"):
+        tabs.addTab(QLabel(name), name)
+    window = themed_window(qtbot, theme, tabs)
+    bar = tabs.tabBar()
+    colors = fxstyle.colors()
+    rest = [bar.tabButton(1, QTabBar.RightSide).geometry()]
+    current = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
+    lead, trail = _pill_leads(
+        window.grab().toImage(), current, colors.state_pressed)
+    assert abs(trail - lead) <= 1, (lead, trail)
+    hover(qtbot, bar, bar.tabRect(1).topLeft() + QPoint(12, 12))
+    other = bar.tabRect(1).translated(bar.mapTo(window, QPoint()))
+    lead, trail = _pill_leads(
+        window.grab().toImage(), other, colors.state_hover)
+    assert abs(trail - lead) <= 1, (lead, trail)
+    # Nothing moves between rest, hover and selected.
+    rest.append(bar.tabButton(1, QTabBar.RightSide).geometry())
+    tabs.setCurrentIndex(1)
+    QApplication.processEvents()
+    rest.append(bar.tabButton(1, QTabBar.RightSide).geometry())
+    assert rest[0] == rest[1] == rest[2]
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])

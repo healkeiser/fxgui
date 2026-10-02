@@ -36,7 +36,7 @@ from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 # Third-party
 import yaml
-from qtpy.QtCore import QEvent, QObject, QRectF, QSize, Qt, Signal
+from qtpy.QtCore import QEvent, QObject, QRect, QRectF, QSize, Qt, Signal
 from qtpy.QtGui import (
     QColor,
     QFont,
@@ -48,6 +48,7 @@ from qtpy.QtGui import (
     QTransform,
 )
 from qtpy.QtWidgets import (
+    QAbstractButton,
     QAbstractItemView,
     QAbstractScrollArea,
     QApplication,
@@ -59,6 +60,8 @@ from qtpy.QtWidgets import (
     QStyle,
     QStyleFactory,
     QStyleOption,
+    QStyleOptionTab,
+    QTabBar,
     QTreeView,
     QWidget,
 )
@@ -198,6 +201,12 @@ THIN_SCROLL_WIDTH = 8
 # The one gap between widgets: a layout's default spacing, a tab pill's gap
 # to its strip's edges, a pane's content's to its edges: `@pane_gap` in QSS.
 PANE_GAP = 4
+
+# A tab pill's side padding, its text's lead off the pill: `@tab_padding`.
+TAB_PADDING = 10
+
+# A tab's close glyph inks 2 px inside its button; the pill edge is 1 px.
+_CLOSE_INSET = PANE_GAP // 2 + 1 + TAB_PADDING - 2
 
 # Per tree level, toward `border_light`; the cap's 48% stays short of a border.
 DEPTH_STEP = 0.12
@@ -1175,6 +1184,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     tokens["@thin_scroll"] = f"{THIN_SCROLL_WIDTH}px"
     tokens["@pane_gap_half"] = f"{PANE_GAP // 2}px"
     tokens["@pane_gap"] = f"{PANE_GAP}px"
+    tokens["@tab_padding"] = f"{TAB_PADDING}px"
     tokens["@spin_padding"] = _SPIN_PADDING
     tokens["@list_text_step"] = _LIST_TEXT_STEP
 
@@ -1583,12 +1593,24 @@ class FXProxyStyle(QProxyStyle):
             super().drawPrimitive(element, option, painter, widget)
 
     def pixelMetric(self, metric, option=None, widget=None):
-        """Return `metric`; layouts space one pane gap, list icons 16 px."""
+        """Return `metric`; layouts space one pane gap, list icons 16 px.
+
+        A themed tab's close button widens to the left by the room its glyph
+        needs to stand as far in from the pill's edge as the text does.
+        """
         if metric in _LAYOUT_GAPS:
             return PANE_GAP
         if metric == QStyle.PM_ListViewIconSize:
             metric = QStyle.PM_SmallIconSize
-        return super().pixelMetric(metric, option, widget)
+        size = super().pixelMetric(metric, option, widget)
+        bar = _compat.parent_widget(widget) if widget is not None else None
+        if (
+            metric == QStyle.PM_TabCloseIndicatorWidth
+            and isinstance(bar, QTabBar)
+            and _is_themed(bar)
+        ):
+            size += _close_room(bar)
+        return size
 
     def polish(self, widget):
         """Lay an item view's rows out again once the sheet has styled them."""
@@ -1602,6 +1624,21 @@ class FXProxyStyle(QProxyStyle):
         # ponytail: read at polish; a later setIndentation needs a repolish.
         if isinstance(widget, QTreeView):
             widget.setProperty(INDENT_PROPERTY, widget.indentation())
+
+
+def _close_room(bar: QTabBar) -> int:
+    """Return how far `bar`'s close glyphs must move in off the tab's edge.
+
+    The sheet's style sets the button a Qt-version-dependent gap off the
+    tab's edge, past the pill's margin and padding.
+    """
+    probe = QStyleOptionTab()
+    probe.rect = QRect(0, 0, 100, 30)
+    probe.rightButtonSize = QSize(1, 1)
+    probe.shape = bar.shape()
+    button = bar.style().subElementRect(
+        QStyle.SE_TabBarTabRightButton, probe, bar)
+    return max(0, _CLOSE_INSET - (probe.rect.right() - button.right()))
 
 
 ###### Stylesheet Functions
@@ -1773,13 +1810,14 @@ _KEYBOARD_REASONS = (
 )
 
 
-def _drop_focus_rect(view: QAbstractItemView) -> None:
-    """Give an item view in a themed host window a style with no focus rect.
+def _adopt_proxy_style(view: QWidget) -> None:
+    """Give an item view or tab bar in a themed host window FXProxyStyle.
 
-    A host's own style draws it on the focused current cell, over the cell's
-    BackgroundRole, on PySide6 6.5; a themed application's FXProxyStyle
-    already skips it. Done once, at the view's first show, after the sheet
-    has polished it; a popup's list is left alone.
+    A host's own style draws a focus rect on a view's current cell, over its
+    BackgroundRole, on PySide6 6.5, and sets a tab's close button on the
+    pill's edge; a themed application's FXProxyStyle already fixes both.
+    Done once, at the first show, after the sheet has polished it; a popup's
+    list is left alone.
     """
     if (
         QApplication.instance() in _themed_roots
@@ -1796,6 +1834,27 @@ def _drop_focus_rect(view: QAbstractItemView) -> None:
     style = FXProxyStyle()
     style.setParent(view)
     view.setStyle(style)
+
+
+def _fit_close_buttons(bar: QTabBar) -> None:
+    """Size `bar`'s close buttons as FXProxyStyle does, then lay tabs out.
+
+    Qt sizes a close button once, as it makes it: a bar built before it was
+    themed, or under a host's style, keeps the narrow button.
+    """
+    _adopt_proxy_style(bar)
+    changed = False
+    for button in bar.findChildren(
+            QAbstractButton, "", Qt.FindDirectChildrenOnly):
+        hint = button.sizeHint()
+        if (
+            button.metaObject().className() == "CloseButton"
+            and button.size() != hint
+        ):
+            button.resize(hint)
+            changed = True
+    if changed:
+        QApplication.sendEvent(bar, QEvent(QEvent.StyleChange))
 
 
 _FOCUS_EVENTS = frozenset((
@@ -1815,8 +1874,8 @@ class _FocusVisibility(QObject):
     """Mark a themed widget's focus visible when it came by keyboard.
 
     It also gives every themed popup and tooltip, Qt's own included,
-    flyout corners, an item view in a host window a style without the
-    focus rect, and a tree whose header hides or shows its padding again.
+    flyout corners, an item view or tab bar in a host window FXProxyStyle,
+    a tab's close button its room, and a tree whose header hides or shows its padding again.
     """
 
     def __init__(self, parent: QObject):
@@ -1854,7 +1913,9 @@ class _FocusVisibility(QObject):
             if watched.windowType() in (Qt.Popup, Qt.ToolTip):
                 self._dress_popup(watched)
             elif isinstance(watched, QAbstractItemView):
-                _drop_focus_rect(watched)
+                _adopt_proxy_style(watched)
+            elif isinstance(watched, QTabBar):
+                _fit_close_buttons(watched)
         return False
 
     @staticmethod

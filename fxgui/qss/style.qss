@@ -919,7 +919,7 @@ ads--CDockWidgetTab[activeTab="true"]
     border-radius: @button_radius;
     /* One gap above, below and between pills: twice the side margin. */
     margin: @pane_gap @pane_gap_half;
-    padding: 3px 10px;
+    padding: 3px @tab_padding;
 }
 
 /* The first pill stands as far off the strip's start as off its top. */
@@ -998,8 +998,10 @@ QTabBar QToolButton::left-arrow:disabled {
     image: ~icon(chevron_left, text_disabled);
 }
 
+/* The glyph keeps its button's left: the button widens to the left. */
 QTabBar::close-button  {
     image: url(~icons/close.svg);
+    image-position: left;
     background: transparent;
 }
 
