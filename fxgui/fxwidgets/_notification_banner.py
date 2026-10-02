@@ -143,7 +143,7 @@ class FXNotificationBanner(QFrame):
         margin: From the parent's right edge (default 16).
         top: From the parent's top to the first banner. Defaults to
             `margin`.
-        spacing: Spacing between stacked notifications (default 8).
+        spacing: Between stacked notifications; the pane gap.
 
     Signals:
         closed: Emitted when the banner is closed.
@@ -192,7 +192,7 @@ class FXNotificationBanner(QFrame):
         icon: Optional[str] = None,
         margin: int = 16,
         top: Optional[int] = None,
-        spacing: int = 8,
+        spacing: int = fxstyle.PANE_GAP,
     ):
         super().__init__(parent)
 
@@ -222,11 +222,11 @@ class FXNotificationBanner(QFrame):
         # Main layout (vertical like FXProgressCard)
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(16, 12, 16, 12)
-        main_layout.setSpacing(8)
+        main_layout.setSpacing(fxstyle.PANE_GAP)
 
         # Header row (icon + title + close button)
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(8)
+        header_layout.setSpacing(fxstyle.PANE_GAP)
 
         # Severity icon
         self._icon_label = FXIconLabel(size=18)
@@ -488,7 +488,7 @@ class FXNotificationBanner(QFrame):
         """
         if self._actions_layout is None:
             self._actions_layout = QHBoxLayout()
-            self._actions_layout.setSpacing(8)
+            self._actions_layout.setSpacing(fxstyle.PANE_GAP)
             self._actions_layout.addStretch()
             self.layout().addLayout(self._actions_layout)
 

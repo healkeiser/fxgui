@@ -52,7 +52,7 @@ class FXCommandRow(QToolBar):
         icon_size: The side of its tool button icons. Defaults to 17.
 
     Examples:
-        >>> row = FXCommandRow(margins=(6, 6, 6, 0), spacing=6)
+        >>> row = FXCommandRow(margins=(6, 6, 6, 0))
         >>> window.addToolBar(Qt.TopToolBarArea, row)
     """
 
@@ -330,7 +330,7 @@ class FXMainWindow(QMainWindow):
         self.title_corner.setObjectName("fxMenuBarCorner")
         layout = QHBoxLayout(self.title_corner)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(fxstyle.PANE_GAP)
         self.banner_icon = FXIconLabel(parent=self.title_corner)
         self.banner_icon.setFixedSize(16, 16)
         self.banner_icon.hide()

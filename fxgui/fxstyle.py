@@ -195,8 +195,8 @@ THIN_SCROLL_PROPERTY = "fxThinScroll"
 # The width, in pixels, of every scroll bar: `@thin_scroll` in QSS.
 THIN_SCROLL_WIDTH = 8
 
-# A tab pill's gap to its strip's edges and to the next pill, and a docked
-# pane's content's gap to the pane's edges: `@pane_gap` in QSS.
+# The one gap between widgets: a layout's default spacing, a tab pill's gap
+# to its strip's edges, a pane's content's to its edges: `@pane_gap` in QSS.
 PANE_GAP = 4
 
 # Per tree level, toward `border_light`; the cap's 48% stays short of a border.
@@ -1526,6 +1526,12 @@ def _get_standard_icon_map() -> dict:
     return _standard_icon_map
 
 
+_LAYOUT_GAPS = (
+    QStyle.PM_LayoutHorizontalSpacing,
+    QStyle.PM_LayoutVerticalSpacing,
+)
+
+
 class FXProxyStyle(QProxyStyle):
     """Give Qt's standard icons (dialogs, message boxes) fxgui's themed icons.
 
@@ -1571,7 +1577,9 @@ class FXProxyStyle(QProxyStyle):
             super().drawPrimitive(element, option, painter, widget)
 
     def pixelMetric(self, metric, option=None, widget=None):
-        """Return `metric`; a list view's icons take a tree's 16 px box."""
+        """Return `metric`; layouts space one pane gap, list icons 16 px."""
+        if metric in _LAYOUT_GAPS:
+            return PANE_GAP
         if metric == QStyle.PM_ListViewIconSize:
             metric = QStyle.PM_SmallIconSize
         return super().pixelMetric(metric, option, widget)

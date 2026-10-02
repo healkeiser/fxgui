@@ -256,7 +256,7 @@ class FXBreadcrumb(QWidget):
         # Main layout
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(4)
+        main_layout.setSpacing(fxstyle.PANE_GAP)
 
         # Navigation buttons (optional)
         if self._show_navigation:

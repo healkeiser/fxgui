@@ -99,7 +99,7 @@ class FXCollapsibleWidget(QWidget):
 
         header_layout = QHBoxLayout(self._header)
         header_layout.setContentsMargins(4, 2, 4, 2)
-        header_layout.setSpacing(8)
+        header_layout.setSpacing(fxstyle.PANE_GAP)
 
         # Toggle button (chevron icon)
         self._toggle_btn = QToolButton()

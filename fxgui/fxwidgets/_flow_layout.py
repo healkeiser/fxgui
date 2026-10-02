@@ -7,6 +7,9 @@ from typing import List, Optional
 from qtpy.QtCore import QPoint, QRect, QSize, Qt
 from qtpy.QtWidgets import QLayout, QLayoutItem, QWidget
 
+# Internal
+from fxgui import fxstyle
+
 
 class FXFlowLayout(QLayout):
     """Lay widgets out left to right, wrapping to a new line when full.
@@ -16,15 +19,20 @@ class FXFlowLayout(QLayout):
 
     Args:
         parent: Widget the layout is set on.
-        spacing: Gap in pixels between items, across and down.
+        spacing: Gap in pixels between items, across and down; the
+            pane gap by default.
 
     Examples:
-        >>> flow = FXFlowLayout(spacing=4)
+        >>> flow = FXFlowLayout()
         >>> for tag in ("comp", "lighting", "fx"):
         ...     flow.addWidget(QLabel(tag))
     """
 
-    def __init__(self, parent: Optional[QWidget] = None, spacing: int = 4):
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        spacing: int = fxstyle.PANE_GAP,
+    ):
         super().__init__(parent)
         self._items: List[QLayoutItem] = []
         self.setSpacing(spacing)

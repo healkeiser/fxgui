@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLayout,
     QLineEdit,
+    QSizePolicy,
     QToolButton,
     QTreeWidget,
     QTreeWidgetItem,
@@ -221,4 +222,8 @@ class FXFilteredTree(QWidget):
         button.setAutoRaise(True)
         fxicons.set_icon(button, icon)
         apply_tip(button, tip)
+        # The bar sets the row's height, so the tree sits one gap below it.
+        policy = button.sizePolicy()
+        policy.setVerticalPolicy(QSizePolicy.Ignored)
+        button.setSizePolicy(policy)
         return button

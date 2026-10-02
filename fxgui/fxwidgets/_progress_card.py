@@ -92,11 +92,11 @@ class FXProgressCard(QFrame):
         # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(16, 12, 16, 12)
-        main_layout.setSpacing(8)
+        main_layout.setSpacing(fxstyle.PANE_GAP)
 
         # Header row (icon + title + status icon)
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(8)
+        header_layout.setSpacing(fxstyle.PANE_GAP)
 
         if icon:
             # Beside the title, so in the title's own icon ink.
@@ -129,7 +129,7 @@ class FXProgressCard(QFrame):
 
         # Progress row
         progress_layout = QHBoxLayout()
-        progress_layout.setSpacing(8)
+        progress_layout.setSpacing(fxstyle.PANE_GAP)
 
         # Progress bar
         self._progress_bar = QProgressBar()

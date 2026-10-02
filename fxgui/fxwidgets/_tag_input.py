@@ -51,7 +51,7 @@ class FXTagChip(QFrame):
         # Layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 2, 4 if removable else 8, 2)
-        layout.setSpacing(4)
+        layout.setSpacing(fxstyle.PANE_GAP)
 
         # Tag label
         self.label = QLabel(text)
@@ -126,11 +126,11 @@ class FXTagInput(QWidget):
         # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(4)
+        main_layout.setSpacing(fxstyle.PANE_GAP)
 
         # Chips wrap onto new lines, so the field grows taller, never wider.
         self._tags_container = QWidget()
-        self._tags_layout = FXFlowLayout(self._tags_container, spacing=4)
+        self._tags_layout = FXFlowLayout(self._tags_container)
 
         # Input field
         self._input = QLineEdit()

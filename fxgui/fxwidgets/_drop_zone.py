@@ -146,7 +146,7 @@ class FXDropZone(QWidget):
         """Initialize the user interface."""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(8)
+        main_layout.setSpacing(fxstyle.PANE_GAP)
 
         self._drop_area = QWidget()
         self._drop_area.setObjectName("FXDropZoneArea")
@@ -155,7 +155,7 @@ class FXDropZone(QWidget):
 
         drop_layout = QVBoxLayout(self._drop_area)
         drop_layout.setContentsMargins(16, 16, 16, 16)
-        drop_layout.setSpacing(8)
+        drop_layout.setSpacing(fxstyle.PANE_GAP)
         drop_layout.addStretch(1)
 
         self._icon_label = FXIconLabel(size=64)
@@ -215,7 +215,7 @@ class FXDropZone(QWidget):
             button_container = QWidget()
             button_layout = QHBoxLayout(button_container)
             button_layout.setContentsMargins(0, 0, 0, 0)
-            button_layout.setSpacing(8)
+            button_layout.setSpacing(fxstyle.PANE_GAP)
 
             self._clear_btn = QPushButton("Clear All")
             self._clear_btn.setCursor(Qt.PointingHandCursor)

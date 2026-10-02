@@ -280,15 +280,15 @@ class FXTimelineSlider(QWidget):
             + ([self._spinbox] if show_spinbox else [])
         )
         self._extra_controls_layout = QHBoxLayout()
-        self._extra_controls_layout.setSpacing(8)
+        self._extra_controls_layout.setSpacing(fxstyle.PANE_GAP)
 
         if controls_position == "below":
             root = QVBoxLayout(self)
             root.setContentsMargins(0, 0, 0, 0)
-            root.setSpacing(4)
+            root.setSpacing(fxstyle.PANE_GAP)
 
             track_row = QHBoxLayout()
-            track_row.setSpacing(8)
+            track_row.setSpacing(fxstyle.PANE_GAP)
             track_row.addWidget(self._start_spinbox)
             track_row.addWidget(self._view_start_spinbox)
             track_row.addWidget(self._track_widget, 1)
@@ -328,7 +328,7 @@ class FXTimelineSlider(QWidget):
         else:
             main_layout = QHBoxLayout(self)
             main_layout.setContentsMargins(0, 0, 0, 0)
-            main_layout.setSpacing(8)
+            main_layout.setSpacing(fxstyle.PANE_GAP)
             main_layout.addWidget(self._start_spinbox)
             controls_layout = QHBoxLayout()
             controls_layout.setSpacing(2)

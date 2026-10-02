@@ -206,7 +206,7 @@ class FXOutputLogWidget(QWidget):
         """Build the output area, the search bar and the Clear button."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(fxstyle.PANE_GAP)
 
         # A QTextEdit, for its rich text formats.
         self.output_area = QTextEdit()
@@ -231,7 +231,7 @@ class FXOutputLogWidget(QWidget):
         self._search_bar = QWidget()
         search_layout = QHBoxLayout(self._search_bar)
         search_layout.setContentsMargins(0, 0, 0, 0)
-        search_layout.setSpacing(6)
+        search_layout.setSpacing(fxstyle.PANE_GAP)
 
         self.search_label = QLabel("Find:")
         search_layout.addWidget(self.search_label)
@@ -290,7 +290,7 @@ class FXOutputLogWidget(QWidget):
         # hidden the row is empty and takes no room.
         bottom_layout = QHBoxLayout()
         bottom_layout.setContentsMargins(0, 0, 0, 0)
-        bottom_layout.setSpacing(6)
+        bottom_layout.setSpacing(fxstyle.PANE_GAP)
         bottom_layout.addWidget(self._search_bar, 1)
         bottom_layout.addWidget(self.clear_button, 0, Qt.AlignRight)
         layout.addLayout(bottom_layout)

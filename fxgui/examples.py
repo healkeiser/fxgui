@@ -87,7 +87,7 @@ def _page(*sections: QWidget) -> QScrollArea:
     """Return `sections` stacked in a scroll area."""
     content = QWidget()
     layout = QVBoxLayout(content)
-    layout.setSpacing(12)
+    layout.setSpacing(fxstyle.PANE_GAP)
     for section in sections:
         layout.addWidget(section)
     layout.addStretch()
@@ -329,7 +329,7 @@ def _display_page() -> QWidget:
         overlay.setVisible(not overlay.isVisible())
 
     flow_box = QWidget()
-    flow = fxwidgets.FXFlowLayout(flow_box, spacing=4)
+    flow = fxwidgets.FXFlowLayout(flow_box)
     for tag in (
         "comp", "lighting", "fx", "layout", "animation", "matte painting",
         "roto", "paint", "tracking", "grading", "editorial", "lookdev",
@@ -600,7 +600,7 @@ def _open_framed(gallery: QWidget) -> None:
         framed=True,
     )
     window.setWindowFlag(Qt.Window)
-    row = fxwidgets.FXCommandRow(margins=(6, 6, 6, 0), spacing=6)
+    row = fxwidgets.FXCommandRow(margins=(6, 6, 6, 0))
     row.addAction(get_icon("arrow_back"), "Back")
     row.addAction(get_icon("refresh"), "Refresh")
     window.addToolBar(Qt.TopToolBarArea, row)

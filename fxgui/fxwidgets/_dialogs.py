@@ -131,7 +131,7 @@ class FXFloatingDialog(QDialog):
 
         self.title_layout = QHBoxLayout(self.title_widget)
         self.title_layout.setContentsMargins(_GUTTER, 8, _GUTTER, 8)
-        self.title_layout.setSpacing(8)
+        self.title_layout.setSpacing(fxstyle.PANE_GAP)
         self.title_layout.addWidget(self._icon_label)
         self.title_layout.addWidget(self.title_label)
         self.title_layout.addStretch()
@@ -147,7 +147,7 @@ class FXFloatingDialog(QDialog):
         self.main_widget.setObjectName("fxFloatingDialogBody")
         self.main_layout = QVBoxLayout(self.main_widget)
         self.main_layout.setContentsMargins(_GUTTER, 12, _GUTTER, 12)
-        self.main_layout.setSpacing(8)
+        self.main_layout.setSpacing(fxstyle.PANE_GAP)
 
     def _setup_buttons(self):
         """Sets up the dialog button box with close button.

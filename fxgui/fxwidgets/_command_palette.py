@@ -141,7 +141,7 @@ class FXCommandPalette(QFrame):
         self._loading = ""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(6)
+        layout.setSpacing(fxstyle.PANE_GAP)
         self.field = QLineEdit()
         self.field.addAction(
             fxicons.get_icon("search"), QLineEdit.LeadingPosition

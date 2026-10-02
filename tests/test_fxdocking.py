@@ -31,7 +31,7 @@ from fxgui.fxwidgets import FXMainWindow  # noqa: E402
 
 from _helpers import pixel  # noqa: E402
 
-GAP = 6
+GAP = fxstyle.PANE_GAP
 THEMES = fxstyle.get_available_themes()
 
 

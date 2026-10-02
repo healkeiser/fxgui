@@ -238,7 +238,7 @@ class FXSplashScreen(QSplashScreen):
         self.title_label = QLabel(title)
         fxstyle.mark_as_title(self.title_label, rank="card")
         heading = QHBoxLayout()
-        heading.setSpacing(8)
+        heading.setSpacing(fxstyle.PANE_GAP)
         heading.addWidget(self.icon_label)
         heading.addWidget(self.title_label)
         heading.addStretch()

@@ -132,7 +132,7 @@ class FXFilePathWidget(QWidget):
         # Main layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        layout.setSpacing(fxstyle.PANE_GAP)
 
         # Path input
         self._input = QLineEdit()
