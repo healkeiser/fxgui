@@ -82,7 +82,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXCheckableComboBox` | Combo box whose popup stays open while several rows are ticked |
 | `FXCodeBlock` | Read-only code with syntax highlighting |
 | `FXCollapsibleWidget` | A titled section that opens and shuts its content |
-| `FXCommand` | One row of an `FXCommandPalette`: a label, a callable, keys, a section |
+| `FXCommand` | One row of an `FXCommandPalette`: a label, a callable or a list of choices, keys, a section |
 | `FXCommandPalette` | Popup search over a window's commands, or over rows to go to |
 | `FXCommandRow` | A toolbar fixed in place, whose margins survive style changes |
 | `FXConfirmDeleteDialog` | Asks for a name typed exactly before an act with no undo; Enter never deletes |

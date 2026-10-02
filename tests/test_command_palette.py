@@ -397,3 +397,65 @@ def test_every_tip_sits_with_the_same_margins(qtbot):
     assert palette.hint.height() > palette.fontMetrics().height() * 2
     assert abs(plain[0] - rich[0]) <= 1, (plain, rich)
     assert abs(plain[1] - rich[1]) <= 1, (plain, rich)
+
+
+def _launch(ran):
+    def flavor(name):
+        return FXCommand(name, lambda: ran.append(name))
+
+    return FXCommand(
+        "Launch", icon="rocket_launch",
+        choices=lambda: [
+            flavor("Blender"),
+            FXCommand("Houdini", choices=lambda: [
+                flavor("Houdini FX"), flavor("Houdini Core")]),
+        ],
+    )
+
+
+def test_a_command_with_choices_lists_them_in_place(qtbot):
+    ran = []
+    _window_, palette = _palette(qtbot, [_launch(ran)])
+
+    QTest.keyClick(palette.field, Qt.Key_Return)
+
+    assert palette.isVisible(), "picking a command with choices keeps it open"
+    assert _labels(palette) == ["Blender", "Houdini"]
+    assert palette.field.text() == ""
+    assert "Launch" in palette.field.placeholderText()
+    assert ran == []
+
+
+def test_typing_filters_the_choices_and_enter_runs_one(qtbot):
+    ran = []
+    _window_, palette = _palette(qtbot, [_launch(ran)])
+    QTest.keyClick(palette.field, Qt.Key_Return)
+
+    _type(palette, "houd")
+    QTest.keyClick(palette.field, Qt.Key_Return)
+    assert _labels(palette) == ["Houdini FX", "Houdini Core"], "a nested step"
+    _type(palette, "core")
+    QTest.keyClick(palette.field, Qt.Key_Return)
+
+    assert ran == ["Houdini Core"]
+    assert not palette.isVisible()
+
+
+def test_a_command_with_no_choices_says_so(qtbot):
+    _window_, palette = _palette(
+        qtbot, [FXCommand("Launch", choices=lambda: [])])
+
+    QTest.keyClick(palette.field, Qt.Key_Return)
+
+    assert _labels(palette) == ["Nothing to pick"]
+
+
+def test_reopening_after_a_choice_step_lists_the_commands_again(qtbot):
+    ran = []
+    _window_, palette = _palette(qtbot, [_launch(ran), *_commands(ran)])
+    QTest.keyClick(palette.field, Qt.Key_Return)
+    QTest.keyClick(palette.field, Qt.Key_Escape)
+
+    palette.open_commands()
+
+    assert "Collapse all" in _labels(palette)

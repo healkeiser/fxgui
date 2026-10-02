@@ -59,22 +59,25 @@ class FXCommand:
 
     Args:
         label: What the row reads.
-        run: Called when the row is picked.
+        run: Called when the row is picked; unused where `choices` is set.
         keys: Its shortcut, as `QKeySequence` reads it, shown at the right.
         section: The group it belongs to, shown beside the label and
             matched by the search.
         enabled: False shows the row greyed; picking it shows `tip`.
         tip: Shown under the list while the row is current.
         icon: A material icon's name, drawn left of the label.
+        choices: Picking the row lists what this returns, in place, to pick
+            one; a choice with its own `choices` steps in again.
     """
 
     label: str
-    run: Callable[[], None]
+    run: Optional[Callable[[], None]] = None
     keys: str = ""
     section: str = ""
     enabled: bool = True
     tip: str = ""
     icon: str = ""
+    choices: Optional[Callable[[], List["FXCommand"]]] = None
 
 
 # Hands `load` a callback taking (row id, words) pairs.
@@ -335,7 +338,7 @@ class FXCommandPalette(QFrame):
             is not None
         )
         if not ranked:
-            self._placeholder("Nothing matches")
+            self._placeholder("Nothing matches" if source else "Nothing to pick")
             return
         shown = [source[index] for _found, index in ranked[: self.SHOWN]]
         # A row with no icon keeps its label in line with those that have one.
@@ -384,9 +387,25 @@ class FXCommandPalette(QFrame):
         if not entry.enabled:
             self._tell(entry.tip)
             return
+        if entry.choices is not None:
+            self._choose(entry)
+            return
         # Closed first, so a command that moves focus lands in the window.
         self.hide()
-        entry.run()
+        if entry.run is not None:
+            entry.run()
+
+    def _choose(self, entry: FXCommand) -> None:
+        """List `entry`'s choices in place of the rows, the field emptied."""
+        self._going = True
+        # A go-to load still in flight must not land over the choices.
+        self._ticket += 1
+        self._go_to = list(entry.choices())
+        self.field.setPlaceholderText(f"{entry.label}: type to pick one")
+        self.field.blockSignals(True)
+        self.field.clear()
+        self.field.blockSignals(False)
+        self._filter("")
 
     def _step(self, by: int) -> None:
         current = self.rows.currentItem()
