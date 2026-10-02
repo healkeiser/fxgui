@@ -151,12 +151,13 @@ def _recross(docks: "ads.CDockManager") -> None:
 
 
 def _inset(area: "ads.CDockAreaWidget") -> None:
-    """Inset `area`'s buttons off its round right corner, its tabs 2 px."""
+    """Inset `area`'s buttons off its round right corner, and its tabs."""
     bar = area.titleBar()
     bar.layout().setContentsMargins(0, 0, fxstyle.BUTTON_RADIUS, 0)
-    # With a tab's 2 px side margin, the first pill sits 4 px in, as it
-    # sits 4 px down: the sheet's QTabBar::tab:first.
-    bar.tabBar().widget().layout().setContentsMargins(2, 0, 0, 0)
+    # With a tab's half-gap side margin, the first pill sits one gap in, as
+    # it sits one gap down: the sheet's QTabBar::tab:first.
+    lead = fxstyle.PANE_GAP - fxstyle.PANE_GAP // 2
+    bar.tabBar().widget().layout().setContentsMargins(lead, 0, 0, 0)
     # The tabs set the bar's height; a button takes it, its margin inside.
     for button in bar.findChildren(ads.CTitleBarButton):
         policy = button.sizePolicy()
@@ -188,7 +189,9 @@ def _floor(area: "ads.CDockAreaWidget") -> None:
     held = area.currentDockWidget()
     if held is None or held.widget() is None:
         return
-    need = held.widget().minimumSizeHint()
+    pad = held.layout().contentsMargins()
+    need = held.widget().minimumSizeHint() + QSize(
+        pad.left() + pad.right(), pad.top() + pad.bottom())
     # From the border and the bar, never live sizes: a size caught
     # mid-layout moves the floor, which lays out again.
     edge = area.contentsMargins()
@@ -370,6 +373,10 @@ class FXDockArea(QWidget):
         held = ads.CDockWidget(self._docks, title)
         held.setObjectName(name)
         held.setWidget(widget, _NO_SCROLL)
+        # The content stands off the pane's edges as a pill does off its
+        # strip's; the strip's own gap under the pills is the top one.
+        gap = fxstyle.PANE_GAP
+        held.layout().setContentsMargins(gap, 0, gap, gap)
         _bare(held.tabWidget())
         # Its content's floor, not QtAds' 60 px: a narrower pane clips.
         held.setMinimumSizeHintMode(
