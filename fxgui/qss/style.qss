@@ -922,6 +922,13 @@ ads--CDockWidgetTab[activeTab="true"]
     padding: 3px 10px;
 }
 
+/* The first pill stands as far off the strip's start as off its top. */
+QTabBar::tab:first,
+QTabBar::tab:only-one
+{
+    margin-left: 4px;
+}
+
 /* Hover shows a lighter pill; the text keeps its ink. */
 QTabBar::tab:hover,
 ads--CDockWidgetTab[activeTab="false"]:hover
