@@ -230,8 +230,9 @@ PANE_BORDER_MIN_CONTRAST = 1.3
 # Least contrast between the splitter mark's dots and the frame.
 SPLITTER_MARK_MIN_CONTRAST = 1.3
 
-# Least contrast between a hovered fill and the surface, and between it and
-# a pressed or checked one: each state reads as a step of its own.
+# Least contrast between a hovered fill and what it sits on (a pane, a view,
+# a row's own card), and between it and a pressed or checked one: each state
+# reads as a step of its own.
 STATE_MIN_CONTRAST = 1.2
 
 # WCAG AA for body text: every text ink reaches it on each ground it sits on.
@@ -1017,8 +1018,9 @@ class _SplitterMark(QObject):
 def _readable_states(theme_data: dict) -> Dict[str, str]:
     """Return a theme's pressed fill and text inks, each held to its floor.
 
-    - ``state_hover``: stepped away from ``surface`` until it differs from
-      it by `STATE_MIN_CONTRAST`, so a hovered row or tab reads.
+    - ``state_hover``: stepped away from ``surface`` until it differs by
+      `STATE_MIN_CONTRAST` from it and from the ``surface_sunken`` and
+      ``well`` a view fills, so a hovered row reads as a hovered tab does.
     - ``state_pressed``: stepped on until it differs from ``state_hover``
       by the same.
     - ``text``: stepped toward black or white until it reads at
@@ -1032,9 +1034,12 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
     """
     surface = theme_data["surface"]
     pole = _pole_from(surface)
+    rows_on = [theme_data.get(key, surface)
+               for key in ("surface", "surface_sunken", "well")]
     hover = step_toward(
         theme_data.get("state_hover", surface), pole,
-        _reads(surface, STATE_MIN_CONTRAST))
+        lambda color: all(
+            _reads(ground, STATE_MIN_CONTRAST)(color) for ground in rows_on))
     pressed = step_toward(
         theme_data.get("state_pressed", hover), pole,
         _reads(hover, STATE_MIN_CONTRAST))

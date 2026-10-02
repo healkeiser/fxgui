@@ -86,7 +86,7 @@ An omitted `text_on_accent_*` is black or white, whichever reads better on the a
 
 | Role | Purpose |
 |------|---------|
-| `state_hover` | Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Pushed to 1.2:1 off `surface` when a theme sets it closer |
+| `state_hover` | Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Pushed to 1.2:1 off `surface`, `surface_sunken` and `well` when a theme sets it closer |
 | `state_pressed` | Pressed and checked fills, an open menu bar item, the current tab's pill. Pushed to 1.2:1 off `state_hover` (`fxstyle.STATE_MIN_CONTRAST`) when a theme sets the two closer |
 
 ### Scrollbar Colors
@@ -580,7 +580,9 @@ The card's edge is `@border_light`. A selected card is filled and edged
 with `@accent_primary`. A row with no background has no card.
 
 A hovered row is filled with `@state_hover` and keeps its own text
-colour, as in a plain list. Call
+colour, as in a plain list. On a card whose shade comes within 1.2:1 of
+`@state_hover`, as a deep row's does, the hover is the card itself made
+1.2:1 lighter (darker on a light theme). Call
 `FXThumbnailDelegate.apply_transparent_selection(view)` on the view so
 Qt's own highlight does not show under the delegate's.
 
