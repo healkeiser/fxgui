@@ -62,6 +62,7 @@ from qtpy.QtWidgets import (
     QStyleOption,
     QStyleOptionTab,
     QTabBar,
+    QTabWidget,
     QTreeView,
     QWidget,
 )
@@ -1622,6 +1623,10 @@ class FXProxyStyle(QProxyStyle):
         # ponytail: read at polish; a later setIndentation needs a repolish.
         if isinstance(widget, QTreeView):
             widget.setProperty(INDENT_PROPERTY, widget.indentation())
+        # A tab widget wears the pane card around its tabs too, as a dock
+        # pane does; Qt draws a sheet box on it only with this.
+        if isinstance(widget, QTabWidget):
+            widget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
 
 def _close_room(bar: QTabBar) -> int:

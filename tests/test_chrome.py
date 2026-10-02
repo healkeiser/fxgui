@@ -937,8 +937,13 @@ def test_the_gaps_around_and_between_tab_pills_are_one_size(qtbot):
     image = window.grab().toImage()
     origin = bar.mapTo(window, QPoint())
     first = bar.tabRect(0).translated(origin)
-    above, below = _vertical_gaps(
-        image, first.center().x(), origin.y(), first.bottom() + 8)
+    # Inside the card's 1 px border, as the dock pane's below.
+    top = pages.mapTo(window, QPoint()).y() + 1
+    above, last = _pill_run([image.pixelColor(first.center().x(), y).name()
+                             for y in range(top, first.bottom() + 2)])
+    # No edge under the strip: the page itself is what the gap reaches.
+    page = pages.currentWidget().mapTo(window, QPoint()).y()
+    below = page - (top + last) - 1
     between = _gap_between(
         image, first.center().y(), first.left(), bar.tabRect(1).right())
     gaps = {"above": above, "below": below, "between": between}

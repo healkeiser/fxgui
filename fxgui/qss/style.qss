@@ -875,22 +875,32 @@ QLabel
     border: 0px solid;
 }
 
-QTabWidget{
-    border: 1px transparent;
-}
-
-/* A tab widget's page is a pane card, as a dock pane is. */
-QTabWidget::pane {
-    top: 0px;
+/* A tab widget is one pane card around its tabs and its page, as a dock
+   pane is: the page sits right under the tab strip and one gap off the
+   card's other edges, as a dock pane's content does. A document-mode
+   tab widget is a window's own strip and draws no card. */
+QTabWidget {
     background: @surface;
     border: 1px solid @pane_border;
     border-radius: @button_radius;
-    padding: 3px;
 }
 
-/* The tabs start past the pane's 1 px edge, as a dock pane's do inside its. */
+QTabWidget[documentMode="true"] {
+    background: transparent;
+    border: none;
+}
+
+QTabWidget::pane {
+    top: 0px;
+    background: transparent;
+    border: none;
+    padding: 1px @pane_gap @pane_gap @pane_gap;
+}
+
+/* The tabs start past the card's 1 px edge, as a dock pane's do inside its. */
 QTabWidget::tab-bar {
     left: 1px;
+    top: 1px;
 }
 
 /* One tab look for QTabBar and QtAds: bare @text_muted text, and the current
