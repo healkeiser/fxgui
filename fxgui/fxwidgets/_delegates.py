@@ -948,8 +948,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing)
         painter.fillPath(self._cell_path(rect_f, ends), QBrush(color))
-        # A button's edge: a lighter fill turns white on a light theme.
-        painter.setPen(QPen(QColor(fxstyle.colors().border_light), 1))
+        # The pane's own edge colour, so a row reads no louder than a pane.
+        painter.setPen(QPen(QColor(fxstyle.colors().border), 1))
         painter.drawPath(self._edge_path(rect_f, ends))
         painter.restore()
         return rect

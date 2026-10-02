@@ -54,7 +54,7 @@ def test_a_row_shows_its_card_fill_and_outline(qtbot, theme, selected):
         assert card["fill"] == card["edge"] == colors.accent_primary.lower()
     else:
         assert card["fill"] == colors.surface.lower()
-        assert card["edge"] == colors.border_light.lower()
+        assert card["edge"] == colors.border.lower()
 
 
 def test_a_token_background_follows_a_theme_switch(qtbot):

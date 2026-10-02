@@ -1386,7 +1386,8 @@ QListView::item:selected:active  {
 }
 
 
-/* A header is flat muted text over one rule, no box around a section. */
+/* A header is flat muted text over one rule; a divider between sections
+   marks where a column resizes. */
 QHeaderView
 {
     background: transparent;
@@ -1401,13 +1402,26 @@ QHeaderView::section  {
     padding: 4px;
     border: none;
     border-bottom: 1px solid @border;
+    border-right: 1px solid @border;
     border-radius: 0px;
+}
+
+QHeaderView::section:horizontal:last,
+QHeaderView::section:horizontal:only-one
+{
+    border-right: none;
 }
 
 QHeaderView::section:vertical
 {
-    border-bottom: none;
+    border-bottom: 1px solid @border;
     border-right: 1px solid @border;
+}
+
+QHeaderView::section:vertical:last,
+QHeaderView::section:vertical:only-one
+{
+    border-bottom: none;
 }
 
 QHeaderView::section:checked
