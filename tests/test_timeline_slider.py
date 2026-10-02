@@ -254,3 +254,22 @@ def test_a_borrowed_clock_leaves_the_frame_to_its_owner(qtbot, qapp):
     assert timeline.current_frame() == 12 and moved == []
     timeline.next_frame()
     assert moved == [13], "a person's step still says so"
+
+
+def test_a_narrow_timeline_drops_the_jumps_then_the_frame_field(
+    qtbot, qapp
+):
+    timeline = _timeline(
+        qtbot, controls_position="below", show_range=False, show_fps=False)
+    wide = timeline.width()
+    assert timeline._goto_start_btn.isVisible()
+    assert timeline.minimumWidth() < timeline.layout().sizeHint().width()
+
+    timeline.resize(timeline.minimumWidth(), timeline.height())
+    assert not timeline._goto_start_btn.isVisible()
+    assert not timeline._goto_end_btn.isVisible()
+    assert not timeline._spinbox.isVisible()
+    assert timeline._play_btn.isVisible() and timeline._loop_btn.isVisible()
+
+    timeline.resize(wide, timeline.height())
+    assert timeline._goto_end_btn.isVisible() and timeline._spinbox.isVisible()

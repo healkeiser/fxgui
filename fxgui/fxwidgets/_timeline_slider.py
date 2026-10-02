@@ -76,6 +76,8 @@ class FXTimelineSlider(QWidget):
       the current frame; the consumer typically calls `set_loop_region`.
     - Optional keyframe navigation (`show_keyframe_controls`).
     - A hover line with the hovered frame number.
+    - Narrow, the "below" layout drops the go-to-start and go-to-end
+      buttons, then the frame field, so the transport keeps one row.
 
     Args:
         parent: Parent widget.
@@ -363,6 +365,38 @@ class FXTimelineSlider(QWidget):
                 widget.setVisible(show_range)
         self._fps_spinbox.setVisible(show_fps)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # Dropped in this order when the row runs out of width.
+        self._shed: List[List[QWidget]] = []
+        if controls_position == "below":
+            self._shed = [
+                [w for w in (self._goto_start_btn, self._goto_end_btn)
+                 if w in shown],
+                [self._spinbox] if self._spinbox in shown else [],
+            ]
+            # As narrow as the row with everything shed, never narrower.
+            self._show_shed(False)
+            self.setMinimumWidth(self.layout().minimumSize().width())
+            self._show_shed(True)
+
+    def _show_shed(self, shown: bool) -> None:
+        for group in self._shed:
+            for widget in group:
+                widget.setVisible(shown)
+
+    def _fit(self) -> None:
+        """Show what the row has room for, dropping in `_shed` order."""
+        self._show_shed(True)
+        for group in self._shed:
+            if self.layout().minimumSize().width() <= self.width():
+                return
+            for widget in group:
+                widget.setVisible(False)
+
+    def resizeEvent(self, event) -> None:
+        """Drop or restore the optional controls for the new width."""
+        super().resizeEvent(event)
+        self._fit()
 
     def _spinbox_for(self, value: int, title: str, body: str) -> QSpinBox:
         """Return a frame number field holding `value`."""
