@@ -491,6 +491,20 @@ class FXDockArea(QWidget):
             self._restore(self._pending)
             self._pending = None
         self._hold_open()
+        # A window that grows to fit does so after its children's show.
+        settled = self.size()
+        later(0, self, lambda: self._resettle(settled))
+
+    def _resettle(self, settled: QSize) -> None:
+        """Split again at the shown size, if the show changed it."""
+        if self.size() == settled:
+            return
+        now = bytes(self._docks.saveState())
+        self._split(self._docks.rootSplitter(), self.width(), self.height())
+        changed = now != self._built
+        self._built = bytes(self._docks.saveState())
+        if changed:
+            self._restore(now)
 
     def focusNextPrevChild(self, next: bool) -> bool:  # noqa: A002
         """Move Tab to the next widget in the chain that takes focus itself.

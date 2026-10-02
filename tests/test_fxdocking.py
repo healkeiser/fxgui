@@ -1130,3 +1130,64 @@ def test_a_saved_layout_comes_back_exactly_in_a_grown_window(
     second = _fitted(qtbot, saved, before_show)
 
     assert (second.size(), _splits(second)) == want
+
+
+
+def _two_panes(fit_to_contents, size):
+    """Return an unshown window around a 500 x 350 body, sized `size`."""
+    window = FXMainWindow(
+        title="Two", framed=True, fit_to_contents=fit_to_contents)
+    window.docks = fxdocking.FXDockArea(gap=GAP)
+    window.setCentralWidget(window.docks)
+    body = QLabel("body")
+    body.setMinimumSize(500, 350)
+    window.docks.set_central(body)
+    window.docks.add_dock("side", "Side", QLabel("side"), "left")
+    window.docks.add_dock(
+        "low", "Low", QLabel("low"), "bottom", beside="side")
+    window.resize(*size)
+    return window
+
+
+def _shown(qtbot, widget):
+    qtbot.addWidget(widget)
+    widget.show()
+    qtbot.waitExposed(widget)
+    qtbot.wait(50)
+    return widget
+
+
+def _first_and_reset(qtbot, window):
+    first = _splits(window)
+    window.docks.manager().rootSplitter().setSizes([50, 900])
+    window.docks.reset_layout()
+    qtbot.wait(20)
+    return first, _splits(window)
+
+
+def test_the_first_split_uses_the_size_a_window_grows_to_on_show(qtbot):
+    grown = _shown(qtbot, _two_panes(True, (300, 200)))
+    plain = _shown(qtbot, _two_panes(False, (grown.width(), grown.height())))
+    assert grown.width() > 300
+    assert plain.size() == grown.size()
+    want = _splits(plain)
+
+    assert _first_and_reset(qtbot, grown) == (want, want)
+
+
+def test_the_first_split_uses_the_size_an_embedded_window_grows_to(qtbot):
+    host = QWidget()
+    host.resize(1400, 1000)
+    grown = _two_panes(True, (300, 200))
+    grown.setParent(host)
+    _shown(qtbot, host)
+    other = QWidget()
+    other.resize(1400, 1000)
+    plain = _two_panes(False, (grown.width(), grown.height()))
+    plain.setParent(other)
+    _shown(qtbot, other)
+    assert grown.width() > 300
+    assert plain.size() == grown.size()
+    want = _splits(plain)
+
+    assert _first_and_reset(qtbot, grown) == (want, want)
