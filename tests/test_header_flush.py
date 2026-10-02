@@ -48,11 +48,11 @@ def test_a_table_header_touches_the_frame(qtbot, theme):
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
-def test_a_tree_with_no_header_keeps_its_rows_inset(qtbot, theme):
+def test_a_tree_with_no_header_keeps_its_rows_off_the_top(qtbot, theme):
     tree = _tree(header=False)
     _window = themed_window(qtbot, theme, tree)
     viewport = tree.viewport().geometry()
-    assert viewport.left() > _EDGE and viewport.top() > _EDGE
+    assert viewport.top() > _EDGE
 
 
 def _text_left(image, origin, y, right):
@@ -93,6 +93,6 @@ def test_the_inset_follows_a_header_hidden_or_shown_after_the_show(
     _window = themed_window(qtbot, theme, tree)
     assert tree.viewport().geometry().left() == _EDGE
     tree.setHeaderHidden(True)
-    qtbot.waitUntil(lambda: tree.viewport().geometry().left() > _EDGE)
+    qtbot.waitUntil(lambda: tree.viewport().geometry().top() > _EDGE)
     tree.setHeaderHidden(False)
-    qtbot.waitUntil(lambda: tree.header().geometry().left() == _EDGE)
+    qtbot.waitUntil(lambda: tree.header().geometry().top() == _EDGE)
