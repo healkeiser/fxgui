@@ -202,13 +202,16 @@ class FXFilteredTree(QWidget):
         self.filter_bar.search_changed.connect(self._filter)
         self.tree.type_into(self.filter_bar)
 
+        # Set, not left to the style: inside a host the style is the host's.
         bar = QHBoxLayout()
         bar.setContentsMargins(0, 0, 0, 0)
+        bar.setSpacing(fxstyle.PANE_GAP)
         bar.addWidget(self.filter_bar, 1)
         bar.addWidget(self.expand_button)
         bar.addWidget(self.collapse_button)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(fxstyle.PANE_GAP)
         layout.addLayout(bar)
         layout.addWidget(self.tree, 1)
         if actions is not None:
