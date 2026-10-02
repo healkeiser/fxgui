@@ -473,4 +473,68 @@ fxgui13-w1 / fxgui13-w2 worktrees.
      the window size and every splitter size match. It passed before any
      change.
 
-Full suite: 2512 passed, 6 skipped. ruff F,B,BLE clean.
+6b. Follow-up on the two real crashes, time-boxed:
+   - Ran: w1's own test_command_row/framed_panes/dependency_page tests,
+     serially, with faulthandler. A local `get_font_family` stub (a
+     pytest plugin in the scratchpad) was used against fix-gaps, then
+     against fxgui e2cf93a8 (00:32, before the rename).
+   - Both runs stop before any window: 196 errors on
+     `FXOutputLogWidget(capture_output=...)`, a keyword gone since
+     d035969e (2026-10-01 15:41). So the w1 tree as it stands matches no
+     fxgui on audit-fixes.
+   - Its 01:20 run cannot be replayed. No fxgui cause was found.
+   - Read, with no cause found: fxdocking's `_sweep` and `mark_as_frame`
+     (both touch only QtAds containers and splitters), and
+     `_drop_focus_rect`, which only styles QAbstractItemView, never a
+     QGraphicsView.
+   - The ls frames to rerun on the merged tree:
+     - ProjectSettingsWindow.__init__ -> AppWindow.add_dock
+       (w1 apps/window.py:453) -> FXDockArea.add_dock -> QtAds
+       addDockWidget, for the "page" pane holding the stack with the
+       DependencyPage GraphCanvas.
+     - WorkflowsWindow.show_workflow
+       (w1 apps/workflows/views/window.py:470) `tabs.setCurrentIndex`
+       on a fresh GraphCanvas tab.
+8. FXFilteredTree takes `actions=` (a layout), a row of buttons under the
+   tree.
+   - Why under: ls's own `filtered_tree_panel` put it there ("A row of
+     action buttons under the tree"), and ls's row_pane keeps it there.
+     The filter bar's row already holds the fold buttons.
+   - Commit: 74050be5.
+   - ls change: fxgui13-t apps/widgets/rows.py:223-226 becomes
+     `FXFilteredTree(tree, placeholder=placeholder, actions=actions)`.
+     Delete the `panel.layout().addLayout` line.
+9. `fxutils.add_submenu(menu, label, before=None)` inserts ahead of
+   `before`, as `QMenu.insertMenu` does.
+   - Commit: 7702b1f5.
+   - ls change: fxgui13-t apps/widgets/action_menu.py:142-147 becomes one
+     call, `sub = fxutils.add_submenu(menu, label, before=before)`.
+10. FXEmojiButton.attach still returns None: unchanged.
+    - Why: both ls calls (fxgui13-t hub/views/comments.py:682 and
+      composer.py:253) already hold the button and ignore the return.
+11. TREE_KEYS stays unexported.
+    - Why: ls does not use it. Its lazy tree passes its own
+      `_LAZY_TREE_KEYS = "+- "` (fxgui13-t apps/views/tree.py:63) to
+      `type_into(qt_keys=...)`. The default stays visible in
+      `type_into`'s signature and docstring.
+11b. `FXStatusBar.version` / `.company` were dropped on purpose.
+    - Commit: 41f9a5b8, "one name per job".
+    - What replaces them: the items `version_label.text()` and
+      `company_label.text()`.
+    - ls change: fxgui13-t apps/window.py:285-286 becomes
+      `StatusBar(self, version=plain.version_label.text(),
+      company=plain.company_label.text())`.
+12. app_root and the suite's NoAntialias font: the premise does not hold.
+    - `fxstyle.font()` starts from `QFont()`, which copies the
+      application font's values. Its resolve mask covers only families
+      and size, so the style strategy carries through
+      `register_themed_root(qapp)` and every `apply_theme`.
+    - New test: `test_a_themed_app_keeps_its_text_antialiasing`, under
+      app_root. It checks the app font and a label's font across light
+      and dark, and it passes with no fxgui change.
+    - It is offscreen on Windows. CI's offscreen run on Linux will
+      confirm it there.
+    - Commit: 7106f36e.
+
+Merged audit-fixes 1618f76c (cd655213). Full suite: 2515 passed,
+6 skipped. ruff F,B,BLE clean.
