@@ -1,6 +1,7 @@
 """A command palette: a search box over a window's commands, or its rows."""
 
 # Built-in
+import html
 import re
 from dataclasses import dataclass
 from functools import partial
@@ -169,6 +170,9 @@ class FXCommandPalette(QFrame):
         self.hint = QLabel()
         self.hint.setObjectName("fxPaletteHint")
         self.hint.setWordWrap(True)
+        # Every tip lays out as rich text: a plain label sets no leading
+        # under its last line, so plain and rich tips sat differently.
+        self.hint.setTextFormat(Qt.RichText)
         layout.addWidget(self.field)
         layout.addWidget(self.rows)
         layout.addWidget(self.hint)
@@ -276,8 +280,11 @@ class FXCommandPalette(QFrame):
         self._fit()
 
     def _fit(self) -> None:
-        self.layout().activate()
-        self.resize(self.width(), self.sizeHint().height())
+        layout = self.layout()
+        layout.activate()
+        # At the real width: a wrapped tip's size hint guesses a narrower
+        # one, and the label then centres the text in the extra height.
+        self.resize(self.width(), layout.totalHeightForWidth(self.width()))
         self._place()
 
     def _place(self) -> None:
@@ -304,6 +311,8 @@ class FXCommandPalette(QFrame):
 
     def _tell(self, text: str) -> None:
         """Say `text` under the list; with nothing to say, take no room."""
+        if not Qt.mightBeRichText(text):
+            text = html.escape(text).replace("\n", "<br>")
         self.hint.setText(text)
         self.hint.setVisible(bool(text))
         self._fit()

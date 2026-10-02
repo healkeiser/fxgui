@@ -359,3 +359,41 @@ def test_a_command_s_icon_shows_left_of_its_label_in_the_icon_ink(qtbot):
     assert rows.iconSize().width() == side == 16
     assert fxstyle.colors().icon.lower() in inks(icon)
     assert _text_left(palette, 0) == _text_left(palette, 1) > band.left() + 16
+
+
+def _hint_gaps(palette):
+    """Return the hint's ink gaps to the list above and the frame below."""
+    from qtpy.QtGui import QColor
+
+    image = palette.grab().toImage()
+    surface = QColor(fxstyle.colors().surface)
+    top = palette.rows.geometry().bottom() + 1
+    bottom = palette.contentsRect().bottom()
+    left, right = palette.hint.geometry().left(), palette.hint.geometry().right()
+
+    def inked(y):
+        return any(
+            max(abs(c.red() - surface.red()), abs(c.green() - surface.green()),
+                abs(c.blue() - surface.blue())) > 60
+            for c in (image.pixelColor(x, y) for x in range(left, right + 1))
+        )
+
+    rows = [y for y in range(top, bottom + 1) if inked(y)]
+    return rows[0] - top, bottom - rows[-1]
+
+
+def test_every_tip_sits_with_the_same_margins(qtbot):
+    long = "<b>Rich</b> and long: " + "a tip that wraps " * 12 + "up"
+    commands = [
+        FXCommand("Plain", lambda: None, tip="A plain tip"),
+        FXCommand("Rich", lambda: None, tip=long),
+    ]
+    _window_, palette = _palette(qtbot, commands)
+    plain = _hint_gaps(palette)
+    palette.rows.setCurrentItem(palette.rows.topLevelItem(1))
+    QApplication.processEvents()
+    rich = _hint_gaps(palette)
+
+    assert palette.hint.height() > palette.fontMetrics().height() * 2
+    assert abs(plain[0] - rich[0]) <= 1, (plain, rich)
+    assert abs(plain[1] - rich[1]) <= 1, (plain, rich)
