@@ -472,3 +472,82 @@ def test_a_library_icon_shows_and_a_missing_one_falls_back(qtbot):
     for index in range(rows.topLevelItemCount()):
         icon = rows.topLevelItem(index).icon(0)
         assert not icon.isNull() and not icon.pixmap(16, 16).isNull()
+
+
+def _sections(palette):
+    rows = palette.rows
+    return [rows.topLevelItem(i).text(1) for i in range(rows.topLevelItemCount())]
+
+
+def test_the_command_run_last_comes_first_next_time(qtbot):
+    ran = []
+    _window_, palette = _palette(qtbot, _commands(ran))
+    told = []
+    palette.recent_changed.connect(told.append)
+
+    _type(palette, "keyboard")
+    QTest.keyClick(palette.field, Qt.Key_Return)
+    palette.open_commands()
+
+    assert _labels(palette)[0] == "Keyboard shortcuts"
+    assert _sections(palette)[0] == "recently used"
+    assert _sections(palette)[1:] == ["View", "View"], "the rest keep theirs"
+    assert told == [["Keyboard shortcuts"]]
+
+
+def test_recent_rows_lead_the_matches_too(qtbot):
+    window = _window(qtbot)
+    palette = FXCommandPalette(
+        window, lambda: _commands([]), recent=["Expand loaded"])
+    palette.open_commands()
+
+    _type(palette, "l")
+
+    assert _labels(palette)[0] == "Expand loaded"
+
+
+def test_a_key_outlives_a_label_that_changes(qtbot):
+    window = _window(qtbot)
+    shown = {"label": "Show Log"}
+    palette = FXCommandPalette(window, lambda: [
+        *_commands([]), FXCommand(shown["label"], lambda: None, key="log")])
+    palette.open_commands()
+    _type(palette, "show log")
+    QTest.keyClick(palette.field, Qt.Key_Return)
+
+    shown["label"] = "Hide Log"
+    palette.open_commands()
+
+    assert palette.recent == ["log"]
+    assert _labels(palette)[0] == "Hide Log"
+
+
+def test_a_choice_picked_last_comes_first_among_its_choices(qtbot):
+    ran = []
+    _window_, palette = _palette(qtbot, [*_commands(ran), _launch(ran)])
+    _type(palette, "launch")
+    QTest.keyClick(palette.field, Qt.Key_Return)
+    _type(palette, "houdini")
+    QTest.keyClick(palette.field, Qt.Key_Return)
+    _type(palette, "core")
+    QTest.keyClick(palette.field, Qt.Key_Return)
+
+    palette.open_commands()
+    assert _labels(palette)[0] == "Launch"
+    QTest.keyClick(palette.field, Qt.Key_Return)
+    assert _labels(palette) == ["Houdini", "Blender"]
+    QTest.keyClick(palette.field, Qt.Key_Return)
+    assert _labels(palette) == ["Houdini Core", "Houdini FX"]
+    assert palette.recent == [
+        "Launch/Houdini/Houdini Core", "Launch/Houdini", "Launch"]
+
+
+def test_go_to_rows_are_not_remembered(qtbot):
+    window = _window(qtbot)
+    palette = FXCommandPalette(window, lambda: _commands([]))
+    palette.open_go_to(
+        lambda landed: landed([("a", "sh0010 lighting")]), lambda _row: None)
+
+    QTest.keyClick(palette.field, Qt.Key_Return)
+
+    assert palette.recent == []

@@ -83,7 +83,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXCodeBlock` | Read-only code with syntax highlighting |
 | `FXCollapsibleWidget` | A titled section that opens and shuts its content |
 | `FXCommand` | One row of an `FXCommandPalette`: a label, a callable or a list of choices, keys, a section |
-| `FXCommandPalette` | Popup search over a window's commands, or over rows to go to |
+| `FXCommandPalette` | Popup search over a window's commands, or over rows to go to; the commands run lately come first |
 | `FXCommandRow` | A toolbar fixed in place, whose margins survive style changes |
 | `FXConfirmDeleteDialog` | Asks for a name typed exactly before an act with no undo; Enter never deletes |
 | `FXDropZone` | Drop target for files or folders, with a browse button and a file list |

@@ -5,10 +5,10 @@ import html
 import re
 from dataclasses import dataclass
 from functools import partial
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Sequence, Tuple
 
 # Third-party
-from qtpy.QtCore import QPoint, QRect, QSize, Qt
+from qtpy.QtCore import QPoint, QRect, QSize, Qt, Signal
 from qtpy.QtGui import QColor, QIcon, QKeyEvent, QKeySequence, QPalette, QPixmap
 from qtpy.QtWidgets import (
     QFrame,
@@ -69,6 +69,8 @@ class FXCommand:
             `library:name` for another library, such as `dcc:houdini_mark`.
         choices: Picking the row lists what this returns, in place, to pick
             one; a choice with its own `choices` steps in again.
+        key: What the palette remembers the row by; the label where empty.
+            Give one where the label changes, as "Show Log" and "Hide Log".
     """
 
     label: str
@@ -79,6 +81,7 @@ class FXCommand:
     tip: str = ""
     icon: str = ""
     choices: Optional[Callable[[], List["FXCommand"]]] = None
+    key: str = ""
 
 
 # Hands `load` a callback taking (row id, words) pairs.
@@ -112,11 +115,17 @@ class FXCommandPalette(QFrame):
     """A frameless popup over `window`'s commands; Enter runs, Escape closes.
 
     Every typed word must appear, in order, in a row's label and section.
-    Rows where the words start words rank first.
+    Rows run lately come first, the latest on top, as in VS Code; then
+    rows where the words start words.
 
     Args:
         window: The window the palette opens over.
         commands: Returns the commands each time the palette opens.
+        recent: The keys run lately, the latest first, to start from.
+
+    Signals:
+        recent_changed: The keys run lately, the latest first, after a run;
+            store them to keep the order across sessions.
 
     Examples:
         >>> palette = FXCommandPalette(window, lambda: [
@@ -130,9 +139,16 @@ class FXCommandPalette(QFrame):
     WIDTH = 640
     ROWS = 12
     POSITIONS = ("top", "center", "bottom")
+    # Keys remembered; a longer list orders nothing a person returns to.
+    RECENT = 50
+
+    recent_changed = Signal(list)
 
     def __init__(
-        self, window: QWidget, commands: Callable[[], List[FXCommand]]
+        self,
+        window: QWidget,
+        commands: Callable[[], List[FXCommand]],
+        recent: Sequence[str] = (),
     ):
         super().__init__(window)
         self.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
@@ -146,6 +162,12 @@ class FXCommandPalette(QFrame):
         self._going = False
         self._ticket = 0
         self._loading = ""
+        self.recent: List[str] = list(recent)[: self.RECENT]
+        # Where the rows shown are remembered: "" for the commands, the
+        # picked keys joined by "/" in a choice step, None for go-to rows.
+        self._scope: Optional[str] = ""
+        # The key of each choice step taken to reach the rows shown.
+        self._steps: List[str] = []
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(fxstyle.PANE_GAP)
@@ -240,6 +262,7 @@ class FXCommandPalette(QFrame):
         self._go_to = None
         self._loading = loading
         self._open(placeholder, position)
+        self._scope = None
         ticket = self._ticket
 
         def landed(entries: List[Tuple[str, str]]) -> None:
@@ -261,6 +284,8 @@ class FXCommandPalette(QFrame):
             )
         self._position = position
         self._ticket += 1
+        self._scope = ""
+        self._steps = []
         self.field.setPlaceholderText(placeholder)
         self._command_rows = self._commands()
         self.field.blockSignals(True)
@@ -325,6 +350,7 @@ class FXCommandPalette(QFrame):
         commands = not self._going or text.startswith(">")
         query = text[1:] if text.startswith(">") else text
         source = self._command_rows if commands else self._go_to
+        scope = "" if self._going and text.startswith(">") else self._scope
         # A row to go to has no section and no key.
         for column in (1, 2):
             self.rows.setColumnHidden(column, not commands)
@@ -332,8 +358,16 @@ class FXCommandPalette(QFrame):
         if source is None:
             self._placeholder(self._loading)
             return
+        late = {key: at for at, key in enumerate(self.recent)}
+        never = len(late)
+
+        def lately(entry: FXCommand) -> int:
+            if scope is None:
+                return never
+            return late.get(self._key(scope, entry), never)
+
         ranked = sorted(
-            (found, index)
+            (lately(entry), found, index)
             for index, entry in enumerate(source)
             if (found := self.rank(query, f"{entry.label} {entry.section}"))
             is not None
@@ -341,7 +375,8 @@ class FXCommandPalette(QFrame):
         if not ranked:
             self._placeholder("Nothing matches" if source else "Nothing to pick")
             return
-        shown = [source[index] for _found, index in ranked[: self.SHOWN]]
+        shown = [source[index] for *_order, index in ranked[: self.SHOWN]]
+        recent_count = sum(order < never for order, *_rest in ranked)
         # A row with no icon keeps its label in line with those that have one.
         blank = None
         if any(entry.icon for entry in shown):
@@ -350,9 +385,10 @@ class FXCommandPalette(QFrame):
             pixmap.fill(Qt.transparent)
             blank = QIcon(pixmap)
         items = []
-        for entry in shown:
+        for at, entry in enumerate(shown):
             keys = QKeySequence(entry.keys).toString(QKeySequence.NativeText)
-            item = QTreeWidgetItem([entry.label, entry.section, keys])
+            section = "recently used" if at < recent_count else entry.section
+            item = QTreeWidgetItem([entry.label, section, keys])
             item.setData(0, _COMMAND_ROLE, entry)
             item.setTextAlignment(2, Qt.AlignRight | Qt.AlignVCenter)
             if blank is not None:
@@ -363,6 +399,25 @@ class FXCommandPalette(QFrame):
             items.append(item)
         self.rows.addTopLevelItems(items)
         self.rows.setCurrentItem(items[0])
+
+    @staticmethod
+    def _key(scope: str, entry: FXCommand) -> str:
+        return f"{scope}{entry.key or entry.label}"
+
+    def _leave_for_commands(self) -> None:
+        """A leading `>` lists the commands: remember them as commands."""
+        if self._going and self.field.text().startswith(">"):
+            self._scope, self._steps = "", []
+
+    def _remember(self, entry: FXCommand) -> None:
+        """Put `entry`, and each step that led to it, first in `recent`."""
+        if self._scope is None:
+            return
+        keys = [*self._steps, self._key(self._scope, entry)]
+        self.recent = (
+            keys[::-1] + [key for key in self.recent if key not in keys]
+        )[: self.RECENT]
+        self.recent_changed.emit(list(self.recent))
 
     @staticmethod
     def _icon(name: str) -> QIcon:
@@ -398,6 +453,8 @@ class FXCommandPalette(QFrame):
         if entry.choices is not None:
             self._choose(entry)
             return
+        self._leave_for_commands()
+        self._remember(entry)
         # Closed first, so a command that moves focus lands in the window.
         self.hide()
         if entry.run is not None:
@@ -405,6 +462,11 @@ class FXCommandPalette(QFrame):
 
     def _choose(self, entry: FXCommand) -> None:
         """List `entry`'s choices in place of the rows, the field emptied."""
+        self._leave_for_commands()
+        if self._scope is not None:
+            key = self._key(self._scope, entry)
+            self._steps.append(key)
+            self._scope = f"{key}/"
         self._going = True
         # A go-to load still in flight must not land over the choices.
         self._ticket += 1
