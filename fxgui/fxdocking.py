@@ -297,6 +297,7 @@ class FXDockArea(QWidget):
         self._placeholder = True
         self._built: Optional[bytes] = None
         self._pending: Optional[bytes] = None
+        self._restored = False
         self._sweep_queued = False
         self._docks = ads.CDockManager(self)
         self._docks.setObjectName("fxDocks")
@@ -499,12 +500,12 @@ class FXDockArea(QWidget):
         """Split again at the shown size, if the show changed it."""
         if self.size() == settled:
             return
-        now = bytes(self._docks.saveState())
+        # A layout restored since the show stays; only the reset target moves.
+        kept = bytes(self._docks.saveState()) if self._restored else None
         self._split(self._docks.rootSplitter(), self.width(), self.height())
-        changed = now != self._built
         self._built = bytes(self._docks.saveState())
-        if changed:
-            self._restore(now)
+        if kept is not None:
+            self._restore(kept)
 
     def focusNextPrevChild(self, next: bool) -> bool:  # noqa: A002
         """Move Tab to the next widget in the chain that takes focus itself.
@@ -535,6 +536,7 @@ class FXDockArea(QWidget):
                 return True
 
     def _restore(self, state: bytes) -> None:
+        self._restored = True
         self._docks.restoreState(QByteArray(state))
         self._hold_open()
 
