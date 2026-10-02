@@ -5,7 +5,7 @@ import pytest
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 # Internal
-from fxgui import fxdocking, fxstyle
+from fxgui import fxstyle
 from fxgui.fxwidgets import FXFilteredTree
 
 
@@ -36,4 +36,7 @@ def test_a_filtered_trees_bar_stands_one_pane_gap_above_its_tree(
 
 
 def test_a_dock_area_defaults_to_the_pane_gap():
+    pytest.importorskip("PySide6QtAds")
+    from fxgui import fxdocking
+
     assert fxdocking.FXDockArea()._gap == fxstyle.PANE_GAP
