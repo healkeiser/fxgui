@@ -521,7 +521,7 @@ two apart.
   `@border` rule, with no box around a section. It sits flush with the
   view's frame: a view with a header has no inner padding, and its rows
   run to the frame's edge. A list or a tree with its header hidden keeps
-  a 4 px inset; hide the header before the view is first shown.
+  a 4 px inset, and a tree follows its header hidden or shown at any time.
 - A splitter handle and the gap between dock widgets show nothing until
   the pointer finds them, then fill with `@accent_primary`. A splitter
   marked with `mark_as_frame` keeps its painted dots.
