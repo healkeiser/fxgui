@@ -2224,7 +2224,7 @@
 <tbody>
 <tr>
 <td><code>state_hover</code></td>
-<td>Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Pushed to 1.2:1 off <code>surface</code> when a theme sets it closer</td>
+<td>Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Pushed to 1.2:1 off <code>surface</code>, <code>surface_sunken</code> and <code>well</code> when a theme sets it closer</td>
 </tr>
 <tr>
 <td><code>state_pressed</code></td>
@@ -2925,7 +2925,12 @@ two apart.</p>
   At rest it is bare; hovered, <code>@state_hover</code>; with its menu open,
   <code>@state_pressed</code> with <code>@text</code>.</li>
 <li>A table or tree header is flat <code>@text_muted</code> text over one 1 px
-  <code>@border</code> rule, with no box around a section.</li>
+  <code>@border</code> rule, with no box around a section. It sits flush with the
+  view's frame: a view with a header has no inner padding. A list or a
+  tree with its header hidden keeps a 4 px inset at the top only, and a
+  tree follows its header hidden or shown at any time. Rows run to the
+  frame's sides, and a scroll bar's thumb sits centred between the rows
+  and the frame.</li>
 <li>A splitter handle and the gap between dock widgets show nothing until
   the pointer finds them, then fill with <code>@accent_primary</code>. A splitter
   marked with <code>mark_as_frame</code> keeps its painted dots.</li>
@@ -3029,7 +3034,9 @@ the card follows every theme switch:</p>
 <p>The card's edge is <code>@border_light</code>. A selected card is filled and edged
 with <code>@accent_primary</code>. A row with no background has no card.</p>
 <p>A hovered row is filled with <code>@state_hover</code> and keeps its own text
-colour, as in a plain list. Call
+colour, as in a plain list. On a card whose shade comes within 1.2:1 of
+<code>@state_hover</code>, as a deep row's does, the hover is the card itself made
+1.2:1 lighter (darker on a light theme). Call
 <code>FXThumbnailDelegate.apply_transparent_selection(view)</code> on the view so
 Qt's own highlight does not show under the delegate's.</p>
 <h2 id="registering-your-own-widget-styles">Registering Your Own Widget Styles<a class="headerlink" href="#registering-your-own-widget-styles" title="Permanent link">&para;</a></h2>
