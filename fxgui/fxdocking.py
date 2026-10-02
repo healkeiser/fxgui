@@ -190,7 +190,9 @@ def _floor(area: "ads.CDockAreaWidget") -> None:
     if held is None or held.widget() is None:
         return
     pad = held.layout().contentsMargins()
-    need = held.widget().minimumSizeHint() + QSize(
+    # As Qt's layouts do: a minimum the content set beats its hint.
+    body = held.widget()
+    need = body.minimumSizeHint().expandedTo(body.minimumSize()) + QSize(
         pad.left() + pad.right(), pad.top() + pad.bottom())
     # From the border and the bar, never live sizes: a size caught
     # mid-layout moves the floor, which lays out again.
