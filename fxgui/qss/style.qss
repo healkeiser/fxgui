@@ -1170,6 +1170,8 @@ QAbstractItemView[fxPopup="true"]::item:hover,
 QAbstractItemView[fxPopup="true"]::item:selected {
     color: @text_on_accent_primary;
     background: @accent_primary;
+    /* A popup row is a menu's: no list text step. */
+    padding-left: 0px;
 }
 
 /* A slider is a 4 px pill, its filled span the accent, and a round handle:
