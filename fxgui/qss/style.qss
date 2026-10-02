@@ -1129,6 +1129,13 @@ QTreeView::item:selected {
     border-radius: @button_radius;
 }
 
+/* Qt 6.6 sets a resting list row's text 1 px further right than a
+   highlighted one, which the sheet draws: the token makes up the step. */
+QListView::item:hover,
+QListView::item:selected {
+    padding-left: @list_text_step;
+}
+
 QListView::item:!selected:hover,
 QTreeView::item:!selected:hover {
     background: @state_hover;

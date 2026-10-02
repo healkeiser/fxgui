@@ -73,7 +73,7 @@ def _text_left(image, origin, y, right):
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
-@pytest.mark.parametrize("kind", ["headed tree", "tree"])
+@pytest.mark.parametrize("kind", ["list", "headed tree", "tree"])
 def test_row_text_stays_put_in_every_state(qtbot, theme, kind):
     if kind == "list":
         view = QListWidget()

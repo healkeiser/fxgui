@@ -264,6 +264,11 @@ _SPIN_PADDING = (
     "4px 0px" if _compat.QT_VERSION < (6, 6) else "3px 0px 2px 0px"
 )
 
+# A highlighted list row's text step to its resting place: from Qt 6.6 the
+# native resting row sits 1 px further right; trees do not move.
+# ponytail: measured on 6.5.3 and 6.11.1 only, as `_SPIN_PADDING`.
+_LIST_TEXT_STEP = "0px" if _compat.QT_VERSION < (6, 6) else "1px"
+
 # The body text size, in pixels, of every themed root.
 FONT_SIZE = 12
 
@@ -1171,6 +1176,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     tokens["@pane_gap_half"] = f"{PANE_GAP // 2}px"
     tokens["@pane_gap"] = f"{PANE_GAP}px"
     tokens["@spin_padding"] = _SPIN_PADDING
+    tokens["@list_text_step"] = _LIST_TEXT_STEP
 
     # url(~icons/...) in QSS: the folder of the theme being resolved, which
     # need not be the current one.
