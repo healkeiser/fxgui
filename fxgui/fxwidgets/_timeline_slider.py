@@ -92,6 +92,14 @@ class FXTimelineSlider(QWidget):
         controls_position: "left" (one row) or "below" (full-width track on
             top, the transport centred below, fps far left, consumer extras
             from add_control_widget() far right).
+        show_range: Whether to show the start and end frame fields, and the
+            view fields of the "below" layout; a player's range is fixed.
+        show_fps: Whether to show the frame rate field.
+        own_clock: Whether playback advances the frame. False for a
+            consumer that keeps time itself, such as a movie: play and stop
+            only switch the button and emit, the consumer moves the
+            playhead with `set_frame(frame, emit=False)`, and
+            `frame_changed` then means the person moved it.
 
     Raises:
         ValueError: `controls_position` is neither "left" nor "below".
@@ -145,6 +153,9 @@ class FXTimelineSlider(QWidget):
         show_loop_controls: bool = False,
         show_keyframe_controls: bool = False,
         controls_position: str = "left",
+        show_range: bool = True,
+        show_fps: bool = True,
+        own_clock: bool = True,
     ):
         super().__init__(parent)
         if controls_position not in ("left", "below"):
@@ -152,6 +163,7 @@ class FXTimelineSlider(QWidget):
                 f"Unknown controls_position: {controls_position!r}"
             )
         self._show_loop_controls = show_loop_controls
+        self._own_clock = own_clock
 
         # The range is held here; the start and end spinboxes show it.
         self._start_frame = start_frame
@@ -345,6 +357,11 @@ class FXTimelineSlider(QWidget):
         # flash up as a window of its own.
         for widget in transport + keys + marks + [self._spinbox]:
             widget.setVisible(widget in shown)
+        for widget in (self._start_spinbox, self._end_spinbox,
+                       self._view_start_spinbox, self._view_end_spinbox):
+            if widget is not None:
+                widget.setVisible(show_range)
+        self._fps_spinbox.setVisible(show_fps)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
     def _spinbox_for(self, value: int, title: str, body: str) -> QSpinBox:
@@ -713,7 +730,8 @@ class FXTimelineSlider(QWidget):
         self._is_playing = True
         self._reanchor()
         # Ticks at the frame rate; the clock, not the tick count, decides.
-        self._playback_timer.start(max(1, int(1000 / self.fps())))
+        if self._own_clock:
+            self._playback_timer.start(max(1, int(1000 / self.fps())))
         fxicons.set_icon(self._play_btn, "pause")
         apply_tip(self._play_btn, "Pause", "Pause playback", "Space")
         self.playback_started.emit()

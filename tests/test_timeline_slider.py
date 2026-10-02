@@ -228,3 +228,29 @@ def test_the_transport_stays_centred_beside_wide_extras(qtbot, qapp):
     middle = field.mapTo(timeline, field.rect().center()).x()
     assert abs(middle - timeline.width() / 2) <= 40
     assert extra.geometry().right() >= timeline.width() - 2
+
+
+def test_a_player_hides_the_range_and_the_rate(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, controls_position="below", show_range=False, show_fps=False)
+    hidden = (timeline._start_spinbox, timeline._end_spinbox,
+              timeline._view_start_spinbox, timeline._view_end_spinbox,
+              timeline._fps_spinbox)
+    assert not any(widget.isVisible() for widget in hidden)
+    assert timeline._track_widget.isVisible()
+    assert timeline._play_btn.isVisible()
+
+
+def test_a_borrowed_clock_leaves_the_frame_to_its_owner(qtbot, qapp):
+    """Play only signals; set_frame moves the playhead without emitting."""
+    timeline = _timeline(qtbot, start_frame=1, end_frame=100, own_clock=False)
+    moved = []
+    timeline.frame_changed.connect(moved.append)
+    with qtbot.waitSignal(timeline.playback_started):
+        timeline.play()
+    qtbot.wait(120)
+    assert timeline.current_frame() == 1, "no timer moved the playhead"
+    timeline.set_frame(12, emit=False)
+    assert timeline.current_frame() == 12 and moved == []
+    timeline.next_frame()
+    assert moved == [13], "a person's step still says so"
