@@ -8,7 +8,19 @@ from qtpy.QtGui import QColor, QImage, QPainter
 
 from fxgui import fxicons, fxstyle
 
-MARKS = ["alembic", "3d_equalizer", "rez", "zbrush"]
+MARKS = [
+    "alembic", "3d_equalizer", "rez", "zbrush",
+    "adobe_after_effects_mark",
+    "adobe_photoshop_mark",
+    "adobe_substance_painter_mark",
+    "blender_mark",
+    "cinema_4d_mark",
+    "davinci_resolve_mark",
+    "houdini_mark",
+    "maya_mark",
+    "nuke_mark",
+    "unreal_engine_mark",
+]
 SVG_DIR = Path(__file__).parent.parent / "fxgui" / "icons" / "dcc" / "svg"
 
 
@@ -46,7 +58,9 @@ def test_a_theme_switch_redraws_the_mark(qapp, name):
     assert _ink(icon) != on_light
 
 
-@pytest.mark.parametrize("name", MARKS)
+# Houdini's and Maya's logos are themselves squares, the mark cut out.
+@pytest.mark.parametrize(
+    "name", [name for name in MARKS if name not in ("houdini_mark", "maya_mark")])
 def test_no_tile_behind_the_mark(qapp, name):
     from qtpy.QtSvg import QSvgRenderer
 

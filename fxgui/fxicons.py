@@ -88,8 +88,21 @@ _libraries_info = {
     },
     "dcc": {
         "recolor": False,
-        # Single-colour marks, drawn in the theme's icon ink.
-        "recolor_names": frozenset({"alembic", "3d_equalizer", "rez", "zbrush"}),
+        # Single-colour marks, drawn in the theme's icon ink. A `_mark` is a
+        # logo's one-colour twin, for where icons share one ink.
+        "recolor_names": frozenset({
+            "alembic", "3d_equalizer", "rez", "zbrush",
+            "adobe_after_effects_mark",
+            "adobe_photoshop_mark",
+            "adobe_substance_painter_mark",
+            "blender_mark",
+            "cinema_4d_mark",
+            "davinci_resolve_mark",
+            "houdini_mark",
+            "maya_mark",
+            "nuke_mark",
+            "unreal_engine_mark",
+        }),
         "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
         "defaults": {
             "extension": "svg",

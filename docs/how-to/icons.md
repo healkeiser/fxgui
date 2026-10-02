@@ -170,6 +170,18 @@ icon keeps the resting ink.
 A full-colour library (`dcc`, or one added with `recolor=False`) keeps its
 own pixels in every mode, whatever colour you ask for.
 
+Where icons share one ink, as the rows of a command palette do, ask for a
+DCC's one-colour mark: its name plus `_mark`, such as `houdini_mark`. It is
+drawn in the theme's icon ink, like a material icon. Marks exist for
+Houdini, Maya, Nuke, Blender, Cinema 4D, DaVinci Resolve, Unreal Engine,
+After Effects, Photoshop and Substance Painter.
+
+```python
+icon = fxicons.get_icon("houdini_mark", library="dcc")
+```
+
+An `FXCommand` names one as `dcc:houdini_mark`.
+
 ### An icon in a label
 
 A `QLabel` pixmap is baked once. `FXIconLabel` holds a `QIcon` instead

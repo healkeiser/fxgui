@@ -459,3 +459,16 @@ def test_reopening_after_a_choice_step_lists_the_commands_again(qtbot):
     palette.open_commands()
 
     assert "Collapse all" in _labels(palette)
+
+
+def test_a_library_icon_shows_and_a_missing_one_falls_back(qtbot):
+    commands = [
+        FXCommand("Houdini", icon="dcc:houdini_mark"),
+        FXCommand("In-house", icon="dcc:no_such_tool"),
+    ]
+    _window_, palette = _palette(qtbot, commands)
+
+    rows = palette.rows
+    for index in range(rows.topLevelItemCount()):
+        icon = rows.topLevelItem(index).icon(0)
+        assert not icon.isNull() and not icon.pixmap(16, 16).isNull()

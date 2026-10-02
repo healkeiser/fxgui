@@ -65,7 +65,8 @@ class FXCommand:
             matched by the search.
         enabled: False shows the row greyed; picking it shows `tip`.
         tip: Shown under the list while the row is current.
-        icon: A material icon's name, drawn left of the label.
+        icon: An icon's name, drawn left of the label: a material one, or
+            `library:name` for another library, such as `dcc:houdini_mark`.
         choices: Picking the row lists what this returns, in place, to pick
             one; a choice with its own `choices` steps in again.
     """
@@ -355,14 +356,21 @@ class FXCommandPalette(QFrame):
             item.setData(0, _COMMAND_ROLE, entry)
             item.setTextAlignment(2, Qt.AlignRight | Qt.AlignVCenter)
             if blank is not None:
-                item.setIcon(
-                    0, fxicons.get_icon(entry.icon) if entry.icon else blank)
+                item.setIcon(0, self._icon(entry.icon) if entry.icon else blank)
             if entry.tip:
                 for column in range(3):
                     item.setToolTip(column, entry.tip)
             items.append(item)
         self.rows.addTopLevelItems(items)
         self.rows.setCurrentItem(items[0])
+
+    @staticmethod
+    def _icon(name: str) -> QIcon:
+        library, _, icon_name = name.rpartition(":")
+        if not library:
+            return fxicons.get_icon(icon_name)
+        # A library icon may be missing, as a DCC with no mark yet.
+        return fxicons.get_icon(icon_name, library=library, fallback="apps")
 
     def _placeholder(self, text: str) -> None:
         item = QTreeWidgetItem([text])
