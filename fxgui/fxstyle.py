@@ -206,9 +206,14 @@ DEPTH_STEP = 0.12
 # tree that nests deeper and needs telling apart.
 DEPTH_CAP = 4
 
-# A tree's indentation: the 16 px box of an icon or branch chevron, 2 px in
-# from each side, as the sheet's ::branch padding sets it.
-_TREE_INDENTATION = 20
+# Names a tree's indentation, so the sheet pads its chevron to 16 px.
+INDENT_PROPERTY = "fxIndent"
+# ponytail: indentations 0-64 px have a rule; a wider tree's chevron grows.
+_BRANCH_RULES = "".join(
+    f'QTreeView[{INDENT_PROPERTY}="{indent}"]::branch:has-children '
+    f"{{ padding: 2px {max(0, (indent - 16) // 2)}px; }}\n"
+    for indent in range(65)
+)
 
 # Styles QPushButton through @button_radius; widgets that draw a button
 # shape of their own read it here.
@@ -1566,16 +1571,9 @@ class FXProxyStyle(QProxyStyle):
             super().drawPrimitive(element, option, painter, widget)
 
     def pixelMetric(self, metric, option=None, widget=None):
-        """Return `metric`; a list view's icons take a tree's 16 px box.
-
-        A tree indents 20 px under any platform style: the
-        sheet's branch chevron scales to the indentation, and Windows 11's
-        30 px drew it half as large again.
-        """
+        """Return `metric`; a list view's icons take a tree's 16 px box."""
         if metric == QStyle.PM_ListViewIconSize:
             metric = QStyle.PM_SmallIconSize
-        elif metric == QStyle.PM_TreeViewIndentation:
-            return _TREE_INDENTATION
         return super().pixelMetric(metric, option, widget)
 
     def polish(self, widget):
@@ -1585,6 +1583,11 @@ class FXProxyStyle(QProxyStyle):
         # the sheet's item box; nothing else tells it to measure again.
         if isinstance(widget, QAbstractItemView):
             widget.scheduleDelayedItemsLayout()
+        # The sheet's chevron fills its branch box: a rule per indentation
+        # pads that box in to the 16 px icon size.
+        # ponytail: read at polish; a later setIndentation needs a repolish.
+        if isinstance(widget, QTreeView):
+            widget.setProperty(INDENT_PROPERTY, widget.indentation())
 
 
 ###### Stylesheet Functions
@@ -1617,7 +1620,11 @@ def _font_stylesheet(theme: Optional[str] = None) -> str:
 
 def _build_stylesheet(theme: Optional[str] = None) -> str:
     """Return the title rules, `STYLE_FILE` and every fragment, resolved."""
-    parts = [_font_stylesheet(theme), STYLE_FILE.read_text(encoding="utf-8")]
+    parts = [
+        _font_stylesheet(theme),
+        STYLE_FILE.read_text(encoding="utf-8"),
+        _BRANCH_RULES,
+    ]
     parts.extend(_widget_fragments.values())
     return resolve("\n".join(parts), theme)
 

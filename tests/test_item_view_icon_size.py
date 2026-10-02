@@ -174,3 +174,11 @@ def test_a_branch_chevron_stays_16_px_in_a_tall_thumbnail_row(
     assert _same_box(drawn, browse), (drawn, browse)
     # Centred down the row, to a device pixel.
     assert abs(offset) <= 1, offset
+
+
+def test_a_view_the_thumbnail_delegate_owns_keeps_fxgui_s_style(qtbot):
+    tree = QTreeWidget()
+    qtbot.addWidget(tree)
+    fxwidgets.FXThumbnailDelegate.apply_transparent_selection(tree)
+    assert isinstance(tree.style(), fxstyle.FXProxyStyle)
+

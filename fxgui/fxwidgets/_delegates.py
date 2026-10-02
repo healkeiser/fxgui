@@ -34,7 +34,6 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import (
     QApplication,
     QMenu,
-    QProxyStyle,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -158,8 +157,8 @@ def _mark(name: str, token: str) -> QIcon:
     return fxicons.get_icon(name, color=token)
 
 
-class _DelegateOwnsTheRow(QProxyStyle):
-    """A style that leaves the row panel and focus rect to the delegate.
+class _DelegateOwnsTheRow(fxstyle.FXProxyStyle):
+    """fxgui's style, leaving the row panel and focus rect to the delegate.
 
     Windows 11 paints an accent pill and a focus rectangle there, under the
     delegate's own ring, and no stylesheet rule reaches either.
@@ -430,6 +429,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             for old in view.findChildren(
                 fxstyle.FXProxyStyle, "", Qt.FindDirectChildrenOnly
             ):
+                if old is style:
+                    continue
                 old.setParent(None)
                 old.deleteLater()
         view.setProperty(_OWNS_ROW, True)
