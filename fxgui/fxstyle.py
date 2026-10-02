@@ -1603,12 +1603,10 @@ class FXProxyStyle(QProxyStyle):
         if metric == QStyle.PM_ListViewIconSize:
             metric = QStyle.PM_SmallIconSize
         size = super().pixelMetric(metric, option, widget)
-        bar = _compat.parent_widget(widget) if widget is not None else None
-        if (
-            metric == QStyle.PM_TabCloseIndicatorWidth
-            and isinstance(bar, QTabBar)
-            and _is_themed(bar)
-        ):
+        if metric != QStyle.PM_TabCloseIndicatorWidth or widget is None:
+            return size
+        bar = widget.parentWidget()
+        if isinstance(bar, QTabBar) and _is_themed(bar):
             size += _close_room(bar)
         return size
 
