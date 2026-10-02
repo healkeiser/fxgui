@@ -466,24 +466,25 @@ class FXDockArea(QWidget):
             self._restore(self._built)
 
     def clear_top(self, width: int, height: int) -> int:
-        """Return the highest top for a `width` x `height` card at the right.
+        """Return the top for a `width` x `height` card at the top right.
 
-        One gap in from the right edge, below every pane title bar it would
-        cover.
+        One gap in from the right edge, and one gap under the topmost pane
+        title bar in that corner. A taller card covers the title bars below
+        it rather than moving down past them, which lands it mid-window.
         """
         left = self.width() - width - self._gap
-        bars = sorted(
-            (
+        column = QRect(left, 0, width, max(self.height(), height, 1))
+        corner = [
+            box
+            for box in (
                 QRect(bar.mapTo(self, QPoint(0, 0)), bar.size())
                 for bar in self._title_bars()
-            ),
-            key=QRect.top,
-        )
-        top = self._gap
-        for bar in bars:
-            if QRect(left, top, width, height).intersects(bar):
-                top = bar.bottom() + 1 + self._gap
-        return top
+            )
+            if box.intersects(column)
+        ]
+        if not corner:
+            return self._gap
+        return min(corner, key=QRect.top).bottom() + 1 + self._gap
 
     def showEvent(self, event) -> None:
         """Size the split at the first show, then apply a waiting layout."""

@@ -11,7 +11,7 @@ import pytest
 
 ads = pytest.importorskip("PySide6QtAds")
 
-from qtpy.QtCore import QRect, Qt  # noqa: E402
+from qtpy.QtCore import QPoint, QRect, Qt  # noqa: E402
 from qtpy.QtGui import QAction, QColor, QKeySequence  # noqa: E402
 from qtpy.QtTest import QTest  # noqa: E402
 from qtpy.QtWidgets import (  # noqa: E402
@@ -1007,6 +1007,24 @@ def test_a_clear_top_leaves_every_pane_title_bar_clear(qtbot, width):
     for bar in bars:
         box = QRect(bar.mapTo(docks, bar.rect().topLeft()), bar.size())
         assert not placed.intersects(box), bar
+
+
+def test_a_card_taller_than_the_top_pane_stays_under_its_title_bar(qtbot):
+    alone = _window(qtbot, ("side", "right"), size=(1100, 600))
+    stacked = _window(qtbot, ("side", "right"), show=False, size=(1100, 600))
+    stacked.docks.add_dock(
+        "under", "Under", QLabel("under"), "bottom", beside="right",
+        size=(1, 4))
+    stacked.show()
+    qtbot.waitExposed(stacked)
+    qtbot.wait(50)
+    under = stacked.docks.manager().findDockWidget("under")
+    lower = under.dockAreaWidget().mapTo(stacked.docks, QPoint()).y()
+    card = (320, 160)
+    top = alone.docks.clear_top(*card)
+    assert top + card[1] > lower, "the card reaches the lower pane's bar"
+
+    assert stacked.docks.clear_top(*card) == top
 
 
 def test_a_burst_of_tree_signals_sweeps_once(qtbot, monkeypatch):
