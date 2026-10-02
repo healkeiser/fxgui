@@ -1021,7 +1021,8 @@ def test_a_hovered_completer_row_is_the_accent_as_a_menu_row(qtbot, theme):
     qtbot.waitUntil(popup.viewport().underMouse)
     image = popup.viewport().grab().toImage()
     popup.hide()
-    assert image.pixelColor(row.left() + 4, row.center().y()).name() == (
+    # Past the text: a glyph may reach any column near the row's start.
+    assert image.pixelColor(row.right() - 4, row.center().y()).name() == (
         fxstyle.colors().accent_primary.lower())
 
 
