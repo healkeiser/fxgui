@@ -45,7 +45,6 @@ from qtpy.QtGui import (
     QIcon,
     QPainter,
     QPalette,
-    QRegion,
     QTransform,
 )
 from qtpy.QtWidgets import (
@@ -1533,47 +1532,6 @@ def _get_standard_icon_map() -> dict:
     return _standard_icon_map
 
 
-class _RoundViewport(QObject):
-    """Cut a view's viewport off the frame's rounded inner corners.
-
-    On the windows platform the sheet fills a viewport square, over the
-    arc of every corner it reaches; the frame's own round fill shows there.
-    """
-
-    def eventFilter(self, watched, event):
-        """Mask the viewport again whenever it moves or resizes."""
-        if event.type() in (QEvent.Resize, QEvent.Move, QEvent.Show):
-            viewport = self.parent()
-            viewport.setMask(_rounded_mask(viewport))
-        return False
-
-
-def _rounded_mask(viewport: QWidget) -> QRegion:
-    """Return `viewport`'s rect less the pixels outside the frame's arc."""
-    box = viewport.geometry()
-    mask = QRegion(viewport.rect())
-    inner = viewport.parentWidget().rect().adjusted(1, 1, -1, -1)
-    # The arc's radius inside the sheet's 1 px edge.
-    radius = BUTTON_RADIUS - 1
-    corners = (
-        (box.left() == inner.left(), box.top() == inner.top(), 1, 1),
-        (box.right() == inner.right(), box.top() == inner.top(), -1, 1),
-        (box.left() == inner.left(), box.bottom() == inner.bottom(), 1, -1),
-        (box.right() == inner.right(), box.bottom() == inner.bottom(), -1, -1),
-    )
-    for across, down, dx, dy in corners:
-        if not (across and down):
-            continue
-        x0 = 0 if dx > 0 else box.width() - 1
-        y0 = 0 if dy > 0 else box.height() - 1
-        for y in range(radius):
-            for x in range(radius):
-                # Dropped unless the pixel lies wholly inside the arc.
-                if (radius - x) ** 2 + (radius - y) ** 2 > radius ** 2:
-                    mask -= QRegion(x0 + dx * x, y0 + dy * y, 1, 1)
-    return mask
-
-
 _LAYOUT_GAPS = (
     QStyle.PM_LayoutHorizontalSpacing,
     QStyle.PM_LayoutVerticalSpacing,
@@ -1639,11 +1597,6 @@ class FXProxyStyle(QProxyStyle):
         # the sheet's item box; nothing else tells it to measure again.
         if isinstance(widget, QAbstractItemView):
             widget.scheduleDelayedItemsLayout()
-            viewport = widget.viewport()
-            # A header sits inside its view's frame, which rounds it.
-            if (not isinstance(widget, QHeaderView)
-                    and viewport.findChild(_RoundViewport) is None):
-                viewport.installEventFilter(_RoundViewport(viewport))
         # The sheet's chevron fills its branch box: a rule per indentation
         # pads that box in to the 16 px icon size.
         # ponytail: read at polish; a later setIndentation needs a repolish.
