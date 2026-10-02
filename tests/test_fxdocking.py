@@ -655,6 +655,20 @@ def test_a_pane_in_front_grows_as_its_content_does(qtbot):
         timeout=2000)
 
 
+def test_a_pane_floors_to_its_contents_own_minimum_size(qtbot):
+    window = _window(qtbot, size=(500, 420), show=False)
+    body = QTreeWidget()
+    body.setMinimumHeight(124)
+    window.docks.add_dock("queue", "Queue", body, "bottom", beside="side")
+    window.docks.add_dock("log", "Log", QLabel("log"), "bottom",
+                          tab_with="queue")
+    window.show()
+    qtbot.waitExposed(window)
+    area = window.docks.manager().findDockWidget("queue").dockAreaWidget()
+    qtbot.wait(50)
+    assert area.minimumHeight() >= 124
+
+
 def test_a_tabbed_pane_floors_to_the_tab_in_front(qtbot):
     window = _window(qtbot, show=False)
     tall = _Growing()
