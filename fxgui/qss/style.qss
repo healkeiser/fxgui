@@ -917,8 +917,8 @@ ads--CDockWidgetTab[activeTab="true"]
     background: transparent;
     border: 1px solid transparent;
     border-radius: @button_radius;
-    /* One 4 px gap above, below and between pills: twice the side margin. */
-    margin: 4px 2px;
+    /* One gap above, below and between pills: twice the side margin. */
+    margin: @pane_gap @pane_gap_half;
     padding: 3px 10px;
 }
 
@@ -926,7 +926,7 @@ ads--CDockWidgetTab[activeTab="true"]
 QTabBar::tab:first,
 QTabBar::tab:only-one
 {
-    margin-left: 4px;
+    margin-left: @pane_gap;
 }
 
 /* Hover shows a lighter pill; the text keeps its ink. */

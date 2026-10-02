@@ -982,6 +982,35 @@ def test_the_first_tab_pill_starts_as_far_in_as_it_sits_down(qtbot, theme):
     assert dock_gaps == bar_gaps, (dock_gaps, bar_gaps)
 
 
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_panes_content_sits_one_tab_gap_in_from_its_edges(qtbot, theme):
+    if fxdocking is None:
+        pytest.skip("needs PySide6-QtAds")
+    docks = fxdocking.FXDockArea()
+    docks.set_central(QLabel("central"))
+    body = QLabel("body")
+    docks.add_dock("one", "Task", body, "left")
+    window = themed_window(qtbot, theme, docks, size=(600, 400))
+    QApplication.processEvents()
+    image = window.grab().toImage()
+    tab = docks.manager().findDockWidget("one").tabWidget()
+    area_widget = tab.dockAreaWidget()
+    area = area_widget.mapTo(window, QPoint())
+    pill = tab.rect().translated(tab.mapTo(window, QPoint()))
+    gap, _top = _start_and_top_gaps(image, pill, area.x() + 1, area.y() + 1)
+    assert gap == fxstyle.PANE_GAP
+    content = body.geometry().translated(body.parentWidget().mapTo(
+        window, QPoint()))
+    # Inside the pane's 1 px edge, and below the pill's own gap.
+    inner = area_widget.rect().adjusted(1, 1, -1, -1).translated(area)
+    assert content.left() - inner.left() == gap
+    assert inner.right() - content.right() == gap
+    assert inner.bottom() - content.bottom() == gap
+    column = [image.pixelColor(pill.center().x(), y).name()
+              for y in range(pill.top(), content.top())]
+    assert len(column) - 1 - _pill_run(column)[1] == gap
+
+
 def test_a_hovered_title_bar_button_is_a_tab_pill_tall(qtbot):
     if fxdocking is None:
         pytest.skip("needs PySide6-QtAds")

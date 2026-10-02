@@ -128,6 +128,7 @@ __all__ = [
     "ROOT_PROPERTY",
     "THIN_SCROLL_PROPERTY",
     "THIN_SCROLL_WIDTH",
+    "PANE_GAP",
     # Color configuration
     "colors",
     "qcolor",
@@ -193,6 +194,10 @@ THIN_SCROLL_PROPERTY = "fxThinScroll"
 
 # The width, in pixels, of every scroll bar: `@thin_scroll` in QSS.
 THIN_SCROLL_WIDTH = 8
+
+# A tab pill's gap to its strip's edges and to the next pill, and a docked
+# pane's content's gap to the pane's edges: `@pane_gap` in QSS.
+PANE_GAP = 4
 
 # Per tree level, toward `border_light`; the cap's 48% stays short of a border.
 DEPTH_STEP = 0.12
@@ -1154,6 +1159,8 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     tokens["@indicator_size"] = f"{INDICATOR_SIZE}px"
     tokens["@thin_scroll_radius"] = f"{THIN_SCROLL_WIDTH // 2}px"
     tokens["@thin_scroll"] = f"{THIN_SCROLL_WIDTH}px"
+    tokens["@pane_gap_half"] = f"{PANE_GAP // 2}px"
+    tokens["@pane_gap"] = f"{PANE_GAP}px"
     tokens["@spin_padding"] = _SPIN_PADDING
 
     # url(~icons/...) in QSS: the folder of the theme being resolved, which
