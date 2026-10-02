@@ -38,6 +38,18 @@ def test_add_submenu_outlives_its_python_wrapper(qtbot):
     assert [a.text() for a in action.menu().actions()] == ["deep"]
 
 
+
+def test_add_submenu_goes_before_the_action_it_is_given(qtbot):
+    owner = QWidget()
+    qtbot.addWidget(owner)
+    menu = QMenu(owner)
+    first = menu.addAction("first")
+    menu.addAction("last")
+
+    fxutils.add_submenu(menu, "More", before=first)
+
+    assert [a.text() for a in menu.actions()] == ["More", "first", "last"]
+
 def _tree(qtbot, columns=1):
     tree = QTreeWidget()
     qtbot.addWidget(tree)

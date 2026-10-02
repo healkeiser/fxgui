@@ -306,14 +306,22 @@ def popup_menu(menu: QMenu, at: QPoint) -> None:
     menu.popup(at)
 
 
-def add_submenu(menu: QMenu, label: str) -> QMenu:
+def add_submenu(
+    menu: QMenu, label: str, before: Optional[QAction] = None
+) -> QMenu:
     """Add and return a submenu titled `label`, owned by `menu` in C++.
 
     `menu.addMenu(label)` makes one that dies with the first dropped Python
     wrapper of its action.
+
+    Args:
+        before: The item the submenu goes ahead of; the end when omitted.
     """
     sub = QMenu(label, menu)
-    menu.addMenu(sub)
+    if before is None:
+        menu.addMenu(sub)
+    else:
+        menu.insertMenu(before, sub)
     return sub
 
 
