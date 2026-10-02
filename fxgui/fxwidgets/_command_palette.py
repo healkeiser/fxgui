@@ -8,7 +8,7 @@ from typing import Callable, List, Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QPoint, QRect, QSize, Qt
-from qtpy.QtGui import QColor, QKeyEvent, QKeySequence, QPalette
+from qtpy.QtGui import QColor, QIcon, QKeyEvent, QKeySequence, QPalette, QPixmap
 from qtpy.QtWidgets import (
     QFrame,
     QHeaderView,
@@ -64,6 +64,7 @@ class FXCommand:
             matched by the search.
         enabled: False shows the row greyed; picking it shows `tip`.
         tip: Shown under the list while the row is current.
+        icon: A material icon's name, drawn left of the label.
     """
 
     label: str
@@ -72,6 +73,7 @@ class FXCommand:
     section: str = ""
     enabled: bool = True
     tip: str = ""
+    icon: str = ""
 
 
 # Hands `load` a callback taking (row id, words) pairs.
@@ -154,6 +156,8 @@ class FXCommandPalette(QFrame):
         self.rows.setRootIsDecorated(False)
         self.rows.setUniformRowHeights(True)
         self.rows.setFocusPolicy(Qt.NoFocus)
+        # A host's style gives a list 24 px icons.
+        self.rows.setIconSize(QSize(16, 16))
         self.rows.setItemDelegate(_RowInk(self.rows))
         header = self.rows.header()
         header.setStretchLastSection(False)
@@ -324,13 +328,23 @@ class FXCommandPalette(QFrame):
         if not ranked:
             self._placeholder("Nothing matches")
             return
+        shown = [source[index] for _found, index in ranked[: self.SHOWN]]
+        # A row with no icon keeps its label in line with those that have one.
+        blank = None
+        if any(entry.icon for entry in shown):
+            side = self.rows.iconSize().width()
+            pixmap = QPixmap(side, side)
+            pixmap.fill(Qt.transparent)
+            blank = QIcon(pixmap)
         items = []
-        for _found, index in ranked[: self.SHOWN]:
-            entry = source[index]
+        for entry in shown:
             keys = QKeySequence(entry.keys).toString(QKeySequence.NativeText)
             item = QTreeWidgetItem([entry.label, entry.section, keys])
             item.setData(0, _COMMAND_ROLE, entry)
             item.setTextAlignment(2, Qt.AlignRight | Qt.AlignVCenter)
+            if blank is not None:
+                item.setIcon(
+                    0, fxicons.get_icon(entry.icon) if entry.icon else blank)
             if entry.tip:
                 for column in range(3):
                     item.setToolTip(column, entry.tip)

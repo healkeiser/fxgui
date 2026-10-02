@@ -322,3 +322,40 @@ def test_open_rows_take_a_theme_switch(qtbot):
         colors.text_disabled.lower()
     )
     assert not hasattr(palette, "_items") and not hasattr(palette, "_shown")
+
+
+def _text_left(palette, row):
+    from qtpy.QtWidgets import QStyle, QStyleOptionViewItem
+
+    rows = palette.rows
+    option = QStyleOptionViewItem()
+    rows.initViewItemOption(option)
+    index = rows.model().index(row, 0)
+    option.rect = rows.visualRect(index)
+    rows.itemDelegate().initStyleOption(option, index)
+    return rows.style().subElementRect(
+        QStyle.SE_ItemViewItemText, option, rows).left()
+
+
+def test_a_command_s_icon_shows_left_of_its_label_in_the_icon_ink(qtbot):
+    from qtpy.QtWidgets import QStyle
+
+    from _helpers import inks
+
+    commands = [
+        FXCommand("Plain", lambda: None),
+        FXCommand("Search", lambda: None, icon="search"),
+    ]
+    _window_, palette = _palette(qtbot, commands)
+    rows = palette.rows
+    # Row 1 is not current, so its icon wears the normal ink.
+    band = rows.visualItemRect(rows.topLevelItem(1))
+    side = rows.style().pixelMetric(QStyle.PM_SmallIconSize)
+    image = palette.grab().toImage()
+    at = rows.viewport().mapTo(palette, band.topLeft())
+    icon = image.copy(at.x(), at.y(), _text_left(palette, 1) - band.left(),
+                      band.height())
+
+    assert rows.iconSize().width() == side == 16
+    assert fxstyle.colors().icon.lower() in inks(icon)
+    assert _text_left(palette, 0) == _text_left(palette, 1) > band.left() + 16

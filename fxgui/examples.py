@@ -698,7 +698,8 @@ def _windows_page(window: fxwidgets.FXMainWindow) -> QWidget:
         window,
         lambda: [
             fxwidgets.FXCommand(
-                "Toggle theme", window.toggle_theme, "Ctrl+T", "View"
+                "Toggle theme", window.toggle_theme, "Ctrl+T", "View",
+                icon="contrast",
             ),
             fxwidgets.FXCommand(
                 "Log a message",
@@ -706,7 +707,8 @@ def _windows_page(window: fxwidgets.FXMainWindow) -> QWidget:
                 section="Log",
             ),
             fxwidgets.FXCommand(
-                "Publish", lambda: None, enabled=False, tip="Nothing to publish"
+                "Publish", lambda: None, enabled=False,
+                tip="Nothing to publish", icon="publish",
             ),
         ],
     )
