@@ -76,6 +76,16 @@ def test_set_font_is_honoured_in_a_themed_app(qtbot, app_root):
     assert label.font().family() == "Courier New"
 
 
+
+def test_a_themed_app_keeps_its_text_antialiasing(qapp, app_root):
+    for theme in ("light", "dark"):
+        fxstyle.apply_theme(theme)
+
+        label = QLabel("text", app_root)
+
+        assert qapp.font().styleStrategy() & QFont.NoAntialias, theme
+        assert label.font().styleStrategy() & QFont.NoAntialias, theme
+
 def test_a_plain_label_takes_the_theme_font_and_ink(qtbot, app_root):
     _show(qtbot, app_root)
     label = QLabel("made late", app_root)
