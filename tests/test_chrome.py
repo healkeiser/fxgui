@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
     QMenu,
     QSpinBox,
     QStyle,
+    QStyleFactory,
     QStyleOptionComboBox,
     QStyleOptionGroupBox,
     QStyleOptionSlider,
@@ -1171,6 +1172,27 @@ def test_combo_and_completer_rows_are_menu_rows_tall(qtbot, theme):
     menu.close()
     assert completer_rows == combo_rows == menu_rows
     assert len(menu_rows) == 1
+
+
+@pytest.mark.parametrize("base", QStyleFactory.keys())
+def test_a_combo_row_stands_no_taller_than_a_menu_row_may(qtbot, qapp, base):
+    """Windows 11 asks 34 px for a combo row; the sheet caps every style."""
+    name = qapp.style().name()
+    fxstyle.set_style(qapp, base)
+    try:
+        combo = QComboBox()
+        combo.setEditable(True)
+        combo.addItems(["main", "alt"])
+        window = themed_window(qtbot, "dark", combo)  # noqa: F841
+        combo.showPopup()
+        qtbot.waitUntil(lambda: combo.view().isVisible())
+        view = combo.view()
+        row = view.visualRect(view.model().index(0, 0)).height()
+        combo.hidePopup()
+    finally:
+        fxstyle.set_style(qapp, name or "Fusion")
+
+    assert row <= 24
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])

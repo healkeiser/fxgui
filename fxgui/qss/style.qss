@@ -1160,14 +1160,15 @@ QTreeView::item:selected:hover {
     color: @text_on_accent_primary;
 }
 
-/* A popup list's rows are a menu's, its text and 4 px above and below, and
-   the pointer's row is the accent. After the view rules above, which match
-   as specifically; the maximum is Qt's own, no cap. */
+/* A popup list's rows are a menu's: its line and 4 px above and below, at
+   most 24 px whatever the base style asks (Windows 11 asks 34 px), and the
+   pointer's row is the accent. After the view rules above, which match as
+   specifically. */
 QComboBox QAbstractItemView::item,
 QAbstractItemView[fxPopup="true"]::item {
     padding: 4px 0px;
     min-height: 0px;
-    max-height: 16777215px;
+    max-height: 16px;
 }
 
 /* A combo box's rows draw no native border for a host's margin to undo. */
