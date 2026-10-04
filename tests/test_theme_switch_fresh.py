@@ -131,13 +131,13 @@ def test_a_switch_inside_a_host_equals_a_fresh_build(qapp, before, after):
 
 
 _APP_MODE = """
-import json, os, pathlib, sys, tempfile
+import json, os, sys, tempfile
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 sys.path.insert(0, {tests!r})
-from fxgui import fxconfig
-folder = pathlib.Path(tempfile.mkdtemp())
-fxconfig.CONFIG_DIR = folder
-fxconfig.SETTINGS_FILE = folder / "settings.ini"
+from qtpy.QtCore import QSettings
+# apply_theme saves the theme: keep it out of the user's own settings.
+QSettings.setPath(
+    QSettings.IniFormat, QSettings.UserScope, tempfile.mkdtemp())
 from fxgui.fxwidgets import FXApplication
 import test_theme_switch_fresh as switch
 app = FXApplication()
