@@ -40,10 +40,6 @@ from qtpy.QtCore import QEvent, QModelIndex, QPoint, QTimer
 # Internal
 from fxgui._compat import created_by_python, parent_widget
 
-try:
-    import markdown as _markdown
-except ImportError:  # optional; asked once, not on every call
-    _markdown = None
 
 
 # Public API
@@ -79,6 +75,19 @@ _DWMWA_WINDOW_CORNER_PREFERENCE = 33
 _DWMWCP_ROUND = 2
 
 _HTML_TAG = re.compile(r"<[^>]+>")
+
+
+@functools.lru_cache(maxsize=1)
+def _markdown():
+    """Return the optional `markdown` module, or None; imported on first use.
+
+    Importing it costs about 25 ms, which most applications never need.
+    """
+    try:
+        import markdown
+    except ImportError:
+        return None
+    return markdown
 
 
 def load_ui(parent: QWidget, ui_file: str) -> QWidget:
@@ -188,9 +197,10 @@ def markdown_to_plain_text(text: str) -> str:
 
     Without the optional `markdown` package the text is returned as is.
     """
-    if not text or text == "-" or _markdown is None:
+    markdown = _markdown() if text and text != "-" else None
+    if markdown is None:
         return text
-    rendered = _markdown.markdown(text, extensions=["extra", "nl2br"])
+    rendered = markdown.markdown(text, extensions=["extra", "nl2br"])
     plain = html.unescape(_HTML_TAG.sub("", rendered))
     return " ".join(plain.split())
 

@@ -61,3 +61,20 @@ def test_importing_fxgui_on_qt5_says_it_needs_qt6():
         timeout=120,
     )
     assert "Qt 6" in result.stdout, result.stdout + result.stderr
+
+
+def test_importing_fxgui_defers_what_only_some_callers_need():
+    import subprocess
+    import sys
+
+    code = (
+        "import os, sys; os.environ['QT_QPA_PLATFORM'] = 'offscreen'\n"
+        "import fxgui\n"
+        "print([m for m in ('yaml', 'importlib.metadata', 'markdown')"
+        " if m in sys.modules])\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True,
+        timeout=120,
+    )
+    assert result.stdout.strip() == "[]", result.stdout + result.stderr

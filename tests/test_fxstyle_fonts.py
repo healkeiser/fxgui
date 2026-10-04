@@ -9,6 +9,9 @@ The offscreen platform has an empty *system* font database on Windows, so
 tests needing two real families skip rather than assert on nothing.
 """
 
+# Built-in
+from pathlib import Path, PurePath
+
 # Third-party
 import pytest
 from qtpy.QtGui import QFont, QFontDatabase
@@ -151,11 +154,15 @@ def test_an_unknown_role_falls_back_to_the_body_font(qapp):
 ###### Registering a consumer's own files
 
 
-def test_register_fonts_reports_a_file_that_did_not_load(qapp, tmp_path):
+@pytest.mark.parametrize("wrap", [str, Path, PurePath], ids=str)
+def test_register_fonts_reports_a_file_that_did_not_load(
+    qapp, tmp_path, wrap
+):
     missing = tmp_path / "not_a_font.ttf"
     missing.write_bytes(b"this is not a font")
-    result = fxstyle.register_fonts(missing)
-    assert result[str(missing)] == []
+    # Any os.PathLike is one path, not an iterable of them.
+    result = fxstyle.register_fonts(wrap(missing))
+    assert result == {str(missing): []}
 
 
 def test_register_fonts_accepts_several_paths(qapp, tmp_path):

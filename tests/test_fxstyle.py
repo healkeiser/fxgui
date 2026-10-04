@@ -178,9 +178,13 @@ def test_register_widget_style_appends_one_resolved_fragment(qapp):
     assert "@surface" not in sheet
 
 
-def test_standard_icon_map_uses_feedback_fallbacks(qapp):
-    fxstyle._standard_icon_map = None
-    assert fxstyle._get_standard_icon_map()
+def test_the_proxy_style_answers_qts_standard_icons_with_themed_ones(qapp):
+    from qtpy.QtWidgets import QStyle
+
+    style = fxstyle.FXProxyStyle()
+    icon = style.standardIcon(QStyle.SP_MessageBoxCritical)
+    assert icon is fxstyle._standard_icons()[QStyle.SP_MessageBoxCritical]
+    assert not icon.pixmap(16, 16).isNull()
 
 
 # -- colors() -----------------------------------------------------------

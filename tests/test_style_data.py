@@ -126,7 +126,7 @@ def test_selected_row_ring_reads_against_the_selection_fill():
     for name in fxstyle.get_available_themes():
         fxstyle._theme = name
         fxstyle._invalidate_theme_namespace()
-        theme = fxstyle._get_theme_namespace()
+        theme = fxstyle.colors()
         ratio = _contrast(theme.text_on_accent_primary, theme.accent_primary)
         assert ratio >= 3.0, f"{name}: selected-row ring is {ratio:.2f}"
 

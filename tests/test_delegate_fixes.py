@@ -91,7 +91,7 @@ def test_the_markdown_import_is_not_retried_per_call(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", counting_import)
     fxutils.markdown_to_plain_text("**a**")
     fxutils.markdown_to_plain_text("**b**")
-    assert attempts == []
+    assert len(attempts) <= 1
 
 
 def test_the_picker_menu_is_parented_and_opened_at_a_global_point(

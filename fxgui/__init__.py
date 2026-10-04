@@ -22,9 +22,6 @@ Examples:
     >>> app.exec()
 """
 
-# Built-in
-from importlib.metadata import version, PackageNotFoundError
-
 # Third-party
 import qtpy
 
@@ -61,11 +58,20 @@ __all__ = [
     "fxwidgets",
 ]
 
-try:
-    __version__ = version("fxgui")
-except PackageNotFoundError:
-    # Running from a source tree that was never installed.
-    __version__ = "0.0.0.dev"
+
+def __getattr__(name: str) -> str:
+    """Read `__version__` on first ask: importlib.metadata costs 30 ms."""
+    if name != "__version__":
+        raise AttributeError(f"module 'fxgui' has no attribute {name!r}")
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        found = version("fxgui")
+    except PackageNotFoundError:
+        # A source tree that was never installed.
+        found = "0.0.0.dev"
+    globals()["__version__"] = found
+    return found
 
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"

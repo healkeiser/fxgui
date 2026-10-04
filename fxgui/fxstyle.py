@@ -35,7 +35,6 @@ from pathlib import Path
 from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 # Third-party
-import yaml
 from qtpy.QtCore import QEvent, QObject, QRect, QRectF, QSize, Qt, Signal
 from qtpy.QtGui import (
     QAction,
@@ -341,7 +340,6 @@ _colors = None
 _color_file = None  # Tracks which color file is currently loaded
 _theme = None  # Will be loaded from settings on first access
 _default_theme = _DEFAULT_THEME  # What load_saved_theme() falls back to
-_standard_icon_map = None  # Lazy-loaded icon map cache
 _theme_namespace = None  # Cached FXThemeColors for the current theme
 _widget_fragments: "OrderedDict[str, str]" = OrderedDict()
 _themed_roots: "weakref.WeakSet" = weakref.WeakSet()
@@ -351,15 +349,6 @@ def _invalidate_theme_namespace() -> None:
     """Drop the cached colours; every change of theme, file or font calls it."""
     global _theme_namespace
     _theme_namespace = None
-
-
-def _get_theme_namespace() -> "FXThemeColors":
-    """Return the cached resolved colours of the current theme."""
-    global _theme_namespace
-    _ensure_theme_loaded()
-    if _theme_namespace is None:
-        _theme_namespace = FXThemeColors(_colour_tokens(_theme))
-    return _theme_namespace
 
 
 def _colour_tokens(theme_name: str) -> Dict[str, str]:
@@ -376,16 +365,13 @@ def _colour_tokens(theme_name: str) -> Dict[str, str]:
 
 def _read_yaml(path) -> dict:
     """Return a YAML file's mapping, empty for an empty file."""
+    # Imported here and parsed by libyaml when built with it: the pure
+    # Python loader takes ten times as long on style.yaml.
+    import yaml
+
+    loader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
     with open(path, "r", encoding="utf-8") as in_file:
-        return yaml.safe_load(in_file) or {}
-
-
-def _load_colors_from_yaml() -> dict:
-    """Return the loaded colour file, reading it on first use."""
-    global _colors
-    if _colors is None:
-        _colors = _read_yaml(_color_file or DEFAULT_COLOR_FILE)
-    return _colors
+        return yaml.load(in_file, Loader=loader) or {}
 
 
 @lru_cache(maxsize=1)
@@ -395,8 +381,7 @@ def _builtin_theme() -> dict:
     Keys computed from others are left out, so a file whose accent differs
     gets them computed from its own accent.
     """
-    with open(DEFAULT_COLOR_FILE, "r", encoding="utf-8") as in_file:
-        theme = yaml.safe_load(in_file)["themes"][_DEFAULT_THEME]
+    theme = _read_yaml(DEFAULT_COLOR_FILE)["themes"][_DEFAULT_THEME]
     return {
         key: value for key, value in theme.items()
         if not key.startswith(("text_on_accent", "icon_on_accent"))
@@ -479,20 +464,10 @@ def get_colors() -> dict:
         >>> fxstyle.get_colors()["dcc"]["houdini"]
         '#ff6600'
     """
-    return _load_colors_from_yaml()
-
-
-def _feedback(theme_name: str) -> dict:
-    """Return a theme's feedback block: its own, the file's dark, built-in."""
-    themes = get_colors().get("themes", {})
-    for source in (
-        themes.get(theme_name, {}),
-        themes.get(_DEFAULT_THEME, {}),
-        _builtin_theme(),
-    ):
-        if isinstance(source.get("feedback"), dict):
-            return source["feedback"]
-    return {}
+    global _colors
+    if _colors is None:
+        _colors = _read_yaml(_color_file or DEFAULT_COLOR_FILE)
+    return _colors
 
 
 def get_available_themes() -> list:
@@ -552,12 +527,12 @@ def register_fonts(
         application font. Called earlier than that, every file reports
         as failed.
     """
-    if isinstance(paths, (str, Path)):
+    if isinstance(paths, (str, os.PathLike)):
         paths = [paths]
 
     results: Dict[str, list] = {}
     for path in paths:
-        key = str(path)
+        key = os.fspath(path)
         font_id = QFontDatabase.addApplicationFont(key)
         if font_id == -1:
             results[key] = []
@@ -1026,7 +1001,7 @@ class _SplitterMark(QObject):
         return True
 
     def _paint(self, handle: QWidget, across: bool) -> None:
-        colors = _get_theme_namespace()
+        colors = colors()
         painter = QPainter(handle)
         painter.fillRect(handle.rect(), QColor(colors.frame))
         # Device pixels from here on, so every dot is whole at any scale.
@@ -1136,7 +1111,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
 
     # Feedback colors flatten to @feedback_<level>_<part>, plus
     # @feedback_<level>_ink, a text colour that reads on the background.
-    for level, pair in _feedback(theme_name).items():
+    for level, pair in theme_data.get("feedback", {}).items():
         if isinstance(pair, dict):
             for part, value in pair.items():
                 tokens[f"@feedback_{level}_{part}"] = value
@@ -1332,17 +1307,6 @@ def load_saved_theme() -> str:
     return _DEFAULT_THEME
 
 
-def _ensure_theme_loaded() -> None:
-    """Ensure the theme is loaded from settings on first access.
-
-    This is called internally to lazily initialize the theme from
-    persistent storage.
-    """
-    global _theme
-    if _theme is None:
-        _theme = load_saved_theme()
-
-
 def get_theme() -> str:
     """Get the current theme name.
 
@@ -1352,7 +1316,9 @@ def get_theme() -> str:
     Returns:
         The current theme name (e.g., "dark", "light").
     """
-    _ensure_theme_loaded()
+    global _theme
+    if _theme is None:
+        _theme = load_saved_theme()
     return _theme
 
 
@@ -1370,8 +1336,10 @@ def colors() -> "FXThemeColors":
         ...     painter = QPainter(self)
         ...     painter.fillRect(self.rect(), QColor(fxstyle.colors().surface))
     """
-    _ensure_theme_loaded()
-    return _get_theme_namespace()
+    global _theme_namespace
+    if _theme_namespace is None:
+        _theme_namespace = FXThemeColors(_colour_tokens(get_theme()))
+    return _theme_namespace
 
 
 def qcolor(value) -> QColor:
@@ -1450,18 +1418,11 @@ def set_style(widget: QWidget, style: str = None) -> "FXProxyStyle":
 ###### Style Classes
 
 
-def _get_standard_icon_map() -> dict:
-    """Get the standard icon map, creating it lazily on first access.
-
-    Returns:
-        Mapping of QStyle.StandardPixmap to QIcon.
-    """
-    global _standard_icon_map
-    if _standard_icon_map is not None:
-        return _standard_icon_map
-
+@lru_cache(maxsize=1)
+def _standard_icons() -> dict:
+    """Return the themed icon standing in for each Qt standard pixmap."""
     # fmt: off
-    _standard_icon_map = {
+    return {
         QStyle.SP_ArrowBack: fxicons.get_icon("arrow_back"),
         QStyle.SP_ArrowDown: fxicons.get_icon("arrow_downward"),
         QStyle.SP_ArrowForward: fxicons.get_icon("arrow_forward"),
@@ -1543,13 +1504,17 @@ def _get_standard_icon_map() -> dict:
         QStyle.SP_VistaShield: fxicons.get_icon("security"),
     }
     # fmt: on
-    return _standard_icon_map
 
 
+# Read once: pixelMetric runs thousands of times per restyle, and each
+# enum attribute read goes through Python's enum machinery.
 _LAYOUT_GAPS = (
     QStyle.PM_LayoutHorizontalSpacing,
     QStyle.PM_LayoutVerticalSpacing,
 )
+_LIST_ICON = QStyle.PM_ListViewIconSize
+_SMALL_ICON = QStyle.PM_SmallIconSize
+_CLOSE_WIDTH = QStyle.PM_TabCloseIndicatorWidth
 
 
 class FXProxyStyle(QProxyStyle):
@@ -1581,7 +1546,7 @@ class FXProxyStyle(QProxyStyle):
             The icon for the standardIcon. If no custom icon is found,
             the default icon is returned.
         """
-        icon = _get_standard_icon_map().get(standardIcon)
+        icon = _standard_icons().get(standardIcon)
         if icon is not None:
             return icon
         return super().standardIcon(standardIcon, option, widget)
@@ -1604,10 +1569,10 @@ class FXProxyStyle(QProxyStyle):
         """
         if metric in _LAYOUT_GAPS:
             return PANE_GAP
-        if metric == QStyle.PM_ListViewIconSize:
-            metric = QStyle.PM_SmallIconSize
+        if metric == _LIST_ICON:
+            metric = _SMALL_ICON
         size = super().pixelMetric(metric, option, widget)
-        if metric != QStyle.PM_TabCloseIndicatorWidth or widget is None:
+        if metric != _CLOSE_WIDTH or widget is None:
             return size
         bar = widget.parentWidget()
         if isinstance(bar, QTabBar) and _is_themed(bar):
@@ -1691,7 +1656,7 @@ class _MenuBadges(QObject):
         if not badged:
             return False
         QMenu.paintEvent(watched, event)
-        colors = _get_theme_namespace()
+        colors = colors()
         painter = QPainter(watched)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setFont(_badge_font())
@@ -1813,7 +1778,6 @@ def register_themed_root(root: QObject) -> None:
     Args:
         root: Any object with ``setStyleSheet`` (QWidget or QApplication).
     """
-    _ensure_theme_loaded()
     if isinstance(root, QWidget) and not _in_host(root):
         return
     _themed_roots.add(root)
@@ -2085,7 +2049,7 @@ class _ComboCard(QObject):
         """Paint the card instead of Qt's frame."""
         if event.type() != QEvent.Paint:
             return False
-        colors = _get_theme_namespace()
+        colors = colors()
         painter = QPainter(watched)
         painter.fillRect(watched.rect(), QColor(colors.surface))
         painter.setRenderHint(QPainter.Antialiasing)
@@ -2198,7 +2162,7 @@ def palette(theme: Optional[str] = None) -> QPalette:
         The palette every themed root wears alongside the sheet.
     """
     if theme is None or theme == get_theme():
-        tokens = vars(_get_theme_namespace())
+        tokens = vars(colors())
     else:
         tokens = _colour_tokens(theme)
     result = QPalette()
