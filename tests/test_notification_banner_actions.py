@@ -113,3 +113,15 @@ def test_action_buttons_are_clickable_looking(qtbot):
     assert button.objectName() == "fxBannerAction"
     assert button.property("primary") is True
     assert banner.add_action("Later").property("primary") is False
+
+
+def test_a_longer_message_grows_the_banner_and_moves_the_next_down(qtbot):
+    parent = _host(qtbot)
+    first = FXNotificationBanner(parent=parent, message="Saved", timeout=0)
+    first.show()
+    second = FXNotificationBanner(parent=parent, message="Next", timeout=0)
+    second.show()
+    short = first.height()
+    first.set_message("A much longer message that wraps. " * 10)
+    assert first.height() > short
+    assert second._target_pos.y() >= first._target_pos.y() + first.height()

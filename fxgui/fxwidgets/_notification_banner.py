@@ -507,12 +507,14 @@ class FXNotificationBanner(QFrame):
         self._timeout = 0
         self._dismiss_timer.stop()
 
-        # The banner just grew, so the ones stacked under it have moved
+        self._refit()
+        return button
+
+    def _refit(self) -> None:
+        """Fit the banner to its content and move the ones stacked under it."""
         self.adjustSize()
         if not self.isHidden() and self.parent():
             self._reposition_notifications(self.parent())
-
-        return button
 
     def _action_clicked(self, _=False) -> None:
         self._run_action(self.sender().callback)
@@ -539,6 +541,7 @@ class FXNotificationBanner(QFrame):
         """
         self._message = message
         self._message_label.setText(message)
+        self._refit()
 
     def set_timeout(self, timeout: int) -> None:
         """Set the auto-dismiss timeout; a shown banner counts from now.
