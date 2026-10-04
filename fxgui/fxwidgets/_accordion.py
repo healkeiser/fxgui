@@ -53,7 +53,6 @@ class FXAccordion(QWidget):
         self._animation_duration = animation_duration
         self._sections: List[FXCollapsibleWidget] = []
 
-        # Main layout
         self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(1)
@@ -105,7 +104,6 @@ class FXAccordion(QWidget):
 
         self._sections.append(section)
 
-        # Insert before stretch
         self._layout.insertWidget(self._layout.count() - 1, section)
 
         return section

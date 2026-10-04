@@ -86,15 +86,12 @@ class FXProgressCard(QFrame):
         self._progress = progress
         self._status = status
 
-        # Frame styling
         self.setFrameShape(QFrame.StyledPanel)
 
-        # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(16, 12, 16, 12)
         main_layout.setSpacing(fxstyle.PANE_GAP)
 
-        # Header row (icon + title + status icon)
         header_layout = QHBoxLayout()
         header_layout.setSpacing(fxstyle.PANE_GAP)
 
@@ -112,14 +109,12 @@ class FXProgressCard(QFrame):
 
         header_layout.addStretch()
 
-        # Status icon
         self._status_icon = FXIconLabel(size=18)
         self._status_icon.setFixedSize(20, 20)
         header_layout.addWidget(self._status_icon)
 
         main_layout.addLayout(header_layout)
 
-        # Description
         # Parented first: shown parentless, it would flash as a window.
         self._description_label = QLabel(description or "", self)
         self._description_label.setObjectName("fxProgressCardDescription")
@@ -127,18 +122,15 @@ class FXProgressCard(QFrame):
         self._description_label.setVisible(bool(description))
         main_layout.addWidget(self._description_label)
 
-        # Progress row
         progress_layout = QHBoxLayout()
         progress_layout.setSpacing(fxstyle.PANE_GAP)
 
-        # Progress bar
         self._progress_bar = QProgressBar()
         self._progress_bar.setRange(0, 100)
         self._progress_bar.setValue(progress)
         self._progress_bar.setTextVisible(False)
         progress_layout.addWidget(self._progress_bar, 1)
 
-        # Percentage label
         self._percentage_label = None
         if show_percentage:
             self._percentage_label = QLabel(f"{progress}%")

@@ -123,18 +123,15 @@ class FXFilePathWidget(QWidget):
         self._validate = validate
         self._is_valid = False
 
-        # Debounce timer for validation
         self._validation_timer = QTimer(self)
         self._validation_timer.setSingleShot(True)
         self._validation_timer.setInterval(300)  # ms
         self._validation_timer.timeout.connect(self._do_validation)
 
-        # Main layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(fxstyle.PANE_GAP)
 
-        # Path input
         self._input = QLineEdit()
         self._input.setPlaceholderText(placeholder)
         self._input.textChanged.connect(self._on_text_changed)
@@ -240,7 +237,6 @@ class FXFilePathWidget(QWidget):
 
     def _on_text_changed(self, text: str) -> None:
         """Handle text change."""
-        # Restart debounce timer for validation
         self._validation_timer.start()
         self.path_changed.emit(text)
 
@@ -268,7 +264,6 @@ class FXFilePathWidget(QWidget):
 
     def _on_validation_finished(self, path: str, is_valid: bool) -> None:
         """Handle validation result from background thread."""
-        # Only update if path hasn't changed
         if path == self._input.text():
             self._is_valid = is_valid
             self._update_indicator()

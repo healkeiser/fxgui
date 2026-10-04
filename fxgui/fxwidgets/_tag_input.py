@@ -45,19 +45,15 @@ class FXTagChip(QFrame):
         self._text = text
         self._removable = removable
 
-        # Setup styling
         self.setFrameShape(QFrame.StyledPanel)
 
-        # Layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 2, 4 if removable else 8, 2)
         layout.setSpacing(fxstyle.PANE_GAP)
 
-        # Tag label
         self.label = QLabel(text)
         layout.addWidget(self.label)
 
-        # Remove button
         self.remove_button = None
         if removable:
             self.remove_button = QPushButton()
@@ -123,7 +119,6 @@ class FXTagInput(QWidget):
         self._max_tags = max_tags
         self._allow_duplicates = allow_duplicates
 
-        # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(fxstyle.PANE_GAP)
@@ -132,7 +127,6 @@ class FXTagInput(QWidget):
         self._tags_container = QWidget()
         self._tags_layout = FXFlowLayout(self._tags_container)
 
-        # Input field
         self._input = QLineEdit()
         self._input.setObjectName("fx_tag_input_field")
         self._input.setPlaceholderText(placeholder)

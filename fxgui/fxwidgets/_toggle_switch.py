@@ -52,7 +52,7 @@ class FXToggleSwitch(QAbstractButton):
     ):
         super().__init__(parent)
 
-        # Store user-provided colors (None means use theme colors)
+        # None reads the theme's colour when painted.
         self._custom_on_color = on_color
         self._custom_off_color = off_color
         self._custom_thumb_color = thumb_color
@@ -60,20 +60,16 @@ class FXToggleSwitch(QAbstractButton):
         # Animation position (0.0 = off, 1.0 = on)
         self._position = 0.0
 
-        # Setup animation
         self._animation = QPropertyAnimation(self, b"position", self)
         self._animation.setEasingCurve(QEasingCurve.InOutCubic)
         self._animation.setDuration(150)
 
-        # Setup widget
         self.setCheckable(True)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setCursor(Qt.PointingHandCursor)
-        # Keyboard: focusable via Tab and mouse; QAbstractButton then
-        # handles Space to toggle.
+        # QAbstractButton toggles on Space once it can take focus.
         self.setFocusPolicy(Qt.StrongFocus)
 
-        # Connect signals
         self.toggled.connect(self._on_toggled)
 
     def sizeHint(self):

@@ -64,12 +64,10 @@ class FXRatingWidget(QWidget):
         self._half_icon = half_icon
         self._hover_rating: Optional[float] = None
 
-        # Main layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
 
-        # Create star labels
         self._stars: list = []
         for _ in range(max_rating):
             star = FXIconLabel(size=icon_size)
@@ -84,11 +82,9 @@ class FXRatingWidget(QWidget):
         # Through the setter, so it is clamped and rounded like any other.
         self.set_rating(initial_rating, emit=False)
 
-        # Mouse tracking
         self.setMouseTracking(True)
         self.setCursor(Qt.PointingHandCursor)
 
-        # Keyboard: arrow keys adjust, digits set, Delete/Backspace clears
         self.setFocusPolicy(Qt.StrongFocus)
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -134,13 +130,10 @@ class FXRatingWidget(QWidget):
             star_value = i + 1
 
             if display_rating >= star_value:
-                # Full star
                 icon = fxicons.get_icon(self._filled_icon, color=color)
             elif self._allow_half and display_rating >= star_value - 0.5:
-                # Half star
                 icon = fxicons.get_icon(self._half_icon, color=color)
             else:
-                # Empty star
                 icon = fxicons.get_icon(self._empty_icon, color=empty_color)
 
             star.setIcon(icon)
@@ -155,7 +148,6 @@ class FXRatingWidget(QWidget):
         if x >= total_width:
             return self._max_rating
 
-        # Calculate which star we're over
         star_index = x // star_width
         star_offset = (x % star_width) / star_width
 

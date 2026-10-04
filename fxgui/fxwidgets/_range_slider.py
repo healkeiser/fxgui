@@ -79,7 +79,6 @@ class FXRangeSlider(QWidget):
         )
         self._show_values = show_values
 
-        # UI state
         self._pressed_handle = self.HANDLE_NONE
         self._press_x = 0.0
         self._hover_handle = self.HANDLE_NONE
@@ -90,11 +89,9 @@ class FXRangeSlider(QWidget):
         self._handle_radius = 8
         self._track_height = 4
 
-        # Setup widget
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setMouseTracking(True)
         self.setCursor(Qt.PointingHandCursor)
-        # Keyboard: arrows adjust the active handle, Space switches handle
         self.setFocusPolicy(Qt.StrongFocus)
 
     def sizeHint(self):
@@ -376,7 +373,6 @@ class FXRangeSlider(QWidget):
             else:
                 self.set_high(max(value, self._low))
         else:
-            # Update hover state
             new_hover = self._handle_at_position(x)
             if new_hover != self._hover_handle:
                 self._hover_handle = new_hover

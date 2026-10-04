@@ -170,34 +170,16 @@ class FXValidatedLineEdit(QLineEdit):
         painter.end()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        """Intercept key presses to detect rejected input.
-
-        Args:
-            event: The key event.
-        """
-        # Get text before the key press
-        text_before = self.text()
-        cursor_before = self.cursorPosition()
-
-        # Let the base class handle the event
+        """Shake when a typed character changed nothing: it was rejected."""
+        before = (self.text(), self.cursorPosition())
         super().keyPressEvent(event)
-
-        # Skip if no validator or if it's a control key
-        validator = self.validator()
-        if validator is None:
-            return
-
-        # Check if this is a printable character that should have been inserted
-        key_text = event.text()
-        if not key_text or not key_text.isprintable():
-            return
-
-        # If text didn't change and cursor didn't move, input was likely rejected
-        text_after = self.text()
-        cursor_after = self.cursorPosition()
-
-        if text_before == text_after and cursor_before == cursor_after:
-            # Input was rejected by the validator
+        typed = event.text()
+        if (
+            self.validator() is not None
+            and typed
+            and typed.isprintable()
+            and (self.text(), self.cursorPosition()) == before
+        ):
             self._show_rejection_feedback()
 
     def _build_animations(self) -> None:
