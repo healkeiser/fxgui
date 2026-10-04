@@ -1,10 +1,7 @@
-"""Keyboard accessibility tests for custom input widgets.
-
-Regression: FXToggleSwitch, FXRatingWidget, and FXRangeSlider were
-mouse-only (no focus policy, no key handling, no focus indicator).
-"""
+"""The toggle switch, rating and range slider work from the keyboard."""
 
 # Third-party
+import pytest
 from qtpy.QtCore import Qt
 
 # Internal
@@ -111,3 +108,12 @@ def test_the_initial_rating_is_held_in_range_and_rounded(qtbot):
     rounded = FXRatingWidget(max_rating=5, initial_rating=2.6)
     qtbot.addWidget(rounded)
     assert rounded.rating() == 3
+
+
+@pytest.mark.parametrize("given, held", [(1.5, 2), (2.5, 3), (3.5, 4)])
+def test_a_whole_star_rating_rounds_a_half_up(qtbot, given, held):
+    """round() would take 2.5 to 2 and 3.5 to 4."""
+    rating = FXRatingWidget(max_rating=5)
+    qtbot.addWidget(rating)
+    rating.set_rating(given)
+    assert rating.rating() == held

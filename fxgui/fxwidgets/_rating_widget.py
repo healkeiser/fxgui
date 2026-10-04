@@ -106,7 +106,8 @@ class FXRatingWidget(QWidget):
         """
         rating = max(0, min(rating, self._max_rating))
         if not self._allow_half:
-            rating = round(rating)
+            # Half up: round() takes 2.5 to 2 but 3.5 to 4.
+            rating = int(rating + 0.5)
 
         if rating != self._rating:
             self._rating = rating
