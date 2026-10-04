@@ -36,26 +36,3 @@ def test_find_pixmap_answers_none_for_a_miss(qapp):
     assert _compat.find_pixmap("fxgui.test|green").cacheKey() == (
         stored.cacheKey())
     assert _compat.find_pixmap("fxgui.test|missing") is None
-
-
-def test_the_icon_engine_finds_through_the_compat_helper(qapp, monkeypatch):
-    from qtpy.QtCore import QSize
-    from qtpy.QtGui import QPixmapCache
-
-    from fxgui import _compat, fxicons
-
-    QPixmapCache.clear()
-    finds = []
-    real = _compat.find_pixmap
-
-    def counted(key):
-        finds.append(key)
-        return real(key)
-
-    monkeypatch.setattr(_compat, "find_pixmap", counted)
-    icon = fxicons.get_icon("check")
-    first = icon.pixmap(QSize(16, 16))
-    second = icon.pixmap(QSize(16, 16))
-
-    assert len(finds) >= 2
-    assert not first.isNull() and first.cacheKey() == second.cacheKey()

@@ -23,6 +23,7 @@ from typing import Any, Dict, List, Optional, Union
 
 # Third-party
 from qtpy.QtGui import (
+    QGuiApplication,
     QIcon,
     QIconEngine,
     QColor,
@@ -58,6 +59,7 @@ _MODES = {
     "selected": QIcon.Selected,
     "disabled": QIcon.Disabled,
 }
+_MODE_NAMES = {mode: name for name, mode in _MODES.items()}
 # Selected is an item-view row on the accent. Active (hover, focus) takes
 # the normal ink, except on a menu's current row, the one hover on the accent.
 _DEFAULT_INKS = {
@@ -284,8 +286,6 @@ def _screen_dpr() -> float:
     200% is the norm on 4K monitors); rendering at physical resolution and
     tagging the pixmap with the ratio keeps them crisp.
     """
-    from qtpy.QtGui import QGuiApplication
-
     app = QGuiApplication.instance()
     if app is not None:
         screen = app.primaryScreen()
@@ -439,13 +439,11 @@ class _ThemedIconEngine(QIconEngine):
 
     def clone(self) -> QIconEngine:
         """Return a copy of this engine, for a QIcon that detaches."""
-        from fxgui._compat import is_valid
-
         copy = _ThemedIconEngine(
             self._path, self._size, tuple(self._inks.items()), self._recolor)
         # PySide gives Qt no ownership of a clone() result and has no API to
         # transfer it; this list is its only owner until the QIcon deletes it.
-        _clones[:] = [engine for engine in _clones if is_valid(engine)]
+        _clones[:] = [engine for engine in _clones if _compat.is_valid(engine)]
         _clones.append(copy)
         return copy
 
@@ -467,7 +465,7 @@ class _ThemedIconEngine(QIconEngine):
             return None
         from fxgui import fxstyle
 
-        name = next(key for key, value in _MODES.items() if value == mode)
+        name = _MODE_NAMES[mode]
         if name in self._inks:
             ink = self._inks[name]
         # An icon drawn in its file's own colours keeps them, except disabled.

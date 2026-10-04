@@ -589,10 +589,8 @@ class FXDockArea(QWidget):
         area.currentChanged.connect(lambda _index: _floor(area))
 
     def _rethemed(self, _theme: str = "") -> None:
-        """Redraw the drop targets and refit the tab bars in the new theme."""
+        """Redraw the drop targets in the new theme."""
         _recross(self._docks)
-        for area in self._docks.findChildren(ads.CDockAreaWidget):
-            _inset(area)
 
     def _sweep(self) -> None:
         """Give every splitter and container the one gap."""

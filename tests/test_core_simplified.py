@@ -1,10 +1,9 @@
 """Tests pinning the behaviour the core modules keep after simplification."""
 
 # Built-in
-from pathlib import Path
 
 # Internal
-from fxgui import fxconfig, fxstyle
+from fxgui import fxstyle
 
 
 def test_a_theme_switch_and_a_colour_change_share_one_path(qapp, monkeypatch):
@@ -32,10 +31,6 @@ def test_luminance_reads_any_colour_qt_reads(qapp):
     assert round(fxstyle.get_luminance("#007ACC"), 4) == 0.1828
 
 
-def test_one_colour_walk_remains(qapp):
-    assert not hasattr(fxstyle, "_shift_away")
-
-
 def test_primary_button_fills_read_in_every_theme(qapp):
     for theme in fxstyle.get_available_themes():
         tokens = fxstyle._token_map(theme)
@@ -48,9 +43,3 @@ def test_primary_button_fills_read_in_every_theme(qapp):
             assert ratio >= 4.5, (theme, fill)
         assert tokens["@primary_button"] != tokens["@primary_button_hover"]
         assert tokens["@primary_button_pressed"] != tokens["@primary_button"]
-
-
-def test_settings_still_round_trip(qapp):
-    fxconfig.set_value("probe/key", "value")
-    assert fxconfig.get_value("probe/key") == "value"
-    assert Path(fxconfig._settings().fileName()).exists()

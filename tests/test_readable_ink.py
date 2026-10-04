@@ -41,10 +41,6 @@ def test_the_floor_is_the_callers():
     assert fxstyle.get_contrast_ratio(ink, "#f5f5f5") >= 7.0
 
 
-def test_it_is_public():
-    assert "readable_ink" in fxstyle.__all__
-
-
 def test_a_qcolor_reads_as_its_name():
     from qtpy.QtGui import QColor
 

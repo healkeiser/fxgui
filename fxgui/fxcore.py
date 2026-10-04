@@ -148,12 +148,7 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         Not red to green, which red-green colourblind users cannot read
         and which says error and success rather than match quality.
         """
-        colors = fxstyle.colors()
-        poor = QColor(colors.text_disabled)
-        good = QColor(colors.accent_primary)
-        ratio = max(0.0, min(1.0, ratio))
-        return QColor(
-            int(poor.red() + (good.red() - poor.red()) * ratio),
-            int(poor.green() + (good.green() - poor.green()) * ratio),
-            int(poor.blue() + (good.blue() - poor.blue()) * ratio),
-        )
+        theme = fxstyle.colors()
+        return QColor(fxstyle.mix(
+            theme.text_disabled, theme.accent_primary,
+            max(0.0, min(1.0, ratio))))

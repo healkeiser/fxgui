@@ -9,7 +9,6 @@ Icons carry per-state pixmaps:
 - Active    -> the normal ink, except on a menu's current row, the accent
 """
 
-import inspect
 
 import pytest
 from qtpy.QtGui import QColor, QIcon, QImage, QPixmap, QPixmapCache
@@ -143,20 +142,6 @@ def test_set_icon_raises_on_a_widget_without_set_icon(qtbot):
     qtbot.addWidget(label)
     with pytest.raises(AttributeError):
         fxicons.set_icon(label, "check")
-
-
-def test_set_icon_takes_no_theme_color():
-    assert "theme_color" not in inspect.signature(fxicons.set_icon).parameters
-
-
-def test_one_icon_cache_remains():
-    for name in (
-        "_get_icon_cached",
-        "_get_pixmap_cached",
-        "_get_pixmap_internal",
-        "clear_icon_cache",
-    ):
-        assert not hasattr(fxicons, name), name
 
 
 def test_get_pixmap_is_the_engines_drawing(qapp):

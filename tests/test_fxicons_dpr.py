@@ -1,8 +1,4 @@
-"""Tests for high-DPI icon rendering in `fxgui.fxicons`.
-
-Regression: SVGs were rasterized at logical size with no devicePixelRatio,
-so icons rendered blurry on scaled displays (the norm on 4K monitors).
-"""
+"""An icon renders at the screen's device pixel ratio, its logical size kept."""
 
 # Third-party
 import pytest
@@ -19,13 +15,12 @@ def _clean_icon_cache():
     QPixmapCache.clear()
 
 
-def test_pixmap_rendered_at_device_pixel_ratio(qapp, monkeypatch):
-    monkeypatch.setattr(fxicons, "_screen_dpr", lambda: 2.0)
+@pytest.mark.parametrize("dpr", [1.0, 2.0])
+def test_pixmap_rendered_at_device_pixel_ratio(qapp, monkeypatch, dpr):
+    monkeypatch.setattr(fxicons, "_screen_dpr", lambda: dpr)
     pixmap = fxicons.get_pixmap("check", width=48, height=48)
-    assert pixmap.devicePixelRatio() == 2.0
-    # Physical resolution doubled; logical size unchanged
-    assert pixmap.width() == 96
-    assert pixmap.height() == 96
+    assert pixmap.devicePixelRatio() == dpr
+    assert pixmap.width() == pixmap.height() == 48 * dpr
 
 
 def test_dpr_is_part_of_cache_key(qapp, monkeypatch):
@@ -37,13 +32,6 @@ def test_dpr_is_part_of_cache_key(qapp, monkeypatch):
 
     # A stale 1x pixmap must not be served for a 2x screen
     assert pixmap_1x.width() != pixmap_2x.width()
-
-
-def test_dpr_one_keeps_legacy_behavior(qapp, monkeypatch):
-    monkeypatch.setattr(fxicons, "_screen_dpr", lambda: 1.0)
-    pixmap = fxicons.get_pixmap("check", width=48, height=48)
-    assert pixmap.width() == 48
-    assert pixmap.devicePixelRatio() == 1.0
 
 
 def test_icon_states_survive_dpr(qapp, monkeypatch):

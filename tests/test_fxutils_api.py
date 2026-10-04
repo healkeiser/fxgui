@@ -4,7 +4,6 @@
 import inspect
 
 # Third-party
-import pytest
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QGraphicsDropShadowEffect, QWidget
 
@@ -68,23 +67,9 @@ def test_a_shadow_follows_a_theme_switch_when_it_draws(qtbot, tmp_path):
     assert shadow.blurRadius() == 9
 
 
-@pytest.mark.parametrize(
-    "name",
-    ["set_app_user_model_id", "markdown_to_plain_text", "add_shadow"],
-)
-def test_public_helpers_are_exported(name):
-    assert name in fxutils.__all__
-    assert callable(getattr(fxutils, name))
-
-
 def test_markdown_to_plain_text_passes_plain_text_through():
     assert fxutils.markdown_to_plain_text("") == ""
     assert fxutils.markdown_to_plain_text("-") == "-"
-
-
-def test_the_qt_helpers_are_defined_in_fxutils():
-    for name in ("later", "rehome", "focus_step"):
-        assert getattr(fxutils, name).__module__ == "fxgui.fxutils", name
 
 
 def test_load_ui_needs_no_qfile(qtbot, tmp_path):

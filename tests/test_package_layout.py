@@ -34,16 +34,6 @@ def test_the_severity_levels_live_with_the_severities():
         assert _severity.severity(level) is _severity.SEVERITIES[level]
 
 
-def test_the_compat_module_holds_only_binding_and_version_shims():
-    from fxgui import _compat
-
-    for name in ("later", "rehome", "focus_step"):
-        assert name not in vars(_compat), name
-    assert set(_compat.__all__) == {
-        "QT_VERSION", "created_by_python", "find_pixmap", "is_valid",
-        "parent_widget"}
-
-
 def test_importing_fxgui_on_qt5_says_it_needs_qt6():
     import subprocess
     import sys

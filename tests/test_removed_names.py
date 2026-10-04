@@ -20,7 +20,8 @@ _GONE = {
         "get_available_icons_in_library", "get_icon_color",
         "superpose_icons", "change_pixmap_color", "has_transparency",
         "sync_colors_with_theme", "refresh_all_icons", "_icon_widgets",
-        "_theme_ink",
+        "_theme_ink", "_get_icon_cached", "_get_pixmap_cached",
+        "_get_pixmap_internal", "clear_icon_cache",
     ),
     "fxgui.fxstyle": (
         "FXThemeAware", "invalidate_standard_icon_map", "theme_manager",
@@ -29,7 +30,7 @@ _GONE = {
         "get_icon_on_accent_secondary", "replace_colors", "load_stylesheet",
         "build_stylesheet", "set_widget_style", "WIDGET_STYLE_PROPERTY",
         "get_contrast_text_color", "_FORCE_UPDATE_WALK",
-        "get_feedback_colors", "get_fonts", "get_font_family",
+        "get_feedback_colors", "get_fonts", "get_font_family", "_shift_away",
     ),
     "fxgui.fxstyle:FXProxyStyle": ("set_icon_color", "icon_color"),
     "fxgui.fxutils": (
