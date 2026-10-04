@@ -67,11 +67,7 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
         self._lexed = False
 
     def _update_lexer(self, language: str) -> None:
-        """Update the Pygments lexer for the specified language.
-
-        Args:
-            language: The programming language name.
-        """
+        """Lex `language` from now on, or plain text if Pygments lacks it."""
         # No stripping: token offsets must match the document's.
         options = {"stripnl": False, "stripall": False, "ensurenl": False}
         try:
@@ -83,20 +79,12 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
         self._lexed = False
 
     def set_language(self, language: str) -> None:
-        """Change the syntax highlighting language.
-
-        Args:
-            language: The programming language name.
-        """
+        """Highlight `language` from now on, plain text if unknown."""
         self._update_lexer(language)
         self.rehighlight()
 
     def language(self) -> str:
-        """Get the current language.
-
-        Returns:
-            The current language name.
-        """
+        """Return the language highlighted, "text" for an unknown one."""
         return self._language
 
     def _update_formats(self) -> None:
@@ -124,14 +112,7 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
             self._formats[token_type] = fmt
 
     def _get_format_for_token(self, token_type) -> Optional[QTextCharFormat]:
-        """Get the format for a token type, checking parent types.
-
-        Args:
-            token_type: The Pygments token type.
-
-        Returns:
-            The QTextCharFormat for the token, or None if not found.
-        """
+        """Return the format for `token_type` or its nearest parent."""
         while token_type:
             if token_type in self._formats:
                 return self._formats[token_type]
@@ -238,30 +219,16 @@ class FXCodeBlock(QWidget):
         edit.setFixedHeight(max(self.MIN_HEIGHT, min(height, self.MAX_HEIGHT)))
 
     def set_code(self, code: str) -> None:
-        """Set the code to display.
-
-        Args:
-            code: The code string.
-        """
+        """Show `code`, stripped, and fit the height to it."""
         self._text_edit.setPlainText(code.strip())
         self._adjust_height()
 
     def code(self) -> str:
-        """Get the current code.
-
-        Returns:
-            The code string.
-        """
+        """Return the code shown."""
         return self._text_edit.toPlainText()
 
     def set_language(self, language: str) -> None:
-        """Set the programming language for syntax highlighting.
-
-        Args:
-            language: The language name. Supports 500+ languages via Pygments
-                (e.g., "python", "javascript", "cpp", "rust", "go", "java").
-                An unknown name shows plain text.
-        """
+        """Highlight `language` from now on, plain text if unknown."""
         self._highlighter.set_language(language)
 
 

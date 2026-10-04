@@ -33,10 +33,7 @@ from fxgui.fxwidgets._labels import FXIconLabel
 
 
 class FXCollapsibleWidget(QWidget):
-    """A widget that can expand or collapse its content.
-
-    The widget consists of a header with a toggle button and a content area
-    that can be shown or hidden with an animation effect.
+    """A header that slides its content open and shut on a click.
 
     Args:
         parent: Parent widget.
@@ -196,11 +193,7 @@ class FXCollapsibleWidget(QWidget):
             self._move_to(self._target_height(), animate=False)
 
     def expand(self, animate: bool = True) -> None:
-        """Expand the widget to show content.
-
-        Args:
-            animate: Whether to animate the expansion.
-        """
+        """Show the content, sliding open unless `animate` is False."""
         if self._is_expanded:
             return
 
@@ -213,11 +206,7 @@ class FXCollapsibleWidget(QWidget):
         self.expanded.emit()
 
     def collapse(self, animate: bool = True) -> None:
-        """Collapse the widget to hide content.
-
-        Args:
-            animate: Whether to animate the collapse.
-        """
+        """Hide the content, sliding shut unless `animate` is False."""
         if not self._is_expanded:
             return
 
@@ -310,21 +299,13 @@ class FXCollapsibleWidget(QWidget):
         fxutils.repolish(self._title_label)
 
     def set_content_layout(self, content_layout: QLayout) -> None:
-        """Set the layout for the content area.
-
-        Args:
-            content_layout: The layout to set for the content area.
-        """
+        """Put `content_layout` on a new widget as the content."""
         content_widget = QWidget()
         content_widget.setLayout(content_layout)
         self.set_content_widget(content_widget)
 
     def set_content_widget(self, widget: QWidget) -> None:
-        """Set the content widget directly.
-
-        Args:
-            widget: The widget to display when expanded.
-        """
+        """Show `widget` as the content."""
         self._content_area.setWidget(widget)
 
     def set_icon(self, icon: Union[QIcon, str, None]) -> None:
@@ -349,20 +330,12 @@ class FXCollapsibleWidget(QWidget):
         self._icon_label.setVisible(icon is not None and not icon.isNull())
 
     def icon(self) -> Optional[QIcon]:
-        """Return the current icon.
-
-        Returns:
-            The current icon, or None if no icon is set.
-        """
+        """Return the icon before the title, or None."""
         icon = self._icon_label.icon()
         return None if icon.isNull() else icon
 
     def set_title(self, title: str) -> None:
-        """Set the title text.
-
-        Args:
-            title: The title text to display.
-        """
+        """Set the title text."""
         self._title_label.setText(str(title))
 
     def title(self) -> str:

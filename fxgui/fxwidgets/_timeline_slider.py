@@ -620,12 +620,7 @@ class FXTimelineSlider(QWidget):
         self.set_region("loop", start, end, color, bracket_edges=True)
 
     def set_frame(self, frame: int, emit: bool = True) -> None:
-        """Set the current frame, clamped to the range.
-
-        Args:
-            frame: The frame number.
-            emit: Whether to emit the frame_changed signal.
-        """
+        """Set the frame, clamped; `emit` says `frame_changed`."""
         frame = max(self._start_frame, min(frame, self._end_frame))
         if frame == self._current_frame:
             return
@@ -640,12 +635,7 @@ class FXTimelineSlider(QWidget):
             self.frame_changed.emit(frame)
 
     def set_range(self, start: int, end: int) -> None:
-        """Set the frame range, clamping the current frame and the view.
-
-        Args:
-            start: Start frame.
-            end: End frame.
-        """
+        """Set the range from `start` to `end`, clamping the frame and view."""
         zoomed = self._view_start is not None and self._view_end is not None
         old_view = self.view_range()
         self._start_frame = start
@@ -673,11 +663,7 @@ class FXTimelineSlider(QWidget):
         return self._fps_spinbox.value()
 
     def set_fps(self, fps: float) -> None:
-        """Set the playback frame rate, clamped to 1-120.
-
-        Args:
-            fps: Frames per second; fractional rates such as 23.976 hold.
-        """
+        """Set the rate, held to 1-120; fractional rates such as 23.976 hold."""
         self._fps_spinbox.setValue(fps)
 
     def _on_start_changed(self, value: int) -> None:
@@ -691,22 +677,14 @@ class FXTimelineSlider(QWidget):
         self.set_range(self._start_frame, end)
 
     def add_keyframe(self, frame: int) -> None:
-        """Add a keyframe marker.
-
-        Args:
-            frame: The frame number to mark.
-        """
+        """Mark `frame` as a keyframe."""
         if frame not in self._keyframes:
             self._keyframes.append(frame)
             self._keyframes.sort()
             self._track_widget.update()
 
     def remove_keyframe(self, frame: int) -> None:
-        """Remove a keyframe marker.
-
-        Args:
-            frame: The frame number to remove.
-        """
+        """Unmark `frame` as a keyframe."""
         if frame in self._keyframes:
             self._keyframes.remove(frame)
             self._track_widget.update()

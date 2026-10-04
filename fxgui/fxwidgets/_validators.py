@@ -10,11 +10,7 @@ from qtpy.QtWidgets import QWidget
 
 
 class FXCamelCaseValidator(QRegularExpressionValidator):
-    """Validator for camelCase without special characters or numbers.
-
-    This validator ensures input follows camelCase format: starts with
-    a lowercase letter, followed by zero or more groups of an uppercase
-    letter followed by lowercase letters.
+    """Accept camelCase letters: a lowercase start, no digits or symbols.
 
     Examples:
         >>> from qtpy.QtWidgets import QLineEdit
@@ -27,8 +23,7 @@ class FXCamelCaseValidator(QRegularExpressionValidator):
 
 
 class FXLowerCaseValidator(QRegularExpressionValidator):
-    """Validator for lowercase letters only, with optional numbers and
-    underscores support.
+    """Accept lowercase letters, and digits or underscores if allowed.
 
     Args:
         allow_numbers: If `True`, allows numbers in addition to lowercase
@@ -57,7 +52,7 @@ class FXLowerCaseValidator(QRegularExpressionValidator):
 
 
 class FXLettersUnderscoreValidator(QRegularExpressionValidator):
-    """Validator for letters and underscores, with optional numbers support.
+    """Accept letters and underscores, and digits if allowed.
 
     Args:
         allow_numbers: If `True`, allows numbers in addition to letters and
@@ -78,11 +73,7 @@ class FXLettersUnderscoreValidator(QRegularExpressionValidator):
 
 
 class FXCapitalizedLetterValidator(QValidator):
-    """Validator for names that must start with a capital letter and contain
-    only letters.
-
-    This validator ensures the first character is uppercase and all
-    characters are alphabetic.
+    """Accept letters only; `fixup` capitalises the first.
 
     Examples:
         >>> from qtpy.QtWidgets import QLineEdit

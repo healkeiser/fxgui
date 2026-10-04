@@ -174,11 +174,10 @@ class _Segment(QPushButton):
 
 
 class FXBreadcrumb(QWidget):
-    """A clickable breadcrumb trail for hierarchical navigation.
+    """A path of clickable segments, with optional back and forward.
 
-    This widget provides a navigation breadcrumb with clickable path
-    segments, separator icons, and optional back/forward navigation.
-    Double-click the breadcrumb to switch to edit mode for typing paths.
+    A double-click opens an editor to type a path; Escape or a click away
+    closes it.
 
     Args:
         parent: Parent widget.
@@ -428,12 +427,7 @@ class FXBreadcrumb(QWidget):
         return self._path.copy()
 
     def set_path(self, path: List[str], record_history: bool = True) -> None:
-        """Set the breadcrumb path.
-
-        Args:
-            path: List of path segment strings.
-            record_history: Whether to record this path in navigation history.
-        """
+        """Show `path`, recording it in the history unless told not to."""
         self._path = path.copy()
         self._rebuild_breadcrumb()
 
@@ -448,20 +442,12 @@ class FXBreadcrumb(QWidget):
             self._update_nav_buttons()
 
     def append_segment(self, segment: str) -> None:
-        """Append a segment to the path.
-
-        Args:
-            segment: The segment string to append.
-        """
+        """Append `segment` to the path."""
         self._path.append(segment)
         self.set_path(self._path)
 
     def pop_segment(self) -> Optional[str]:
-        """Remove and return the last segment.
-
-        Returns:
-            The removed segment, or None if path is empty.
-        """
+        """Remove and return the last segment, or None on an empty path."""
         if self._path:
             segment = self._path.pop()
             self.set_path(self._path)
@@ -469,11 +455,7 @@ class FXBreadcrumb(QWidget):
         return None
 
     def navigate_to(self, index: int) -> None:
-        """Navigate to a specific path index, removing subsequent segments.
-
-        Args:
-            index: The index to navigate to.
-        """
+        """Cut the path after `index` and say `segment_clicked`."""
         if 0 <= index < len(self._path):
             self.set_path(self._path[: index + 1])
             self.segment_clicked.emit(index, self.path())
@@ -484,19 +466,11 @@ class FXBreadcrumb(QWidget):
         self._rebuild_breadcrumb()
 
     def go_back(self) -> bool:
-        """Navigate to the previous path in history.
-
-        Returns:
-            True if navigation occurred, False if at beginning of history.
-        """
+        """Step back through the history; return whether it moved."""
         return self._step(-1, self.navigated_back)
 
     def go_forward(self) -> bool:
-        """Navigate to the next path in history.
-
-        Returns:
-            True if navigation occurred, False if at end of history.
-        """
+        """Step forward through the history; return whether it moved."""
         return self._step(1, self.navigated_forward)
 
     def _step(self, by: int, signal) -> bool:

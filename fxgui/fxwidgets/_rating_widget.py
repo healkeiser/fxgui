@@ -14,13 +14,9 @@ from fxgui.fxwidgets._labels import FXIconLabel
 
 
 class FXRatingWidget(QWidget):
-    """A clickable star rating widget.
+    """A row of stars to click, with a preview under the pointer.
 
-    This widget provides a configurable star rating with:
-    - Configurable max stars
-    - Half-star support (optional)
-    - Hover preview
-    - Theme-aware icons
+    Arrows step the rating, digits set it, Home and End jump, Delete clears.
 
     Args:
         parent: Parent widget.
@@ -94,12 +90,7 @@ class FXRatingWidget(QWidget):
         return self._rating
 
     def set_rating(self, rating: float, emit: bool = True) -> None:
-        """Set the rating value.
-
-        Args:
-            rating: The rating value (0 to max_rating).
-            emit: Whether to emit the rating_changed signal.
-        """
+        """Set the rating, clamped and rounded; `emit` says `rating_changed`."""
         rating = max(0, min(rating, self._max_rating))
         if not self._allow_half:
             # Half up: round() takes 2.5 to 2 but 3.5 to 4.

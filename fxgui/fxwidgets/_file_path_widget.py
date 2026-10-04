@@ -73,13 +73,10 @@ class _PathCheck(QRunnable):
 
 
 class FXFilePathWidget(QWidget):
-    """A line edit with integrated browse button for file/folder selection.
+    """A path field with a Browse button, a drop target and a validity mark.
 
-    This widget provides:
-    - File or folder mode selection
-    - Drag & drop support
-    - Path validation indicator
-    - Browse button with file dialog
+    The check runs on a worker thread, so a share that does not answer
+    stalls the mark, never the window.
 
     Args:
         parent: Parent widget.
@@ -94,7 +91,8 @@ class FXFilePathWidget(QWidget):
 
     Signals:
         path_changed: Emitted when the path changes.
-        path_valid: Emitted with True/False when validation state changes.
+        path_valid: Whether the path exists as the mode asks, after each
+            check.
 
     Examples:
         >>> path_widget = FXFilePathWidget(mode='file', file_filter="Python (*.py)")
@@ -169,11 +167,7 @@ class FXFilePathWidget(QWidget):
         return self._input.text()
 
     def set_path(self, path: str) -> None:
-        """Set the path.
-
-        Args:
-            path: The file or folder path.
-        """
+        """Set the path shown."""
         self._input.setText(path)
 
     def is_valid(self) -> bool:
@@ -185,10 +179,7 @@ class FXFilePathWidget(QWidget):
         self._input.clear()
 
     def set_mode(self, mode: str) -> None:
-        """Set the selection mode.
-
-        Args:
-            mode: Selection mode: 'file', 'files', 'folder' or 'save'.
+        """Set the mode: 'file', 'files', 'folder' or 'save'.
 
         Raises:
             ValueError: `mode` is not one of `MODES`.
@@ -203,11 +194,7 @@ class FXFilePathWidget(QWidget):
         self._validation_timer.start()
 
     def set_file_filter(self, filter_str: str) -> None:
-        """Set the file filter.
-
-        Args:
-            filter_str: File filter string (e.g., "Images (*.png *.jpg)").
-        """
+        """Set the dialogs' filter, such as "Images (*.png *.jpg)"."""
         self._file_filter = filter_str
 
     def _browse(self) -> None:

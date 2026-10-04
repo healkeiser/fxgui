@@ -147,11 +147,7 @@ class FXProgressCard(QFrame):
         self._update_status_icon()
 
     def set_progress(self, value: int) -> None:
-        """Set the progress value.
-
-        Args:
-            value: Progress value (0-100).
-        """
+        """Show `value`, held to 0-100; say `completed` at 100."""
         value = max(0, min(100, value))
         if value != self._progress:
             self._progress = value
@@ -164,28 +160,16 @@ class FXProgressCard(QFrame):
                 self.completed.emit()
 
     def set_title(self, title: str) -> None:
-        """Set the card title.
-
-        Args:
-            title: The new title.
-        """
+        """Set the card title."""
         self._title_label.setText(title)
 
     def set_description(self, description: str) -> None:
-        """Set the card description.
-
-        Args:
-            description: The new description.
-        """
+        """Set the description; empty hides it."""
         self._description_label.setText(description or "")
         self._description_label.setVisible(bool(description))
 
     def set_status(self, status: Optional[int]) -> None:
-        """Set the status icon.
-
-        Args:
-            status: Status constant (SUCCESS, ERROR, WARNING, etc.) or None.
-        """
+        """Show severity `status`'s icon, or none for None."""
         self._status = status
         self._update_status_icon()
 

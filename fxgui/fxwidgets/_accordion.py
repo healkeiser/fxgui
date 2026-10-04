@@ -74,15 +74,11 @@ class FXAccordion(QWidget):
         content: Optional[Union[QWidget, QLayout]] = None,
         icon: Optional[str] = None,
     ) -> FXCollapsibleWidget:
-        """Add a new section to the accordion.
+        """Add a section titled `title`, return it.
 
         Args:
-            title: Section title.
-            content: Content widget or layout.
-            icon: Optional icon name for the header.
-
-        Returns:
-            The created FXCollapsibleWidget.
+            content: A widget or a layout for the section's body.
+            icon: An icon name for the header.
         """
         section = FXCollapsibleWidget(
             parent=self,
@@ -109,44 +105,25 @@ class FXAccordion(QWidget):
         return section
 
     def remove_section(self, index: int) -> None:
-        """Remove a section by index.
-
-        Args:
-            index: The section index to remove.
-        """
+        """Remove the section at `index`; an index out of range does nothing."""
         if 0 <= index < len(self._sections):
             section = self._sections.pop(index)
             self._layout.removeWidget(section)
             section.deleteLater()
 
     def get_section(self, index: int) -> Optional[FXCollapsibleWidget]:
-        """Get a section by index.
-
-        Args:
-            index: The section index.
-
-        Returns:
-            The FXCollapsibleWidget or None if index is invalid.
-        """
+        """Return the section at `index`, or None out of range."""
         if 0 <= index < len(self._sections):
             return self._sections[index]
         return None
 
     def expand_section(self, index: int) -> None:
-        """Expand a section by index.
-
-        Args:
-            index: The section index to expand.
-        """
+        """Expand the section at `index`; out of range does nothing."""
         if 0 <= index < len(self._sections):
             self._sections[index].expand()
 
     def collapse_section(self, index: int) -> None:
-        """Collapse a section by index.
-
-        Args:
-            index: The section index to collapse.
-        """
+        """Collapse the section at `index`; out of range does nothing."""
         if 0 <= index < len(self._sections):
             self._sections[index].collapse()
 

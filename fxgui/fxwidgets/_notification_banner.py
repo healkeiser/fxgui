@@ -476,21 +476,13 @@ class FXNotificationBanner(QFrame):
         return self._message
 
     def set_message(self, message: str) -> None:
-        """Set the notification message.
-
-        Args:
-            message: The new message text.
-        """
+        """Show `message`, refitting the card and the stack."""
         self._message = message
         self._message_label.setText(message)
         self._refit()
 
     def set_timeout(self, timeout: int) -> None:
-        """Set the auto-dismiss timeout; a shown banner counts from now.
-
-        Args:
-            timeout: Timeout in milliseconds (0 = no auto-dismiss).
-        """
+        """Set the timeout in ms, 0 for none; a shown card counts from now."""
         self._timeout = timeout
         self._dismiss_timer.stop()
         if timeout > 0 and not self.isHidden() and not self._dismissing:
