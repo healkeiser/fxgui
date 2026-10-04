@@ -183,3 +183,13 @@ def test_a_new_minimum_or_maximum_carries_both_handles(qtbot):
     assert (slider.low(), slider.high()) == (30, 30)
     slider.set_values(0, 100)
     assert (slider.low(), slider.high()) == (30, 30)
+
+
+def test_set_values_signals_only_the_handle_that_moved(qtbot, qapp):
+    slider = _slider(qtbot, minimum=0, maximum=100, low=10, high=90)
+    said = []
+    slider.low_changed.connect(lambda value: said.append(("low", value)))
+    slider.high_changed.connect(lambda value: said.append(("high", value)))
+    slider.range_changed.connect(lambda *pair: said.append(("range", pair)))
+    slider.set_values(20, 90)
+    assert said == [("low", 20), ("range", (20, 90))]

@@ -146,13 +146,13 @@ class FXRangeSlider(QWidget):
             high: The high value.
         """
         low, high = self._clamped(low, high)
-        changed = low != self._low or high != self._high
-        self._low = low
-        self._high = high
-
-        if changed:
+        moved_low, moved_high = low != self._low, high != self._high
+        self._low, self._high = low, high
+        if moved_low:
             self.low_changed.emit(low)
+        if moved_high:
             self.high_changed.emit(high)
+        if moved_low or moved_high:
             self.range_changed.emit(low, high)
         self.update()
 
