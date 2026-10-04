@@ -75,18 +75,21 @@ _DEVICE_SIZED = _compat.QT_VERSION < (6, 8)
 # Opacity of a disabled full-colour icon.
 _DISABLED_ALPHA = 0.35
 
+# What a library's `defaults` hold when it states no value of its own.
+_LIBRARY_DEFAULTS = {
+    "extension": "svg",
+    "style": None,
+    "color": None,
+    "width": 48,
+    "height": 48,
+}
+
 # Globals
 _libraries_info = {
     "beacon": {
         "recolor": True,
         "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
-        "defaults": {
-            "extension": "svg",
-            "style": None,
-            "color": None,
-            "width": 48,
-            "height": 48,
-        },
+        "defaults": _LIBRARY_DEFAULTS,
     },
     "dcc": {
         "recolor": False,
@@ -106,46 +109,22 @@ _libraries_info = {
             "unreal_engine_mark",
         }),
         "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
-        "defaults": {
-            "extension": "svg",
-            "style": None,
-            "color": None,
-            "width": 48,
-            "height": 48,
-        },
+        "defaults": _LIBRARY_DEFAULTS,
     },
     "material": {
         "recolor": True,
         "pattern": "{root}/{library}/{extension}/{icon_name}/{style}.{extension}",
-        "defaults": {
-            "extension": "svg",
-            "style": "round",
-            "color": "icon",
-            "width": 48,
-            "height": 48,
-        },
+        "defaults": {**_LIBRARY_DEFAULTS, "style": "round", "color": "icon"},
     },
     "fontawesome": {
         "recolor": True,
         "pattern": "{root}/{library}/{extension}s/{style}/{icon_name}.{extension}",
-        "defaults": {
-            "extension": "svg",
-            "style": "solid",
-            "color": "icon",
-            "width": 48,
-            "height": 48,
-        },
+        "defaults": {**_LIBRARY_DEFAULTS, "style": "solid", "color": "icon"},
     },
     "simple": {
         "recolor": True,
         "pattern": "{root}/{library}/icons/{icon_name}.{extension}",
-        "defaults": {
-            "extension": "svg",
-            "style": "solid",
-            "color": "icon",
-            "width": 48,
-            "height": 48,
-        },
+        "defaults": {**_LIBRARY_DEFAULTS, "style": "solid", "color": "icon"},
     },
 }
 _DEFAULT_LIBRARY = "material"
@@ -168,7 +147,8 @@ def add_library(
             - `{style}`: The style of the icon.
             - `{icon_name}`: The name of the icon.
             - `{extension}`: The extension of the icon.
-        defaults: The default values for the library.
+        defaults: The library's own extension, style, color, width and
+            height. A key left out is "svg", no style, no colour, 48 px.
         root: The root path for the library. Defaults to
             `fxconstants.ICONS_ROOT`.
         recolor: Whether the icons are monochrome and take a colour. A
@@ -190,9 +170,9 @@ def add_library(
         ... )
     """
 
-    valid_keys = _libraries_info[_DEFAULT_LIBRARY]["defaults"].keys()
-    if not all(key in valid_keys for key in defaults.keys()):
-        raise ValueError(f"Invalid key(s) in defaults: {defaults.keys()}")
+    unknown = set(defaults) - set(_LIBRARY_DEFAULTS)
+    if unknown:
+        raise ValueError(f"Invalid key(s) in defaults: {sorted(unknown)}")
 
     valid_placeholders = {
         "{root}",
@@ -207,7 +187,7 @@ def add_library(
     _libraries_info[library] = {
         "recolor": recolor,
         "pattern": pattern,
-        "defaults": defaults,
+        "defaults": {**_LIBRARY_DEFAULTS, **defaults},
         "root": root,
     }
 

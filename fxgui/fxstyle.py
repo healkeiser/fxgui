@@ -1191,9 +1191,13 @@ def _sheet_icon(name: str, color: str) -> str:
     if not path.exists():
         svg = Path(fxicons.get_icon_path(name)).read_text(encoding="utf-8")
         folder.mkdir(parents=True, exist_ok=True)
-        path.write_text(
+        # Written aside, then renamed: another app starting at once must
+        # never load a half-written file.
+        part = path.with_name(f"{path.name}.{os.getpid()}.part")
+        part.write_text(
             svg.replace("<svg ", f'<svg fill="{color}" ', 1), encoding="utf-8"
         )
+        os.replace(part, path)
     return f"url({path.as_posix()})"
 
 

@@ -218,3 +218,25 @@ def test_an_opaque_png_icon_recolours(qapp, monkeypatch, tmp_path):
     pixmap = fxicons.get_pixmap("square", library="studio", dpr=1.0)
 
     assert pixmap.toImage().pixelColor(4, 4) == QColor("#00ff00")
+
+
+def test_a_library_stating_some_defaults_takes_the_rest(
+    qapp, monkeypatch, tmp_path
+):
+    (tmp_path / "dot.svg").write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4">'
+        '<rect width="4" height="4"/></svg>', encoding="utf-8")
+    monkeypatch.setattr(
+        fxicons, "_libraries_info", dict(fxicons._libraries_info))
+    fxicons.add_library(
+        "partial", "{root}/{icon_name}.{extension}", {"width": 8},
+        root=str(tmp_path))
+
+    pixmap = fxicons.get_pixmap("dot", library="partial", dpr=1.0)
+
+    assert pixmap.width() == 8 and pixmap.height() == 48
+
+
+def test_a_library_default_outside_the_five_keys_is_refused():
+    with pytest.raises(ValueError, match="sizes"):
+        fxicons.add_library("bad", "{root}/{icon_name}.svg", {"sizes": 8})

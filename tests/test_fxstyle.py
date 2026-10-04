@@ -3,6 +3,7 @@
 # Built-in
 import gc
 import inspect
+from pathlib import Path
 
 # Third-party
 import pytest
@@ -374,3 +375,23 @@ def test_a_colour_file_change_reaches_roots_and_signal(
 
     assert "#123456" in root.styleSheet()
     assert received == ["dark"]
+
+
+def test_a_sheet_icon_cut_off_mid_write_is_written_whole_next_time(
+    qapp, monkeypatch
+):
+    real_write = Path.write_text
+
+    def cut_off(self, text, *args, **kwargs):
+        real_write(self, text[: len(text) // 2], *args, **kwargs)
+        raise OSError("disk full")
+
+    monkeypatch.setattr(Path, "write_text", cut_off)
+    with pytest.raises(OSError):
+        fxstyle._sheet_icon("check", "#123456")
+    monkeypatch.setattr(Path, "write_text", real_write)
+
+    url = fxstyle._sheet_icon("check", "#123456")
+
+    svg = Path(url[len("url("):-1]).read_text(encoding="utf-8")
+    assert svg.rstrip().endswith("</svg>") and 'fill="#123456"' in svg
