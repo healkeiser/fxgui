@@ -15,6 +15,20 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxstyle
 
+# Qt finds the user INI folder through the shell and ignores APPDATA, so
+# only setPath keeps a child process's theme out of the user's settings.
+_ISOLATED = (
+    "import tempfile\n"
+    "from qtpy.QtCore import QSettings\n"
+    "QSettings.setPath(QSettings.IniFormat, QSettings.UserScope,"
+    " tempfile.mkdtemp())\n"
+)
+
+
+def isolated(code: str) -> str:
+    """Return `code` for a child process, its settings in a temp folder."""
+    return _ISOLATED + code
+
 
 def near(a, b, step: int = 8) -> bool:
     """Return whether two colours sit within `step` on every channel."""

@@ -23,6 +23,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import examples, fxstyle, fxwidgets
+from _helpers import isolated
 
 _PAIRS = (("light", "dark"), ("dark", "light"))
 
@@ -131,13 +132,9 @@ def test_a_switch_inside_a_host_equals_a_fresh_build(qapp, before, after):
 
 
 _APP_MODE = """
-import json, os, sys, tempfile
+import json, os, sys
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 sys.path.insert(0, {tests!r})
-from qtpy.QtCore import QSettings
-# apply_theme saves the theme: keep it out of the user's own settings.
-QSettings.setPath(
-    QSettings.IniFormat, QSettings.UserScope, tempfile.mkdtemp())
 from fxgui.fxwidgets import FXApplication
 import test_theme_switch_fresh as switch
 app = FXApplication()
@@ -148,7 +145,7 @@ print(json.dumps(switch.differences(*switch._PAIRS[0])))
 def test_a_switch_in_an_fxapplication_equals_a_fresh_build():
     code = _APP_MODE.format(tests=os.path.dirname(os.path.abspath(__file__)))
     result = subprocess.run(
-        [sys.executable, "-c", code],
+        [sys.executable, "-c", isolated(code)],
         capture_output=True,
         text=True,
         timeout=120,

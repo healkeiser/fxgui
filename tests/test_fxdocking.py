@@ -29,7 +29,7 @@ from qtpy.QtWidgets import (  # noqa: E402
 from fxgui import fxdocking, fxicons, fxstyle  # noqa: E402
 from fxgui.fxwidgets import FXMainWindow  # noqa: E402
 
-from _helpers import pixel  # noqa: E402
+from _helpers import isolated, pixel  # noqa: E402
 
 GAP = fxstyle.PANE_GAP
 THEMES = fxstyle.get_available_themes()
@@ -791,7 +791,7 @@ def test_corners_and_the_mark_hold_at_150_percent(tmp_path):
     env = dict(os.environ, QT_SCALE_FACTOR="1.5", QT_QPA_PLATFORM="offscreen",
                PYTHONPATH=os.pathsep.join(sys.path), APPDATA=str(tmp_path))
     done = subprocess.run(
-        [sys.executable, "-c", _AT_SCALE], env=env, capture_output=True,
+        [sys.executable, "-c", isolated(_AT_SCALE)], env=env, capture_output=True,
         text=True, timeout=120, check=False)
 
     assert done.returncode == 0, done.stderr[-2000:]

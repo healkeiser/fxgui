@@ -21,7 +21,7 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle
 
-from _helpers import hover
+from _helpers import hover, isolated
 
 THEMES = fxstyle.get_available_themes()
 ORIENTATIONS = [Qt.Horizontal, Qt.Vertical]
@@ -151,7 +151,7 @@ def test_the_mark_is_exact_in_device_pixels_on_a_scaled_screen(
     env = dict(os.environ, QT_SCALE_FACTOR=scale, QT_QPA_PLATFORM="offscreen",
                APPDATA=str(tmp_path), LOCALAPPDATA=str(tmp_path))
     result = subprocess.run(
-        [sys.executable, "-c", _SCREEN_PROBE, orientation],
+        [sys.executable, "-c", isolated(_SCREEN_PROBE), orientation],
         env=env, capture_output=True, text=True, timeout=60, check=True)
     probe = json.loads(result.stdout.strip().splitlines()[-1])
     ratio = float(scale)
