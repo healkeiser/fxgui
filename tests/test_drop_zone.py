@@ -212,3 +212,17 @@ def test_the_file_list_has_no_alternating_rows(qtbot, qapp):
     zone = FXDropZone()
     qtbot.addWidget(zone)
     assert not zone.file_tree().alternatingRowColors()
+
+
+def test_an_empty_extension_set_accepts_everything_as_none_does(
+    qtbot, qapp, tmp_path
+):
+    """Browse already took an empty set as no filter; a drop refused all."""
+    notes = tmp_path / "notes.txt"
+    notes.write_text("x")
+    zone = FXDropZone(extensions=set())
+    qtbot.addWidget(zone)
+    assert zone.extensions() is None
+    event, _mime = _drag(notes)
+    zone.dragEnterEvent(event)
+    assert event.isAccepted()

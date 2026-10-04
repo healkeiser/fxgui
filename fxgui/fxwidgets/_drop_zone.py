@@ -450,12 +450,10 @@ class FXDropZone(QWidget):
         return None if self._extensions is None else set(self._extensions)
 
     def set_extensions(self, value: Optional[Iterable[str]]) -> None:
-        """Set the accepted extensions; None accepts all."""
-        self._extensions = (
-            None
-            if value is None
-            else {"." + ext.lower().lstrip(".") for ext in value}
-        )
+        """Set the accepted extensions; None or none at all accepts all."""
+        self._extensions = {
+            "." + ext.lower().lstrip(".") for ext in value or ()
+        } or None
         if self._extensions:
             self._formats_label.setText(
                 f"Accepted formats: {', '.join(sorted(self._extensions))}"
