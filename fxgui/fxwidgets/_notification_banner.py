@@ -27,7 +27,14 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXIconLabel
-from fxgui.fxwidgets._severity import CRITICAL, ERROR, SEVERITIES, log, severity
+from fxgui.fxwidgets._severity import (
+    CRITICAL,
+    ERROR,
+    SEVERITIES,
+    log,
+    severity,
+    severity_icon,
+)
 
 
 fxstyle.register_widget_style(
@@ -42,21 +49,6 @@ fxstyle.register_widget_style(
     }
     FXNotificationBanner QLabel#fxBannerTitle {
         color: @text;
-    }
-    FXNotificationBanner[severity="error"] QLabel#fxBannerTitle {
-        color: @feedback_error_foreground;
-    }
-    FXNotificationBanner[severity="warning"] QLabel#fxBannerTitle {
-        color: @feedback_warning_foreground;
-    }
-    FXNotificationBanner[severity="success"] QLabel#fxBannerTitle {
-        color: @feedback_success_foreground;
-    }
-    FXNotificationBanner[severity="info"] QLabel#fxBannerTitle {
-        color: @feedback_info_foreground;
-    }
-    FXNotificationBanner[severity="debug"] QLabel#fxBannerTitle {
-        color: @feedback_debug_foreground;
     }
     FXNotificationBanner QLabel#fxBannerMessage {
         color: @text_muted;
@@ -101,6 +93,11 @@ fxstyle.register_widget_style(
         border-color: @text;
     }
     """
+    + "".join(
+        f'FXNotificationBanner[severity="{key}"] QLabel#fxBannerTitle '
+        f"{{ color: @feedback_{key}_foreground; }} "
+        for key in sorted({kind.feedback for kind in SEVERITIES.values()})
+    )
 )
 
 
@@ -357,13 +354,15 @@ class FXNotificationBanner(QFrame):
     def _update_icons(self) -> None:
         """Set the severity icon and the close icon, in theme ink tokens."""
         if self._severity_type is None:
-            color, icon_name = "text", "notifications"
-        else:
+            shown = fxicons.get_icon(
+                self._custom_icon or "notifications", color="text")
+        elif self._custom_icon:
             kind = severity(self._severity_type)
-            color = f"feedback_{kind.feedback}_foreground"
-            icon_name = kind.icon
-        icon_name = self._custom_icon or icon_name
-        self._icon_label.setIcon(fxicons.get_icon(icon_name, color=color))
+            shown = fxicons.get_icon(
+                self._custom_icon, color=f"feedback_{kind.feedback}_foreground")
+        else:
+            shown = severity_icon(self._severity_type)
+        self._icon_label.setIcon(shown)
         if self._closable:
             fxicons.set_icon(self._close_button, "close", color="text_muted")
 

@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXIconLabel
-from fxgui.fxwidgets._severity import SEVERITIES, severity
+from fxgui.fxwidgets._severity import SEVERITIES, severity_icon
 
 
 fxstyle.register_widget_style(
@@ -203,7 +203,5 @@ class FXProgressCard(QFrame):
             self._status_icon.setIcon(None)
             self._status_icon.setVisible(False)
         else:
-            kind = severity(self._status)
-            self._status_icon.setIcon(fxicons.get_icon(
-                kind.icon, color=f"feedback_{kind.feedback}_foreground"))
+            self._status_icon.setIcon(severity_icon(self._status))
             self._status_icon.setVisible(True)
