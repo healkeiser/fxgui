@@ -61,6 +61,24 @@ def test_a_theme_switch_recolours_a_line_already_shown(qtbot, qapp):
     assert fmt.foreground().color().name() == _hex(_expected("warning"))
 
 
+def test_a_flush_and_a_theme_switch_each_change_the_document_once(
+    qtbot, qapp
+):
+    """One change notice per batch: one per line took 10 s on 5,000 lines."""
+    fxstyle.apply_theme("dark")
+    pane = FXOutputLogWidget()
+    qtbot.addWidget(pane)
+    seen = []
+    pane.output_area.document().contentsChange.connect(
+        lambda *_args: seen.append(1)
+    )
+    pane.append_many([f"\x1b[33mWARNING\x1b[0m line {n}" for n in range(50)])
+    assert len(seen) == 1
+    seen.clear()
+    fxstyle.apply_theme("light")
+    assert len(seen) == 1
+
+
 def _hex(value):
     from qtpy.QtGui import QColor
 
