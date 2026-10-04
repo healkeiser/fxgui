@@ -361,7 +361,8 @@ class FXCollapsibleWidget(QWidget):
         if isinstance(icon, str):
             icon = fxicons.get_icon(icon)
         self._icon_label.setIcon(icon)
-        self._icon_label.setVisible(icon is not None)
+        # A null QIcon is no icon too: shown, it is an empty gap.
+        self._icon_label.setVisible(icon is not None and not icon.isNull())
 
     def icon(self) -> Optional[QIcon]:
         """Return the current icon.

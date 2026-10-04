@@ -121,3 +121,14 @@ def test_a_header_is_a_section_header_hover_fills_open_weighs(qtbot, qapp):
 
     hover(qtbot, section._header)
     assert _header_fill(section) == lit
+
+
+def test_a_null_icon_leaves_no_gap_before_the_title(qtbot, qapp):
+    from qtpy.QtGui import QIcon
+
+    section = _section(qtbot)
+    section.set_icon("settings")
+    assert section._icon_label.isVisible()
+    section.set_icon(QIcon())
+    assert not section._icon_label.isVisible()
+    assert section.icon() is None
