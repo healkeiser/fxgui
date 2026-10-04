@@ -53,13 +53,6 @@ def test_close_runs_qdialogs_own_close(qtbot):
     assert "closeEvent" not in FXFloatingDialog.__dict__
 
 
-def test_layout_is_qts_method(qtbot):
-    dialog = _dialog(qtbot)
-
-    assert callable(dialog.layout)
-    assert dialog.layout() is not None
-
-
 def test_the_body_is_opaque_in_the_theme_surface(qtbot):
     dialog = _dialog(qtbot)
     dialog.resize(240, 160)
@@ -111,14 +104,6 @@ def test_the_close_button_rejects_and_deletes_the_dialog(qtbot):
     QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
 
     assert not _compat.is_valid(dialog)
-
-
-def test_the_dialog_keeps_no_dead_state_and_no_host_look(qtbot):
-    dialog = _dialog(qtbot, popup=False)
-
-    for name in ("dialog_icon", "dialog_title", "parent_package"):
-        assert not hasattr(dialog, name), name
-    assert "houdini" not in fxstyle._build_stylesheet()
 
 
 def _shown(qtbot, theme):

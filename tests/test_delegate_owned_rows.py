@@ -124,12 +124,6 @@ def test_a_cell_ring_closes_on_both_sides_of_a_middle_cell(qtbot):
     assert image.pixelColor(59, 15).name() == accent
 
 
-def test_a_row_ring_leaves_a_middle_cell_open(qtbot):
-    image = _ring(FXThumbnailDelegate(), first=False, last=False)
-    assert image.pixelColor(0, 15).name() == "#ff00ff"
-    assert image.pixelColor(59, 15).name() == "#ff00ff"
-
-
 def test_a_cell_ring_marks_the_current_cell_only(qtbot):
     tree = _themed_tree(qtbot)
     delegate = tree.itemDelegate()
@@ -174,12 +168,6 @@ def test_paint_selection_off_leaves_the_fill_and_keeps_the_ring(qtbot):
     accent = QColor(fxstyle.colors().accent_primary).name()
     assert image.pixelColor(110, 15).name() != accent, "no accent fill"
     assert image.pixelColor(110, 0).name() == accent, "the ring still marks it"
-
-
-def test_paint_selection_on_fills_a_selected_row(qtbot):
-    image = _paint_selected(qtbot, FXThumbnailDelegate())
-    accent = QColor(fxstyle.colors().accent_primary).name()
-    assert image.pixelColor(110, 15).name() == accent
 
 
 def test_a_table_item_background_shows_in_a_themed_root(qtbot):

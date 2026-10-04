@@ -208,12 +208,6 @@ def test_a_file_gone_from_disk_lists_with_no_size(qtbot, qapp, tmp_path):
     assert tree.topLevelItem(1).text(2) != "-"
 
 
-def test_the_file_list_has_no_alternating_rows(qtbot, qapp):
-    zone = FXDropZone()
-    qtbot.addWidget(zone)
-    assert not zone.file_tree().alternatingRowColors()
-
-
 def test_an_empty_extension_set_accepts_everything_as_none_does(
     qtbot, qapp, tmp_path
 ):

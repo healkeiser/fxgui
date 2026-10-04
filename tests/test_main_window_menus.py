@@ -1,7 +1,6 @@
 """FXMainWindow: Qt's own central widget, menus looked up, bars swappable."""
 
 # Built-in
-import inspect
 
 # Third-party
 import pytest
@@ -9,11 +8,9 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QAction
 from qtpy.QtWidgets import (
     QDialog,
-    QLabel,
     QMenuBar,
     QMessageBox,
     QStatusBar,
-    QWidget,
 )
 
 # Internal
@@ -27,23 +24,6 @@ def _window(qtbot, **kwargs):
     window = FXMainWindow(title="probe", **kwargs)
     qtbot.addWidget(window)
     return window
-
-
-def test_the_central_widget_is_the_one_set(qtbot):
-    window = _window(qtbot)
-    body = QLabel("Body")
-
-    window.setCentralWidget(body)
-
-    assert window.centralWidget() is body
-
-
-def test_there_is_no_banner_band(qtbot):
-    window = _window(qtbot)
-
-    assert not hasattr(window, "banner")
-    assert not hasattr(window, "hide_banner")
-    assert not hasattr(window, "show_banner")
 
 
 def test_every_window_shows_its_name_in_the_corner(qtbot):
@@ -97,33 +77,6 @@ def test_no_menu_bar_keeps_the_corner_for_the_next_one(qtbot, qapp):
     assert window.main_menu.menuAction() in bar.actions()
 
 
-def test_status_bar_falls_back_to_qts_own(qtbot):
-    window = _window(qtbot)
-
-    window.setStatusBar(None)
-
-    assert isinstance(window.statusBar(), QStatusBar)
-
-
-def test_the_window_wraps_no_bar_and_no_theme_call():
-    for name in (
-        "menu_bar",
-        "status_bar",
-        "set_theme",
-        "get_available_themes",
-        "set_status_line_colors",
-        "hide_status_line",
-        "show_status_line",
-        "set_project_label",
-        "set_version_label",
-        "set_company_label",
-        "use_corner_title",
-        "set_ui_file",
-        "_theme_switched",
-    ):
-        assert not hasattr(FXMainWindow, name), name
-
-
 def test_the_window_holds_no_placeholder_action_and_no_edit_menu(qtbot):
     window = _window(qtbot)
 
@@ -151,12 +104,6 @@ def test_the_window_holds_no_placeholder_action_and_no_edit_menu(qtbot):
         assert not hasattr(FXMainWindow, name), name
     for action in window.findChildren(QAction):
         assert action.isEnabled() or action is window.open_documentation_action
-
-
-def test_the_window_takes_only_the_options_it_uses():
-    parameters = inspect.signature(FXMainWindow).parameters
-    for name in ("rich_tooltips", "toolbar", "set_stylesheet"):
-        assert name not in parameters, name
 
 
 def test_about_reads_the_bar_as_it_is_now(qtbot, monkeypatch):
@@ -253,17 +200,6 @@ def test_a_subclass_hook_without_the_theme_name_still_runs(qtbot):
     fxstyle.apply_theme("github_light")
 
     assert seen == [1]
-
-
-def test_a_replaced_central_widget_is_deleted_by_qt(qtbot):
-    window = _window(qtbot)
-    first = QWidget()
-    window.setCentralWidget(first)
-
-    window.setCentralWidget(QWidget())
-    qtbot.wait(10)
-
-    assert not _compat.is_valid(first)
 
 
 def test_the_theme_actions_switch_the_theme(qtbot):

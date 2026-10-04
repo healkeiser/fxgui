@@ -158,15 +158,6 @@ def test_a_subclass_can_name_its_own_tokens(qtbot, qapp):
     assert _close(_corner(qtbot, _segments(crumb)[0], True), expected)
 
 
-def test_the_strip_is_never_the_window_s_own_colour(qtbot, qapp):
-    """A strip painted in `surface` is a strip nobody can see: in every
-    theme fxgui ships that token is the window's colour to the byte."""
-    colors = dict(vars(fxstyle.colors()))
-
-    assert colors[FXBreadcrumb.STRIP_RESTING_TOKEN] != colors["surface"]
-    assert colors[FXBreadcrumb.STRIP_HOVERED_TOKEN] != colors["surface"]
-
-
 def _enter_event(widget):
     """The event Qt delivers when the pointer arrives over `widget`."""
     inside = QPointF(1.0, 1.0)

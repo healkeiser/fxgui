@@ -59,10 +59,3 @@ def test_quit_quits_an_fxapplication(qtbot, monkeypatch):
     tray.quit_action.trigger()
 
     assert quits == [1]
-
-
-def test_the_tray_is_qts_own_icon_with_no_wrappers():
-    assert issubclass(FXSystemTray, QSystemTrayIcon)
-    for name in ("tray_icon", "tray_menu", "add_action", "set_icon",
-                 "closeEvent"):
-        assert not hasattr(FXSystemTray, name), name

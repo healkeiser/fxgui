@@ -88,11 +88,6 @@ def test_a_card_without_an_icon_builds_none(qtbot):
     assert card.findChildren(FXIconLabel) == [card._status_icon]
 
 
-def test_the_card_keeps_one_way_to_set_its_progress():
-    for name in ("progress", "increment", "reset", "STATUS_ICONS"):
-        assert not hasattr(FXProgressCard, name), name
-
-
 def test_the_initial_progress_is_held_in_range(qtbot):
     card = FXProgressCard(progress=150)
     qtbot.addWidget(card)

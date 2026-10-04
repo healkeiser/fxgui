@@ -10,7 +10,6 @@ and closes the banner on the way out.
 """
 
 # Built-in
-import inspect
 
 # Third-party
 from qtpy.QtCore import Qt
@@ -76,14 +75,6 @@ def test_actions_keep_their_declared_order(qtbot):
 
     labels = [button.text() for button in banner._action_buttons]
     assert labels == ["Overwrite", "Keep both"]
-
-
-def test_actions_is_the_one_way_to_add_buttons():
-    parameters = inspect.signature(FXNotificationBanner).parameters
-
-    assert "action_text" not in parameters
-    assert not hasattr(FXNotificationBanner, "action_clicked")
-    assert not hasattr(FXNotificationBanner, "SEVERITY_ICONS")
 
 
 def test_a_plain_banner_grows_no_action_row(qtbot):

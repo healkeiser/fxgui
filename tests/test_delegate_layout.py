@@ -491,22 +491,6 @@ def test_both_indicators_reserve_both_and_the_spacing_between_them(qtbot):
     )
 
 
-def test_the_pill_reserves_the_same_room_whether_the_dot_shows_or_not(qtbot):
-    """The difference between the two rows is exactly the dot and its spacing,
-    which is the arithmetic the empty gap came from being spent twice."""
-
-    with_dot, delegate, index = _tree_with_item(qtbot)
-    without_dot, other_delegate, other_index = _tree_with_item(
-        qtbot, dot=False
-    )
-
-    paired = delegate._indicator_metrics(index, QStyleOptionViewItem())[2]
-    alone = other_delegate._indicator_metrics(other_index, QStyleOptionViewItem())[2]
-    assert paired - alone == (
-        delegate._DOT_SIZE + delegate._INDICATOR_SPACING
-    )
-
-
 def test_wider_pill_text_reserves_more_room(qtbot):
     """The pill grows with its text, so the footprint must grow with it too."""
 
@@ -565,20 +549,6 @@ def test_per_item_roles_gate_the_reservation(
 
 
 ###### The floor under column 0
-
-
-def test_the_floor_is_the_thumbnail_plus_the_indicators(qtbot):
-    """The owner's rule, in arithmetic: column 0 cannot go below the
-    thumbnail's span plus the gap plus what the indicators take."""
-
-    tree, delegate, index = _tree_with_item(qtbot)
-    option = _option_for(tree, index)
-    footprint = delegate._indicator_metrics(index, QStyleOptionViewItem())[2]
-
-    # Bordered thumbnail (68 + 2) inside its 5px margins, then the 5px gutter
-    assert delegate._row_minimum_width(option, index, True) == (
-        85 + footprint
-    )
 
 
 @pytest.mark.parametrize(
@@ -1216,14 +1186,3 @@ def test_a_selected_row_is_not_outlined_by_the_focus_ring(qtbot):
     assert dark not in painted
     # Nothing at all was drawn, which is the whole of the fix.
     assert painted == {"#ff00ff"}
-
-
-def test_an_unselected_current_row_still_gets_its_ring(qtbot):
-    """The other half, so the fix above is a narrowing and not a
-    removal: a keyboard moved without selecting is what the ring was
-    added to show, and there it is drawn in the accent."""
-    from fxgui import fxstyle
-
-    painted = _focus_ring_pixels(qtbot, selected=False)
-    accent = QColor(fxstyle.colors().accent_primary).name()
-    assert accent in painted

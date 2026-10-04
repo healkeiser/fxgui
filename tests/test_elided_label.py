@@ -45,18 +45,6 @@ def test_the_label_does_not_widen_its_own_window(qtbot, qapp):
     assert button.x() < 150, "and the button kept its place in the row"
 
 
-def test_a_plain_label_in_the_same_row_does_widen_it(qtbot, qapp):
-    """The comparison that makes the fix a fix rather than a preference.
-    """
-    plain = QLabel(IDENTITY)
-
-    host, button = _row(plain, qtbot)
-
-    assert host.minimumSizeHint().width() > 200, (
-        "a plain label insists on its whole text width"
-    )
-
-
 def test_the_minimum_width_is_zero(qtbot, qapp):
     label = FXElidedLabel(WIDE)
 

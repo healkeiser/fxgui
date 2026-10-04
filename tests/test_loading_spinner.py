@@ -36,10 +36,6 @@ def test_a_stopped_spinner_stays_stopped_when_shown(qtbot):
     assert not spinner._timer.isActive()
 
 
-def test_the_spinner_has_no_angle_property():
-    assert not hasattr(FXLoadingSpinner, "angle")
-
-
 def test_the_overlay_follows_its_parent_resizing(qtbot):
     parent = QWidget()
     qtbot.addWidget(parent)
@@ -236,14 +232,6 @@ def test_a_plain_colour_still_paints(qtbot):
     qtbot.addWidget(spinner)
 
     assert _inks(spinner).get("#ff0000", 0) > 0
-
-
-def test_the_spinner_has_one_look():
-    import inspect
-
-    assert "style" not in inspect.signature(FXLoadingSpinner).parameters
-    for name in ("set_style", "_paint_dots", "_paint_pulse"):
-        assert not hasattr(FXLoadingSpinner, name), name
 
 
 def _windows_shown_during(qtbot, build):

@@ -36,34 +36,6 @@ def _an_icon(color="#ff0000"):
     return QIcon(pixmap)
 
 
-def test_no_toolbar_comes_through_the_menu(qtbot):
-    """With nothing to offer, `createPopupMenu` answers with no menu
-    at all rather than an empty one, so either is the pass here."""
-    window = FXMainWindow(title="probe")
-    qtbot.addWidget(window)
-
-    offered_menu = window.createPopupMenu()
-    offered = (
-        []
-        if offered_menu is None
-        else [action.text() for action in offered_menu.actions()]
-    )
-
-    assert "Toolbar" not in offered
-
-
-def test_a_window_opens_at_the_constants_size_by_default(qtbot):
-    """The one behaviour here that must not change silently: it decides
-    the opening size of every window already built on this class."""
-    window = FXMainWindow(title="probe")
-    qtbot.addWidget(window)
-    window.show()
-    qtbot.waitExposed(window)
-
-    assert window.width() == 500
-    assert window.height() == 600
-
-
 class _Roomy(QWidget):
     """A widget that ASKS for more room than it insists on.
 

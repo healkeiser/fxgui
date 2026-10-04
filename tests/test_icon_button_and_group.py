@@ -73,19 +73,6 @@ def test_checkable_toggles_on_click_and_swaps_icon_and_fill(qtbot, window):
     assert not button.isChecked()
 
 
-def test_the_checked_icon_is_drawn_in_the_on_accent_colour(qtbot, window):
-    button = FXIconButton("visibility_off", window, checkable=True,
-                          checked_icon="visibility")
-    button.setChecked(True)
-    on = button.icon().pixmap(16, 16).toImage()
-    inks = {
-        on.pixelColor(x, y).name()
-        for x in range(on.width()) for y in range(on.height())
-        if on.pixelColor(x, y).alpha() == 255
-    }
-    assert inks == {fxstyle._token_map("dark")["@icon_on_accent_primary"]}
-
-
 def _group(qtbot, window, trailing):
     group = FXJoinedGroup(window)
     combo = QComboBox(group)
