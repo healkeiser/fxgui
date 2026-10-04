@@ -84,13 +84,8 @@ class FXThemeColors:
     """
 
     def __init__(self, colors_dict: dict):
-        """Initialize with a colors dictionary.
-
-        Args:
-            colors_dict: Dictionary of color name to hex value mappings.
-        """
-        for key, value in colors_dict.items():
-            setattr(self, key, value)
+        """Hold each role of `colors_dict` as an attribute."""
+        self.__dict__.update(colors_dict)
 
     def __getattr__(self, name: str):
         # Only called for missing attributes; give a helpful error instead of
@@ -296,7 +291,7 @@ _GENERIC_FONT_FAMILIES = frozenset(
 
 # Font roles used when the color file declares no `fonts:` section, no
 # value for a role, or an empty one. An empty list means the platform
-# default UI font, which is what every role used before roles existed.
+# default UI font.
 _DEFAULT_FONTS = {
     "title": [],
     "body": [],
@@ -1397,7 +1392,7 @@ def apply_theme(theme: str) -> str:
 
 
 def set_style(widget: QWidget, style: str = None) -> "FXProxyStyle":
-    """Set the style.
+    """Give `widget` (or the application) FXProxyStyle over a Qt style.
 
     Args:
         widget: The QWidget subclass to set the style to.
