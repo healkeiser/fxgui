@@ -273,3 +273,15 @@ def test_a_narrow_timeline_drops_the_jumps_then_the_frame_field(
 
     timeline.resize(wide, timeline.height())
     assert timeline._goto_end_btn.isVisible() and timeline._spinbox.isVisible()
+
+
+def test_a_zoomed_track_paints_as_a_fresh_one(qtbot, qapp):
+    """The tick lines are cached per window; a stale cache would show."""
+    used = _timeline(qtbot, start_frame=1, end_frame=200)
+    used._track_widget.grab()
+    used.set_view_range(20, 60)
+    fresh = _timeline(qtbot, start_frame=1, end_frame=200)
+    fresh.set_view_range(20, 60)
+    assert used._track_widget.grab().toImage() == (
+        fresh._track_widget.grab().toImage()
+    )
