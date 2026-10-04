@@ -1001,9 +1001,9 @@ class _SplitterMark(QObject):
         return True
 
     def _paint(self, handle: QWidget, across: bool) -> None:
-        colors = colors()
+        theme = colors()
         painter = QPainter(handle)
-        painter.fillRect(handle.rect(), QColor(colors.frame))
+        painter.fillRect(handle.rect(), QColor(theme.frame))
         # Device pixels from here on, so every dot is whole at any scale.
         ratio = painter.device().devicePixelRatioF()
         painter.setWorldTransform(QTransform.fromScale(1 / ratio, 1 / ratio))
@@ -1013,7 +1013,7 @@ class _SplitterMark(QObject):
         dot = max(1, round(_MARK_DOT * ratio))
         start = (length - (_MARK_DOTS * 2 - 1) * dot) // 2
         cross = (thickness - dot) // 2
-        ink = QColor(colors.splitter_mark)
+        ink = QColor(theme.splitter_mark)
         for index in range(_MARK_DOTS):
             along = start + index * dot * 2
             if across:
@@ -1656,7 +1656,7 @@ class _MenuBadges(QObject):
         if not badged:
             return False
         QMenu.paintEvent(watched, event)
-        colors = colors()
+        theme = colors()
         painter = QPainter(watched)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setFont(_badge_font())
@@ -1669,9 +1669,9 @@ class _MenuBadges(QObject):
                 width, _BADGE_HEIGHT)
             painter.setOpacity(1.0 if action.isEnabled() else 0.6)
             painter.setPen(Qt.NoPen)
-            painter.setBrush(QColor(colors.feedback_warning_background))
+            painter.setBrush(QColor(theme.feedback_warning_background))
             painter.drawRoundedRect(pill, _BADGE_HEIGHT / 2, _BADGE_HEIGHT / 2)
-            painter.setPen(QColor(colors.feedback_warning_foreground))
+            painter.setPen(QColor(theme.feedback_warning_foreground))
             painter.drawText(pill, Qt.AlignCenter, str(text))
         painter.end()
         return True
@@ -2049,11 +2049,11 @@ class _ComboCard(QObject):
         """Paint the card instead of Qt's frame."""
         if event.type() != QEvent.Paint:
             return False
-        colors = colors()
+        theme = colors()
         painter = QPainter(watched)
-        painter.fillRect(watched.rect(), QColor(colors.surface))
+        painter.fillRect(watched.rect(), QColor(theme.surface))
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.setPen(QColor(colors.border))
+        painter.setPen(QColor(theme.border))
         painter.drawRoundedRect(
             QRectF(watched.rect()).adjusted(0.5, 0.5, -0.5, -0.5),
             CARD_RADIUS, CARD_RADIUS)
