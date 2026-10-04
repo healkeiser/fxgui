@@ -396,9 +396,6 @@ class FXStatusBar(QStatusBar):
             ...     duration=5,
             ...     logger=my_logger,
             ... )
-
-        Note:
-            Overrides the base class method.
         """
 
         # Qt's own message only drives `messageChanged` and the timeout.
@@ -424,20 +421,12 @@ class FXStatusBar(QStatusBar):
         log(logger, severity_type, message)
 
     def clearMessage(self):
-        """Clear the message and its tint.
-
-        Note:
-            Overrides the base class method.
-        """
+        """Clear the message and its tint."""
         super().clearMessage()
         self._clear()
 
     def _clear(self) -> None:
-        """Hide the message labels and drop the tint.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Hide the message labels and drop the tint."""
         self.icon_label.setIcon(None)
         self.icon_label.setVisible(False)
         self.message_label.clear()

@@ -191,11 +191,7 @@ class FXMainWindow(QMainWindow):
 
     # Private methods
     def _set_window_icon(self, icon: Optional[Union[str, QIcon]]) -> None:
-        """Set the window icon: a `QIcon`, a path, the app's, or fxgui's logo.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Set the window icon: a `QIcon`, a path, the app's, or fxgui's logo."""
         if isinstance(icon, QIcon):
             self.setWindowIcon(icon)
             return
@@ -225,11 +221,7 @@ class FXMainWindow(QMainWindow):
         self.resize(self.size().expandedTo(wanted))
 
     def _create_actions(self) -> None:
-        """Create the actions for the window.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Create the actions for the window."""
         self.about_action = fxutils.create_action(
             self, "About", trigger=self._show_about_dialog, icon_name="help")
         self.close_action = fxutils.create_action(
@@ -285,11 +277,7 @@ class FXMainWindow(QMainWindow):
             self, "Refresh", shortcut="Ctrl+Alt+r", icon_name="refresh")
 
     def _create_menus(self, bar: QMenuBar) -> None:
-        """Build fxgui's File, Window and Help menus on `bar`.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Build fxgui's File, Window and Help menus on `bar`."""
         bar.setNativeMenuBar(False)  # Mostly for macOS
 
         def menu(label: str, name: str, parent: QWidget) -> QMenu:
@@ -321,11 +309,7 @@ class FXMainWindow(QMainWindow):
         bar.addMenu(help_menu)
 
     def _create_title_corner(self, title: Optional[str]) -> None:
-        """Build the icon and name that sit at the menu bar's right end.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Build the icon and name that sit at the menu bar's right end."""
         self.title_corner = QWidget(self)
         self.title_corner.setObjectName("fxMenuBarCorner")
         layout = QHBoxLayout(self.title_corner)
@@ -342,20 +326,12 @@ class FXMainWindow(QMainWindow):
         self._corner_hidden = False
 
     def _current_menu_bar(self) -> Optional[QMenuBar]:
-        """Return the menu bar the window holds, without creating one.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Return the menu bar the window holds, without creating one."""
         bar = self.layout().menuBar() if self.layout() else None
         return bar if isinstance(bar, QMenuBar) else None
 
     def _adopt_menu_bar(self, bar: QMenuBar) -> None:
-        """Give `bar` fxgui's menus, the title corner, and the frame.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Give `bar` fxgui's menus, the title corner, and the frame."""
         self._create_menus(bar)
         bar.setCornerWidget(self.title_corner, Qt.TopRightCorner)
         self.title_corner.setVisible(not self._corner_hidden)
@@ -367,11 +343,7 @@ class FXMainWindow(QMainWindow):
             fxstyle.mark_as_frame(bar)
 
     def _menu(self, key: str) -> Optional[QMenu]:
-        """Return fxgui's menu `key` on the current menu bar, or `None`.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Return fxgui's menu `key` on the current menu bar, or `None`."""
         bar = self._current_menu_bar()
         return bar.findChild(QMenu, _MENU_NAMES[key]) if bar else None
 
@@ -424,21 +396,13 @@ class FXMainWindow(QMainWindow):
         return super().eventFilter(watched, event)
 
     def _is_band(self, widget: QObject) -> bool:
-        """Return whether `widget` is a bar of this window's frame.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Return whether `widget` is a bar of this window's frame."""
         return isinstance(widget, (QToolBar, QStatusBar, QMenuBar)) and (
             widget.parent() is self)
 
     @staticmethod
     def _flatten_icon_buttons(band: QWidget) -> None:
-        """Give `band`'s icon-only push buttons without a role the flat one.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Give `band`'s icon-only push buttons without a role the flat one."""
         for button in band.findChildren(QPushButton):
             if (
                 not button.text()
@@ -449,11 +413,7 @@ class FXMainWindow(QMainWindow):
                 fxutils.repolish(button)
 
     def _fit_title_corner(self) -> None:
-        """Size the corner as tall as the bar, inset like the first menu.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Size the corner as tall as the bar, inset like the first menu."""
         bar = self._current_menu_bar()
         if bar is None:
             return
@@ -470,11 +430,7 @@ class FXMainWindow(QMainWindow):
         self.title_corner.layout().setContentsMargins(0, 0, max(inset, 0), 0)
 
     def _about_text(self) -> str:
-        """Return the About dialog's lines: the title, then the bar's items.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Return the About dialog's lines: the title, then the bar's items."""
         lines = [self.windowTitle()]
         bar = self.statusBar()
         if isinstance(bar, FXStatusBar):
@@ -486,32 +442,20 @@ class FXMainWindow(QMainWindow):
         return "\n".join(line for line in lines if line)
 
     def _show_about_dialog(self) -> None:
-        """Show the About dialog.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Show the About dialog."""
         QMessageBox.about(self, "About", self._about_text())
 
     def _open_documentation(self, _=False) -> None:
         open_new_tab(self._documentation)
 
     def _toggle_window_on_top(self) -> None:
-        """Keep the window above the others while the action is checked.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Keep the window above the others while the action is checked."""
         self.setWindowFlag(
             Qt.WindowStaysOnTopHint, self.window_on_top_action.isChecked())
         self.show()
 
     def _on_theme_changed(self) -> None:
-        """Refit the corner and check the theme in force; override to extend.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Refit the corner and check the theme in force; override to extend."""
         # A theme may change the menu font, and with it the first title.
         self._fit_title_corner()
         action = self.theme_actions.get(fxstyle.get_theme())
@@ -562,11 +506,7 @@ class FXMainWindow(QMainWindow):
 
     # Overrides
     def setStatusBar(self, status_bar: Optional[QStatusBar]) -> None:
-        """Set the status bar; a framed window paints it in the frame.
-
-        Note:
-            Overrides the base class method.
-        """
+        """Set the status bar; a framed window paints it in the frame."""
         super().setStatusBar(status_bar)
         if self._framed and status_bar is not None:
             fxstyle.mark_as_frame(status_bar)
@@ -576,9 +516,6 @@ class FXMainWindow(QMainWindow):
 
         `None` removes the bar and fxgui's menus with it; the corner waits
         for the next bar.
-
-        Note:
-            Overrides the base class method.
         """
         old = self._current_menu_bar()
         if menu_bar is old:

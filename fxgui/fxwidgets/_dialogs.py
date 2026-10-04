@@ -88,14 +88,49 @@ class FXFloatingDialog(QDialog):
     ):
         super().__init__(parent)
 
-        self._setup_title()
-        self._setup_main_widget()
-        self._setup_buttons()
-        self._setup_layout()
+        self._icon_label = FXIconLabel(parent=self, size=22)
+        self._icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self._icon_label.setFixedSize(24, 24)
+        self.title_label = QLabel("", self)
+        self.title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        fxstyle.mark_as_title(self.title_label, rank="section")
+        self.title_widget = QWidget(self)
+        self.title_widget.setObjectName("fxFloatingDialogTitle")
+        self.title_layout = QHBoxLayout(self.title_widget)
+        self.title_layout.setContentsMargins(_GUTTER, 8, _GUTTER, 8)
+        self.title_layout.setSpacing(fxstyle.PANE_GAP)
+        self.title_layout.addWidget(self._icon_label)
+        self.title_layout.addWidget(self.title_label)
+        self.title_layout.addStretch()
+
+        self.main_widget = QWidget(self)
+        self.main_widget.setObjectName("fxFloatingDialogBody")
+        self.main_layout = QVBoxLayout(self.main_widget)
+        self.main_layout.setContentsMargins(_GUTTER, 12, _GUTTER, 12)
+        self.main_layout.setSpacing(fxstyle.PANE_GAP)
+
+        self.button_box = QDialogButtonBox(self)
+        self.button_box.setObjectName("fxFloatingDialogButtons")
+        self.button_box.setContentsMargins(_GUTTER, 8, _GUTTER, _GUTTER)
+        self.button_close = self.button_box.addButton(QDialogButtonBox.Close)
+        # reject() closes, and WA_DeleteOnClose deletes, the dialog.
+        self.button_box.rejected.connect(self.reject)
+
+        # The opaque rounded card; the dialog around it is transparent.
+        self._container = QFrame(self)
+        self._container.setObjectName("FXFloatingDialogContainer")
+        container_layout = QVBoxLayout(self._container)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setSpacing(0)
+        container_layout.addWidget(self.title_widget)
+        container_layout.addWidget(self.main_widget, 1)
+        container_layout.addWidget(self.button_box)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 8, 8, 8)  # Room for the shadow
+        layout.addWidget(self._container)
+
         self.set_dialog_icon(icon)
         self.set_dialog_title(title)
-
-        # Window - frameless with transparent background for rounded corners
         self.setAttribute(Qt.WA_DeleteOnClose)
         if popup:
             self.setWindowFlags(
@@ -111,100 +146,13 @@ class FXFloatingDialog(QDialog):
         # Inside a DCC the host application carries no fxgui sheet.
         fxstyle.register_themed_root(self)
 
-    # Private methods
-    def _setup_title(self):
-        """Sets up the title bar with icon and label.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        self._icon_label = FXIconLabel(parent=self, size=22)
-        self._icon_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self._icon_label.setFixedSize(24, 24)
-        self.title_widget = QWidget(self)
-        self.title_widget.setObjectName("fxFloatingDialogTitle")
-
-        self.title_label = QLabel("", self)
-        self.title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        fxstyle.mark_as_title(self.title_label, rank="section")
-
-        self.title_layout = QHBoxLayout(self.title_widget)
-        self.title_layout.setContentsMargins(_GUTTER, 8, _GUTTER, 8)
-        self.title_layout.setSpacing(fxstyle.PANE_GAP)
-        self.title_layout.addWidget(self._icon_label)
-        self.title_layout.addWidget(self.title_label)
-        self.title_layout.addStretch()
-
-    def _setup_main_widget(self):
-        """Sets up the main content widget and layout.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        self.main_widget = QWidget(self)
-        self.main_widget.setObjectName("fxFloatingDialogBody")
-        self.main_layout = QVBoxLayout(self.main_widget)
-        self.main_layout.setContentsMargins(_GUTTER, 12, _GUTTER, 12)
-        self.main_layout.setSpacing(fxstyle.PANE_GAP)
-
-    def _setup_buttons(self):
-        """Sets up the dialog button box with close button.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        self.button_box = QDialogButtonBox(self)
-        self.button_box.setObjectName("fxFloatingDialogButtons")
-        self.button_box.setContentsMargins(_GUTTER, 8, _GUTTER, _GUTTER)
-        self.button_close = self.button_box.addButton(QDialogButtonBox.Close)
-        # reject() closes, and WA_DeleteOnClose deletes, the dialog.
-        self.button_box.rejected.connect(self.reject)
-
-    def _setup_layout(self):
-        """Sets up the main dialog layout with title, content, and buttons.
-
-        Warning:
-            This method is intended for internal use only.
-        """
-
-        # Container frame for opaque background with rounded corners
-        self._container = QFrame(self)
-        self._container.setObjectName("FXFloatingDialogContainer")
-
-        # Container layout
-        container_layout = QVBoxLayout(self._container)
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setSpacing(0)
-        container_layout.addWidget(self.title_widget)
-        container_layout.addWidget(self.main_widget, 1)
-        container_layout.addWidget(self.button_box)
-
-        # Main dialog layout (transparent, holds the container)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)  # Margin for shadow
-        layout.addWidget(self._container)
-
-    # Public methods
     def set_dialog_icon(self, icon: Optional[QPixmap] = None) -> None:
-        """Sets the dialog's icon; `None` is the theme's home icon.
-
-        Args:
-            icon (QPixmap, optional): The QPixmap icon.
-        """
-
+        """Set the title's icon; `None` is the theme's home icon."""
         self._icon_label.setIcon(
             QIcon(icon) if icon else fxicons.get_icon("home"))
 
-    def set_dialog_title(self, title: str = None) -> None:
-        """Sets the dialog's title.
-
-        Args:
-            title (str): The title of the dialog.
-        """
-
+    def set_dialog_title(self, title: Optional[str] = None) -> None:
+        """Set the title; `None` or empty reads "Floating Dialog"."""
         self.title_label.setText(title if title else "Floating Dialog")
 
     def show_under_cursor(self) -> int:
@@ -213,20 +161,13 @@ class FXFloatingDialog(QDialog):
         Returns:
             int: `exec()`'s `DialogCode`, `Accepted` or `Rejected`.
         """
-
         self.adjustSize()
         geometry = self.frameGeometry()
         geometry.moveCenter(QCursor.pos())
         self.move(geometry.topLeft())
         return self.exec()
 
-    # Events
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Closes the dialog when any mouse button except the right one is pressed.
-
-        Args:
-            event (QMouseEvent): The mouse press event.
-        """
-
+        """Close on a press of any button but the right one."""
         if event.button() != Qt.RightButton:
             self.close()
