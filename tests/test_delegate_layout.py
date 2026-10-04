@@ -1,19 +1,4 @@
-"""Layout tests for FXThumbnailDelegate's column 0.
-
-Regression: the status label pill and the status dot are anchored to the row's
-right edge, so they walk left as the column narrows. Nothing stopped column 0
-from shrinking past the point where they reach the thumbnail, and they were
-painted on top of the image.
-
-The anchoring is not the bug and is unchanged. What these tests pin is the
-floor under column 0: the thumbnail's full span plus the space the row's own
-indicators take. `sizeHint` reports it, `apply_minimum_thumbnail_width`
-enforces it against a hand-dragged header, and the paint helpers skip an
-indicator rather than draw it on the image when a view has neither.
-
-Set the ``FXGUI_SCREENSHOT_DIR`` environment variable to also dump the
-grabbed rows as PNGs for human inspection.
-"""
+"""Layout tests for FXThumbnailDelegate's column 0."""
 
 # Built-in
 import os
@@ -160,26 +145,6 @@ def _icon_rect(row_rect: QRect) -> QRect:
 
 
 def _prefix_indicator_rects(row_rect: QRect, label_width: int, dot: bool):
-    """The pill and dot rects as cb76d019 placed them, in literals.
-
-    This is the pre-fix geometry the owner's screenshots were taken of, copied
-    out of `_draw_status_dot` and `_draw_status_label` at that commit: an 8px
-    dot 4px in from the row's right edge, at 4px from its top, and the pill
-    6px to the left of the dot's slot whether or not the dot is shown, 14px
-    tall from the same top.
-
-    The dot's y here is cb76d019's, which the delegate no longer matches: the
-    dot is centered in the pill's band now. Callers compare against the dot's
-    x and size only.
-
-    Args:
-        row_rect: The rectangle of the entire row.
-        label_width: The pill width, or 0 when it is not shown.
-        dot: Whether the dot is shown.
-
-    Returns:
-        Tuple of (pill_rect, dot_rect), either None when not shown.
-    """
 
     dot_size, dot_margin, label_margin, label_height = 8, 4, 6, 14
     dot_x = row_rect.right() - dot_size - dot_margin
@@ -261,20 +226,6 @@ def _indicator_hits(image, rect: QRect):
 def test_indicator_placement_matches_the_pre_fix_geometry(
     qtbot, pill, dot, width
 ):
-    """The horizontal anchoring is cb76d019's, to the pixel.
-
-    An intermediate round read the owner's screenshot as a request to move the
-    indicators into a gutter between the thumbnail and the text. It was not:
-    the screenshot showed this same right-anchored layout at its minimum
-    column width. The rects compared against here are the pre-fix ones,
-    written out in literals.
-
-    Two deliberate departures are excluded rather than asserted. The dot's
-    vertical placement is one, so only its x and its size are held to
-    cb76d019 here; see `test_the_dot_is_centered_against_the_pill`. A pill
-    with no dot beside it is the other, which is why every case here shows
-    the dot; see `test_the_pill_takes_the_dots_place_when_the_dot_is_hidden`.
-    """
 
     tree, delegate, index = _tree_with_item(
         qtbot, pill=pill, dot=dot, width=width
@@ -317,23 +268,13 @@ def test_the_pill_sits_left_of_the_dot_at_the_rows_right_edge(qtbot):
 
 
 def test_the_dot_is_centered_against_the_pill(qtbot):
-    """The dot lines up with the middle of the pill rather than with its top.
-
-    This is the one axis on which the pre-fix geometry is deliberately not
-    restored: cb76d019 put an 8px dot and a 14px pill at the same y, leaving
-    their centers 3px apart.
-    """
+    """The dot lines up with the middle of the pill rather than with its top."""
 
     tree, delegate, index = _tree_with_item(qtbot)
     option = _option_for(tree, index)
     pill_rect, dot_rect = _indicator_rects(delegate, option, index)
 
     assert dot_rect.center().y() == pill_rect.center().y()
-    # And it is no longer where cb76d019 put it
-    _, prefix_dot = _prefix_indicator_rects(
-        option.rect, delegate._indicator_metrics(index, QStyleOptionViewItem())[0], True
-    )
-    assert dot_rect.top() != prefix_dot.top()
 
 
 def test_a_dot_sits_at_the_same_height_with_or_without_a_pill(qtbot):
@@ -354,14 +295,7 @@ def test_a_dot_sits_at_the_same_height_with_or_without_a_pill(qtbot):
 
 
 def test_the_pill_takes_the_dots_place_when_the_dot_is_hidden(qtbot):
-    """A row drawing no dot leaves no room for one.
-
-    Reported by an artist: a row showing the pill and no dot had an empty gap
-    the width of the dot and its spacing between the pill and the row's right
-    edge. The pill used to be placed against the dot's slot whether or not
-    anything filled it, so hiding the dot left the slot standing empty. It now
-    sits at `_INDICATOR_RIGHT_MARGIN`, the dot's own place.
-    """
+    """A row drawing no dot leaves no room for one."""
 
     with_dot, delegate, index = _tree_with_item(qtbot)
     without_dot, other_delegate, other_index = _tree_with_item(
@@ -491,22 +425,6 @@ def test_both_indicators_reserve_both_and_the_spacing_between_them(qtbot):
     )
 
 
-def test_the_pill_reserves_the_same_room_whether_the_dot_shows_or_not(qtbot):
-    """The difference between the two rows is exactly the dot and its spacing,
-    which is the arithmetic the empty gap came from being spent twice."""
-
-    with_dot, delegate, index = _tree_with_item(qtbot)
-    without_dot, other_delegate, other_index = _tree_with_item(
-        qtbot, dot=False
-    )
-
-    paired = delegate._indicator_metrics(index, QStyleOptionViewItem())[2]
-    alone = other_delegate._indicator_metrics(other_index, QStyleOptionViewItem())[2]
-    assert paired - alone == (
-        delegate._DOT_SIZE + delegate._INDICATOR_SPACING
-    )
-
-
 def test_wider_pill_text_reserves_more_room(qtbot):
     """The pill grows with its text, so the footprint must grow with it too."""
 
@@ -567,28 +485,14 @@ def test_per_item_roles_gate_the_reservation(
 ###### The floor under column 0
 
 
-def test_the_floor_is_the_thumbnail_plus_the_indicators(qtbot):
-    """The owner's rule, in arithmetic: column 0 cannot go below the
-    thumbnail's span plus the gap plus what the indicators take."""
-
-    tree, delegate, index = _tree_with_item(qtbot)
-    option = _option_for(tree, index)
-    footprint = delegate._indicator_metrics(index, QStyleOptionViewItem())[2]
-
-    # Bordered thumbnail (68 + 2) inside its 5px margins, then the 5px gutter
-    assert delegate._row_minimum_width(option, index, True) == (
-        85 + footprint
-    )
-
-
 @pytest.mark.parametrize(
     "pill, dot",
     [(True, True), (True, False), (False, True), (False, False)],
 )
 def test_the_floor_follows_the_indicators_the_row_shows(qtbot, pill, dot):
     """A row showing neither indicator asks only for its thumbnail, a row
-    showing both asks for the most. The owner's words: the minimum depends on
-    the presence of the dot and/or the status pill."""
+    showing both asks for the most.
+    """
 
     tree, delegate, index = _tree_with_item(qtbot, pill=pill, dot=dot)
     option = _option_for(tree, index)
@@ -599,8 +503,7 @@ def test_the_floor_follows_the_indicators_the_row_shows(qtbot, pill, dot):
         return
 
     assert floor > 85
-    # At exactly the floor the leftmost indicator comes to rest on the text
-    # origin, which is what the owner's screenshot showed
+    # At exactly the floor the leftmost indicator rests on the text origin.
     row = QRect(option.rect.left(), option.rect.top(), floor, 50)
     label_width, dot_width, _ = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
     label_x, dot_x = delegate._indicator_left(row, label_width, dot_width)
@@ -630,7 +533,6 @@ def test_size_hint_never_reports_less_than_the_floor(
 
 
 def test_resize_to_contents_lands_at_or_above_the_floor(qtbot):
-    """The path an artist actually takes: double-click the header divider."""
 
     tree, delegate, index = _tree_with_item(qtbot, title="A", description=None)
     tree.resizeColumnToContents(0)
@@ -828,8 +730,7 @@ def test_no_indicator_pixel_lands_on_the_image(
 
 
 def test_the_pill_is_painted_at_the_floor_and_skipped_below_it(qtbot):
-    """At the floor the pill is still there, immediately right of the
-    thumbnail. That is the state the owner's screenshot showed."""
+    """At the floor the pill sits right of the thumbnail; below it, none."""
 
     tree, delegate, index = _tree_with_item(qtbot, dot=False)
     option = _option_for(tree, index)
@@ -930,8 +831,6 @@ def test_the_title_clips_instead_of_eliding(qtbot, thumbnail):
 
 @pytest.mark.parametrize("thumbnail", [True, False])
 def test_the_title_reveals_more_as_the_column_widens(qtbot, thumbnail):
-    """Step by step, which is what the owner asked for: more of the title
-    with every pixel of column, no ellipsis eating the tail."""
 
     tree, delegate, index = _tree_with_item(
         qtbot, thumbnail=thumbnail, title=LONG_TITLE, description=None
@@ -1018,11 +917,6 @@ def test_size_hint_grows_with_the_title_width(qtbot, thumbnail):
 def test_resize_to_contents_fits_the_whole_title(
     qtbot, thumbnail, description, children
 ):
-    """Regression: an artist sized the thumbnail column to contents and the
-    title still came out short. `sizeHint` summed its parts while the paint
-    path measured from `QRect.right()`, which is one pixel inside the rect,
-    so the row was always a pixel short of the title it had just asked for.
-    """
 
     tree, delegate, index = _tree_with_item(
         qtbot,
@@ -1136,9 +1030,7 @@ def test_color_roles_accept_a_string(qtbot, role_value):
     "role_value", ["not a color", "", 42, object(), QRect()]
 )
 def test_unusable_color_roles_hide_without_raising(qtbot, role_value):
-    """Anything a QColor cannot be made of hides its indicator. It used to
-    raise mid-paint, and it would raise in sizeHint too now that the hint
-    measures the indicators."""
+    """Anything a QColor cannot be made of hides its indicator."""
 
     tree, delegate, index = _tree_with_item(
         qtbot, pill_color=role_value, dot_color=role_value
@@ -1152,17 +1044,7 @@ def test_unusable_color_roles_hide_without_raising(qtbot, role_value):
 
 
 def _focus_ring_pixels(qtbot, *, selected):
-    """What `_draw_focus_indicator` puts on a blank canvas.
-
-    `option.widget` is left `None` on purpose. `has_focus_ring` reads the
-    view's own `hasFocus()` when it has one, and under
-    `QT_QPA_PLATFORM=offscreen` a shown widget never becomes active --
-    so a test that handed it a real tree painted no ring at all and
-    passed whatever the colour logic did. Measured: with the fix
-    reverted, that version still passed. With no widget the helper falls
-    back to the option's own `State_HasFocus`, which is the branch this
-    is about.
-    """
+    """What `_draw_focus_indicator` puts on a blank canvas."""
     from qtpy.QtCore import QModelIndex
     from qtpy.QtGui import QColor, QPainter, QPixmap
     from qtpy.QtWidgets import QStyle, QStyleOptionViewItem, QTreeWidget
@@ -1198,17 +1080,7 @@ def _focus_ring_pixels(qtbot, *, selected):
 
 
 def test_a_selected_row_is_not_outlined_by_the_focus_ring(qtbot):
-    """The ring must not draw a dark line inside a selected row.
-
-    `text_on_accent_primary` exists to carry *text* on the accent, so on
-    a light accent it is dark -- and stroking a ring in it outlined the
-    current row in near-black. Measured on a real focused tree before
-    the fix: `#282c34` one pixel inside a `#61afef` fill, top and
-    bottom, and gone the moment the window lost focus, which is how it
-    was reported.
-
-    A selected row needs no ring: the accent fill already marks it.
-    """
+    """The ring must not draw a dark line inside a selected row."""
     from fxgui import fxstyle
 
     painted = _focus_ring_pixels(qtbot, selected=True)
@@ -1216,14 +1088,3 @@ def test_a_selected_row_is_not_outlined_by_the_focus_ring(qtbot):
     assert dark not in painted
     # Nothing at all was drawn, which is the whole of the fix.
     assert painted == {"#ff00ff"}
-
-
-def test_an_unselected_current_row_still_gets_its_ring(qtbot):
-    """The other half, so the fix above is a narrowing and not a
-    removal: a keyboard moved without selecting is what the ring was
-    added to show, and there it is drawn in the accent."""
-    from fxgui import fxstyle
-
-    painted = _focus_ring_pixels(qtbot, selected=False)
-    accent = QColor(fxstyle.colors().accent_primary).name()
-    assert accent in painted

@@ -174,11 +174,10 @@ class _Segment(QPushButton):
 
 
 class FXBreadcrumb(QWidget):
-    """A clickable breadcrumb trail for hierarchical navigation.
+    """A path of clickable segments, with optional back and forward.
 
-    This widget provides a navigation breadcrumb with clickable path
-    segments, separator icons, and optional back/forward navigation.
-    Double-click the breadcrumb to switch to edit mode for typing paths.
+    A double-click opens an editor to type a path; Escape or a click away
+    closes it.
 
     Args:
         parent: Parent widget.
@@ -246,19 +245,16 @@ class FXBreadcrumb(QWidget):
         self._path_separator = path_separator
         self._home_path = list(home_path) if home_path else None
 
-        # History tracking
         self._history: List[List[str]] = []
         self._history_index: int = -1
 
         # The buttons, the strip and the editor are a push button's height.
         side = fxstyle.control_height(self)
 
-        # Main layout
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(fxstyle.PANE_GAP)
 
-        # Navigation buttons (optional)
         if self._show_navigation:
             self._back_button = QPushButton()
             self._back_button.setCursor(Qt.PointingHandCursor)
@@ -287,11 +283,9 @@ class FXBreadcrumb(QWidget):
                     button.setFocusPolicy(Qt.NoFocus)
                 main_layout.addWidget(button)
 
-        # Stacked widget to switch between breadcrumb and edit mode
         self._stacked = QStackedWidget()
         self._stacked.setFixedHeight(side)
 
-        # Scroll area for breadcrumb overflow
         self._scroll_area = QScrollArea()
         self._scroll_area.setWidgetResizable(True)
         self._scroll_area.setFrameShape(QFrame.NoFrame)
@@ -300,7 +294,6 @@ class FXBreadcrumb(QWidget):
         # It never scrolls, so a Tab stop on it lands on nothing.
         self._scroll_area.setFocusPolicy(Qt.NoFocus)
 
-        # Container widget for breadcrumb segments
         self._container = _Strip(self)
         self._layout = QHBoxLayout(self._container)
         self._layout.setContentsMargins(4, 0, 4, 0)
@@ -309,7 +302,6 @@ class FXBreadcrumb(QWidget):
 
         self._scroll_area.setWidget(self._container)
 
-        # Line edit for manual path entry
         self._line_edit = QLineEdit()
         self._line_edit.setPlaceholderText("Enter path...")
         self._line_edit.returnPressed.connect(self._on_path_submitted)
@@ -358,14 +350,10 @@ class FXBreadcrumb(QWidget):
         self._container.update()
 
     def eventFilter(self, obj, event):
-        """Handle escape key and focus loss to exit edit mode.
+        """Enter the editor on a double-click; leave it on Escape or away.
 
-        While the editor is up this widget also filters the application,
-        to catch a press that lands outside it: focus loss alone covers
-        only a press that lands on something focusable, and a press on a
-        heading, a tree's own header or the window's background moves no
-        focus at all -- which left the editor open with the artist
-        looking at a path they had already left.
+        While the editor is up this widget also filters the application: a
+        press on a heading or a window's background moves no focus.
         """
         if event.type() == QEvent.Type.MouseButtonDblClick and (
             obj in (self._scroll_area, self._container)
@@ -387,14 +375,12 @@ class FXBreadcrumb(QWidget):
                     self.exit_edit_mode()
                     return True
             elif event.type() == QEvent.Type.FocusOut:
-                # Exit edit mode when clicking outside
                 self.exit_edit_mode()
         return super().eventFilter(obj, event)
 
     def enter_edit_mode(self) -> None:
         """Switch to edit mode with the line edit visible."""
-        # Build path string, stripping trailing slashes from segments
-        # to handle Windows drive letters like 'C:\\'
+        # A drive segment such as "C:/" loses its slash before the join.
         if self._path:
             parts = [p.rstrip("\\/") for p in self._path]
             path_str = self._path_separator.join(parts)
@@ -431,25 +417,17 @@ class FXBreadcrumb(QWidget):
         self.exit_edit_mode()
 
     def _update_nav_buttons(self) -> None:
-        """Update the enabled state of navigation buttons."""
-        if not self._show_navigation:
-            return
-        self._back_button.setEnabled(self._history_index > 0)
-        self._forward_button.setEnabled(
-            self._history_index < len(self._history) - 1
-        )
+        """Enable back and forward as the history allows."""
+        if self._show_navigation:
+            self._back_button.setEnabled(self.can_go_back())
+            self._forward_button.setEnabled(self.can_go_forward())
 
     def path(self) -> List[str]:
         """Return the current path segments."""
         return self._path.copy()
 
     def set_path(self, path: List[str], record_history: bool = True) -> None:
-        """Set the breadcrumb path.
-
-        Args:
-            path: List of path segment strings.
-            record_history: Whether to record this path in navigation history.
-        """
+        """Show `path`, recording it in the history unless told not to."""
         self._path = path.copy()
         self._rebuild_breadcrumb()
 
@@ -464,20 +442,12 @@ class FXBreadcrumb(QWidget):
             self._update_nav_buttons()
 
     def append_segment(self, segment: str) -> None:
-        """Append a segment to the path.
-
-        Args:
-            segment: The segment string to append.
-        """
+        """Append `segment` to the path."""
         self._path.append(segment)
         self.set_path(self._path)
 
     def pop_segment(self) -> Optional[str]:
-        """Remove and return the last segment.
-
-        Returns:
-            The removed segment, or None if path is empty.
-        """
+        """Remove and return the last segment, or None on an empty path."""
         if self._path:
             segment = self._path.pop()
             self.set_path(self._path)
@@ -485,11 +455,7 @@ class FXBreadcrumb(QWidget):
         return None
 
     def navigate_to(self, index: int) -> None:
-        """Navigate to a specific path index, removing subsequent segments.
-
-        Args:
-            index: The index to navigate to.
-        """
+        """Cut the path after `index` and say `segment_clicked`."""
         if 0 <= index < len(self._path):
             self.set_path(self._path[: index + 1])
             self.segment_clicked.emit(index, self.path())
@@ -500,19 +466,11 @@ class FXBreadcrumb(QWidget):
         self._rebuild_breadcrumb()
 
     def go_back(self) -> bool:
-        """Navigate to the previous path in history.
-
-        Returns:
-            True if navigation occurred, False if at beginning of history.
-        """
+        """Step back through the history; return whether it moved."""
         return self._step(-1, self.navigated_back)
 
     def go_forward(self) -> bool:
-        """Navigate to the next path in history.
-
-        Returns:
-            True if navigation occurred, False if at end of history.
-        """
+        """Step forward through the history; return whether it moved."""
         return self._step(1, self.navigated_forward)
 
     def _step(self, by: int, signal) -> bool:
@@ -547,7 +505,6 @@ class FXBreadcrumb(QWidget):
 
     def _rebuild_breadcrumb(self) -> None:
         """Rebuild the segments for the current path."""
-        # Clear existing widgets
         while self._layout.count() > 1:  # Keep stretch
             item = self._layout.takeAt(0)
             if item.widget():
@@ -557,7 +514,6 @@ class FXBreadcrumb(QWidget):
             return
 
         for i, segment in enumerate(self._path):
-            # Add separator before segment (except first)
             if i > 0:
                 self._add_separator()
 
@@ -592,7 +548,6 @@ class FXBreadcrumb(QWidget):
 
         button.installEventFilter(self)
 
-        # Insert before stretch
         self._layout.insertWidget(self._layout.count() - 1, button)
 
     def _add_separator(self) -> None:

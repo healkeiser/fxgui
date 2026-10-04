@@ -393,10 +393,13 @@ class FXOutputLogWidget(QWidget):
         scrollbar = self.output_area.verticalScrollBar()
         following = scrollbar.value() >= scrollbar.maximum()
         cursor = QTextCursor(self.output_area.document())
+        cursor.movePosition(QTextCursor.End)
+        # One edit block: the document lays out once per flush, not per line.
+        cursor.beginEditBlock()
         for _ in range(min(len(self._pending_logs), self.MAX_RECORDS_PER_FLUSH)):
-            self._insert_text_with_ansi(self._pending_logs.popleft())
-            cursor.movePosition(QTextCursor.End)
+            self._insert_text_with_ansi(cursor, self._pending_logs.popleft())
             cursor.insertText("\n")
+        cursor.endEditBlock()
 
         if following:
             scrollbar.setValue(scrollbar.maximum())
@@ -429,16 +432,9 @@ class FXOutputLogWidget(QWidget):
         if not self._throttle_timer.isActive():
             self._flush_pending_log()
 
-    def _insert_text_with_ansi(self, text: str) -> None:
-        """Insert text with ANSI colors, then hang its wrapped lines.
-
-        Args:
-            text: Text with ANSI escape codes.
-        """
-        document = self.output_area.document()
-        first = document.blockCount() - 1
-        cursor = QTextCursor(document)
-        cursor.movePosition(QTextCursor.End)
+    def _insert_text_with_ansi(self, cursor: QTextCursor, text: str) -> None:
+        """Insert `text` at `cursor` in its ANSI colours, then hang it."""
+        first = cursor.blockNumber()
         role, dim, bright = None, False, False
         # split() alternates text and the codes captured between escapes.
         for index, part in enumerate(_ANSI_ESCAPE_PATTERN.split(text)):
@@ -496,10 +492,13 @@ class FXOutputLogWidget(QWidget):
                 it += 1
             block = block.next()
         cursor = QTextCursor(document)
+        # One edit block: the document lays out once, not once per segment.
+        cursor.beginEditBlock()
         for position, length, fmt in changes:
             cursor.setPosition(position)
             cursor.setPosition(position + length, QTextCursor.KeepAnchor)
             cursor.setCharFormat(fmt)
+        cursor.endEditBlock()
 
     def clear_log(self) -> None:
         """Clear the log output."""

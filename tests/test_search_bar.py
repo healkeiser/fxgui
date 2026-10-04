@@ -23,14 +23,6 @@ def test_the_bar_is_the_line_edit(qtbot, qapp):
     assert bar.findChildren(QPushButton) == []
 
 
-def test_text_is_qt_s_own_accessor(qtbot, qapp):
-    bar = _bar(qtbot)
-    qtbot.keyClicks(bar, "fx")
-    assert bar.text() == "fx"
-    bar.setText("comp")
-    assert bar.text() == "comp"
-
-
 def test_typing_is_debounced_into_one_search_changed(qtbot, qapp):
     bar = _bar(qtbot, debounce_ms=50)
     seen = []

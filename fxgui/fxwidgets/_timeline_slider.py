@@ -3,10 +3,10 @@
 # Built-in
 import time
 from bisect import bisect_left, bisect_right
-from typing import Callable, Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QPointF, Qt, QTimer, Signal
+from qtpy.QtCore import QLineF, QPointF, Qt, QTimer, Signal
 from qtpy.QtGui import (
     QColor,
     QKeyEvent,
@@ -620,12 +620,7 @@ class FXTimelineSlider(QWidget):
         self.set_region("loop", start, end, color, bracket_edges=True)
 
     def set_frame(self, frame: int, emit: bool = True) -> None:
-        """Set the current frame, clamped to the range.
-
-        Args:
-            frame: The frame number.
-            emit: Whether to emit the frame_changed signal.
-        """
+        """Set the frame, clamped; `emit` says `frame_changed`."""
         frame = max(self._start_frame, min(frame, self._end_frame))
         if frame == self._current_frame:
             return
@@ -640,12 +635,7 @@ class FXTimelineSlider(QWidget):
             self.frame_changed.emit(frame)
 
     def set_range(self, start: int, end: int) -> None:
-        """Set the frame range, clamping the current frame and the view.
-
-        Args:
-            start: Start frame.
-            end: End frame.
-        """
+        """Set the range from `start` to `end`, clamping the frame and view."""
         zoomed = self._view_start is not None and self._view_end is not None
         old_view = self.view_range()
         self._start_frame = start
@@ -673,11 +663,7 @@ class FXTimelineSlider(QWidget):
         return self._fps_spinbox.value()
 
     def set_fps(self, fps: float) -> None:
-        """Set the playback frame rate, clamped to 1-120.
-
-        Args:
-            fps: Frames per second; fractional rates such as 23.976 hold.
-        """
+        """Set the rate, held to 1-120; fractional rates such as 23.976 hold."""
         self._fps_spinbox.setValue(fps)
 
     def _on_start_changed(self, value: int) -> None:
@@ -691,22 +677,14 @@ class FXTimelineSlider(QWidget):
         self.set_range(self._start_frame, end)
 
     def add_keyframe(self, frame: int) -> None:
-        """Add a keyframe marker.
-
-        Args:
-            frame: The frame number to mark.
-        """
+        """Mark `frame` as a keyframe."""
         if frame not in self._keyframes:
             self._keyframes.append(frame)
             self._keyframes.sort()
             self._track_widget.update()
 
     def remove_keyframe(self, frame: int) -> None:
-        """Remove a keyframe marker.
-
-        Args:
-            frame: The frame number to remove.
-        """
+        """Unmark `frame` as a keyframe."""
         if frame in self._keyframes:
             self._keyframes.remove(frame)
             self._track_widget.update()
@@ -820,6 +798,8 @@ class _TimelineTrack(QWidget):
         self._pan_accum = 0.0
         # Hovered frame (crosshair-style indicator), None when outside.
         self._hover_frame: Optional[int] = None
+        self._tick_key: tuple = ()
+        self._tick_lines: Dict[bool, List[QLineF]] = {}
 
     @property
     def _timeline(self) -> FXTimelineSlider:
@@ -864,32 +844,11 @@ class _TimelineTrack(QWidget):
         minor_pen = QPen(minor_color, 1)
         major_pen = QPen(major_color, 1)
 
-        pixels_per_frame = width / frame_range
-        if pixels_per_frame >= 4:
-            tick_interval = 1
-        elif pixels_per_frame >= 1:
-            tick_interval = 5
-        elif pixels_per_frame >= 0.4:
-            tick_interval = 10
-        else:
-            tick_interval = max(1, frame_range // 20)
-
-        tick_frames = list(range(view_first, view_last + 1, tick_interval))
-        if tick_frames and tick_frames[-1] != view_last:
-            tick_frames.append(view_last)   # always mark the window edge
-        for frame in tick_frames:
-            x = int(frame_to_x(frame))
-            is_major = (
-                (frame - view_first) % (tick_interval * 5) == 0
-                or frame == view_first
-                or frame == view_last
-            )
-            tick_extent = 5 if is_major else 2
+        for is_major, lines in self._ticks(
+            width, track_y, track_height, view_first, view_last
+        ).items():
             painter.setPen(major_pen if is_major else minor_pen)
-            painter.drawLine(
-                x, track_y - tick_extent,
-                x, track_y + track_height + tick_extent,
-            )
+            painter.drawLines(lines)
 
         # Regions: a translucent fill and edge lines; bracketed edges keep a
         # zero-width region (a lone in/out point) visible.
@@ -1015,6 +974,42 @@ class _TimelineTrack(QWidget):
             painter.drawText(label_x + 1, metrics.ascent() + 2, text)
 
         painter.end()
+
+    def _ticks(
+        self, width: int, track_y: int, track_height: int, first: int, last: int
+    ) -> Dict[bool, List[QLineF]]:
+        """Return the minor and major tick lines, built once per window."""
+        # Scrubbing and playback repaint the same window every frame.
+        key = (width, track_y, track_height, first, last)
+        if self._tick_key == key:
+            return self._tick_lines
+        frame_range = max(1, last - first)
+        usable = max(1, width - 2 * self.EDGE_PAD)
+        pixels_per_frame = width / frame_range
+        if pixels_per_frame >= 4:
+            interval = 1
+        elif pixels_per_frame >= 1:
+            interval = 5
+        elif pixels_per_frame >= 0.4:
+            interval = 10
+        else:
+            interval = max(1, frame_range // 20)
+        frames = list(range(first, last + 1, interval))
+        if frames and frames[-1] != last:
+            frames.append(last)   # always mark the window edge
+        ticks: Dict[bool, List[QLineF]] = {True: [], False: []}
+        for frame in frames:
+            x = int(self.EDGE_PAD + (frame - first) / frame_range * usable)
+            major = (
+                (frame - first) % (interval * 5) == 0
+                or frame in (first, last)
+            )
+            extent = 5 if major else 2
+            ticks[major].append(QLineF(
+                x, track_y - extent, x, track_y + track_height + extent
+            ))
+        self._tick_key, self._tick_lines = key, ticks
+        return ticks
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Left = scrub; middle = start panning the zoomed window."""

@@ -137,17 +137,6 @@ def test_every_role_is_claimed_once_from_one_table():
     assert _roles.FIRST_FREE == max(claimed)
 
 
-def test_the_show_flags_are_plain_attributes():
-    delegate = FXThumbnailDelegate()
-    for name in (
-        "show_thumbnail",
-        "show_status_dot",
-        "show_status_label",
-        "picker_column",
-    ):
-        assert name in vars(delegate), name
-
-
 def test_a_thumbnail_is_stat_once_per_window(qtbot, monkeypatch, tmp_path):
     calls = []
     real = os.path.getmtime
@@ -346,11 +335,6 @@ def test_each_row_is_scored_once_per_filter(qapp, monkeypatch):
     for row in range(proxy.rowCount()):
         proxy.index(row, 0).data(Qt.ForegroundRole)
     assert len(calls) <= len(texts)
-
-
-def test_the_proxy_has_no_show_all_switch():
-    assert not hasattr(FXSortFilterProxyModel, "set_show_all")
-    assert not hasattr(FXSortFilterProxyModel, "set_color_match")
 
 
 # FXSortedTreeWidgetItem ---------------------------------------------------

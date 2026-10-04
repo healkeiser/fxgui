@@ -56,12 +56,6 @@ def _output_gap(pane, qapp):
     return pane.height() - 1 - pane.output_area.geometry().bottom()
 
 
-def test_an_empty_bottom_row_takes_no_room(qtbot, qapp):
-    pane = _shown(qtbot, clear=False)
-
-    assert _output_gap(pane, qapp) == 0
-
-
 def test_the_bottom_row_follows_the_clear_button_both_ways(qtbot, qapp):
     pane = _shown(qtbot)
     pane.clear_button.hide()

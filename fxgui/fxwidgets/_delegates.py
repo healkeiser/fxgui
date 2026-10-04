@@ -378,11 +378,6 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _FOCUS_RINGS = ("row", "cell")
 
     def __init__(self, parent: Optional[QWidget] = None):
-        """Initialize the thumbnail delegate.
-
-        Args:
-            parent: The parent widget.
-        """
         super().__init__(parent)
         #: Whether rows show their thumbnail.
         self.show_thumbnail = True

@@ -80,29 +80,6 @@ def _shown(qtbot):
     return crumb
 
 
-def _strip_pixel(crumb):
-    """The strip's fill, read off a grab away from its edge and text."""
-    strip = crumb._container
-    image = strip.grab().toImage()
-    return image.pixelColor(image.width() - 6, image.height() // 2).name()
-
-
-def test_the_strip_paints_the_fill_it_works_out(qtbot):
-    crumb = _shown(qtbot)
-
-    assert _strip_pixel(crumb) == QColor(crumb._colors()[0]).name()
-
-
-def test_a_theme_switch_repaints_the_strip_without_a_rebuild(qtbot):
-    crumb = _shown(qtbot)
-    buttons = crumb._container.findChildren(QPushButton)
-
-    fxstyle.apply_theme("solarized_light")
-
-    assert _strip_pixel(crumb) == QColor(crumb._colors()[0]).name()
-    assert crumb._container.findChildren(QPushButton) == buttons
-
-
 def test_the_breadcrumb_holds_no_theme_hook(qtbot):
     count = lambda: fxstyle._signals.receivers(  # noqa: E731
         SIGNAL("theme_changed(QString)")

@@ -45,19 +45,15 @@ class FXTagChip(QFrame):
         self._text = text
         self._removable = removable
 
-        # Setup styling
         self.setFrameShape(QFrame.StyledPanel)
 
-        # Layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 2, 4 if removable else 8, 2)
         layout.setSpacing(fxstyle.PANE_GAP)
 
-        # Tag label
         self.label = QLabel(text)
         layout.addWidget(self.label)
 
-        # Remove button
         self.remove_button = None
         if removable:
             self.remove_button = QPushButton()
@@ -81,11 +77,7 @@ class FXTagChip(QFrame):
 
 
 class FXTagInput(QWidget):
-    """A styled input widget that displays tags as removable chips.
-
-    This widget provides an input field where users can type and press
-    Enter to add tags. Tags are displayed as styled chips that can be
-    removed by clicking the x button.
+    """A field whose Enter turns the text into a chip; a chip's x removes it.
 
     Args:
         parent: Parent widget.
@@ -123,7 +115,6 @@ class FXTagInput(QWidget):
         self._max_tags = max_tags
         self._allow_duplicates = allow_duplicates
 
-        # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(fxstyle.PANE_GAP)
@@ -132,7 +123,6 @@ class FXTagInput(QWidget):
         self._tags_container = QWidget()
         self._tags_layout = FXFlowLayout(self._tags_container)
 
-        # Input field
         self._input = QLineEdit()
         self._input.setObjectName("fx_tag_input_field")
         self._input.setPlaceholderText(placeholder)
@@ -148,25 +138,14 @@ class FXTagInput(QWidget):
         return [chip.text() for chip in self._chips]
 
     def add_tag(self, tag: str) -> bool:
-        """Add a tag to the input.
-
-        Args:
-            tag: The tag text to add.
-
-        Returns:
-            True if the tag was added, False otherwise.
-        """
+        """Add `tag`; return False for a blank, a duplicate or one too many."""
         if not self._add(tag):
             return False
         self.tags_changed.emit(self.tags())
         return True
 
     def remove_tag(self, tag: str) -> bool:
-        """Remove the first chip that reads `tag`.
-
-        Returns:
-            True if the tag was removed, False otherwise.
-        """
+        """Remove the first chip reading `tag`; return whether one did."""
         for chip in self._chips:
             if chip.text() == tag:
                 self._drop(chip)
@@ -179,11 +158,7 @@ class FXTagInput(QWidget):
         self.set_tags([])
 
     def set_tags(self, tags: List[str]) -> None:
-        """Replace the tags, saying `tags_changed` once.
-
-        Args:
-            tags: List of tag strings to set.
-        """
+        """Replace the tags, saying `tags_changed` once."""
         before = self.tags()
         for chip in list(self._chips):
             self._drop(chip)

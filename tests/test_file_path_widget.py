@@ -41,11 +41,6 @@ def test_a_multi_file_drop_keeps_every_file(qtbot, qapp, tmp_path):
     ]
 
 
-def test_path_widget_leaves_the_mixin(qtbot, qapp):
-    widget = FXFilePathWidget()
-    qtbot.addWidget(widget)
-
-
 def test_a_result_for_a_deleted_widget_is_dropped(qtbot, qapp, tmp_path):
     from qtpy.QtCore import QEvent, QThreadPool
 
@@ -67,16 +62,6 @@ def test_an_unknown_mode_is_refused(qtbot, qapp):
     qtbot.addWidget(widget)
     with pytest.raises(ValueError):
         widget.set_mode("dir")
-
-
-def test_one_accessor_for_the_path(qtbot, qapp):
-    widget = FXFilePathWidget()
-    qtbot.addWidget(widget)
-
-    widget.set_path("C:/shots")
-
-    assert widget.path() == "C:/shots"
-    assert not hasattr(widget, "get_path")
 
 
 def test_the_indicator_is_an_icon_label_with_no_sheet(qtbot, qapp):

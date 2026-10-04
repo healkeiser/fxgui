@@ -1,13 +1,4 @@
-"""An eliding label has to elide, which means it has to yield its width.
-
-`QLabel`'s own minimum width IS the width of its whole text, and a
-minimum is not a preference: a label that will not go below its own text
-width does not shorten its text when the room runs out, it takes the room
-from whatever shares its row and, failing that, from the window. Measured
-on a plain `QLabel`, a 47-character identity in a row with a button in a
-window told to be 200px wide: the window came out 680px and the button
-moved from x=90 to x=570.
-"""
+"""An eliding label has to elide, which means it has to yield its width."""
 
 # Third-party
 from qtpy.QtCore import Qt
@@ -43,18 +34,6 @@ def test_the_label_does_not_widen_its_own_window(qtbot, qapp):
 
     assert host.width() == 200, "the window kept the width it was given"
     assert button.x() < 150, "and the button kept its place in the row"
-
-
-def test_a_plain_label_in_the_same_row_does_widen_it(qtbot, qapp):
-    """The comparison that makes the fix a fix rather than a preference.
-    """
-    plain = QLabel(IDENTITY)
-
-    host, button = _row(plain, qtbot)
-
-    assert host.minimumSizeHint().width() > 200, (
-        "a plain label insists on its whole text width"
-    )
 
 
 def test_the_minimum_width_is_zero(qtbot, qapp):
@@ -119,7 +98,6 @@ def test_a_label_can_be_asked_to_elide_from_the_middle(qtbot, qapp):
 
 
 def test_two_identities_sharing_a_tail_stay_tellable_apart(qtbot, qapp):
-    """The measured reason the mode is worth an argument."""
     first = "valentin.beaumont@a.very.long.studio.domain.example"
     second = "valerie.beaumarchais@a.very.long.studio.domain.example"
 

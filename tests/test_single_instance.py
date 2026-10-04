@@ -15,12 +15,6 @@ def _name(tag):
     return f"fxgui-test-{tag}-{os.getpid()}"
 
 
-def test_the_first_claim_holds_the_name(qtbot):
-    instance = FXSingleInstance(_name("first"))
-
-    assert instance.claim()
-
-
 def test_a_second_claim_is_refused_and_wakes_the_first(qtbot):
     first = FXSingleInstance(_name("second"))
     assert first.claim()

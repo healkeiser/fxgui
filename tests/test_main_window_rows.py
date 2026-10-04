@@ -35,7 +35,7 @@ def test_a_window_with_a_parent_stays_its_own_window(qtbot):
     qtbot.addWidget(host)
     host.show()
 
-    # The host owns the window; qtbot closing both trips PySide6 6.5.
+    # The host owns the window; qtbot must close only the host.
     window = FXMainWindow(parent=host)
     window.show()
     qtbot.waitExposed(window)

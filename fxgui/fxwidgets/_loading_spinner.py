@@ -162,15 +162,12 @@ class FXLoadingOverlay(QWidget):
         if parent is not None:
             parent.installEventFilter(self)
 
-        # Layout
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignCenter)
 
-        # Spinner
         self._spinner = FXLoadingSpinner(self, size=size)
         layout.addWidget(self._spinner, 0, Qt.AlignCenter)
 
-        # Message label
         self._message_label = None
         if message:
             self._message_label = QLabel(message)

@@ -4,6 +4,12 @@
 import logging
 from typing import NamedTuple, Optional
 
+# Third-party
+from qtpy.QtGui import QIcon
+
+# Internal
+from fxgui import fxicons
+
 CRITICAL = 0
 ERROR = 1
 WARNING = 2
@@ -34,6 +40,13 @@ SEVERITIES = {
 def severity(level: Optional[int]) -> _Severity:
     """Return `level`'s severity; an unknown one reads as INFO."""
     return SEVERITIES.get(level, SEVERITIES[INFO])
+
+
+def severity_icon(level: Optional[int]) -> QIcon:
+    """Return `level`'s icon in its feedback colour, read when drawn."""
+    kind = severity(level)
+    return fxicons.get_icon(
+        kind.icon, color=f"feedback_{kind.feedback}_foreground")
 
 
 def log(logger: Optional[logging.Logger], level: int, message: str) -> None:

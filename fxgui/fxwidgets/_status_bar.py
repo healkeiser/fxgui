@@ -25,7 +25,13 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXIconLabel
-from fxgui.fxwidgets._severity import INFO, SEVERITIES, log, severity
+from fxgui.fxwidgets._severity import (
+    INFO,
+    SEVERITIES,
+    log,
+    severity,
+    severity_icon,
+)
 from fxgui.fxwidgets._tips import apply_tip
 
 # The painted lines replace the base sheet's top border.
@@ -390,9 +396,6 @@ class FXStatusBar(QStatusBar):
             ...     duration=5,
             ...     logger=my_logger,
             ... )
-
-        Note:
-            Overrides the base class method.
         """
 
         # Qt's own message only drives `messageChanged` and the timeout.
@@ -402,16 +405,12 @@ class FXStatusBar(QStatusBar):
         self.message_label.setVisible(True)
 
         kind = severity(severity_type)
-        severity_prefix = kind.title
-        severity_icon = fxicons.get_icon(
-            kind.icon, color=f"feedback_{kind.feedback}_foreground")
-
         message_prefix = (
-            f"<b>{severity_prefix}</b>: {datetime.now():%H:%M} - "
+            f"<b>{kind.title}</b>: {datetime.now():%H:%M} - "
             if time
-            else f"<b>{severity_prefix}</b>: "
+            else f"<b>{kind.title}</b>: "
         )
-        self.icon_label.setIcon(severity_icon)
+        self.icon_label.setIcon(severity_icon(severity_type))
         # The label is rich for the bold prefix; the message is plain text.
         self._message = f"{message_prefix} {html.escape(message)}"
         self.message_label.setText(self._message)
@@ -422,20 +421,12 @@ class FXStatusBar(QStatusBar):
         log(logger, severity_type, message)
 
     def clearMessage(self):
-        """Clear the message and its tint.
-
-        Note:
-            Overrides the base class method.
-        """
+        """Clear the message and its tint."""
         super().clearMessage()
         self._clear()
 
     def _clear(self) -> None:
-        """Hide the message labels and drop the tint.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Hide the message labels and drop the tint."""
         self.icon_label.setIcon(None)
         self.icon_label.setVisible(False)
         self.message_label.clear()

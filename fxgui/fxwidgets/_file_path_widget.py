@@ -73,13 +73,10 @@ class _PathCheck(QRunnable):
 
 
 class FXFilePathWidget(QWidget):
-    """A line edit with integrated browse button for file/folder selection.
+    """A path field with a Browse button, a drop target and a validity mark.
 
-    This widget provides:
-    - File or folder mode selection
-    - Drag & drop support
-    - Path validation indicator
-    - Browse button with file dialog
+    The check runs on a worker thread, so a share that does not answer
+    stalls the mark, never the window.
 
     Args:
         parent: Parent widget.
@@ -94,7 +91,8 @@ class FXFilePathWidget(QWidget):
 
     Signals:
         path_changed: Emitted when the path changes.
-        path_valid: Emitted with True/False when validation state changes.
+        path_valid: Whether the path exists as the mode asks, after each
+            check.
 
     Examples:
         >>> path_widget = FXFilePathWidget(mode='file', file_filter="Python (*.py)")
@@ -123,18 +121,15 @@ class FXFilePathWidget(QWidget):
         self._validate = validate
         self._is_valid = False
 
-        # Debounce timer for validation
         self._validation_timer = QTimer(self)
         self._validation_timer.setSingleShot(True)
         self._validation_timer.setInterval(300)  # ms
         self._validation_timer.timeout.connect(self._do_validation)
 
-        # Main layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(fxstyle.PANE_GAP)
 
-        # Path input
         self._input = QLineEdit()
         self._input.setPlaceholderText(placeholder)
         self._input.textChanged.connect(self._on_text_changed)
@@ -172,11 +167,7 @@ class FXFilePathWidget(QWidget):
         return self._input.text()
 
     def set_path(self, path: str) -> None:
-        """Set the path.
-
-        Args:
-            path: The file or folder path.
-        """
+        """Set the path shown."""
         self._input.setText(path)
 
     def is_valid(self) -> bool:
@@ -188,10 +179,7 @@ class FXFilePathWidget(QWidget):
         self._input.clear()
 
     def set_mode(self, mode: str) -> None:
-        """Set the selection mode.
-
-        Args:
-            mode: Selection mode: 'file', 'files', 'folder' or 'save'.
+        """Set the mode: 'file', 'files', 'folder' or 'save'.
 
         Raises:
             ValueError: `mode` is not one of `MODES`.
@@ -206,11 +194,7 @@ class FXFilePathWidget(QWidget):
         self._validation_timer.start()
 
     def set_file_filter(self, filter_str: str) -> None:
-        """Set the file filter.
-
-        Args:
-            filter_str: File filter string (e.g., "Images (*.png *.jpg)").
-        """
+        """Set the dialogs' filter, such as "Images (*.png *.jpg)"."""
         self._file_filter = filter_str
 
     def _browse(self) -> None:
@@ -240,7 +224,6 @@ class FXFilePathWidget(QWidget):
 
     def _on_text_changed(self, text: str) -> None:
         """Handle text change."""
-        # Restart debounce timer for validation
         self._validation_timer.start()
         self.path_changed.emit(text)
 
@@ -268,7 +251,6 @@ class FXFilePathWidget(QWidget):
 
     def _on_validation_finished(self, path: str, is_valid: bool) -> None:
         """Handle validation result from background thread."""
-        # Only update if path hasn't changed
         if path == self._input.text():
             self._is_valid = is_valid
             self._update_indicator()

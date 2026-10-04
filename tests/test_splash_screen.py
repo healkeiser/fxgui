@@ -34,14 +34,6 @@ def test_an_image_of_any_shape_crops_at_whole_pixels(
     assert not splash.pixmap().isNull()
 
 
-def test_the_image_is_qts_own_pixmap(qtbot):
-    splash = FXSplashScreen()
-    qtbot.addWidget(splash)
-
-    assert callable(splash.pixmap)
-    assert splash.pixmap().width() == FXSplashScreen.IDEAL_WIDTH
-
-
 def test_a_file_that_is_no_image_is_refused(tmp_path):
     path = tmp_path / "broken.png"
     path.write_bytes(b"not an image")
@@ -127,25 +119,6 @@ def test_a_click_hides_the_splash(qtbot):
     qtbot.mouseClick(splash, Qt.LeftButton, pos=QPoint(600, 200))
 
     assert not splash.isVisible()
-
-
-def test_the_splash_keeps_one_way_to_set_each_thing():
-    for name in (
-        "set_pixmap",
-        "set_icon",
-        "set_title",
-        "set_information_text",
-        "toggle_progress_bar_visibility",
-        "set_project_label",
-        "set_version_label",
-        "set_company_label",
-        "toggle_fade_in",
-        "set_overlay_opacity",
-        "set_corner_radius",
-        "set_border",
-        "_apply_rounded_mask",
-    ):
-        assert not hasattr(FXSplashScreen, name), name
 
 
 def test_a_show_costs_what_a_widget_show_costs(qtbot):

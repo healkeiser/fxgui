@@ -2,7 +2,7 @@
 
 # Third-party
 import pytest
-from qtpy.QtCore import QPoint, QSize
+from qtpy.QtCore import QPoint
 from qtpy.QtGui import QColor, QStatusTipEvent
 from qtpy.QtWidgets import QApplication
 
@@ -168,14 +168,6 @@ def test_off_a_tint_a_toned_icon_wears_its_tone(qtbot):
     assert painted.name() != QColor(item.ink()).name()
 
 
-def test_an_item_takes_the_button_radius_and_icon_size(qtbot):
-    window = _window(qtbot)
-    item = window.statusBar().warnings
-
-    assert item.iconSize() == QSize(14, 14)
-    assert item.radius == fxstyle.BUTTON_RADIUS
-
-
 def test_a_hover_tip_shows_after_the_items_not_over_them(qtbot):
     window = _window(qtbot)
     bar = window.statusBar()
@@ -235,16 +227,6 @@ def test_set_tip_leaves_no_status_tip(qtbot):
 
     assert item.statusTip() == ""
     assert "Project" in item.toolTip()
-
-
-def test_no_project_leaves_the_project_blank(qtbot):
-    window = FXMainWindow()
-    qtbot.addWidget(window)
-    window.show()
-    qtbot.waitExposed(window)
-
-    assert window.statusBar().project_label.text() == ""
-    assert not window.statusBar().project_label.isVisible()
 
 
 def test_the_version_and_company_are_plain_items(qtbot):

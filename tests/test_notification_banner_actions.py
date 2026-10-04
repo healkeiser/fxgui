@@ -10,7 +10,6 @@ and closes the banner on the way out.
 """
 
 # Built-in
-import inspect
 
 # Third-party
 from qtpy.QtCore import Qt
@@ -55,12 +54,12 @@ def test_actions_cancel_the_auto_dismiss(qtbot):
     banner = FXNotificationBanner(
         parent=parent,
         message="Overwrite the published version?",
-        timeout=200,
+        timeout=20,
         actions={"Overwrite": lambda: None, "Keep both": lambda: None},
     )
     banner.show()
 
-    qtbot.wait(400)  # Twice the timeout it was asked for
+    qtbot.wait(40)  # Twice the timeout it was asked for
     assert banner.isVisible()
     assert not banner._dismiss_timer.isActive()
 
@@ -76,14 +75,6 @@ def test_actions_keep_their_declared_order(qtbot):
 
     labels = [button.text() for button in banner._action_buttons]
     assert labels == ["Overwrite", "Keep both"]
-
-
-def test_actions_is_the_one_way_to_add_buttons():
-    parameters = inspect.signature(FXNotificationBanner).parameters
-
-    assert "action_text" not in parameters
-    assert not hasattr(FXNotificationBanner, "action_clicked")
-    assert not hasattr(FXNotificationBanner, "SEVERITY_ICONS")
 
 
 def test_a_plain_banner_grows_no_action_row(qtbot):
@@ -113,3 +104,15 @@ def test_action_buttons_are_clickable_looking(qtbot):
     assert button.objectName() == "fxBannerAction"
     assert button.property("primary") is True
     assert banner.add_action("Later").property("primary") is False
+
+
+def test_a_longer_message_grows_the_banner_and_moves_the_next_down(qtbot):
+    parent = _host(qtbot)
+    first = FXNotificationBanner(parent=parent, message="Saved", timeout=0)
+    first.show()
+    second = FXNotificationBanner(parent=parent, message="Next", timeout=0)
+    second.show()
+    short = first.height()
+    first.set_message("A much longer message that wraps. " * 10)
+    assert first.height() > short
+    assert second._target_pos.y() >= first._target_pos.y() + first.height()

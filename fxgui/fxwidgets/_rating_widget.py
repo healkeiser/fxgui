@@ -14,13 +14,9 @@ from fxgui.fxwidgets._labels import FXIconLabel
 
 
 class FXRatingWidget(QWidget):
-    """A clickable star rating widget.
+    """A row of stars to click, with a preview under the pointer.
 
-    This widget provides a configurable star rating with:
-    - Configurable max stars
-    - Half-star support (optional)
-    - Hover preview
-    - Theme-aware icons
+    Arrows step the rating, digits set it, Home and End jump, Delete clears.
 
     Args:
         parent: Parent widget.
@@ -64,12 +60,10 @@ class FXRatingWidget(QWidget):
         self._half_icon = half_icon
         self._hover_rating: Optional[float] = None
 
-        # Main layout
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
 
-        # Create star labels
         self._stars: list = []
         for _ in range(max_rating):
             star = FXIconLabel(size=icon_size)
@@ -84,11 +78,9 @@ class FXRatingWidget(QWidget):
         # Through the setter, so it is clamped and rounded like any other.
         self.set_rating(initial_rating, emit=False)
 
-        # Mouse tracking
         self.setMouseTracking(True)
         self.setCursor(Qt.PointingHandCursor)
 
-        # Keyboard: arrow keys adjust, digits set, Delete/Backspace clears
         self.setFocusPolicy(Qt.StrongFocus)
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -98,15 +90,11 @@ class FXRatingWidget(QWidget):
         return self._rating
 
     def set_rating(self, rating: float, emit: bool = True) -> None:
-        """Set the rating value.
-
-        Args:
-            rating: The rating value (0 to max_rating).
-            emit: Whether to emit the rating_changed signal.
-        """
+        """Set the rating, clamped and rounded; `emit` says `rating_changed`."""
         rating = max(0, min(rating, self._max_rating))
         if not self._allow_half:
-            rating = round(rating)
+            # Half up: round() takes 2.5 to 2 but 3.5 to 4.
+            rating = int(rating + 0.5)
 
         if rating != self._rating:
             self._rating = rating
@@ -133,13 +121,10 @@ class FXRatingWidget(QWidget):
             star_value = i + 1
 
             if display_rating >= star_value:
-                # Full star
                 icon = fxicons.get_icon(self._filled_icon, color=color)
             elif self._allow_half and display_rating >= star_value - 0.5:
-                # Half star
                 icon = fxicons.get_icon(self._half_icon, color=color)
             else:
-                # Empty star
                 icon = fxicons.get_icon(self._empty_icon, color=empty_color)
 
             star.setIcon(icon)
@@ -154,7 +139,6 @@ class FXRatingWidget(QWidget):
         if x >= total_width:
             return self._max_rating
 
-        # Calculate which star we're over
         star_index = x // star_width
         star_offset = (x % star_width) / star_width
 

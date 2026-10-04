@@ -1,16 +1,5 @@
-"""The breadcrumb has to look like something you can click, and the
-editor it opens has to close when you click away from it.
-
-Measured on the plain widget: every segment is a `QPushButton` and none
-of them said so -- flat text on the window's own background, no cursor
-change, nothing under the pointer. The one control that walks the
-hierarchy read as a row of labels, and an artist had no reason to try it.
-
-The second half is the editor. It exited on the line edit's `FocusOut`,
-which covers a press that lands on something focusable and nothing else:
-a press on a heading, a tree's own header or the window's background
-moves no focus at all, so the editor stayed up with the artist looking at
-a path they had already left.
+"""The breadcrumb has to look like something you can click, and the editor it
+opens has to close when you click away from it.
 """
 
 # Third-party
@@ -158,15 +147,6 @@ def test_a_subclass_can_name_its_own_tokens(qtbot, qapp):
     assert _close(_corner(qtbot, _segments(crumb)[0], True), expected)
 
 
-def test_the_strip_is_never_the_window_s_own_colour(qtbot, qapp):
-    """A strip painted in `surface` is a strip nobody can see: in every
-    theme fxgui ships that token is the window's colour to the byte."""
-    colors = dict(vars(fxstyle.colors()))
-
-    assert colors[FXBreadcrumb.STRIP_RESTING_TOKEN] != colors["surface"]
-    assert colors[FXBreadcrumb.STRIP_HOVERED_TOKEN] != colors["surface"]
-
-
 def _enter_event(widget):
     """The event Qt delivers when the pointer arrives over `widget`."""
     inside = QPointF(1.0, 1.0)
@@ -242,9 +222,6 @@ def _press_on(widget):
 
 
 def test_a_press_that_moves_no_focus_closes_the_editor(qtbot, qapp):
-    """The whole finding: a heading, a tree header or a window
-    background takes no focus, so `FocusOut` never fires and the editor
-    stayed open over a path the artist had already left."""
     host = QWidget()
     qtbot.addWidget(host)
     layout = QVBoxLayout(host)

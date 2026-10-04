@@ -27,7 +27,14 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXIconLabel
-from fxgui.fxwidgets._severity import CRITICAL, ERROR, SEVERITIES, log, severity
+from fxgui.fxwidgets._severity import (
+    CRITICAL,
+    ERROR,
+    SEVERITIES,
+    log,
+    severity,
+    severity_icon,
+)
 
 
 fxstyle.register_widget_style(
@@ -42,21 +49,6 @@ fxstyle.register_widget_style(
     }
     FXNotificationBanner QLabel#fxBannerTitle {
         color: @text;
-    }
-    FXNotificationBanner[severity="error"] QLabel#fxBannerTitle {
-        color: @feedback_error_foreground;
-    }
-    FXNotificationBanner[severity="warning"] QLabel#fxBannerTitle {
-        color: @feedback_warning_foreground;
-    }
-    FXNotificationBanner[severity="success"] QLabel#fxBannerTitle {
-        color: @feedback_success_foreground;
-    }
-    FXNotificationBanner[severity="info"] QLabel#fxBannerTitle {
-        color: @feedback_info_foreground;
-    }
-    FXNotificationBanner[severity="debug"] QLabel#fxBannerTitle {
-        color: @feedback_debug_foreground;
     }
     FXNotificationBanner QLabel#fxBannerMessage {
         color: @text_muted;
@@ -101,6 +93,11 @@ fxstyle.register_widget_style(
         border-color: @text;
     }
     """
+    + "".join(
+        f'FXNotificationBanner[severity="{key}"] QLabel#fxBannerTitle '
+        f"{{ color: @feedback_{key}_foreground; }} "
+        for key in sorted({kind.feedback for kind in SEVERITIES.values()})
+    )
 )
 
 
@@ -116,31 +113,27 @@ def _staying(parent: QWidget) -> list:
 
 
 class FXNotificationBanner(QFrame):
-    """Animated pop-up notification cards that slide in from the right.
+    """A notification card that slides in at the parent's top right.
 
-    This widget provides toast-style notifications with severity levels,
-    auto-dismiss, and optional action buttons. Notifications automatically
-    stack when multiple are shown and reposition when one is dismissed.
+    Cards on one parent stack, and close up when one is dismissed.
 
     Args:
-        parent: Parent widget (required for positioning).
-        message: The notification message.
-        severity_type: Severity level (CRITICAL, ERROR, WARNING, SUCCESS, INFO, DEBUG).
-            If None, a custom notification is shown using title and icon.
-        timeout: Auto-dismiss timeout in milliseconds (0 = no auto-dismiss).
+        parent: The widget the card sits on; it positions the card.
+        message: The notification message, rich text.
+        severity_type: CRITICAL, ERROR, WARNING, SUCCESS, INFO or DEBUG;
+            None for a plain card with `title` and `icon`.
+        timeout: Milliseconds before it dismisses itself; 0 never.
             Defaults to 5000, and to 0 for ERROR and CRITICAL: an error
             waits for the artist to read it.
-        actions: Buttons to put on the banner, as `{label: callback}`, left to
-            right. The first one is styled as the primary. A banner with
-            actions never auto-dismisses, and clicking one runs its callback
-            then dismisses the banner.
+        actions: Buttons as `{label: callback}`, left to right, the first
+            styled primary. A card with actions never times out; a click
+            runs the callback, then dismisses the card.
         closable: Whether to show a close button.
-        width: Fixed width of the notification card (default 320).
-        logger: A logger object to log the message when shown. The severity
-            level is mapped to the appropriate logging level.
-        title: Custom title for the notification. Overrides severity-based title.
-        icon: Custom icon name for the notification. Overrides severity-based icon.
-        margin: From the parent's right edge (default 16).
+        width: The card's fixed width.
+        logger: Logs the message when shown, at the severity's level.
+        title: Replaces the severity's title.
+        icon: An icon name replacing the severity's icon.
+        margin: From the parent's right edge.
         top: From the parent's top to the first banner. Defaults to
             `margin`.
         spacing: Between stacked notifications; the pane gap.
@@ -208,7 +201,6 @@ class FXNotificationBanner(QFrame):
         self._top = margin if top is None else top
         self._spacing = spacing
 
-        # Fixed width for pop notification style
         self.setFixedWidth(width)
         self.setProperty(
             "severity",
@@ -216,24 +208,18 @@ class FXNotificationBanner(QFrame):
             else "",
         )
 
-        # Setup frame styling
         self.setFrameShape(QFrame.StyledPanel)
 
-        # Main layout (vertical like FXProgressCard)
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(16, 12, 16, 12)
         main_layout.setSpacing(fxstyle.PANE_GAP)
 
-        # Header row (icon + title + close button)
         header_layout = QHBoxLayout()
         header_layout.setSpacing(fxstyle.PANE_GAP)
-
-        # Severity icon
         self._icon_label = FXIconLabel(size=18)
         self._icon_label.setFixedSize(20, 20)
         header_layout.addWidget(self._icon_label)
 
-        # Title (custom title, severity name, or default)
         if title is None:
             title = (
                 severity(severity_type).title
@@ -246,7 +232,6 @@ class FXNotificationBanner(QFrame):
 
         header_layout.addStretch()
 
-        # Close button
         if closable:
             self._close_button = QPushButton()
             self._close_button.setObjectName("fxBannerClose")
@@ -258,7 +243,6 @@ class FXNotificationBanner(QFrame):
 
         main_layout.addLayout(header_layout)
 
-        # Message label
         self._message_label = QLabel(message)
         self._message_label.setObjectName("fxBannerMessage")
         self._message_label.setTextFormat(Qt.RichText)
@@ -268,29 +252,27 @@ class FXNotificationBanner(QFrame):
         )
         main_layout.addWidget(self._message_label)
 
-        # Action buttons (optional) - the row is only built if one is added,
-        # so a plain banner keeps its own bottom margin
+        # Built with the first action, so a plain banner keeps its margin.
         self._actions_layout: Optional[QHBoxLayout] = None
         self._action_buttons: list[QPushButton] = []
 
-        # Setup slide animation (from right)
+        # One animation slides in, out and restacks; ending the slide out
+        # is the only end that does anything.
         self._slide_animation = QPropertyAnimation(self, b"pos", self)
         self._slide_animation.setEasingCurve(QEasingCurve.OutCubic)
         self._slide_animation.setDuration(250)
+        self._slide_animation.finished.connect(self._on_slide_finished)
 
         # Where the last slide was told to land, and whether we're leaving
         self._target_pos = QPoint()
         self._dismissing = False
-        self._slide_handler = None
 
         fxutils.add_shadow(self)
 
-        # Auto-dismiss timer
         self._dismiss_timer = QTimer(self)
         self._dismiss_timer.setSingleShot(True)
         self._dismiss_timer.timeout.connect(self.dismiss)
 
-        # Size policy - fixed width, minimum height to fit content
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
 
         self._update_icons()
@@ -298,15 +280,12 @@ class FXNotificationBanner(QFrame):
         for label, callback in (actions or {}).items():
             self.add_action(label, callback)
 
-        # Ensure widget sizes to fit content
         self.adjustSize()
-
-        # Install event filter on parent to track resize
         if parent:
             parent.installEventFilter(self)
 
     def eventFilter(self, obj, event) -> bool:
-        """Handle parent resize events to reposition notifications."""
+        """Keep the banner at the parent's right edge as it resizes."""
         if obj == self.parent() and event.type() == QEvent.Resize:
             self._update_position()
         return super().eventFilter(obj, event)
@@ -317,28 +296,11 @@ class FXNotificationBanner(QFrame):
         parent_width = parent.width() if parent else 0
         return parent_width - self.width() - self._margin
 
-    def _animate_to(self, target: QPoint, on_finished=None) -> None:
-        """Slide to `target`, replacing whatever the banner was doing.
-
-        The animation object is shared between slide-in, slide-out and
-        restacking, so any pending `finished` handler is dropped first: a
-        handler left connected fires at the end of the *next* slide, which is
-        how a dismissing banner ends up stopping mid-way then vanishing.
-
-        Args:
-            target: Position to slide to, in parent coordinates.
-            on_finished: Called once, when this slide reaches `target`.
-        """
+    def _animate_to(self, target: QPoint) -> None:
+        """Slide to `target`, in parent coordinates, from where it is now."""
         animation = self._slide_animation
         animation.stop()
-        if self._slide_handler is not None:
-            animation.finished.disconnect(self._slide_handler)
-            self._slide_handler = None
-
         self._target_pos = target
-        if on_finished is not None:
-            animation.finished.connect(on_finished)
-            self._slide_handler = on_finished
         animation.setStartValue(self.pos())
         animation.setEndValue(target)
         animation.start()
@@ -357,13 +319,15 @@ class FXNotificationBanner(QFrame):
     def _update_icons(self) -> None:
         """Set the severity icon and the close icon, in theme ink tokens."""
         if self._severity_type is None:
-            color, icon_name = "text", "notifications"
-        else:
+            shown = fxicons.get_icon(
+                self._custom_icon or "notifications", color="text")
+        elif self._custom_icon:
             kind = severity(self._severity_type)
-            color = f"feedback_{kind.feedback}_foreground"
-            icon_name = kind.icon
-        icon_name = self._custom_icon or icon_name
-        self._icon_label.setIcon(fxicons.get_icon(icon_name, color=color))
+            shown = fxicons.get_icon(
+                self._custom_icon, color=f"feedback_{kind.feedback}_foreground")
+        else:
+            shown = severity_icon(self._severity_type)
+        self._icon_label.setIcon(shown)
         if self._closable:
             fxicons.set_icon(self._close_button, "close", color="text_muted")
 
@@ -390,7 +354,6 @@ class FXNotificationBanner(QFrame):
             self.deleteLater()
             return False
 
-        # Ensure layout is calculated before showing
         self.adjustSize()
 
         super().show()
@@ -411,7 +374,6 @@ class FXNotificationBanner(QFrame):
             self.move(parent.width(), y_offset)  # Off-screen, to the right
             self._animate_to(QPoint(self._resting_x(), y_offset))
 
-        # Start auto-dismiss timer
         if self._timeout > 0:
             self._dismiss_timer.start(self._timeout)
         return True
@@ -424,34 +386,28 @@ class FXNotificationBanner(QFrame):
         self._dismiss_timer.stop()
         self._dismissing = True
 
-        # Slide out to the right
         parent = self.parent()
         if parent:
-            self._animate_to(
-                QPoint(parent.width(), self._target_pos.y()),
-                self._on_slide_out_finished,
-            )
+            self._animate_to(QPoint(parent.width(), self._target_pos.y()))
         else:
-            self._on_slide_out_finished()
+            self._leave()
 
-    def _on_slide_out_finished(self) -> None:
-        """Handle slide-out completion and reposition remaining notifications."""
+    def _on_slide_finished(self) -> None:
+        if self._dismissing:
+            self._leave()
+
+    def _leave(self) -> None:
+        """Hide, let the banners below close up, then delete."""
         self.hide()
         if self.parent():
             self._reposition_notifications(self.parent())
         self.closed.emit()
         self.deleteLater()
 
-    @classmethod
-    def _reposition_notifications(cls, parent: QWidget) -> None:
-        """Reposition all active notifications for a parent widget.
-
-        Animates remaining notifications to fill gaps left by dismissed ones.
-
-        Args:
-            parent: The parent widget containing the notifications.
-        """
-        # Sort by where each banner is headed, not by its transient position
+    @staticmethod
+    def _reposition_notifications(parent: QWidget) -> None:
+        """Slide the banners staying on `parent` up into one stack."""
+        # By where each is headed, not where a slide has it now.
         staying = sorted(_staying(parent), key=lambda n: n._target_pos.y())
         if not staying:
             return
@@ -470,18 +426,11 @@ class FXNotificationBanner(QFrame):
     ) -> QPushButton:
         """Add an action button to the banner.
 
-        A banner you are meant to answer must not disappear while you reach
-        for it, so the first action cancels auto-dismiss: the banner then
-        stays until an action or the close button is used. Clicking an action
-        runs `callback`, then dismisses the banner.
-
-        Args:
-            text: The button label.
-            callback: Called when the button is clicked, before the dismiss.
+        A banner with an action never times out. Clicking one runs its
+        `callback`, then dismisses the banner.
 
         Returns:
-            QPushButton: The button, for callers who want to restyle it or
-                wire extra signals.
+            QPushButton: The button.
 
         Examples:
             >>> banner.add_action("Retry", retry_publish)
@@ -503,26 +452,21 @@ class FXNotificationBanner(QFrame):
         self._actions_layout.addWidget(button)
         self._action_buttons.append(button)
 
-        # No timing out a banner that is waiting on an answer
         self._timeout = 0
         self._dismiss_timer.stop()
 
-        # The banner just grew, so the ones stacked under it have moved
+        self._refit()
+        return button
+
+    def _refit(self) -> None:
+        """Fit the banner to its content and move the ones stacked under it."""
         self.adjustSize()
         if not self.isHidden() and self.parent():
             self._reposition_notifications(self.parent())
 
-        return button
-
     def _action_clicked(self, _=False) -> None:
-        self._run_action(self.sender().callback)
-
-    def _run_action(self, callback: Optional[Callable[[], None]]) -> None:
-        """Run an action's callback, then close the banner.
-
-        Warning:
-            This method is intended for internal use only.
-        """
+        """Run the clicked action's callback, then close the banner."""
+        callback = self.sender().callback
         if callback is not None:
             callback()
         self.dismiss()
@@ -532,20 +476,13 @@ class FXNotificationBanner(QFrame):
         return self._message
 
     def set_message(self, message: str) -> None:
-        """Set the notification message.
-
-        Args:
-            message: The new message text.
-        """
+        """Show `message`, refitting the card and the stack."""
         self._message = message
         self._message_label.setText(message)
+        self._refit()
 
     def set_timeout(self, timeout: int) -> None:
-        """Set the auto-dismiss timeout; a shown banner counts from now.
-
-        Args:
-            timeout: Timeout in milliseconds (0 = no auto-dismiss).
-        """
+        """Set the timeout in ms, 0 for none; a shown card counts from now."""
         self._timeout = timeout
         self._dismiss_timer.stop()
         if timeout > 0 and not self.isHidden() and not self._dismissing:

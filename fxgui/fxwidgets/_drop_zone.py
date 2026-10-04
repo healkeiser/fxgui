@@ -243,11 +243,7 @@ class FXDropZone(QWidget):
         fxutils.repolish(self._drop_area)
 
     def _flash_feedback(self, feedback_type: str) -> None:
-        """Edge the area in a feedback colour for FLASH_MS.
-
-        Args:
-            feedback_type: Either 'success' or 'error'.
-        """
+        """Edge the area in `feedback_type`, success or error, for FLASH_MS."""
         self._set_drop_state(feedback_type)
         self._update_icon(f"feedback_{feedback_type}_foreground")
         self._flash_timer.start(self.FLASH_MS)
@@ -311,11 +307,7 @@ class FXDropZone(QWidget):
         fxutils.popup_menu(menu, at)
 
     def _remove_file(self, path: Path) -> None:
-        """Remove a single file from the selection.
-
-        Args:
-            path: The path to remove.
-        """
+        """Drop `path` from the selection and say `file_removed`."""
         if path in self._selected_files:
             self._selected_files.remove(path)
             self._update_file_tree()
@@ -450,12 +442,10 @@ class FXDropZone(QWidget):
         return None if self._extensions is None else set(self._extensions)
 
     def set_extensions(self, value: Optional[Iterable[str]]) -> None:
-        """Set the accepted extensions; None accepts all."""
-        self._extensions = (
-            None
-            if value is None
-            else {"." + ext.lower().lstrip(".") for ext in value}
-        )
+        """Set the accepted extensions; None or none at all accepts all."""
+        self._extensions = {
+            "." + ext.lower().lstrip(".") for ext in value or ()
+        } or None
         if self._extensions:
             self._formats_label.setText(
                 f"Accepted formats: {', '.join(sorted(self._extensions))}"
@@ -485,29 +475,17 @@ class FXDropZone(QWidget):
         return self._file_tree if self._show_tree else None
 
     def set_icon(self, icon_name: str) -> None:
-        """Set the icon displayed in the drop zone.
-
-        Args:
-            icon_name: Name of the icon (from fxicons).
-        """
+        """Show the fxicons icon `icon_name` in the area."""
         self._icon_name = icon_name
         self._update_icon()
 
     def set_files(self, paths: List[Path]) -> None:
-        """Set the selected files, saying nothing.
-
-        Args:
-            paths: List of paths to set as selected.
-        """
+        """Replace the selected files, saying nothing."""
         self._selected_files = list(paths)
         self._update_file_tree()
 
     def add_files(self, paths: List[Path]) -> None:
-        """Add files to the current selection, saying `files_dropped`.
-
-        Args:
-            paths: List of paths to add.
-        """
+        """Add the paths not held yet, saying `files_dropped`."""
         self._on_files_added(paths)
 
     def clear(self) -> None:

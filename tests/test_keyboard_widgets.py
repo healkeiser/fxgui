@@ -1,6 +1,7 @@
 """FXKeyboardTree, FXSplitButton and FXFilteredTree answer the keyboard."""
 
 # Third-party
+import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
@@ -129,11 +130,15 @@ def _split(qtbot):
     return window, button, menu
 
 
-def test_enter_clicks_a_split_button(qtbot):
+@pytest.mark.parametrize(
+    "key, modifiers",
+    [(Qt.Key_Return, Qt.NoModifier), (Qt.Key_Enter, Qt.KeypadModifier)],
+)
+def test_enter_clicks_a_split_button(qtbot, key, modifiers):
     _window, button, _menu = _split(qtbot)
     clicks = []
     button.clicked.connect(lambda: clicks.append(True))
-    _press(Qt.Key_Return)
+    _press(key, modifiers)
     assert clicks == [True]
 
 
@@ -218,14 +223,6 @@ def test_the_fold_buttons_wear_the_house_tip(qtbot):
     qtbot.addWidget(panel)
     assert panel.expand_button.statusTip() == "Expand all"
     assert panel.collapse_button.statusTip() == "Collapse all"
-
-
-def test_keypad_enter_clicks_a_split_button(qtbot):
-    _window, button, _menu = _split(qtbot)
-    clicks = []
-    button.clicked.connect(lambda: clicks.append(True))
-    _press(Qt.Key_Enter, Qt.KeypadModifier)
-    assert clicks == [True]
 
 
 def test_a_filtered_tree_holds_a_row_of_actions_under_its_tree(qtbot):

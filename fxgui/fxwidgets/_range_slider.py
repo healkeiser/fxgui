@@ -24,10 +24,10 @@ _LABEL_GAP = 4
 
 
 class FXRangeSlider(QWidget):
-    """A slider with two handles for selecting a min/max range.
+    """A slider with two handles for a low and a high value.
 
-    This widget provides a dual-handle slider perfect for filtering
-    values within a range (e.g., frame ranges, price ranges).
+    Arrows move the active handle, Page keys a tenth of the range, Space
+    switches handle.
 
     Args:
         parent: Parent widget.
@@ -79,22 +79,18 @@ class FXRangeSlider(QWidget):
         )
         self._show_values = show_values
 
-        # UI state
         self._pressed_handle = self.HANDLE_NONE
         self._press_x = 0.0
         self._hover_handle = self.HANDLE_NONE
-        # Handle addressed by keyboard input (arrow keys); Tab toggles it
-        # while the widget has focus.
+        # The handle the keys move; Space switches it.
         self._active_handle = self.HANDLE_LOW
         # A QSlider's 16 px handle on its 4 px groove.
         self._handle_radius = 8
         self._track_height = 4
 
-        # Setup widget
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setMouseTracking(True)
         self.setCursor(Qt.PointingHandCursor)
-        # Keyboard: arrows adjust the active handle, Space switches handle
         self.setFocusPolicy(Qt.StrongFocus)
 
     def sizeHint(self):
@@ -139,20 +135,15 @@ class FXRangeSlider(QWidget):
             self.update()
 
     def set_values(self, low: int, high: int) -> None:
-        """Set both low and high values.
-
-        Args:
-            low: The low value.
-            high: The high value.
-        """
+        """Set both values, clamped; signal only what moved."""
         low, high = self._clamped(low, high)
-        changed = low != self._low or high != self._high
-        self._low = low
-        self._high = high
-
-        if changed:
+        moved_low, moved_high = low != self._low, high != self._high
+        self._low, self._high = low, high
+        if moved_low:
             self.low_changed.emit(low)
+        if moved_high:
             self.high_changed.emit(high)
+        if moved_low or moved_high:
             self.range_changed.emit(low, high)
         self.update()
 
@@ -376,7 +367,6 @@ class FXRangeSlider(QWidget):
             else:
                 self.set_high(max(value, self._low))
         else:
-            # Update hover state
             new_hover = self._handle_at_position(x)
             if new_hover != self._hover_handle:
                 self._hover_handle = new_hover
