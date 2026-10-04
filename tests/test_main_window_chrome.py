@@ -1,20 +1,4 @@
-"""Three things `FXMainWindow` did to every window it built, whether or
-not the window wanted them.
-
-- It built a toolbar, with no way to say no. An application with nothing
-  to browse and nothing to refresh has no trigger for any of the four
-  buttons, and a control that does nothing reads as broken.
-- It resized every window to a fixed 500x600 in its own constructor,
-  before the subclass had put anything inside it. Measured on a window
-  with a log panel: 500x674 against a `sizeHint` of 506x931, which
-  pinned every widget to its minimum and left the panel four lines tall.
-- It stamped its own logo on every window unless handed a path to an icon
-  FILE, overwriting an application icon set on the running
-  `QApplication` -- so an application mark became a per-window accident.
-
-The toolbar and the icon are fixed outright. The resize is opt-in, since
-changing the opening size of every existing window silently is not a fix.
-"""
+"""FXMainWindow's size, icon and toolbar follow what the caller asked for."""
 
 # Third-party
 from qtpy.QtCore import QSize
@@ -37,13 +21,7 @@ def _an_icon(color="#ff0000"):
 
 
 class _Roomy(QWidget):
-    """A widget that ASKS for more room than it insists on.
-
-    Which is the shape the finding was measured in: every widget pinned
-    to its own minimum, and a `sizeHint` far above that. A widget whose
-    MINIMUM is large would be enlarged by Qt itself whatever this class
-    resized to, and would prove nothing about the flag.
-    """
+    """A widget that ASKS for more room than it insists on."""
 
     def sizeHint(self):
         return QSize(506, 931)
@@ -98,8 +76,7 @@ def test_fit_to_contents_only_grows(qtbot):
 
 
 def test_fit_to_contents_does_not_undo_a_later_resize(qtbot):
-    """Once only. A window an artist has dragged smaller must not be
-    pushed back out the next time it is shown."""
+    """Once only."""
     window = _stuffed(True)
     qtbot.addWidget(window)
     window.show()
@@ -126,8 +103,6 @@ def test_a_window_takes_a_qicon(qtbot):
 
 
 def test_a_window_leaves_the_applications_own_icon_alone(qtbot):
-    """The defect: an icon set on the running application reaches every
-    other window in the process and was overwritten on exactly these."""
     application = QApplication.instance()
     before = application.windowIcon()
     application.setWindowIcon(_an_icon("#00ff00"))
@@ -173,15 +148,7 @@ def test_a_path_still_wins_over_the_applications_icon(qtbot):
 
 
 def test_the_system_tray_takes_a_qicon_too(qtbot):
-    """An application whose mark comes out of fxgui's own icon set has it
-    in a `QIcon`, and this class documented a path only.
-
-    Measured before the signature was widened: it already worked.
-    `QIcon(QIcon)` is Qt's own copy constructor, so the old expression
-    accepted an icon it never said it would, cache key and all. This
-    pins the shape so the promise and the behaviour cannot drift apart
-    again -- it is not a regression test for a break.
-    """
+    """FXSystemTray takes a `QIcon` as well as a path."""
     from fxgui.fxwidgets import FXSystemTray
 
     icon = _an_icon("#123456")

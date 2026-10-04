@@ -211,7 +211,7 @@ def test_a_file_gone_from_disk_lists_with_no_size(qtbot, qapp, tmp_path):
 def test_an_empty_extension_set_accepts_everything_as_none_does(
     qtbot, qapp, tmp_path
 ):
-    """Browse already took an empty set as no filter; a drop refused all."""
+    """An empty set is no filter, for a drop as for Browse."""
     notes = tmp_path / "notes.txt"
     notes.write_text("x")
     zone = FXDropZone(extensions=set())

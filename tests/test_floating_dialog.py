@@ -99,7 +99,7 @@ def test_the_close_button_rejects_and_deletes_the_dialog(qtbot):
 
     with qtbot.waitSignal(dialog.rejected):
         dialog.button_close.click()
-    # PySide6 6.5 runs a deleteLater only once control is back in the loop
+    # A deleteLater runs only once control is back in the loop.
     # it was posted from; delivering it here proves one was posted.
     QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
 

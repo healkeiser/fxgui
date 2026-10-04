@@ -52,7 +52,6 @@ def test_a_row_with_one_version_paints_no_pill(qtbot):
 
 
 def test_a_row_with_no_choices_paints_no_pill(qtbot):
-    """The 1.x defect written as a test: no choices, no control."""
 
     none, _, _ = _tree(qtbot, choices=[])
     rect = none.visualRect(none.model().index(0, 1))
@@ -191,13 +190,7 @@ def test_a_click_outside_the_pill_announces_nothing(qtbot):
 
 
 def test_the_drawn_pill_and_the_clickable_one_are_the_same_pill(qtbot):
-    """A row with its own font drew one pill and hit-tested another.
-
-    `paint` is handed an option run through `initStyleOption`, which is what
-    applies a row's `FontRole`. `sizeHint` and `editorEvent` are handed the
-    view's raw option, which is not. Measured against two fonts the same pill
-    lands in two places, and the gap is dead pixels that look clickable.
-    """
+    """A row with its own font drew one pill and hit-tested another."""
 
     tree, delegate, item = _tree(qtbot, choices=["v001", "v002", "v003"])
     big = QFont()

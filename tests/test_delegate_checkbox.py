@@ -1,15 +1,4 @@
-"""A tickable row drawn through FXThumbnailDelegate shows and takes its tick.
-
-Regression: the delegate painted column 0 itself -- icon, title, description,
-indicators -- and never the check box a `Qt.ItemIsUserCheckable` item
-carries. The base class's `editorEvent` went on toggling the check state
-under a click, so a tickable tree given this delegate had ticks nobody
-could see and a box nobody could aim at.
-
-What these tests pin: the box is painted where the style puts it, the text
-starts to its right, a click on it toggles the item, and `sizeHint` makes
-room for it.
-"""
+"""A tickable row drawn through FXThumbnailDelegate shows and takes its tick."""
 
 # Third-party
 from qtpy.QtCore import QRect, Qt

@@ -1,9 +1,4 @@
-"""Tests for `fxgui.fxwidgets.FXApplication` inside a host application.
-
-Regression: constructing FXApplication while another QApplication exists
-(the situation inside Houdini/Maya/Nuke) raised RuntimeError, making the
-library unusable in the DCCs it targets.
-"""
+"""Tests for `fxgui.fxwidgets.FXApplication` inside a host application."""
 
 # Third-party
 

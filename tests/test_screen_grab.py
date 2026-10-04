@@ -2,6 +2,7 @@
 back, and never quits the application."""
 
 # Third-party
+import pytest
 from qtpy.QtCore import QCoreApplication, QEvent, QPoint, Qt, QTimer
 from qtpy.QtGui import QKeyEvent, QMouseEvent
 from qtpy.QtWidgets import QApplication, QWidget
@@ -10,7 +11,13 @@ from qtpy.QtWidgets import QApplication, QWidget
 from fxgui.fxwidgets import _screen_grab, grab_screen_region
 
 
-SETTLE = _screen_grab.HIDE_SETTLE_MS
+# A settle the tests can wait out quickly; the real one is 250 ms.
+SETTLE = 10
+
+
+@pytest.fixture(autouse=True)
+def _quick_settle(monkeypatch):
+    monkeypatch.setattr(_screen_grab, "HIDE_SETTLE_MS", SETTLE)
 
 
 def _send_to_the_overlay(window, event):

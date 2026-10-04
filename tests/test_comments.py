@@ -228,8 +228,6 @@ def test_the_box_holds_its_lines_inside_the_frame_its_sheet_gives(qtbot):
 
 
 def test_a_name_list_outlives_the_theme_looking_at_it(qtbot):
-    """PySide6 6.5 handed a parentless list Qt made to Python when asked its
-    parent, and freed it with the wrapper: the next key crashed."""
     import gc
 
     from fxgui import _compat

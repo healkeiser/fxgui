@@ -54,12 +54,12 @@ def test_actions_cancel_the_auto_dismiss(qtbot):
     banner = FXNotificationBanner(
         parent=parent,
         message="Overwrite the published version?",
-        timeout=200,
+        timeout=20,
         actions={"Overwrite": lambda: None, "Keep both": lambda: None},
     )
     banner.show()
 
-    qtbot.wait(400)  # Twice the timeout it was asked for
+    qtbot.wait(40)  # Twice the timeout it was asked for
     assert banner.isVisible()
     assert not banner._dismiss_timer.isActive()
 

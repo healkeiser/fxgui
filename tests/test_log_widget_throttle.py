@@ -1,12 +1,4 @@
-"""What the log widget's throttle is allowed to delay, and what it is
-not allowed to drop.
-
-The throttle exists so a flood of records cannot freeze the UI, and the
-one thing it must not buy that with is records. Measured against the
-single-slot version: six entries handed over back to back left TWO in
-the pane, and only around 20ms of spacing between them let all six
-survive. Nothing on screen said any had gone.
-"""
+"""The log throttle delays repaints; it never drops or reorders a record."""
 
 # Third-party
 from qtpy.QtCore import QTimer
@@ -29,16 +21,15 @@ def _lines(pane):
     return [line for line in pane.output_area.toPlainText().split("\n") if line]
 
 
-def test_a_burst_of_records_all_reach_the_pane(qtbot, qapp):
-    """Six entries in one go, with no event loop pass between them: the
-    exact shape that used to leave two."""
+def test_a_burst_of_records_all_reach_the_pane_in_order(qtbot, qapp):
+    """Twenty entries with no event loop pass between them."""
     pane = _pane(qtbot)
 
-    for index in range(6):
-        pane.append_log(f"entry {index}")
+    for index in range(20):
+        pane.append_log(f"{index:02d}")
 
-    qtbot.waitUntil(lambda: len(_lines(pane)) == 6)
-    assert _lines(pane) == [f"entry {index}" for index in range(6)]
+    qtbot.waitUntil(lambda: len(_lines(pane)) == 20)
+    assert _lines(pane) == [f"{index:02d}" for index in range(20)]
 
 
 def test_the_first_record_still_arrives_without_waiting(qtbot, qapp):
@@ -50,18 +41,6 @@ def test_the_first_record_still_arrives_without_waiting(qtbot, qapp):
     pane.append_log("the first thing that happened")
 
     assert _lines(pane) == ["the first thing that happened"]
-
-
-def test_records_queued_behind_the_timer_keep_their_order(qtbot, qapp):
-    """Out of order is as misleading as missing: a log's whole claim is
-    that what is above happened before what is below."""
-    pane = _pane(qtbot)
-
-    for index in range(20):
-        pane.append_log(f"{index:02d}")
-
-    qtbot.waitUntil(lambda: len(_lines(pane)) == 20)
-    assert _lines(pane) == [f"{index:02d}" for index in range(20)]
 
 
 def test_records_arriving_across_several_windows_all_survive(qtbot, qapp):
@@ -121,13 +100,7 @@ def test_each_queued_entry_is_parsed_for_ansi_on_its_own(qtbot, qapp):
 
 
 def test_one_flush_is_bounded_however_large_the_burst(qtbot, qapp):
-    """Keeping every record is only half of staying responsive.
-
-    An unbounded drain makes one flush cost O(burst), and a producer that
-    never yields the event loop hands over the whole burst at once.
-    Measured at about 8.7 microseconds a record: 50,000 in one flush is a
-    513ms freeze on the main thread.
-    """
+    """Keeping every record is only half of staying responsive."""
     pane = _pane(qtbot)
     burst = FXOutputLogWidget.MAX_RECORDS_PER_FLUSH * 3
 
@@ -173,10 +146,6 @@ def test_the_flush_chain_stops_when_the_queue_empties(qtbot, qapp):
 
 
 def test_the_document_is_unbounded_by_default(qtbot, qapp):
-    """Unchanged behaviour, and deliberately so: pruning the OLDEST
-    records silently is the same class of defect as dropping the newest,
-    and only a consumer knows whether a file behind the pane makes it
-    safe."""
     pane = _pane(qtbot)
 
     assert pane.output_area.document().maximumBlockCount() == 0

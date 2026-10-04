@@ -1,16 +1,5 @@
-"""The breadcrumb has to look like something you can click, and the
-editor it opens has to close when you click away from it.
-
-Measured on the plain widget: every segment is a `QPushButton` and none
-of them said so -- flat text on the window's own background, no cursor
-change, nothing under the pointer. The one control that walks the
-hierarchy read as a row of labels, and an artist had no reason to try it.
-
-The second half is the editor. It exited on the line edit's `FocusOut`,
-which covers a press that lands on something focusable and nothing else:
-a press on a heading, a tree's own header or the window's background
-moves no focus at all, so the editor stayed up with the artist looking at
-a path they had already left.
+"""The breadcrumb has to look like something you can click, and the editor it
+opens has to close when you click away from it.
 """
 
 # Third-party
@@ -233,9 +222,6 @@ def _press_on(widget):
 
 
 def test_a_press_that_moves_no_focus_closes_the_editor(qtbot, qapp):
-    """The whole finding: a heading, a tree header or a window
-    background takes no focus, so `FocusOut` never fires and the editor
-    stayed open over a path the artist had already left."""
     host = QWidget()
     qtbot.addWidget(host)
     layout = QVBoxLayout(host)

@@ -64,7 +64,7 @@ def test_a_theme_switch_recolours_a_line_already_shown(qtbot, qapp):
 def test_a_flush_and_a_theme_switch_each_change_the_document_once(
     qtbot, qapp
 ):
-    """One change notice per batch: one per line took 10 s on 5,000 lines."""
+    """One change notice, so one relayout, per batch rather than per line."""
     fxstyle.apply_theme("dark")
     pane = FXOutputLogWidget()
     qtbot.addWidget(pane)

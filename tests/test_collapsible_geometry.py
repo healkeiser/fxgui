@@ -1,24 +1,4 @@
-"""Four things a collapsible section got wrong about its own height.
-
-All four are inherited by `FXAccordion`, which is built out of these.
-
-- A layout raises its widget's own minimum height when a child grows and
-  never lowers it again, and every layout between a section and the
-  window caches the height it worked out for a given width. So a section
-  opened once left the window permanently taller. Measured on PySide6
-  6.11: 552px against the 472px it started at, and invalidating the outer
-  layout changed nothing, because the sections sat in a nested one and an
-  outer layout does not reach into one.
-- The animation drives `maximumHeight`, so an opened section stayed
-  capped at whatever height its content wanted at the moment it opened.
-  Anything added afterwards was clipped by a number from before.
-- A group run backwards starts at its own end value, so a header clicked
-  twice quickly snapped to a height it had never reached and fell from
-  there.
-- `expanded` and `collapsed` both arrive before a single frame is drawn;
-  which is no use to a window sized to its own contents: it has to grow
-  WITH the movement, not after it.
-"""
+"""A collapsible section's height opens, shuts and settles where it should."""
 
 # Third-party
 from qtpy.QtCore import QAbstractAnimation
@@ -68,16 +48,7 @@ def _settled():
 
 
 def _nested_host(qtbot, section):
-    """A window whose section sits in a NESTED layout.
-
-    Which is the shape the geometry finding was measured in, and the
-    reason it could not be fixed by invalidating the window's own outer
-    layout: that call does not reach into a nested one.
-
-    The caller MUST keep the returned window: pytest-qt holds only a
-    weak reference, so a discarded host is collected and takes the
-    section inside it along.
-    """
+    """A window whose section sits in a NESTED layout."""
     host = QWidget()
     qtbot.addWidget(host)
     outer = QVBoxLayout(host)
@@ -91,8 +62,6 @@ def _nested_host(qtbot, section):
 
 
 def test_a_section_shut_again_gives_the_window_its_height_back(qtbot, qapp):
-    """The permanently-taller-window bug, which every consumer of this
-    class and of FXAccordion has today."""
     section = _section()
     host = _nested_host(qtbot, section)
     shut_height = host.sizeHint().height()
@@ -143,10 +112,6 @@ def test_a_row_added_after_opening_is_not_clipped(qtbot, qapp):
 
 
 def test_a_requested_cap_is_still_a_cap(qtbot, qapp):
-    """`max_content_height` is a limit the caller asked for, so releasing
-    the animation's cap must not release that one -- and it is the cap
-    itself rather than the measured height, which is what lets taller
-    content scroll instead of being cut."""
     limit = 60
     section = _section(max_content_height=limit)
 
@@ -164,9 +129,7 @@ def _first_animation(section):
 def test_an_interrupted_opening_is_reversed_from_where_it_got_to(
     qtbot, qapp
 ):
-    """A header clicked twice quickly. Measured on the group run
-    backwards: the content snapped to its full height and fell from
-    there, an end it had never reached."""
+    """A header clicked twice quickly."""
     section = _section(animation_duration=400)
     _host = _nested_host(qtbot, section)
 
@@ -191,16 +154,7 @@ def test_an_interrupted_opening_is_reversed_from_where_it_got_to(
 def test_a_collapse_after_a_finished_expansion_does_not_grow_first(
     qtbot, qapp
 ):
-    """The shape the interrupted-movement tests cannot reach.
-
-    They interrupt mid-flight, where `maximumHeight` genuinely IS the
-    height on screen, so a start value read from it is right for the
-    wrong reason. Once an expansion FINISHES, the maximum is released to
-    the cap -- so reading it there starts the collapse from the cap.
-    Measured on a 90px body under the default 300px cap: the first frame
-    jumped to 300, a 210px upward lurch, out of the same commit that
-    fixed the mid-flight jump.
-    """
+    """The shape the interrupted-movement tests cannot reach."""
     section = _section(animation_duration=400)
     _host = _nested_host(qtbot, section)
     section.expand(animate=False)
