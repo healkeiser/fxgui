@@ -117,7 +117,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXRatingWidget` | Star rating input, halves optional |
 | `FXResizedScrollArea` | Scroll area whose height follows its content, between a floor and a cap |
 | `FXSearchBar` | Search field with a clear button and a debounced search signal |
-| `FXSeating` | Seats a tray panel off its icon or the pointer and slides it in |
+| `FXSeating` | Seats a tray panel in the screen corner nearest its icon and slides it in |
 | `FXSingleInstance` | Lock on a local socket name; a second start wakes the first |
 | `FXSingleton` | Metaclass for Qt classes that have one instance |
 | `FXSortedTreeWidgetItem` | Tree row that sorts numbers in text naturally (v2 before v10) |

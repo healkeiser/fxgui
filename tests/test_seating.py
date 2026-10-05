@@ -1,4 +1,4 @@
-"""A tray panel sits off its icon or the pointer, inside the screen, and
+"""A tray panel sits in the screen corner nearest its icon, and
 rises into place once."""
 
 # Third-party
@@ -16,28 +16,28 @@ GAP = FXSeating.EDGE_GAP
 corner = FXSeating.popup_corner
 
 
-def test_a_visible_tray_icon_anchors_the_panel_above_itself():
-    tray = QRect(1600, 1000, 24, 24)
-    at = corner(SIZE, tray, None, SCREEN)
-    assert at.y() == tray.top() - SIZE.height() - GAP
-    assert at.x() == SCREEN.right() - SIZE.width() + 1 - GAP
+LOWER_RIGHT = QPoint(
+    SCREEN.right() - SIZE.width() + 1 - GAP,
+    SCREEN.bottom() - SIZE.height() + 1 - GAP,
+)
 
 
-def test_a_tray_icon_at_the_top_puts_the_panel_below_it():
-    tray = QRect(1600, 0, 24, 24)
-    assert corner(SIZE, tray, None, SCREEN).y() == tray.bottom() + 1 + GAP
+def test_a_tray_icon_seats_the_panel_one_gap_off_both_near_edges():
+    seat = QRect(corner(SIZE, QRect(1600, 1040, 24, 24), None, SCREEN), SIZE)
+    assert SCREEN.right() - seat.right() == GAP
+    assert SCREEN.bottom() - seat.bottom() == GAP
 
 
-def test_an_empty_tray_rect_anchors_at_the_cursor():
-    at = corner(SIZE, QRect(), QPoint(600, 500), SCREEN)
-    assert at == QPoint(600, 500 - SIZE.height() - GAP)
+def test_a_tray_icon_at_the_top_left_takes_that_corner():
+    assert corner(SIZE, QRect(100, 0, 24, 24), None, SCREEN) == QPoint(GAP, GAP)
+
+
+def test_a_click_in_the_overflow_flyout_still_takes_the_corner():
+    assert corner(SIZE, QRect(), QPoint(1500, 1000), SCREEN) == LOWER_RIGHT
 
 
 def test_no_tray_and_no_cursor_takes_the_work_area_s_corner():
-    assert corner(SIZE, QRect(), None, SCREEN) == QPoint(
-        SCREEN.right() - SIZE.width() + 1 - GAP,
-        SCREEN.bottom() - SIZE.height() + 1 - GAP,
-    )
+    assert corner(SIZE, QRect(), None, SCREEN) == LOWER_RIGHT
 
 
 def test_the_corner_is_always_clamped_inside_the_screen():
@@ -137,7 +137,5 @@ def test_a_centred_panel_forgets_its_anchor(qtbot):
 def test_clamp_keeps_a_rect_inside_the_screen_off_its_edges_by_the_gap():
     clamp = FXSeating.clamp
     assert clamp(QPoint(1900, -5), SIZE, SCREEN) == QPoint(1920 - 320, 0)
-    assert clamp(QPoint(-5, 900), SIZE, SCREEN, gap=10) == QPoint(
-        10, 1040 - 420 - 10
-    )
+    assert clamp(QPoint(-5, 900), SIZE, SCREEN, gap=10) == QPoint(10, 1040 - 420 - 10)
     assert clamp(QPoint(100, 100), SIZE, SCREEN) == QPoint(100, 100)

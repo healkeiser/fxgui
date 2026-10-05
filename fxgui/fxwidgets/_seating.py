@@ -17,12 +17,12 @@ from qtpy.QtWidgets import QWidget
 
 
 class FXSeating:
-    """Seat a panel against a tray icon or the pointer, and slide it in.
+    """Seat a panel in the screen corner nearest its tray icon; slide it in.
 
-    The panel sits above the tray icon when there is room, else below; with
-    no icon rectangle (the icon is in the overflow flyout) at the pointer;
-    with neither, at the screen's lower right. A panel not yet on screen
-    rises into its seat while it fades up.
+    The corner nearest the icon, else the pointer (the icon is in the
+    overflow flyout), else the lower right; `EDGE_GAP` off both edges, as
+    Windows seats its own flyouts. A panel not yet on screen rises into its
+    seat while it fades up.
 
     Args:
         panel: The top-level widget to seat.
@@ -53,9 +53,7 @@ class FXSeating:
             self.entrance.addAnimation(step)
 
     @staticmethod
-    def anchor_point(
-        tray: QRect, cursor: Optional[QPoint]
-    ) -> Optional[QPoint]:
+    def anchor_point(tray: QRect, cursor: Optional[QPoint]) -> Optional[QPoint]:
         """Return the tray icon's middle, else `cursor`, else None."""
         if not tray.isEmpty():
             return tray.center()
@@ -78,22 +76,16 @@ class FXSeating:
             cursor: The pointer for a clicked show, None for an automatic one.
             screen: The target screen's `availableGeometry()`.
         """
-        gap = cls.EDGE_GAP
-        if not tray.isEmpty():
-            x = tray.center().x()
-            above = tray.top() - size.height() - gap
-            y = above if above >= screen.top() else tray.bottom() + 1 + gap
-        elif cursor is not None:
-            x, y = cursor.x(), cursor.y() - size.height() - gap
-        else:
-            x = screen.right() - size.width() + 1 - gap
-            y = screen.bottom() - size.height() + 1 - gap
-        return cls.clamp(QPoint(x, y), size, screen, gap)
+        point = cls.anchor_point(tray, cursor)
+        if point is None:
+            point = screen.bottomRight()
+        # Pushed to the edge, so `clamp` leaves the same gap on both sides.
+        x = screen.left() if point.x() < screen.center().x() else screen.right()
+        y = screen.top() if point.y() < screen.center().y() else screen.bottom()
+        return cls.clamp(QPoint(x, y), size, screen, cls.EDGE_GAP)
 
     @staticmethod
-    def clamp(
-        corner: QPoint, size: QSize, screen: QRect, gap: int = 0
-    ) -> QPoint:
+    def clamp(corner: QPoint, size: QSize, screen: QRect, gap: int = 0) -> QPoint:
         """Return `corner` moved so a `size` rect sits `gap` inside `screen`."""
         right = screen.right() - size.width() + 1 - gap
         bottom = screen.bottom() - size.height() + 1 - gap
@@ -102,9 +94,7 @@ class FXSeating:
             max(screen.top() + gap, min(corner.y(), bottom)),
         )
 
-    def screen_for(
-        self, tray: QRect, cursor: Optional[QPoint]
-    ) -> Optional[QScreen]:
+    def screen_for(self, tray: QRect, cursor: Optional[QPoint]) -> Optional[QScreen]:
         """Return the anchor's screen, else the panel's own.
 
         The anchor's, not the panel's: on two monitors the panel may be a
