@@ -454,8 +454,8 @@ def test_reopening_after_a_choice_step_lists_the_commands_again(qtbot):
 
 def test_a_library_icon_shows_and_a_missing_one_falls_back(qtbot):
     commands = [
-        FXCommand("Houdini", icon="dcc:houdini_mark"),
-        FXCommand("In-house", icon="dcc:no_such_tool"),
+        FXCommand("Houdini", icon="brands:houdini_mark"),
+        FXCommand("In-house", icon="brands:no_such_tool"),
     ]
     _window_, palette = _palette(qtbot, commands)
 

@@ -153,7 +153,7 @@ def test_get_pixmap_is_the_engines_drawing(qapp):
 
 def test_a_fallback_name_keeps_the_size_and_colour_asked(qapp):
     icon = fxicons.get_icon(
-        "no_such_mark", 20, 20, color="#00ff00", library="dcc",
+        "no_such_mark", 20, 20, color="#00ff00", library="brands",
         fallback="check")
     assert icon.actualSize(QSize(64, 64)) == QSize(20, 20)
     assert first_ink(_img(icon, QIcon.Normal)) == "#00ff00"

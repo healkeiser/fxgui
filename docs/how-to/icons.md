@@ -2,7 +2,9 @@
 
 ## Use `fxicons`
 
-[fxicons](../technical/fxgui/fxicons.md) is a module that provides a way to use library icons in your applications. It comes with 5 libraries by default: "material", "fontawesome", "simple", "dcc", and "beacon". You can add your own libraries by using the `add_library` function.
+[fxicons](../technical/fxgui/fxicons.md) is a module that provides a way to use library icons in your applications. It comes with 5 libraries by default: "material", "fontawesome", "simple", "brands", and "beacon". You can add your own libraries by using the `add_library` function.
+
+"brands" holds the logos of the tools a studio uses: DCCs, renderers, trackers, file formats and dev tools. It used to be called "dcc", and that name still works.
 
 ### Basic Usage
 
@@ -51,7 +53,7 @@ be overridden on the call itself:
 ```python
 from fxgui import fxicons
 
-icon = fxicons.get_icon("houdini", library="dcc")
+icon = fxicons.get_icon("houdini", library="brands")
 small_red = fxicons.get_icon("home", width=32, height=32, color="red")
 ```
 
@@ -67,9 +69,9 @@ from fxgui import fxicons
 
 tool = "my_inhouse_tool"  # a name read from your tracker
 
-# A DCC the "dcc" library carries a brand mark for gets it; anything
+# A tool the "brands" library carries a logo for gets it; anything
 # else gets the general-purpose icon rather than no icon at all.
-icon = fxicons.get_icon(tool, library="dcc", fallback="apps")
+icon = fxicons.get_icon(tool, library="brands", fallback="apps")
 ```
 
 A fallback **name** is looked up in the *default* library, not in the one
@@ -85,7 +87,7 @@ Pass a `QIcon` instead of a name to be answered with it as it is, and
 from qtpy.QtGui import QIcon
 from fxgui import fxicons
 
-icon = fxicons.get_icon("my_inhouse_tool", library="dcc", fallback=QIcon())
+icon = fxicons.get_icon("my_inhouse_tool", library="brands", fallback=QIcon())
 ```
 
 A fallback that is not in the default library either still raises, since
@@ -167,7 +169,7 @@ for a button that hovers on a coloured fill, as the send button above
 does: a hovered button sits on the grey hover fill, so by default its
 icon keeps the resting ink.
 
-A full-colour library (`dcc`, or one added with `recolor=False`) keeps its
+A full-colour library (`brands`, or one added with `recolor=False`) keeps its
 own pixels in every mode, whatever colour you ask for.
 
 Where icons share one ink, as the rows of a command palette do, ask for a
@@ -177,10 +179,10 @@ Houdini, Maya, Nuke, Blender, Cinema 4D, DaVinci Resolve, Unreal Engine,
 After Effects, Photoshop and Substance Painter.
 
 ```python
-icon = fxicons.get_icon("houdini_mark", library="dcc")
+icon = fxicons.get_icon("houdini_mark", library="brands")
 ```
 
-An `FXCommand` names one as `dcc:houdini_mark`.
+An `FXCommand` names one as `brands:houdini_mark`.
 
 ### An icon in a label
 

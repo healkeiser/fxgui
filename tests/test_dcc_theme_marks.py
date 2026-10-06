@@ -1,4 +1,4 @@
-"""The single-colour dcc marks follow the theme and carry no tile."""
+"""The single-colour brand marks follow the theme and carry no tile."""
 
 from pathlib import Path
 
@@ -21,7 +21,7 @@ MARKS = [
     "nuke_mark",
     "unreal_engine_mark",
 ]
-SVG_DIR = Path(__file__).parent.parent / "fxgui" / "icons" / "dcc" / "svg"
+SVG_DIR = Path(__file__).parent.parent / "fxgui" / "icons" / "brands" / "svg"
 
 
 def _ink(icon):
@@ -45,13 +45,13 @@ def test_each_mark_reads_on_the_surface(qapp, theme):
     fxstyle.apply_theme(theme)
     surface = fxstyle.colors().surface
     for name in MARKS:
-        ink = _ink(fxicons.get_icon(name, library="dcc"))
+        ink = _ink(fxicons.get_icon(name, library="brands"))
         assert fxstyle.get_contrast_ratio(ink, surface) >= 3.0, (name, ink)
 
 
 @pytest.mark.parametrize("name", MARKS)
 def test_a_theme_switch_redraws_the_mark(qapp, name):
-    icon = fxicons.get_icon(name, library="dcc")
+    icon = fxicons.get_icon(name, library="brands")
     fxstyle.apply_theme("light")
     on_light = _ink(icon)
     fxstyle.apply_theme("dark")

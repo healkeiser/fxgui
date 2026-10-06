@@ -1,6 +1,7 @@
 """Icons from the bundled libraries, drawn in the theme's colours.
 
-Material, Font Awesome, Simple Icons, Beacon and the full-colour DCC marks.
+Material, Font Awesome, Simple Icons, Beacon and the full-colour brand logos
+(DCCs, renderers, pipeline tools) with their one-colour marks.
 An icon names theme tokens for its inks; `_ThemedIconEngine` resolves them
 each time Qt draws it and keeps the drawings in `QPixmapCache`.
 
@@ -8,7 +9,7 @@ Examples:
     >>> from fxgui.fxicons import get_icon
     >>> icon = get_icon("home")
     >>> colored_icon = get_icon("settings", color="#FF5722")
-    >>> dcc_icon = get_icon("houdini", library="dcc")
+    >>> logo = get_icon("houdini", library="brands")
 """
 
 # Metadata
@@ -91,22 +92,63 @@ _libraries_info = {
         "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
         "defaults": _LIBRARY_DEFAULTS,
     },
-    "dcc": {
+    "brands": {
         "recolor": False,
         # Single-colour marks, drawn in the theme's icon ink. A `_mark` is a
         # logo's one-colour twin, for where icons share one ink.
         "recolor_names": frozenset({
             "alembic", "3d_equalizer", "rez", "zbrush",
+            "3d_equalizer_mark",
             "adobe_after_effects_mark",
+            "adobe_illustrator_mark",
+            "adobe_mark",
+            "adobe_media_encoder_mark",
             "adobe_photoshop_mark",
+            "adobe_premiere_pro_mark",
+            "adobe_substance_designer_mark",
             "adobe_substance_painter_mark",
+            "adobe_substance_sampler_mark",
+            "adobe_substance_stager_mark",
+            "alembic_mark",
+            "arnold_mark",
             "blender_mark",
             "cinema_4d_mark",
             "davinci_resolve_mark",
+            "deadline_mark",
+            "docker_mark",
+            "flow_production_tracking_mark",
+            "ftrack_mark",
+            "git_mark",
+            "godot_mark",
+            "hiero_mark",
             "houdini_mark",
+            "inkscape_mark",
+            "karma_mark",
+            "katana_mark",
+            "kitsu_mark",
+            "mari_mark",
+            "materialx_mark",
             "maya_mark",
+            "notch_mark",
             "nuke_mark",
+            "octane_mark",
+            "open_exr_mark",
+            "open_rv_mark",
+            "opencolorio_mark",
+            "openimageio_mark",
+            "python_mark",
+            "redshift_mark",
+            "renderman_mark",
+            "rez_mark",
+            "subversion_mark",
+            "touchdesigner_mark",
+            "unity_mark",
             "unreal_engine_mark",
+            "usd_mark",
+            "vlc_mark",
+            "vray_mark",
+            "xstudio_mark",
+            "zbrush_mark",
         }),
         "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
         "defaults": _LIBRARY_DEFAULTS,
@@ -128,6 +170,8 @@ _libraries_info = {
     },
 }
 _DEFAULT_LIBRARY = "material"
+# Old library names, still accepted.
+_LIBRARY_ALIASES = {"dcc": "brands"}
 
 
 def add_library(
@@ -217,7 +261,8 @@ def get_icon_path(
         >>> get_icon_path("lemon", library="fontawesome")
     """
 
-    info = _libraries_info[library or _DEFAULT_LIBRARY]
+    library = _LIBRARY_ALIASES.get(library, library) or _DEFAULT_LIBRARY
+    info = _libraries_info[library]
     if style is None:
         style = info["defaults"].get("style")
     if extension is None:
@@ -226,7 +271,7 @@ def get_icon_path(
     path = info["pattern"].format(
         icon_name=icon_name,
         style=style,
-        library=library or _DEFAULT_LIBRARY,
+        library=library,
         extension=extension,
         root=info.get("root") or fxconstants.ICONS_ROOT,
     ).replace("\\", "/")
@@ -342,7 +387,7 @@ def _resolved(library, width, height, color, icon_name):
     A full-colour icon answers no colour, whatever was asked; a single-colour
     mark in a full-colour library defaults to the "icon" token.
     """
-    library = library or _DEFAULT_LIBRARY
+    library = _LIBRARY_ALIASES.get(library, library) or _DEFAULT_LIBRARY
     info = _libraries_info[library]
     defaults = info["defaults"]
     recolors = info["recolor"] or icon_name in info.get("recolor_names", ())
@@ -598,7 +643,7 @@ def get_icon(
         Mapping open-ended studio data onto a curated set, where a name
         that is not in it is ordinary rather than exceptional:
 
-        >>> get_icon("houdini", library="dcc", fallback="apps")
+        >>> get_icon("houdini", library="brands", fallback="apps")
         >>> get_icon(whatever_the_tracker_said, fallback=QIcon())
     """
 

@@ -66,7 +66,7 @@ class FXCommand:
         enabled: False shows the row greyed; picking it shows `tip`.
         tip: Shown under the list while the row is current.
         icon: An icon's name, drawn left of the label: a material one, or
-            `library:name` for another library, such as `dcc:houdini_mark`.
+            `library:name` for another library, such as `brands:houdini_mark`.
         choices: Picking the row lists what this returns, in place, to pick
             one; a choice with its own `choices` steps in again.
         key: What the palette remembers the row by; the label where empty.

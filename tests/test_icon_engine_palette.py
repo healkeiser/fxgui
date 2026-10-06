@@ -166,12 +166,12 @@ def test_two_thousand_icon_draws_fit_a_small_budget(qtbot):
 
 
 def test_a_full_colour_icon_ignores_a_colour(qapp):
-    plain = fxicons.get_icon("blender", library="dcc").pixmap(_SIZE).toImage()
+    plain = fxicons.get_icon("blender", library="brands").pixmap(_SIZE).toImage()
     asked = fxicons.get_icon(
-        "blender", library="dcc", color="#00ff00").pixmap(_SIZE).toImage()
+        "blender", library="brands", color="#00ff00").pixmap(_SIZE).toImage()
     pixmap = fxicons.get_pixmap(
-        "blender", library="dcc", color="#00ff00", dpr=1.0).toImage()
-    raw = fxicons.get_pixmap("blender", library="dcc", dpr=1.0).toImage()
+        "blender", library="brands", color="#00ff00", dpr=1.0).toImage()
+    raw = fxicons.get_pixmap("blender", library="brands", dpr=1.0).toImage()
 
     assert asked == plain
     assert pixmap == raw
@@ -186,7 +186,7 @@ def test_libraries_declare_whether_they_recolour(qapp, monkeypatch, tmp_path):
     monkeypatch.setattr(fxicons, "_libraries_info", dict(fxicons._libraries_info))
     recolor = {name: info["recolor"] for name, info in fxicons._libraries_info.items()}
     assert recolor == {
-        "beacon": True, "dcc": False, "material": True,
+        "beacon": True, "brands": False, "material": True,
         "fontawesome": True, "simple": True,
     }
     defaults = {"extension": "svg", "style": None, "color": None,

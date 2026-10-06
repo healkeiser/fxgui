@@ -23,7 +23,7 @@ from fxgui import fxicons
 from fxgui.fxwidgets import FXSortedTreeWidgetItem, FXThumbnailDelegate
 
 
-# A brand fxgui's curated "dcc" library does carry, and one no library
+# A brand fxgui's curated "brands" library does carry, and one no library
 # does. The second is the case every consumer of an open-ended name hits.
 CURATED = "houdini"
 UNCURATED = "a_dcc_nobody_has_curated"
@@ -33,11 +33,11 @@ def test_an_uncurated_name_still_raises_without_a_fallback(qtbot, qapp):
     """The default is unchanged: a caller who named no stand-in wanted to
     hear about it."""
     with pytest.raises(FileNotFoundError):
-        fxicons.get_icon(UNCURATED, library="dcc")
+        fxicons.get_icon(UNCURATED, library="brands")
 
 
 def test_a_fallback_name_answers_for_an_uncurated_one(qtbot, qapp):
-    icon = fxicons.get_icon(UNCURATED, library="dcc", fallback="apps")
+    icon = fxicons.get_icon(UNCURATED, library="brands", fallback="apps")
 
     assert not icon.isNull()
 
@@ -47,23 +47,23 @@ def test_the_fallback_is_looked_up_in_the_default_library(qtbot, qapp):
     library that just failed to carry the name is the least likely place
     for the stand-in, and the general-purpose set is where it lives.
 
-    "apps" is a material icon and is in no "dcc" library at all, so a
+    "apps" is a material icon and is in no "brands" library at all, so a
     fallback resolved in `library` would raise here.
     """
     with pytest.raises(FileNotFoundError):
-        fxicons.get_icon("apps", library="dcc")
+        fxicons.get_icon("apps", library="brands")
 
     assert not fxicons.get_icon(
-        UNCURATED, library="dcc", fallback="apps"
+        UNCURATED, library="brands", fallback="apps"
     ).isNull()
 
 
 def test_a_curated_name_is_unaffected_by_a_fallback(qtbot, qapp):
     """A fallback is a fallback, not a substitution."""
     with_fallback = fxicons.get_icon(
-        CURATED, library="dcc", fallback="apps"
+        CURATED, library="brands", fallback="apps"
     )
-    without = fxicons.get_icon(CURATED, library="dcc")
+    without = fxicons.get_icon(CURATED, library="brands")
 
     assert not with_fallback.isNull()
     assert with_fallback.availableSizes() == without.availableSizes()
@@ -73,7 +73,7 @@ def test_a_qicon_fallback_is_answered_with_as_it_is(qtbot, qapp):
     """`QIcon()` asks for a blank rather than a picture of something
     else, which is what a consumer wants when there is no honest
     stand-in for the thing the name meant."""
-    blank = fxicons.get_icon(UNCURATED, library="dcc", fallback=QIcon())
+    blank = fxicons.get_icon(UNCURATED, library="brands", fallback=QIcon())
 
     assert blank.isNull()
 
@@ -83,7 +83,7 @@ def test_a_fallback_that_is_not_there_either_is_not_swallowed(qtbot, qapp):
     than in the data."""
     with pytest.raises(FileNotFoundError):
         fxicons.get_icon(
-            UNCURATED, library="dcc", fallback="also_not_a_real_icon"
+            UNCURATED, library="brands", fallback="also_not_a_real_icon"
         )
 
 
@@ -91,7 +91,7 @@ def test_the_fallback_keeps_the_size_and_colour_asked_for(qtbot, qapp):
     """A stand-in that came out at another size would be visible as a
     layout jump on exactly the rows that fell back."""
     icon = fxicons.get_icon(
-        UNCURATED, library="dcc", width=32, height=32, fallback="apps"
+        UNCURATED, library="brands", width=32, height=32, fallback="apps"
     )
 
     assert icon.availableSizes(), "it rendered something"
