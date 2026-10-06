@@ -6,7 +6,7 @@ from bisect import bisect_left, bisect_right
 from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QLineF, QPointF, Qt, QTimer, Signal
+from qtpy.QtCore import QLineF, QPoint, QPointF, QRect, Qt, QTimer, Signal
 from qtpy.QtGui import (
     QColor,
     QKeyEvent,
@@ -480,6 +480,42 @@ class FXTimelineSlider(QWidget):
     def is_view_zoomed(self) -> bool:
         """Return whether the track shows a sub-window of the full range."""
         return self.view_range() != (self._start_frame, self._end_frame)
+
+    def track_rect(self) -> QRect:
+        """Return where the track draws its frames, in this widget's pixels.
+
+        The left edge is the first frame of `view_range()`, the right edge
+        the last, so another widget can line its own frames up with them.
+        """
+        track = self._track_widget
+        pad = _TimelineTrack.EDGE_PAD
+        corner = track.mapTo(self, QPoint(0, 0))
+        return QRect(
+            corner.x() + pad,
+            corner.y(),
+            max(0, track.width() - 2 * pad),
+            track.height(),
+        )
+
+    def zoom_view(self, notches: float, about: float = 0.5) -> None:
+        """Zoom in `notches` wheel notches (out when negative) about a point.
+
+        Args:
+            about: Where the zoom is anchored, as a share of the visible
+                window from its first frame (0) to its last (1).
+        """
+        if not notches:
+            return
+        first, last = self.view_range()
+        span = last - first
+        # At least one frame per notch: 2 * 1.25 rounds back to 2.
+        if notches > 0:
+            new_span = min(span - 1, round(span * 0.8))
+        else:
+            new_span = max(span + 1, round(span * 1.25))
+        anchor = first + about * span
+        new_first = round(anchor - about * new_span)
+        self.set_view_range(new_first, new_first + new_span)
 
     def set_view_range(self, first: int, last: int) -> None:
         """Zoom the track to the [first, last] frame window.
@@ -1069,17 +1105,9 @@ class _TimelineTrack(QWidget):
         if delta == 0:
             event.ignore()
             return
-        first, last = self._timeline.view_range()
-        span = last - first
-        # At least one frame per notch: 2 * 1.25 rounds back to 2.
-        if delta > 0:
-            new_span = min(span - 1, round(span * 0.8))
-        else:
-            new_span = max(span + 1, round(span * 1.25))
-        ratio = self._x_to_ratio(event.position().x())
-        anchor = first + ratio * span
-        new_first = round(anchor - ratio * new_span)
-        self._timeline.set_view_range(new_first, new_first + new_span)
+        self._timeline.zoom_view(
+            1 if delta > 0 else -1, self._x_to_ratio(event.position().x())
+        )
         event.accept()
 
     def _pan_view(self, x: float) -> None:

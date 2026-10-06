@@ -285,3 +285,25 @@ def test_a_zoomed_track_paints_as_a_fresh_one(qtbot, qapp):
     assert used._track_widget.grab().toImage() == (
         fresh._track_widget.grab().toImage()
     )
+
+
+def test_the_track_rect_spans_the_frames_the_track_draws(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, controls_position="below", show_range=False, show_fps=False)
+    track = timeline._track_widget
+    rect = timeline.track_rect()
+    left = track.mapTo(timeline, QPoint(0, 0)).x()
+    assert rect.left() == left + track.EDGE_PAD
+    assert rect.width() == track.width() - 2 * track.EDGE_PAD
+    assert track._frame_at(rect.left() - left) == timeline.view_range()[0]
+    assert track._frame_at(rect.right() + 1 - left) == timeline.view_range()[1]
+
+
+def test_zoom_view_is_the_wheel_s_zoom(qtbot, qapp):
+    wheeled = _timeline(qtbot, start_frame=1, end_frame=200)
+    called = _timeline(qtbot, start_frame=1, end_frame=200)
+    _wheel(wheeled._track_widget, 120)
+    called.zoom_view(1, 0.5)
+    assert called.view_range() == wheeled.view_range() != (1, 200)
+    called.zoom_view(-1, 0.5)
+    assert called.view_range() != wheeled.view_range()
