@@ -69,9 +69,11 @@ def test_every_token_family_resolves(qapp):
 
 
 def test_resolve_icons_path(qapp):
-    resolved = fxstyle.resolve("url(~icons/x.svg)", "dark")
-    assert "~icons" not in resolved
-    assert "stylesheet_dark" in resolved or "stylesheet_light" in resolved
+    dark = fxstyle.resolve("url(~icons/close.svg)", "dark")
+    light = fxstyle.resolve("url(~icons/close.svg)", "light")
+    assert "~icons" not in dark
+    assert "/stylesheet_dark_close_18.png" in dark
+    assert "/stylesheet_light_close_18.png" in light
 
 
 def test_token_map_flattens_feedback_colors(qapp):
@@ -378,20 +380,71 @@ def test_a_colour_file_change_reaches_roots_and_signal(
 
 
 def test_a_sheet_icon_cut_off_mid_write_is_written_whole_next_time(
-    qapp, monkeypatch
+    qapp, monkeypatch, tmp_path
 ):
-    real_write = Path.write_text
+    import tempfile
 
-    def cut_off(self, text, *args, **kwargs):
-        real_write(self, text[: len(text) // 2], *args, **kwargs)
-        raise OSError("disk full")
+    from qtpy.QtGui import QImage, QPixmap
 
-    monkeypatch.setattr(Path, "write_text", cut_off)
+    from fxgui import fxicons
+
+    monkeypatch.setattr(tempfile, "gettempdir", lambda: str(tmp_path))
+    svg = fxicons.get_icon_path("check")
+    monkeypatch.setattr(QPixmap, "save", lambda *args: False)
     with pytest.raises(OSError):
-        fxstyle._sheet_icon("check", "#123456")
-    monkeypatch.setattr(Path, "write_text", real_write)
+        fxstyle._sheet_icon(svg, "check_123456", 16, "#123456")
+    monkeypatch.undo()
+    monkeypatch.setattr(tempfile, "gettempdir", lambda: str(tmp_path))
 
-    url = fxstyle._sheet_icon("check", "#123456")
+    url = fxstyle._sheet_icon(svg, "check_123456", 16, "#123456")
 
-    svg = Path(url[len("url("):-1]).read_text(encoding="utf-8")
-    assert svg.rstrip().endswith("</svg>") and 'fill="#123456"' in svg
+    image = QImage(url[len("url("):-1])
+    assert not image.isNull()
+    solid = max(
+        (image.pixelColor(x, y) for x in range(16) for y in range(16)),
+        key=lambda color: color.alpha(),
+    )
+    assert solid.alpha() > 128 and solid.name() == "#123456"
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_every_sheet_image_is_a_png_qt_reads_without_the_svg_plugin(
+    qapp, theme
+):
+    import re
+
+    from qtpy.QtGui import QImageReader
+
+    # PNG is built into QtGui; SVG needs the qsvg plugin Cinema 4D lacks.
+    urls = re.findall(r"url\(([^)]*)\)", fxstyle._build_stylesheet(theme))
+    assert urls
+    for url in urls:
+        assert url.endswith(".png"), url
+        reader = QImageReader(url)
+        assert reader.format() == b"png" and not reader.read().isNull(), url
+        assert Path(url[: -len(".png")] + "@2x.png").is_file(), url
+
+
+def test_a_checked_box_draws_its_indicator(qtbot):
+    from qtpy.QtWidgets import QCheckBox
+
+    fxstyle.apply_theme("dark")
+    box = QCheckBox()
+    box.setChecked(True)
+    qtbot.addWidget(box)
+    fxstyle.register_themed_root(box)
+    box.resize(60, 24)
+    box.show()
+    qtbot.waitExposed(box)
+
+    image = box.grab().toImage()
+    background = image.pixelColor(image.width() - 1, 0)
+    size = fxstyle.INDICATOR_SIZE
+    top = (image.height() - size) // 2
+    inked = [
+        (x, y)
+        for x in range(size + 4)
+        for y in range(top, top + size)
+        if image.pixelColor(x, y) != background
+    ]
+    assert len(inked) > size * size // 4

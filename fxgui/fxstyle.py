@@ -1172,27 +1172,42 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     return tokens
 
 
-# `~icon(name, token)`: the icon library's `name`, filled with a token.
-_SHEET_ICON = re.compile(r"~icon\((\w+),\s*(\w+)\)")
+# `~icon(name, token[, px])`: the icon library's `name`, filled with a token,
+# 16 px unless sized.
+_SHEET_ICON = re.compile(r"~icon\((\w+),\s*(\w+)(?:,\s*(\d+))?\)")
+# `url(~icons/name.svg[, px])`: an image of the theme's light or dark sheet
+# set, INDICATOR_SIZE unless sized.
+_SHEET_SVG = re.compile(r"url\(~icons/(\w+)\.svg(?:,\s*(\d+))?\)")
+# Qt loads `name@2x.png` beside `name.png` on a screen scaled past 100%.
+_SHEET_SCALES = (3, 2, 1)
 
 
-def _sheet_icon(name: str, color: str) -> str:
-    """Return a sheet `url()` of icon `name` filled with `color`.
+def _sheet_icon(
+    svg: str, stem: str, size: int, color: Optional[str] = None
+) -> str:
+    """Return a sheet `url()` of `svg` as a `size` px PNG, filled `color`.
 
-    A sheet loads an image only from a file, so each colour gets a copy.
+    A sheet reads an SVG through the qsvg plugin, which Cinema 4D fails to
+    load, so its images go blank; a PNG needs no plugin. `size` is the size
+    the rule draws it at: Qt blurs a PNG it scales down.
     """
     folder = Path(tempfile.gettempdir()) / "fxgui" / "sheet_icons"
-    path = folder / f"{name}_{color.lstrip('#')}.svg"
-    if not path.exists():
-        svg = Path(fxicons.get_icon_path(name)).read_text(encoding="utf-8")
+    stem = f"{stem}_{size}"
+    path = folder / f"{stem}.png"
+    if not path.exists() or path.stat().st_mtime < os.stat(svg).st_mtime:
         folder.mkdir(parents=True, exist_ok=True)
-        # Written aside, then renamed: another app starting at once must
-        # never load a half-written file.
-        part = path.with_name(f"{path.name}.{os.getpid()}.part")
-        part.write_text(
-            svg.replace("<svg ", f'<svg fill="{color}" ', 1), encoding="utf-8"
-        )
-        os.replace(part, path)
+        # The plain file goes last: its presence says the set is whole.
+        for scale in _SHEET_SCALES:
+            target = path.with_name(
+                f"{stem}@{scale}x.png" if scale > 1 else path.name
+            )
+            pixmap = fxicons._raster(svg, size, size, scale, color)
+            # Written aside, then renamed: another app starting at once must
+            # never load a half-written file.
+            part = target.with_name(f"{target.name}.{os.getpid()}.part")
+            if not pixmap.save(str(part), "PNG"):
+                raise OSError(f"Cannot write {part}")
+            os.replace(part, target)
     return f"url({path.as_posix()})"
 
 
@@ -1200,10 +1215,21 @@ def _substitute(qss: str, tokens: Dict[str, str]) -> str:
     """Replace each placeholder, longest first so @border spares @border_light."""
 
     def icon(match: "re.Match") -> str:
-        color = tokens.get(f"@{match.group(2)}")
-        return _sheet_icon(match.group(1), color) if color else match.group(0)
+        name, color = match.group(1), tokens.get(f"@{match.group(2)}")
+        if not color:
+            return match.group(0)
+        stem = f"{name}_{color.lstrip('#')}"
+        size = int(match.group(3) or 16)
+        return _sheet_icon(fxicons.get_icon_path(name), stem, size, color)
+
+    def sheet_svg(match: "re.Match") -> str:
+        folder = Path(tokens["~icons"])
+        svg = str(folder / f"{match.group(1)}.svg")
+        stem = f"{folder.name}_{match.group(1)}"
+        return _sheet_icon(svg, stem, int(match.group(2) or INDICATOR_SIZE))
 
     qss = _SHEET_ICON.sub(icon, qss)
+    qss = _SHEET_SVG.sub(sheet_svg, qss)
     for key in sorted(tokens, key=len, reverse=True):
         qss = qss.replace(key, tokens[key])
     return qss

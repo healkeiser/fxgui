@@ -225,15 +225,6 @@ QRadioButton::indicator:checked:pressed
     height: @indicator_size;
 }
 
-QRadioButton::indicator:indeterminate,
-QRadioButton::indicator:indeterminate:hover,
-QRadioButton::indicator:indeterminate:pressed
-{
-    image: url(~icons/radio_indeterminate.svg);
-    width: @indicator_size;
-    height: @indicator_size;
-}
-
 QRadioButton::indicator:checked:disabled
 {
     image: url(~icons/radio_checked_disabled.svg);
@@ -1008,21 +999,22 @@ QTabBar QToolButton::left-arrow:disabled {
     image: ~icon(chevron_left, text_disabled);
 }
 
-/* The glyph keeps its button's left: the button widens to the left. */
+/* The glyph keeps its button's left: the button widens to the left.
+   20 px is Fusion's close button; a smaller style's shrinks the glyph. */
 QTabBar::close-button  {
-    image: url(~icons/close.svg);
+    image: url(~icons/close.svg, 20);
     image-position: left;
     background: transparent;
 }
 
 QTabBar::close-button:hover
 {
-    image: url(~icons/close_hover.svg);
+    image: url(~icons/close_hover.svg, 20);
     background: transparent;
 }
 
 QTabBar::close-button:pressed {
-    image: url(~icons/close_pressed.svg);
+    image: url(~icons/close_pressed.svg, 20);
     background: transparent;
 }
 
@@ -1030,8 +1022,8 @@ QTabBar::close-button:pressed {
 /* A plain dock widget reads as a dock pane: a flat title in the tab text. */
 QDockWidget {
     color: @text;
-    titlebar-close-icon: url(~icons/close.svg);
-    titlebar-normal-icon: url(~icons/undock.svg);
+    titlebar-close-icon: url(~icons/close.svg, 16);
+    titlebar-normal-icon: url(~icons/undock.svg, 16);
 }
 
 QDockWidget::title {
@@ -1324,7 +1316,7 @@ QToolButton:checked {
 
 /* the subcontrol below is used only in the InstantPopup or DelayedPopup mode */
 QToolButton::menu-indicator {
-    image: ~icon(expand_more, icon);
+    image: ~icon(expand_more, icon, 12);
     width: 12px;
     height: 12px;
     subcontrol-origin: padding;
@@ -1342,18 +1334,18 @@ QToolButton::menu-button {
 }
 
 QToolButton::menu-arrow {
-    image: ~icon(expand_more, icon);
+    image: ~icon(expand_more, icon, 12);
     width: 12px;
     height: 12px;
 }
 
 QToolButton::menu-arrow:disabled {
-    image: ~icon(expand_more, text_disabled);
+    image: ~icon(expand_more, text_disabled, 12);
 }
 
 
 QPushButton::menu-indicator  {
-    image: ~icon(expand_more, icon);
+    image: ~icon(expand_more, icon, 12);
     subcontrol-origin: padding;
     subcontrol-position: right;
     width: 12px;
@@ -1361,7 +1353,7 @@ QPushButton::menu-indicator  {
 }
 
 QPushButton::menu-indicator:disabled {
-    image: ~icon(expand_more, text_disabled);
+    image: ~icon(expand_more, text_disabled, 12);
 }
 
 
@@ -1438,11 +1430,11 @@ QHeaderView::up-arrow {
 }
 
 QHeaderView::down-arrow {
-    image: ~icon(expand_more, icon);
+    image: ~icon(expand_more, icon, 12);
 }
 
 QHeaderView::up-arrow {
-    image: ~icon(expand_less, icon);
+    image: ~icon(expand_less, icon, 12);
 }
 
 QTableCornerButton::section {
