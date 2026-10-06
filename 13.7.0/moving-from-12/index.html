@@ -1,0 +1,2426 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.">
+      
+      
+        <meta name="author" content="Valentin Beaumont">
+      
+      
+        <link rel="canonical" href="https://healkeiser.github.io/fxgui/13.7.0/moving-from-12/">
+      
+      
+        <link rel="prev" href="../installation/">
+      
+      
+        <link rel="next" href="../how-to/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/fxgui_logo_background_light.svg">
+      <meta name="generator" content="zensical-0.0.68">
+    
+    
+      
+        <title>Moving from 12.x - fxgui</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.595f2bf5.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.b27955a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="./.." title="fxgui" class="md-header__button md-logo" aria-label="fxgui" data-md-component="logo">
+      
+  <img src="../images/fxgui_logo_light.svg" alt="fxgui">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            fxgui
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Moving from 12.x
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/healkeiser/fxgui" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    healkeiser/fxgui
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="./.." class="md-tabs__link">
+        
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../installation/" class="md-tabs__link">
+        
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="././" class="md-tabs__link">
+        
+  
+  Moving from 12.x
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../how-to/" class="md-tabs__link">
+          
+  
+  How-to
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+    
+    
+    
+    
+      
+  
+  
+  
+  
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../technical/fxgui/" class="md-tabs__link">
+          
+  
+  Technical
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="fxgui" class="md-nav__button md-logo" aria-label="fxgui" data-md-component="logo">
+      
+  <img src="../images/fxgui_logo_light.svg" alt="fxgui">
+
+    </a>
+    fxgui
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/healkeiser/fxgui" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    healkeiser/fxgui
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Moving from 12.x
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Moving from 12.x
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before you start
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Before you start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-property-is-now-a-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A property is now a method
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxconfig
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxconstants" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxconstants
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxcore" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxcore
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxdcc" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxdcc
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxicons" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxicons
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxstyle" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxstyle
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxutils" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxutils
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxwidgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxwidgets
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="fxwidgets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gone-or-moved" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Gone or moved
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxmainwindow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FXMainWindow
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status-bar-banner-splash-screen-tray-progress-spinner-dialog" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Status bar, banner, splash screen, tray, progress, spinner, dialog
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Inputs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#collapsible-and-accordion" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Collapsible and accordion
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-widgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Other widgets
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxthumbnaildelegate" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FXThumbnailDelegate
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../how-to/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  How-to
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  How-to
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/styling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Styling
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/theming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Theming
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/widgets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Widgets
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/icons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Icons
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Changelog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Technical
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Technical
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../technical/fxgui/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxgui
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6_1">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  fxgui
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxgui/examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  examples
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxgui/fxconfig/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxconfig
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxgui/fxconstants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxconstants
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxgui/fxcore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxcore
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxgui/fxdocking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxdocking
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxgui/fxicons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxicons
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxgui/fxstyle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxstyle
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxgui/fxutils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxutils
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../technical/fxgui/fxwidgets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxwidgets
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before you start
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Before you start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-property-is-now-a-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A property is now a method
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxconfig
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxconstants" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxconstants
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxcore" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxcore
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxdcc" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxdcc
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxicons" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxicons
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxstyle" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxstyle
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxutils" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxutils
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fxwidgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        fxwidgets
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="fxwidgets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gone-or-moved" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Gone or moved
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxmainwindow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FXMainWindow
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status-bar-banner-splash-screen-tray-progress-spinner-dialog" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Status bar, banner, splash screen, tray, progress, spinner, dialog
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Inputs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#collapsible-and-accordion" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Collapsible and accordion
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-widgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Other widgets
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fxthumbnaildelegate" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FXThumbnailDelegate
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+    <a href="https://github.com/healkeiser/fxgui/edit/main/docs/moving-from-12.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="moving-from-12x"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg></span> Moving from 12.x<a class="headerlink" href="#moving-from-12x" title="Permanent link">&para;</a></h1>
+<p>13.0.0 keeps one public name per job. A 12.x name that did the same job
+as another is gone, so code written for 12.x can stop with an
+<code>AttributeError</code>, an <code>ImportError</code> or a <code>TypeError</code> on its first run.</p>
+<p>Find the name the error gives you in the tables below, and write what
+the right-hand column says. "Gone" means 13.0.0 has nothing in its
+place; the column says what to do instead.</p>
+<h2 id="before-you-start">Before you start<a class="headerlink" href="#before-you-start" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qt 5 (PySide2, PyQt5)</td>
+<td>Qt 6 only: PySide6 6.5 or newer, or PyQt6. <code>import fxgui</code> raises <code>ImportError</code> naming the binding or version it found</td>
+</tr>
+<tr>
+<td><code>pip install "fxgui[docking]"</code></td>
+<td>No <code>docking</code> extra. Install <code>PySide6-QtAds</code> beside your own PySide6, as <a href="../installation/#docking">Installation</a> shows</td>
+</tr>
+<tr>
+<td><code>exec_()</code></td>
+<td><code>exec()</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a-property-is-now-a-method">A property is now a method<a class="headerlink" href="#a-property-is-now-a-method" title="Permanent link">&para;</a></h3>
+<p>Many values that were properties are now methods with a <code>set_</code> partner.
+Reading one without <code>()</code> gives you a bound method instead of the value,
+so nothing fails at once: the value just looks wrong.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxwidgets</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">crumb</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXBreadcrumb</span><span class="p">()</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">crumb</span><span class="o">.</span><span class="n">set_path</span><span class="p">([</span><span class="s2">"pilot"</span><span class="p">,</span> <span class="s2">"sq010"</span><span class="p">])</span>  <span class="c1"># 12.x: crumb.path = [...]</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">crumb</span><span class="o">.</span><span class="n">path</span><span class="p">())</span>                 <span class="c1"># 12.x: crumb.path</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Read with <code>()</code></th>
+<th>Set with</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FXAccordion</code></td>
+<td><code>exclusive()</code></td>
+<td><code>set_exclusive(b)</code></td>
+</tr>
+<tr>
+<td><code>FXBreadcrumb</code></td>
+<td><code>path()</code>, <code>home_path()</code></td>
+<td><code>set_path(p)</code>, <code>set_home_path(p)</code></td>
+</tr>
+<tr>
+<td><code>FXCollapsibleWidget</code></td>
+<td><code>title()</code>, <code>is_expanded()</code>, <code>animation_duration()</code>, <code>max_content_height()</code></td>
+<td><code>set_title(t)</code>, <code>set_animation_duration(ms)</code>, <code>set_max_content_height(px)</code></td>
+</tr>
+<tr>
+<td><code>FXDropZone</code></td>
+<td><code>title()</code>, <code>description()</code>, <code>accept_mode()</code>, <code>extensions()</code>, <code>multiple()</code>, <code>has_files()</code>, <code>selected_files()</code>, <code>file_tree()</code></td>
+<td><code>set_title</code>, <code>set_description</code>, <code>set_accept_mode</code>, <code>set_extensions</code>, <code>set_multiple</code></td>
+</tr>
+<tr>
+<td><code>FXElidedLabel</code></td>
+<td><code>mode()</code></td>
+<td><code>set_mode(m)</code></td>
+</tr>
+<tr>
+<td><code>FXFilePathWidget</code></td>
+<td><code>path()</code></td>
+<td><code>set_path(p)</code></td>
+</tr>
+<tr>
+<td><code>FXRangeSlider</code></td>
+<td><code>low()</code>, <code>high()</code></td>
+<td><code>set_low(v)</code>, <code>set_high(v)</code></td>
+</tr>
+<tr>
+<td><code>FXRatingWidget</code></td>
+<td><code>rating()</code></td>
+<td><code>set_rating(v)</code></td>
+</tr>
+<tr>
+<td><code>FXTagChip</code></td>
+<td><code>text()</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>FXTagInput</code></td>
+<td><code>tags()</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>FXTimelineSlider</code></td>
+<td><code>current_frame()</code>, <code>fps()</code>, <code>frame_range()</code>, <code>view_range()</code>, <code>is_view_zoomed()</code>, <code>loop_playback()</code></td>
+<td><code>set_frame(f)</code>, <code>set_fps</code>, <code>set_range</code>, <code>set_view_range</code>, <code>set_loop_playback</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="fxconfig">fxconfig<a class="headerlink" href="#fxconfig" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_settings()</code></td>
+<td><code>fxconfig.get_value(key, default)</code> and <code>fxconfig.set_value(key, value)</code>. For a <code>QSettings</code> of your own: <code>QSettings(QSettings.IniFormat, QSettings.UserScope, name, "settings")</code></td>
+</tr>
+<tr>
+<td><code>get_config_dir()</code>, <code>SETTINGS_FILE</code></td>
+<td>Gone. The file is that <code>QSettings</code>'s <code>fileName()</code>, and its folder is <code>Path(...fileName()).parent</code></td>
+</tr>
+<tr>
+<td><code>get_application_name()</code></td>
+<td>Gone. Keep the name you gave <code>set_application_name</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="fxconstants">fxconstants<a class="headerlink" href="#fxconstants" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FAVICON_DARK</code></td>
+<td>Gone. <code>FAVICON_LIGHT</code> stays</td>
+</tr>
+</tbody>
+</table>
+<h2 id="fxcore">fxcore<a class="headerlink" href="#fxcore" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FXSortFilterProxyModel.set_color_match(b)</code></td>
+<td><code>FXSortFilterProxyModel(color_match=b)</code></td>
+</tr>
+<tr>
+<td><code>FXSortFilterProxyModel.set_show_all(b)</code></td>
+<td>Gone</td>
+</tr>
+</tbody>
+</table>
+<h2 id="fxdcc">fxdcc<a class="headerlink" href="#fxdcc" title="Permanent link">&para;</a></h2>
+<p>The whole module is gone. Ask the host application yourself:</p>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_houdini_main_window()</code></td>
+<td><code>hou.qt.mainWindow()</code></td>
+</tr>
+<tr>
+<td><code>get_houdini_stylesheet()</code></td>
+<td><code>hou.qt.styleSheet()</code></td>
+</tr>
+<tr>
+<td><code>get_maya_main_window()</code></td>
+<td><code>wrapInstance(int(maya.OpenMayaUI.MQtUtil.mainWindow()), QWidget)</code></td>
+</tr>
+<tr>
+<td><code>get_nuke_main_window()</code></td>
+<td>The top-level widget whose <code>metaObject().className()</code> is <code>"Foundry::UI::DockMainWindow"</code></td>
+</tr>
+<tr>
+<td><code>get_dcc_main_window()</code>, <code>STANDALONE</code>, <code>HOUDINI</code>, <code>MAYA</code>, <code>NUKE</code></td>
+<td>Gone</td>
+</tr>
+</tbody>
+</table>
+<h2 id="fxicons">fxicons<a class="headerlink" href="#fxicons" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_icon(..., include_active=False)</code></td>
+<td>Drop the argument. A hovered button's icon keeps its resting colour by default; only a menu's highlighted row, which is the accent, changes it</td>
+</tr>
+<tr>
+<td><code>get_icon(..., include_active=True)</code></td>
+<td><code>get_icon(..., inks={"active": "icon_on_accent_secondary"})</code></td>
+</tr>
+<tr>
+<td><code>set_icon(widget, name, theme_color=...)</code></td>
+<td>Drop <code>theme_color</code>. A token colour (<code>color="text_muted"</code>) follows the theme; a colour (<code>"#ff0000"</code>) stays fixed</td>
+</tr>
+<tr>
+<td><code>get_icon_color()</code></td>
+<td><code>fxstyle.colors().icon</code></td>
+</tr>
+<tr>
+<td><code>set_default_icon_library(library)</code></td>
+<td>Pass <code>library=</code> to each <code>get_icon</code> call</td>
+</tr>
+<tr>
+<td><code>set_icon_defaults(**kwargs)</code></td>
+<td>Pass <code>color=</code>, <code>width=</code>, <code>height=</code> to each <code>get_icon</code> call</td>
+</tr>
+<tr>
+<td><code>refresh_all_icons()</code>, <code>sync_colors_with_theme()</code></td>
+<td>Delete the call. An icon reads its theme colours each time Qt draws it</td>
+</tr>
+<tr>
+<td><code>clear_icon_cache()</code></td>
+<td><code>QPixmapCache.clear()</code>, Qt's own: fxicons keeps its drawings there</td>
+</tr>
+<tr>
+<td><code>convert_icon_to_pixmap(icon, size)</code></td>
+<td>Qt's own <code>icon.pixmap(size)</code></td>
+</tr>
+<tr>
+<td><code>change_pixmap_color(pixmap, color)</code></td>
+<td>Gone. For a library icon, <code>fxicons.get_pixmap(name, color=...)</code></td>
+</tr>
+<tr>
+<td><code>superpose_icons(*icons)</code></td>
+<td>Gone. <code>fxicons.badged(icon, color)</code> adds a dot, which is a different picture</td>
+</tr>
+<tr>
+<td><code>get_available_libraries()</code>, <code>get_available_icons_in_library(library)</code></td>
+<td>Gone</td>
+</tr>
+</tbody>
+</table>
+<h2 id="fxstyle">fxstyle<a class="headerlink" href="#fxstyle" title="Permanent link">&para;</a></h2>
+<p>The colour getters are one call now, <code>fxstyle.colors()</code>. It returns an
+object, not a dict: read a token as an attribute.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">surface</span> <span class="o">=</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span><span class="o">.</span><span class="n">surface</span>          <span class="c1"># 12.x: get_theme_colors()["surface"]</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">name</span> <span class="o">=</span> <span class="s2">"accent_primary"</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">accent</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">(),</span> <span class="n">name</span><span class="p">)</span>    <span class="c1"># a token name held in a variable</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_theme_colors()["surface"]</code></td>
+<td><code>colors().surface</code></td>
+</tr>
+<tr>
+<td><code>get_accent_colors()["primary"]</code>, <code>["secondary"]</code></td>
+<td><code>colors().accent_primary</code>, <code>colors().accent_secondary</code></td>
+</tr>
+<tr>
+<td><code>get_icon_color()</code></td>
+<td><code>colors().icon</code></td>
+</tr>
+<tr>
+<td><code>get_icon_on_accent_primary()</code>, <code>get_icon_on_accent_secondary()</code></td>
+<td><code>colors().icon_on_accent_primary</code>, <code>colors().icon_on_accent_secondary</code></td>
+</tr>
+<tr>
+<td><code>get_feedback_colors()["error"]["foreground"]</code></td>
+<td><code>colors().feedback_error_foreground</code> (also <code>_background</code> and <code>_ink</code>); <code>fxstyle.qcolor("feedback_error_foreground")</code> for a <code>QColor</code></td>
+</tr>
+<tr>
+<td><code>get_contrast_text_color(background)</code></td>
+<td><code>fxstyle.readable_ink(background)</code>. It keeps white while white reads at 4.5:1, so the answer can differ from 12.x's black-or-white</td>
+</tr>
+<tr>
+<td><code>get_fonts(theme)["body"]</code></td>
+<td><code>fxstyle.font(theme, role="body")</code>, a <code>QFont</code> rather than a stylesheet string</td>
+</tr>
+<tr>
+<td><code>get_font_family(role)</code></td>
+<td><code>fxstyle.font(role=role).family()</code>: one installed family, unquoted</td>
+</tr>
+<tr>
+<td><code>theme_manager.theme_changed</code>, <code>FXThemeManager</code></td>
+<td><code>fxstyle.theme_changed</code>, which sends the theme's name</td>
+</tr>
+<tr>
+<td><code>FXThemeAware</code></td>
+<td>Gone. Follow the custom widget contract in <a href="../how-to/theming/#the-custom-widget-contract">Theming</a></td>
+</tr>
+<tr>
+<td><code>apply_theme(widget, theme)</code></td>
+<td><code>fxstyle.register_themed_root(widget)</code> once, then <code>fxstyle.apply_theme(theme)</code></td>
+</tr>
+<tr>
+<td><code>build_stylesheet()</code>, <code>load_stylesheet()</code></td>
+<td><code>fxstyle.register_themed_root(window)</code>: the window gets the sheet now and on every switch</td>
+</tr>
+<tr>
+<td><code>replace_colors(qss, colors)</code></td>
+<td><code>fxstyle.resolve(qss)</code> for the theme's tokens; write <code>@button_radius</code> where you wrote <code>@radius</code></td>
+</tr>
+<tr>
+<td><code>invalidate_standard_icon_map()</code></td>
+<td>Delete the call</td>
+</tr>
+<tr>
+<td><code>FXProxyStyle.set_icon_color(color)</code></td>
+<td>Gone. Qt's standard icons use the theme's <code>icon</code> token; change the theme to change them</td>
+</tr>
+</tbody>
+</table>
+<h2 id="fxutils">fxutils<a class="headerlink" href="#fxutils" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>add_shadows(parent, widget, ...)</code></td>
+<td><code>fxutils.add_shadow(widget, offset=(x, y))</code>. The colour and blur come from the theme</td>
+</tr>
+<tr>
+<td><code>set_formatted_tooltip(widget, title, text)</code></td>
+<td><code>fxwidgets.apply_tip(widget, title, text)</code>. No <code>duration</code>; markup in <code>text</code> shows as text</td>
+</tr>
+<tr>
+<td><code>get_formatted_time()</code></td>
+<td><code>datetime.now().strftime("%H:%M")</code></td>
+</tr>
+<tr>
+<td><code>deprecated</code></td>
+<td>Python's <code>warnings.warn(..., DeprecationWarning)</code></td>
+</tr>
+<tr>
+<td><code>create_action(parent, name, icon, trigger, ...)</code></td>
+<td><code>create_action(parent, name, trigger, ..., icon_name="save")</code>. <code>icon</code> is gone, so a positional call now passes your icon as the trigger: name the arguments. <code>visible=False</code> becomes <code>action.setVisible(False)</code></td>
+</tr>
+<tr>
+<td><code>filter_tree(line_edit, tree, column)</code></td>
+<td><code>filter_tree(tree, line_edit.text())</code>. It matches every column, keeps a match's parents and children, and <code>mark=</code> decides what happens to the rest (hidden by default)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="fxwidgets">fxwidgets<a class="headerlink" href="#fxwidgets" title="Permanent link">&para;</a></h2>
+<h3 id="gone-or-moved">Gone or moved<a class="headerlink" href="#gone-or-moved" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FXTooltip</code>, <code>FXTooltipManager</code>, <code>FXTooltipPosition</code>, <code>set_tooltip(target, description, title)</code></td>
+<td><code>apply_tip(target, title, body, shortcut)</code>: Qt's own tooltip. Note the order, title before body. No icon, image or position</td>
+</tr>
+<tr>
+<td><code>FXWidget(ui_file=path)</code></td>
+<td><code>QWidget</code>, and <code>fxutils.load_ui(widget, path)</code></td>
+</tr>
+<tr>
+<td><code>FXAccordionSection</code></td>
+<td><code>FXCollapsibleWidget</code></td>
+</tr>
+<tr>
+<td><code>FXItemDelegate</code></td>
+<td><code>QStyledItemDelegate</code></td>
+</tr>
+<tr>
+<td><code>FXFuzzySearchTree</code></td>
+<td><code>FXFilteredTree(tree, placeholder)</code> over an <code>FXKeyboardTree</code> you fill. Fuzzy ranking stays in <code>fxcore.FXSortFilterProxyModel</code></td>
+</tr>
+<tr>
+<td><code>FXFuzzySearchList</code></td>
+<td><code>FXFilteredTree</code> with top-level items only</td>
+</tr>
+<tr>
+<td><code>FXColorLabelDelegate</code></td>
+<td>Gone</td>
+</tr>
+<tr>
+<td><code>FXThemeColors</code></td>
+<td><code>fxstyle.FXThemeColors</code></td>
+</tr>
+<tr>
+<td><code>FXThemeManager</code>, <code>theme_manager</code>, <code>FXThemeAware</code></td>
+<td>See <a href="#fxstyle">fxstyle</a></td>
+</tr>
+<tr>
+<td><code>apply_tip(widget=w, ...)</code></td>
+<td><code>apply_tip(w, ...)</code>: the first argument is now called <code>target</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="fxmainwindow">FXMainWindow<a class="headerlink" href="#fxmainwindow" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>self.ERROR</code>, <code>self.WARNING</code>, <code>self.INFO</code>, ...</td>
+<td><code>fxwidgets.ERROR</code>, <code>fxwidgets.WARNING</code>, <code>fxwidgets.INFO</code>, ...</td>
+</tr>
+<tr>
+<td><code>set_theme(theme)</code></td>
+<td><code>fxstyle.apply_theme(theme)</code></td>
+</tr>
+<tr>
+<td><code>get_available_themes()</code></td>
+<td><code>fxstyle.get_available_themes()</code></td>
+</tr>
+<tr>
+<td><code>hide_banner()</code>, <code>show_banner()</code></td>
+<td><code>window.title_corner.hide()</code>, <code>.show()</code>: the name sits in the menu bar's corner</td>
+</tr>
+<tr>
+<td><code>use_corner_title()</code></td>
+<td>Delete the call: every window shows its name there</td>
+</tr>
+<tr>
+<td><code>set_project_label(p)</code>, <code>set_version_label(v)</code>, <code>set_company_label(c)</code></td>
+<td><code>window.statusBar().project_label.setText(p)</code>, and <code>version_label</code>, <code>company_label</code></td>
+</tr>
+<tr>
+<td><code>set_status_line_colors(a, b)</code>, <code>hide_status_line()</code>, <code>show_status_line()</code></td>
+<td>The same names on <code>window.statusBar()</code></td>
+</tr>
+<tr>
+<td><code>set_ui_file(path)</code></td>
+<td><code>FXMainWindow(ui_file=path)</code></td>
+</tr>
+<tr>
+<td><code>FXMainWindow(set_stylesheet=..., rich_tooltips=..., toolbar=...)</code></td>
+<td>Drop all three. Add a toolbar with <code>addToolBar</code>. Pass <code>fit_to_contents</code> and <code>framed</code> by name: they moved</td>
+</tr>
+</tbody>
+</table>
+<h3 id="status-bar-banner-splash-screen-tray-progress-spinner-dialog">Status bar, banner, splash screen, tray, progress, spinner, dialog<a class="headerlink" href="#status-bar-banner-splash-screen-tray-progress-spinner-dialog" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>statusBar().showMessage(..., pixmap=..., background_color=...)</code></td>
+<td>Drop both: the severity sets the look</td>
+</tr>
+<tr>
+<td><code>FXNotificationBanner(action_text=...)</code>, <code>action_clicked</code></td>
+<td><code>FXNotificationBanner(actions={"Retry": retry})</code> or <code>banner.add_action("Retry", retry)</code>. Pass the arguments after <code>message</code> by name: they moved</td>
+</tr>
+<tr>
+<td><code>FXNotificationBanner.SEVERITY_ICONS</code>, <code>SEVERITY_TITLES</code></td>
+<td>Gone</td>
+</tr>
+<tr>
+<td><code>FXSplashScreen.set_title(t)</code>, <code>set_information_text</code>, <code>set_icon</code>, <code>set_pixmap</code>, <code>set_project_label</code>, <code>set_version_label</code>, <code>set_company_label</code>, <code>set_overlay_opacity</code>, <code>set_corner_radius</code>, <code>set_border</code>, <code>toggle_fade_in</code></td>
+<td>Constructor arguments: <code>title=</code>, <code>information=</code>, <code>icon=</code>, <code>image_path=</code>, <code>project=</code>, <code>version=</code>, <code>company=</code>, <code>overlay_opacity=</code>, <code>corner_radius=</code>, <code>border_width=</code>, <code>border_color=</code>, <code>fade_in=</code>. After that, <code>splash.title_label.setText(...)</code></td>
+</tr>
+<tr>
+<td><code>FXSplashScreen.toggle_progress_bar_visibility(b)</code></td>
+<td><code>show_progress_bar=</code> in the constructor, or <code>splash.progress_bar.setVisible(b)</code></td>
+</tr>
+<tr>
+<td><code>FXSplashScreen(set_stylesheet=...)</code></td>
+<td>Drop it, and pass the arguments after it by name</td>
+</tr>
+<tr>
+<td><code>FXSystemTray.add_action(action)</code></td>
+<td><code>tray.contextMenu().insertAction(tray.quit_action, action)</code></td>
+</tr>
+<tr>
+<td><code>FXSystemTray.set_icon(path)</code></td>
+<td><code>tray.setIcon(QIcon(path))</code></td>
+</tr>
+<tr>
+<td><code>FXProgressCard.progress = v</code></td>
+<td><code>card.set_progress(v)</code>; keep the value yourself or listen to <code>progress_changed</code></td>
+</tr>
+<tr>
+<td><code>FXProgressCard.increment(n)</code></td>
+<td><code>card.set_progress(value + n)</code></td>
+</tr>
+<tr>
+<td><code>FXProgressCard.reset()</code></td>
+<td><code>card.set_progress(0)</code> then <code>card.set_status(None)</code></td>
+</tr>
+<tr>
+<td><code>FXProgressCard.STATUS_ICONS</code></td>
+<td>Gone</td>
+</tr>
+<tr>
+<td><code>FXLoadingSpinner(style=...)</code>, <code>set_style</code>, <code>angle</code></td>
+<td>Drop them: the ring is the only spinner. <code>color</code> takes a token</td>
+</tr>
+<tr>
+<td><code>FXFloatingDialog(parent_package=...)</code></td>
+<td>Drop it, and pass <code>popup</code> by name</td>
+</tr>
+</tbody>
+</table>
+<h3 id="inputs">Inputs<a class="headerlink" href="#inputs" title="Permanent link">&para;</a></h3>
+<p><code>FXSearchBar</code>, <code>FXPasswordLineEdit</code> and <code>FXIconLineEdit</code> are each a
+<code>QLineEdit</code> now, so Qt's own line edit calls work on them.</p>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FXSearchBar.set_placeholder(t)</code></td>
+<td><code>setPlaceholderText(t)</code></td>
+</tr>
+<tr>
+<td><code>FXSearchBar.text</code></td>
+<td><code>text()</code>, <code>setText(t)</code></td>
+</tr>
+<tr>
+<td><code>FXSearchBar(filters=..., show_filter=...)</code>, <code>filter</code>, <code>filter_changed</code>, <code>set_filters</code>, <code>show_filter</code></td>
+<td>Gone. Put a <code>QComboBox</code> beside the search bar</td>
+</tr>
+<tr>
+<td><code>FXPasswordLineEdit.line_edit</code>, <code>toggle_reveal()</code></td>
+<td>Call the widget itself. The eye has no public handle</td>
+</tr>
+<tr>
+<td><code>FXIconLineEdit("search")</code></td>
+<td><code>FXIconLineEdit(icon_name="search")</code>: <code>parent</code> is first now</td>
+</tr>
+</tbody>
+</table>
+<h3 id="collapsible-and-accordion">Collapsible and accordion<a class="headerlink" href="#collapsible-and-accordion" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get_title()</code></td>
+<td><code>title()</code></td>
+</tr>
+<tr>
+<td><code>get_icon()</code>, <code>get_title_icon()</code></td>
+<td><code>icon()</code></td>
+</tr>
+<tr>
+<td><code>set_title_icon(icon)</code></td>
+<td><code>set_icon(icon)</code></td>
+</tr>
+<tr>
+<td><code>header_widget</code>, <code>content_area</code>, <code>toggle_button</code>, <code>title_label</code>, <code>title_icon_label</code></td>
+<td>Gone. Use <code>set_content_widget</code>, <code>set_content_layout</code>, <code>set_title</code>, <code>set_icon</code></td>
+</tr>
+<tr>
+<td><code>resized</code></td>
+<td>Gone</td>
+</tr>
+<tr>
+<td><code>FXCollapsibleWidget.NO_CAP</code></td>
+<td><code>fxutils.NO_CAP</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="other-widgets">Other widgets<a class="headerlink" href="#other-widgets" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FXBreadcrumb.RADIUS</code></td>
+<td><code>fxstyle.BUTTON_RADIUS</code></td>
+</tr>
+<tr>
+<td><code>FXFilePathWidget.get_path()</code></td>
+<td><code>path()</code>. <code>mode="directory"</code> is now <code>mode="folder"</code></td>
+</tr>
+<tr>
+<td><code>FXDropZone.show_placeholder()</code>, <code>show_file_tree()</code></td>
+<td>Gone: the zone switches by itself</td>
+</tr>
+<tr>
+<td><code>FXRangeSlider.set_range(low, high)</code></td>
+<td><code>set_values(low, high)</code>. The bounds are <code>set_minimum</code>, <code>set_maximum</code></td>
+</tr>
+<tr>
+<td><code>FXRatingWidget.get_rating()</code></td>
+<td><code>rating()</code></td>
+</tr>
+<tr>
+<td><code>FXResizedScrollArea.resized</code></td>
+<td>Gone. Use your own <code>resizeEvent</code></td>
+</tr>
+<tr>
+<td><code>FXOutputLogWidget(capture_output=True)</code></td>
+<td>Gone: add <code>logger.addHandler(fxwidgets.FXOutputLogHandler(widget))</code>. Pass <code>max_blocks</code> by name</td>
+</tr>
+<tr>
+<td><code>FXOutputLogWidget.restore_output_streams()</code>, <code>ANSI_COLORS</code></td>
+<td>Gone. The log's colours are theme tokens</td>
+</tr>
+</tbody>
+</table>
+<h3 id="fxthumbnaildelegate">FXThumbnailDelegate<a class="headerlink" href="#fxthumbnaildelegate" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>12.x</th>
+<th>13.0.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TRANSPARENT_SELECTION_STYLE</code></td>
+<td><code>FXThumbnailDelegate.apply_transparent_selection(view)</code></td>
+</tr>
+<tr>
+<td><code>markdown_to_plain_text(text)</code></td>
+<td><code>fxutils.markdown_to_plain_text(text)</code></td>
+</tr>
+<tr>
+<td><code>show_child_count</code></td>
+<td>Gone. Set <code>CHILD_COUNT_VISIBLE_ROLE</code> to <code>False</code> on a row to hide its count</td>
+</tr>
+<tr>
+<td><code>show_starred</code>, <code>STARRED_ROLE</code>, <code>STARRED_COLOR_ROLE</code>, <code>STATUS_LABEL_ICON_ROLE</code></td>
+<td>Gone</td>
+</tr>
+<tr>
+<td><code>Qt.UserRole + n</code> for a role of your own</td>
+<td><code>FXThumbnailDelegate.FIRST_FREE_ROLE + n</code>: every role number moved</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../installation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Installation">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Installation
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../how-to/" class="md-footer__link md-footer__link--next" aria-label="Next: How-to Guides">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                How-to Guides
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Valentin Beaumont | Licensed under the MIT License
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.action.edit","content.code.annotate","content.code.copy","content.tabs.link","content.tooltips","navigation.expand","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.tabs","navigation.top","search.highlight","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"alias":true,"default":"latest","provider":"mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.3c842f4c.min.js"></script>
+      
+    
+  </body>
+</html>
