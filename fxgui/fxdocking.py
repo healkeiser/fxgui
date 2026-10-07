@@ -331,6 +331,9 @@ class FXDockArea(QWidget):
                 getattr(ads.CDockWidget.DockWidgetFeature, feature), False
             )
         self._docks.setCentralWidget(held)
+        # Out of the size hints until a body arrives: a window seated before
+        # its first show (a tray panel) would otherwise stand its height.
+        held.dockAreaWidget().setVisible(False)
 
     def manager(self) -> "ads.CDockManager":
         """Return the QtAds dock manager under this area."""
@@ -341,6 +344,7 @@ class FXDockArea(QWidget):
         held = self._docks.centralWidget()
         old = held.takeWidget()
         held.setWidget(widget, _NO_SCROLL)
+        held.dockAreaWidget().setVisible(True)
         self._placeholder = False
         if old is not None:
             old.deleteLater()
@@ -440,6 +444,22 @@ class FXDockArea(QWidget):
         """
         self._keep_open = True
         self._hold_open()
+
+    def fix_panes(self) -> None:
+        """Fix every pane docked now where it is: none moves, floats or closes.
+
+        For a window with nowhere to put a pane, such as a tray panel. A pane
+        still opens and shuts through its toggle.
+        """
+        held_by = ads.CDockWidget.DockWidgetFeature
+        for held in self._panes():
+            for feature in (
+                held_by.DockWidgetClosable,
+                held_by.DockWidgetMovable,
+                held_by.DockWidgetFloatable,
+                held_by.DockWidgetPinnable,
+            ):
+                held.setFeature(feature, False)
 
     def save_state(self) -> bytes:
         """Return the layout, or the one waiting for the first show."""

@@ -219,6 +219,41 @@ def test_the_centre_holds_the_body(qtbot):
 
     held = window.docks.manager().centralWidget()
     assert held.widget().text() == "body"
+    assert held.dockAreaWidget().isVisible()
+
+
+def test_panes_with_no_body_ask_before_the_first_show_what_they_take(qtbot):
+    """The empty centre stays out of the hint, so a seated panel fits."""
+    docks = fxdocking.FXDockArea()
+    docks.add_dock("one", "One", QLabel("one"), "top")
+    docks.add_dock("two", "Two", QLabel("two"), "top", tab_with="one")
+    asked = docks.sizeHint().height()
+    qtbot.addWidget(docks)
+    docks.show()
+    qtbot.waitExposed(docks)
+    qtbot.wait(50)
+
+    assert docks.sizeHint().height() == asked
+
+
+def test_fixed_panes_neither_move_float_nor_close_but_still_toggle(qtbot):
+    window = _window(qtbot, ("side", "low"), show=False)
+    window.docks.fix_panes()
+    window.show()
+    qtbot.waitExposed(window)
+    held = window.docks.manager().findDockWidget("side")
+    feature = held.DockWidgetFeature
+
+    for name in ("side", "low"):
+        features = window.docks.manager().findDockWidget(name).features()
+        for fixed in (
+            feature.DockWidgetClosable,
+            feature.DockWidgetMovable,
+            feature.DockWidgetFloatable,
+        ):
+            assert not features & fixed, (name, fixed)
+    window.toggles["side"].trigger()
+    assert held.isClosed(), "its toggle still shuts it"
 
 
 def test_a_pane_folds_from_its_toggle(qtbot):
