@@ -1208,7 +1208,9 @@ def _sheet_icon(
             if not pixmap.save(str(part), "PNG"):
                 raise OSError(f"Cannot write {part}")
             os.replace(part, target)
-    return f"url({path.as_posix()})"
+    # Quoted: Qt drops the whole sheet over a `$` in a bare url, and the
+    # temp folder of a Windows service account ends in one.
+    return f'url("{path.as_posix()}")'
 
 
 def _substitute(qss: str, tokens: Dict[str, str]) -> str:

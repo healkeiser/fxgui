@@ -398,13 +398,43 @@ def test_a_sheet_icon_cut_off_mid_write_is_written_whole_next_time(
 
     url = fxstyle._sheet_icon(svg, "check_123456", 16, "#123456")
 
-    image = QImage(url[len("url("):-1])
+    image = QImage(url[len('url("'):-2])
     assert not image.isNull()
     solid = max(
         (image.pixelColor(x, y) for x in range(16) for y in range(16)),
         key=lambda color: color.alpha(),
     )
     assert solid.alpha() > 128 and solid.name() == "#123456"
+
+
+def test_a_sheet_under_a_dollar_folder_still_parses(
+    qapp, monkeypatch, tmp_path
+):
+    import tempfile
+
+    from qtpy.QtCore import QtMsgType, qInstallMessageHandler
+    from qtpy.QtWidgets import QCheckBox
+
+    folder = tmp_path / "pytest-of-HOST$"
+    monkeypatch.setattr(tempfile, "gettempdir", lambda: str(folder))
+    warnings = []
+    previous = qInstallMessageHandler(
+        lambda kind, _context, text: warnings.append(text)
+        if kind == QtMsgType.QtWarningMsg
+        else None
+    )
+    try:
+        box = QCheckBox()
+        box.setStyleSheet(
+            fxstyle.resolve(
+                "QCheckBox::indicator { image: url(~icons/close.svg); }"
+            )
+        )
+        box.ensurePolished()
+    finally:
+        qInstallMessageHandler(previous)
+
+    assert not [text for text in warnings if "parse" in text]
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
@@ -416,7 +446,7 @@ def test_every_sheet_image_is_a_png_qt_reads_without_the_svg_plugin(
     from qtpy.QtGui import QImageReader
 
     # PNG is built into QtGui; SVG needs the qsvg plugin Cinema 4D lacks.
-    urls = re.findall(r"url\(([^)]*)\)", fxstyle._build_stylesheet(theme))
+    urls = re.findall(r'url\("([^"]*)"\)', fxstyle._build_stylesheet(theme))
     assert urls
     for url in urls:
         assert url.endswith(".png"), url
