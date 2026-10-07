@@ -224,8 +224,8 @@ def test_the_transport_stays_centred_beside_wide_extras(qtbot, qapp):
     qtbot.waitExposed(timeline)
     qapp.processEvents()
 
-    field = timeline._spinbox
-    middle = field.mapTo(timeline, field.rect().center()).x()
+    play = timeline._play_btn
+    middle = play.mapTo(timeline, play.rect().center()).x()
     assert abs(middle - timeline.width() / 2) <= 40
     assert extra.geometry().right() >= timeline.width() - 2
 
@@ -254,6 +254,21 @@ def test_a_borrowed_clock_leaves_the_frame_to_its_owner(qtbot, qapp):
     assert timeline.current_frame() == 12 and moved == []
     timeline.next_frame()
     assert moved == [13], "a person's step still says so"
+
+
+def test_in_and_out_stand_a_group_apart_from_the_steps(qtbot, qapp):
+    timeline = _timeline(qtbot, controls_position="below")
+    timeline.resize(900, 70)
+    qapp.processEvents()
+    mark_in, start = timeline._mark_in_btn, timeline._goto_start_btn
+    prev, play = timeline._prev_btn, timeline._play_btn
+    assert start.x() - mark_in.geometry().right() > prev.x() - (
+        start.geometry().right()
+    )
+    assert play.property("fxRole") == "primary"
+    timeline.play()
+    timeline.stop()
+    assert not play.icon().isNull()
 
 
 def test_a_narrow_timeline_drops_the_jumps_then_the_frame_field(

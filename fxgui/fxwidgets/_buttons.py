@@ -47,21 +47,25 @@ class FXPrimaryButton(QPushButton):
             text, parent = "", text
         super().__init__(text or "", parent)
         self._icons = {}
+        self.pressed.connect(self._show_icon)
+        self.released.connect(self._show_icon)
         if icon:
-            # Qt draws a hovered push button's icon in Normal mode, so the
-            # hover fill's ink is a second icon swapped in; each resolves
-            # its token when drawn.
-            self._icons = {
-                hovered: fxicons.get_icon(icon, color=ink)
-                for hovered, ink in (
-                    (False, "icon_on_accent_primary"),
-                    (True, "icon_on_accent_secondary"),
-                )
-            }
-            self.pressed.connect(self._show_icon)
-            self.released.connect(self._show_icon)
-            self._show_icon()
+            self.set_icon_name(icon)
         self.setProperty("fxRole", "primary")
+
+    def set_icon_name(self, icon: str) -> None:
+        """Draw the material icon `icon` in the on-accent icon colour."""
+        # Qt draws a hovered push button's icon in Normal mode, so the
+        # hover fill's ink is a second icon swapped in; each resolves its
+        # token when drawn.
+        self._icons = {
+            hovered: fxicons.get_icon(icon, color=ink)
+            for hovered, ink in (
+                (False, "icon_on_accent_primary"),
+                (True, "icon_on_accent_secondary"),
+            )
+        }
+        self._show_icon()
 
     def enterEvent(self, event) -> None:
         """Draw the icon in the hover fill's ink."""

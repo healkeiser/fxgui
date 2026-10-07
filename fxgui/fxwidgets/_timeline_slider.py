@@ -28,6 +28,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._buttons import FXPrimaryButton
 from fxgui.fxwidgets._tips import apply_tip
 
 
@@ -142,6 +143,8 @@ class FXTimelineSlider(QWidget):
     STRIP_HEIGHT = 3
     # The token keyframe diamonds are drawn in; a subclass names its own.
     KEYFRAME_TOKEN = "feedback_warning_foreground"
+    # Between the transport's groups, three times a button's own gap.
+    GROUP_GAP = 6
 
     def __init__(
         self,
@@ -231,9 +234,12 @@ class FXTimelineSlider(QWidget):
         self._prev_btn = self._button(
             "chevron_left", self.previous_frame,
             "Previous Frame", "Go back one frame", "Left")
-        self._play_btn = self._button(
-            "play_arrow", self.toggle_playback,
-            "Play", "Start playback", "Space", flat=False)
+        # On the accent: the one control the row is for.
+        self._play_btn = FXPrimaryButton(self, icon="play_arrow")
+        side = fxstyle.control_height(self)
+        self._play_btn.setFixedSize(side, side)
+        self._play_btn.clicked.connect(self.toggle_playback)
+        apply_tip(self._play_btn, "Play", "Start playback", "Space")
         self._next_btn = self._button(
             "chevron_right", self.next_frame,
             "Next Frame", "Go forward one frame", "Right")
@@ -310,18 +316,30 @@ class FXTimelineSlider(QWidget):
             track_row.addWidget(self._end_spinbox)
             root.addLayout(track_row)
 
-            # Mirror-symmetric round the frame field: in/out outermost,
-            # then start/end, keyframe nav, prev/next. Play sits right of
-            # the field, the loop toggle is its left counterpart.
+            # Mirror-symmetric round Play: the steps, then the jumps, then
+            # in and out a group apart.
             cluster = QHBoxLayout()
             cluster.setSpacing(2)
-            for widget in (
-                self._loop_btn, self._mark_in_btn, self._goto_start_btn,
-                self._prev_key_btn, self._prev_btn, self._spinbox,
-                self._play_btn, self._next_btn, self._next_key_btn,
-                self._goto_end_btn, self._mark_out_btn,
-            ):
-                cluster.addWidget(widget)
+            groups = (
+                (self._mark_in_btn,),
+                (self._goto_start_btn, self._prev_key_btn, self._prev_btn,
+                 self._play_btn, self._next_btn, self._next_key_btn,
+                 self._goto_end_btn),
+                (self._mark_out_btn,),
+            )
+            for index, group in enumerate(groups):
+                if index:
+                    cluster.addSpacing(self.GROUP_GAP)
+                for widget in group:
+                    cluster.addWidget(widget)
+
+            # Where the playhead is, then how fast it moves.
+            readouts = QHBoxLayout()
+            readouts.setSpacing(fxstyle.PANE_GAP)
+            readouts.addWidget(self._spinbox)
+            readouts.addWidget(self._fps_spinbox)
+            self._extra_controls_layout.addWidget(self._loop_btn)
+            self._extra_controls_layout.addSpacing(self.GROUP_GAP)
 
             # Equal outer columns keep the cluster centred, whatever sits
             # on either side.
@@ -329,8 +347,8 @@ class FXTimelineSlider(QWidget):
             controls_row.setContentsMargins(0, 0, 0, 0)
             controls_row.setColumnStretch(0, 1)
             controls_row.setColumnStretch(2, 1)
-            controls_row.addWidget(
-                self._fps_spinbox, 0, 0, Qt.AlignLeft | Qt.AlignVCenter
+            controls_row.addLayout(
+                readouts, 0, 0, Qt.AlignLeft | Qt.AlignVCenter
             )
             controls_row.addLayout(cluster, 0, 1)
             controls_row.addLayout(
@@ -372,6 +390,7 @@ class FXTimelineSlider(QWidget):
             self._shed = [
                 [w for w in (self._goto_start_btn, self._goto_end_btn)
                  if w in shown],
+                [w for w in marks if w in shown],
                 [self._spinbox] if self._spinbox in shown else [],
             ]
             # As narrow as the row with everything shed, never narrower.
@@ -416,14 +435,13 @@ class FXTimelineSlider(QWidget):
         title: str,
         body: str,
         keys: str = "",
-        flat: bool = True,
     ) -> QPushButton:
-        """Return a square transport button a push button's height."""
+        """Return a flat square transport button a push button's height."""
         button = QPushButton(self)
         fxicons.set_icon(button, icon)
         side = fxstyle.control_height(self)
         button.setFixedSize(side, side)
-        button.setFlat(flat)
+        button.setFlat(True)
         if slot is not None:
             button.clicked.connect(slot)
         apply_tip(button, title, body, keys)
@@ -780,7 +798,7 @@ class FXTimelineSlider(QWidget):
         # Ticks at the frame rate; the clock, not the tick count, decides.
         if self._own_clock:
             self._playback_timer.start(max(1, int(1000 / self.fps())))
-        fxicons.set_icon(self._play_btn, "pause")
+        self._play_btn.set_icon_name("pause")
         apply_tip(self._play_btn, "Pause", "Pause playback", "Space")
         self.playback_started.emit()
 
@@ -788,7 +806,7 @@ class FXTimelineSlider(QWidget):
         """Stop playback."""
         self._is_playing = False
         self._playback_timer.stop()
-        fxicons.set_icon(self._play_btn, "play_arrow")
+        self._play_btn.set_icon_name("play_arrow")
         apply_tip(self._play_btn, "Play", "Start playback", "Space")
         self.playback_stopped.emit()
 
