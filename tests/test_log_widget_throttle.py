@@ -73,7 +73,7 @@ def test_a_record_from_the_signal_is_queued_like_any_other(qtbot, qapp):
     pane = _pane(qtbot)
 
     for index in range(6):
-        pane.log_message.emit(f"through the signal {index}")
+        pane.log_message.emit(f"through the signal {index}", 0)
 
     qtbot.waitUntil(lambda: len(_lines(pane)) == 6)
     assert _lines(pane) == [f"through the signal {index}" for index in range(6)]

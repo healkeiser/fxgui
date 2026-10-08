@@ -6,7 +6,7 @@ import logging
 import re
 import weakref
 from collections import deque
-from typing import Deque, Optional, Pattern, Sequence, Union
+from typing import Deque, Optional, Pattern, Sequence, Tuple, Union
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal
@@ -67,7 +67,7 @@ class FXOutputLogHandler(logging.Handler):
             return
         try:
             # The signal hands the text to the widget's thread.
-            widget.log_message.emit(self.format(record))
+            widget.log_message.emit(self.format(record), record.levelno)
         except Exception:  # noqa: BLE001 - logging's own handler contract
             self.handleError(record)
 
@@ -151,8 +151,8 @@ class FXOutputLogWidget(QWidget):
             Nothing is added to the text, so a copy gives the original.
 
     Signals:
-        log_message: Emitted when a log message is received (for thread-safe
-            delivery).
+        log_message: Emitted with a message and its level when a record is
+            received (for thread-safe            delivery).
 
     Examples:
         >>> import logging
@@ -162,7 +162,7 @@ class FXOutputLogWidget(QWidget):
     """
 
     # Signal for thread-safe log message delivery
-    log_message = Signal(str)
+    log_message = Signal(str, int)
 
     # Records per flush: 1000 take about 8.5 ms, inside the 16 ms tick.
     MAX_RECORDS_PER_FLUSH = 1000
@@ -183,7 +183,9 @@ class FXOutputLogWidget(QWidget):
         self._hang = re.compile(hang_indent) if hang_indent else None
 
         # The throttle limits repaints, never records: all are queued.
-        self._pending_logs: Deque[str] = deque()
+        self._pending_logs: Deque[Tuple[str, int]] = deque()
+        # `(minimum, below)` while filtered by level, `None` showing all.
+        self._levels: Optional[Tuple[int, Optional[int]]] = None
         self._throttle_timer = QTimer(self)
         self._throttle_timer.setSingleShot(True)
         self._throttle_timer.timeout.connect(self._flush_pending_log)
@@ -286,11 +288,27 @@ class FXOutputLogWidget(QWidget):
         self.clear_button.clicked.connect(self.clear_log)
         apply_tip(self.clear_button, "Clear Log", "Clear all log messages")
 
+        self._filter_bar = QWidget()
+        filter_layout = QHBoxLayout(self._filter_bar)
+        filter_layout.setContentsMargins(0, 0, 0, 0)
+        filter_layout.setSpacing(fxstyle.PANE_GAP)
+        self.filter_label = QLabel("")
+        filter_layout.addWidget(self.filter_label)
+        self.show_all_button = QPushButton("Show all")
+        fxicons.set_icon(self.show_all_button, "filter_alt_off")
+        self.show_all_button.clicked.connect(lambda _c=False: self.show_levels())
+        apply_tip(
+            self.show_all_button, "Show All", "Show every level again")
+        filter_layout.addWidget(self.show_all_button)
+        filter_layout.addStretch(1)
+        self._filter_bar.hide()
+
         # Clear keeps the right edge; the bar takes the rest. With both
         # hidden the row is empty and takes no room.
         bottom_layout = QHBoxLayout()
         bottom_layout.setContentsMargins(0, 0, 0, 0)
         bottom_layout.setSpacing(fxstyle.PANE_GAP)
+        bottom_layout.addWidget(self._filter_bar, 1)
         bottom_layout.addWidget(self._search_bar, 1)
         bottom_layout.addWidget(self.clear_button, 0, Qt.AlignRight)
         layout.addLayout(bottom_layout)
@@ -397,7 +415,16 @@ class FXOutputLogWidget(QWidget):
         # One edit block: the document lays out once per flush, not per line.
         cursor.beginEditBlock()
         for _ in range(min(len(self._pending_logs), self.MAX_RECORDS_PER_FLUSH)):
-            self._insert_text_with_ansi(cursor, self._pending_logs.popleft())
+            text, level = self._pending_logs.popleft()
+            first = cursor.block()
+            self._insert_text_with_ansi(cursor, text)
+            # Every line of the record carries its level, a traceback too.
+            last = cursor.blockNumber()
+            block = first
+            while block.isValid() and block.blockNumber() <= last:
+                block.setUserState(level)
+                block.setVisible(self._passes(level))
+                block = block.next()
             cursor.insertText("\n")
         cursor.endEditBlock()
 
@@ -406,7 +433,7 @@ class FXOutputLogWidget(QWidget):
 
         self._throttle_timer.start(self._throttle_interval)
 
-    def append_log(self, text: str) -> None:
+    def append_log(self, text: str, level: int = logging.NOTSET) -> None:
         """Queue text for the pane; every record queued is shown.
 
         The first record of a burst is written at once, the rest on the
@@ -414,8 +441,9 @@ class FXOutputLogWidget(QWidget):
 
         Args:
             text: Text to append (may contain ANSI color codes).
+            level: The record's logging level, which `show_levels` reads.
         """
-        self._pending_logs.append(text)
+        self._pending_logs.append((text, level))
         if not self._throttle_timer.isActive():
             self._flush_pending_log()
 
@@ -428,7 +456,7 @@ class FXOutputLogWidget(QWidget):
         Args:
             lines: Each without its own newline; may carry ANSI codes.
         """
-        self._pending_logs.extend(lines)
+        self._pending_logs.extend((line, logging.NOTSET) for line in lines)
         if not self._throttle_timer.isActive():
             self._flush_pending_log()
 
@@ -499,6 +527,40 @@ class FXOutputLogWidget(QWidget):
             cursor.setPosition(position + length, QTextCursor.KeepAnchor)
             cursor.setCharFormat(fmt)
         cursor.endEditBlock()
+
+    def show_levels(
+        self, minimum: int = logging.NOTSET, below: Optional[int] = None
+    ) -> None:
+        """Show only records from `minimum` up to, not including, `below`.
+
+        The defaults show every line. While filtered, a bar under the log
+        names the filter and offers Show all, and lines appended without
+        a level stay hidden.
+        """
+        filtered = minimum > logging.NOTSET or below is not None
+        self._levels = (minimum, below) if filtered else None
+        if filtered:
+            name = logging.getLevelName(minimum).lower()
+            self.filter_label.setText(
+                f"Showing {name}s " + ("only" if below is not None else "and above")
+            )
+        self._filter_bar.setVisible(filtered)
+        document = self.output_area.document()
+        block = document.begin()
+        while block.isValid():
+            block.setVisible(self._passes(block.userState()))
+            block = block.next()
+        # Visibility is read at layout time, so lay the whole log out again.
+        document.markContentsDirty(0, document.characterCount())
+        scrollbar = self.output_area.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+
+    def _passes(self, level: int) -> bool:
+        """Return whether a line at `level` is shown under the filter."""
+        if self._levels is None:
+            return True
+        minimum, below = self._levels
+        return level >= minimum and (below is None or level < below)
 
     def clear_log(self) -> None:
         """Clear the log output."""
