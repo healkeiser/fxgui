@@ -1,0 +1,3254 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DCC applications.">
+      
+      
+        <meta name="author" content="Valentin Beaumont">
+      
+      
+        <link rel="canonical" href="https://healkeiser.github.io/fxgui/13.10.3/how-to/theming/">
+      
+      
+        <link rel="prev" href="../styling/">
+      
+      
+        <link rel="next" href="../widgets/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/fxgui_logo_background_light.svg">
+      <meta name="generator" content="zensical-0.0.68">
+    
+    
+      
+        <title>Theming - fxgui</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.595f2bf5.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b27955a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="fxgui" class="md-header__button md-logo" aria-label="fxgui" data-md-component="logo">
+      
+  <img src="../../images/fxgui_logo_light.svg" alt="fxgui">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            fxgui
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Theming
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/healkeiser/fxgui" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    healkeiser/fxgui
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../installation/" class="md-tabs__link">
+        
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../moving-from-12/" class="md-tabs__link">
+        
+  
+  Moving from 12.x
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  How-to
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+    
+    
+    
+    
+      
+  
+  
+  
+  
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../technical/fxgui/" class="md-tabs__link">
+          
+  
+  Technical
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="fxgui" class="md-nav__button md-logo" aria-label="fxgui" data-md-component="logo">
+      
+  <img src="../../images/fxgui_logo_light.svg" alt="fxgui">
+
+    </a>
+    fxgui
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/healkeiser/fxgui" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    healkeiser/fxgui
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../moving-from-12/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Moving from 12.x
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  How-to
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  How-to
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../styling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Styling
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Theming
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Theming
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-the-theme-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Understanding the Theme Structure
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theme-color-roles-complete-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Theme Color Roles - Complete Reference
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Theme Color Roles - Complete Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#accent-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Accent Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#surface-colors-backgrounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Surface Colors (Backgrounds)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#border-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Border Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#text-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Text Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interactive-state-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Interactive State Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scrollbar-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scrollbar Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layout-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Layout Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shadow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Shadow
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icon-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Icon Color
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feedback-colors-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Feedback Colors Reference
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dcc-colors-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        DCC Colors Reference
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-your-custom-theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Creating Your Custom Theme
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-your-custom-theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Using Your Custom Theme
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#switching-themes-at-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Switching Themes at Runtime
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-a-theme-puts-on-a-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What a Theme Puts on a Window
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-theme-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reading Theme Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-themed-roots" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Registering Themed Roots
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reacting-to-theme-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reacting to Theme Changes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-control-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Control Language
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Control Language">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#size-and-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Size and shape
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fills-and-edges-by-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Fills and edges by state
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#focus-shows-only-after-the-keyboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Focus shows only after the keyboard
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parts-that-must-be-seen" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Parts that must be seen
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#accent-text-and-icons" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Accent, text and icons
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#popups-cards-and-shadows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Popups, cards and shadows
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sliders-and-switches" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sliders and switches
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cards-in-item-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cards in item views
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-your-own-widget-styles" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Registering Your Own Widget Styles
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repolishing-after-a-property-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Repolishing After a Property Change
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-custom-widget-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Custom Widget Contract
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Custom Widget Contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#available-color-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Available Color Tokens
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../widgets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Widgets
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../icons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Icons
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Changelog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Technical
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Technical
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../technical/fxgui/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxgui
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_6_1">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  fxgui
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical/fxgui/examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  examples
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical/fxgui/fxconfig/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxconfig
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical/fxgui/fxconstants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxconstants
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical/fxgui/fxcore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxcore
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical/fxgui/fxdocking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxdocking
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical/fxgui/fxicons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxicons
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical/fxgui/fxstyle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxstyle
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical/fxgui/fxutils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxutils
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical/fxgui/fxwidgets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  fxwidgets
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-the-theme-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Understanding the Theme Structure
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theme-color-roles-complete-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Theme Color Roles - Complete Reference
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Theme Color Roles - Complete Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#accent-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Accent Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#surface-colors-backgrounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Surface Colors (Backgrounds)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#border-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Border Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#text-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Text Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interactive-state-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Interactive State Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scrollbar-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scrollbar Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layout-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Layout Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shadow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Shadow
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#icon-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Icon Color
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feedback-colors-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Feedback Colors Reference
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dcc-colors-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        DCC Colors Reference
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-your-custom-theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Creating Your Custom Theme
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-your-custom-theme" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Using Your Custom Theme
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#switching-themes-at-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Switching Themes at Runtime
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-a-theme-puts-on-a-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What a Theme Puts on a Window
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-theme-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reading Theme Colors
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-themed-roots" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Registering Themed Roots
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reacting-to-theme-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reacting to Theme Changes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-control-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Control Language
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Control Language">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#size-and-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Size and shape
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fills-and-edges-by-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Fills and edges by state
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#focus-shows-only-after-the-keyboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Focus shows only after the keyboard
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parts-that-must-be-seen" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Parts that must be seen
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#accent-text-and-icons" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Accent, text and icons
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#popups-cards-and-shadows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Popups, cards and shadows
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sliders-and-switches" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sliders and switches
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cards-in-item-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cards in item views
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-your-own-widget-styles" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Registering Your Own Widget Styles
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repolishing-after-a-property-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Repolishing After a Property Change
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-custom-widget-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Custom Widget Contract
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Custom Widget Contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#available-color-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Available Color Tokens
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    How-to
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+    <a href="https://github.com/healkeiser/fxgui/edit/main/docs/how-to/theming.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="theming"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7.5 2c-1.79 1.15-3 3.18-3 5.5s1.21 4.35 3.03 5.5C4.46 13 2 10.54 2 7.5A5.5 5.5 0 0 1 7.5 2m11.57 1.5 1.43 1.43L4.93 20.5 3.5 19.07zm-6.18 2.43L11.41 5 9.97 6l.42-1.7L9 3.24l1.75-.12.58-1.65L12 3.1l1.73.03-1.35 1.13zm-3.3 3.61-1.16-.73-1.12.78.34-1.32-1.09-.83 1.36-.09.45-1.29.51 1.27 1.36.03-1.05.87zM19 13.5a5.5 5.5 0 0 1-5.5 5.5c-1.22 0-2.35-.4-3.26-1.07l7.69-7.69c.67.91 1.07 2.04 1.07 3.26m-4.4 6.58 2.77-1.15-.24 3.35zm4.33-2.7 1.15-2.77 2.2 2.54zm1.15-4.96-1.14-2.78 3.34.24zM9.63 18.93l2.77 1.15-2.53 2.19z"/></svg></span> Theming<a class="headerlink" href="#theming" title="Permanent link">&para;</a></h1>
+<p>fxgui uses a YAML configuration file to define all theme colors. YAML supports <strong>anchors and aliases</strong> for theme inheritance, allowing you to create new themes that extend existing ones and override only specific colors.</p>
+<h2 id="understanding-the-theme-structure">Understanding the Theme Structure<a class="headerlink" href="#understanding-the-theme-structure" title="Permanent link">&para;</a></h2>
+<p>The default <code>style.yaml</code> file contains several sections:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># DCC branding colors</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">dcc</span><span class="p">:</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">houdini</span><span class="p">:</span><span class="w"> </span><span class="s">"#ff6600"</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">maya</span><span class="p">:</span><span class="w"> </span><span class="s">"#38a6cc"</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">nuke</span><span class="p">:</span><span class="w"> </span><span class="s">"#fcb434"</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Theme definitions with inheritance</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nt">themes</span><span class="p">:</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">dark</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;dark</span><span class="w">  </span><span class="c1"># Define anchor for inheritance</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="nt">accent_primary</span><span class="p">:</span><span class="w"> </span><span class="s">"#2196F3"</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="c1"># ... all colors ...</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nt">feedback</span><span class="p">:</span><span class="w">  </span><span class="c1"># status colours: debug, info, success, warning, error</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="nt">error</span><span class="p">:</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="nt">foreground</span><span class="p">:</span><span class="w"> </span><span class="s">"#ff4444"</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">        </span><span class="nt">background</span><span class="p">:</span><span class="w"> </span><span class="s">"#7b2323"</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span><span class="nt">dracula</span><span class="p">:</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*dark</span><span class="w">  </span><span class="c1"># Inherit from dark theme</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="nt">accent_primary</span><span class="p">:</span><span class="w"> </span><span class="s">"#bd93f9"</span><span class="w">  </span><span class="c1"># Override specific colors</span>
+</span></code></pre></div>
+<h2 id="theme-color-roles-complete-reference">Theme Color Roles - Complete Reference<a class="headerlink" href="#theme-color-roles-complete-reference" title="Permanent link">&para;</a></h2>
+<p>Each theme defines semantic color roles. All names are designed to clearly indicate their purpose:</p>
+<h3 id="accent-colors">Accent Colors<a class="headerlink" href="#accent-colors" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accent_primary</code></td>
+<td>Selection, keyboard focus, the current menu item, a filled span, the primary action</td>
+</tr>
+<tr>
+<td><code>accent_secondary</code></td>
+<td>A primary button's hover fill and a pressed menu item; never a hover fill</td>
+</tr>
+</tbody>
+</table>
+<h3 id="surface-colors-backgrounds">Surface Colors (Backgrounds)<a class="headerlink" href="#surface-colors-backgrounds" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>surface</code></td>
+<td>Main widget/window backgrounds, buttons, selected tabs, toolbar</td>
+</tr>
+<tr>
+<td><code>surface_alt</code></td>
+<td>Alternate surface - odd rows in lists/tables, secondary panels</td>
+</tr>
+<tr>
+<td><code>surface_sunken</code></td>
+<td>Recessed/inset areas - input fields, lists, status bar</td>
+</tr>
+<tr>
+<td><code>frame</code></td>
+<td>The chrome around the panes of a framed window (optional)</td>
+</tr>
+<tr>
+<td><code>well</code></td>
+<td>Lists and logs set into a pane (optional)</td>
+</tr>
+<tr>
+<td><code>pane_border</code></td>
+<td>The 1 px edge of a pane on the frame (optional)</td>
+</tr>
+<tr>
+<td><code>splitter_mark</code></td>
+<td>The dots on a marked splitter's handles (optional)</td>
+</tr>
+<tr>
+<td><code>tooltip</code></td>
+<td>Tooltip popup backgrounds</td>
+</tr>
+</tbody>
+</table>
+<p><code>frame</code>, <code>well</code>, <code>pane_border</code> and <code>splitter_mark</code> are computed when a theme leaves them out, and a theme that states one keeps its own value:</p>
+<ul>
+<li><code>frame</code> is <code>surface_sunken</code> when that is darker than <code>surface</code> by a contrast of at least <code>fxstyle.FRAME_MIN_CONTRAST</code> (1.06). Otherwise it is <code>surface</code> darkened toward black until it is, which keeps the pane's own tint and never brings in the accent. In every bundled dark theme, and in <code>github_light</code> and <code>catppuccin_latte</code>, that is <code>surface_sunken</code>; <code>light</code> and <code>solarized_light</code> have a sunken surface as light as the pane, so they get a darkened one.</li>
+<li>A pane too dark to darken (pure black, as in an OLED theme) gets a frame lighter than itself instead.</li>
+<li><code>well</code> is half-way from <code>surface</code> to <code>frame</code>, so a list inside a pane reads one step deeper than the pane and one step shallower than the frame. Where half-way differs from <code>surface</code> by less than <code>fxstyle.WELL_MIN_CONTRAST</code> (1.04), the well moves on toward the frame until it does; <code>github_light</code> is the one bundled theme where that happens.</li>
+<li><code>pane_border</code> is <code>border</code> when that differs from <code>frame</code> by a contrast of at least <code>fxstyle.PANE_BORDER_MIN_CONTRAST</code> (1.3). Otherwise it is <code>border</code> pushed further from the frame (darker on a light frame, lighter on a dark one) until it does. <code>light</code> and <code>catppuccin_latte</code> get a darker one; every other bundled theme keeps its <code>border</code>.</li>
+<li><code>splitter_mark</code> is <code>border</code>, else <code>border_light</code>, else <code>border_light</code> moved toward <code>text</code>, whichever first differs from <code>frame</code> by <code>fxstyle.SPLITTER_MARK_MIN_CONTRAST</code> (1.3). <code>light</code> and <code>catppuccin_latte</code> use <code>border_light</code>.</li>
+</ul>
+<h3 id="border-colors">Border Colors<a class="headerlink" href="#border-colors" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>border</code></td>
+<td>Standard borders - inputs, containers, menus, separators</td>
+</tr>
+<tr>
+<td><code>border_light</code></td>
+<td>Subtle borders - button borders, tab borders</td>
+</tr>
+<tr>
+<td><code>border_strong</code></td>
+<td>Emphasized borders - frames, separator lines</td>
+</tr>
+</tbody>
+</table>
+<h3 id="text-colors">Text Colors<a class="headerlink" href="#text-colors" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code></td>
+<td>Primary text for all widgets</td>
+</tr>
+<tr>
+<td><code>text_muted</code></td>
+<td>Secondary text: placeholders, secondary labels, headers, the tabs that are not current</td>
+</tr>
+<tr>
+<td><code>text_disabled</code></td>
+<td>Disabled widget text</td>
+</tr>
+<tr>
+<td><code>text_on_accent_primary</code></td>
+<td><em>(Optional)</em> Text on <code>accent_primary</code> backgrounds (e.g., selected items). Auto-computed if omitted</td>
+</tr>
+<tr>
+<td><code>text_on_accent_secondary</code></td>
+<td><em>(Optional)</em> Text on <code>accent_secondary</code> backgrounds (a hovered primary button). Auto-computed if omitted</td>
+</tr>
+</tbody>
+</table>
+<p><code>text</code> and <code>text_muted</code> are held to 4.5:1 (<code>fxstyle.TEXT_CONTRAST</code>, WCAG AA) on every surface they sit on: <code>surface</code>, <code>surface_sunken</code>, <code>surface_alt</code>, <code>well</code>, <code>frame</code>, <code>tooltip</code> and <code>state_hover</code>, and <code>text</code> on <code>state_pressed</code> too. A theme's value that misses it is darkened or lightened until it reads, so <code>fxstyle.colors().text</code> can differ from the file. <code>text</code> then moves on until it stands 1.5:1 off <code>text_muted</code> (<code>fxstyle.MUTED_STEP</code>), so the two always read as two ranks; where <code>text</code> is already black or white, <code>text_muted</code> steps back toward the surface instead, as far as it still reads at 4.5:1.</p>
+<p>An omitted <code>text_on_accent_*</code> is black or white, whichever reads better on the accent.</p>
+<h3 id="interactive-state-colors">Interactive State Colors<a class="headerlink" href="#interactive-state-colors" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state_hover</code></td>
+<td>Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Pushed to 1.2:1 off <code>surface</code>, <code>surface_sunken</code> and <code>well</code> when a theme sets it closer</td>
+</tr>
+<tr>
+<td><code>state_pressed</code></td>
+<td>Pressed and checked fills, an open menu bar item, the current tab's pill. Pushed to 1.2:1 off <code>state_hover</code> (<code>fxstyle.STATE_MIN_CONTRAST</code>) when a theme sets the two closer</td>
+</tr>
+</tbody>
+</table>
+<h3 id="scrollbar-colors">Scrollbar Colors<a class="headerlink" href="#scrollbar-colors" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scrollbar_track</code></td>
+<td>Menu bar and status bar borders; a scroll bar has no track</td>
+</tr>
+<tr>
+<td><code>scrollbar_thumb</code></td>
+<td>Draggable thumb</td>
+</tr>
+<tr>
+<td><code>scrollbar_thumb_hover</code></td>
+<td>Thumb hover state</td>
+</tr>
+</tbody>
+</table>
+<h3 id="layout-colors">Layout Colors<a class="headerlink" href="#layout-colors" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>grid</code></td>
+<td>Table gridlines, a checked push button's edge</td>
+</tr>
+</tbody>
+</table>
+<h3 id="shadow">Shadow<a class="headerlink" href="#shadow" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>shadow</code></td>
+<td>Colour of a floating card's drop shadow, <code>#AARRGGBB</code> (dark <code>#50000000</code>, light <code>#28000000</code>)</td>
+</tr>
+<tr>
+<td><code>shadow_blur</code></td>
+<td>Its blur radius in pixels (20)</td>
+</tr>
+<tr>
+<td><code>scrim</code></td>
+<td>Fill dimming a pane behind <code>FXLoadingOverlay</code>, <code>#AARRGGBB</code> (<code>#80000000</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="icon-color">Icon Color<a class="headerlink" href="#icon-color" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>icon</code></td>
+<td>Tint color for monochrome icons via <code>fxicons.get_icon()</code> and standard Qt icons</td>
+</tr>
+</tbody>
+</table>
+<h2 id="feedback-colors-reference">Feedback Colors Reference<a class="headerlink" href="#feedback-colors-reference" title="Permanent link">&para;</a></h2>
+<p>Each theme has a <code>feedback:</code> block; a theme without one takes <code>dark</code>'s. Used by <code>FXNotificationBanner</code>, <code>FXOutputLogWidget</code>, and other status widgets. Each colour is a token, <code>feedback_&lt;level&gt;_&lt;part&gt;</code>: <code>fxstyle.colors().feedback_error_foreground</code>, or <code>fxstyle.qcolor("feedback_error_foreground")</code> for a QColor.</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Property</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>debug</code></td>
+<td><code>foreground</code></td>
+<td>Text/icon color for debug messages</td>
+</tr>
+<tr>
+<td><code>debug</code></td>
+<td><code>background</code></td>
+<td>Background color for debug notifications</td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td><code>foreground</code></td>
+<td>Text/icon color for info messages</td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td><code>background</code></td>
+<td>Background color for info notifications</td>
+</tr>
+<tr>
+<td><code>success</code></td>
+<td><code>foreground</code></td>
+<td>Text/icon color for success messages</td>
+</tr>
+<tr>
+<td><code>success</code></td>
+<td><code>background</code></td>
+<td>Background color for success notifications</td>
+</tr>
+<tr>
+<td><code>warning</code></td>
+<td><code>foreground</code></td>
+<td>Text/icon color for warning messages</td>
+</tr>
+<tr>
+<td><code>warning</code></td>
+<td><code>background</code></td>
+<td>Background color for warning notifications</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><code>foreground</code></td>
+<td>Text/icon color for error messages</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><code>background</code></td>
+<td>Background color for error notifications</td>
+</tr>
+</tbody>
+</table>
+<h2 id="dcc-colors-reference">DCC Colors Reference<a class="headerlink" href="#dcc-colors-reference" title="Permanent link">&para;</a></h2>
+<p>Used by DCC-specific widgets and branding elements:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Software</th>
+<th>Default Color</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>houdini</code></td>
+<td>SideFX Houdini</td>
+<td><code>#ff6600</code> (orange)</td>
+</tr>
+<tr>
+<td><code>maya</code></td>
+<td>Autodesk Maya</td>
+<td><code>#38a6cc</code> (teal/cyan)</td>
+</tr>
+<tr>
+<td><code>nuke</code></td>
+<td>Foundry Nuke</td>
+<td><code>#fcb434</code> (yellow/gold)</td>
+</tr>
+<tr>
+<td><code>megascans</code></td>
+<td>Quixel Megascans</td>
+<td><code>#8ecd4f</code> (green)</td>
+</tr>
+<tr>
+<td><code>bridge</code></td>
+<td>Quixel Bridge</td>
+<td><code>#1aa9f3</code> (blue)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="creating-your-custom-theme">Creating Your Custom Theme<a class="headerlink" href="#creating-your-custom-theme" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Copy the default file</strong> as a starting point:</li>
+</ol>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># The default style.yaml location</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">default_file</span> <span class="o">=</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">DEFAULT_COLOR_FILE</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Default file: </span><span class="si">{</span><span class="n">default_file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Copy it to your preferred location</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">custom_file</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">".fxgui"</span> <span class="o">/</span> <span class="s2">"my_theme.yaml"</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">custom_file</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">default_file</span><span class="p">,</span> <span class="n">custom_file</span><span class="p">)</span>
+</span></code></pre></div>
+<ol>
+<li><strong>Add your theme</strong> using YAML inheritance:</li>
+</ol>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">themes</span><span class="p">:</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="c1"># Base dark theme with anchor</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">dark</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;dark</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">accent_primary</span><span class="p">:</span><span class="w"> </span><span class="s">"#2196F3"</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">surface</span><span class="p">:</span><span class="w"> </span><span class="s">"#302f2f"</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="c1"># ... existing dark colors ...</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="c1"># Your custom theme inheriting from dark</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="nt">monokai</span><span class="p">:</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*dark</span><span class="w">  </span><span class="c1"># Inherit ALL colors from dark theme</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="c1"># Override only the colors you want to change</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="nt">accent_primary</span><span class="p">:</span><span class="w"> </span><span class="s">"#A6E22E"</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="nt">accent_secondary</span><span class="p">:</span><span class="w"> </span><span class="s">"#66D9EF"</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">    </span><span class="nt">surface</span><span class="p">:</span><span class="w"> </span><span class="s">"#272822"</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span><span class="nt">surface_alt</span><span class="p">:</span><span class="w"> </span><span class="s">"#1e1f1c"</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="nt">surface_sunken</span><span class="p">:</span><span class="w"> </span><span class="s">"#1a1a17"</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="nt">tooltip</span><span class="p">:</span><span class="w"> </span><span class="s">"#3e3d32"</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="nt">border</span><span class="p">:</span><span class="w"> </span><span class="s">"#49483e"</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">    </span><span class="nt">border_light</span><span class="p">:</span><span class="w"> </span><span class="s">"#75715e"</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">    </span><span class="nt">border_strong</span><span class="p">:</span><span class="w"> </span><span class="s">"#49483e"</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">    </span><span class="nt">text</span><span class="p">:</span><span class="w"> </span><span class="s">"#f8f8f2"</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">    </span><span class="nt">text_muted</span><span class="p">:</span><span class="w"> </span><span class="s">"#a59f85"</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">    </span><span class="nt">text_disabled</span><span class="p">:</span><span class="w"> </span><span class="s">"#75715e"</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">    </span><span class="nt">state_hover</span><span class="p">:</span><span class="w"> </span><span class="s">"#3e3d32"</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">    </span><span class="nt">state_pressed</span><span class="p">:</span><span class="w"> </span><span class="s">"#49483e"</span>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">    </span><span class="nt">scrollbar_track</span><span class="p">:</span><span class="w"> </span><span class="s">"#1e1f1c"</span>
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">    </span><span class="nt">scrollbar_thumb</span><span class="p">:</span><span class="w"> </span><span class="s">"#49483e"</span>
+</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">    </span><span class="nt">scrollbar_thumb_hover</span><span class="p">:</span><span class="w"> </span><span class="s">"#75715e"</span>
+</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a>
+</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="w">    </span><span class="nt">grid</span><span class="p">:</span><span class="w"> </span><span class="s">"#49483e"</span>
+</span><span id="__span-2-37"><a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a>
+</span><span id="__span-2-38"><a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="w">    </span><span class="nt">icon</span><span class="p">:</span><span class="w"> </span><span class="s">"#f8f8f2"</span>
+</span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">YAML Inheritance</p>
+<p>Use <code>&amp;anchor_name</code> to define a base theme, then <code>&lt;&lt;: *anchor_name</code> to inherit from it.
+Any colors you specify after the inheritance line will override the inherited values.</p>
+</div>
+<h2 id="using-your-custom-theme">Using Your Custom Theme<a class="headerlink" href="#using-your-custom-theme" title="Permanent link">&para;</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span><span class="p">,</span> <span class="n">fxwidgets</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Set your custom color file BEFORE creating any widgets</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">set_color_file</span><span class="p">(</span><span class="s2">"/path/to/my_theme.yaml"</span><span class="p">)</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># Check available themes (includes your custom ones)</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">get_available_themes</span><span class="p">())</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># ['dark', 'light', 'dracula', 'one_dark_pro', 'github_dark', 'github_light',</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="c1">#  'catppuccin_mocha', 'catppuccin_latte', 'nord', 'material_dark',</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="c1">#  'solarized_light', 'monokai']</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="c1"># Create your application</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="n">app</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXApplication</span><span class="p">()</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="n">window</span> <span class="o">=</span> <span class="n">fxwidgets</span><span class="o">.</span><span class="n">FXMainWindow</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Custom Theme Demo"</span><span class="p">)</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="n">window</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="c1"># Apply your custom theme, everywhere</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="s2">"monokai"</span><span class="p">)</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="n">app</span><span class="o">.</span><span class="n">exec</span><span class="p">()</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>FXApplication</code> is a themed root (see "Registering Themed Roots" further down), so <code>apply_theme()</code> reaches every window without you touching one.</p>
+</div>
+<p>A file that cannot be read raises <code>OSError</code> (<code>FileNotFoundError</code> for a wrong
+path), and one that is no YAML raises <code>yaml.YAMLError</code>, both from
+<code>set_color_file</code> itself. The colours already loaded stay in force.</p>
+<h2 id="switching-themes-at-runtime">Switching Themes at Runtime<a class="headerlink" href="#switching-themes-at-runtime" title="Permanent link">&para;</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="s2">"dracula"</span><span class="p">)</span>
+</span></code></pre></div>
+<p><code>apply_theme(name)</code> takes one theme name. It saves the choice, rebuilds
+the stylesheet, puts the theme's stylesheet, palette and font on every
+themed root, and emits <code>theme_changed</code>. A name that is not a theme raises
+<code>ValueError</code>; anything that is not a string raises <code>TypeError</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The choice is saved through <code>fxconfig</code>. The next time the application
+starts, <code>FXApplication</code> loads it again.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Built-in themes: <code>dark</code>, <code>light</code>, <code>dracula</code>, <code>one_dark_pro</code>, <code>github_dark</code>, <code>github_light</code>, <code>catppuccin_mocha</code>, <code>catppuccin_latte</code>, <code>nord</code>, <code>material_dark</code>, and <code>solarized_light</code>.</p>
+</div>
+<h2 id="what-a-theme-puts-on-a-window">What a Theme Puts on a Window<a class="headerlink" href="#what-a-theme-puts-on-a-window" title="Permanent link">&para;</a></h2>
+<p>A themed root (see below) gets three things, and each has one job:</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Where it comes from</th>
+<th>What it carries</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stylesheet</td>
+<td><code>style.qss</code> plus every registered fragment, <code>@tokens</code> resolved</td>
+<td>Shapes, borders, radii, states (hover, pressed, focus) and each widget's own look. The text colour.</td>
+</tr>
+<tr>
+<td>Palette</td>
+<td><code>fxstyle.palette()</code></td>
+<td>Default fills: a window's <code>Window</code>, an item view's <code>Base</code>, <code>Highlight</code>, and the rest</td>
+</tr>
+<tr>
+<td>Font</td>
+<td><code>fxstyle.font()</code></td>
+<td>The body family of the theme at <code>fxstyle.FONT_SIZE</code> (12 px)</td>
+</tr>
+</tbody>
+</table>
+<p>The base rule for every widget carries no fill and no font. So:</p>
+<ul>
+<li><code>label.setFont(...)</code> keeps the size and family you gave it.</li>
+<li>A plain <code>QLabel</code> on a coloured card shows the card, not a box of its own.</li>
+<li><code>item.setBackground(...)</code> on a list or tree item shows.</li>
+<li>Every list, tree and table scrolls by the pixel, in an app or inside a
+  host. The sheet sets this each time it styles the view, so a
+  <code>setVerticalScrollMode</code> call holds only until the next restyle. A view that wants to scroll by the
+  row says so in a rule of its own, by objectName:
+  <code>QTreeView#shots { qproperty-verticalScrollMode: ScrollPerItem; }</code>.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Inside a host application</p>
+<p>Inside Houdini, Maya or Nuke, fxgui themes its own windows, never the
+host's <code>QApplication</code>. Qt then gives a widget made or moved into such
+a window after it was shown the host's palette and font, never the
+window's. So a window themed inside a host adds a few rules to its own
+stylesheet: the body font and size for every widget, and the surface
+behind the window and its dialogs. There, a widget's own <code>setFont()</code>
+loses to that rule, as it does to any stylesheet font. To set a font
+in a host, give the widget its own stylesheet (<code>font-size: 16px;</code>).</p>
+</div>
+<h2 id="reading-theme-colors">Reading Theme Colors<a class="headerlink" href="#reading-theme-colors" title="Permanent link">&para;</a></h2>
+<p>For custom drawing, read colours when you paint instead of keeping them.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QColor</span><span class="p">,</span> <span class="n">QPainter</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">painter</span> <span class="o">=</span> <span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="n">painter</span><span class="o">.</span><span class="n">fillRect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">QColor</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span><span class="o">.</span><span class="n">surface</span><span class="p">))</span>
+</span></code></pre></div>
+<p><code>fxstyle.colors()</code> returns the current theme as a namespace of colour
+names. It is cached per theme, so reading it in every <code>paintEvent</code> costs
+one attribute lookup. It is the one way to read a colour; for a name held
+in a variable, <code>getattr(fxstyle.colors(), name)</code>. An unknown name raises
+<code>AttributeError</code> listing the names that exist.</p>
+<h2 id="registering-themed-roots">Registering Themed Roots<a class="headerlink" href="#registering-themed-roots" title="Permanent link">&para;</a></h2>
+<p><code>fxstyle.register_themed_root(root)</code> makes a widget, or the <code>QApplication</code>
+itself, a themed root. It gets the current stylesheet, palette and font at
+once, and again on every later <code>apply_theme()</code>. Qt passes the stylesheet
+down to every child, so you register the top-level widget once.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QApplication</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">application</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">([])</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">register_themed_root</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Most applications never call it:</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Registers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>FXApplication</code></td>
+<td>Itself, so every window is themed</td>
+</tr>
+<tr>
+<td><code>FXMainWindow</code>, <code>FXFloatingDialog</code>, <code>FXSplashScreen</code>, <code>FXSystemTray</code>'s menu</td>
+<td>Themselves, which counts only inside a host</td>
+</tr>
+</tbody>
+</table>
+<p>While the <code>QApplication</code> is a themed root, <code>register_themed_root(widget)</code>
+does nothing. The application's sheet already reaches every widget, and a
+window that wore a sheet of its own as well would get the old theme's
+palette back on the next switch: its edges and its tab area would stay in
+the old colours.</p>
+<p>A registered widget carries the <code>fxThemedRoot</code> property
+(<code>fxstyle.ROOT_PROPERTY</code>), which a stylesheet may select on.</p>
+<h2 id="reacting-to-theme-changes">Reacting to Theme Changes<a class="headerlink" href="#reacting-to-theme-changes" title="Permanent link">&para;</a></h2>
+<p><code>fxstyle.theme_changed</code> is a signal emitted after a switch, with the new
+theme's name. It is for side effects only: a cached pixmap to redraw, a
+highlighter to run again.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">_on_theme_changed</span><span class="p">(</span><span class="n">theme_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Theme switched to </span><span class="si">{</span><span class="n">theme_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">theme_changed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">_on_theme_changed</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Connect a widget's own method, not a lambda. Qt drops a connection to a
+method of a widget when the widget is deleted; a lambda has no widget for
+Qt to drop it with, so it outlives the widget and runs on a dead one.</p>
+<p>Nothing about looks needs this signal. The stylesheet, the palette, the
+colours read in <code>paintEvent</code> and the icons all take the new theme by
+themselves.</p>
+<h2 id="the-control-language">The Control Language<a class="headerlink" href="#the-control-language" title="Permanent link">&para;</a></h2>
+<p>Every fxgui control is built from the same few parts. A new control
+reuses them, so it looks like it belongs.</p>
+<h3 id="size-and-shape">Size and shape<a class="headerlink" href="#size-and-shape" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Value</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Height</td>
+<td>28 px at the 12 px body font</td>
+<td><code>fxstyle.control_height(widget)</code>: the font's line plus 5 px of padding and a 1 px border on each side</td>
+</tr>
+<tr>
+<td>Corner radius of a control, a row, a tab or a pane</td>
+<td>4 px</td>
+<td><code>fxstyle.BUTTON_RADIUS</code>, <code>@button_radius</code> in QSS</td>
+</tr>
+<tr>
+<td>Corner radius of a popup or a floating card (menu, combo list, completer list, tooltip, banner, progress card, drop zone, <code>FXFloatingDialog</code>)</td>
+<td>8 px</td>
+<td><code>fxstyle.CARD_RADIUS</code>, <code>@card_radius</code></td>
+</tr>
+<tr>
+<td>Menu row</td>
+<td>24 px at the 12 px body font</td>
+<td><code>QMenu::item</code> padding</td>
+</tr>
+<tr>
+<td>Tool button</td>
+<td>a 22 px box around a 16 px icon</td>
+<td><code>QToolButton</code> margin 2 px, padding 2 px, a reserved 1 px edge</td>
+</tr>
+<tr>
+<td>Tab</td>
+<td>one 4 px gap above, below and between pills</td>
+<td>tab margin <code>4px 2px</code>, the same for <code>QTabBar</code> and QtAds tabs</td>
+</tr>
+<tr>
+<td>Border</td>
+<td>1 px, solid</td>
+<td>Every control</td>
+</tr>
+</tbody>
+</table>
+<p>No rule names a 2, 4 or 8 px radius in pixels. Two shapes do keep pixels:
+a pill (a slider groove, a scroll thumb, a progress bar) rounds at half
+its thickness, and a part set inside a 1 px border rounds 1 px less
+than its frame.</p>
+<p>Two sizes set every height, so controls side by side share one centre
+line:</p>
+<table>
+<thead>
+<tr>
+<th>Size</th>
+<th>Value</th>
+<th>Who takes it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fxstyle.control_height(widget)</code></td>
+<td>28 px at the 12 px body font</td>
+<td>Every control with text or a button's box: push buttons, <code>FXIconButton</code>, <code>FXSplitButton</code>, <code>FXJoinedGroup</code>, line edits, combo boxes, spin boxes, <code>FXSearchBar</code>, <code>FXFilePathWidget</code>, <code>FXBreadcrumb</code>, the <code>FXTagInput</code> field, the <code>FXTimelineSlider</code> row</td>
+</tr>
+<tr>
+<td><code>fxstyle.INDICATOR_SIZE</code>, <code>@indicator_size</code></td>
+<td>18 px</td>
+<td>An on/off mark: a check box or radio indicator, and the track of <code>FXToggleSwitch</code> (twice as wide as tall)</td>
+</tr>
+</tbody>
+</table>
+<p>A mark is smaller than the row and centres in it: an <code>FXToggleSwitch</code> is
+<code>control_height</code> tall, its 18 px track in the middle, so it lines up
+with the button beside it. A slider handle (14 px) and a status dot do
+the same. A control that sizes itself returns these from <code>sizeHint()</code>.
+A plain icon <code>QToolButton</code> in a toolbar sizes to its icon. The Buttons
+page of the gallery shows one row of every control.</p>
+<p>A spin box reaches a line edit's height by its padding, which differs by
+Qt version: PySide6 6.5 sizes a spin box 3 px shorter than later Qt for
+the same padding, so fxstyle picks the padding when it builds the sheet.</p>
+<h3 id="fills-and-edges-by-state">Fills and edges by state<a class="headerlink" href="#fills-and-edges-by-state" title="Permanent link">&para;</a></h3>
+<p>One rule under every row of the table: <strong>the accent marks keyboard
+focus, a selection, the current item and the primary action. Hover is
+never the accent.</strong> Hover is a neutral fill, so a hovered control never
+looks like the focused one.</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Push button, <code>FXSplitButton</code></th>
+<th>Tool button (flat)</th>
+<th>Input (line edit, combo box, spin box)</th>
+<th>Row in a list, tree or table</th>
+<th>Menu item, combo or completer row</th>
+<th>Tab</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rest</td>
+<td>fill <code>@surface</code>, edge <code>@border_light</code></td>
+<td>no fill</td>
+<td>fill <code>@surface_sunken</code>, edge <code>@border</code></td>
+<td>no fill</td>
+<td>no fill</td>
+<td>text <code>@text_muted</code></td>
+</tr>
+<tr>
+<td>Hover</td>
+<td>fill <code>@state_hover</code>, edge kept</td>
+<td>fill <code>@state_hover</code>, no edge</td>
+<td>edge <code>@border_light</code></td>
+<td>fill <code>@state_hover</code>, text kept</td>
+<td>fill <code>@accent_primary</code>, text <code>@text_on_accent_primary</code></td>
+<td>fill <code>@state_hover</code> in the pill's shape, no edge, text kept</td>
+</tr>
+<tr>
+<td>Pressed</td>
+<td>fill <code>@state_pressed</code></td>
+<td>fill <code>@state_pressed</code></td>
+<td></td>
+<td>fill <code>@accent_primary</code></td>
+<td>fill <code>@accent_secondary</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Checked or current</td>
+<td>fill <code>@state_pressed</code>, edge <code>@grid</code></td>
+<td>fill <code>@state_pressed</code>, edge <code>@accent_primary</code></td>
+<td></td>
+<td>selected: fill <code>@accent_primary</code>, focused view or not</td>
+<td>check mark</td>
+<td>pill <code>@state_pressed</code>, no edge</td>
+</tr>
+<tr>
+<td>Keyboard focus</td>
+<td>edge <code>@accent_primary</code></td>
+<td>edge <code>@accent_primary</code></td>
+<td>edge <code>@accent_primary</code></td>
+<td>the delegate's ring</td>
+<td></td>
+<td>edge <code>@accent_primary</code></td>
+</tr>
+<tr>
+<td>Disabled</td>
+<td>fill <code>@surface</code>, edge <code>@border</code>, text <code>@text_disabled</code></td>
+<td>no fill</td>
+<td>text <code>@text_disabled</code></td>
+<td></td>
+<td>text <code>@text_disabled</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>A primary button (<code>FXPrimaryButton</code>) is filled <code>@primary_button</code>, hovers
+<code>@primary_button_hover</code> and presses <code>@primary_button_pressed</code>; its focus
+edge is <code>@text</code>, and disabled it is <code>@surface_alt</code> with <code>@text_disabled</code>.
+Text edits and views do not change on hover. A menu is the one place the
+pointer moves the current item, so there alone hover is the accent.</p>
+<p>Focus never draws a box around a control. It recolours the edge the
+control already has, so nothing moves. Qt's own focus rectangle is off:
+<code>FXProxyStyle</code> (which <code>FXApplication</code> installs) never draws it, and inside
+a host each list, tree and table of a themed window gets its own
+<code>FXProxyStyle</code> when it first shows, so a focused current cell keeps its
+<code>BackgroundRole</code> on PySide6 6.5 as well.</p>
+<h3 id="focus-shows-only-after-the-keyboard">Focus shows only after the keyboard<a class="headerlink" href="#focus-shows-only-after-the-keyboard" title="Permanent link">&para;</a></h3>
+<p>A control wears its focus look only when focus came by keyboard: Tab,
+Shift+Tab, or a shortcut. A click still gives the control focus, but it
+looks as it does at rest once the pointer leaves. This is a browser's
+<code>:focus-visible</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Focus came from</th>
+<th>Focus look</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tab, Shift+Tab, a shortcut</td>
+<td>Shown</td>
+</tr>
+<tr>
+<td>A mouse click</td>
+<td>Hidden</td>
+</tr>
+<tr>
+<td>A menu closing, a window coming back, a <code>setFocus()</code> call</td>
+<td>As the last input was: shown after a key, hidden after a click</td>
+</tr>
+</tbody>
+</table>
+<p>fxgui sets the <code>fxFocusVisible</code> property (<code>fxstyle.FOCUS_VISIBLE_PROPERTY</code>)
+on the focused widget, true only for keyboard focus, and clears it when
+focus leaves. A themed root turns this on for every widget under it,
+including widgets made later and widgets inside a host. For your own
+rules, select on the property, not on <code>:focus</code> alone:</p>
+<div class="language-css highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">MyWidget</span><span class="o">[</span><span class="nt">fxFocusVisible</span><span class="o">=</span><span class="s2">"true"</span><span class="o">]</span><span class="p">:</span><span class="nd">focus</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">border-color</span><span class="p">:</span><span class="w"> </span><span class="o">@</span><span class="n">accent_primary</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p>A widget that paints its own focus look asks
+<code>fxstyle.focus_visible(widget)</code> instead of <code>hasFocus()</code>. The first call
+starts the focus watch, so ask once before the widget can take focus: in
+<code>paintEvent</code>, or once when it is built.</p>
+<p>A colour of your own can be a token name or a colour string:
+<code>fxstyle.qcolor(value)</code> returns the QColor for either, read from the theme
+in force, and an invalid QColor for anything else.</p>
+<p>Inside a host, the property reaches the host's own widgets too, but only
+fxgui's widgets are restyled when it changes.</p>
+<h3 id="parts-that-must-be-seen">Parts that must be seen<a class="headerlink" href="#parts-that-must-be-seen" title="Permanent link">&para;</a></h3>
+<p>The bundled <code>@border</code> tokens sit close to the surface (about 1.2:1).
+That is fine for a button, whose text says what it is. A control whose
+shape is the only thing you see (a switch, a slider handle) needs more.</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Token</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Edge of a switch or a slider handle, and a slider's empty groove</td>
+<td><code>@control_edge</code></td>
+<td><code>border_strong</code>, darkened or lightened until it reads at 3:1 on <code>@surface</code></td>
+</tr>
+<tr>
+<td>Text of a tab that is not the current one</td>
+<td><code>@text_muted</code></td>
+<td>4.5:1 on <code>@surface</code>, as every text ink is</td>
+</tr>
+<tr>
+<td>Current tab</td>
+<td>A <code>@state_pressed</code> pill with <code>@text</code>, no edge</td>
+<td>The same look on <code>QTabBar</code> and QtAds pane tabs. A hovered tab shows a lighter <code>@state_hover</code> pill, its text still <code>@text_muted</code>; a hovered current tab keeps its <code>@state_pressed</code> fill. The two fills stand at least 1.2:1 apart</td>
+</tr>
+<tr>
+<td>Filled part of a slider</td>
+<td><code>@accent_primary</code></td>
+<td>Reads at 3:1 on <code>@surface</code>; told from the groove by its hue and the handle</td>
+</tr>
+<tr>
+<td>Thumb of a switch</td>
+<td><code>@text_muted</code> off, <code>@text_on_accent_primary</code> on</td>
+<td>Pushed to 3:1 on the track</td>
+</tr>
+<tr>
+<td>Moving part of a spinner</td>
+<td><code>@accent_primary</code></td>
+<td>Over a <code>@border_light</code> track</td>
+</tr>
+</tbody>
+</table>
+<p>A slider's groove and span both read at 3:1 on <code>@surface</code>, so they cannot
+also read at 3:1 on each other: the bundled accents reach only 3.4:1 to
+7.8:1 on their surface. The span's hue and the handle at its end tell the
+two apart.</p>
+<p>3:1 is the WCAG minimum for the parts of a control
+(<code>fxstyle.CONTROL_CONTRAST</code>). <code>fxstyle.readable_ink(background, ink,
+3.0)</code> pushes any colour of your own to it.</p>
+<h3 id="accent-text-and-icons">Accent, text and icons<a class="headerlink" href="#accent-text-and-icons" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The accent marks the one thing to look at: the main action, a
+  selection, the current item, a filled span, a keyboard-focused edge.</li>
+<li>Text is <code>@text</code>. Secondary text and placeholders are <code>@text_muted</code>.
+  Text on an accent fill is <code>@text_on_accent_primary</code>.</li>
+<li>Icons take <code>color="icon"</code>; on an accent fill, <code>icon_on_accent_primary</code>.</li>
+<li>A popup (a menu, a combo box's list, a completer's list,
+  <code>FXCommandPalette</code>) and a tooltip are <code>@surface</code> with a 1 px <code>@border</code>
+  at <code>@card_radius</code>, their rows inset 4 px. A menu, combo or completer row
+  is its text plus 4 px above and below, 24 px at the 12 px body font, and
+  a separator runs the menu's full width. A hovered menu item, combo row
+  or completer row is <code>@accent_primary</code> with <code>@text_on_accent_primary</code>
+  text. No state moves a row's text.</li>
+<li>A menu bar item keeps one box, at the button radius, in every state.
+  At rest it is bare; hovered, <code>@state_hover</code>; with its menu open,
+  <code>@state_pressed</code> with <code>@text</code>.</li>
+<li>A table or tree header is flat <code>@text_muted</code> text over one 1 px
+  <code>@border</code> rule, with no box around a section. It sits flush with the
+  view's frame: a view with a header has no inner padding. A list or a
+  tree with its header hidden keeps a 4 px inset at the top only, and a
+  tree follows its header hidden or shown at any time. Rows run to the
+  frame's sides, and a scroll bar's thumb sits centred between the rows
+  and the frame.</li>
+<li>A splitter handle and the gap between dock widgets show nothing until
+  the pointer finds them, then fill with <code>@accent_primary</code>. A splitter
+  marked with <code>mark_as_frame</code> keeps its painted dots.</li>
+<li>A progress bar is a 4 px pill: a <code>@control_edge</code> track and an
+  <code>@accent_primary</code> chunk, no text unless you turn it on with
+  <code>setTextVisible(True)</code>. It is the slider's groove.</li>
+<li>A tab widget's page is a pane card (<code>@surface</code>, a 1 px <code>@pane_border</code>),
+  as a dock pane is. A <code>QToolBox</code> section is a flat 28 px header with a
+  chevron, a hover fill and the open one at weight 600. A plain
+  <code>QDockWidget</code> title is flat <code>@surface</code> with <code>@text</code>.</li>
+<li>A tab bar too full for its tabs scrolls. Its two scroll buttons are
+  opaque in the strip's colour, with a 4 px gap off the last tab's cut
+  text.</li>
+</ul>
+<h3 id="popups-cards-and-shadows">Popups, cards and shadows<a class="headerlink" href="#popups-cards-and-shadows" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Examples</th>
+<th>Frame</th>
+<th>Shadow</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Popup: a window that closes when you click away, or a tooltip</td>
+<td><code>QMenu</code>, a combo box list, <code>FXCommandPalette</code>, a completer or calendar popup, a tooltip</td>
+<td><code>@border</code>, <code>@card_radius</code></td>
+<td>The platform's own. Windows draws one under every popup window. Every popup and tooltip under a themed root asks Windows 11 for flyout corners (<code>fxutils.round_window_corners</code>) when it shows, which is the 8 px flyout radius. fxgui paints none.</td>
+</tr>
+<tr>
+<td>Floating card: a panel over the window that stays until it is done</td>
+<td><code>FXNotificationBanner</code>, <code>FXProgressCard</code>, <code>FXFloatingDialog</code></td>
+<td><code>@border</code>, <code>@card_radius</code></td>
+<td>One painted shadow: <code>fxutils.add_shadow(card)</code>, in the theme's <code>@shadow</code> and <code>@shadow_blur</code>, no offset unless you pass one</td>
+</tr>
+</tbody>
+</table>
+<p>A shadow reads its colour and blur from the theme each time it draws, so
+it follows a switch with no call.</p>
+<p><code>FXCommandPalette</code> opens centred across its window. <code>position</code> puts it
+at <code>"top"</code> (under the menu bar and the command rows), <code>"center"</code> (the
+default) or <code>"bottom"</code> (over the status bar). It stays inside a window
+too small for it. Anything else raises <code>ValueError</code>.</p>
+<h3 id="sliders-and-switches">Sliders and switches<a class="headerlink" href="#sliders-and-switches" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Rest</th>
+<th>Hover</th>
+<th>Focus</th>
+<th>Disabled</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>QSlider</code> handle</td>
+<td>fill <code>@surface</code>, edge <code>@accent_primary</code></td>
+<td>a thicker edge</td>
+<td>edge <code>@text</code></td>
+<td>fill <code>@surface</code>, edge <code>@border</code></td>
+</tr>
+<tr>
+<td><code>QSlider</code>, <code>FXRangeSlider</code> groove and span</td>
+<td>groove <code>@control_edge</code>, span <code>@accent_primary</code></td>
+<td></td>
+<td></td>
+<td>span <code>@border_strong</code></td>
+</tr>
+<tr>
+<td><code>FXToggleSwitch</code> off</td>
+<td>fill <code>@surface_sunken</code>, edge <code>@control_edge</code></td>
+<td>fill <code>@state_hover</code>, edge kept</td>
+<td>edge <code>@accent_primary</code></td>
+<td>fill <code>@surface</code>, edge <code>@border</code></td>
+</tr>
+<tr>
+<td><code>FXToggleSwitch</code> on</td>
+<td>fill <code>@accent_primary</code></td>
+<td>fill <code>@primary_button_hover</code></td>
+<td>edge <code>@text</code></td>
+<td>fill <code>@surface_alt</code>, edge <code>@border</code></td>
+</tr>
+</tbody>
+</table>
+<p>The switch's fills are pushed to 3:1 on <code>@surface</code> when a theme's own
+accent misses it.</p>
+<p>Every <code>QSlider</code> gets these rules from the base sheet.</p>
+<h3 id="cards-in-item-views">Cards in item views<a class="headerlink" href="#cards-in-item-views" title="Permanent link">&para;</a></h3>
+<p><code>FXThumbnailDelegate</code> draws a row as a card when the row has a
+<code>Qt.BackgroundRole</code>. The fill is that colour. Give it a token name, and
+the card follows every theme switch:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QTreeWidgetItem</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">item</span> <span class="o">=</span> <span class="n">QTreeWidgetItem</span><span class="p">([</span><span class="s2">"sh010"</span><span class="p">])</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">item</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">BackgroundRole</span><span class="p">,</span> <span class="s2">"surface"</span><span class="p">)</span>
+</span></code></pre></div>
+<p>The card's edge is <code>@border_light</code>. A selected card is filled and edged
+with <code>@accent_primary</code>. A row with no background has no card.</p>
+<p>A hovered row is filled with <code>@state_hover</code> and keeps its own text
+colour, as in a plain list. On a card whose shade comes within 1.2:1 of
+<code>@state_hover</code>, as a deep row's does, the hover is the card itself made
+1.2:1 lighter (darker on a light theme). Call
+<code>FXThumbnailDelegate.apply_transparent_selection(view)</code> on the view so
+Qt's own highlight does not show under the delegate's.</p>
+<h2 id="registering-your-own-widget-styles">Registering Your Own Widget Styles<a class="headerlink" href="#registering-your-own-widget-styles" title="Permanent link">&para;</a></h2>
+<p><code>fxstyle.register_widget_style(qss)</code> adds a QSS fragment to the theme
+stylesheet. Call it once, when your module is imported, with your class
+name as the selector. The fragment may use any <code>@token</code>.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">register_widget_style</span><span class="p">(</span><span class="s2">"""</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="s2">    MyWidget {</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="s2">        background: @surface;</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="s2">        border: 1px solid @border;</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="s2">        border-radius: 4px;</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="s2">    }</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="s2">"""</span><span class="p">)</span>
+</span></code></pre></div>
+<p>An image in a rule names an icon and a token: <code>image: ~icon(expand_more,
+icon);</code> draws the icon library's <code>expand_more</code> in the theme's <code>@icon</code>
+colour. Every arrow and chevron of the base sheet is drawn this way. The
+icon is written as a PNG at 16 px, and at 2x and 3x for scaled screens;
+give the size the rule draws it at as a third value, <code>~icon(expand_more,
+icon, 12)</code>, or Qt shrinks the 16 px picture and blurs it. A PNG, unlike
+an SVG, needs no Qt plugin, which some DCCs fail to load.</p>
+<p>Fragments come after the base stylesheet and are resolved again on every
+switch. Registering after themed roots exist re-applies the sheet to them
+at once, so import order does not matter.</p>
+<p>To style a window inside a DCC, register it with
+<code>fxstyle.register_themed_root(window)</code>: it gets the sheet, the rules a
+window inside a host needs, the palette and the font, and again on every
+switch. <code>fxstyle.resolve(qss)</code> resolves the tokens of a sheet of your own.</p>
+<h2 id="repolishing-after-a-property-change">Repolishing After a Property Change<a class="headerlink" href="#repolishing-after-a-property-change" title="Permanent link">&para;</a></h2>
+<p>If your QSS uses a dynamic property in a selector, for example
+<code>MyBanner[level="error"] { ... }</code>, Qt does not look at the rule again when
+you call <code>setProperty()</code>. Call <code>fxutils.repolish()</code> after it:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QLabel</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxutils</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="n">banner</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">"Disk full"</span><span class="p">)</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">banner</span><span class="o">.</span><span class="n">setProperty</span><span class="p">(</span><span class="s2">"level"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">)</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="n">fxutils</span><span class="o">.</span><span class="n">repolish</span><span class="p">(</span><span class="n">banner</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="the-custom-widget-contract">The Custom Widget Contract<a class="headerlink" href="#the-custom-widget-contract" title="Permanent link">&para;</a></h2>
+<p>A custom widget follows the theme with no base class and no signal when
+it does one of these:</p>
+<table>
+<thead>
+<tr>
+<th>The widget</th>
+<th>Do this</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Has a look QSS can say</td>
+<td>Register the rules with <code>register_widget_style()</code>, <code>@tokens</code> for colours, your class name as the selector</td>
+</tr>
+<tr>
+<td>Paints itself</td>
+<td>Read <code>fxstyle.colors()</code> inside <code>paintEvent()</code></td>
+</tr>
+<tr>
+<td>Shows an icon</td>
+<td><code>fxicons.set_icon()</code> or <code>get_icon()</code>, colours named by token (see <a href="../icons/">Icons</a>)</td>
+</tr>
+<tr>
+<td>Changes state</td>
+<td>Set a dynamic property and call <code>fxutils.repolish()</code></td>
+</tr>
+</tbody>
+</table>
+<p>Connect to <code>fxstyle.theme_changed</code> only for a side effect a switch has
+beyond looks.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QColor</span><span class="p">,</span> <span class="n">QPainter</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">register_widget_style</span><span class="p">(</span><span class="s2">"""</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="s2">    MyStatusChip {</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="s2">        border: 1px solid @border;</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="s2">        border-radius: 10px;</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="s2">    }</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="s2">"""</span><span class="p">)</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>
+</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>
+</span><span id="__span-12-14"><a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyStatusChip</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+</span><span id="__span-12-15"><a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="w">    </span><span class="sd">"""A chip that takes the theme's colours when painted."""</span>
+</span><span id="__span-12-16"><a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>
+</span><span id="__span-12-17"><a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+</span><span id="__span-12-18"><a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>        <span class="n">painter</span> <span class="o">=</span> <span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</span><span id="__span-12-19"><a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">fillRect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">QColor</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span><span class="o">.</span><span class="n">surface</span><span class="p">))</span>
+</span><span id="__span-12-20"><a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+</span><span id="__span-12-21"><a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">drawText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">,</span> <span class="s2">"Ready"</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="available-color-tokens">Available Color Tokens<a class="headerlink" href="#available-color-tokens" title="Permanent link">&para;</a></h3>
+<p>Every role in the tables at the top of this page is a token: <code>@surface</code>
+in QSS, <code>fxstyle.colors().surface</code> in code. So are the computed ones:
+<code>@text_on_accent_primary</code>, <code>@icon_on_accent_primary</code>, <code>@primary_button</code>,
+<code>@control_edge</code>, <code>@card_radius</code>, <code>@shadow</code>, <code>@shadow_blur</code>,
+the flattened feedback colours (<code>@feedback_error_foreground</code>,
+<code>@feedback_info_background</code>, ...), <code>@button_radius</code> and the
+font roles (<code>@font_body</code>, <code>@font_title</code>, <code>@font_mono</code>).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../styling/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Styling">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Styling
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../widgets/" class="md-footer__link md-footer__link--next" aria-label="Next: Widgets">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Widgets
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Valentin Beaumont | Licensed under the MIT License
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.action.edit","content.code.annotate","content.code.copy","content.tabs.link","content.tooltips","navigation.expand","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.tabs","navigation.top","search.highlight","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"alias":true,"default":"latest","provider":"mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.3c842f4c.min.js"></script>
+      
+    
+  </body>
+</html>
