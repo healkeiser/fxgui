@@ -18,6 +18,7 @@ from qtpy.QtCore import (
     QSize,
     Qt,
     Signal,
+    Slot,
 )
 from qtpy.QtGui import (
     QBrush,
@@ -208,7 +209,10 @@ class _ColumnFloor(QObject):
         self.setParent(None)
         self.deleteLater()
 
-    def _stale(self, *_args) -> None:
+    # Declared slots: as bare methods, PySide raised "Slot not found" on a
+    # live floor once another floor had died.
+    @Slot()
+    def _stale(self) -> None:
         self._floor = None
 
     def floor(self) -> int:
@@ -236,6 +240,7 @@ class _ColumnFloor(QObject):
             )
         return self._floor
 
+    @Slot(int, int, int)
     def _enforce(self, index: int, _old_size: int, new_size: int) -> None:
         if index != self.column or self._snapping:
             return
