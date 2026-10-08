@@ -39,6 +39,9 @@ from fxgui import fxstyle
 # widget or action, an item role on a view's item.
 _PARTS = "fxTipParts"
 _PARTS_ROLE = Qt.ItemDataRole.UserRole + 0x7F1
+# The accessible (name, description) apply_tip last set, so a later tip
+# replaces its own words but never a name the caller chose.
+_SPOKEN = "fxTipSpoken"
 
 # Gaps between keycaps: keys of one chord sit close, chords further apart.
 _KEY_GAP = 2
@@ -307,7 +310,9 @@ def apply_tip(
     Note:
         The status tip carries the same words without markup. Qt shows it in
         the window's status bar on hover, which is where a person looks for
-        "what is this" before a tooltip has had time to appear.
+        "what is this" before a tooltip has had time to appear. The title
+        and body also become the accessible name and description; a later
+        call replaces them, but never a name set by hand.
     """
 
     parts = [title, body, shortcut]
@@ -342,11 +347,13 @@ def apply_tip(
         target.setStatusTip(plain)
 
     # A screen reader reads the accessible name, never the HTML tooltip.
-    if title and hasattr(target, "setAccessibleName") and not (
-        target.accessibleName()
-    ):
+    if not hasattr(target, "setAccessibleName"):
+        return
+    spoken: list[str] = list(target.property(_SPOKEN) or ("", ""))
+    if target.accessibleName() in ("", spoken[0]):
         target.setAccessibleName(title)
-    if body and hasattr(target, "setAccessibleDescription") and not (
-        target.accessibleDescription()
-    ):
+        spoken[0] = title
+    if target.accessibleDescription() in ("", spoken[1]):
         target.setAccessibleDescription(body)
+        spoken[1] = body
+    target.setProperty(_SPOKEN, spoken)

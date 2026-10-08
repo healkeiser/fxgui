@@ -667,6 +667,33 @@ def test_a_tip_keeps_a_name_the_caller_chose(qtbot):
     assert button.accessibleName() == "Attach files"
 
 
+def test_a_new_tip_replaces_the_words_the_last_one_spoke(qtbot):
+    label = QLabel()
+    qtbot.addWidget(label)
+
+    _tips.apply_tip(label, "Assignees", "anne")
+    _tips.apply_tip(label, "Assignees", "jean")
+
+    assert label.accessibleDescription() == "jean"
+
+    _tips.apply_tip(label, "")
+
+    assert label.accessibleName() == ""
+    assert label.accessibleDescription() == ""
+
+
+def test_a_later_tip_keeps_a_name_the_caller_chose(qtbot):
+    button = QPushButton()
+    qtbot.addWidget(button)
+    _tips.apply_tip(button, "Attach")
+    button.setAccessibleName("Attach files")
+
+    _tips.apply_tip(button, "Attach", "Add files")
+
+    assert button.accessibleName() == "Attach files"
+    assert button.accessibleDescription() == "Add files"
+
+
 def test_icon_only_buttons_carry_a_name(qtbot):
     from fxgui.fxwidgets import FXEmojiButton, FXEmojiPicker, FXIconButton
 
