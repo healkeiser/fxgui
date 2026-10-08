@@ -62,11 +62,12 @@ def test_a_record_arriving_while_filtered_obeys_the_filter(qtbot):
     pane = _pane(qtbot)
     pane.show_levels(logging.ERROR)
 
-    pane.append_log("late info", logging.INFO)
-    pane.append_log("late error", logging.ERROR)
+    for index in range(2):
+        pane.append_log(f"late error {index}", logging.ERROR)
+        pane.append_log(f"late info {index}", logging.INFO)
     qtbot.waitUntil(lambda: not pane._pending_logs)
 
-    assert _shown(pane) == ["late error"]
+    assert _shown(pane) == ["late error 0", "late error 1"]
 
 
 def test_show_all_brings_every_line_back(qtbot):

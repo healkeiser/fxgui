@@ -9,7 +9,7 @@ from collections import deque
 from typing import Deque, Optional, Pattern, Sequence, Tuple, Union
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal
+from qtpy.QtCore import QEvent, QObject, Qt, QTimer, Signal, Slot
 from qtpy.QtGui import (
     QColor,
     QFont,
@@ -152,7 +152,7 @@ class FXOutputLogWidget(QWidget):
 
     Signals:
         log_message: Emitted with a message and its level when a record is
-            received (for thread-safe            delivery).
+            received (for thread-safe delivery).
 
     Examples:
         >>> import logging
@@ -296,7 +296,8 @@ class FXOutputLogWidget(QWidget):
         filter_layout.addWidget(self.filter_label)
         self.show_all_button = QPushButton("Show all")
         fxicons.set_icon(self.show_all_button, "filter_alt_off")
-        self.show_all_button.clicked.connect(lambda _c=False: self.show_levels())
+        # A bound method, not a lambda: a lambda holding `self` is a cycle.
+        self.show_all_button.clicked.connect(self.show_all_levels)
         apply_tip(
             self.show_all_button, "Show All", "Show every level again")
         filter_layout.addWidget(self.show_all_button)
@@ -554,6 +555,11 @@ class FXOutputLogWidget(QWidget):
         document.markContentsDirty(0, document.characterCount())
         scrollbar = self.output_area.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
+
+    @Slot()
+    def show_all_levels(self) -> None:
+        """Show every line again, as Show all does."""
+        self.show_levels()
 
     def _passes(self, level: int) -> bool:
         """Return whether a line at `level` is shown under the filter."""
