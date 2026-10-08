@@ -7,7 +7,15 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QEvent, QRectF, QSize, Qt, QTimer, Slot
+from qtpy.QtCore import (
+    QAbstractAnimation,
+    QEvent,
+    QRectF,
+    QSize,
+    Qt,
+    QVariantAnimation,
+    Slot,
+)
 from qtpy.QtGui import (
     QColor,
     QLinearGradient,
@@ -71,11 +79,9 @@ _ICON_CONTRAST = 3.0
 # Between the window's left edge and the first item or message.
 _LEFT_MARGIN = 6
 
-# The busy line: a run a third of the bar wide, crossing it in about a
-# second and a half at 30 frames a second.
+# The busy line: a run a third of the bar wide, crossing it in 1.5 s.
 _BUSY_SPAN = 1 / 3
-_BUSY_FRAME_MS = 33
-_BUSY_FRAMES = 45
+_BUSY_CROSSING_MS = 1500
 
 
 class FXStatusItem(QToolButton):
@@ -273,10 +279,14 @@ class FXStatusBar(QStatusBar):
         self._severity: Optional[str] = None
         self._message = ""
         self._busy = False
-        self._busy_frame = 0
-        self._busy_timer = QTimer(self)
-        self._busy_timer.setInterval(_BUSY_FRAME_MS)
-        self._busy_timer.timeout.connect(self._step_busy)
+        # Qt's animation clock places the line by elapsed time, at the
+        # screen's rate: a late tick never stalls it, unlike a frame count.
+        self._busy_line = QVariantAnimation(self)
+        self._busy_line.setStartValue(0.0)
+        self._busy_line.setEndValue(1.0)
+        self._busy_line.setDuration(_BUSY_CROSSING_MS)
+        self._busy_line.setLoopCount(-1)
+        self._busy_line.valueChanged.connect(self._step_busy)
 
         self.icon_label = FXIconLabel(size=ICON_SIZE)
         self.message_label = QLabel()
@@ -477,33 +487,36 @@ class FXStatusBar(QStatusBar):
     def set_busy(self, busy: bool) -> None:
         """Run the busy line along the top edge, or stop it."""
         self._busy = bool(busy)
-        self._busy_frame = 0
-        self._run_busy_timer()
+        self._busy_line.stop()
+        self._run_busy_line()
         self.update(0, 0, self.width(), STATUS_LINE_HEIGHT)
 
     def is_busy(self) -> bool:
         """Return whether the busy line runs."""
         return self._busy
 
-    def _run_busy_timer(self) -> None:
-        if self._busy and self.isVisible():
-            self._busy_timer.start()
-        else:
-            self._busy_timer.stop()
+    def _run_busy_line(self) -> None:
+        line = self._busy_line
+        if not (self._busy and self.isVisible()):
+            if line.state() == QAbstractAnimation.Running:
+                line.pause()
+        elif line.state() == QAbstractAnimation.Paused:
+            line.resume()
+        elif line.state() == QAbstractAnimation.Stopped:
+            line.start()
 
-    def _step_busy(self) -> None:
-        self._busy_frame = (self._busy_frame + 1) % _BUSY_FRAMES
+    def _step_busy(self, *_) -> None:
         self.update(0, 0, self.width(), STATUS_LINE_HEIGHT)
 
     def showEvent(self, event) -> None:
         """Run the busy line again, if it ran when the bar hid."""
         super().showEvent(event)
-        self._run_busy_timer()
+        self._run_busy_line()
 
     def hideEvent(self, event) -> None:
         """Stop the busy line's timer while nobody can see it."""
         super().hideEvent(event)
-        self._run_busy_timer()
+        self._run_busy_line()
 
     def paintEvent(self, event) -> None:
         """Paint the bar, then its accent line or busy line along the top."""
@@ -539,14 +552,15 @@ class FXStatusBar(QStatusBar):
 
     def _paint_busy(self) -> None:
         """Paint a flat accent run across the bar's top band, as a chunk."""
-        span = int(self.width() * _BUSY_SPAN)
+        span = self.width() * _BUSY_SPAN
         # From fully off the left edge to fully off the right one.
-        left = -span + (self.width() + span) * self._busy_frame // _BUSY_FRAMES
+        progress = self._busy_line.currentValue() or 0.0
+        left = -span + (self.width() + span) * progress
         painter = QPainter(self)
         painter.fillRect(
             0, 0, self.width(), STATUS_LINE_HEIGHT, QColor(self.ground()))
         painter.fillRect(
-            left, 0, span, STATUS_LINE_HEIGHT,
+            QRectF(left, 0, span, STATUS_LINE_HEIGHT),
             QColor(fxstyle.colors().accent_primary))
         painter.end()
 

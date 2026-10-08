@@ -1,6 +1,7 @@
 """set_busy runs a line along the status bar's top edge, moving nothing."""
 
 # Third-party
+from qtpy.QtCore import QAbstractAnimation
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QLabel
 
@@ -19,9 +20,13 @@ def _window(qtbot, framed=True):
     return window
 
 
-def _run_to(qtbot, bar, frame):
-    """Wait for the busy line's timer to reach `frame`, where it shows."""
-    qtbot.waitUntil(lambda: bar._busy_frame >= frame)
+def _run_to(qtbot, bar, progress):
+    """Wait for the busy line to cross `progress` of the bar, where it shows."""
+    qtbot.waitUntil(lambda: (bar._busy_line.currentValue() or 0) >= progress)
+
+
+def _running(bar):
+    return bar._busy_line.state() == QAbstractAnimation.Running
 
 
 def _top_row(bar):
@@ -38,7 +43,7 @@ def test_busy_paints_a_line_across_the_top_and_moves_nothing(qtbot):
     was = (window.centralWidget().geometry(), bar.geometry())
 
     bar.set_busy(True)
-    _run_to(qtbot, bar, 6)
+    _run_to(qtbot, bar, 0.4)
 
     assert bar.is_busy()
     assert (window.centralWidget().geometry(), bar.geometry()) == was
@@ -55,7 +60,7 @@ def test_the_busy_line_is_one_flat_accent_like_a_progress_chunk(qtbot):
     window = _window(qtbot)
     bar = window.statusBar()
     bar.set_busy(True)
-    _run_to(qtbot, bar, 6)
+    _run_to(qtbot, bar, 0.4)
 
     assert _top_row(bar) <= {
         QColor(bar.ground()).name(),
@@ -67,10 +72,10 @@ def test_the_line_moves_while_busy(qtbot):
     window = _window(qtbot)
     bar = window.statusBar()
     bar.set_busy(True)
-    _run_to(qtbot, bar, 3)
+    _run_to(qtbot, bar, 0.2)
 
     first = bar.grab().toImage().copy(0, 0, bar.width(), STATUS_LINE_HEIGHT)
-    _run_to(qtbot, bar, 6)
+    _run_to(qtbot, bar, 0.4)
     later = bar.grab().toImage().copy(0, 0, bar.width(), STATUS_LINE_HEIGHT)
 
     assert first != later
@@ -82,12 +87,12 @@ def test_not_busy_gives_the_bar_its_resting_top_back(qtbot):
     resting = _top_row(bar)
 
     bar.set_busy(True)
-    _run_to(qtbot, bar, 3)
+    _run_to(qtbot, bar, 0.2)
     bar.set_busy(False)
 
     assert not bar.is_busy()
     assert _top_row(bar) == resting
-    assert not bar._busy_timer.isActive(), "a stopped line costs nothing"
+    assert not _running(bar), "a stopped line costs nothing"
 
 
 def test_a_hidden_busy_bar_stops_its_timer_and_resumes_shown(qtbot):
@@ -96,9 +101,24 @@ def test_a_hidden_busy_bar_stops_its_timer_and_resumes_shown(qtbot):
     bar.set_busy(True)
 
     bar.hide()
-    assert not bar._busy_timer.isActive()
+    assert not _running(bar)
     bar.show()
-    assert bar._busy_timer.isActive()
+    assert _running(bar)
+
+
+def test_the_line_keeps_its_pace_through_a_stalled_qt_thread(qtbot):
+    import time
+
+    window = _window(qtbot)
+    bar = window.statusBar()
+    bar.set_busy(True)
+    _run_to(qtbot, bar, 0.01)
+    before = bar._busy_line.currentValue()
+
+    time.sleep(0.6)  # a loading view holding the Qt thread
+    qtbot.wait(50)
+
+    assert bar._busy_line.currentValue() - before > 0.3
 
 
 def test_busy_shows_over_a_hidden_status_line(qtbot):
@@ -108,6 +128,6 @@ def test_busy_shows_over_a_hidden_status_line(qtbot):
     resting = _top_row(bar)
 
     bar.set_busy(True)
-    _run_to(qtbot, bar, 3)
+    _run_to(qtbot, bar, 0.2)
 
     assert _top_row(bar) != resting
