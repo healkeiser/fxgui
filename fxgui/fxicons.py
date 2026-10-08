@@ -17,9 +17,13 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 # Built-in
+import functools
+import os
 from pathlib import Path
 import re
+import tempfile
 import traceback
+import zipfile
 from typing import Any, Dict, List, Optional, Union
 
 # Third-party
@@ -194,7 +198,8 @@ def add_library(
         defaults: The library's own extension, style, color, width and
             height. A key left out is "svg", no style, no colour, 48 px.
         root: The root path for the library. Defaults to
-            `fxconstants.ICONS_ROOT`.
+            `fxconstants.ICONS_ROOT`. The icons may sit in
+            `<root>/<library>.zip` instead, at the same paths.
         recolor: Whether the icons are monochrome and take a colour. A
             full-colour library (logos) passes False; a colour asked of
             it is ignored.
@@ -268,18 +273,56 @@ def get_icon_path(
     if extension is None:
         extension = info["defaults"].get("extension")
 
+    root = info.get("root") or fxconstants.ICONS_ROOT
     path = info["pattern"].format(
         icon_name=icon_name,
         style=style,
         library=library,
         extension=extension,
-        root=info.get("root") or fxconstants.ICONS_ROOT,
+        root=root,
     ).replace("\\", "/")
 
-    if not Path(path).exists():
-        raise FileNotFoundError(f"Icon path '{path}' does not exist.")
+    if Path(path).exists():
+        return path
+    # A library shipped as `<root>/<library>.zip` holds the same paths.
+    archive = Path(root) / f"{library}.zip"
+    if archive.exists():
+        member = Path(path).relative_to(Path(root) / library).as_posix()
+        extracted = _extracted(str(archive), member)
+        if extracted:
+            return extracted
+    raise FileNotFoundError(f"Icon path '{path}' does not exist.")
 
-    return path
+
+@functools.lru_cache(maxsize=None)
+def _open_archive(archive: str) -> zipfile.ZipFile:
+    """Return `archive` opened once, its index of names read once."""
+    return zipfile.ZipFile(archive)
+
+
+def _extracted(archive: str, member: str) -> Optional[str]:
+    """Return the path of `member` written out of `archive`, or None.
+
+    Qt and stylesheets take a file, so the icon is written once to the temp
+    folder, under a name that changes when the zip does.
+    """
+    stat = os.stat(archive)
+    folder = Path(tempfile.gettempdir()) / "fxgui" / "icons" / (
+        f"{Path(archive).stem}-{stat.st_size}-{stat.st_mtime_ns}"
+    )
+    target = folder / member
+    if target.exists():
+        return target.as_posix()
+    try:
+        data = _open_archive(archive).read(member)
+    except KeyError:
+        return None
+    target.parent.mkdir(parents=True, exist_ok=True)
+    # Written aside then renamed, so a second process never reads half a file.
+    partial = target.with_name(f"{target.name}.{os.getpid()}.part")
+    partial.write_bytes(data)
+    os.replace(partial, target)
+    return target.as_posix()
 
 
 def _tint(pixmap: QPixmap, color: str) -> QPixmap:

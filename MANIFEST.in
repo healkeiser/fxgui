@@ -4,6 +4,7 @@ recursive-include fxgui *.yaml
 recursive-include fxgui *.svg
 recursive-include fxgui *.png
 recursive-include fxgui *.qss
+recursive-include fxgui *.zip
 
 # Exclude root-level directories not needed in sdist
 prune .github
@@ -40,28 +41,7 @@ global-exclude *.swp
 global-exclude *.swo
 global-exclude *~
 
-# Prune icon submodule non-SVG directories
-prune fxgui/icons/fontawesome/js
-prune fxgui/icons/fontawesome/js-packages
-prune fxgui/icons/fontawesome/css
-prune fxgui/icons/fontawesome/less
-prune fxgui/icons/fontawesome/scss
-prune fxgui/icons/fontawesome/webfonts
-prune fxgui/icons/fontawesome/sprites
-prune fxgui/icons/fontawesome/metadata
-prune fxgui/icons/fontawesome/otfs
-prune fxgui/icons/fontawesome/.github
-
-prune fxgui/icons/material/.github
-
-prune fxgui/icons/simple/.github
-prune fxgui/icons/simple/.devcontainer
-prune fxgui/icons/simple/.husky
-prune fxgui/icons/simple/scripts
-prune fxgui/icons/simple/tests
-prune fxgui/icons/simple/data
-
-# Exclude documentation/config files from submodules
+# Exclude documentation/config files
 global-exclude README.md
 global-exclude CHANGELOG.md
 global-exclude CONTRIBUTING.md

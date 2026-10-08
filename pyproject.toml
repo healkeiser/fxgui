@@ -78,7 +78,7 @@ where = ["."]
 include = ["fxgui*"]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml", "*.svg", "*.png", "*.qss"]
+"*" = ["*.yaml", "*.svg", "*.png", "*.qss", "*.zip"]
 
 [tool.setuptools.exclude-package-data]
 "*" = [

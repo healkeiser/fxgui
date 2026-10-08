@@ -10,7 +10,7 @@ fxgui is a Python library providing custom Qt-based widgets and utilities for VF
 
 ### Setup
 ```bash
-git clone --recurse-submodules https://github.com/healkeiser/fxgui
+git clone https://github.com/healkeiser/fxgui
 pip install -e .
 ```
 

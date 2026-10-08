@@ -197,7 +197,6 @@ jobs:
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
-          submodules: true
 
       - name: Set up Python
         uses: actions/setup-python@v5

@@ -83,10 +83,10 @@ Qt 5 (PySide2, PyQt5) is not supported: `import fxgui` raises an
 
 ### From Source
 
-Clone the repository with submodules:
+Clone the repository:
 
 ``` shell
-git clone --recurse-submodules https://github.com/healkeiser/fxgui
+git clone https://github.com/healkeiser/fxgui
 cd fxgui
 pip install -e .
 ```

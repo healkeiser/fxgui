@@ -24,10 +24,10 @@ version it found.
 
 ## From Source
 
-Clone the repository with submodules:
+Clone the repository:
 
 ``` shell
-git clone --recurse-submodules https://github.com/healkeiser/fxgui
+git clone https://github.com/healkeiser/fxgui
 cd fxgui
 pip install -e .
 ```
