@@ -23,7 +23,7 @@ class FXCamelCaseValidator(QRegularExpressionValidator):
 
 
 class FXLowerCaseValidator(QRegularExpressionValidator):
-    """Accept lowercase letters, and digits or underscores if allowed.
+    """Lowercase typed letters; accept digits or underscores if allowed.
 
     Args:
         allow_numbers: If `True`, allows numbers in addition to lowercase
@@ -49,6 +49,11 @@ class FXLowerCaseValidator(QRegularExpressionValidator):
         super().__init__(
             QRegularExpression(f"^[a-z{digits}{underscore}]+$"), parent
         )
+
+    def validate(self, input_string: str, pos: int):
+        """Lowercase the input, then check it against the pattern."""
+        # The regex alone rejects a capital as Invalid, and Qt drops the key.
+        return super().validate(input_string.lower(), pos)
 
 
 class FXLettersUnderscoreValidator(QRegularExpressionValidator):

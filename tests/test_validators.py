@@ -53,3 +53,13 @@ def test_letters_and_underscores(qapp):
     assert _ok(FXLettersUnderscoreValidator(), "Ab_")
     assert not _ok(FXLettersUnderscoreValidator(), "A1")
     assert _ok(FXLettersUnderscoreValidator(True), "A1_")
+
+
+def test_lower_case_lowercases_capitals_as_typed(qtbot, qapp):
+    edit = QLineEdit()
+    edit.setValidator(FXLowerCaseValidator())
+    qtbot.addWidget(edit)
+    QTest.keyClicks(edit, "LookDev")
+    assert edit.text() == "lookdev"
+    assert _ok(FXLowerCaseValidator(), "ABC")
+    assert not _ok(FXLowerCaseValidator(), "A1")
