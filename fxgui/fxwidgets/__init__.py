@@ -10,7 +10,11 @@ from fxgui.fxwidgets._buttons import (
     FXPrimaryButton,
 )
 from fxgui.fxwidgets._checkable_combo import FXCheckableComboBox
-from fxgui.fxwidgets._code_block import FXCodeBlock, FXPygmentsHighlighter
+from fxgui.fxwidgets._code_block import (
+    FXCodeBlock,
+    FXPygmentsHighlighter,
+    code_color,
+)
 from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 from fxgui.fxwidgets._command_palette import FXCommand, FXCommandPalette
 from fxgui.fxwidgets._comments import FXMentionEdit, FXThreadLine
@@ -85,6 +89,7 @@ from fxgui.fxwidgets._validators import (
 __all__ = [
     "align_labels",
     "apply_tip",
+    "code_color",
     "CRITICAL",
     "DEBUG",
     "DEFAULT_EMOJIS",

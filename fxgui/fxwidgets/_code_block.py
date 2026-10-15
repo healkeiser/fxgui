@@ -13,6 +13,7 @@ from pygments import lex
 from pygments.util import ClassNotFound
 from pygments.lexers import get_lexer_by_name
 from pygments.styles import get_style_by_name
+from pygments.token import string_to_tokentype
 from qtpy.QtCore import Qt
 from qtpy.QtGui import (
     QColor,
@@ -25,6 +26,34 @@ from qtpy.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 
 # Internal
 from fxgui import fxstyle
+
+_DARK_STYLE = "one-dark"
+_LIGHT_STYLE = "friendly"
+
+
+def _code_style():
+    """Return the Pygments style code is coloured with in the current theme."""
+    name = _LIGHT_STYLE if fxstyle.is_light_theme() else _DARK_STYLE
+    try:
+        return get_style_by_name(name)
+    except ClassNotFound:
+        return get_style_by_name("default")
+
+
+def code_color(token: str) -> QColor:
+    """Return the colour code highlighting gives `token` in the current theme.
+
+    Args:
+        token: A Pygments token name, such as "String", "Number" or
+            "Name.Function"; one the style leaves uncoloured takes its
+            parent's colour, else the theme's text colour.
+
+    Examples:
+        >>> code_color("String").isValid()
+        True
+    """
+    colour = _code_style().style_for_token(string_to_tokentype(token))["color"]
+    return QColor(f"#{colour}" if colour else fxstyle.colors().text)
 
 
 class FXPygmentsHighlighter(QSyntaxHighlighter):
@@ -42,9 +71,6 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
     Example:
         >>> highlighter = FXPygmentsHighlighter(text_edit.document(), "python")
     """
-
-    _DARK_STYLE = "one-dark"
-    _LIGHT_STYLE = "friendly"
 
     def __init__(self, document: QTextDocument, language: str = "python"):
         super().__init__(None)
@@ -90,12 +116,7 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
     def _update_formats(self) -> None:
         """Build format dictionary from Pygments style."""
         self._formats = {}
-        style_name = self._LIGHT_STYLE if fxstyle.is_light_theme() else self._DARK_STYLE
-
-        try:
-            style = get_style_by_name(style_name)
-        except ClassNotFound:
-            style = get_style_by_name("default")
+        style = _code_style()
 
         for token_type, style_dict in style:
             fmt = QTextCharFormat()

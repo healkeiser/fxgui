@@ -1,7 +1,7 @@
 """The Pygments highlighter colours the right characters, once per change."""
 
 # Third-party
-from qtpy.QtGui import QFontInfo, QTextCursor
+from qtpy.QtGui import QColor, QFontInfo, QTextCursor
 from qtpy.QtWidgets import QPlainTextEdit
 
 # Internal
@@ -123,6 +123,33 @@ def test_the_highlighter_is_public():
 
     assert fxwidgets.FXPygmentsHighlighter is FXPygmentsHighlighter
     assert "FXPygmentsHighlighter" in fxwidgets.__all__
+    assert fxwidgets.code_color is _code_block.code_color
+    assert "code_color" in fxwidgets.__all__
+
+
+def test_code_color_is_the_colour_the_highlighter_paints(qapp):
+    from pygments.token import Number, String
+
+    edit = QPlainTextEdit()
+    highlighter = FXPygmentsHighlighter(edit.document(), "python")
+    for name, token in (("String", String), ("Number", Number)):
+        painted = highlighter._get_format_for_token(token).foreground().color()
+        assert _code_block.code_color(name) == painted, name
+
+
+def test_code_color_follows_the_theme(qapp):
+    dark = _code_block.code_color("String")
+
+    fxstyle.apply_theme("light")
+
+    assert _code_block.code_color("String") != dark
+
+
+def test_an_uncoloured_token_reads_as_the_theme_text(qapp):
+    # The light style colours no plain Text token.
+    fxstyle.apply_theme("light")
+
+    assert _code_block.code_color("Text") == QColor(fxstyle.colors().text)
 
 
 def test_a_class_rule_gives_an_editor_the_mono_face_inside_a_host(qtbot):
