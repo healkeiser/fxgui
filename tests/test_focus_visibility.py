@@ -691,3 +691,25 @@ def test_a_focused_slider_rings_its_handle_in_text(qtbot, themed):
         "the ring was drawn beside the accent edge, not instead of it"
     )
     assert widget.sizeHint() == hint
+
+
+def test_an_item_view_check_box_is_drawn_by_the_theme(qtbot, themed):
+    """A checkable cell draws the theme's check box, not Fusion's own.
+
+    Fusion outlines it in the window colour darkened, which on a near-black
+    theme is black on black.
+    """
+
+    # The dark sheet's checkbox_unchecked.svg is filled with this grey.
+    ink = QColor("#a2a2a2")
+    table = QTableWidget(1, 1)
+    item = QTableWidgetItem("archived")
+    item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+    item.setCheckState(Qt.CheckState.Unchecked)
+    table.setItem(0, 0, item)
+    window, _ = _hosted(qtbot, table)
+
+    image = table.viewport().grab().toImage()
+    _save(image, "item_view_check_box.png")
+
+    assert _count(image, ink) > 0

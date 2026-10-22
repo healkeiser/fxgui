@@ -80,7 +80,8 @@ QCheckBox:disabled
     color: @text_disabled;
 }
 QCheckBox::indicator,
-QGroupBox::indicator
+QGroupBox::indicator,
+QAbstractItemView::indicator
 {
     width: @indicator_size;
     height: @indicator_size;
@@ -94,7 +95,8 @@ QGroupBox::indicator
 QCheckBox::indicator:unchecked,
 QCheckBox::indicator:unchecked:hover,
 QGroupBox::indicator:unchecked,
-QGroupBox::indicator:unchecked:hover
+QGroupBox::indicator:unchecked:hover,
+QAbstractItemView::indicator:unchecked
 {
     image: url(~icons/checkbox_unchecked.svg);
     width: @indicator_size;
@@ -115,7 +117,8 @@ QGroupBox::indicator:unchecked:pressed
 QCheckBox::indicator:checked,
 QCheckBox::indicator:checked:hover,
 QGroupBox::indicator:checked,
-QGroupBox::indicator:checked:hover
+QGroupBox::indicator:checked:hover,
+QAbstractItemView::indicator:checked
 {
     image: url(~icons/checkbox_checked.svg);
     width: @indicator_size;
@@ -138,7 +141,8 @@ QCheckBox::indicator:indeterminate:hover,
 QCheckBox::indicator:indeterminate:pressed,
 QGroupBox::indicator:indeterminate,
 QGroupBox::indicator:indeterminate:hover,
-QGroupBox::indicator:indeterminate:pressed
+QGroupBox::indicator:indeterminate:pressed,
+QAbstractItemView::indicator:indeterminate
 {
     image: url(~icons/checkbox_indeterminate.svg);
     width: @indicator_size;
@@ -154,7 +158,8 @@ QGroupBox[fxFocusVisible="true"]::indicator:indeterminate:focus
 }
 
 QCheckBox::indicator:checked:disabled,
-QGroupBox::indicator:checked:disabled
+QGroupBox::indicator:checked:disabled,
+QAbstractItemView::indicator:checked:disabled
 {
     image: url(~icons/checkbox_checked_disabled.svg);
     width: @indicator_size;
@@ -162,7 +167,8 @@ QGroupBox::indicator:checked:disabled
 }
 
 QCheckBox::indicator:unchecked:disabled,
-QGroupBox::indicator:unchecked:disabled
+QGroupBox::indicator:unchecked:disabled,
+QAbstractItemView::indicator:unchecked:disabled
 {
     image: url(~icons/checkbox_unchecked_disabled.svg);
     width: @indicator_size;
