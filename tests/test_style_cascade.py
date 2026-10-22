@@ -97,11 +97,14 @@ def test_qss_class_selector_matches_python_subclass(qtbot):
     assert image.pixelColor(child.rect().center()) == QColor("#ff00ff")
 
 
+# Module level: PySide6 6.12 names a nested class by its qualified name,
+# which no type selector can spell.
+class _FancyLabel(QLabel):
+    pass
+
+
 def test_qss_class_selector_matches_qt_subclass(qtbot):
     """Same check for a QLabel subclass (no WA_StyledBackground needed)."""
-
-    class _FancyLabel(QLabel):
-        pass
 
     root = QWidget()
     layout = QVBoxLayout(root)

@@ -152,11 +152,14 @@ def test_an_uncoloured_token_reads_as_the_theme_text(qapp):
     assert _code_block.code_color("Text") == QColor(fxstyle.colors().text)
 
 
-def test_a_class_rule_gives_an_editor_the_mono_face_inside_a_host(qtbot):
-    from qtpy.QtWidgets import QPlainTextEdit, QVBoxLayout, QWidget
+# Module level: PySide6 6.12 names a nested class by its qualified name,
+# which no type selector can spell.
+class _MonoProbeEditor(QPlainTextEdit):
+    pass
 
-    class _MonoProbeEditor(QPlainTextEdit):
-        pass
+
+def test_a_class_rule_gives_an_editor_the_mono_face_inside_a_host(qtbot):
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
 
     fxstyle.register_widget_style(
         "_MonoProbeEditor { font-family: @font_mono; font-size: 17px; }")
