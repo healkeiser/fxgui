@@ -1131,6 +1131,20 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         "icon_on_accent_secondary", text_on_secondary
     )
 
+    # A selected item's fill is the accent unless the theme names a softer
+    # one, whose inks are the theme's own text and icon made to read on it.
+    selection = theme_data.get("selection") or accent_primary
+    tokens["@selection"] = selection
+    tokens["@selection_border"] = theme_data.get("selection_border") or selection
+    if selection == accent_primary:
+        tokens["@text_on_selection"] = text_on_primary
+        tokens["@icon_on_selection"] = tokens["@icon_on_accent_primary"]
+    else:
+        tokens["@text_on_selection"] = readable_ink(
+            selection, theme_data["text"])
+        tokens["@icon_on_selection"] = readable_ink(
+            selection, theme_data.get("icon", theme_data["text"]))
+
     (
         tokens["@primary_button"],
         tokens["@primary_button_hover"],
@@ -2159,8 +2173,8 @@ _PALETTE_ROLES = {
     "Button": "surface",
     "ButtonText": "text",
     "BrightText": "text_on_accent_primary",
-    "Highlight": "accent_primary",
-    "HighlightedText": "text_on_accent_primary",
+    "Highlight": "selection",
+    "HighlightedText": "text_on_selection",
     "ToolTipBase": "tooltip",
     "ToolTipText": "text",
     "PlaceholderText": "text_muted",

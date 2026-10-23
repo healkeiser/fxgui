@@ -962,14 +962,17 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         ends: Tuple[bool, bool],
         card: Optional[QColor] = None,
     ) -> None:
-        """Fill a selected cell with `accent_primary`, a hovered one with
+        """Fill a selected cell with `selection`, a hovered one with
         `state_hover`, as the stylesheet does for plain item views.
+
+        A selected row is ringed in `selection_border`, around the row and
+        not between its cells.
 
         On a `card` too near `state_hover`, as a deep row's shade comes, the
         hover is the card stepped off it by `fxstyle.STATE_MIN_CONTRAST`.
         """
         if option.state & QStyle.State_Selected:
-            fill = QColor(fxstyle.colors().accent_primary)
+            fill = QColor(fxstyle.colors().selection)
         elif option.state & QStyle.State_MouseOver:
             fill = QColor(_hover_on(card))
         else:
@@ -981,6 +984,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         # Over the row's own edge, pixel for pixel, so none shows through.
         painter.setPen(QPen(fill, 1))
         painter.drawPath(self._edge_path(rect_f, ends))
+        if option.state & QStyle.State_Selected:
+            painter.setClipRect(rect, Qt.IntersectClip)
+            painter.setPen(QPen(QColor(fxstyle.colors().selection_border), 1))
+            painter.drawPath(self._row_outline(
+                rect_f.adjusted(0.5, 0.5, -0.5, -0.5),
+                fxstyle.BUTTON_RADIUS, ends))
         painter.restore()
 
     def has_focus_ring(
@@ -1360,17 +1369,17 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing)
         if option.checkState == Qt.Unchecked:
-            edge = theme.text_on_accent_primary if selected else theme.border_light
+            edge = theme.text_on_selection if selected else theme.border_light
             painter.setPen(QPen(QColor(edge), 1.2))
             painter.setBrush(Qt.NoBrush)
             painter.drawRoundedRect(box, radius, radius)
         else:
-            fill = theme.text_on_accent_primary if selected else theme.accent_primary
+            fill = theme.text_on_selection if selected else theme.accent_primary
             painter.setPen(Qt.NoPen)
             painter.setBrush(QBrush(QColor(fill)))
             painter.drawRoundedRect(box, radius, radius)
             name = "remove" if option.checkState == Qt.PartiallyChecked else "check"
-            token = "accent_primary" if selected else "text_on_accent_primary"
+            token = "selection" if selected else "text_on_accent_primary"
             _mark(name, token).paint(painter, rect)
         painter.restore()
 

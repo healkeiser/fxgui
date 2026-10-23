@@ -41,8 +41,8 @@ QWidget
     /* Qt gives a widget made under a styled parent the app palette, not the
        parent's, so the text inks live here rather than in the palette. */
     color: @text;
-    selection-background-color: @accent_primary;
-    selection-color: @text_on_accent_primary;
+    selection-background-color: @selection;
+    selection-color: @text_on_selection;
     background-clip: border;
     border-image: none;
     /* Qt's focus rectangle ignores a widget's shape; KEYBOARD FOCUS at the
@@ -50,8 +50,9 @@ QWidget
     outline: none;
 }
 
-/* Hover is a neutral fill, never the accent: the accent marks selection,
-   keyboard focus, the current item and the primary action. */
+/* Hover is a neutral fill, never the accent: the accent marks keyboard
+   focus, the current item and the primary action; `selection` marks a
+   selected item, the accent unless the theme names a softer fill. */
 QWidget:item:hover
 {
     background-color: @state_hover;
@@ -60,8 +61,8 @@ QWidget:item:hover
 
 QWidget:item:selected
 {
-    background-color: @accent_primary;
-    color: @text_on_accent_primary;
+    background-color: @selection;
+    color: @text_on_selection;
 }
 
 QCheckBox
@@ -306,7 +307,7 @@ QMenu::icon:checked
 }
 
 /* A 24 px row at the 12 px body font. The pointer moves a menu's current
-   item, so here alone hover wears the accent. */
+   item, so here alone hover wears the selection fill. */
 QMenu::item
 {
     background-color: transparent;
@@ -317,8 +318,8 @@ QMenu::item
 
 QMenu::item:selected
 {
-    color: @text_on_accent_primary;
-    background-color: @accent_primary;
+    color: @text_on_selection;
+    background-color: @selection;
 }
 
 QMenu::item:pressed
@@ -667,7 +668,7 @@ QPushButton:focus {
 
 QComboBox
 {
-    selection-background-color: @accent_primary;
+    selection-background-color: @selection;
     background-color: @surface_sunken;
     border-style: solid;
     border: 1px solid @border;
@@ -1154,13 +1155,13 @@ QTreeView::item:!selected:hover {
 
 QListView::item:selected:hover,
 QTreeView::item:selected:hover {
-    background: @accent_primary;
-    color: @text_on_accent_primary;
+    background: @selection;
+    color: @text_on_selection;
 }
 
 /* A popup list's rows are a menu's: its line and 4 px above and below, at
    most 24 px whatever the base style asks (Windows 11 asks 34 px), and the
-   pointer's row is the accent. After the view rules above, which match as
+   pointer's row is the selection fill. After the view rules above, which match as
    specifically. */
 QComboBox QAbstractItemView::item,
 QAbstractItemView[fxPopup="true"]::item {
@@ -1179,8 +1180,8 @@ QComboBox QAbstractItemView::item:!selected:hover,
 QComboBox QAbstractItemView::item:selected,
 QAbstractItemView[fxPopup="true"]::item:hover,
 QAbstractItemView[fxPopup="true"]::item:selected {
-    color: @text_on_accent_primary;
-    background: @accent_primary;
+    color: @text_on_selection;
+    background: @selection;
     /* A popup row is a menu's: no list text step. */
     padding-left: 0px;
 }
@@ -1372,16 +1373,16 @@ QTableView
 QTableView::item:pressed,
 QListView::item:pressed,
 QTreeView::item:pressed  {
-    border-color: @accent_primary;
-    background: @accent_primary;
-    color: @text_on_accent_primary;
+    border-color: @selection;
+    background: @selection;
+    color: @text_on_selection;
 }
 
 QTableView::item:selected:active,
 QTreeView::item:selected:active,
 QListView::item:selected:active  {
-    background: @accent_primary;
-    color: @text_on_accent_primary;
+    background: @selection;
+    color: @text_on_selection;
 }
 
 

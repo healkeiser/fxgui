@@ -61,6 +61,8 @@ test = [
     "pytest-qt>=4.2",
     # Every run shuffles the order, so a test leaning on another fails.
     "pytest-randomly>=3.0",
+    # `-n 8` runs the suite in about a quarter of the serial time.
+    "pytest-xdist>=3.0",
     # The oldest PySide6 fxgui supports is Houdini 21's 6.5.3.
     "PySide6>=6.5; sys_platform != 'linux' or python_version >= '3.12'",
     # Linux 6.12.0 drops a reference to None on every enum it hands a Python

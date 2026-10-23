@@ -91,8 +91,11 @@ fonts:
 # COLOR REFERENCE:
 #
 # Accent Colors:
-#   accent_primary    - Selection, keyboard focus, the current item, the primary action
+#   accent_primary    - Selection (unless `selection` is set), keyboard focus, the current item, the primary action
 #   accent_secondary  - A primary button's hover fill and a pressed menu item
+#   selection         - (Optional) Fill of a selected row, list item or menu item, accent_primary if omitted;
+#                       its text and icon inks are the theme's own, made to read on it
+#   selection_border  - (Optional) Ring a thumbnail delegate draws around a selected row, `selection` if omitted
 #
 # Surface Colors (Backgrounds):
 #   surface           - Main widget/window backgrounds

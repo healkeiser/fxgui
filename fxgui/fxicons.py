@@ -65,13 +65,13 @@ _MODES = {
     "disabled": QIcon.Disabled,
 }
 _MODE_NAMES = {mode: name for name, mode in _MODES.items()}
-# Selected is an item-view row on the accent. Active (hover, focus) takes
-# the normal ink, except on a menu's current row, the one hover on the accent.
+# Selected is an item-view row on the selection fill. Active (hover, focus)
+# takes the normal ink, except on a menu's current row, the one hover on it.
 _DEFAULT_INKS = {
-    "selected": "icon_on_accent_primary",
+    "selected": "icon_on_selection",
     "disabled": "text_disabled",
 }
-_MENU_ROW_INK = "icon_on_accent_primary"
+_MENU_ROW_INK = "icon_on_selection"
 
 # Before Qt 6.8, QIcon hands scaledPixmap a device size and sets the
 # returned pixmap's ratio itself; measured on 6.5.3, 6.7.3 and 6.8.3.
