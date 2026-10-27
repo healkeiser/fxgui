@@ -1,5 +1,8 @@
 """A header's resizable column edge lights in the accent under the pointer."""
 
+# Built-in
+import gc
+
 # Third-party
 from qtpy.QtCore import QPoint
 from qtpy.QtGui import QColor
@@ -39,6 +42,21 @@ def test_an_edge_lights_under_the_pointer_and_clears_off_it(qtbot):
     assert near(image.pixelColor(edge, middle), accent, 40)
     QTest.mouseMove(header.viewport(), QPoint(edge // 2, middle))
     qtbot.waitUntil(lambda: mark._x is None, timeout=1000)
+
+
+def test_an_edge_still_lights_once_python_dropped_every_handle(qtbot):
+    """Only Qt holds the tree and its mark: a collection must spare the mark."""
+    window = themed_window(qtbot, "dark", QTreeWidget())
+    window.findChild(QTreeWidget).setHeaderLabels(["Name", "Version"])
+    gc.collect()
+    header = window.findChild(QTreeWidget).header()
+    (mark,) = [
+        child for child in header.viewport().children()
+        if type(child).__name__ == "_ResizeMark"
+    ]
+    edge = header.sectionViewportPosition(0) + header.sectionSize(0)
+    QTest.mouseMove(header.viewport(), QPoint(edge - 1, header.height() // 2))
+    qtbot.waitUntil(lambda: mark._x == edge, timeout=1000)
 
 
 def test_a_fixed_column_edge_stays_dark(qtbot):

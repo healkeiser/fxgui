@@ -9,7 +9,7 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 __all__ = [
-    "QT_VERSION", "created_by_python", "find_pixmap", "is_valid",
+    "QT_VERSION", "created_by_python", "find_pixmap", "hold", "is_valid",
     "parent_widget",
 ]
 
@@ -50,8 +50,22 @@ def find_pixmap(key: str) -> Optional[QPixmap]:
     return found if found is not None and not found.isNull() else None
 
 
-# A parentless widget C++ made, held until C++ frees it; see parent_widget.
+# Python objects held until Qt destroys them; see hold.
 _held = {}
+
+
+def hold(obj) -> None:
+    """Keep `obj`'s Python side alive until Qt destroys the object.
+
+    PySide keeps a child's wrapper only through its parent's wrapper; under
+    a parent C++ made, that one is freed at will and takes the child's
+    overrides with it, while Qt keeps the widget.
+    """
+    key = id(obj)
+    if key in _held:
+        return
+    _held[key] = obj
+    obj.destroyed.connect(lambda _=None, key=key: _held.pop(key, None))
 
 
 def parent_widget(widget):
@@ -65,9 +79,6 @@ def parent_widget(widget):
         parent is None
         and created_by_python is not None
         and not created_by_python(widget)
-        and id(widget) not in _held
     ):
-        key = id(widget)
-        _held[key] = widget
-        widget.destroyed.connect(lambda _=None, key=key: _held.pop(key, None))
+        hold(widget)
     return parent

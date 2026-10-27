@@ -2364,6 +2364,7 @@ class _ResizeMark(QWidget):
 
     def __init__(self, header: QHeaderView):
         super().__init__(header.viewport())
+        _compat.hold(self)
         self._header = header
         self._x: Optional[int] = None
         self._edge: Optional[int] = None
