@@ -497,7 +497,7 @@ class FXDropZone(QWidget):
 fxstyle.register_widget_style("""
 FXDropZone QWidget#FXDropZoneArea {
     border: 2px dashed @border;
-    border-radius: @card_radius;
+    border-radius: @button_radius;
     background-color: @surface_sunken;
 }
 FXDropZone QWidget#FXDropZoneArea:hover {

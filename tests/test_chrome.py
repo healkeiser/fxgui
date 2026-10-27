@@ -15,13 +15,11 @@ from qtpy.QtWidgets import (
     QLabel,
     QListWidget,
     QMenu,
-    QSpinBox,
     QStyle,
     QStyleFactory,
     QStyleOptionComboBox,
     QStyleOptionGroupBox,
     QStyleOptionSlider,
-    QStyleOptionSpinBox,
     QTableWidget,
     QTabBar,
     QTabWidget,
@@ -91,7 +89,8 @@ def _branch(tree, item):
 @THEMES
 def test_a_tree_draws_chevrons_and_no_branch_lines(qtbot, theme):
     tree = _tree()
-    window = themed_window(qtbot, theme, tree)
+    # Tall enough for all six 36 px rows.
+    window = themed_window(qtbot, theme, tree, size=(320, 320))
     image = window.grab().toImage()
     colors = fxstyle.colors()
     opened, closed, leaf = (tree.topLevelItem(row) for row in range(3))
@@ -106,6 +105,39 @@ def test_a_tree_draws_chevrons_and_no_branch_lines(qtbot, theme):
     assert image.copy(_branch(tree, opened)) != image.copy(
         _branch(tree, closed)
     )
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_nav_list_s_current_row_is_a_neutral_chip_in_the_nav_ink(
+    qtbot, theme
+):
+    pages = QListWidget()
+    pages.addItems(["Shots", "Assets", "Renders"])
+    fxstyle.mark_as_nav(pages)
+    window = themed_window(qtbot, theme, pages)
+    pages.setCurrentRow(1)
+    QApplication.processEvents()
+    image = window.grab().toImage()
+    colors = fxstyle.colors()
+    origin = pages.viewport().mapTo(window, QPoint())
+    current = pages.visualItemRect(pages.item(1)).translated(origin)
+    rest = pages.visualItemRect(pages.item(2)).translated(origin)
+
+    assert pages.property(fxstyle.NAV_PROPERTY) is True
+    # A 28 px chip, 1 px clear above and below.
+    assert current.height() == 28 + 2
+    # Past the text: the chip's own fill, a resting row none.
+    middle = current.center().y()
+    assert image.pixelColor(current.right() - 8, middle).name() == (
+        colors.state_hover.lower())
+    assert image.pixelColor(rest.right() - 8, rest.center().y()).name() != (
+        colors.state_hover.lower())
+    # Set in from the side and rounded: the row's corner is not the chip.
+    assert image.pixelColor(current.topLeft()).name() != (
+        colors.state_hover.lower())
+    ink = fxstyle._token_map(theme)["@nav_ink"]
+    inks = _pixels(image, current)
+    assert min(_distance(pixel, ink) for pixel in inks) <= 24, inks
 
 
 # (2) Scroll bars: a thin rounded thumb, no arrows, wider on hover.
@@ -169,22 +201,20 @@ def test_every_arrow_in_the_sheet_is_a_chevron(theme):
     sheet = fxstyle._build_stylesheet(theme)
     assert "~icon(" not in sheet
     assert not re.search(r"_arrow(_disabled)?.svg", sheet)
-    for name in ("expand_more", "expand_less", "chevron_right"):
+    for name in ("expand_more", "chevron_right"):
         assert f"/{name}_" in sheet, name
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
-def test_combo_spin_and_header_arrows_wear_the_icon_token(qtbot, theme):
+def test_combo_and_header_arrows_wear_the_icon_token(qtbot, theme):
     holder = QWidget()
     column = QVBoxLayout(holder)
     combo = QComboBox()
     combo.addItems(["one", "two"])
-    spin = QSpinBox()
-    spin.setValue(5)
     table = QTableWidget(3, 2)
     table.setSortingEnabled(True)
     table.sortByColumn(0, Qt.AscendingOrder)
-    for widget in (combo, spin, table):
+    for widget in (combo, table):
         column.addWidget(widget)
     window = themed_window(qtbot, theme, holder, size=(320, 320))
     image = window.grab().toImage()
@@ -199,17 +229,10 @@ def test_combo_spin_and_header_arrows_wear_the_icon_token(qtbot, theme):
         QStyle.CC_ComboBox, option, QStyle.SC_ComboBoxArrow, combo
     )
     assert _ink_near(image, mapped(combo, arrow), icon) <= 24
-    option = QStyleOptionSpinBox()
-    spin.initStyleOption(option)
-    for control in (QStyle.SC_SpinBoxUp, QStyle.SC_SpinBoxDown):
-        button = spin.style().subControlRect(
-            QStyle.CC_SpinBox, option, control, spin
-        )
-        assert _ink_near(image, mapped(spin, button), icon) <= 24, control
     header = table.horizontalHeader()
-    # The sort mark sits at the section's right end, clear of its text.
-    right = header.sectionViewportPosition(0) + header.sectionSize(0)
-    mark = QRect(right - 20, 0, 20, header.height())
+    # The sort mark sits right after the label, in the section's first half.
+    left = header.sectionViewportPosition(0)
+    mark = QRect(left, 0, header.sectionSize(0) // 2, header.height())
     assert _ink_near(image, mapped(header, mark), icon) <= 40
 
 
@@ -507,7 +530,7 @@ def test_a_combo_popup_is_the_popup_look_edge_to_edge(qtbot, theme):
     image = popup.grab().toImage()
     combo.hidePopup()
     colors = fxstyle.colors()
-    inks = (colors.surface, colors.border, colors.accent_primary)
+    inks = (colors.surface, colors.border, colors.state_hover)
     assert not _foreign(image, inks)
     middle = image.height() // 2
     assert image.pixelColor(0, middle).name() == colors.border.lower()
@@ -526,7 +549,7 @@ def test_a_menu_wears_the_same_popup_look(qtbot, theme):
     image = menu.grab().toImage()
     menu.close()
     colors = fxstyle.colors()
-    inks = (colors.surface, colors.border, colors.accent_primary)
+    inks = (colors.surface, colors.border, colors.state_hover)
     assert not _foreign(image, inks)
     middle = image.height() // 2
     assert image.pixelColor(0, middle).name() == colors.border.lower()
@@ -553,8 +576,8 @@ def test_a_completer_list_wears_the_popup_look(qtbot, theme):
     middle = image.height() // 2
     assert image.pixelColor(0, middle).name() == colors.border.lower()
     assert image.pixelColor(2, middle).name() == colors.surface.lower()
-    # The current row is the accent, as a combo box's is.
-    assert colors.accent_primary.lower() in _pixels(image, image.rect())
+    # The current row is the neutral fill, as a combo box's is.
+    assert colors.state_hover.lower() in _pixels(image, image.rect())
     # Marked for the card look, which an application's sheet carries too.
     assert popup.property(fxstyle.POPUP_PROPERTY) is True
     assert window
@@ -636,6 +659,25 @@ def _room_for_tabs(docks, name, width=400):
     manager = docks.manager()
     area = manager.findDockWidget(name).dockAreaWidget()
     manager.setSplitterSizes(area, [width, 200])
+    QApplication.processEvents()
+
+
+def _paired_docks(body=None):
+    """Return a dock area with "one" and "two" sharing the left area.
+
+    A lone pane's tab is a title, so a pill needs a second pane beside it.
+    """
+    docks = fxdocking.FXDockArea()
+    docks.set_central(QLabel("central"))
+    docks.add_dock("one", "Render", body or QLabel("one"), "left")
+    docks.add_dock("two", "Comp", QLabel("two"), "left")
+    return docks
+
+
+def _current_one(docks):
+    """Make "one" the current tab, with room for both tabs."""
+    _room_for_tabs(docks, "one")
+    docks.manager().findDockWidget("one").setAsCurrentTab()
     QApplication.processEvents()
 
 
@@ -740,25 +782,18 @@ def test_a_dock_tab_starts_as_far_in_as_a_tab_bar_tab(qtbot):
     first = bar.tabRect(0).translated(bar.mapTo(window, QPoint()))
     left = pages.mapTo(window, QPoint()).x()
     ours = _first_edge(image, first.center().y(), left, first.right())
-
-    pages.setCurrentIndex(pages.count() - 1)
-    QApplication.processEvents()
-    image = window.grab().toImage()
-    tabs = [
-        widget for widget in window.findChildren(QWidget)
-        if widget.metaObject().className() == "ads::CDockWidgetTab"
-        and widget.isVisible()
-    ]
-    assert tabs
-    for tab in tabs:
-        area = tab.dockAreaWidget()
-        start = area.mapTo(window, QPoint()).x()
-        rect = tab.rect().translated(tab.mapTo(window, QPoint()))
-        assert _first_edge(image, rect.center().y(), start, rect.right()) == (
-            ours), tab.dockWidget().windowTitle()
     window.close()
     window.deleteLater()
     QApplication.processEvents()
+
+    docks = _paired_docks()
+    holder = themed_window(qtbot, "dark", docks, size=(600, 400))
+    _current_one(docks)
+    image = holder.grab().toImage()
+    tab = docks.manager().findDockWidget("one").tabWidget()
+    start = tab.dockAreaWidget().mapTo(holder, QPoint()).x()
+    rect = tab.rect().translated(tab.mapTo(holder, QPoint()))
+    assert _first_edge(image, rect.center().y(), start, rect.right()) == ours
 
 
 def _hovered_tab(image, rect):
@@ -949,40 +984,25 @@ def test_the_gaps_around_and_between_tab_pills_are_one_size(qtbot):
         image, first.center().y(), first.left(), bar.tabRect(1).right())
     gaps = {"above": above, "below": below, "between": between}
     height = bar.tabRect(0).height()
-
-    pages.setCurrentIndex(pages.count() - 1)
-    QApplication.processEvents()
-    image = window.grab().toImage()
-    tab = next(
-        widget for widget in window.findChildren(QWidget)
-        if widget.metaObject().className() == "ads::CDockWidgetTab"
-        and widget.isVisible()
-    )
-    area = tab.dockAreaWidget()
-    rect = tab.rect().translated(tab.mapTo(window, QPoint()))
-    # Inside the pane's 1 px border.
-    top = area.mapTo(window, QPoint()).y() + 1
-    dock_above, dock_below = _vertical_gaps(
-        image, rect.center().x(), top, rect.bottom() + 8)
     window.close()
     window.deleteLater()
     QApplication.processEvents()
 
-    docks = fxdocking.FXDockArea()
-    docks.set_central(QLabel("central"))
-    docks.add_dock("one", "Render", QLabel("one"), "left")
-    docks.add_dock("two", "Comp", QLabel("two"), "left")
+    # A sunken body, so the gap below the pill ends at the content's edge.
+    docks = _paired_docks(QTreeWidget())
     holder = themed_window(qtbot, "dark", docks, size=(600, 400))
-    _room_for_tabs(docks, "one")
+    _current_one(docks)
     manager = docks.manager()
-    manager.findDockWidget("one").setAsCurrentTab()
-    QApplication.processEvents()
     one = manager.findDockWidget("one").tabWidget()
     two = manager.findDockWidget("two").tabWidget()
     hover(qtbot, two, two.rect().center())
     image = holder.grab().toImage()
     left = one.rect().translated(one.mapTo(holder, QPoint()))
     right = two.rect().translated(two.mapTo(holder, QPoint()))
+    # Inside the pane's 1 px border.
+    top = one.dockAreaWidget().mapTo(holder, QPoint()).y() + 1
+    dock_above, dock_below = _vertical_gaps(
+        image, left.center().x(), top, left.bottom() + 20)
     dock_between = _gap_between(
         image, left.center().y(), left.left(), right.right())
 
@@ -1011,11 +1031,9 @@ def test_the_first_tab_pill_starts_as_far_in_as_it_sits_down(qtbot, theme):
     tabs = QTabWidget()
     tabs.addTab(QLabel("x"), "Render")
     tabs.addTab(QLabel("y"), "Comp")
-    docks = fxdocking.FXDockArea()
-    docks.set_central(QLabel("central"))
-    docks.add_dock("one", "Task", QLabel("one"), "left")
+    docks = _paired_docks()
     window = themed_window(qtbot, theme, tabs, docks, size=(600, 500))
-    QApplication.processEvents()
+    _current_one(docks)
     image = window.grab().toImage()
     bar = tabs.tabBar()
     origin = bar.mapTo(window, QPoint())
@@ -1036,12 +1054,10 @@ def test_the_first_tab_pill_starts_as_far_in_as_it_sits_down(qtbot, theme):
 def test_a_panes_content_sits_one_tab_gap_in_from_its_edges(qtbot, theme):
     if fxdocking is None:
         pytest.skip("needs PySide6-QtAds")
-    docks = fxdocking.FXDockArea()
-    docks.set_central(QLabel("central"))
     body = QLabel("body")
-    docks.add_dock("one", "Task", body, "left")
+    docks = _paired_docks(body)
     window = themed_window(qtbot, theme, docks, size=(600, 400))
-    QApplication.processEvents()
+    _current_one(docks)
     image = window.grab().toImage()
     tab = docks.manager().findDockWidget("one").tabWidget()
     area_widget = tab.dockAreaWidget()
@@ -1130,7 +1146,9 @@ def test_a_completer_in_a_themed_app_shows_four_rows_too(qtbot, app_root):
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
-def test_a_hovered_completer_row_is_the_accent_as_a_menu_row(qtbot, theme):
+def test_a_hovered_completer_row_is_the_neutral_fill_as_a_menu_row(
+    qtbot, theme
+):
     _window, completer, popup = _completer(qtbot, theme)
     model = completer.completionModel()
     row = popup.visualRect(model.index(2, 0))
@@ -1143,12 +1161,12 @@ def test_a_hovered_completer_row_is_the_accent_as_a_menu_row(qtbot, theme):
     popup.hide()
     # Past the text: a glyph may reach any column near the row's start.
     assert image.pixelColor(row.right() - 4, row.center().y()).name() == (
-        fxstyle.colors().accent_primary.lower())
+        fxstyle.colors().state_hover.lower())
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
 def test_combo_and_completer_rows_are_menu_rows_tall(qtbot, theme):
-    """A menu row is 24 px at the 12 px body font, its text plus 8 px."""
+    """A menu row is 28 px at the 12 px body font, its text plus 16 px."""
     _window, completer, popup = _completer(qtbot, theme)
     model = completer.completionModel()
     completer_rows = {
@@ -1192,7 +1210,8 @@ def test_a_combo_row_stands_no_taller_than_a_menu_row_may(qtbot, qapp, base):
     finally:
         fxstyle.set_style(qapp, name or "Fusion")
 
-    assert row <= 24
+    # The sheet's cap: 16 px of line and 8 px above and below.
+    assert row <= 32
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])

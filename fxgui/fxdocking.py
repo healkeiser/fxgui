@@ -19,16 +19,19 @@ from typing import Dict, List, Optional, Set, Tuple
 import PySide6QtAds as ads
 from qtpy.QtCore import (
     QByteArray,
+    QEasingCurve,
     QEvent,
     QObject,
     QPoint,
     QRect,
     QSize,
     Qt,
+    QVariantAnimation,
     qUncompress,
 )
 from qtpy.QtGui import QAction, QColor, QIcon, QShortcut
 from qtpy.QtWidgets import (
+    QLabel,
     QMainWindow,
     QSizePolicy,
     QSplitter,
@@ -38,7 +41,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import _compat, fxicons, fxstyle
-from fxgui.fxutils import focus_step, later, rehome
+from fxgui.fxutils import focus_step, later, rehome, repolish
 
 _AREAS = {
     "left": ads.LeftDockWidgetArea,
@@ -56,7 +59,7 @@ fxstyle.register_widget_style(
 #fxDocks ads--CFloatingDockContainer { background: @frame; }
 #fxDocks ads--CDockAreaWidget {
     background: @surface; border: 1px solid @pane_border;
-    border-radius: @button_radius;
+    border-radius: @card_radius;
 }
 #fxDocks ads--CDockAreaTitleBar, #fxDocks ads--CDockAreaTabBar,
 #fxDocks ads--CDockAreaTabBar QWidget#qt_scrollarea_viewport,
@@ -75,8 +78,22 @@ fxstyle.register_widget_style(
 #fxDocks ads--CDockAreaWidget QTreeView::branch:!selected:hover {
     background: @well;
 }
+/* A tree whose delegate owns its rows fills its own indentation. */
+#fxDocks ads--CDockAreaWidget QTreeView[fxOwnsRow="true"]::branch,
+#fxDocks ads--CDockAreaWidget QTreeView[fxOwnsRow="true"]::branch:selected,
+#fxDocks ads--CDockAreaWidget QTreeView[fxOwnsRow="true"]::branch:!selected:hover {
+    background: transparent;
+}
 #fxDocks ads--CDockAreaWidget QComboBox QAbstractItemView {
     background-color: @surface_sunken;
+}
+/* A pane alone in its area wears its tab as a plain title, not a pill. */
+#fxDocks ads--CDockWidgetTab[fxSole="true"],
+#fxDocks ads--CDockWidgetTab[fxSole="true"]:hover {
+    background: transparent;
+}
+#fxDocks ads--CDockWidgetTab[fxSole="true"] QLabel {
+    color: @text;
 }
 """
 )
@@ -95,7 +112,6 @@ _BUTTONS = {
 }
 
 _configured = False
-
 
 def _configure() -> None:
     """Set the process-wide flags, which apply to managers made after."""
@@ -178,6 +194,68 @@ def _bare(tab: "ads.CDockWidgetTab") -> None:
         if spacer is not None:
             spacer.changeSize(0, 0)
     layout.invalidate()
+
+
+def _open(held: "ads.CDockWidget") -> None:
+    """Grow a pane just opened from nothing, its content sliding in."""
+    if not fxstyle.motion():
+        return
+    later(0, held, lambda: _grow(held))
+
+
+def _grow(held: "ads.CDockWidget") -> None:
+    """Widen `held`'s area in its splitter from nothing to the size it took.
+
+    Its neighbour gives the room back as it goes; the content fades in.
+    """
+    area = held.dockAreaWidget()
+    splitter = _compat.parent_widget(area) if area is not None else None
+    if not isinstance(splitter, QSplitter) or splitter.count() < 2:
+        return
+    index = splitter.indexOf(area)
+    final = splitter.sizes()
+    if index < 0 or final[index] <= 0:
+        return
+    beside = index - 1 if index > 0 else index + 1
+    start = list(final)
+    start[beside] += start[index]
+    start[index] = 0
+    fxstyle._Reveal.over(held.widget(), moving=False)
+    floor = area.minimumSize()
+    area.setMinimumSize(0, 0)
+
+    def still_here() -> bool:
+        # A drag or a restore may move the area, or drop the splitter.
+        return (
+            _compat.is_valid(splitter)
+            and _compat.is_valid(area)
+            and splitter.indexOf(area) == index
+            and splitter.count() == len(final)
+        )
+
+    def size(progress: float) -> None:
+        if still_here():
+            splitter.setSizes([
+                round(begin + (end - begin) * progress)
+                for begin, end in zip(start, final)
+            ])
+
+    def done() -> None:
+        if still_here():
+            splitter.setSizes(final)
+        # Unless `_floor` has set a newer one meanwhile.
+        if _compat.is_valid(area) and area.minimumSize().isNull():
+            area.setMinimumSize(floor)
+
+    grow = QVariantAnimation(area)
+    grow.setDuration(fxstyle.PANEL_OPEN_MS)
+    grow.setStartValue(0.0)
+    grow.setEndValue(1.0)
+    grow.setEasingCurve(QEasingCurve.OutCubic)
+    grow.valueChanged.connect(size)
+    grow.finished.connect(done)
+    size(0.0)
+    grow.start(QVariantAnimation.DeleteWhenStopped)
 
 
 def _floor(area: "ads.CDockAreaWidget") -> None:
@@ -300,6 +378,10 @@ class FXDockArea(QWidget):
         self._keep_open = False
         self._placeholder = True
         self._built: Optional[bytes] = None
+        # Set once the first show has laid the panes out; a layout being
+        # restored meanwhile brings panes up with it, unanimated.
+        self._ready = False
+        self._restoring = False
         self._pending: Optional[bytes] = None
         self._restored = False
         self._sweep_queued = False
@@ -379,6 +461,15 @@ class FXDockArea(QWidget):
         held = ads.CDockWidget(self._docks, title)
         held.setObjectName(name)
         held.setWidget(widget, _NO_SCROLL)
+        # A pane picked by its tab rises in; one a person opens grows
+        # open. `triggered`, not `viewToggled`: a window building or
+        # restoring its layout toggles every pane, and none may grow.
+        held.visibilityChanged.connect(
+            lambda shown, held=held: shown and self._reveal(held)
+        )
+        held.toggleViewAction().triggered.connect(
+            lambda checked, held=held: checked and _open(held)
+        )
         # The content stands off the pane's edges as a pill does off its
         # strip's; the strip's own gap under the pills is the top one.
         gap = fxstyle.PANE_GAP
@@ -413,12 +504,31 @@ class FXDockArea(QWidget):
                 self._docks.addDockWidget(_AREAS[area], held)
         return held.toggleViewAction()
 
+    def _settled(self) -> bool:
+        """Whether the window shows, and its panes have come up with it."""
+        return (
+            self._ready
+            and not self._restoring
+            and self.window().windowOpacity() >= 1.0
+        )
+
+    def _reveal(self, held: "ads.CDockWidget") -> None:
+        """Fade `held` in, unless its window is still coming up."""
+        if self._settled():
+            fxstyle._Reveal.over(held.widget())
+
     def show_dock(self, name: str) -> None:
-        """Open the pane `name`, in front of its tabs and its window."""
+        """Open the pane `name`, in front of its tabs and its window.
+
+        A closed pane grows open once its window has settled.
+        """
         held = self._docks.findDockWidget(name)
         if held is None:
             return
+        opening = held.isClosed() and self._settled()
         held.toggleView(True)
+        if opening:
+            _open(held)
         held.setAsCurrentTab()
         floating = held.floatingDockContainer()
         if floating is not None:
@@ -527,6 +637,7 @@ class FXDockArea(QWidget):
 
     def _resettle(self, settled: QSize) -> None:
         """Split again at the shown size, if the show changed it."""
+        self._ready = True
         if self.size() == settled:
             return
         # A layout restored since the show stays; only the reset target moves.
@@ -566,8 +677,12 @@ class FXDockArea(QWidget):
 
     def _restore(self, state: bytes) -> None:
         self._restored = True
-        self._docks.restoreState(QByteArray(state))
-        self._hold_open()
+        self._restoring = True
+        try:
+            self._docks.restoreState(QByteArray(state))
+            self._hold_open()
+        finally:
+            self._restoring = False
 
     def _panes(self) -> List["ads.CDockWidget"]:
         return [
@@ -607,6 +722,9 @@ class FXDockArea(QWidget):
     def _area_created(self, area: "ads.CDockAreaWidget") -> None:
         _inset(area)
         area.currentChanged.connect(lambda _index: _floor(area))
+        bar = area.titleBar().tabBar()
+        for signal in (bar.tabOpened, bar.tabClosed, bar.tabInserted):
+            signal.connect(self._resweep)
 
     def _rethemed(self, _theme: str = "") -> None:
         """Redraw the drop targets in the new theme."""
@@ -622,6 +740,15 @@ class FXDockArea(QWidget):
             if splitter.property(fxstyle.FRAME_PROPERTY) is not True:
                 splitter.setHandleWidth(gap)
                 fxstyle.mark_as_frame(splitter)
+        for area in docks.findChildren(ads.CDockAreaWidget):
+            sole = area.openDockWidgetsCount() == 1
+            for held in area.dockWidgets():
+                tab = held.tabWidget()
+                if tab.property("fxSole") is not sole:
+                    tab.setProperty("fxSole", sole)
+                    repolish(tab)
+                    for label in tab.findChildren(QLabel):
+                        repolish(label)
 
     def _keep_gaps(self) -> None:
         """Sweep now, and after every change QtAds makes to its tree.

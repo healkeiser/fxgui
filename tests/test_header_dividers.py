@@ -1,4 +1,4 @@
-"""A header draws a divider between sections, where a column resizes."""
+"""A header is flat: one rule under it, no divider between sections."""
 
 # Third-party
 from qtpy.QtGui import QColor
@@ -8,8 +8,7 @@ from qtpy.QtWidgets import QTreeWidget
 from fxgui import fxstyle
 
 
-def test_a_divider_stands_between_sections_and_not_after_the_last(
-        qtbot, app_root):
+def test_no_divider_stands_between_sections(qtbot, app_root):
     tree = QTreeWidget()
     tree.setHeaderLabels(["Name", "Version", "Artist"])
     tree.header().setStretchLastSection(False)
@@ -26,6 +25,9 @@ def test_a_divider_stands_between_sections_and_not_after_the_last(
         return header.sectionViewportPosition(section) + header.sectionSize(
             section) - 1
 
-    assert shot.pixelColor(edge(0), middle).name() == border
-    assert shot.pixelColor(edge(1), middle).name() == border
-    assert shot.pixelColor(edge(2), middle).name() != border
+    for section in range(3):
+        at = shot.pixelColor(edge(section), middle).name()
+        assert at != border
+        assert at == shot.pixelColor(edge(section) - 2, middle).name()
+        assert shot.pixelColor(edge(section), header.height() - 1).name() == (
+            border)

@@ -156,13 +156,10 @@ class FXIconButton(QToolButton):
         size: Optional[int] = None,
     ):
         super().__init__(parent)
-        size = size or fxstyle.control_height(self)
+        self._size = size
         self.setAutoRaise(True)
         self.setCheckable(checkable)
-        self.setFixedSize(size, size)
-        glyph = round(size * 0.57)
-        self.setIconSize(QSize(glyph, glyph))
-        self.setProperty("fxSize", min(max(size, _SIZES[0]), _SIZES[-1]))
+        self._fit()
         if tip:
             apply_tip(self, tip)
         # Active is a hovered tool button: checked, on primary_button_hover,
@@ -175,6 +172,20 @@ class FXIconButton(QToolButton):
         }
         self.toggled.connect(self._show_icon)
         self._show_icon(self.isChecked())
+
+    def _fit(self) -> None:
+        """Size the circle: its own size, or a push button's in its font."""
+        size = self._size or fxstyle.control_height(self)
+        self.setFixedSize(size, size)
+        glyph = round(size * 0.57)
+        self.setIconSize(QSize(glyph, glyph))
+        self.setProperty("fxSize", min(max(size, _SIZES[0]), _SIZES[-1]))
+
+    def changeEvent(self, event: QEvent) -> None:
+        """Follow a font the theme gives after construction."""
+        super().changeEvent(event)
+        if event.type() == QEvent.FontChange and self._size is None:
+            self._fit()
 
     def _show_icon(self, checked: bool) -> None:
         self.setIcon(self._icons[checked])
@@ -211,7 +222,7 @@ FXJoinedGroup[fxFocus="true"] {
     + _each_state(
         'FXJoinedGroup > *[fxJoined="middle"], '
         'FXJoinedGroup > *[fxJoined="last"]',
-        "border-left: 1px solid @border;",
+        "border-left: 1px solid @border_light;",
     )
     + _each_state(
         'FXJoinedGroup > *[fxJoined="first"], '
@@ -290,6 +301,17 @@ class FXJoinedGroup(QFrame):
         self.layout().addWidget(widget)
         widget.installEventFilter(self)
         self._place_children()
+
+    def changeEvent(self, event: QEvent) -> None:
+        """Follow a font the theme gives after construction."""
+        super().changeEvent(event)
+        if event.type() == QEvent.FontChange:
+            self.setFixedHeight(fxstyle.control_height(self))
+            layout = self.layout()
+            for index in range(layout.count()):
+                child = layout.itemAt(index).widget()
+                if child is not None:
+                    child.setFixedHeight(self.height() - 2)
 
     def _place_children(self) -> None:
         # Only shown children count: a hidden one must not keep the round

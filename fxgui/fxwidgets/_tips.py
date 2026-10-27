@@ -61,12 +61,11 @@ _MODIFIERS = (
 fxstyle.register_widget_style(
     """
     QLabel#fxKeycap {
-        background: @state_hover;
-        color: @text_muted;
-        border: 1px solid @border;
-        border-radius: @button_radius;
-        padding: 1px 5px;
-        font-family: @font_mono;
+        background: transparent;
+        color: @text;
+        border: 1px solid @border_light;
+        border-radius: @small_radius;
+        padding: 0px 4px;
     }
     """
 )

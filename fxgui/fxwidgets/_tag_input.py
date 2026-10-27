@@ -211,7 +211,7 @@ fxstyle.register_widget_style("""
 FXTagChip {
     background-color: @primary_button;
     border: 1px solid @border_light;
-    border-radius: @button_radius;
+    border-radius: @small_radius;
     padding: 2px 4px;
 }
 FXTagChip QLabel {
@@ -221,7 +221,7 @@ FXTagChip QLabel {
 FXTagChip QPushButton {
     background: transparent;
     border: none;
-    border-radius: @button_radius;
+    border-radius: @small_radius;
 }
 FXTagChip QPushButton:hover {
     background: @primary_button_hover;

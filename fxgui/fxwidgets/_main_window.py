@@ -33,6 +33,7 @@ _MENU_NAMES = {
     "main_menu": "fxMainMenu",
     "window_menu": "fxWindowMenu",
     "theme_menu": "fxThemeMenu",
+    "row_size_menu": "fxRowSizeMenu",
     "help_menu": "fxHelpMenu",
 }
 
@@ -136,8 +137,8 @@ class FXMainWindow(QMainWindow):
     Attributes:
         title_corner (QWidget): The widget at the menu bar's right end
             holding `banner_icon` and `banner_label`.
-        main_menu, window_menu, theme_menu, help_menu (QMenu): fxgui's
-            menus on the current menu bar, or `None` with none.
+        main_menu, window_menu, theme_menu, row_size_menu, help_menu
+            (QMenu): fxgui's menus on the current menu bar, or `None`.
         refresh_action (QAction): Ctrl+Alt+R, on no menu; an application
             adds it where its refresh belongs.
     """
@@ -163,6 +164,7 @@ class FXMainWindow(QMainWindow):
         self._documentation: Optional[str] = None
         self.ui: Optional[QWidget] = None
         self.theme_actions: Dict[str, QAction] = {}
+        self.row_size_actions: Dict[str, QAction] = {}
 
         self._create_actions()
         self._create_title_corner(title)
@@ -267,6 +269,19 @@ class FXMainWindow(QMainWindow):
             group.addAction(action)
             self.theme_actions[theme_name] = action
 
+        sizes = QActionGroup(self)
+        sizes.setExclusive(True)
+        for size in fxstyle.ROW_SIZES:
+            action = fxutils.create_action(
+                self,
+                size.title(),
+                trigger=lambda _=False, s=size: fxstyle.apply_row_size(s),
+                checkable=True,
+            )
+            action.setChecked(size == fxstyle.row_size())
+            sizes.addAction(action)
+            self.row_size_actions[size] = action
+
         self.open_documentation_action = fxutils.create_action(
             self,
             "Documentation",
@@ -302,6 +317,13 @@ class FXMainWindow(QMainWindow):
         for action in self.theme_actions.values():
             theme_menu.addAction(action)
         window_menu.addMenu(theme_menu)
+        size_menu = menu(
+            "Row size", _MENU_NAMES["row_size_menu"], window_menu
+        )
+        fxicons.set_icon(size_menu, "density_medium")
+        for action in self.row_size_actions.values():
+            size_menu.addAction(action)
+        window_menu.addMenu(size_menu)
         bar.addMenu(window_menu)
 
         help_menu = menu("Help", _MENU_NAMES["help_menu"], bar)
@@ -361,6 +383,11 @@ class FXMainWindow(QMainWindow):
     def theme_menu(self) -> Optional[QMenu]:
         """The Window menu's Theme submenu."""
         return self._menu("theme_menu")
+
+    @property
+    def row_size_menu(self) -> Optional[QMenu]:
+        """The Window menu's Row size submenu."""
+        return self._menu("row_size_menu")
 
     @property
     def help_menu(self) -> Optional[QMenu]:
@@ -455,12 +482,18 @@ class FXMainWindow(QMainWindow):
         self.show()
 
     def _on_theme_changed(self) -> None:
-        """Refit the corner and check the theme in force; override to extend."""
+        """Refit the corner; check the theme and row size in force.
+
+        Override to extend.
+        """
         # A theme may change the menu font, and with it the first title.
         self._fit_title_corner()
-        action = self.theme_actions.get(fxstyle.get_theme())
-        if action is not None:
-            action.setChecked(True)
+        for action in (
+            self.theme_actions.get(fxstyle.get_theme()),
+            self.row_size_actions.get(fxstyle.row_size()),
+        ):
+            if action is not None:
+                action.setChecked(True)
 
     # Public methods
     def documentation(self) -> Optional[str]:

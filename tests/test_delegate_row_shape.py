@@ -1,4 +1,4 @@
-"""The row's rounded card, its column separators and the focus ring's ends."""
+"""The focus ring's ends, and a row's size and paint."""
 
 # Third-party
 import pytest
@@ -14,11 +14,10 @@ from _helpers import delegate_tree
 
 from _helpers import near
 
-_FILL = QColor("#1a3a5c")
 _BLANK = QColor("#ff00ff")
 
 
-def _paint(qtbot, draw, position):
+def _paint(qtbot, position):
     delegate = FXThumbnailDelegate()
     option = QStyleOptionViewItem()
     option.rect = QRect(0, 0, 60, 30)
@@ -28,33 +27,12 @@ def _paint(qtbot, draw, position):
     canvas.fill(_BLANK)
     painter = QPainter(canvas)
     try:
-        if draw == "card":
-            delegate._draw_background_and_border(
-                painter, option, _FILL, position
-            )
-        else:
-            delegate._draw_focus_indicator(
-                painter, option.rect, option, QModelIndex(), position
-            )
+        delegate._draw_focus_indicator(
+            painter, option.rect, option, QModelIndex(), position
+        )
     finally:
         painter.end()
     return canvas.toImage()
-
-
-def test_the_first_cell_rounds_its_outer_corners_only(qtbot):
-    image = _paint(qtbot, "card", (True, False))
-    assert not near(image.pixelColor(1, 1), _FILL, 40)
-    assert near(image.pixelColor(30, 15), _FILL, 40)
-    # The inner edge is square and carries the column separator
-    assert image.pixelColor(59, 2) != _BLANK
-
-
-def test_a_middle_cell_draws_both_separators(qtbot):
-    image = _paint(qtbot, "card", (False, False))
-    border = QColor(fxstyle.colors().border)
-    assert image.pixelColor(0, 15) == border
-    assert image.pixelColor(59, 15) == border
-    assert image.pixelColor(0, 1) != _BLANK
 
 
 @pytest.mark.parametrize(
@@ -69,11 +47,13 @@ def test_a_middle_cell_draws_both_separators(qtbot):
 def test_the_focus_ring_closes_only_at_the_row_ends(
     qtbot, position, left, right
 ):
-    image = _paint(qtbot, "ring", position)
+    image = _paint(qtbot, position)
     accent = QColor(fxstyle.colors().accent_primary)
     assert near(image.pixelColor(30, 0), accent, 40)
     assert near(image.pixelColor(0, 15), accent, 40) is left
     assert near(image.pixelColor(59, 15), accent, 40) is right
+    # Square, as the row it rings: a round corner would leave this blank.
+    assert image.pixelColor(0, 0) != _BLANK
 
 
 def _tree_row(qtbot, text="Row"):
@@ -87,7 +67,8 @@ def test_size_and_paint_agree_on_a_falsy_thumbnail_role(qtbot):
     option = QStyleOptionViewItem()
     option.rect = tree.visualRect(index)
     assert delegate._has_thumbnail(index)
-    assert delegate.sizeHint(option, index).height() == 50
+    height = delegate.sizeHint(option, index).height()
+    assert height == delegate._THUMBNAIL_ROW_HEIGHT == fxstyle.row_height()
 
 
 def test_a_selected_title_is_painted_in_the_highlighted_text_color(qtbot):

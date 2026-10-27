@@ -343,13 +343,14 @@ def test_a_keycap_follows_a_switch_and_has_round_corners(qtbot):
     assert first.size() == second.size()
     assert image.copy(first) == image.copy(second)
 
-    fill = image.pixelColor(second.center().x(), second.top() + 1).name()
-    assert fill == fxstyle.colors().state_hover.lower()
+    # No fill of its own: inside, the host shows through.
+    fill = image.pixelColor(second.left() + 2, second.center().y()).name()
+    assert fill == image.pixelColor(second.right() + 3, second.top()).name()
     # The border is drawn and the corner is cut round.
     edge = image.pixelColor(second.center().x(), second.top()).name()
-    assert edge == fxstyle.colors().border.lower()
+    assert edge == fxstyle.colors().border_light.lower()
     corner = image.pixelColor(second.topLeft()).name()
-    assert corner not in (fill, edge)
+    assert corner != edge
 
 
 def test_fxkeycap_draws_one_cap_per_key(qtbot):

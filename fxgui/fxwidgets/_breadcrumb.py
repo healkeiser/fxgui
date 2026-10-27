@@ -7,11 +7,12 @@ from typing import List, Optional
 
 # Third-party
 from qtpy.QtCore import QEvent, QRect, QRectF, Qt, Signal
-from qtpy.QtGui import QColor, QFont, QPainter, QPen
+from qtpy.QtGui import QColor, QFont, QPainter
 from qtpy.QtWidgets import (
     QApplication,
     QFrame,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QMainWindow,
     QPushButton,
@@ -45,6 +46,11 @@ fxstyle.register_widget_style(
     QPushButton#fxBreadcrumbSegment[fxFocusVisible="true"]:focus
     {
         border-color: @accent_primary;
+    }
+    QLabel#fxBreadcrumbSeparator
+    {
+        color: @text_muted;
+        background: transparent;
     }
     """
 )
@@ -104,7 +110,10 @@ def _worked_out(under, resting, surface, hover, text, pane_border):
 
 
 class _Strip(QWidget):
-    """The field behind the segments, painted from the theme each time."""
+    """The field behind the segments: bare, as Lumen's path, until hovered.
+
+    The hover fill says the path is one target: a double-click edits it.
+    """
 
     def __init__(self, crumb: "FXBreadcrumb"):
         super().__init__()
@@ -112,20 +121,26 @@ class _Strip(QWidget):
         self._crumb = weakref.proxy(crumb)
 
     def paintEvent(self, event) -> None:
-        """Paint the strip's fill and edge."""
-        rest, hover, edge, _ink = self._crumb._colors()
+        """Paint the bar's own colour, or the hover fill while lit.
+
+        Never left unpainted: the scroll area under it fills in the
+        window's colour, a square on a bar of another.
+        """
         painter = QPainter(self)
+        ground = getattr(fxstyle.colors(), _ground(self._crumb))
+        painter.fillRect(self.rect(), QColor(ground))
+        if not self._crumb._lit:
+            return
+        _rest, hover, _edge, _ink = self._crumb._colors()
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.setPen(QPen(QColor(edge), 1))
-        painter.setBrush(QColor(hover if self._crumb._lit else rest))
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor(hover))
         radius = fxstyle.BUTTON_RADIUS
-        painter.drawRoundedRect(
-            QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5), radius, radius
-        )
+        painter.drawRoundedRect(QRectF(self.rect()), radius, radius)
 
 
 class _Segment(QPushButton):
-    """One path segment, its text in the strip's ink."""
+    """One path segment: a parent muted until hovered, the current one whole."""
 
     def __init__(self, crumb: "FXBreadcrumb", current: bool):
         super().__init__()
@@ -165,7 +180,10 @@ class _Segment(QPushButton):
             QStyle.SE_PushButtonContents, option, self
         )
         if self.icon().isNull():
-            painter.setPen(QColor(crumb._colors()[3]))
+            ink = crumb._colors()[3]
+            if not self._current and not self.underMouse():
+                ink = fxstyle.colors().text_muted
+            painter.setPen(QColor(ink))
             painter.drawText(contents, Qt.AlignCenter, self.text())
         else:
             box = QRect(contents.topLeft(), self.iconSize())
@@ -181,7 +199,8 @@ class FXBreadcrumb(QWidget):
 
     Args:
         parent: Parent widget.
-        separator: Icon name for separator between segments.
+        separator: The separator between segments: one character, as the
+            default "/", drawn as muted text; longer, an icon's name.
         home_icon: Icon name for the home/root segment.
         show_navigation: Show back/forward navigation buttons.
         path_separator: Character used to join path segments in edit mode.
@@ -227,7 +246,7 @@ class FXBreadcrumb(QWidget):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        separator: str = "chevron_right",
+        separator: str = "/",
         home_icon: str = "home",
         show_navigation: bool = False,
         path_separator: str = "/",
@@ -320,6 +339,18 @@ class FXBreadcrumb(QWidget):
         self.setFixedHeight(side)
 
         self._update_nav_buttons()
+
+    def changeEvent(self, event: QEvent) -> None:
+        """Follow a font the theme gives after construction."""
+        super().changeEvent(event)
+        if event.type() != QEvent.FontChange:
+            return
+        side = fxstyle.control_height(self)
+        if self._show_navigation:
+            self._back_button.setFixedSize(side, side)
+            self._forward_button.setFixedSize(side, side)
+        self._stacked.setFixedHeight(side)
+        self.setFixedHeight(side)
 
     def _colors(self):
         """Return the strip's rest fill, hover fill, edge and ink, now."""
@@ -431,7 +462,11 @@ class FXBreadcrumb(QWidget):
         self._path = path.copy()
         self._rebuild_breadcrumb()
 
-        if record_history and path:
+        # Where history already stands: a window echoing back or forward.
+        here = 0 <= self._history_index < len(self._history) and (
+            self._history[self._history_index] == path
+        )
+        if record_history and path and not here:
             # Truncate forward history when navigating to new path
             if self._history_index < len(self._history) - 1:
                 self._history = self._history[: self._history_index + 1]
@@ -551,10 +586,14 @@ class FXBreadcrumb(QWidget):
         self._layout.insertWidget(self._layout.count() - 1, button)
 
     def _add_separator(self) -> None:
-        """Add a separator icon."""
-        label = FXIconLabel(
-            fxicons.get_icon(self._separator, color="text_muted"), size=12)
-        label.setFixedSize(16, 16)
+        """Add the separator: a muted text, or an icon by its name."""
+        if len(self._separator) > 1:
+            label = FXIconLabel(
+                fxicons.get_icon(self._separator, color="text_muted"), size=12)
+            label.setFixedSize(16, 16)
+        else:
+            label = QLabel(self._separator)
+            label.setObjectName("fxBreadcrumbSeparator")
         label.setAlignment(Qt.AlignCenter)
         label.installEventFilter(self)
 

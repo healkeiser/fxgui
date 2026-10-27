@@ -163,7 +163,7 @@ def test_a_view_filled_before_it_is_shown_lays_its_rows_out_once_styled(
     qtbot.wait(20)
     first, second = (view.visualItemRect(view.item(i)) for i in (0, 1))
     assert second.top() == first.bottom() + 1
-    assert first.height() == 26
+    assert first.height() == 28
 
 
 @pytest.mark.parametrize("where", ["app_root", "host_root"])

@@ -230,6 +230,8 @@ def test_badges_follow_the_view_font(qtbot):
     item = QTreeWidgetItem(tree, ["Row"])
     item.setData(0, FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, "Review")
     item.setData(0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, "#c678dd")
+    # Wide enough that the title leaves the label its words at either size.
+    tree.header().resizeSection(0, 1000)
     index = tree.model().index(0, 0)
     small = delegate._indicator_metrics(index, _raw_option(tree, index))[0]
     font = QFont(tree.font())

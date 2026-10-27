@@ -105,7 +105,7 @@ def test_the_group_draws_one_outline_and_a_divider(qtbot, window):
     assert not near(pixel(window, group, combo.x() + middle, 2),
                      tokens["@border_light"], 4)
     divider = pixel(window, group, button.x(), group.height() // 2)
-    assert near(divider, tokens["@border"], 4), divider
+    assert near(divider, tokens["@border_light"], 4), divider
     assert near(pixel(window, group, 0, 0), tokens["@surface"])
 
 
@@ -133,8 +133,8 @@ def test_the_outline_has_the_push_button_corner(qtbot, window):
     window.layout().insertWidget(0, plain)
     QApplication.processEvents()
     tokens = fxstyle._token_map("dark")
-    # 2 px in from the corner is inside a 4 px radius; a pill leaves it out.
-    assert near(pixel(window, group, group.width() - 3, 2),
+    # 4 px in from the corner is inside a 9 px radius; a pill leaves it out.
+    assert near(pixel(window, group, group.width() - 5, 4),
                  tokens["@primary_button"])
     image = window.grab().toImage()
     for x in range(5):

@@ -1,4 +1,4 @@
-"""Corners come from two tokens: a control's radius and a card's."""
+"""Corners come from three tokens: a control's, a card's and a small one's."""
 
 # Built-in
 import re
@@ -8,7 +8,11 @@ from fxgui import fxstyle, fxwidgets  # noqa: F401  (registers every rule)
 
 # A pill (a groove, a scroll thumb) rounds at half its thickness, and a
 # part inside a 1 px border at one less: those stay in pixels.
-_SIZES = {"2", "4", "8"}
+_SIZES = {
+    str(fxstyle.BUTTON_RADIUS),
+    str(fxstyle.CARD_RADIUS),
+    str(fxstyle.SMALL_RADIUS),
+}
 
 
 def _literal_radii(qss: str) -> list:
@@ -32,6 +36,10 @@ def test_no_widget_rule_names_one_in_pixels():
 
 
 def test_the_tokens_are_the_constants():
-    sheet = fxstyle.resolve("a{border-radius:@button_radius;} b{x:@card_radius;}")
+    sheet = fxstyle.resolve(
+        "a{border-radius:@button_radius;} b{x:@card_radius;}"
+        " c{x:@small_radius;}"
+    )
     assert f"{fxstyle.BUTTON_RADIUS}px" in sheet
     assert f"{fxstyle.CARD_RADIUS}px" in sheet
+    assert f"{fxstyle.SMALL_RADIUS}px" in sheet

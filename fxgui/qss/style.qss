@@ -32,8 +32,8 @@ QToolTip
     border: 1px solid @border;
     background-color: @surface;
     color: @text;
-    padding: 4px 8px;
-    border-radius: @card_radius;
+    padding: 4px 10px;
+    border-radius: @small_radius;
 }
 
 QWidget
@@ -67,25 +67,38 @@ QWidget:item:selected
 
 QCheckBox
 {
-    spacing: 5px;
+    spacing: 8px;
     color: @text;
     margin-bottom: 2px;
     /* Reserved for the focus ring, which only recolours it, so the label
        never shifts on focus. */
     border: 1px solid transparent;
-    border-radius: @button_radius;
+    border-radius: @small_radius;
 }
 
 QCheckBox:disabled
 {
     color: @text_disabled;
 }
+/* An on/off mark is drawn, not an image: Lumen's 1 px edge with the small
+   corner, filled orange with a dark Lucide check once on. The border sits
+   inside the indicator size, so a mark keeps its box in every state. */
 QCheckBox::indicator,
 QGroupBox::indicator,
-QAbstractItemView::indicator
+QAbstractItemView::indicator,
+QRadioButton::indicator
 {
-    width: @indicator_size;
-    height: @indicator_size;
+    width: @indicator_inner;
+    height: @indicator_inner;
+    border: 1px solid @border_light;
+    border-radius: @small_radius;
+    background: transparent;
+    image: none;
+}
+
+QRadioButton::indicator
+{
+    border-radius: @indicator_round;
 }
 
 QGroupBox::indicator
@@ -93,157 +106,92 @@ QGroupBox::indicator
     margin-left: 2px;
 }
 
-QCheckBox::indicator:unchecked,
-QCheckBox::indicator:unchecked:hover,
-QGroupBox::indicator:unchecked,
-QGroupBox::indicator:unchecked:hover,
-QAbstractItemView::indicator:unchecked
+QCheckBox::indicator:hover,
+QGroupBox::indicator:hover,
+QRadioButton::indicator:hover,
+QCheckBox::indicator:pressed,
+QGroupBox::indicator:pressed,
+QRadioButton::indicator:pressed
 {
-    image: url(~icons/checkbox_unchecked.svg);
-    width: @indicator_size;
-    height: @indicator_size;
+    border-color: @border_strong;
 }
 
-QCheckBox[fxFocusVisible="true"]::indicator:unchecked:focus,
-QCheckBox::indicator:unchecked:pressed,
-QGroupBox[fxFocusVisible="true"]::indicator:unchecked:focus,
-QGroupBox::indicator:unchecked:pressed
+QCheckBox[fxFocusVisible="true"]::indicator:focus,
+QGroupBox[fxFocusVisible="true"]::indicator:focus,
+QRadioButton[fxFocusVisible="true"]::indicator:focus
 {
-    border: none;
-    image: url(~icons/checkbox_unchecked_focus.svg);
-    width: @indicator_size;
-    height: @indicator_size;
+    border-color: @accent_primary;
 }
 
 QCheckBox::indicator:checked,
-QCheckBox::indicator:checked:hover,
 QGroupBox::indicator:checked,
-QGroupBox::indicator:checked:hover,
 QAbstractItemView::indicator:checked
 {
-    image: url(~icons/checkbox_checked.svg);
-    width: @indicator_size;
-    height: @indicator_size;
-}
-
-QCheckBox[fxFocusVisible="true"]::indicator:checked:focus,
-QCheckBox::indicator:checked:pressed,
-QGroupBox[fxFocusVisible="true"]::indicator:checked:focus,
-QGroupBox::indicator:checked:pressed
-{
-    border: none;
-    image: url(~icons/checkbox_checked_focus.svg);
-    width: @indicator_size;
-    height: @indicator_size;
+    background: @accent_primary;
+    border-color: @accent_primary;
+    image: ~icon(check, text_on_accent_primary, 16);
 }
 
 QCheckBox::indicator:indeterminate,
-QCheckBox::indicator:indeterminate:hover,
-QCheckBox::indicator:indeterminate:pressed,
 QGroupBox::indicator:indeterminate,
-QGroupBox::indicator:indeterminate:hover,
-QGroupBox::indicator:indeterminate:pressed,
 QAbstractItemView::indicator:indeterminate
 {
-    image: url(~icons/checkbox_indeterminate.svg);
-    width: @indicator_size;
-    height: @indicator_size;
+    background: @accent_primary;
+    border-color: @accent_primary;
+    image: ~icon(remove, text_on_accent_primary, 16);
 }
 
-QCheckBox[fxFocusVisible="true"]::indicator:indeterminate:focus,
-QGroupBox[fxFocusVisible="true"]::indicator:indeterminate:focus
+/* A radio's dot is the dark ink at the middle of the orange disc. */
+QRadioButton::indicator:checked
 {
-    image: url(~icons/checkbox_indeterminate_focus.svg);
-    width: @indicator_size;
-    height: @indicator_size;
+    border-color: @accent_primary;
+    background: qradialgradient(cx: 0.5, cy: 0.5, radius: 0.5,
+        fx: 0.5, fy: 0.5,
+        stop: 0 @text_on_accent_primary, stop: 0.36 @text_on_accent_primary,
+        stop: 0.42 @accent_primary, stop: 1 @accent_primary);
+}
+
+QCheckBox::indicator:disabled,
+QGroupBox::indicator:disabled,
+QAbstractItemView::indicator:disabled,
+QRadioButton::indicator:disabled
+{
+    border-color: @border;
 }
 
 QCheckBox::indicator:checked:disabled,
+QCheckBox::indicator:indeterminate:disabled,
 QGroupBox::indicator:checked:disabled,
 QAbstractItemView::indicator:checked:disabled
 {
-    image: url(~icons/checkbox_checked_disabled.svg);
-    width: @indicator_size;
-    height: @indicator_size;
+    background: @border_light;
+    border-color: @border_light;
+    image: ~icon(check, text_disabled, 16);
 }
 
-QCheckBox::indicator:unchecked:disabled,
-QGroupBox::indicator:unchecked:disabled,
-QAbstractItemView::indicator:unchecked:disabled
+QRadioButton::indicator:checked:disabled
 {
-    image: url(~icons/checkbox_unchecked_disabled.svg);
-    width: @indicator_size;
-    height: @indicator_size;
+    border-color: @border_light;
+    background: qradialgradient(cx: 0.5, cy: 0.5, radius: 0.5,
+        fx: 0.5, fy: 0.5,
+        stop: 0 @text_disabled, stop: 0.36 @text_disabled,
+        stop: 0.42 @border_light, stop: 1 @border_light);
 }
 
 QRadioButton
 {
-    spacing: 5px;
+    spacing: 8px;
     color: @text;
     margin-bottom: 2px;
     /* Reserved for the focus ring, which only recolours it. Declaring the
        border in both states is what stops the label shifting on focus. */
     border: 1px solid transparent;
-    border-radius: @button_radius;
+    border-radius: @small_radius;
 }
 
 QRadioButton:disabled
 {
     color: @text_disabled;
-}
-QRadioButton::indicator
-{
-    width: @indicator_size;
-    height: @indicator_size;
-}
-
-QRadioButton::indicator:unchecked,
-QRadioButton::indicator:unchecked:hover
-{
-    image: url(~icons/radio_unchecked.svg);
-    width: @indicator_size;
-    height: @indicator_size;
-}
-
-QRadioButton[fxFocusVisible="true"]::indicator:unchecked:focus,
-QRadioButton::indicator:unchecked:pressed
-{
-    border: none;
-    image: url(~icons/radio_unchecked_focus.svg);
-    width: @indicator_size;
-    height: @indicator_size;
-}
-
-QRadioButton::indicator:checked,
-QRadioButton::indicator:checked:hover
-{
-    border: none;
-    image: url(~icons/radio_checked.svg);
-    width: @indicator_size;
-    height: @indicator_size;
-}
-
-QRadioButton[fxFocusVisible="true"]::indicator:checked:focus,
-QRadioButton::indicator:checked:pressed
-{
-    border: none;
-    image: url(~icons/radio_checked_focus.svg);
-    width: @indicator_size;
-    height: @indicator_size;
-}
-
-QRadioButton::indicator:checked:disabled
-{
-    image: url(~icons/radio_checked_disabled.svg);
-    width: @indicator_size;
-    height: @indicator_size;
-}
-
-QRadioButton::indicator:unchecked:disabled
-{
-    image: url(~icons/radio_unchecked_disabled.svg);
-    width: @indicator_size;
-    height: @indicator_size;
 }
 
 
@@ -298,34 +246,35 @@ QMenu::icon
 }
 
 /* Qt draws a checkable action's icon instead of its check box, so the
-   icon carries the checked state. */
+   icon carries the checked state, on a fill and no edge: a sheet's 1px
+   round edge comes out jagged. */
 QMenu::icon:checked
 {
     background-color: @state_pressed;
-    border: 1px solid @accent_primary;
-    border-radius: @button_radius;
+    border: 1px solid transparent;
+    border-radius: @small_radius;
 }
 
-/* A 24 px row at the 12 px body font. The pointer moves a menu's current
-   item, so here alone hover wears the selection fill. */
+/* A 28 px row at the 12 px body font. The pointer's item is a neutral
+   fill, as a hovered row's: the accent is kept for what is chosen. */
 QMenu::item
 {
     background-color: transparent;
     border: none;
     border-radius: @button_radius;
-    padding: 4px 24px;
+    padding: 8px 24px;
 }
 
 QMenu::item:selected
 {
-    color: @text_on_selection;
-    background-color: @selection;
+    color: @text;
+    background-color: @state_hover;
 }
 
 QMenu::item:pressed
 {
-    color: @text_on_accent_secondary;
-    background-color: @accent_secondary;
+    color: @text;
+    background-color: @state_pressed;
 }
 
 /* Full width inside the menu's padding. */
@@ -343,55 +292,14 @@ QMenu::indicator {
     left: 12px;
 }
 
-/* non-exclusive indicator = check box style indicator
-   (see QActionGroup::setExclusive) */
-QMenu::indicator:non-exclusive:unchecked {
-    image: url(~icons/checkbox_unchecked.svg);
-    width: 18px;
-    height: 18px;
+/* A checkable menu row is Lumen's: a check when on, nothing when off,
+   for a toggle and a one-of-many pick alike. */
+QMenu::indicator:unchecked {
+    image: none;
 }
 
-QMenu::indicator:non-exclusive:unchecked:selected {
-    image: url(~icons/checkbox_unchecked_focus.svg);
-    width: 18px;
-    height: 18px;
-}
-
-QMenu::indicator:non-exclusive:checked {
-    image: url(~icons/checkbox_checked.svg);
-    width: 18px;
-    height: 18px;
-}
-
-QMenu::indicator:non-exclusive:checked:selected {
-    image: url(~icons/checkbox_checked_focus.svg);
-    width: 18px;
-    height: 18px;
-}
-
-/* exclusive indicator = radio button style indicator (see QActionGroup::setExclusive) */
-QMenu::indicator:exclusive:unchecked {
-    image: url(~icons/radio_unchecked.svg);
-    width: 18px;
-    height: 18px;
-}
-
-QMenu::indicator:exclusive:unchecked:selected {
-    image: url(~icons/radio_unchecked_focus.svg);
-    width: 18px;
-    height: 18px;
-}
-
-QMenu::indicator:exclusive:checked {
-    image: url(~icons/radio_checked.svg);
-    width: 18px;
-    height: 18px;
-}
-
-QMenu::indicator:exclusive:checked:selected {
-    image: url(~icons/radio_checked_focus.svg);
-    width: 18px;
-    height: 18px;
+QMenu::indicator:checked {
+    image: ~icon(check, text, 16);
 }
 
 QMenu::right-arrow {
@@ -402,7 +310,7 @@ QMenu::right-arrow {
 }
 
 QMenu::right-arrow:selected {
-    image: ~icon(chevron_right, icon_on_accent_primary);
+    image: ~icon(chevron_right, icon);
 }
 
 
@@ -433,21 +341,36 @@ QMenuBar:focus
     border: none;
 }
 
+/* A field is Lumen's outline: no fill of its own, a hairline edge, and
+   the accent edge under keyboard focus. */
 QLineEdit
 {
-    background-color: @surface_sunken;
-    padding: 4px 6px;
+    background-color: transparent;
+    padding: 4px 8px;
     border-style: solid;
-    border: 1px solid @border;
+    border: 1px solid @border_light;
     border-radius: @button_radius;
     color: @text;
+}
+
+/* A search bar is Lumen's ghost field: no edge, filled while hovered or
+   typed in. */
+QLineEdit[fxGhost="true"]
+{
+    border-color: transparent;
+}
+
+QLineEdit[fxGhost="true"]:hover,
+QLineEdit[fxGhost="true"]:focus
+{
+    background-color: @state_pressed;
 }
 
 /* The title sits in the margin above a whole card, never cut into its
    border; the margin is in em so it grows with the font. */
 QGroupBox {
     border: 1px solid @border;
-    border-radius: @card_radius;
+    border-radius: @button_radius;
     margin-top: 1.75em;
 }
 
@@ -641,15 +564,17 @@ QToolBar::separator:vertical {
     height: 18px;
 }
 
+/* A button is an outline on whatever it sits on: a hairline ring, no
+   fill until hovered, then Lumen's raised grey. */
 QPushButton
 {
     color: @text;
-    background-color: @surface;
+    background-color: transparent;
     border-width: 1px;
     border-color: @border_light;
     border-style: solid;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 6px;
+    padding-bottom: 6px;
     padding-left: 10px;
     padding-right: 10px;
     border-radius: @button_radius;
@@ -657,9 +582,30 @@ QPushButton
 
 QPushButton:disabled
 {
-    background-color: @surface;
+    background-color: transparent;
     border-color: @border;
     color: @text_disabled;
+}
+
+/* A flat push button (setFlat) is a bare icon: no edge, a fill on hover,
+   the pressed fill held while checked. */
+QPushButton:flat,
+QPushButton:flat:disabled,
+QPushButton:flat:focus
+{
+    background-color: transparent;
+    border-color: transparent;
+}
+
+QPushButton:flat:hover
+{
+    background-color: @state_pressed;
+}
+
+QPushButton:flat:pressed,
+QPushButton:flat:checked
+{
+    background-color: @state_pressed;
 }
 
 QPushButton:focus {
@@ -669,9 +615,9 @@ QPushButton:focus {
 QComboBox
 {
     selection-background-color: @selection;
-    background-color: @surface_sunken;
+    background-color: transparent;
     border-style: solid;
-    border: 1px solid @border;
+    border: 1px solid @border_light;
     border-radius: @button_radius;
     padding: 4px 6px;
     min-width: 75px;
@@ -684,19 +630,10 @@ QPushButton:checked{
     border-color: @grid;
 }
 
-/* A field lifts its edge on hover; only keyboard focus makes it the accent.
-   Text edits and views do not change on hover. */
-QComboBox:hover,
-QAbstractSpinBox:hover,
-QLineEdit:hover
-{
-    border-color: @border_light;
-}
-
 /* A button hovers by its fill alone, so it never looks focused. */
 QPushButton:hover
 {
-    background-color: @state_hover;
+    background-color: @state_pressed;
     color: @text;
 }
 
@@ -807,6 +744,20 @@ QPushButton[fxRole="primary"]:pressed
     border-color: @primary_button_pressed;
 }
 
+/* A dialog's buttons are Lumen's: Cancel first, bare words with no icon;
+   fxstyle makes the accepting verb the primary button. */
+QDialogButtonBox
+{
+    button-layout: 1;
+    dialogbuttonbox-buttons-have-icons: 0;
+}
+
+QDialogButtonBox QPushButton,
+QDialogButtonBox QPushButton:focus
+{
+    border-color: transparent;
+}
+
 QPushButton[fxRole="primary"]:disabled
 {
     color: @text_disabled;
@@ -817,55 +768,28 @@ QPushButton[fxRole="primary"]:disabled
 QAbstractSpinBox {
     /* A line edit's height; fxstyle picks the padding per Qt version. */
     padding: @spin_padding;
-    border: 1px solid @border;
-    background-color: @surface_sunken;
+    border: 1px solid @border_light;
+    background-color: transparent;
     color: @text;
     border-radius: @button_radius;
     min-width: 75px;
 }
 
-QAbstractSpinBox:up-button
+/* A number box has no step arrows, as Lumen's: the wheel and the arrow
+   keys step it. */
+QAbstractSpinBox::up-button,
+QAbstractSpinBox::down-button
 {
-    background-color: transparent;
-    subcontrol-origin: border;
-    subcontrol-position: center right;
-}
-
-QAbstractSpinBox:down-button
-{
-    background-color: transparent;
-    subcontrol-origin: border;
-    subcontrol-position: center left;
+    width: 0px;
+    border: none;
 }
 
 QAbstractSpinBox::up-arrow,
 QAbstractSpinBox::down-arrow
 {
-    width: 16px;
-    height: 16px;
-}
-
-QAbstractSpinBox::up-arrow
-{
-    image: ~icon(expand_less, icon);
-}
-
-QAbstractSpinBox::down-arrow
-{
-    image: ~icon(expand_more, icon);
-}
-
-/* :off is an arrow at its end of the range. */
-QAbstractSpinBox::up-arrow:disabled,
-QAbstractSpinBox::up-arrow:off
-{
-    image: ~icon(expand_less, text_disabled);
-}
-
-QAbstractSpinBox::down-arrow:disabled,
-QAbstractSpinBox::down-arrow:off
-{
-    image: ~icon(expand_more, text_disabled);
+    image: none;
+    width: 0px;
+    height: 0px;
 }
 
 QLabel
@@ -1108,35 +1032,45 @@ QTreeView::branch:has-children:open {
 }
 
 /* A row has no padding in any state: Qt 6.5 skips an item's padding on
-   a row it paints natively and honours it on a highlighted one. The view
-   carries a top inset only: Qt sets its scroll bars inside any padding,
-   which would sit a thumb off the middle between the rows and the frame. */
+   a row it paints natively and honours it on a highlighted one. Nor has
+   the view: its rows run from its very top, edge to edge. */
 QListView,
-QTreeView {
-    show-decoration-selected: 1;
-    padding: 4px 0px 0px 0px;
-}
-
-/* Qt lays a header over the viewport, so the top inset would sit it off
-   the frame: a view with a header has none. Text keeps Qt's own margin. */
-QTreeView[headerHidden="false"],
+QTreeView,
 QTableView {
+    show-decoration-selected: 1;
     padding: 0px;
 }
 
-QListView::item,
+/* A branch slides open and shut. */
+QTreeView {
+    qproperty-animated: true;
+}
+
+QListView::item {
+    padding: 0px;
+    min-height: 28px;
+    max-height: 28px;
+}
+
+/* A canvas is framed as a list is: one hairline, the control's corner.
+   Qt's own frame would be a bevel, light on two sides and dark on two. */
+QGraphicsView
+{
+    border: 1px solid @border;
+    border-radius: @button_radius;
+}
+
+/* A tree row is a table's: flat, and as tall as the row size in force. */
 QTreeView::item {
     padding: 0px;
-    min-height: 26px;
-    max-height: 26px;
+    min-height: @row_height;
+    max-height: @row_height;
 }
 
 /* A radius makes the sheet draw the whole cell, which hides an item's own
-   BackgroundRole; only the highlighted states carry one. */
+   BackgroundRole; only a list's highlighted rows carry one. */
 QListView::item:hover,
-QTreeView::item:hover,
-QListView::item:selected,
-QTreeView::item:selected {
+QListView::item:selected {
     border-radius: @button_radius;
 }
 
@@ -1159,13 +1093,13 @@ QTreeView::item:selected:hover {
     color: @text_on_selection;
 }
 
-/* A popup list's rows are a menu's: its line and 4 px above and below, at
-   most 24 px whatever the base style asks (Windows 11 asks 34 px), and the
-   pointer's row is the selection fill. After the view rules above, which match as
-   specifically. */
+/* A popup list's rows are a menu's: its line and 8 px above and below,
+   at most 32 px whatever the base style asks (Windows 11 asks 34 px), and the
+   pointer's row the neutral fill. After the view rules above, which match
+   as specifically. */
 QComboBox QAbstractItemView::item,
 QAbstractItemView[fxPopup="true"]::item {
-    padding: 4px 0px;
+    padding: 8px 0px;
     min-height: 0px;
     max-height: 16px;
 }
@@ -1178,12 +1112,44 @@ QComboBox QAbstractItemView::item {
 QComboBox QAbstractItemView::item:hover,
 QComboBox QAbstractItemView::item:!selected:hover,
 QComboBox QAbstractItemView::item:selected,
+QComboBox QAbstractItemView::item:selected:active,
 QAbstractItemView[fxPopup="true"]::item:hover,
-QAbstractItemView[fxPopup="true"]::item:selected {
-    color: @text_on_selection;
-    background: @selection;
+QAbstractItemView[fxPopup="true"]::item:selected,
+QAbstractItemView[fxPopup="true"]::item:selected:active {
+    color: @text;
+    background: @state_hover;
     /* A popup row is a menu's: no list text step. */
     padding-left: 0px;
+}
+
+/* A navigation list (mark_as_nav): 28 px rounded chips set in from the
+   edges, no rule between them; the current row a neutral chip with its
+   text in the accent, a hovered one the same chip in the text's ink.
+   mark_as_nav sets the gap at the ends. */
+
+QTreeView[fxNav="true"]::item,
+QListView[fxNav="true"]::item {
+    min-height: 28px;
+    max-height: 28px;
+    border: none;
+    border-radius: @button_radius;
+    margin: 1px 4px;
+}
+
+QTreeView[fxNav="true"]::item:!selected:hover,
+QListView[fxNav="true"]::item:!selected:hover {
+    background: @state_hover;
+    color: @text;
+}
+
+QTreeView[fxNav="true"]::item:selected,
+QTreeView[fxNav="true"]::item:selected:active,
+QTreeView[fxNav="true"]::item:selected:hover,
+QListView[fxNav="true"]::item:selected,
+QListView[fxNav="true"]::item:selected:active,
+QListView[fxNav="true"]::item:selected:hover {
+    background: @state_hover;
+    color: @nav_ink;
 }
 
 /* A slider is a 4 px pill, its filled span the accent, and a round handle:
@@ -1280,16 +1246,16 @@ QToolButton {
 
 QToolButton[popupMode="1"] { /* MenuButtonPopup: QPushButton look */
     color: @text;
-    background-color: @surface;
-    border: 1px solid @border_light;
+    background-color: transparent;
+    border: 1px solid @border;
     border-radius: @button_radius;
     margin: 0px;
-    padding: 5px 10px;
+    padding: 6px 10px;
     padding-right: 22px; /* room for the menu-button section */
 }
 
 QToolButton[popupMode="1"]:disabled {
-    background-color: @surface;
+    background-color: transparent;
     border: 1px solid @border;
     color: @text_disabled;
 }
@@ -1315,10 +1281,11 @@ QToolButton::menu-button:pressed {
     background-color: @state_pressed;
 }
 
-/* A toggle that is on keeps an accent edge, so it reads as on. */
+/* A toggle that is on fills, with no edge: a sheet's 1px round edge
+   comes out jagged. */
 QToolButton:checked {
     background-color: @state_pressed;
-    border-color: @accent_primary;
+    border-color: transparent;
 }
 
 /* the subcontrol below is used only in the InstantPopup or DelayedPopup mode */
@@ -1364,9 +1331,13 @@ QPushButton::menu-indicator:disabled {
 }
 
 
+/* No grid: FXProxyStyle draws a hairline under each row, as Lumen's. A
+   rule in the sheet would make it draw the whole cell over a cell's own
+   BackgroundRole. */
 QTableView
 {
     gridline-color: @grid;
+    qproperty-showGrid: false;
 }
 
 
@@ -1386,30 +1357,33 @@ QListView::item:selected:active  {
 }
 
 
-/* A header is flat muted text over one rule; a divider between sections
-   marks where a column resizes. */
+/* A keycap is Lumen's: two steps below the body. Its look is FXKeycap's
+   own rule; the size lives here, with the type scale. */
+QLabel#fxKeycap
+{
+    font-size: @font_size_tiny;
+}
+
+/* A header is Lumen's: flat muted text over one rule, no line between
+   columns, labels on the left a step below the body. */
 QHeaderView
 {
     background: transparent;
     border: none;
     margin: 0px;
     padding: 0px;
+    qproperty-defaultAlignment: "AlignLeft|AlignVCenter";
 }
 
 QHeaderView::section  {
     background-color: transparent;
     color: @text_muted;
-    padding: 4px;
+    font-size: @font_size_small;
+    /* Left in line with a cell's text, which sits 4 px in. */
+    padding: 8px 4px;
     border: none;
     border-bottom: 1px solid @border;
-    border-right: 1px solid @border;
     border-radius: 0px;
-}
-
-QHeaderView::section:horizontal:last,
-QHeaderView::section:horizontal:only-one
-{
-    border-right: none;
 }
 
 QHeaderView::section:vertical
@@ -1429,20 +1403,8 @@ QHeaderView::section:checked
     color: @text;
 }
 
-QHeaderView::down-arrow,
-QHeaderView::up-arrow {
-    width: 12px;
-    height: 12px;
-    margin-right: 4px;
-}
-
-QHeaderView::down-arrow {
-    image: ~icon(expand_more, icon, 12);
-}
-
-QHeaderView::up-arrow {
-    image: ~icon(expand_less, icon, 12);
-}
+/* No sort-arrow rule: FXProxyStyle draws it right after the label, as
+   Lumen's, where a sheet can only pin it to the section's end. */
 
 QTableCornerButton::section {
     background-color: transparent;
@@ -1508,16 +1470,29 @@ QSplitter::handle {
     border: none;
 }
 
+/* A splitter inside a pane leaves its two sides a gutter of breathing
+   room; under the pointer, a thin accent line down its middle says it
+   drags, as a column's resize edge does. */
 QSplitter::handle:horizontal {
-    width: 1px;
+    width: 8px;
 }
 
 QSplitter::handle:vertical {
-    height: 1px;
+    height: 8px;
 }
 
-QSplitter::handle:hover {
-    background-color: @accent_primary;
+QSplitter::handle:horizontal:hover {
+    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 transparent, stop: 0.374 transparent,
+        stop: 0.375 @accent_primary, stop: 0.625 @accent_primary,
+        stop: 0.626 transparent, stop: 1 transparent);
+}
+
+QSplitter::handle:vertical:hover {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 transparent, stop: 0.374 transparent,
+        stop: 0.375 @accent_primary, stop: 0.625 @accent_primary,
+        stop: 0.626 transparent, stop: 1 transparent);
 }
 
 QSplitter {

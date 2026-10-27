@@ -48,7 +48,7 @@ _GONE = {
     "fxgui.fxwidgets:FXThumbnailDelegate": (
         "TRANSPARENT_SELECTION_STYLE", "markdown_to_plain_text",
         "show_child_count", "show_starred", "STARRED_ROLE",
-        "STARRED_COLOR_ROLE", "STATUS_LABEL_ICON_ROLE",
+        "STARRED_COLOR_ROLE",
         "_get_column_position", "_as_color",
     ),
     "fxgui.fxwidgets:FXMainWindow": (

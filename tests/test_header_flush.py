@@ -18,8 +18,6 @@ from _helpers import hover, themed_window
 # The sheet's 1 px edge around every item view.
 _EDGE = 1
 
-# A list's or headerless tree's inset above its first row.
-_TOP = 4
 
 
 def _tree(header=True):
@@ -52,11 +50,11 @@ def test_a_table_header_touches_the_frame(qtbot, theme):
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
-def test_a_tree_with_no_header_keeps_its_rows_off_the_top(qtbot, theme):
+def test_a_tree_with_no_header_starts_its_rows_at_the_top(qtbot, theme):
     tree = _tree(header=False)
     _window = themed_window(qtbot, theme, tree)
     viewport = tree.viewport().geometry()
-    assert viewport.top() == _EDGE + _TOP
+    assert viewport.top() == _EDGE
 
 
 def _text_left(image, origin, y, right):
@@ -98,20 +96,20 @@ def test_row_text_stays_put_in_every_state(qtbot, theme, kind):
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
-def test_the_inset_follows_a_header_hidden_or_shown_after_the_show(
+def test_the_rows_follow_a_header_hidden_or_shown_after_the_show(
         qtbot, theme):
     tree = _tree()
     _window = themed_window(qtbot, theme, tree)
     assert tree.viewport().geometry().left() == _EDGE
     tree.setHeaderHidden(True)
-    qtbot.waitUntil(lambda: tree.viewport().geometry().top() > _EDGE)
+    qtbot.waitUntil(lambda: tree.viewport().geometry().top() == _EDGE)
     tree.setHeaderHidden(False)
     qtbot.waitUntil(lambda: tree.header().geometry().top() == _EDGE)
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
-def test_a_list_keeps_its_rows_off_the_top(qtbot, theme):
+def test_a_list_starts_its_rows_at_the_top(qtbot, theme):
     view = QListWidget()
     view.addItems(["Row0", "Row1"])
     _window = themed_window(qtbot, theme, view)
-    assert view.viewport().geometry().top() == _EDGE + _TOP
+    assert view.viewport().geometry().top() == _EDGE

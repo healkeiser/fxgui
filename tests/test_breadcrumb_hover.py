@@ -154,23 +154,31 @@ def _enter_event(widget):
 
 
 def _strip_fill(crumb):
+    """The strip's colour at its right end, `None` where it is its bar's."""
+    from fxgui.fxwidgets._breadcrumb import _ground
+
     image = crumb._container.grab().toImage()
-    return image.pixelColor(image.width() - 6, image.height() // 2).name()
+    color = image.pixelColor(image.width() - 6, image.height() // 2)
+    bar = QColor(getattr(fxstyle.colors(), _ground(crumb)))
+    return None if color == bar else color.name()
 
 
 def test_the_strip_lights_on_enter_and_drops_on_leave(qtbot, qapp):
     """A `:hover` rule on the container cannot do this: once the path is
-    drawn, the widget the pointer is directly over is a segment."""
-    crumb = _crumb(qtbot)
-    resting, lit = (QColor(c).name() for c in crumb._colors()[:2])
+    drawn, the widget the pointer is directly over is a segment.
 
-    assert _strip_fill(crumb) == resting
+    At rest the path is bare text, as Lumen's: no field around it.
+    """
+    crumb = _crumb(qtbot)
+    lit = QColor(crumb._colors()[1]).name()
+
+    assert _strip_fill(crumb) is None
 
     QApplication.sendEvent(crumb, _enter_event(crumb))
     assert _strip_fill(crumb) == lit, "lit while pointed at"
 
     QApplication.sendEvent(crumb, QEvent(QEvent.Type.Leave))
-    assert _strip_fill(crumb) == resting, "and back on leaving"
+    assert _strip_fill(crumb) is None, "and bare again on leaving"
 
 
 def test_a_theme_change_keeps_the_segments_and_their_tint(qtbot, qapp):
@@ -181,7 +189,7 @@ def test_a_theme_change_keeps_the_segments_and_their_tint(qtbot, qapp):
     fxstyle.apply_theme("light")
 
     assert _segments(crumb) == before
-    assert _strip_fill(crumb) == QColor(crumb._colors()[0]).name()
+    assert _strip_fill(crumb) is None
     first = before[0]
     assert _corner(qtbot, first, True) != _corner(qtbot, first, False)
 
@@ -201,6 +209,31 @@ def test_a_new_path_bolds_only_its_last_segment(qtbot, qapp):
     assert [segment.font().bold() for segment in drawn] == [
         False, False, True
     ]
+
+
+def test_parents_read_muted_and_slashes_part_them_as_lumen_s(qtbot, qapp):
+    """Where the path leads from is muted, where it is reads whole."""
+    crumb = _crumb(qtbot)
+    unhover(qtbot, crumb)
+    muted = QColor(fxstyle.colors().text_muted).rgb()
+    ink = QColor(crumb._colors()[3]).rgb()
+
+    def inks(segment):
+        image = segment.grab().toImage()
+        return {
+            image.pixel(x, y)
+            for x in range(image.width())
+            for y in range(image.height())
+        }
+
+    drawn = _segments(crumb)
+    assert muted in inks(drawn[0]) and ink not in inks(drawn[0])
+    assert ink in inks(drawn[-1])
+    slashes = [
+        label.text() for label in crumb._container.findChildren(QLabel)
+        if label.objectName() == "fxBreadcrumbSeparator"
+    ]
+    assert slashes == ["/"] * (len(PATH) - 1)
 
 
 def _press_on(widget):

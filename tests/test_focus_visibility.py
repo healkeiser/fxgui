@@ -700,8 +700,8 @@ def test_an_item_view_check_box_is_drawn_by_the_theme(qtbot, themed):
     theme is black on black.
     """
 
-    # The dark sheet's checkbox_unchecked.svg is filled with this grey.
-    ink = QColor("#a2a2a2")
+    # The sheet draws an empty box's edge in this grey.
+    ink = QColor(fxstyle.colors().border_light)
     table = QTableWidget(1, 1)
     item = QTableWidgetItem("archived")
     item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)

@@ -28,7 +28,6 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
-from fxgui.fxwidgets._buttons import FXPrimaryButton
 from fxgui.fxwidgets._tips import apply_tip
 
 
@@ -234,12 +233,9 @@ class FXTimelineSlider(QWidget):
         self._prev_btn = self._button(
             "chevron_left", self.previous_frame,
             "Previous Frame", "Go back one frame", "Left")
-        # On the accent: the one control the row is for.
-        self._play_btn = FXPrimaryButton(self, icon="play_arrow")
-        side = fxstyle.control_height(self)
-        self._play_btn.setFixedSize(side, side)
-        self._play_btn.clicked.connect(self.toggle_playback)
-        apply_tip(self._play_btn, "Play", "Start playback", "Space")
+        self._play_btn = self._button(
+            "play_arrow", self.toggle_playback,
+            "Play", "Start playback", "Space")
         self._next_btn = self._button(
             "chevron_right", self.next_frame,
             "Next Frame", "Go forward one frame", "Right")
@@ -798,7 +794,7 @@ class FXTimelineSlider(QWidget):
         # Ticks at the frame rate; the clock, not the tick count, decides.
         if self._own_clock:
             self._playback_timer.start(max(1, int(1000 / self.fps())))
-        self._play_btn.set_icon_name("pause")
+        fxicons.set_icon(self._play_btn, "pause")
         apply_tip(self._play_btn, "Pause", "Pause playback", "Space")
         self.playback_started.emit()
 
@@ -806,7 +802,7 @@ class FXTimelineSlider(QWidget):
         """Stop playback."""
         self._is_playing = False
         self._playback_timer.stop()
-        self._play_btn.set_icon_name("play_arrow")
+        fxicons.set_icon(self._play_btn, "play_arrow")
         apply_tip(self._play_btn, "Play", "Start playback", "Space")
         self.playback_stopped.emit()
 

@@ -12,7 +12,7 @@ import pytest
 ads = pytest.importorskip("PySide6QtAds")
 
 from qtpy.QtCore import QPoint, QRect, Qt  # noqa: E402
-from qtpy.QtGui import QAction, QColor, QKeySequence  # noqa: E402
+from qtpy.QtGui import QAction, QColor, QFont, QKeySequence  # noqa: E402
 from qtpy.QtTest import QTest  # noqa: E402
 from qtpy.QtWidgets import (  # noqa: E402
     QAbstractButton,
@@ -527,7 +527,7 @@ def test_every_pane_is_a_rounded_card_on_the_frame(qtbot, theme):
     _corners_are_frame(window)
     area = _areas(window)[0]
     edge = QColor(fxstyle.colors().pane_border).name()
-    radius = fxstyle.BUTTON_RADIUS
+    radius = fxstyle.CARD_RADIUS
     assert pixel(window, area, area.width() // 2, 0) == edge
     assert pixel(window, area, 0, area.height() // 2) == edge
     # Round, not square: a square card's top row is its edge to the corner.
@@ -555,8 +555,12 @@ def test_the_buttons_are_inset_off_the_round_corner(qtbot):
 
 
 def test_the_current_tab_pill_follows_a_theme_change(qtbot):
-    window = _window(qtbot)
-    tab = window.docks.manager().findDockWidget("side").tabWidget()
+    # Two panes in one area: a lone pane's tab is a title, not a pill.
+    window = _window(qtbot, panes=("side", "notes"))
+    manager = window.docks.manager()
+    tab = next(
+        held.tabWidget() for held in map(manager.findDockWidget, window.panes)
+        if held.tabWidget().isActiveTab())
 
     for theme in ("dark", "light"):
         fxstyle.apply_theme(theme)
@@ -564,6 +568,32 @@ def test_the_current_tab_pill_follows_a_theme_change(qtbot):
         fill = QColor(fxstyle.colors().state_pressed).name()
         # Inside the pill, left of its text.
         assert pixel(window, tab, 5, tab.height() // 2) == fill, theme
+
+
+def test_a_lone_pane_s_tab_is_a_title_until_a_second_pane_joins(qtbot):
+    window = _window(qtbot)
+    manager = window.docks.manager()
+    tab = manager.findDockWidget("side").tabWidget()
+    label = tab.findChild(QLabel)
+
+    assert tab.property("fxSole") is True
+    # No pill: the strip shows through, the title in the body's weight and
+    # the text ink.
+    strip = QColor(fxstyle.colors().surface).name()
+    assert pixel(window, tab, 5, tab.height() // 2) == strip
+    assert label.font().weight() < QFont.Weight.DemiBold
+    assert label.palette().color(label.foregroundRole()).name() == (
+        QColor(fxstyle.colors().text).name())
+
+    window.docks.add_dock("notes", "Notes", QLabel("notes"), "left")
+    qtbot.wait(20)
+    notes = manager.findDockWidget("notes")
+    assert tab.property("fxSole") is False
+    assert notes.tabWidget().property("fxSole") is False
+
+    notes.toggleView(False)
+    qtbot.wait(20)
+    assert tab.property("fxSole") is True
 
 
 def test_a_moved_pane_keeps_the_gap(qtbot):

@@ -92,3 +92,17 @@ def test_back_and_forward_hand_out_a_copy(qtbot, qapp):
     assert crumb.path() == PATH[:2]
     crumb.go_back()
     assert crumb.path() == PATH
+
+
+def test_a_window_echoing_where_back_went_keeps_forward(qtbot, qapp):
+    """A window selects what Back named, then shows it: still one step."""
+    crumb = _crumb(qtbot)
+    crumb.set_path(PATH[:2])
+    crumb.navigated_back.connect(crumb.set_path)
+
+    crumb.go_back()
+
+    assert crumb.path() == PATH
+    assert crumb.can_go_forward(), "the echo filed no new place"
+    crumb.go_forward()
+    assert crumb.path() == PATH[:2]

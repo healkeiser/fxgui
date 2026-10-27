@@ -21,6 +21,8 @@ from qtpy.QtWidgets import (
 from fxgui import fxstyle
 from fxgui.fxwidgets import FXThumbnailDelegate
 
+from _helpers import near
+
 _OWNED = (
     QStyle.PrimitiveElement.PE_PanelItemViewRow,
     QStyle.PrimitiveElement.PE_FrameFocusRect,
@@ -167,7 +169,10 @@ def test_paint_selection_off_leaves_the_fill_and_keeps_the_ring(qtbot):
     image = _paint_selected(qtbot, delegate)
     accent = QColor(fxstyle.colors().accent_primary).name()
     assert image.pixelColor(110, 15).name() != accent, "no accent fill"
-    assert image.pixelColor(110, 0).name() == accent, "the ring still marks it"
+    # On the row's edge, or its chip's a gap inside it.
+    edge = [image.pixelColor(110, y) for y in (0, 1)]
+    assert any(near(ink, QColor(accent), 80) for ink in edge), (
+        "the ring still marks it")
 
 
 def test_a_table_item_background_shows_in_a_themed_root(qtbot):

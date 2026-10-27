@@ -47,11 +47,19 @@ def _menu(qtbot, theme):
     return menu, icon, check, both
 
 
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_an_unchecked_row_draws_no_mark(qtbot, theme):
+    """As Lumen's menus: a check when on, nothing when off."""
+    menu, _icon, check, _both = _menu(qtbot, theme)
+    rect = menu.actionGeometry(check)
+    # The first ink from the left is the label, past the icon column.
+    assert _ink(menu.grab().toImage(), rect)[0] > rect.left() + 30
+
+
 @pytest.mark.parametrize("theme", fxstyle.get_available_themes())
-@pytest.mark.parametrize("checked", [False, True])
-def test_the_check_box_is_centred_on_the_icon_column(qtbot, theme, checked):
+def test_the_check_is_centred_on_the_icon_column(qtbot, theme):
     menu, icon, check, _both = _menu(qtbot, theme)
-    check.setChecked(checked)
+    check.setChecked(True)
     menu.update()
     qtbot.wait(10)
     image = menu.grab().toImage()

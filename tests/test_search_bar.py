@@ -86,3 +86,36 @@ def test_clearing_leaves_focus_where_it_was(qtbot, qapp):
     bar.clear()
 
     assert bar.text() == "" and other.hasFocus()
+
+
+def test_the_shortcut_shows_at_the_right_end_while_empty(qtbot, qapp):
+    """As Lumen's filter box: the keys that reach it, until text hides them."""
+    from fxgui.fxwidgets import FXKeycap
+
+    bar = _bar(qtbot, keys="Ctrl+F")
+    bar.resize(240, bar.height())
+    cap = bar.findChild(FXKeycap)
+    assert cap is not None and cap.isVisible()
+    assert cap.geometry().right() < bar.width()
+    assert cap.x() > bar.width() // 2
+    bar.setText("hero")
+    assert not cap.isVisible()
+
+
+def test_keys_set_later_show_and_clear(qtbot, qapp):
+    """A bar a wrapper built gets its keys afterwards, and can drop them."""
+    from fxgui.fxwidgets import FXKeycap
+
+    bar = _bar(qtbot)
+    bar.resize(240, bar.height())
+    bar.set_keys("/")
+    cap = bar.findChild(FXKeycap)
+    assert cap is not None and cap.keys() == "/" and cap.isVisible()
+    bar.set_keys("")
+    assert not cap.isVisible()
+
+
+def test_a_bar_without_keys_shows_none(qtbot, qapp):
+    from fxgui.fxwidgets import FXKeycap
+
+    assert _bar(qtbot).findChild(FXKeycap) is None

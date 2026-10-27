@@ -210,15 +210,12 @@ def test_owning_the_row_is_one_registered_rule(qtbot):
     assert 'fxOwnsRow="true"' in fxstyle._build_stylesheet()
 
 
-def _contrast(one: QColor, two: QColor) -> float:
-    return fxstyle.get_contrast_ratio(one.name(), two.name())
-
-
-def test_a_status_label_ink_reads_on_its_fill(qtbot):
+def test_a_status_label_is_a_coloured_mark_and_muted_words(qtbot):
     delegate = FXThumbnailDelegate()
-    fill = QColor("#ff0000")
+    ground = QColor(fxstyle.colors().surface)
+    color = QColor("#ff0000")
     canvas = QImage(200, 40, QImage.Format_RGB32)
-    canvas.fill(fill)
+    canvas.fill(ground)
     font = QFont()
     font.setPixelSize(30)
     font.setBold(True)
@@ -227,16 +224,20 @@ def test_a_status_label_ink_reads_on_its_fill(qtbot):
     delegate._INDICATOR_BAND_TOP = 0
     try:
         delegate._draw_status_label(
-            painter, QRect(0, 0, 200, 40), 0, 200, 0, fill, "HHHH", font
+            painter, QRect(0, 0, 200, 40), 0, 200, 0, color, "HHHH", font
         )
     finally:
         painter.end()
-    best = max(
-        _contrast(canvas.pixelColor(x, y), fill)
-        for x in range(0, 200, 2)
-        for y in range(4, 36, 2)
-    )
-    assert best >= 4.5
+    mark = delegate._LABEL_MARK
+    words = {
+        canvas.pixelColor(x, y).name()
+        for x in range(mark + delegate._LABEL_GAP, 200)
+        for y in range(40)
+    }
+    assert canvas.pixelColor(mark // 2, 20) == color
+    # The colour is on the mark alone; the words are the muted ink.
+    assert color.name() not in words
+    assert QColor(fxstyle.colors().text_muted).name() in words
 
 
 def _paint_row(qtbot, state, text="Asset"):

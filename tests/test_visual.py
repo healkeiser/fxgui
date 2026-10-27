@@ -110,7 +110,9 @@ def test_theme_switch_restyles_children_through_cascade(qtbot):
     root.show()
     qtbot.waitExposed(root)
 
+    # The edge: a field has no fill of its own.
     center = line.rect().center()
+    center.setY(0)
     fxstyle.apply_theme("dark")
     qtbot.wait(20)
     dark_pixel = line.grab().toImage().pixelColor(center)

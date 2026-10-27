@@ -265,7 +265,8 @@ def test_in_and_out_stand_a_group_apart_from_the_steps(qtbot, qapp):
     assert start.x() - mark_in.geometry().right() > prev.x() - (
         start.geometry().right()
     )
-    assert play.property("fxRole") == "primary"
+    # A bare icon as its neighbours are, not the accent: as Lumen's.
+    assert play.isFlat()
     timeline.play()
     timeline.stop()
     assert not play.icon().isNull()

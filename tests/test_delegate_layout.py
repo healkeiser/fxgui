@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxutils
+from fxgui import fxstyle, fxutils
 from fxgui.fxwidgets import FXThumbnailDelegate
 
 
@@ -115,17 +115,16 @@ def _option_for(tree, index) -> QStyleOptionViewItem:
     return option
 
 
-def _thumbnail_rect(row_rect: QRect) -> QRect:
+def _thumbnail_rect(delegate, row_rect: QRect) -> QRect:
     """The bordered thumbnail rect, as `_draw_thumbnail_content` paints it.
 
-    Spelled out in literals rather than read off the delegate, so the pixel
-    scans below stay a black-box check of the documented geometry: a 68x38
-    thumbnail plus a 1px border, inset by a 5px margin, centered vertically.
+    The picture plus its 1px border, inset by the margin, centered vertically.
     """
 
-    width, height = 68 + 2, 38 + 2
+    width = delegate._THUMBNAIL_WIDTH + delegate._THUMBNAIL_BORDER
+    height = delegate._THUMBNAIL_HEIGHT + delegate._THUMBNAIL_BORDER
     return QRect(
-        row_rect.left() + 5,
+        row_rect.left() + delegate._THUMBNAIL_MARGIN,
         row_rect.top() + (row_rect.height() - height) // 2,
         width,
         height,
@@ -144,16 +143,24 @@ def _icon_rect(row_rect: QRect) -> QRect:
     )
 
 
-def _prefix_indicator_rects(row_rect: QRect, label_width: int, dot: bool):
+def _documented_indicator_rects(row_rect: QRect, label_width: int, dot: bool):
+    """The label and dot rects in a thumbnail row, spelled out in literals.
 
-    dot_size, dot_margin, label_margin, label_height = 8, 4, 6, 14
+    The band sits 4px down a row at least 48px tall, and centres in a shorter
+    one.
+    """
+
+    dot_size, dot_margin, label_spacing, label_height = 8, 6, 8, 14
     dot_x = row_rect.right() - dot_size - dot_margin
-    top = row_rect.top() + dot_margin
+    if row_rect.height() >= 48:
+        top = row_rect.top() + 4
+    else:
+        top = row_rect.top() + (row_rect.height() - label_height) // 2
 
     pill_rect = None
     if label_width:
         pill_rect = QRect(
-            dot_x - label_width - label_margin, top, label_width, label_height
+            dot_x - label_width - label_spacing, top, label_width, label_height
         )
 
     dot_rect = None
@@ -170,7 +177,8 @@ def _indicator_rects(delegate, option, index):
     label_x, dot_x = delegate._indicator_left(
         option.rect, label_width, dot_width
     )
-    band_top = option.rect.top() + delegate._INDICATOR_BAND_TOP
+    tall = delegate._is_tall(option.rect, delegate._has_thumbnail(index))
+    band_top = delegate._band_top(option.rect, tall)
 
     pill_rect = None
     if label_width:
@@ -223,10 +231,12 @@ def _indicator_hits(image, rect: QRect):
     [(True, True), (False, True)],
 )
 @pytest.mark.parametrize("width", [420, 300, 220, 180])
-def test_indicator_placement_matches_the_pre_fix_geometry(
-    qtbot, pill, dot, width
+@pytest.mark.parametrize("size", ["normal", "big"])
+def test_indicator_placement_matches_the_documented_geometry(
+    qtbot, set_row_size, pill, dot, width, size
 ):
 
+    set_row_size(size)
     tree, delegate, index = _tree_with_item(
         qtbot, pill=pill, dot=dot, width=width
     )
@@ -234,7 +244,7 @@ def test_indicator_placement_matches_the_pre_fix_geometry(
     label_width, _, _ = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
 
     pill_rect, dot_rect = _indicator_rects(delegate, option, index)
-    prefix_pill, prefix_dot = _prefix_indicator_rects(
+    prefix_pill, prefix_dot = _documented_indicator_rects(
         option.rect, label_width, dot
     )
 
@@ -247,16 +257,21 @@ def test_indicator_placement_matches_the_pre_fix_geometry(
         assert dot_rect is prefix_dot is None
 
 
-def test_the_pill_sits_left_of_the_dot_at_the_rows_right_edge(qtbot):
-    """Reading order is thumbnail, text, pill, dot."""
+def test_the_pill_sits_left_of_the_dot_at_the_rows_right_edge(
+    qtbot, set_row_size
+):
+    """Reading order is thumbnail, text, pill, dot; a tall row tops the band."""
 
-    tree, delegate, index = _tree_with_item(qtbot)
+    set_row_size("big")
+
+    # A short title, so the label keeps its words rather than its mark alone
+    tree, delegate, index = _tree_with_item(qtbot, description=None)
     option = _option_for(tree, index)
     pill_rect, dot_rect = _indicator_rects(delegate, option, index)
 
     assert pill_rect.right() < dot_rect.left()
-    # An 8px dot, 4px in from the row's right edge
-    assert dot_rect.left() == option.rect.right() - 8 - 4
+    # An 8px dot, 6px in from the row's right edge
+    assert dot_rect.left() == option.rect.right() - 8 - 6
     assert pill_rect.top() == option.rect.top() + 4
     # The text stops short of the pill, so nothing runs under it
     assert (
@@ -341,9 +356,9 @@ def test_no_gap_of_row_colour_stands_right_of_a_lone_pill(qtbot):
     assert dot_rect is None, "this row draws no dot"
 
     middle = pill_rect.center().y()
-    # The pill's own last column is pill-coloured, so nothing sits between it
-    # and where it ends
-    assert _is_near(image.pixelColor(pill_rect.right() - 1, middle), PILL_COLOR)
+    # The label starts with its coloured mark
+    mark = pill_rect.left() + delegate._LABEL_MARK // 2
+    assert _is_near(image.pixelColor(mark, middle), PILL_COLOR)
     # And the strip between the pill and the row's edge is the margin alone,
     # carrying no indicator of any kind
     gap = QRect(
@@ -357,6 +372,38 @@ def test_no_gap_of_row_colour_stands_right_of_a_lone_pill(qtbot):
         f"{delegate._INDICATOR_RIGHT_MARGIN}px margin"
     )
     assert not _indicator_hits(image, gap)
+
+
+def test_the_label_keeps_only_its_mark_when_the_title_would_be_cut(qtbot):
+    """The title wins the room: the label drops its words, not its colour."""
+
+    roomy, delegate, index = _tree_with_item(qtbot, description=None)
+    shown = delegate._indicator_metrics(
+        index, _option_for(roomy, index), fit=True
+    )
+    assert shown.label_text == "Ready"
+    assert shown.label_width > delegate._LABEL_MARK
+
+    tree, delegate, index = _tree_with_item(
+        qtbot, title=LONG_TITLE, description=None
+    )
+    option = _option_for(tree, index)
+    # Measuring never shrinks it, so a size hint never depends on the width.
+    assert delegate._indicator_metrics(index, option).label_text == "Ready"
+    squeezed = delegate._indicator_metrics(index, option, fit=True)
+    assert squeezed.label_text == ""
+    assert squeezed.label_width == delegate._LABEL_MARK
+
+    # In pixels: the label's colour covers the mark's width and no more
+    image = tree.viewport().grab().toImage()
+    label_x, _dot_x = delegate._indicator_left(
+        option.rect, squeezed.label_width, squeezed.dot_width
+    )
+    columns = {x for kind, x, _y in _indicator_hits(image, option.rect)
+               if kind == "pill"}
+    assert columns
+    assert min(columns) >= label_x
+    assert max(columns) < label_x + delegate._LABEL_MARK
 
 
 ###### What each row reserves
@@ -498,13 +545,19 @@ def test_the_floor_follows_the_indicators_the_row_shows(qtbot, pill, dot):
     option = _option_for(tree, index)
     floor = delegate._row_minimum_width(option, index, True)
 
+    span = delegate._THUMBNAIL_SPAN
     if not pill and not dot:
-        assert floor == 80
+        assert floor == span
         return
 
-    assert floor > 85
+    assert floor > span + delegate._CONTENT_SPACING
     # At exactly the floor the leftmost indicator rests on the text origin.
-    row = QRect(option.rect.left(), option.rect.top(), floor, 50)
+    row = QRect(
+        option.rect.left(),
+        option.rect.top(),
+        floor,
+        delegate._THUMBNAIL_ROW_HEIGHT,
+    )
     label_width, dot_width, _ = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
     label_x, dot_x = delegate._indicator_left(row, label_width, dot_width)
     leftmost = label_x if label_width else dot_x
@@ -722,15 +775,15 @@ def test_no_indicator_pixel_lands_on_the_image(
         _save(image, f"delegate_{name}_{kind}_{width}.png")
 
         row = tree.visualRect(index)
-        target = _thumbnail_rect(row) if thumbnail else _icon_rect(row)
+        target = _thumbnail_rect(delegate, row) if thumbnail else _icon_rect(row)
         hits = _indicator_hits(image, target)
         assert not hits, (
             f"indicator pixels on the image at width {width}: {hits[:5]}"
         )
 
 
-def test_the_pill_is_painted_at_the_floor_and_skipped_below_it(qtbot):
-    """At the floor the pill sits right of the thumbnail; below it, none."""
+def test_the_label_is_painted_at_the_floor_and_only_its_mark_below_it(qtbot):
+    """At the floor the label sits right of the thumbnail; below, its mark."""
 
     tree, delegate, index = _tree_with_item(qtbot, dot=False)
     option = _option_for(tree, index)
@@ -748,11 +801,17 @@ def test_the_pill_is_painted_at_the_floor_and_skipped_below_it(qtbot):
         _option_for(tree, index), index, True
     )
 
-    # Far below the floor it is dropped rather than drawn on the image
+    # Far below the floor only its mark is drawn, clear of the image
     tree.setColumnWidth(0, floor - 40)
     tree.resize(floor, 160)
     below = tree.viewport().grab().toImage()
-    assert not _indicator_hits(below, tree.visualRect(index))
+    columns = {x for kind, x, _y in _indicator_hits(below, tree.visualRect(index))
+               if kind == "pill"}
+    assert columns
+    assert max(columns) - min(columns) < delegate._LABEL_MARK
+    assert min(columns) > delegate._text_left(
+        _option_for(tree, index), index, True
+    )
 
 
 ###### The text clips, it does not elide
@@ -774,14 +833,11 @@ def _title_band(tree, delegate, index, has_thumbnail: bool):
 
 
 @pytest.mark.parametrize("thumbnail", [True, False])
-def test_the_title_clips_instead_of_eliding(qtbot, thumbnail):
-    """A narrowing column must reveal less of the title, not replace its tail
-    with an ellipsis.
+def test_a_long_title_ends_in_an_ellipsis(qtbot, thumbnail):
+    """A narrowing column keeps the title's head and swaps its tail for "...".
 
-    The check is a comparison rather than a hunt for three dots: rendered at a
-    narrow width, the title's pixels must be exactly the wide render's pixels
-    cropped to the narrow text width. Clipping gives that by construction.
-    Eliding cannot: it swaps the tail for an ellipsis, so the pixels differ.
+    Compared with the wide render: the head's pixels match, the tail's do
+    not, since the ellipsis replaces the letters that were there.
     """
 
     wide_tree, wide_delegate, wide_index = _tree_with_item(
@@ -812,21 +868,23 @@ def test_the_title_clips_instead_of_eliding(qtbot, thumbnail):
     assert wide_x == narrow_x, "the two rows must share a text origin"
     assert wide_top == narrow_top
 
-    differences = 0
-    ink = 0
-    for y in range(narrow_top, narrow_bottom + 1):
-        for x in range(narrow_x, narrow_right):
-            narrow_pixel = narrow_image.pixelColor(x, y)
-            if narrow_pixel != wide_image.pixelColor(x, y):
-                differences += 1
-            if not _is_near(narrow_pixel, QColor("#1e1e1e"), 30):
-                ink += 1
+    middle = (narrow_x + narrow_right) // 2
 
-    assert ink, "no title was painted, so the comparison proves nothing"
-    assert not differences, (
-        f"{differences} title pixels differ from the wide render, so the "
-        "narrow row is not the same text clipped"
+    def differences(left, right):
+        return sum(
+            narrow_image.pixelColor(x, y) != wide_image.pixelColor(x, y)
+            for y in range(narrow_top, narrow_bottom + 1)
+            for x in range(left, right)
+        )
+
+    ink = sum(
+        not _is_near(narrow_image.pixelColor(x, y), QColor("#1e1e1e"), 30)
+        for y in range(narrow_top, narrow_bottom + 1)
+        for x in range(narrow_x, middle)
     )
+    assert ink, "no title was painted, so the comparison proves nothing"
+    assert not differences(narrow_x, middle), "the title's head changed"
+    assert differences(middle, narrow_right), "the tail was clipped, not elided"
 
 
 @pytest.mark.parametrize("thumbnail", [True, False])
@@ -1040,7 +1098,8 @@ def test_unusable_color_roles_hide_without_raising(qtbot, role_value):
     assert (label_width, dot_width, footprint) == (0, 0, 0)
     # Neither painting nor sizing may raise on the way through
     assert not tree.viewport().grab().toImage().isNull()
-    assert delegate.sizeHint(_option_for(tree, index), index).height() == 50
+    hint = delegate.sizeHint(_option_for(tree, index), index)
+    assert hint.height() == fxstyle.row_height()
 
 
 def _focus_ring_pixels(qtbot, *, selected):

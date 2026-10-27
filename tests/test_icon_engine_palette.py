@@ -187,7 +187,7 @@ def test_libraries_declare_whether_they_recolour(qapp, monkeypatch, tmp_path):
     recolor = {name: info["recolor"] for name, info in fxicons._libraries_info.items()}
     assert recolor == {
         "beacon": True, "brands": False, "material": True,
-        "fontawesome": True, "simple": True,
+        "fontawesome": True, "simple": True, "lucide": True,
     }
     defaults = {"extension": "svg", "style": None, "color": None,
                 "width": 8, "height": 8}

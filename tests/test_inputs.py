@@ -140,7 +140,8 @@ def test_the_flash_shows_over_a_focused_field(qtbot, qapp):
     area = QRect(edit.mapTo(window, QPoint(0, 0)), edit.size())
     image = window.grab(area).toImage()
     error = QColor(fxstyle.colors().feedback_error_foreground).rgb()
-    edge = [image.pixel(x, 0) for x in range(8, image.width() - 8)]
+    inset = 2 * fxstyle.BUTTON_RADIUS
+    edge = [image.pixel(x, 0) for x in range(inset, image.width() - inset)]
     assert all(pixel == error for pixel in edge)
 
 

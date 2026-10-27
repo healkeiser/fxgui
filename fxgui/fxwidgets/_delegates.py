@@ -12,17 +12,20 @@ from qtpy.QtCore import (
     QModelIndex,
     QObject,
     QPersistentModelIndex,
+    QPoint,
     QPointF,
     QRect,
     QRectF,
     QSize,
     Qt,
+    QTimer,
     Signal,
     Slot,
 )
 from qtpy.QtGui import (
     QBrush,
     QColor,
+    QCursor,
     QFont,
     QFontMetrics,
     QIcon,
@@ -34,11 +37,13 @@ from qtpy.QtGui import (
     QPixmapCache,
 )
 from qtpy.QtWidgets import (
+    QAbstractItemView,
     QApplication,
     QMenu,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
+    QTreeView,
     QWidget,
 )
 
@@ -65,6 +70,7 @@ fxstyle.register_widget_style(
     QAbstractItemView[{_OWNS_ROW}="true"]::item,
     QAbstractItemView[{_OWNS_ROW}="true"]::item:hover,
     QAbstractItemView[{_OWNS_ROW}="true"]::item:selected,
+    QTreeView[{_OWNS_ROW}="true"]::branch,
     QTreeView[{_OWNS_ROW}="true"]::branch:hover,
     QTreeView[{_OWNS_ROW}="true"]::branch:selected {{
         background: transparent;
@@ -78,11 +84,16 @@ def _hover_on(card: Optional[QColor]) -> str:
     hover = fxstyle.colors().state_hover
     if card is None:
         return hover
-    ground = card.name()
+    return _hover_reading(card.name(), hover, fxstyle.get_theme())
+
+
+@functools.lru_cache(maxsize=256)
+def _hover_reading(ground: str, hover: str, theme: str) -> str:
+    """Return `hover`, stepped until it reads on `ground` in `theme`."""
+    floor = fxstyle.state_contrast(theme)
 
     def reads(color: str) -> bool:
-        return fxstyle.get_contrast_ratio(color, ground) >= (
-            fxstyle.STATE_MIN_CONTRAST)
+        return fxstyle.get_contrast_ratio(color, ground) >= floor
 
     if reads(hover):
         return hover
@@ -119,6 +130,16 @@ def _smaller(font: QFont, pixels: int) -> QFont:
     else:
         font.setPixelSize(max(8, font.pixelSize() - pixels))
     return font
+
+
+def _draw_elided(
+    painter: QPainter, rect: QRect, alignment, text: str
+) -> None:
+    """Draw `text` in `rect`, ending in an ellipsis when it does not fit."""
+    fitted = painter.fontMetrics().elidedText(
+        text, Qt.ElideRight, max(0, rect.width())
+    )
+    painter.drawText(rect, alignment, fitted)
 
 
 def _paint_icon(
@@ -169,15 +190,38 @@ class _DelegateOwnsTheRow(fxstyle.FXProxyStyle):
     _SKIP = frozenset(
         {
             QStyle.PrimitiveElement.PE_FrameFocusRect,
-            QStyle.PrimitiveElement.PE_PanelItemViewRow,
         }
     )
 
     def drawPrimitive(self, element, option, painter, widget=None):
-        """Draw `element` unless the delegate owns it."""
+        """Draw `element` unless the delegate owns it.
+
+        A tree's indentation reaches here as a row panel with no index; the
+        row is found by position and its delegate fills it.
+        """
+        if element == QStyle.PrimitiveElement.PE_PanelItemViewRow:
+            _paint_indent(option, painter, widget)
+            return
         if element in self._SKIP:
             return
         super().drawPrimitive(element, option, painter, widget)
+
+
+def _paint_indent(option, painter: QPainter, view: Optional[QWidget]) -> None:
+    """Fill a tree row's indentation through its delegate, if it owns one."""
+    if not isinstance(view, QTreeView):
+        return
+    beside = QPoint(option.rect.right() + 1, option.rect.center().y())
+    index = view.indexAt(beside)
+    if not index.isValid():
+        return
+    cell = view.visualRect(index)
+    # Only the area left of the first cell: the cells paint themselves.
+    if cell.left() != beside.x() or option.rect.left() >= cell.left():
+        return
+    delegate = view.itemDelegateForIndex(index)
+    if isinstance(delegate, FXThumbnailDelegate):
+        delegate.paint_indent(painter, option, index)
 
 
 class _ColumnFloor(QObject):
@@ -264,6 +308,7 @@ class _Indicators(NamedTuple):
     label_color: QColor
     dot_color: QColor
     label_text: str
+    label_icon: str = ""
 
 
 class FXThumbnailDelegate(QStyledItemDelegate):
@@ -271,14 +316,15 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     Column 0 is laid out from both edges: the thumbnail (or the decoration
     icon) at the left, then the title and the description (Markdown,
-    shown as plain text), and the status pill and dot anchored to the
-    right edge with the child count badge under them. The text stops short
-    of all three. A row with a `Qt.BackgroundRole` is drawn as a card.
+    shown as plain text), and the status label and dot anchored to the
+    right edge with the child count under them. The text stops short of
+    all three. A row is flat, edge to edge, its indentation included, with
+    a hairline under it; a `Qt.BackgroundRole` fills it as a band.
 
     Note:
         Item roles:
-        - `Qt.BackgroundRole` (`QColor`, `QBrush` or token name): the card
-          fill, rounded with a `border_light` edge.
+        - `Qt.BackgroundRole` (`QColor`, `QBrush` or token name): the
+          band's fill.
         - `Qt.DecorationRole` (`QIcon`): the icon of a row without a
           thumbnail, or an overlay on the thumbnail.
         - `THUMBNAIL_VISIBLE_ROLE` (`bool`), `THUMBNAIL_PATH_ROLE` (`str`).
@@ -320,6 +366,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     STATUS_DOT_COLOR_ROLE = _roles.STATUS_DOT_COLOR
     STATUS_LABEL_COLOR_ROLE = _roles.STATUS_LABEL_COLOR
     STATUS_LABEL_TEXT_ROLE = _roles.STATUS_LABEL_TEXT
+    # An icon name drawn in the label's colour in place of its dot.
+    STATUS_LABEL_ICON_ROLE = _roles.STATUS_LABEL_ICON
     STATUS_DOT_VISIBLE_ROLE = _roles.STATUS_DOT_VISIBLE
     STATUS_LABEL_VISIBLE_ROLE = _roles.STATUS_LABEL_VISIBLE
     CHILD_COUNT_VISIBLE_ROLE = _roles.CHILD_COUNT_VISIBLE
@@ -335,36 +383,46 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     picked = Signal(QModelIndex, str)
 
     # Shared by the paint and sizeHint paths, so the space reserved for an
-    # element and the space it paints in cannot drift.
-    _THUMBNAIL_WIDTH = 68  # 16:9 against _THUMBNAIL_HEIGHT
-    _THUMBNAIL_HEIGHT = 38
-    _THUMBNAIL_MARGIN = 5
+    # element and the space it paints in cannot drift. The thumbnail fills
+    # the row the row size in force makes, at 16:9.
+    _THUMBNAIL_MARGIN = 4
     _THUMBNAIL_BORDER = 2  # 1 px of frame on each side
-    _THUMBNAIL_SPAN = (
-        _THUMBNAIL_WIDTH + _THUMBNAIL_BORDER + _THUMBNAIL_MARGIN * 2
-    )
-    _THUMBNAIL_ROW_HEIGHT = (
-        _THUMBNAIL_HEIGHT + _THUMBNAIL_BORDER + _THUMBNAIL_MARGIN * 2
-    )
     _OVERLAY_SIZE = 15
     _OVERLAY_MARGIN = 6
     _CONTENT_SPACING = 5
     _ICON_SIZE = 16
     _ICON_MARGIN = 6
     _TEXT_RIGHT_MARGIN = 10
-    # Above and below the text, so a one-line row is a control's height.
-    _ROW_PADDING = 6
+    # The least room above and below a row's one line of text.
+    _ROW_PADDING = 2
     _LINE_GAP = 2
+    # A description shows only in a row at least this tall: two lines.
+    _DESCRIPTION_FLOOR = 34
+    # From this height up, the status band sits at the row's top and the
+    # child count at its bottom; below it, both centre.
+    _TALL_ROW = 48
 
-    # The pill and the dot share one band at the row's top, anchored to its
-    # right edge: the dot _INDICATOR_RIGHT_MARGIN in, the pill
+    # The label and the dot share one band, anchored to the row's right
+    # edge: the dot _INDICATOR_RIGHT_MARGIN in, the label
     # _INDICATOR_SPACING left of it, or at the margin when there is no dot.
+    # The band centres in a one-line row and sits at the top of a taller
+    # one, clear of the child count at its bottom.
     _INDICATOR_BAND_TOP = 4
     _INDICATOR_BAND_HEIGHT = 14
-    _INDICATOR_RIGHT_MARGIN = 4
-    _INDICATOR_SPACING = 6
+    _INDICATOR_RIGHT_MARGIN = 6
+    _INDICATOR_SPACING = 8
     _DOT_SIZE = 8
     _LABEL_PADDING = 4
+    # The status label's coloured mark, and its gap to the words.
+    _LABEL_MARK = 8
+    _LABEL_ICON = 14
+    _LABEL_GAP = 5
+    # Under every row, a share of `border`, so the rows read as one table:
+    # more under a top-level row, which heads what nests in it.
+    _RULE_ALPHA = 0.6
+    _NESTED_RULE_ALPHA = 0.25
+    # How long a row's hover fades once the pointer leaves it, in seconds.
+    _HOVER_FADE = 0.15
 
     _CHILD_COUNT_HEIGHT = 14
     _CHILD_COUNT_MARGIN = 4
@@ -377,8 +435,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _PICKER_SPACING = 2
     _PICKER_RIGHT_MARGIN = 4
 
-    # Pills and badges, one derived font per base font key
+    # Badges and labels, one derived font per base font key
     _badge_fonts: Dict[str, QFont] = {}
+    _label_fonts: Dict[str, QFont] = {}
 
     _FOCUS_RINGS = ("row", "cell")
 
@@ -397,6 +456,14 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         #: focus ring marks the current cell.
         self.paint_selection = True
         self._focus_ring = "row"
+        # A row lights at once under the pointer and fades once it leaves:
+        # the row under it, and each row fading, to when it left.
+        self._hovered: Optional[QPersistentModelIndex] = None
+        self._fading: Dict[QPersistentModelIndex, float] = {}
+        self._fading_view: Optional[QWidget] = None
+        self._fade_timer = QTimer(self)
+        self._fade_timer.setInterval(16)
+        self._fade_timer.timeout.connect(self._fade_step)
 
     @property
     def focus_ring(self) -> str:
@@ -511,6 +578,34 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                     parents.append(index)
         return floor
 
+    @property
+    def _THUMBNAIL_HEIGHT(self) -> int:
+        """The picture's height: the row's, less its margins and frame."""
+        return (
+            fxstyle.row_height()
+            - self._THUMBNAIL_MARGIN * 2
+            - self._THUMBNAIL_BORDER
+        )
+
+    @property
+    def _THUMBNAIL_WIDTH(self) -> int:
+        """The picture's width, 16:9 against its height."""
+        return round(self._THUMBNAIL_HEIGHT * 16 / 9)
+
+    @property
+    def _THUMBNAIL_SPAN(self) -> int:
+        """The room a thumbnail takes across the row, margins included."""
+        return (
+            self._THUMBNAIL_WIDTH
+            + self._THUMBNAIL_BORDER
+            + self._THUMBNAIL_MARGIN * 2
+        )
+
+    @property
+    def _THUMBNAIL_ROW_HEIGHT(self) -> int:
+        """The height of a row with a thumbnail: the row size's."""
+        return fxstyle.row_height()
+
     def _init(
         self, option: QStyleOptionViewItem, index: QModelIndex
     ) -> QStyleOptionViewItem:
@@ -539,9 +634,14 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         return _smaller(option.font, 1)
 
     def _description(self, index: QModelIndex) -> str:
-        """Return the row's description as plain text, or ""."""
+        """Return the row's description as plain text, or "".
+
+        "" as well in a row too short for a second line.
+        """
         text = index.data(self.DESCRIPTION_ROLE)
         if not text or text == "-":
+            return ""
+        if fxstyle.row_height() < self._DESCRIPTION_FLOOR:
             return ""
         return fxutils.markdown_to_plain_text(str(text))
 
@@ -580,7 +680,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             + option.rect.width()
             - right_margin
             - self._child_count_width(index, option)
-            - self._indicator_metrics(index, option).footprint
+            - self._indicator_metrics(index, option, fit=True).footprint
         )
 
     def _text_rects(
@@ -615,7 +715,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     def _row_height(
         self, option: QStyleOptionViewItem, index: QModelIndex
     ) -> int:
-        """Return the row's height: its text plus padding, or the thumbnail's."""
+        """Return the row's height: the row size's, or its text's if taller."""
         has_thumbnail = self._has_thumbnail(index)
         has_description = bool(self._description(index.siblingAtColumn(0)))
         title_font = (
@@ -623,15 +723,16 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             if has_thumbnail or has_description
             else option.font
         )
-        height = QFontMetrics(title_font).height() + self._ROW_PADDING * 2
+        text = QFontMetrics(title_font).height()
         if has_description:
-            height += (
+            text += (
                 self._LINE_GAP
                 + QFontMetrics(self._description_font(option)).height()
             )
-        if has_thumbnail:
-            height = max(height, self._THUMBNAIL_ROW_HEIGHT)
-        return height
+        # Padding only past the row size: two lines that fit keep every row
+        # of a size one height.
+        size = fxstyle.row_height()
+        return size if text <= size else text + self._ROW_PADDING * 2
 
     @classmethod
     def _badge_font(cls, option: QStyleOptionViewItem) -> QFont:
@@ -645,19 +746,39 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             cls._badge_fonts[key] = font
         return font
 
+    @classmethod
+    def _label_font(cls, option: QStyleOptionViewItem) -> QFont:
+        """Return the item's font 1 px smaller at 500, cached per font."""
+        base = option.font
+        key = base.key()
+        font = cls._label_fonts.get(key)
+        if font is None:
+            font = _smaller(base, 1)
+            font.setWeight(QFont.Medium)
+            cls._label_fonts[key] = font
+        return font
+
+    def _mark_size(self, icon: str) -> int:
+        """Return the side of the label's mark: its icon's, or its dot's."""
+        return self._LABEL_ICON if icon else self._LABEL_MARK
+
     def _status_label_width(
-        self, label_text: str, option: QStyleOptionViewItem
+        self, label_text: str, option: QStyleOptionViewItem, icon: str = ""
     ) -> int:
-        """Return the width of the status label pill."""
+        """Return the width of the status mark and its words."""
         return (
-            QFontMetrics(self._badge_font(option)).horizontalAdvance(
-                label_text
+            self._mark_size(icon)
+            + self._LABEL_GAP
+            + QFontMetrics(self._label_font(option)).horizontalAdvance(
+                label_text.upper()
             )
-            + self._LABEL_PADDING * 2
         )
 
     def _indicator_metrics(
-        self, index: QModelIndex, option: QStyleOptionViewItem
+        self,
+        index: QModelIndex,
+        option: QStyleOptionViewItem,
+        fit: bool = False,
     ) -> _Indicators:
         """Measure the status marks the row paints, and check their colours.
 
@@ -668,6 +789,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         """
         label_color = fxstyle.qcolor(index.data(self.STATUS_LABEL_COLOR_ROLE))
         label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
+        label_icon = str(index.data(self.STATUS_LABEL_ICON_ROLE) or "")
         dot_color = fxstyle.qcolor(index.data(self.STATUS_DOT_COLOR_ROLE))
 
         show_label = bool(
@@ -677,7 +799,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             and label_color.isValid()
         )
         label_width = (
-            self._status_label_width(str(label_text), option)
+            self._status_label_width(str(label_text), option, label_icon)
             if show_label
             else 0
         )
@@ -687,6 +809,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             and dot_color.isValid()
         )
         dot_width = self._DOT_SIZE if show_dot else 0
+        # Painting only: a measured width must never depend on the width.
+        if fit and label_width and self._title_squeezed(
+            index, option, label_width, dot_width
+        ):
+            # The title wins: the label keeps its coloured mark alone.
+            label_width, label_text = self._mark_size(label_icon), ""
 
         # `+ 1` turns an inset from the inclusive right edge into a width
         label_inset, dot_inset = self._indicator_insets(label_width, dot_width)
@@ -702,7 +830,37 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             label_color,
             dot_color,
             str(label_text or ""),
+            label_icon,
         )
+
+    def _title_squeezed(
+        self,
+        index: QModelIndex,
+        option: QStyleOptionViewItem,
+        label_width: int,
+        dot_width: int,
+    ) -> bool:
+        """Whether the title would be cut beside the label's words."""
+        has_thumbnail = self._has_thumbnail(index)
+        title_font = (
+            self._title_font(option)
+            if has_thumbnail or self._description(index)
+            else option.font
+        )
+        title = str(index.data(Qt.DisplayRole) or "")
+        label_inset, dot_inset = self._indicator_insets(label_width, dot_width)
+        right_margin = (
+            self._TEXT_RIGHT_MARGIN if has_thumbnail else self._ICON_MARGIN
+        )
+        room = (
+            option.rect.left()
+            + option.rect.width()
+            - right_margin
+            - self._child_count_width(index, option)
+            - (label_inset + 1)
+            - self._text_left(option, index, has_thumbnail)
+        )
+        return room < QFontMetrics(title_font).horizontalAdvance(title)
 
     def _indicator_insets(
         self, label_width: int, dot_width: int
@@ -814,20 +972,33 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         dot_x: int,
         left_limit: int,
         color: QColor,
+        tall: bool = False,
     ) -> None:
         """Draw the status dot centred in the band, unless past `left_limit`."""
         if dot_x < left_limit:
             return
         dot_y = (
-            item_rect.top()
-            + self._INDICATOR_BAND_TOP
+            self._band_top(item_rect, tall)
             + (self._INDICATOR_BAND_HEIGHT - self._DOT_SIZE) // 2
         )
         painter.setRenderHint(QPainter.Antialiasing)
-        # A darker edge reads on both light and dark rows
-        painter.setPen(QPen(color.darker(150), 1.5))
+        painter.setPen(Qt.NoPen)
         painter.setBrush(QBrush(color))
         painter.drawEllipse(QRect(dot_x, dot_y, self._DOT_SIZE, self._DOT_SIZE))
+
+    def _band_top(self, item_rect: QRect, tall: bool = False) -> int:
+        """Return the top of the status band: centred, or a tall row's top.
+
+        A `tall` row's band sits at its top, clear of the child count.
+        """
+        if not tall:
+            return item_rect.top() + (
+                item_rect.height() - self._INDICATOR_BAND_HEIGHT) // 2
+        return item_rect.top() + self._INDICATOR_BAND_TOP
+
+    def _is_tall(self, item_rect: QRect, has_thumbnail: bool) -> bool:
+        """Whether a row stacks its marks: a thumbnail row of `_TALL_ROW`."""
+        return has_thumbnail and item_rect.height() >= self._TALL_ROW
 
     def _draw_status_label(
         self,
@@ -839,24 +1010,44 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         color: QColor,
         text: str,
         font: QFont,
+        tall: bool = False,
+        icon: str = "",
     ) -> None:
-        """Draw the status pill filling the band, unless past `left_limit`."""
+        """Draw the status mark and its words, unless past `left_limit`.
+
+        The colour is on the mark only, so a bright status never sets a loud
+        block of colour in the row.
+        """
         if label_x < left_limit:
             return
-        label_rect = QRect(
+        top = self._band_top(item_rect, tall)
+        side = self._mark_size(icon)
+        mark = QRectF(
             label_x,
-            item_rect.top() + self._INDICATOR_BAND_TOP,
-            label_width,
-            self._INDICATOR_BAND_HEIGHT,
+            top + (self._INDICATOR_BAND_HEIGHT - side) / 2,
+            side,
+            side,
         )
         painter.setRenderHint(QPainter.Antialiasing)
-        # An edge, so the pill still reads on a selected row
-        painter.setPen(QPen(color.darker(130), 1))
-        painter.setBrush(QBrush(color))
-        painter.drawRoundedRect(label_rect, 2, 2)
-        painter.setPen(QColor(fxstyle.readable_ink(color.name())))
+        if icon:
+            fxicons.get_icon(icon, color=color.name()).paint(
+                painter, mark.toRect()
+            )
+        else:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(color))
+            painter.drawEllipse(mark)
+        if not text:
+            return
+        words = QRect(
+            label_x + side + self._LABEL_GAP,
+            top,
+            label_width - side - self._LABEL_GAP,
+            self._INDICATOR_BAND_HEIGHT,
+        )
+        painter.setPen(QColor(fxstyle.colors().text_muted))
         painter.setFont(font)
-        painter.drawText(label_rect, Qt.AlignCenter, text)
+        painter.drawText(words, Qt.AlignVCenter | Qt.AlignLeft, text.upper())
 
     @staticmethod
     def _row_ends(
@@ -897,27 +1088,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         path.addRoundedRect(outline, radius, radius)
         return path
 
-    def _cell_path(
-        self, rect_f: QRectF, ends: Tuple[bool, bool]
-    ) -> QPainterPath:
-        """Return one cell's closed share of the row's rounded rectangle.
-
-        Stroked, its inner edges are the column separators.
-        """
-        cell = QPainterPath()
-        cell.addRect(rect_f)
-        return self._row_outline(
-            rect_f, fxstyle.BUTTON_RADIUS, ends
-        ).intersected(cell)
-
-    def _edge_path(
-        self, rect_f: QRectF, ends: Tuple[bool, bool]
-    ) -> QPainterPath:
-        """Return the cell's outline half a pixel in, for a crisp 1 px pen."""
-        return self._cell_path(rect_f.adjusted(0.5, 0.5, -0.5, -0.5), ends)
-
     def _custom_background(self, index: QModelIndex) -> Optional[QColor]:
-        """Return the row's card fill from column 0, or None for no card."""
+        """Return the row's band fill from column 0, or None for no band."""
         data = index.siblingAtColumn(0).data(Qt.BackgroundRole)
         if isinstance(data, QBrush):
             color = data.color()
@@ -932,65 +1104,133 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         visible = index.siblingAtColumn(0).data(self.THUMBNAIL_VISIBLE_ROLE)
         return visible is not False and self.show_thumbnail
 
-    def _draw_background_and_border(
-        self,
-        painter: QPainter,
-        option: QStyleOptionViewItem,
-        color: QColor,
-        ends: Tuple[bool, bool],
-    ) -> QRect:
-        """Draw the cell's share of the row's card; return the card's rect."""
-        first, last = ends
-        rect = option.rect.adjusted(
-            1 if first else 0, 1, -1 if last else 0, -1
-        )
-        rect_f = QRectF(rect)
-        painter.save()
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.fillPath(self._cell_path(rect_f, ends), QBrush(color))
-        # The pane's own edge colour, so a row reads no louder than a pane.
-        painter.setPen(QPen(QColor(fxstyle.colors().border), 1))
-        painter.drawPath(self._edge_path(rect_f, ends))
-        painter.restore()
-        return rect
-
-    def _draw_hover_selection(
+    def _draw_row_fill(
         self,
         painter: QPainter,
         rect: QRect,
         option: QStyleOptionViewItem,
-        ends: Tuple[bool, bool],
-        card: Optional[QColor] = None,
+        index: QModelIndex,
+        band: Optional[QColor] = None,
+        nested: bool = False,
     ) -> None:
-        """Fill a selected cell with `selection`, a hovered one with
-        `state_hover`, as the stylesheet does for plain item views.
+        """Fill `rect` edge to edge, then draw the hairline under it.
 
-        A selected row is ringed in `selection_border`, around the row and
-        not between its cells.
-
-        On a `card` too near `state_hover`, as a deep row's shade comes, the
-        hover is the card stepped off it by `fxstyle.STATE_MIN_CONTRAST`.
+        The fill is the selection, the hover, the row's own `band`, or the
+        view's ground; a row the pointer just left fades to its own. The
+        hairline is fainter under a `nested` row. On a `band` too near
+        `state_hover`, the hover is the band stepped off it by the theme's
+        `fxstyle.state_contrast`.
         """
+        hover = self._hover_amount(option, index)
+        ground = band if band is not None else option.palette.color(
+            QPalette.Base)
         if option.state & QStyle.State_Selected:
             fill = QColor(fxstyle.colors().selection)
-        elif option.state & QStyle.State_MouseOver:
-            fill = QColor(_hover_on(card))
+        elif hover > 0:
+            fill = QColor(fxstyle.mix(ground, _hover_on(band), hover))
         else:
+            fill = ground
+        painter.fillRect(rect, fill)
+        ink = QColor(fxstyle.colors().border)
+        ink.setAlphaF(self._NESTED_RULE_ALPHA if nested else self._RULE_ALPHA)
+        painter.fillRect(
+            QRect(rect.left(), rect.bottom(), rect.width(), 1), ink
+        )
+
+    def _hover_amount(
+        self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> float:
+        """Return how much of the hover fill `index`'s row wears, 0 to 1.
+
+        1 under the pointer; after it leaves, less and less for
+        `_HOVER_FADE` seconds, eased out.
+        """
+        row = QPersistentModelIndex(index.siblingAtColumn(0))
+        now = time.monotonic()
+        if option.state & QStyle.State_MouseOver or self._pointer_on_row(
+            option.widget, index
+        ):
+            if self._hovered != row:
+                self._leave(self._hovered, now, option.widget)
+                self._hovered = row
+            self._fading.pop(row, None)
+            return 1.0
+        if row == self._hovered:
+            # The pointer left the view from this row.
+            self._leave(row, now, option.widget)
+            self._hovered = None
+        left = self._fading.get(row)
+        if left is None or not fxstyle.motion():
+            return 0.0
+        done = (now - left) / self._HOVER_FADE
+        return 0.0 if done >= 1.0 else (1.0 - done) ** 2
+
+    @staticmethod
+    def _pointer_on_row(view: Optional[QWidget], index: QModelIndex) -> bool:
+        """Whether the pointer is over any cell of `index`'s row.
+
+        Qt marks only the hovered cell where a view selects cells: read
+        alone, the row's other cells would leave and re-enter on each paint.
+        """
+        if not isinstance(view, QAbstractItemView):
+            return False
+        viewport = view.viewport()
+        if not viewport.underMouse():
+            return False
+        under = view.indexAt(viewport.mapFromGlobal(QCursor.pos()))
+        return under.isValid() and (
+            under.siblingAtColumn(0) == index.siblingAtColumn(0)
+        )
+
+    def _leave(
+        self,
+        row: Optional[QPersistentModelIndex],
+        now: float,
+        view: Optional[QWidget],
+    ) -> None:
+        """Start `row` fading, and the timer that repaints it."""
+        if row is None or not row.isValid():
             return
-        rect_f = QRectF(rect)
-        painter.save()
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.fillPath(self._cell_path(rect_f, ends), QBrush(fill))
-        # Over the row's own edge, pixel for pixel, so none shows through.
-        painter.setPen(QPen(fill, 1))
-        painter.drawPath(self._edge_path(rect_f, ends))
-        if option.state & QStyle.State_Selected:
-            painter.setClipRect(rect, Qt.IntersectClip)
-            painter.setPen(QPen(QColor(fxstyle.colors().selection_border), 1))
-            painter.drawPath(self._row_outline(
-                rect_f.adjusted(0.5, 0.5, -0.5, -0.5),
-                fxstyle.BUTTON_RADIUS, ends))
-        painter.restore()
+        self._fading[row] = now
+        self._fading_view = view
+        if not self._fade_timer.isActive():
+            self._fade_timer.start()
+
+    @Slot()
+    def _fade_step(self) -> None:
+        """Drop the rows done fading; repaint the view while any is not."""
+        now = time.monotonic()
+        self._fading = {
+            row: left for row, left in self._fading.items()
+            if row.isValid() and now - left < self._HOVER_FADE
+        }
+        view = self._fading_view
+        if view is not None and _compat.is_valid(view):
+            target = getattr(view, "viewport", None)
+            (target() if callable(target) else view).update()
+        if not self._fading:
+            self._fade_timer.stop()
+
+    def paint_indent(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+    ) -> None:
+        """Fill the indentation left of `index`'s row, as its cells are.
+
+        The tree's own branch area: the row runs under it to the view's
+        edge, and the chevron is drawn over it afterwards.
+        """
+        self._draw_row_fill(
+            painter,
+            option.rect,
+            option,
+            index,
+            self._custom_background(index),
+            index.parent().isValid(),
+        )
+
 
     def has_focus_ring(
         self, option: QStyleOptionViewItem, index: QModelIndex
@@ -1046,9 +1286,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.setClipRect(rect, Qt.IntersectClip)
         painter.setPen(QPen(QColor(fxstyle.colors().accent_primary), 1))
         painter.setBrush(Qt.NoBrush)
-        painter.drawPath(
-            self._row_outline(inset, fxstyle.BUTTON_RADIUS, ends)
-        )
+        # Square, as the row it rings.
+        painter.drawPath(self._row_outline(inset, 0, ends))
         painter.restore()
 
     def _draw_status_indicators(
@@ -1058,12 +1297,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         index: QModelIndex,
         has_thumbnail: bool,
     ) -> None:
-        """Draw the pill and the dot, skipping one that would reach the image."""
-        marks = self._indicator_metrics(index, option)
+        """Draw the label and the dot, skipping one that would reach the image."""
+        marks = self._indicator_metrics(index, option, fit=True)
         label_x, dot_x = self._indicator_left(
             option.rect, marks.label_width, marks.dot_width
         )
         left_limit = self._content_left(option, index, has_thumbnail)
+        tall = self._is_tall(option.rect, has_thumbnail)
         if marks.label_width:
             self._draw_status_label(
                 painter,
@@ -1073,11 +1313,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                 left_limit,
                 marks.label_color,
                 marks.label_text,
-                self._badge_font(option),
+                self._label_font(option),
+                tall,
+                marks.label_icon,
             )
         if marks.dot_width:
             self._draw_status_dot(
-                painter, option.rect, dot_x, left_limit, marks.dot_color
+                painter, option.rect, dot_x, left_limit, marks.dot_color, tall
             )
 
     def _draw_child_count(
@@ -1086,37 +1328,42 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         item_rect: QRect,
         count: int,
         option: QStyleOptionViewItem,
+        tall: bool = False,
+        inset: int = 0,
     ) -> None:
-        """Draw the child count badge at the row's bottom-right corner."""
+        """Draw the child count at the row's right edge, as muted text.
+
+        At a `tall` row's bottom, under the status band; else centred,
+        `inset` further in, left of the status marks it shares the line with.
+        """
         width = self._child_count_badge_width(count, option)
         margin = self._CHILD_COUNT_MARGIN
+        if not tall:
+            top = item_rect.top() + (
+                item_rect.height() - self._CHILD_COUNT_HEIGHT) // 2
+        else:
+            top = item_rect.bottom() - self._CHILD_COUNT_HEIGHT - margin
         rect = QRectF(
-            item_rect.right() - width - margin,
-            item_rect.bottom() - self._CHILD_COUNT_HEIGHT - margin,
+            item_rect.right() - width - margin - (0 if tall else inset),
+            top,
             width,
             self._CHILD_COUNT_HEIGHT,
         )
-        theme = fxstyle.colors()
-        fill = QColor(theme.surface)
-        fill.setAlpha(200)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setPen(QPen(QColor(theme.border_light), 1))
-        painter.setBrush(QBrush(fill))
-        painter.drawRoundedRect(rect, 3, 3)
-        painter.setPen(QColor(theme.text_muted))
+        painter.setPen(QColor(fxstyle.colors().text_muted))
         painter.setFont(self._badge_font(option))
-        painter.drawText(rect, Qt.AlignCenter, str(count))
+        painter.drawText(rect, Qt.AlignRight | Qt.AlignVCenter, str(count))
 
     def _bordered_thumbnail(self, path: Optional[str], ratio: float) -> QPixmap:
         """Return the framed thumbnail for a path at a pixel ratio, cached.
 
-        Keyed by path, mtime, ratio and the two tokens it is drawn in, so
-        an edited file or a theme switch builds a fresh one.
+        Keyed by path, mtime, ratio, size and the two tokens it is drawn
+        in, so an edited file, a row size or a theme switch builds afresh.
         """
         theme = fxstyle.colors()
         stamp = _mtime(path) if path else None
         key = (
             f"fxgui.thumbnail|{path}|{stamp}|{ratio}"
+            f"|{self._THUMBNAIL_WIDTH}x{self._THUMBNAIL_HEIGHT}"
             f"|{theme.surface_sunken}|{theme.border_light}"
         )
         cached = _compat.find_pixmap(key)
@@ -1146,7 +1393,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
         painter.setPen(Qt.NoPen)
         painter.setBrush(QBrush(QColor(theme.surface_sunken)))
-        painter.drawRoundedRect(frame, 2, 2)
+        radius = fxstyle.SMALL_RADIUS
+        painter.drawRoundedRect(frame, radius, radius)
+        # The picture takes the frame's corners too.
+        corners = QPainterPath()
+        corners.addRoundedRect(frame, radius, radius)
+        painter.setClipPath(corners)
         painter.drawPixmap(
             QPointF(
                 1 + (width - source.width() / ratio) / 2,
@@ -1154,9 +1406,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             ),
             source,
         )
+        painter.setClipping(False)
         painter.setPen(QPen(QColor(theme.border_light), 1))
         painter.setBrush(Qt.NoBrush)
-        painter.drawRoundedRect(frame, 2, 2)
+        painter.drawRoundedRect(frame, radius, radius)
         painter.end()
 
         QPixmapCache.insert(key, framed)
@@ -1171,20 +1424,22 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         right: int,
         bold: bool,
     ) -> None:
-        """Draw the title and, under it, the description, between two x's.
-
-        Clipped rather than elided: a narrowing column reveals less of the
-        title instead of collapsing it to an ellipsis.
-        """
+        """Draw the title and, under it, the description, between two x's."""
         description = self._description(index)
         title_font = self._title_font(option) if bold else QFont(option.font)
         title_rect, description_rect = self._text_rects(
             option, left, right, title_font, bool(description)
         )
         color = self._text_color(option)
-        painter.setPen(color)
+        # A row's name stands out in the strong ink, unless it is
+        # selected or wears an ink of its own.
+        plain = not option.state & QStyle.State_Selected and (
+            index.data(Qt.ForegroundRole) is None)
+        painter.setPen(
+            QColor(fxstyle.colors().text_strong) if plain else color)
         painter.setFont(title_font)
-        painter.drawText(
+        _draw_elided(
+            painter,
             title_rect,
             Qt.AlignLeft | Qt.AlignVCenter,
             str(index.data(Qt.DisplayRole) or ""),
@@ -1196,8 +1451,11 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                 color if selected else QColor(fxstyle.colors().text_muted)
             )
             painter.setFont(self._description_font(option))
-            painter.drawText(
-                description_rect, Qt.AlignLeft | Qt.AlignVCenter, description
+            _draw_elided(
+                painter,
+                description_rect,
+                Qt.AlignLeft | Qt.AlignVCenter,
+                description,
             )
 
     def _draw_thumbnail_content(
@@ -1218,10 +1476,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.drawPixmap(x, y, thumbnail)
 
         if self._has_icon(option):
-            size = self._OVERLAY_SIZE
+            # Half the picture at most, so a small row's still shows.
+            size = min(self._OVERLAY_SIZE, outer_height // 2)
+            margin = min(self._OVERLAY_MARGIN, (outer_height - size) // 2)
             icon_rect = QRect(
-                x + outer_width - size - self._OVERLAY_MARGIN,
-                y + outer_height - size - self._OVERLAY_MARGIN,
+                x + outer_width - size - margin,
+                y + outer_height - size - margin,
                 size,
                 size,
             )
@@ -1431,7 +1691,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         text = index.data(Qt.DisplayRole)
         if not text:
             return
-        painter.setPen(self._text_color(option))
+        # Beside a row's name, its other columns are quieter.
+        plain = not option.state & QStyle.State_Selected and (
+            index.data(Qt.ForegroundRole) is None)
+        painter.setPen(
+            QColor(fxstyle.colors().text_muted) if plain
+            else self._text_color(option))
         painter.setFont(option.font)
         alignment = Qt.AlignLeft | Qt.AlignVCenter
         right_inset = self._ICON_MARGIN
@@ -1444,7 +1709,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             option.rect.right() - text_x - right_inset,
             option.rect.height(),
         )
-        painter.drawText(text_rect, alignment, str(text))
+        _draw_elided(painter, text_rect, alignment, str(text))
 
     def _draw_picker(
         self,
@@ -1458,10 +1723,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setPen(QPen(QColor(theme.border_light), 1))
         painter.setBrush(QBrush(QColor(theme.surface)))
-        painter.drawRoundedRect(QRectF(rect), 3, 3)
+        painter.drawRoundedRect(
+            QRectF(rect), fxstyle.SMALL_RADIUS, fxstyle.SMALL_RADIUS)
 
         chevron = self._PICKER_CHEVRON
-        chevron_left = rect.right() - self._PICKER_PADDING - chevron
+        # From the far edge, not right(): right() is one pixel short of it.
+        chevron_left = (
+            rect.left() + rect.width() - self._PICKER_PADDING - chevron)
         text_left = rect.left() + self._PICKER_PADDING
         text_rect = QRect(
             text_left,
@@ -1471,7 +1739,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         )
         painter.setPen(QColor(theme.text_muted))
         painter.setFont(option.font)
-        painter.drawText(
+        _draw_elided(
+            painter,
             text_rect,
             Qt.AlignLeft | Qt.AlignVCenter,
             str(index.data(self.PICKER_TEXT_ROLE) or ""),
@@ -1534,7 +1803,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ) -> None:
-        """Paint the cell: its fill or card, hover or selection, content, ring."""
+        """Paint the cell: its fill, rule, content and focus ring."""
         opt = self._init(option, index)
         if not self.paint_selection:
             opt.state &= ~QStyle.State_Selected
@@ -1544,16 +1813,18 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         painter.save()
         painter.setClipRect(row_rect)
-        # Also covers any selection Qt drew before calling the delegate, in
-        # the view's own well, so the card's corners show nothing square.
-        painter.fillRect(row_rect, opt.palette.color(QPalette.Base))
-        ends = self._row_ends(opt, index)
-        card = self._custom_background(index)
-        rect = row_rect
-        if card is not None:
-            rect = self._draw_background_and_border(painter, opt, card, ends)
-        self._draw_hover_selection(painter, rect, opt, ends, card)
+        # Also covers any selection Qt drew before calling the delegate.
+        self._draw_row_fill(
+            painter,
+            row_rect,
+            opt,
+            index,
+            self._custom_background(index),
+            index.parent().isValid(),
+        )
         painter.restore()
+        ends = self._row_ends(opt, index)
+        rect = row_rect
 
         painter.save()
         painter.setClipRect(opt.rect)
@@ -1572,7 +1843,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             self._draw_status_indicators(painter, opt, index, has_thumbnail)
             if self._child_count_width(index, opt):
                 self._draw_child_count(
-                    painter, opt.rect, index.model().rowCount(index), opt
+                    painter,
+                    opt.rect,
+                    index.model().rowCount(index),
+                    opt,
+                    self._is_tall(opt.rect, has_thumbnail),
+                    self._indicator_metrics(index, opt, fit=True).footprint,
                 )
         else:
             picker = self._picker_rect(opt, index)

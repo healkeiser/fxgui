@@ -63,6 +63,29 @@ def test_a_crumb_on_a_framed_window_s_toolbar_sits_on_the_frame(qtbot):
     assert _ground(inside) == "surface", "a pane keeps the surface"
 
 
+def test_the_resting_strip_wears_its_bar_s_colour_not_a_square(qtbot):
+    """The scroll area under the path fills in the window's colour: on a
+    framed toolbar that showed as a square box round a bare path."""
+    window = QMainWindow()
+    qtbot.addWidget(window)
+    fxstyle.mark_as_frame(window)
+    window.setCentralWidget(QWidget())
+    bar = QToolBar()
+    window.addToolBar(bar)
+    crumb = FXBreadcrumb(home_icon="")
+    crumb.set_path(PATH)
+    bar.addWidget(crumb)
+    window.resize(600, 200)
+    window.show()
+    qtbot.waitExposed(window)
+
+    strip = crumb._container
+    image = strip.grab().toImage()
+    end = image.pixelColor(image.width() - 3, image.height() // 2)
+
+    assert end.name() == QColor(fxstyle.colors().frame).name()
+
+
 def test_a_crumb_on_a_plain_window_sits_on_the_surface(qtbot):
     host = QWidget()
     qtbot.addWidget(host)

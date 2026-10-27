@@ -9,6 +9,9 @@ pytest-qt provides the `qapp` and `qtbot` fixtures used by the tests.
 import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+# Pixels are read the moment a widget shows: no fade may be under way.
+# Motion's own tests turn it back on.
+os.environ["FXGUI_REDUCED_MOTION"] = "1"
 
 import pytest  # noqa: E402
 
@@ -97,6 +100,7 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     fxstyle._colors = None
     fxstyle._color_file = None
     fxstyle._theme = None
+    fxstyle._row_size = None
     fxstyle._default_theme = fxstyle._DEFAULT_THEME
     fxstyle._theme_namespace = None
     fxstyle._widget_fragments.clear()
@@ -104,6 +108,15 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     fxstyle._themed_roots = type(fxstyle._themed_roots)()
     if held:
         pytest.fail(f"the test left {held} pressed: release it")
+
+
+@pytest.fixture
+def set_row_size():
+    """Yield `fxstyle.apply_row_size`; restore the "normal" size after."""
+    from fxgui import fxstyle
+
+    yield fxstyle.apply_row_size
+    fxstyle.apply_row_size("normal")
 
 
 @pytest.fixture

@@ -24,7 +24,7 @@ import re
 import tempfile
 import traceback
 import zipfile
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Third-party
 from qtpy.QtGui import (
@@ -49,6 +49,8 @@ from fxgui import _compat, fxconstants
 __all__ = [
     "add_library",
     "badged",
+    "default_library",
+    "set_default_library",
     "get_icon_path",
     "get_icon",
     "get_pixmap",
@@ -172,10 +174,74 @@ _libraries_info = {
         "pattern": "{root}/{library}/icons/{icon_name}.{extension}",
         "defaults": {**_LIBRARY_DEFAULTS, "style": "solid", "color": "icon"},
     },
+    # Lucide, the web apps' line icons; `lucide_names.yaml` reads a Material
+    # name as its Lucide twin.
+    "lucide": {
+        "recolor": True,
+        "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
+        "defaults": {**_LIBRARY_DEFAULTS, "color": "icon"},
+    },
 }
-_DEFAULT_LIBRARY = "material"
+# Where a name with no library resolves; see `set_default_library`.
+_default_library = "material"
+# The library every name is written in, and what one missing elsewhere
+# falls back to.
+_NAMED_IN = "material"
 # Old library names, still accepted.
 _LIBRARY_ALIASES = {"dcc": "brands"}
+
+
+def set_default_library(library: str) -> None:
+    """Draw every icon named without a library from `library`.
+
+    Names stay Material's: a library shipping `<library>_names.yaml` reads
+    each through it, and one it lacks keeps its Material icon. Call it
+    before any icon is made.
+
+    Raises:
+        ValueError: If no library is called `library`.
+
+    Examples:
+        >>> fxicons.set_default_library("lucide")
+    """
+    global _default_library
+    library = _LIBRARY_ALIASES.get(library, library)
+    if library not in _libraries_info:
+        raise ValueError(f"No icon library named {library!r}.")
+    _default_library = library
+
+
+def default_library() -> str:
+    """Return the library a name with no library resolves in."""
+    return _default_library
+
+
+@functools.lru_cache(maxsize=None)
+def _names(library: str) -> Dict[str, str]:
+    """Return `library`'s Material name to its own, empty without a table."""
+    # Imported here, as fxstyle reads its own YAML: only a library with a
+    # table pays for the import.
+    import yaml
+
+    table = fxconstants.ICONS_ROOT / f"{library}_names.yaml"
+    if not table.exists():
+        return {}
+    return yaml.safe_load(table.read_text(encoding="utf-8")) or {}
+
+
+def _pick(icon_name: str, library: Optional[str]) -> Tuple[str, str]:
+    """Return the name and library a requested icon is drawn from."""
+    if library:
+        return icon_name, _LIBRARY_ALIASES.get(library, library)
+    if _default_library == _NAMED_IN:
+        return icon_name, _NAMED_IN
+    names = _names(_default_library)
+    if icon_name in names:
+        return names[icon_name], _default_library
+    # A name in the library's own spelling, as Lucide's hyphens.
+    if "-" in icon_name:
+        return icon_name, _default_library
+    return icon_name, _NAMED_IN
 
 
 def add_library(
@@ -266,7 +332,7 @@ def get_icon_path(
         >>> get_icon_path("lemon", library="fontawesome")
     """
 
-    library = _LIBRARY_ALIASES.get(library, library) or _DEFAULT_LIBRARY
+    icon_name, library = _pick(icon_name, library)
     info = _libraries_info[library]
     if style is None:
         style = info["defaults"].get("style")
@@ -430,7 +496,7 @@ def _resolved(library, width, height, color, icon_name):
     A full-colour icon answers no colour, whatever was asked; a single-colour
     mark in a full-colour library defaults to the "icon" token.
     """
-    library = _LIBRARY_ALIASES.get(library, library) or _DEFAULT_LIBRARY
+    library = _LIBRARY_ALIASES.get(library, library) or _default_library
     info = _libraries_info[library]
     defaults = info["defaults"]
     recolors = info["recolor"] or icon_name in info.get("recolor_names", ())
@@ -621,6 +687,7 @@ def _engine(icon_name, width, height, color, library, style, extension,
     unknown = set(inks) - (set(_MODES) - {"normal"})
     if unknown:
         raise ValueError(f"No icon mode named {sorted(unknown)}.")
+    icon_name, library = _pick(icon_name, library)
     library, width, height, inks["normal"], recolors = _resolved(
         library, width, height, color, icon_name)
     path = get_icon_path(

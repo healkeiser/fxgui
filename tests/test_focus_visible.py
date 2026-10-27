@@ -158,8 +158,79 @@ def test_a_clicked_dialog_button_looks_untouched(qtbot):
     assert apply.grab().toImage() == before
 
 
+def test_a_dialog_s_accepting_verb_is_its_primary_button(qtbot):
+    """As Lumen's dialogs: the verb is solid, Cancel and Apply stay bare."""
+    dialog = QDialog()
+    fxstyle.register_themed_root(dialog)
+    box = QDialogButtonBox(
+        QDialogButtonBox.Ok | QDialogButtonBox.Cancel | QDialogButtonBox.Apply
+    )
+    QVBoxLayout(dialog).addWidget(box)
+    qtbot.addWidget(dialog)
+    dialog.show()
+    qtbot.waitExposed(dialog)
+    roles = {
+        name: box.button(getattr(QDialogButtonBox, name)).property("fxRole")
+        for name in ("Ok", "Cancel", "Apply")
+    }
+    assert roles == {"Ok": "primary", "Cancel": None, "Apply": None}
+
+
+def test_a_key_typed_before_the_app_lost_the_input_shows_no_look(qtbot):
+    """A tray click brings a window back unseen: the key before it is old."""
+    widget, twin, sink = _window(qtbot, _KINDS["button"])
+    QTest.keyClick(sink, Qt.Key_Shift)
+    widget.setFocus(Qt.OtherFocusReason)
+    QApplication.processEvents()
+    assert _accent(widget) > _accent(twin), "a key was the last input"
+
+    _tab_to(sink)
+    QTest.keyClick(sink, Qt.Key_Shift)
+    QApplication.instance().applicationStateChanged.emit(Qt.ApplicationInactive)
+    widget.setFocus(Qt.OtherFocusReason)
+    QApplication.processEvents()
+
+    assert _accent(widget) == _accent(twin)
+
+
+def test_a_toggle_that_is_on_wears_no_accent_edge(qtbot):
+    """On is a fill, as Lumen's toggles: a sheet's round 1px edge is jagged."""
+    from qtpy.QtWidgets import QToolButton
+
+    def toggle():
+        button = QToolButton()
+        button.setText("Loop")
+        button.setCheckable(True)
+        return button
+
+    widget, twin, _ = _window(qtbot, toggle)
+    widget.setChecked(True)
+    QApplication.processEvents()
+
+    assert widget.grab().toImage() != twin.grab().toImage(), "on still shows"
+    assert _accent(widget) == 0
+
+
 def test_a_shortcut_focus_shows_the_look(qtbot):
     widget, twin, _ = _window(qtbot, QLineEdit)
     widget.setFocus(Qt.ShortcutFocusReason)
     QApplication.processEvents()
     assert _accent(widget) > _accent(twin)
+
+
+def test_a_dialog_has_one_primary_button_at_most(qtbot):
+    """"Yes" beside "Yes to All": one solid verb, not two."""
+    dialog = QDialog()
+    fxstyle.register_themed_root(dialog)
+    box = QDialogButtonBox(
+        QDialogButtonBox.Yes | QDialogButtonBox.YesToAll | QDialogButtonBox.No
+    )
+    QVBoxLayout(dialog).addWidget(box)
+    qtbot.addWidget(dialog)
+    dialog.show()
+    qtbot.waitExposed(dialog)
+    primaries = [
+        button.text() for button in box.buttons()
+        if button.property("fxRole") == "primary"
+    ]
+    assert len(primaries) == 1, primaries

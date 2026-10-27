@@ -294,7 +294,8 @@ def test_a_hovered_flat_button_fills(qtbot, theme):
     window, button = _flat(qtbot, theme, on_frame=True)
     hover(qtbot, button)
 
-    assert _at(window, button, 2, 2) == _color("state_hover")
+    assert _at(window, button, fxstyle.BUTTON_RADIUS, 2) == _color(
+        "state_hover")
 
 
 @pytest.mark.parametrize("theme", THEMES)
@@ -303,7 +304,8 @@ def test_a_pressed_flat_button_fills(qtbot, qapp, theme):
     button.setDown(True)
     qapp.processEvents()
 
-    assert _at(window, button, 2, 2) == _color("state_pressed")
+    assert _at(window, button, fxstyle.BUTTON_RADIUS, 2) == _color(
+        "state_pressed")
 
 
 @pytest.mark.parametrize("theme", THEMES)

@@ -35,7 +35,20 @@ from pathlib import Path
 from typing import Callable, Dict, Iterable, Optional, Tuple, Union
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject, QRect, QRectF, QSize, Qt, Signal
+from qtpy.QtCore import (
+    QEasingCurve,
+    QEvent,
+    QObject,
+    QPoint,
+    QPointF,
+    QPropertyAnimation,
+    QRect,
+    QRectF,
+    QSize,
+    Qt,
+    QVariantAnimation,
+    Signal,
+)
 from qtpy.QtGui import (
     QAction,
     QColor,
@@ -45,7 +58,10 @@ from qtpy.QtGui import (
     QGuiApplication,
     QIcon,
     QPainter,
+    QPainterPath,
     QPalette,
+    QPen,
+    QPixmap,
     QTransform,
 )
 from qtpy.QtWidgets import (
@@ -54,16 +70,21 @@ from qtpy.QtWidgets import (
     QAbstractScrollArea,
     QApplication,
     QComboBox,
+    QDialogButtonBox,
     QFrame,
+    QGraphicsView,
     QHeaderView,
     QMenu,
     QProxyStyle,
     QSplitter,
+    QStackedLayout,
     QStyle,
     QStyleFactory,
     QStyleOption,
+    QStyleOptionHeader,
     QStyleOptionTab,
     QTabBar,
+    QTableView,
     QTabWidget,
     QTreeView,
     QWidget,
@@ -125,9 +146,13 @@ __all__ = [
     "DEFAULT_COLOR_FILE",
     "TITLE_PROPERTY",
     "BUTTON_RADIUS",
+    "CARD_RADIUS",
+    "SMALL_RADIUS",
     "FONT_SIZE",
+    "ROW_SIZES",
     "ROOT_PROPERTY",
     "THIN_SCROLL_PROPERTY",
+    "NAV_PROPERTY",
     "THIN_SCROLL_WIDTH",
     "PANE_GAP",
     # Color configuration
@@ -141,11 +166,18 @@ __all__ = [
     "mark_as_title",
     "mark_as_frame",
     "mark_as_thin_scroll",
+    "mark_as_nav",
     # Theme functions
     "get_available_themes",
     "get_theme",
     "is_light_theme",
     "apply_theme",
+    "motion",
+    "REDUCED_MOTION_VAR",
+    "apply_row_size",
+    "row_size",
+    "row_height",
+    "state_contrast",
     "save_theme",
     "load_saved_theme",
     # Style functions
@@ -165,6 +197,7 @@ __all__ = [
     "get_contrast_ratio",
     "readable_ink",
     "mix",
+    "mix_oklab",
     "step_toward",
     "depth_shade",
     "DEPTH_STEP",
@@ -179,6 +212,7 @@ DEFAULT_COLOR_FILE = fxconstants.PACKAGE_ROOT / "style.yaml"
 
 # Theme persistence keys
 _SETTINGS_THEME_KEY = "theme/current"
+_SETTINGS_ROW_SIZE_KEY = "rows/size"
 _DEFAULT_THEME = "dark"
 
 # Dynamic property routing a widget to the title font role. Set it
@@ -192,6 +226,11 @@ FRAME_PROPERTY = "fxFrame"
 # Dynamic property drawing a scroll area as a card's thin scroll. Set it
 # through mark_as_thin_scroll() rather than by hand.
 THIN_SCROLL_PROPERTY = "fxThinScroll"
+
+# Dynamic property drawing an item view as a navigation list. Set it
+# through mark_as_nav() rather than by hand.
+NAV_PROPERTY = "fxNav"
+_NAV_END_GAP = 3
 
 # The width, in pixels, of every scroll bar: `@thin_scroll` in QSS.
 THIN_SCROLL_WIDTH = 8
@@ -222,12 +261,17 @@ _BRANCH_RULES = "".join(
     for indent in range(65)
 )
 
-# Styles QPushButton through @button_radius; widgets that draw a button
-# shape of their own read it here.
-BUTTON_RADIUS = 4
+# One scale of corners, each step nesting inside the one above. Qt draws a
+# corner square when its radius passes half the box's height, so a box under
+# 18 px tall takes SMALL_RADIUS.
+# What floats or holds panes' content: a pane, a menu, a popup, a dialog.
+CARD_RADIUS = 12
 
-# The corners of a floating card: a tooltip, a banner, a dialog.
-CARD_RADIUS = 8
+# What sits inside one: a control, a list, a card in a pane, a menu item.
+BUTTON_RADIUS = 9
+
+# Something small: a badge, a key hint, a chip, a tooltip, a check's box.
+SMALL_RADIUS = 6
 
 # The side of an on/off mark: a check box or radio indicator, and the
 # height of a switch's track. It centres in a row of control_height.
@@ -268,7 +312,7 @@ MUTED_STEP = 1.5
 # ponytail: measured on 6.5.3 and 6.11.2 only; move the bound if a version
 # between them measures otherwise.
 _SPIN_PADDING = (
-    "4px 0px" if _compat.QT_VERSION < (6, 6) else "3px 0px 2px 0px"
+    "4px 8px" if _compat.QT_VERSION < (6, 6) else "3px 8px 2px 8px"
 )
 
 # A highlighted list row's text step to its resting place: from Qt 6.6 the
@@ -277,7 +321,37 @@ _SPIN_PADDING = (
 _LIST_TEXT_STEP = "0px" if _compat.QT_VERSION < (6, 6) else "1px"
 
 # The body text size, in pixels, of every themed root.
-FONT_SIZE = 12
+FONT_SIZE = 13
+
+# How long a popup, a menu or a tooltip takes to fade in, in ms: short
+# enough never to hold the pointer up; a window, a little longer.
+POPUP_FADE_MS = 150
+WINDOW_FADE_MS = 250
+# How far a popup drops into place as it fades in, in px.
+POPUP_DROP = 6
+
+# How long a panel takes to fade in as it comes to the front, in ms: a dock
+# pane opened or picked by its tab, a page of a stacked widget.
+PANEL_FADE_MS = 220
+# How far a page rises into place as it fades in, in px; a pane opening
+# grows open over `PANEL_OPEN_MS` instead.
+PANEL_RISE = 8
+PANEL_OPEN_MS = 260
+
+# Set to "1", every fade and trail is skipped, as a reduced-motion setting
+# asks; tests that read pixels set it.
+REDUCED_MOTION_VAR = "FXGUI_REDUCED_MOTION"
+
+
+def motion() -> bool:
+    """Whether fades and trails play: not under `REDUCED_MOTION_VAR`."""
+    return os.environ.get(REDUCED_MOTION_VAR) != "1"
+
+
+# One scale of row heights for every list and tree, in even steps so each
+# choice reads as different; `apply_row_size` picks one.
+ROW_SIZES = {"small": 28, "normal": 36, "big": 52}
+_DEFAULT_ROW_SIZE = "normal"
 
 # The dynamic property a widget registered as a themed root carries.
 ROOT_PROPERTY = "fxThemedRoot"
@@ -334,6 +408,7 @@ _HINTING = {
 _colors = None
 _color_file = None  # Tracks which color file is currently loaded
 _theme = None  # Will be loaded from settings on first access
+_row_size = None  # Likewise
 _default_theme = _DEFAULT_THEME  # What load_saved_theme() falls back to
 _theme_namespace = None  # Cached FXThemeColors for the current theme
 _widget_fragments: "OrderedDict[str, str]" = OrderedDict()
@@ -381,6 +456,16 @@ def _builtin_theme() -> dict:
         key: value for key, value in theme.items()
         if not key.startswith(("text_on_accent", "icon_on_accent"))
     }
+
+
+def state_contrast(theme_name: Optional[str] = None) -> float:
+    """Return the least contrast a theme holds its hover and pressed fills to.
+
+    `STATE_MIN_CONTRAST` unless the theme's ``state_contrast`` says less, as
+    a brand's own fills may.
+    """
+    data = _theme_data(theme_name or get_theme())
+    return float(data.get("state_contrast", STATE_MIN_CONTRAST))
 
 
 def _theme_data(theme_name: str) -> dict:
@@ -711,6 +796,28 @@ def mark_as_thin_scroll(area: QAbstractScrollArea, is_thin: bool = True) -> None
         fxutils.repolish(part)
 
 
+def mark_as_nav(view: QAbstractItemView, is_nav: bool = True) -> None:
+    """Draw an item view as a navigation list, as a sidebar's.
+
+    Rows are 28 px rounded chips; the current one is a neutral chip with
+    its text in the accent, so it reads as a place, not a selection.
+
+    Args:
+        view: The list or tree of places to go to.
+        is_nav: False gives it the theme's own look back. Defaults to True.
+
+    Examples:
+        >>> fxstyle.mark_as_nav(pages)
+    """
+    view.setProperty(NAV_PROPERTY, bool(is_nav))
+    # Chips sit 1 px apart; 3 px more at the ends gives the first and last
+    # the 4 px to the frame they have at the sides. Not sheet padding: Qt
+    # then paints a rounded frame's corners as thick wedges.
+    end = _NAV_END_GAP if is_nav else 0
+    view.setViewportMargins(0, end, 0, end)
+    fxutils.repolish(view)
+
+
 ###### Color Utility Functions
 
 
@@ -822,8 +929,66 @@ def _primary_button_fills(
 
 def control_height(widget: QWidget) -> int:
     """Return the height a push button comes to in `widget`'s font."""
-    # QPushButton in style.qss: 5 px of padding and a 1 px border each side.
-    return widget.fontMetrics().height() + 12
+    # QPushButton in style.qss: 6 px of padding and a 1 px border each side.
+    return widget.fontMetrics().height() + 14
+
+
+def _to_oklab(color: QColor) -> Tuple[float, float, float]:
+    """Return `color` in OKLab, from sRGB."""
+
+    def linear(channel: float) -> float:
+        return (
+            channel / 12.92 if channel <= 0.04045
+            else ((channel + 0.055) / 1.055) ** 2.4
+        )
+
+    r, g, b = (linear(c) for c in (
+        color.redF(), color.greenF(), color.blueF()))
+    l_ = (0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b) ** (1 / 3)
+    m_ = (0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b) ** (1 / 3)
+    s_ = (0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b) ** (1 / 3)
+    return (
+        0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_,
+        1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_,
+        0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_,
+    )
+
+
+def _from_oklab(lab: Tuple[float, float, float]) -> QColor:
+    """Return the sRGB colour of an OKLab triple, clamped to the gamut."""
+    L, a, b = lab
+    l_ = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3
+    m_ = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3
+    s_ = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3
+
+    def encoded(channel: float) -> int:
+        channel = max(0.0, min(1.0, channel))
+        value = (
+            12.92 * channel if channel <= 0.0031308
+            else 1.055 * channel ** (1 / 2.4) - 0.055
+        )
+        return round(value * 255)
+
+    return QColor(*(encoded(c) for c in (
+        4.0767416621 * l_ - 3.3077115913 * m_ + 0.2309699292 * s_,
+        -1.2684380046 * l_ + 2.6097574011 * m_ - 0.3413193965 * s_,
+        -0.0041960863 * l_ - 0.7034186147 * m_ + 1.7076147010 * s_,
+    )))
+
+
+def mix_oklab(one_hex, two_hex, amount: float) -> str:
+    """Return the hex colour `amount` of the way from one to two, in OKLab.
+
+    As CSS ``color-mix(in oklab, ...)`` mixes: even in lightness, so a
+    little white in a dark grey lightens it as little as the eye expects.
+
+    Examples:
+        >>> fxstyle.mix_oklab("#101113", "#f7f8f8", 0.1)
+        '#222325'
+    """
+    one, two = _to_oklab(QColor(one_hex)), _to_oklab(QColor(two_hex))
+    return _from_oklab(tuple(
+        x + (y - x) * amount for x, y in zip(one, two))).name()
 
 
 def mix(one_hex, two_hex, amount: float) -> str:
@@ -1039,13 +1204,14 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
     pole = _pole_from(surface)
     rows_on = [theme_data.get(key, surface)
                for key in ("surface", "surface_sunken", "well")]
+    # A theme may hold its states closer, as a brand's own fills do.
+    floor = float(theme_data.get("state_contrast", STATE_MIN_CONTRAST))
     hover = step_toward(
         theme_data.get("state_hover", surface), pole,
         lambda color: all(
-            _reads(ground, STATE_MIN_CONTRAST)(color) for ground in rows_on))
+            _reads(ground, floor)(color) for ground in rows_on))
     pressed = step_toward(
-        theme_data.get("state_pressed", hover), pole,
-        _reads(hover, STATE_MIN_CONTRAST))
+        theme_data.get("state_pressed", hover), pole, _reads(hover, floor))
     grounds = [
         theme_data.get(key, surface)
         for key in ("surface", "surface_sunken", "surface_alt", "well",
@@ -1072,6 +1238,8 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
         "state_pressed": pressed,
         "text": text,
         "text_muted": muted,
+        # What a row's name is drawn in: brighter than text, if stated.
+        "text_strong": theme_data.get("text_strong", text),
     }
 
 
@@ -1167,7 +1335,21 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     )
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
     tokens["@card_radius"] = f"{CARD_RADIUS}px"
+    tokens["@small_radius"] = f"{SMALL_RADIUS}px"
+    tokens["@row_height"] = f"{row_height()}px"
+    # A navigation list's current row: the accent, stepped until it reads
+    # on the neutral chip behind it.
+    tokens["@nav_ink"] = readable_ink(
+        theme_data.get("state_hover", theme_data["surface"]),
+        theme_data["accent_primary"],
+    )
     tokens["@indicator_size"] = f"{INDICATOR_SIZE}px"
+    # Text a step and two below the body: a header's labels, a keycap's.
+    tokens["@font_size_small"] = f"{FONT_SIZE - 1}px"
+    tokens["@font_size_tiny"] = f"{FONT_SIZE - 2}px"
+    # A drawn mark's box less its 1 px edge, and the corner that makes it round.
+    tokens["@indicator_inner"] = f"{INDICATOR_SIZE - 2}px"
+    tokens["@indicator_round"] = f"{INDICATOR_SIZE // 2}px"
     tokens["@thin_scroll_radius"] = f"{THIN_SCROLL_WIDTH // 2}px"
     tokens["@thin_scroll"] = f"{THIN_SCROLL_WIDTH}px"
     tokens["@pane_gap_half"] = f"{PANE_GAP // 2}px"
@@ -1234,9 +1416,11 @@ def _substitute(qss: str, tokens: Dict[str, str]) -> str:
         name, color = match.group(1), tokens.get(f"@{match.group(2)}")
         if not color:
             return match.group(0)
-        stem = f"{name}_{color.lstrip('#')}"
+        svg = fxicons.get_icon_path(name)
+        # From the file, so one name in two libraries keeps two images.
+        stem = f"{Path(svg).parent.name}_{Path(svg).stem}_{color.lstrip('#')}"
         size = int(match.group(3) or 16)
-        return _sheet_icon(fxicons.get_icon_path(name), stem, size, color)
+        return _sheet_icon(svg, stem, size, color)
 
     def sheet_svg(match: "re.Match") -> str:
         folder = Path(tokens["~icons"])
@@ -1361,6 +1545,38 @@ def get_theme() -> str:
     if _theme is None:
         _theme = load_saved_theme()
     return _theme
+
+
+def row_size() -> str:
+    """Return the `ROW_SIZES` name in force, the saved one on first access."""
+    global _row_size
+    if _row_size is None:
+        saved = fxconfig.get_value(_SETTINGS_ROW_SIZE_KEY, _DEFAULT_ROW_SIZE)
+        _row_size = saved if saved in ROW_SIZES else _DEFAULT_ROW_SIZE
+    return _row_size
+
+
+def row_height() -> int:
+    """Return the height, in pixels, of a list or tree row."""
+    return ROW_SIZES[row_size()]
+
+
+def apply_row_size(size: str) -> str:
+    """Make every list and tree row `size` tall, save it, and re-style.
+
+    Raises:
+        ValueError: If `size` is not a `ROW_SIZES` name.
+
+    Examples:
+        >>> fxstyle.apply_row_size("small")
+    """
+    global _row_size
+    if size not in ROW_SIZES:
+        raise ValueError(f"Row size '{size}' not found: {sorted(ROW_SIZES)}")
+    _row_size = size
+    fxconfig.set_value(_SETTINGS_ROW_SIZE_KEY, size)
+    _colors_changed()
+    return size
 
 
 def colors() -> "FXThemeColors":
@@ -1554,6 +1770,15 @@ _LAYOUT_GAPS = (
     QStyle.PM_LayoutVerticalSpacing,
 )
 _LIST_ICON = QStyle.PM_ListViewIconSize
+# A table row's hairline, Lumen's border at 60%.
+_TABLE_RULE_ALPHA = 0.6
+# A header's sort arrow: its side, its gap after the label, and the label's
+# lead in the section (the sheet's ::section padding).
+_SORT_ARROW = 12
+_SORT_GAP = 4
+_HEADER_LEAD = 4
+# A header label's icon, which sits before its words.
+_HEADER_ICON = 16
 _SMALL_ICON = QStyle.PM_SmallIconSize
 _CLOSE_WIDTH = QStyle.PM_TabCloseIndicatorWidth
 
@@ -1593,14 +1818,65 @@ class FXProxyStyle(QProxyStyle):
         return super().standardIcon(standardIcon, option, widget)
 
     def drawPrimitive(self, element, option, painter, widget=None):
-        """Draw `element`, except Qt's focus rectangle.
+        """Draw `element`, except Qt's focus rectangle; rule a table's rows.
 
         PySide6 6.5's Fusion and Windows 11 draw it on an item view's current
         cell whatever the sheet's ``outline`` says, tinting its
         BackgroundRole; every fxgui control shows focus in its own edge.
+        A table cell gets Lumen's hairline under it here, over its own
+        BackgroundRole: a sheet ``::item`` border would hide that colour.
         """
-        if element != QStyle.PE_FrameFocusRect:
-            super().drawPrimitive(element, option, painter, widget)
+        if element == QStyle.PE_FrameFocusRect:
+            return
+        if element == QStyle.PE_IndicatorHeaderArrow and isinstance(
+            option, QStyleOptionHeader
+        ):
+            # Qt names an ascending sort SortDown; Lumen marks it arrow-up.
+            up = option.sortIndicator == QStyleOptionHeader.SortDown
+            fxicons.get_icon(
+                "arrow_upward" if up else "arrow_downward", color="icon"
+            ).paint(painter, option.rect)
+            return
+        super().drawPrimitive(element, option, painter, widget)
+        if element == QStyle.PE_PanelItemViewItem and isinstance(
+            widget, QTableView
+        ):
+            rule = QColor(colors().border)
+            rule.setAlphaF(_TABLE_RULE_ALPHA)
+            painter.save()
+            painter.setPen(QPen(rule, 1))
+            bottom = option.rect.bottom()
+            painter.drawLine(
+                option.rect.left(), bottom, option.rect.right(), bottom
+            )
+            painter.restore()
+
+    def subElementRect(self, element, option, widget=None):
+        """Return `element`'s rect; a header's sort arrow follows its label."""
+        rect = super().subElementRect(element, option, widget)
+        if (
+            element != QStyle.SE_HeaderArrow
+            or not isinstance(option, QStyleOptionHeader)
+            # A label set right or centred keeps the arrow at the end.
+            or not option.textAlignment & Qt.AlignLeft
+        ):
+            return rect
+        font = QFont(
+            widget.font() if widget is not None else QApplication.font()
+        )
+        # The sheet's ::section size, which the option's font does not carry.
+        font.setPixelSize(FONT_SIZE - 1)
+        label = QFontMetrics(font).horizontalAdvance(option.text)
+        if not option.icon.isNull():
+            label += _HEADER_ICON + _SORT_GAP
+        section = option.rect
+        left = section.left() + _HEADER_LEAD + label + _SORT_GAP
+        return QRect(
+            min(left, section.right() - _SORT_ARROW),
+            section.center().y() - _SORT_ARROW // 2 + 1,
+            _SORT_ARROW,
+            _SORT_ARROW,
+        )
 
     def pixelMetric(self, metric, option=None, widget=None):
         """Return `metric`; layouts space one pane gap, list icons 16 px.
@@ -1907,6 +2183,310 @@ _KEYBOARD_REASONS = (
 )
 
 
+def _is_stacked_page(widget: QWidget) -> bool:
+    """Whether `widget` is a page a stacked layout brings to the front."""
+    parent = _compat.parent_widget(widget)
+    return (
+        parent is not None
+        and isinstance(parent.layout(), QStackedLayout)
+        and _is_themed(widget)
+    )
+
+
+def _ground(widget: Optional[QWidget]) -> QColor:
+    """Return the colour `widget` is painted on: its sheet's, by its palette.
+
+    A view may sit on the frame, a well or a card, not only the surface; a
+    see-through widget shows its nearest painted parent's.
+    """
+    while widget is not None:
+        color = widget.palette().color(widget.backgroundRole())
+        if color.alpha() == 255:
+            return color
+        widget = _compat.parent_widget(widget)
+    return QColor(colors().surface)
+
+
+class _Reveal(QWidget):
+    """Fade a page in as it rises `PANEL_RISE` px into place.
+
+    A child of the page, above it and clear of the pointer: it paints the
+    pane's colour, then a snapshot of the page, faded and lowered, while
+    the page lays itself out and paints as ever underneath.
+    """
+
+    # Read before `__init__` has run: Qt may paint a child it adopts.
+    _shown = 1.0
+    _moving = False
+
+    @classmethod
+    def over(cls, page: QWidget, *, moving: bool = True) -> None:
+        """Reveal `page`; not `moving`, it fades in where it stands.
+
+        A page whose size is still changing, as a pane growing open, does
+        not move: a snapshot of it would be the wrong size. A reveal
+        already under way on it takes that on.
+        """
+        # A page coming up with its window rides the window's own fade.
+        if not motion() or page.window().windowOpacity() < 1.0:
+            return
+        reveal = page.findChild(cls, "", Qt.FindDirectChildrenOnly)
+        if reveal is None:
+            reveal = cls(page)
+        reveal._moving = reveal._moving and moving
+
+    def __init__(self, page: QWidget):
+        super().__init__(page)
+        self._shown = 0.0
+        self._moving = True
+        self._shot = QPixmap()
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        self.setGeometry(page.rect())
+        self.raise_()
+        self.show()
+        # Once the page has laid itself out, a step later.
+        fxutils.later(0, self, self._start)
+
+    def _start(self) -> None:
+        page = self.parentWidget()
+        if page is None:
+            return
+        # Qt shows a window's pages before the window itself: by now a page
+        # shown with its window knows that window is fading in, and stands.
+        if page.window().windowOpacity() < 1.0:
+            self.setParent(None)
+            self.deleteLater()
+            return
+        self.setGeometry(page.rect())
+        if self._moving:
+            self.hide()
+            self._shot = page.grab()
+            self.show()
+        rise = QVariantAnimation(self)
+        rise.setDuration(PANEL_FADE_MS)
+        rise.setStartValue(0.0)
+        rise.setEndValue(1.0)
+        rise.setEasingCurve(QEasingCurve.OutCubic)
+        rise.valueChanged.connect(self._step)
+        rise.finished.connect(self.deleteLater)
+        rise.start(QVariantAnimation.DeleteWhenStopped)
+
+    def _step(self, shown: float) -> None:
+        self._shown = shown
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        """Paint the pane over the page, less and less as it fades in.
+
+        A moving page paints its snapshot, faded and lowered, over a pane.
+        """
+        painter = QPainter(self)
+        fill = _ground(self.parentWidget())
+        if self._moving and not self._shot.isNull():
+            painter.fillRect(self.rect(), fill)
+            painter.setOpacity(self._shown)
+            painter.drawPixmap(
+                QPointF(0, (1.0 - self._shown) * PANEL_RISE), self._shot)
+        else:
+            fill.setAlphaF(1.0 - self._shown)
+            painter.fillRect(self.rect(), fill)
+        painter.end()
+
+
+class _ResizeMark(QWidget):
+    """Light the edge a header column resizes by, under the pointer.
+
+    An edge is found as Qt finds it, within the style's grip margin of a
+    section the user may resize; this transparent child of the viewport
+    draws a short accent bar there, held while the edge is dragged.
+    """
+
+    # The bar's width, and its height against the header's, in px.
+    _WIDTH = 2
+    _INSET = 6
+    # Read before `__init__` has run, or after a closing window tore the
+    # Python side down while Qt still sends events: each answers "nothing".
+    _header: Optional[QHeaderView] = None
+    _x: Optional[int] = None
+    _edge: Optional[int] = None
+    _dragging = False
+
+    @classmethod
+    def watch(cls, header: QHeaderView) -> None:
+        """Give a themed horizontal `header` its mark, once."""
+        viewport = header.viewport()
+        if (
+            header.orientation() != Qt.Horizontal
+            or not _is_themed(header)
+            or viewport.findChild(cls, "", Qt.FindDirectChildrenOnly)
+        ):
+            return
+        cls(header)
+
+    def __init__(self, header: QHeaderView):
+        super().__init__(header.viewport())
+        self._header = header
+        self._x: Optional[int] = None
+        self._edge: Optional[int] = None
+        self._dragging = False
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        for watched in (header, header.viewport()):
+            watched.installEventFilter(self)
+        self.setGeometry(header.viewport().rect())
+        self.show()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Follow the pointer along the header and the drag of an edge."""
+        if self._header is None or not _compat.is_valid(self._header):
+            return False
+        kind = event.type()
+        if kind == QEvent.Resize and watched is self._header.viewport():
+            self.setGeometry(watched.rect())
+        elif kind in (QEvent.MouseMove, QEvent.HoverMove):
+            self._follow(event.position().toPoint().x())
+        elif kind == QEvent.MouseButtonPress:
+            self._dragging = self._edge is not None
+        elif kind == QEvent.MouseButtonRelease:
+            self._dragging = False
+            self._follow(event.position().toPoint().x())
+        elif kind in (QEvent.Leave, QEvent.HoverLeave) and not self._dragging:
+            self._show_at(None)
+        return False
+
+    def _follow(self, x: int) -> None:
+        header = self._header
+        if not self._dragging:
+            self._edge = self._edge_at(x)
+        if self._edge is None:
+            self._show_at(None)
+            return
+        self._show_at(
+            header.sectionViewportPosition(self._edge)
+            + header.sectionSize(self._edge))
+
+    def _edge_at(self, x: int) -> Optional[int]:
+        """Return the section whose right edge `x` grips, as Qt reads it."""
+        header = self._header
+        index = header.logicalIndexAt(x)
+        if index < 0:
+            return None
+        grip = header.style().pixelMetric(
+            QStyle.PM_HeaderGripMargin, None, header)
+        start = header.sectionViewportPosition(index)
+        if start + header.sectionSize(index) - x <= grip:
+            edge = index
+        elif x - start <= grip and header.visualIndex(index) > 0:
+            edge = header.logicalIndex(header.visualIndex(index) - 1)
+        else:
+            return None
+        if header.sectionResizeMode(edge) != QHeaderView.Interactive:
+            return None
+        return edge
+
+    def _show_at(self, x: Optional[int]) -> None:
+        if x != self._x:
+            self._x = x
+            self.raise_()
+            self.update()
+
+    def paintEvent(self, event) -> None:
+        """Draw the accent bar on the lit edge."""
+        if self._x is None or self._header is None:
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor(colors().accent_primary))
+        bar = QRectF(
+            self._x - self._WIDTH / 2,
+            self._INSET,
+            self._WIDTH,
+            self.height() - 2 * self._INSET,
+        )
+        painter.drawRoundedRect(bar, self._WIDTH / 2, self._WIDTH / 2)
+        painter.end()
+
+
+class _ViewportCorners(QWidget):
+    """Redraw a framed view's round corners over what it paints.
+
+    The sheet rounds the frame, but rows, or a canvas's grid, paint the
+    viewport's square corners over it. This transparent child covers the
+    whole view, so padding between frame and viewport moves nothing; at
+    each corner it paints the pane outside the arc, then the arc.
+    """
+
+    @classmethod
+    def round(cls, view: QAbstractScrollArea) -> None:
+        """Give `view` its corners once, unless it draws no frame."""
+        if (
+            view.frameWidth() == 0
+            or view.window().windowType() == Qt.Popup
+            or not _is_themed(view)
+            or view.findChild(cls, "", Qt.FindDirectChildrenOnly)
+        ):
+            return
+        cls(view)
+
+    # Read before `__init__` has run, or after a closing window tore the
+    # Python side down while Qt still paints: it then paints nothing.
+    _view: Optional[QAbstractScrollArea] = None
+
+    def __init__(self, view: QAbstractScrollArea):
+        super().__init__(view)
+        self._view = view
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        view.installEventFilter(self)
+        self.setGeometry(view.rect())
+        self.raise_()
+        self.show()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Follow the view's size; stay above its viewport and bars."""
+        if event.type() in (QEvent.Resize, QEvent.Show):
+            self.setGeometry(watched.rect())
+            self.raise_()
+        return False
+
+    def paintEvent(self, event) -> None:
+        """Paint the pane outside each rounded corner, then the arc."""
+        view = self._view
+        if view is None or not _compat.is_valid(view):
+            return
+        frame = view.frameWidth()
+        outer = QRectF(self.rect())
+        radius = BUTTON_RADIUS
+        clip = QPainterPath()
+        for x, y in (
+            (outer.left(), outer.top()),
+            (outer.right() - radius, outer.top()),
+            (outer.left(), outer.bottom() - radius),
+            (outer.right() - radius, outer.bottom() - radius),
+        ):
+            clip.addRect(QRectF(x, y, radius + 1, radius + 1))
+        shape = QPainterPath()
+        shape.addRoundedRect(outer, radius, radius)
+        theme = colors()
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setClipPath(clip)
+        painter.fillPath(clip.subtracted(shape), _ground(view.parentWidget()))
+        edge = QPainterPath()
+        half = frame / 2
+        edge.addRoundedRect(
+            outer.adjusted(half, half, -half, -half),
+            radius - half,
+            radius - half,
+        )
+        painter.setPen(QPen(QColor(theme.border), frame))
+        painter.setBrush(Qt.NoBrush)
+        painter.drawPath(edge)
+        painter.end()
+
+
 def _adopt_proxy_style(view: QWidget) -> None:
     """Give an item view or tab bar in a themed host window FXProxyStyle.
 
@@ -1931,6 +2511,23 @@ def _adopt_proxy_style(view: QWidget) -> None:
     style = FXProxyStyle()
     style.setParent(view)
     view.setStyle(style)
+
+
+def _rank_dialog_buttons(box: QDialogButtonBox) -> None:
+    """Make a dialog's first accepting verb its one primary button.
+
+    By role, not Qt's default: Qt makes the last clicked button the default.
+    One only: "Yes" beside "Yes to All" keeps the second plain.
+    """
+    accepting = (QDialogButtonBox.AcceptRole, QDialogButtonBox.YesRole)
+    buttons = box.buttons()
+    if any(button.property("fxRole") is not None for button in buttons):
+        return
+    for button in buttons:
+        if box.buttonRole(button) in accepting:
+            button.setProperty("fxRole", "primary")
+            fxutils.repolish(button)
+            return
 
 
 def _fit_close_buttons(bar: QTabBar) -> None:
@@ -1962,8 +2559,6 @@ _FOCUS_EVENTS = frozenset((
     QEvent.FocusOut,
     QEvent.Polish,
     QEvent.Show,
-    QEvent.ShowToParent,
-    QEvent.HideToParent,
 ))
 
 
@@ -1972,12 +2567,23 @@ class _FocusVisibility(QObject):
 
     It also gives every themed popup and tooltip, Qt's own included,
     flyout corners, an item view or tab bar in a host window FXProxyStyle,
-    a tab's close button its room, and a tree whose header hides or shows its padding again.
+    and a tab's close button its room.
     """
 
     def __init__(self, parent: QObject):
         super().__init__(parent)
         self._by_keyboard = False
+        if isinstance(parent, QGuiApplication):
+            parent.applicationStateChanged.connect(self._left_for)
+
+    def _left_for(self, state: Qt.ApplicationState) -> None:
+        """Forget the last key once another application takes the input.
+
+        The input that brings a window back, a tray icon's click, is one
+        Qt never sees.
+        """
+        if state != Qt.ApplicationActive:
+            self._by_keyboard = False
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Note the last input, and set the property on focus in and out."""
@@ -2000,19 +2606,29 @@ class _FocusVisibility(QObject):
                 and watched.windowType() == Qt.Popup
             ):
                 self._adopt(watched)
-        elif kind in (QEvent.ShowToParent, QEvent.HideToParent):
-            # The sheet pads a tree by its headerHidden property.
-            view = _compat.parent_widget(watched) if isinstance(
-                watched, QHeaderView) else None
-            if isinstance(view, QTreeView) and _is_themed(view):
-                fxutils.repolish(view)
         elif kind == QEvent.Show and isinstance(watched, QWidget):
             if watched.windowType() in (Qt.Popup, Qt.ToolTip):
                 self._dress_popup(watched)
+            elif (
+                watched.isWindow()
+                and watched.property(ROOT_PROPERTY)
+                # Shown by the application, not restored by the system.
+                and not event.spontaneous()
+            ):
+                _fade_in(watched, WINDOW_FADE_MS)
             elif isinstance(watched, QAbstractItemView):
                 _adopt_proxy_style(watched)
+                _ViewportCorners.round(watched)
+                if isinstance(watched, QHeaderView):
+                    _ResizeMark.watch(watched)
             elif isinstance(watched, QTabBar):
                 _fit_close_buttons(watched)
+            elif isinstance(watched, QDialogButtonBox):
+                _rank_dialog_buttons(watched)
+            elif isinstance(watched, QGraphicsView):
+                _ViewportCorners.round(watched)
+            if not event.spontaneous() and _is_stacked_page(watched):
+                _Reveal.over(watched)
         return False
 
     @staticmethod
@@ -2044,6 +2660,9 @@ class _FocusVisibility(QObject):
         if isinstance(_compat.parent_widget(popup), QComboBox):
             _ComboCard.dress(popup)
         fxutils.round_window_corners(popup)
+        _fade_in(popup)
+        if popup.windowType() == Qt.Popup:
+            _drop_in(popup)
 
     def _visible(self, event) -> bool:
         reason = event.reason()
@@ -2066,6 +2685,31 @@ class _FocusVisibility(QObject):
 
 
 _focus_visibility: Optional[_FocusVisibility] = None
+
+
+def _drop_in(popup: QWidget) -> None:
+    """Drop a popup `POPUP_DROP` px into the place Qt gave it."""
+    if not motion():
+        return
+    end = popup.pos()
+    drop = QPropertyAnimation(popup, b"pos", popup)
+    drop.setDuration(POPUP_FADE_MS)
+    drop.setStartValue(end - QPoint(0, POPUP_DROP))
+    drop.setEndValue(end)
+    drop.setEasingCurve(QEasingCurve.OutCubic)
+    drop.start(QPropertyAnimation.DeleteWhenStopped)
+
+
+def _fade_in(window: QWidget, duration: int = POPUP_FADE_MS) -> None:
+    """Fade a window in from clear; it ends opaque however it ends."""
+    if not motion():
+        return
+    fade = QPropertyAnimation(window, b"windowOpacity", window)
+    fade.setDuration(duration)
+    fade.setStartValue(0.0)
+    fade.setEndValue(1.0)
+    fade.setEasingCurve(QEasingCurve.OutCubic)
+    fade.start(QPropertyAnimation.DeleteWhenStopped)
 
 
 class _ComboCard(QObject):
