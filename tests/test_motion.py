@@ -173,6 +173,38 @@ def test_a_see_through_page_hides_under_its_cover_while_it_rises(qtbot):
     ) <= 2, cover.name()
 
 
+def test_a_page_on_another_ground_is_covered_in_that_ground(qtbot):
+    """A page on a card or a well hides under the card's colour."""
+    from qtpy.QtCore import Qt
+    from qtpy.QtGui import QColor
+    from qtpy.QtWidgets import QStackedWidget, QVBoxLayout
+
+    card = QWidget()
+    card.setObjectName("card")
+    card.setAttribute(Qt.WA_StyledBackground)
+    card.setStyleSheet("QWidget#card { background-color: #204060; }")
+    stack = QStackedWidget()
+    page = QWidget()
+    stack.addWidget(QWidget())
+    stack.addWidget(page)
+    QVBoxLayout(card).addWidget(stack)
+    window = themed_window(qtbot, "dark", card)
+    qtbot.waitUntil(lambda: window.windowOpacity() == 1.0, timeout=2000)
+    stack.setCurrentWidget(page)
+    qtbot.waitUntil(
+        lambda: any(type(c).__name__ == "_Reveal" and 0.2 < c._shown < 0.8
+                    for c in page.children()),
+        timeout=2000,
+    )
+    cover = page.grab().toImage().pixelColor(5, 5)
+    want = QColor("#204060")
+    assert max(
+        abs(cover.red() - want.red()),
+        abs(cover.green() - want.green()),
+        abs(cover.blue() - want.blue()),
+    ) <= 2, cover.name()
+
+
 def test_a_pane_opened_grows_open_to_its_width(qtbot):
     from qtpy.QtWidgets import QLabel, QMainWindow
 
@@ -227,6 +259,75 @@ def test_a_pane_show_dock_opens_grows_open_too(qtbot):
     assert side.dockAreaWidget().width() < full, "the pane popped open"
     qtbot.waitUntil(
         lambda: side.dockAreaWidget().width() == full, timeout=2000)
+
+
+def _settled_sides(qtbot):
+    """A window with a main and a side pane, past its own settling."""
+    from qtpy.QtWidgets import QLabel, QMainWindow
+
+    from fxgui.fxdocking import FXDockArea
+
+    window = QMainWindow()
+    qtbot.addWidget(window)
+    fxstyle.register_themed_root(window)
+    docks = FXDockArea(window)
+    window.setCentralWidget(docks)
+    docks.add_dock("main", "Main", QLabel("main"), "left")
+    docks.add_dock("side", "Side", QLabel("side"), "right")
+    window.resize(800, 400)
+    window.show()
+    qtbot.waitExposed(window)
+    qtbot.wait(700)
+    window.docks_ = docks
+    return window, docks, docks.manager().findDockWidget("side")
+
+
+def test_a_grown_pane_gets_its_floor_back(qtbot):
+    """The grow lets the area shrink to nothing; it must not stay so."""
+    _window, docks, side = _settled_sides(qtbot)
+    floor = side.dockAreaWidget().minimumSize()
+    full = side.dockAreaWidget().width()
+    side.toggleView(False)
+    qtbot.wait(100)
+
+    docks.show_dock("side")
+    qtbot.waitUntil(
+        lambda: side.dockAreaWidget().width() == full, timeout=2000)
+    qtbot.wait(100)
+
+    assert not side.dockAreaWidget().minimumSize().isNull()
+    assert side.dockAreaWidget().minimumSize() == floor
+
+
+def test_a_pane_opened_while_its_window_fades_takes_its_width_at_once(
+        qtbot):
+    """The window's own fade is the motion: a pane does not grow under it."""
+    window, docks, side = _settled_sides(qtbot)
+    full = side.dockAreaWidget().width()
+    side.toggleView(False)
+    qtbot.wait(100)
+    window.setWindowOpacity(0.5)
+
+    docks.show_dock("side")
+    qtbot.wait(60)
+
+    assert side.dockAreaWidget().width() == full
+    window.setWindowOpacity(1.0)
+
+
+def test_a_layout_restored_after_settling_moves_no_pane(qtbot):
+    """A restore shows every pane; none of them is a person picking one."""
+    _window, docks, side = _settled_sides(qtbot)
+    full = side.dockAreaWidget().width()
+    state = docks.save_state()
+    side.toggleView(False)
+    qtbot.wait(100)
+
+    docks.restore_state(state)
+
+    assert not side.widget().findChildren(fxstyle._Reveal), "no fade either"
+    qtbot.wait(60)
+    assert side.dockAreaWidget().width() == full
 
 
 def test_a_pane_the_layout_opens_takes_its_width_at_once(qtbot):

@@ -218,6 +218,23 @@ def test_a_shortcut_focus_shows_the_look(qtbot):
     assert _accent(widget) > _accent(twin)
 
 
+def test_the_button_enter_presses_is_the_primary_one(qtbot):
+    """A dialog that names a safe default fills that one, not the verb."""
+    dialog = QDialog()
+    fxstyle.register_themed_root(dialog)
+    box = QDialogButtonBox()
+    close = box.addButton("Close it", QDialogButtonBox.AcceptRole)
+    keep = box.addButton("Keep it open", QDialogButtonBox.RejectRole)
+    keep.setDefault(True)
+    QVBoxLayout(dialog).addWidget(box)
+    qtbot.addWidget(dialog)
+    dialog.show()
+    qtbot.waitExposed(dialog)
+
+    assert keep.property("fxRole") == "primary"
+    assert close.property("fxRole") is None
+
+
 def test_a_dialog_has_one_primary_button_at_most(qtbot):
     """"Yes" beside "Yes to All": one solid verb, not two."""
     dialog = QDialog()

@@ -1222,6 +1222,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         The tree's own branch area: the row runs under it to the view's
         edge, and the chevron is drawn over it afterwards.
         """
+        # As `paint` does: a row that draws no selection draws none here.
+        if not self.paint_selection:
+            option = QStyleOptionViewItem(option)
+            option.state &= ~QStyle.State_Selected
         self._draw_row_fill(
             painter,
             option.rect,
@@ -1230,7 +1234,6 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             self._custom_background(index),
             index.parent().isValid(),
         )
-
 
     def has_focus_ring(
         self, option: QStyleOptionViewItem, index: QModelIndex

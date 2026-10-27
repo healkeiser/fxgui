@@ -76,6 +76,7 @@ from qtpy.QtWidgets import (
     QHeaderView,
     QMenu,
     QProxyStyle,
+    QPushButton,
     QSplitter,
     QStackedLayout,
     QStyle,
@@ -2514,20 +2515,27 @@ def _adopt_proxy_style(view: QWidget) -> None:
 
 
 def _rank_dialog_buttons(box: QDialogButtonBox) -> None:
-    """Make a dialog's first accepting verb its one primary button.
+    """Make a dialog's one primary button: its named default, else its
+    first accepting verb.
 
-    By role, not Qt's default: Qt makes the last clicked button the default.
-    One only: "Yes" beside "Yes to All" keeps the second plain.
+    Read as the box shows, before a click: Qt then makes the last clicked
+    button the default. One only: "Yes" beside "Yes to All" stays plain.
     """
     accepting = (QDialogButtonBox.AcceptRole, QDialogButtonBox.YesRole)
     buttons = box.buttons()
     if any(button.property("fxRole") is not None for button in buttons):
         return
-    for button in buttons:
-        if box.buttonRole(button) in accepting:
-            button.setProperty("fxRole", "primary")
-            fxutils.repolish(button)
-            return
+    # The button Enter presses is the one that should look pressable.
+    named = [
+        button for button in buttons
+        if isinstance(button, QPushButton) and button.isDefault()
+    ]
+    chosen = named or [
+        button for button in buttons if box.buttonRole(button) in accepting
+    ]
+    if chosen:
+        chosen[0].setProperty("fxRole", "primary")
+        fxutils.repolish(chosen[0])
 
 
 def _fit_close_buttons(bar: QTabBar) -> None:

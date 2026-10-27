@@ -175,6 +175,36 @@ def test_paint_selection_off_leaves_the_fill_and_keeps_the_ring(qtbot):
         "the ring still marks it")
 
 
+def test_paint_selection_off_leaves_the_indentation_plain_too(qtbot):
+    """The strip left of a row follows its cells: no selection fill."""
+    tree = QTreeWidget()
+    qtbot.addWidget(tree)
+    QTreeWidgetItem(tree, ["row"])
+    index = tree.model().index(0, 0)
+
+    def indent(delegate, state):
+        option = QStyleOptionViewItem()
+        option.rect = QRect(0, 0, 40, 30)
+        option.state = QStyle.State_Enabled | state
+        option.widget = None
+        canvas = QPixmap(40, 30)
+        canvas.fill(QColor("#ff00ff"))
+        painter = QPainter(canvas)
+        try:
+            delegate.paint_indent(painter, option, index)
+        finally:
+            painter.end()
+        return canvas.toImage()
+
+    showing = FXThumbnailDelegate()
+    plain = indent(showing, QStyle.State_None)
+    assert indent(showing, QStyle.State_Selected) != plain, "it can show one"
+
+    quiet = FXThumbnailDelegate()
+    quiet.paint_selection = False
+    assert indent(quiet, QStyle.State_Selected) == plain
+
+
 def test_a_table_item_background_shows_in_a_themed_root(qtbot):
     root = QWidget()
     qtbot.addWidget(root)

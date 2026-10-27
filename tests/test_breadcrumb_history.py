@@ -94,6 +94,16 @@ def test_back_and_forward_hand_out_a_copy(qtbot, qapp):
     assert crumb.path() == PATH
 
 
+def test_a_blank_path_is_no_place_to_go_back_to(qtbot, qapp):
+    """A window can name its root before it knows it: [""] is not filed."""
+    crumb = FXBreadcrumb()
+    qtbot.addWidget(crumb)
+    crumb.set_path([""])
+    crumb.set_path(PATH)
+
+    assert not crumb.can_go_back()
+
+
 def test_a_window_echoing_where_back_went_keeps_forward(qtbot, qapp):
     """A window selects what Back named, then shows it: still one step."""
     crumb = _crumb(qtbot)

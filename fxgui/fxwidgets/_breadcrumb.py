@@ -466,7 +466,8 @@ class FXBreadcrumb(QWidget):
         here = 0 <= self._history_index < len(self._history) and (
             self._history[self._history_index] == path
         )
-        if record_history and path and not here:
+        # A path of blanks names no place to come back to.
+        if record_history and any(path) and not here:
             # Truncate forward history when navigating to new path
             if self._history_index < len(self._history) - 1:
                 self._history = self._history[: self._history_index + 1]
