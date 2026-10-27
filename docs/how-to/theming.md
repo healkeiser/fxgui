@@ -36,8 +36,10 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 
 | Role | Purpose |
 |------|---------|
-| `accent_primary` | Selection, keyboard focus, the current menu item, a filled span, the primary action |
+| `accent_primary` | Keyboard focus, the current item, a filled span, the primary action |
 | `accent_secondary` | A primary button's hover fill and a pressed menu item; never a hover fill |
+| `selection` | *(Optional)* A selected row's fill. Omitted, `accent_primary` at 15% over `surface` (`fxstyle.SELECTION_TINT`, mixed in OKLab), so the row keeps the theme's own text |
+| `selection_border` | *(Optional)* The ring around a selected thumbnail row. `accent_primary` if omitted |
 
 ### Surface Colors (Backgrounds)
 
@@ -75,6 +77,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 | `text` | Primary text for all widgets |
 | `text_muted` | Secondary text: placeholders, secondary labels, headers, the tabs that are not current |
 | `text_disabled` | Disabled widget text |
+| `text_strong` | *(Optional)* A row's name. Omitted, `text` moved 60% of the way to black or white (`fxstyle.STRONG_STEP`) |
 | `text_on_accent_primary` | *(Optional)* Text on `accent_primary` backgrounds (e.g., selected items). Auto-computed if omitted |
 | `text_on_accent_secondary` | *(Optional)* Text on `accent_secondary` backgrounds (a hovered primary button). Auto-computed if omitted |
 
@@ -86,8 +89,9 @@ An omitted `text_on_accent_*` is black or white, whichever reads better on the a
 
 | Role | Purpose |
 |------|---------|
-| `state_hover` | Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Pushed to 1.2:1 off `surface`, `surface_sunken` and `well` when a theme sets it closer |
-| `state_pressed` | Pressed and checked fills, an open menu bar item, the current tab's pill. Pushed to 1.2:1 off `state_hover` (`fxstyle.STATE_MIN_CONTRAST`) when a theme sets the two closer |
+| `state_hover` | *(Optional)* Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Omitted, `text` at 5% over `surface`. Pushed to 1.2:1 off `surface`, `surface_sunken` and `well` when closer |
+| `state_pressed` | *(Optional)* Pressed and checked fills, an open menu bar item, the current tab's pill. Omitted, `text` at 10% over `surface`. Pushed to 1.2:1 off `state_hover` (`fxstyle.STATE_MIN_CONTRAST`) when closer |
+| `state_contrast` | *(Optional)* That 1.2:1 floor, for a brand that holds its fills closer, as Lumen's do |
 
 ### Scrollbar Colors
 
@@ -119,7 +123,7 @@ An omitted `text_on_accent_*` is black or white, whichever reads better on the a
 
 ## Feedback Colors Reference
 
-Each theme has a `feedback:` block; a theme without one takes `dark`'s. Used by `FXNotificationBanner`, `FXOutputLogWidget`, and other status widgets. Each colour is a token, `feedback_<level>_<part>`: `fxstyle.colors().feedback_error_foreground`, or `fxstyle.qcolor("feedback_error_foreground")` for a QColor.
+Each theme has a `feedback:` block; a theme without one takes `dark`'s. A level may name only its `foreground`: its `background` is then that colour at 12% over `surface` (`fxstyle.FEEDBACK_TINT`), and the foreground is darkened or lightened until it reads at 4.5:1 on it. A level that names both keeps both. Used by `FXNotificationBanner`, `FXOutputLogWidget`, and other status widgets. Each colour is a token, `feedback_<level>_<part>`: `fxstyle.colors().feedback_error_foreground`, or `fxstyle.qcolor("feedback_error_foreground")` for a QColor.
 
 | Level | Property | Usage |
 |-------|----------|-------|

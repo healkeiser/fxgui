@@ -34,10 +34,13 @@ def _active_matches_normal(icon: QIcon) -> bool:
 def test_get_icon_has_per_state_colors(qapp):
     """A bare get_icon() carries distinct Disabled and Selected pixmaps, so
     item views recolor their icons on a highlight background."""
+    fxstyle.apply_theme("dark")
     icon = fxicons.get_icon("check", width=48, height=48)
     normal = _img(icon, QIcon.Normal)
     assert _img(icon, QIcon.Disabled) != normal
-    assert _img(icon, QIcon.Selected) != normal
+    selected = fxicons.get_icon(
+        "check", width=48, height=48, color="icon_on_selection")
+    assert _img(icon, QIcon.Selected) == _img(selected, QIcon.Normal)
 
 
 def test_an_active_ink_of_the_normal_token_matches_normal(qapp):
@@ -101,9 +104,9 @@ def test_a_hovered_toolbar_action_keeps_its_normal_ink(qtbot, how):
     window.close()
 
 
-def test_a_current_menu_row_draws_its_icon_in_the_on_accent_ink(qtbot):
-    """The pointer's menu row is the accent, so its icon takes the ink made
-    for it; no text, which would wear the same ink."""
+def test_a_current_menu_row_draws_its_icon_in_the_on_selection_ink(qtbot):
+    """The pointer's menu row takes the selection's icon ink; no text,
+    which would wear the same ink."""
     fxstyle.apply_theme("dark")
     menu = QMenu()
     fxstyle.register_themed_root(menu)
@@ -114,7 +117,7 @@ def test_a_current_menu_row_draws_its_icon_in_the_on_accent_ink(qtbot):
     menu.setActiveAction(action)
 
     assert _wears(menu.grab(menu.actionGeometry(action)),
-                  fxstyle.colors().icon_on_accent_primary)
+                  fxstyle.colors().icon_on_selection)
 
 
 @pytest.mark.parametrize("theme", __import__("fxgui.fxstyle").fxstyle

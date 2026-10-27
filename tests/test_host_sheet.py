@@ -316,7 +316,7 @@ def test_selection_and_hover_wear_the_theme_under_a_host_s_sheet(
 
     theme = fxstyle.colors()
     assert fill(items[0]) == "#aa3333", "an unselected cell keeps its own"
-    assert fill(items[1]) == QColor(theme.accent_primary).name()
+    assert fill(items[1]) == QColor(theme.selection).name()
     assert fill(items[2]) == QColor(theme.state_hover).name()
     other = QMainWindow()
     qtbot.addWidget(other)
@@ -324,5 +324,5 @@ def test_selection_and_hover_wear_the_theme_under_a_host_s_sheet(
     other.activateWindow()
     qtbot.waitUntil(lambda: not window.isActiveWindow())
     image = view.viewport().grab().toImage()
-    assert fill(items[1]) == QColor(theme.accent_primary).name(), (
+    assert fill(items[1]) == QColor(theme.selection).name(), (
         "an inactive selection wears the theme too")

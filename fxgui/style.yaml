@@ -93,9 +93,9 @@ fonts:
 # Accent Colors:
 #   accent_primary    - Selection (unless `selection` is set), keyboard focus, the current item, the primary action
 #   accent_secondary  - A primary button's hover fill and a pressed menu item
-#   selection         - (Optional) Fill of a selected row, list item or menu item, accent_primary if omitted;
-#                       its text and icon inks are the theme's own, made to read on it
-#   selection_border  - (Optional) Ring a thumbnail delegate draws around a selected row, `selection` if omitted
+#   selection         - (Optional) Fill of a selected row, list item or menu item; accent_primary at 15% over
+#                       surface if omitted; its text and icon inks are the theme's own, made to read on it
+#   selection_border  - (Optional) Ring a thumbnail delegate draws around a selected row, accent_primary if omitted
 #
 # Surface Colors (Backgrounds):
 #   surface           - Main widget/window backgrounds
@@ -116,12 +116,21 @@ fonts:
 #   text              - Primary text; darkened or lightened to 4.5:1 on every surface and state fill
 #   text_muted        - Secondary text and inactive tabs; held to 4.5:1 as text is, except on state_pressed
 #   text_disabled     - Disabled widget text
+#   text_strong       - (Optional) A row's name; text stepped 60% toward black or white if omitted
 #   text_on_accent_primary   - (Optional) Text on accent_primary backgrounds, auto-computed if omitted
 #   text_on_accent_secondary - (Optional) Text on accent_secondary backgrounds, auto-computed if omitted
 #
 # Interactive State Colors:
-#   state_hover       - Hover fill of rows, buttons, tool buttons and tabs; held to 1.2:1 on surface, surface_sunken and well
-#   state_pressed     - Pressed and checked fills; pushed to 1.2:1 from state_hover
+#   state_hover       - (Optional) Hover fill of rows, buttons, tool buttons and tabs; text at 5% over surface if
+#                       omitted; held to 1.2:1 on surface, surface_sunken and well
+#   state_pressed     - (Optional) Pressed and checked fills; text at 10% over surface if omitted; pushed to
+#                       1.2:1 from state_hover
+#   state_contrast    - (Optional) The 1.2:1 floor above, lowered by a brand that holds its states closer
+#
+# Feedback Colors (feedback: <level>: foreground, background), level debug, info, success, warning, error:
+#   foreground        - The level's colour: a notice's icon and text
+#   background        - (Optional) A notice's fill; the foreground at 12% over surface if omitted, and the
+#                       foreground is then stepped until it reads at 4.5:1 on it
 #
 # Shadow:
 #   shadow            - Colour of a floating card's drop shadow, #AARRGGBB
@@ -153,7 +162,7 @@ themes:
     surface: "#302f2f"
     surface_alt: "#2d2c2c"
     surface_sunken: "#202020"
-    tooltip: "#202020"
+    tooltip: "#3a3939"
 
     # Border colors
     border: "#3a3939"
@@ -169,9 +178,6 @@ themes:
     text_on_accent_primary: "#ffffff"
     text_on_accent_secondary: "#ffffff"
 
-    # Interactive states
-    state_hover: "#403f3f"
-    state_pressed: "#4a4949"
 
     # Scrollbar
     scrollbar_track: "#2a2929"
@@ -196,19 +202,14 @@ themes:
     feedback:
       debug:
         foreground: "#26C6DA"
-        background: "#006064"
       info:
         foreground: "#7661f6"
-        background: "#372d75"
       success:
         foreground: "#8ac549"
-        background: "#466425"
       warning:
         foreground: "#ffbb33"
-        background: "#7b5918"
       error:
         foreground: "#ff4444"
-        background: "#7b2323"
 
   # ===========================================================================
   # LIGHT THEME
@@ -221,7 +222,7 @@ themes:
     surface: "#f0f0f0"
     surface_alt: "#fafafa"
     surface_sunken: "#ffffff"
-    tooltip: "#ffffe1"
+    tooltip: "#e4e4e4"
 
     # Border colors
     border: "#e0e0e0"
@@ -235,9 +236,6 @@ themes:
     text_on_accent_primary: "#ffffff"
     text_on_accent_secondary: "#ffffff"
 
-    # Interactive states
-    state_hover: "#d8d8d8"
-    state_pressed: "#bdbdbd"
 
     # Scrollbar
     scrollbar_track: "#f5f5f5"
@@ -261,19 +259,14 @@ themes:
     feedback:
       debug:
         foreground: "#00838F"
-        background: "#80DEEA"
       info:
         foreground: "#5E35B1"
-        background: "#B39DDB"
       success:
         foreground: "#2E7D32"
-        background: "#A5D6A7"
       warning:
         foreground: "#E65100"
-        background: "#FFCC80"
       error:
         foreground: "#C62828"
-        background: "#EF9A9A"
 
   # ===========================================================================
   # DRACULA THEME - Inherits from dark, overrides accent and surface colors
@@ -304,9 +297,6 @@ themes:
     text_on_accent_primary: "#282a36"
     text_on_accent_secondary: "#282a36"
 
-    # Override interactive states
-    state_hover: "#44475a"
-    state_pressed: "#6272a4"
 
     # Override scrollbar
     scrollbar_track: "#21222c"
@@ -321,6 +311,19 @@ themes:
     icon: "#f8f8f2"
     icon_on_accent_primary: "#282a36"
     icon_on_accent_secondary: "#282a36"
+
+    # Notices in the palette's own colours; each fill derives from them.
+    feedback:
+      debug:
+        foreground: "#6272a4"
+      info:
+        foreground: "#8be9fd"
+      success:
+        foreground: "#50fa7b"
+      warning:
+        foreground: "#f1fa8c"
+      error:
+        foreground: "#ff5555"
 
   # ===========================================================================
   # ONE DARK PRO THEME - Inherits from dark
@@ -351,9 +354,6 @@ themes:
     text_on_accent_primary: "#282c34"
     text_on_accent_secondary: "#282c34"
 
-    # Override interactive states
-    state_hover: "#3a3f4b"
-    state_pressed: "#4b5263"
 
     # Override scrollbar
     scrollbar_track: "#21252b"
@@ -368,6 +368,19 @@ themes:
     icon: "#abb2bf"
     icon_on_accent_primary: "#282c34"
     icon_on_accent_secondary: "#282c34"
+
+    # Notices in the palette's own colours; each fill derives from them.
+    feedback:
+      debug:
+        foreground: "#7f848e"
+      info:
+        foreground: "#61afef"
+      success:
+        foreground: "#98c379"
+      warning:
+        foreground: "#e5c07b"
+      error:
+        foreground: "#e06c75"
 
   # ===========================================================================
   # GITHUB DARK THEME - GitHub's official dark theme
@@ -398,9 +411,6 @@ themes:
     text_on_accent_primary: "#0d1117"
     text_on_accent_secondary: "#0d1117"
 
-    # Override interactive states
-    state_hover: "#1f242a"
-    state_pressed: "#30363d"
 
     # Override scrollbar
     scrollbar_track: "#161b22"
@@ -415,6 +425,19 @@ themes:
     icon: "#8b949e"
     icon_on_accent_primary: "#0d1117"
     icon_on_accent_secondary: "#0d1117"
+
+    # Notices in the palette's own colours; each fill derives from them.
+    feedback:
+      debug:
+        foreground: "#8b949e"
+      info:
+        foreground: "#58a6ff"
+      success:
+        foreground: "#3fb950"
+      warning:
+        foreground: "#d29922"
+      error:
+        foreground: "#f85149"
 
   # ===========================================================================
   # GITHUB LIGHT THEME - GitHub's official light theme
@@ -445,9 +468,6 @@ themes:
     text_on_accent_primary: "#ffffff"
     text_on_accent_secondary: "#ffffff"
 
-    # Override interactive states
-    state_hover: "#f3f4f6"
-    state_pressed: "#eaeef2"
 
     # Override scrollbar
     scrollbar_track: "#f6f8fa"
@@ -462,6 +482,19 @@ themes:
     icon: "#656d76"
     icon_on_accent_primary: "#ffffff"
     icon_on_accent_secondary: "#ffffff"
+
+    # Notices in the palette's own colours; each fill derives from them.
+    feedback:
+      debug:
+        foreground: "#59636e"
+      info:
+        foreground: "#0969da"
+      success:
+        foreground: "#1a7f37"
+      warning:
+        foreground: "#9a6700"
+      error:
+        foreground: "#cf222e"
 
   # ===========================================================================
   # CATPPUCCIN MOCHA THEME - Soothing pastel dark theme
@@ -492,9 +525,6 @@ themes:
     text_on_accent_primary: "#1e1e2e"
     text_on_accent_secondary: "#1e1e2e"
 
-    # Override interactive states
-    state_hover: "#313244"
-    state_pressed: "#45475a"
 
     # Override scrollbar
     scrollbar_track: "#181825"
@@ -509,6 +539,19 @@ themes:
     icon: "#cdd6f4"
     icon_on_accent_primary: "#1e1e2e"
     icon_on_accent_secondary: "#1e1e2e"
+
+    # Notices in the palette's own colours; each fill derives from them.
+    feedback:
+      debug:
+        foreground: "#9399b2"
+      info:
+        foreground: "#89b4fa"
+      success:
+        foreground: "#a6e3a1"
+      warning:
+        foreground: "#f9e2af"
+      error:
+        foreground: "#f38ba8"
 
   # ===========================================================================
   # CATPPUCCIN LATTE THEME - Soothing pastel light theme
@@ -539,9 +582,6 @@ themes:
     text_on_accent_primary: "#eff1f5"
     text_on_accent_secondary: "#eff1f5"
 
-    # Override interactive states
-    state_hover: "#e6e9ef"
-    state_pressed: "#ccd0da"
 
     # Override scrollbar
     scrollbar_track: "#e6e9ef"
@@ -556,6 +596,19 @@ themes:
     icon: "#4c4f69"
     icon_on_accent_primary: "#eff1f5"
     icon_on_accent_secondary: "#eff1f5"
+
+    # Notices in the palette's own colours; each fill derives from them.
+    feedback:
+      debug:
+        foreground: "#7c7f93"
+      info:
+        foreground: "#1e66f5"
+      success:
+        foreground: "#40a02b"
+      warning:
+        foreground: "#df8e1d"
+      error:
+        foreground: "#d20f39"
 
   # ===========================================================================
   # NORD THEME - Arctic, north-bluish color palette
@@ -586,9 +639,6 @@ themes:
     text_on_accent_primary: "#2e3440"
     text_on_accent_secondary: "#2e3440"
 
-    # Override interactive states
-    state_hover: "#3b4252"
-    state_pressed: "#434c5e"
 
     # Override scrollbar
     scrollbar_track: "#3b4252"
@@ -603,6 +653,19 @@ themes:
     icon: "#d8dee9"
     icon_on_accent_primary: "#2e3440"
     icon_on_accent_secondary: "#2e3440"
+
+    # Notices in the palette's own colours; each fill derives from them.
+    feedback:
+      debug:
+        foreground: "#616e88"
+      info:
+        foreground: "#81a1c1"
+      success:
+        foreground: "#a3be8c"
+      warning:
+        foreground: "#ebcb8b"
+      error:
+        foreground: "#bf616a"
 
   # ===========================================================================
   # MATERIAL DARK THEME - Google Material Design dark
@@ -633,9 +696,6 @@ themes:
     text_on_accent_primary: "#212121"
     text_on_accent_secondary: "#212121"
 
-    # Override interactive states
-    state_hover: "#2d2d2d"
-    state_pressed: "#424242"
 
     # Override scrollbar
     scrollbar_track: "#1a1a1a"
@@ -650,6 +710,19 @@ themes:
     icon: "#b0bec5"
     icon_on_accent_primary: "#212121"
     icon_on_accent_secondary: "#212121"
+
+    # Notices in the palette's own colours; each fill derives from them.
+    feedback:
+      debug:
+        foreground: "#b0bec5"
+      info:
+        foreground: "#82aaff"
+      success:
+        foreground: "#c3e88d"
+      warning:
+        foreground: "#ffcb6b"
+      error:
+        foreground: "#f07178"
 
   # ===========================================================================
   # SOLARIZED LIGHT THEME - Precision colors for readability
@@ -680,9 +753,6 @@ themes:
     text_on_accent_primary: "#fdf6e3"
     text_on_accent_secondary: "#fdf6e3"
 
-    # Override interactive states
-    state_hover: "#eee8d5"
-    state_pressed: "#ddd6c1"
 
     # Override scrollbar
     scrollbar_track: "#eee8d5"
@@ -697,3 +767,16 @@ themes:
     icon: "#657b83"
     icon_on_accent_primary: "#fdf6e3"
     icon_on_accent_secondary: "#fdf6e3"
+
+    # Notices in the palette's own colours; each fill derives from them.
+    feedback:
+      debug:
+        foreground: "#586e75"
+      info:
+        foreground: "#268bd2"
+      success:
+        foreground: "#859900"
+      warning:
+        foreground: "#b58900"
+      error:
+        foreground: "#dc322f"

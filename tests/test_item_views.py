@@ -280,12 +280,12 @@ def test_a_hovered_row_keeps_its_text_ink():
     )
 
 
-def test_a_selected_row_keeps_the_accent_in_a_view_without_focus(qtbot):
+def test_a_selected_row_keeps_its_fill_in_a_view_without_focus(qtbot):
     canvas, tree = _paint_row(qtbot, QStyle.State_Selected, text="")
     assert not tree.hasFocus()
     assert (
         canvas.pixelColor(110, 14).name()
-        == QColor(fxstyle.colors().accent_primary).name()
+        == QColor(fxstyle.colors().selection).name()
     )
 
 

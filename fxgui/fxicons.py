@@ -723,8 +723,8 @@ def get_icon(
         extension: The extension of the icon. Defaults to `None`.
         inks: Inks for the other modes, keyed "active", "selected" or
             "disabled", each a token or a colour. Unset, Active takes the
-            normal ink (icon_on_accent_primary on a menu's current row),
-            Selected icon_on_accent_primary and Disabled text_disabled.
+            normal ink (icon_on_selection on a menu's current row),
+            Selected icon_on_selection and Disabled text_disabled.
         fallback: What to answer with when `icon_name` is in no library
             this asked. A name is resolved in the DEFAULT library rather
             than in `library`, which is the point: a curated set is

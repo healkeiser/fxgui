@@ -66,7 +66,7 @@ def test_a_graphics_text_item_selects_in_the_theme_accent(qtbot, themed_app,
     assert _theme_highlight()[0] in drawn
 
 
-def test_the_selection_fill_is_the_accent_unless_a_theme_names_one(
+def test_the_selection_fill_is_the_accent_over_the_pane_unless_named(
         qapp, monkeypatch):
     colors = fxstyle.get_colors()
     themes = dict(colors["themes"])
@@ -74,10 +74,10 @@ def test_the_selection_fill_is_the_accent_unless_a_theme_names_one(
                       "selection_border": "#ff4200"}
     monkeypatch.setattr(fxstyle, "_colors", {**colors, "themes": themes})
     dark, soft = fxstyle._colour_tokens("dark"), fxstyle._colour_tokens("soft")
-    assert dark["selection"] == dark["accent_primary"]
-    assert dark["text_on_selection"] == dark["text_on_accent_primary"]
+    assert dark["selection"] == fxstyle.mix_oklab(
+        dark["surface"], dark["accent_primary"], fxstyle.SELECTION_TINT)
     assert soft["selection"] == "#2a1a12"
-    assert dark["selection_border"] == dark["selection"]
+    assert dark["selection_border"] == dark["accent_primary"]
     assert soft["selection_border"] == "#ff4200"
     for ink in ("text_on_selection", "icon_on_selection"):
         assert fxstyle.get_contrast_ratio(soft[ink], "#2a1a12") >= 4.5, ink

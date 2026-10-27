@@ -33,7 +33,7 @@ def test_a_root_wears_the_theme_palette(qtbot, theme):
 
     colors = fxstyle.colors()
     palette = root.palette()
-    assert palette.color(QPalette.Highlight).name() == _name(colors.accent_primary)
+    assert palette.color(QPalette.Highlight).name() == _name(colors.selection)
     assert palette.color(QPalette.Base).name() == _name(colors.surface_sunken)
     assert palette.color(QPalette.Text).name() == _name(colors.text)
     assert palette.color(QPalette.Disabled, QPalette.Text).name() == (

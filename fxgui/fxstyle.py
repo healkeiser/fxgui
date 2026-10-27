@@ -308,6 +308,16 @@ TEXT_CONTRAST = 4.5
 # Least contrast between text and muted text, so the two read as two ranks.
 MUTED_STEP = 1.5
 
+# Lumen's tints, in OKLab, for the keys a theme leaves out: a selected row is
+# the accent over the pane, a notice its own colour; hover starts from text
+# over the pane and is held to `STATE_MIN_CONTRAST`.
+SELECTION_TINT = 0.15
+FEEDBACK_TINT = 0.12
+HOVER_TINT = 0.05
+PRESSED_TINT = 0.10
+# How far a row's name stands past `text`, toward black or white.
+STRONG_STEP = 0.6
+
 # A spin box's height with no vertical padding, over its line of text (Qt
 # holds that line to 14 px at least): PySide6 6.5 sizes one 3 px shorter.
 # ponytail: measured on 6.5.3, 6.11.1 and 6.12.0 only; move the bound if a
@@ -1215,11 +1225,14 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
     # A theme may hold its states closer, as a brand's own fills do.
     floor = float(theme_data.get("state_contrast", STATE_MIN_CONTRAST))
     hover = step_toward(
-        theme_data.get("state_hover", surface), pole,
+        theme_data.get("state_hover")
+        or mix_oklab(surface, theme_data["text"], HOVER_TINT), pole,
         lambda color: all(
             _reads(ground, floor)(color) for ground in rows_on))
     pressed = step_toward(
-        theme_data.get("state_pressed", hover), pole, _reads(hover, floor))
+        theme_data.get("state_pressed")
+        or mix_oklab(surface, theme_data["text"], PRESSED_TINT),
+        pole, _reads(hover, floor))
     grounds = [
         theme_data.get(key, surface)
         for key in ("surface", "surface_sunken", "surface_alt", "well",
@@ -1246,8 +1259,9 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
         "state_pressed": pressed,
         "text": text,
         "text_muted": muted,
-        # What a row's name is drawn in: brighter than text, if stated.
-        "text_strong": theme_data.get("text_strong", text),
+        # What a row's name is drawn in: past text, toward black or white.
+        "text_strong": theme_data.get("text_strong")
+        or mix_oklab(text, pole, STRONG_STEP),
     }
 
 
@@ -1308,8 +1322,18 @@ def _token_map(theme_name: str) -> Dict[str, str]:
 
     # Feedback colors flatten to @feedback_<level>_<part>, plus
     # @feedback_<level>_ink, a text colour that reads on the background.
+    # A level that names no background gets its colour over the pane, and
+    # that colour stepped until it reads as text on it.
     for level, pair in theme_data.get("feedback", {}).items():
         if isinstance(pair, dict):
+            pair = dict(pair)
+            if "background" not in pair and "foreground" in pair:
+                ground = mix_oklab(
+                    theme_data["surface"], pair["foreground"], FEEDBACK_TINT)
+                pair["background"] = ground
+                pair["foreground"] = step_toward(
+                    QColor(pair["foreground"]).name(), _pole_from(ground),
+                    _reads(ground, TEXT_CONTRAST))
             for part, value in pair.items():
                 tokens[f"@feedback_{level}_{part}"] = value
             if "background" in pair:
@@ -1335,9 +1359,11 @@ def _token_map(theme_name: str) -> Dict[str, str]:
 
     # A selected item's fill is the accent unless the theme names a softer
     # one, whose inks are the theme's own text and icon made to read on it.
-    selection = theme_data.get("selection") or accent_primary
+    selection = theme_data.get("selection") or mix_oklab(
+        theme_data["surface"], accent_primary, SELECTION_TINT)
     tokens["@selection"] = selection
-    tokens["@selection_border"] = theme_data.get("selection_border") or selection
+    tokens["@selection_border"] = (
+        theme_data.get("selection_border") or accent_primary)
     if selection == accent_primary:
         tokens["@text_on_selection"] = text_on_primary
         tokens["@icon_on_selection"] = tokens["@icon_on_accent_primary"]

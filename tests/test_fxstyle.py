@@ -91,7 +91,9 @@ def test_a_partial_or_unknown_theme_fills_from_dark(qapp, monkeypatch):
     monkeypatch.setattr(fxstyle, "_colors", {**colors, "themes": themes})
     tokens = fxstyle._token_map("_partial")
     assert tokens["@surface"] == "#123456"
-    assert tokens["@text"] == fxstyle._token_map("dark")["@text"]
+    # Dark's text, then held to read on this theme's own surface.
+    assert fxstyle._theme_data("_partial")["text"] == (
+        fxstyle._theme_data("dark")["text"])
 
 
 def test_a_colour_file_without_dark_fills_from_the_default(qapp, tmp_path):
