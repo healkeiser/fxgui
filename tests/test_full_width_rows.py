@@ -7,7 +7,7 @@ from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 
 # Internal
-from fxgui import fxstyle
+from fxgui import _compat, fxstyle
 from fxgui.fxwidgets import FXThumbnailDelegate
 from fxgui.fxwidgets._delegates import _hover_on
 
@@ -108,6 +108,11 @@ def test_a_hairline_runs_under_every_row(qtbot, theme):
         assert _at(image, view, top) in (_WELL, rule.name())
 
 
+@pytest.mark.skipif(
+    _compat.QT_VERSION < (6, 6),
+    reason="Qt 6.5's stylesheet style paints a tree's indentation itself: "
+    "no style hook reaches it, and a delegate would paint over the arrows",
+)
 @pytest.mark.parametrize("theme", ["dark", "light"])
 def test_a_nested_row_runs_under_its_indentation(qtbot, theme):
     window, view, rows = _well_view(qtbot, theme, band=False, nested=True)

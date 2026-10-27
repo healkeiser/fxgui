@@ -208,6 +208,7 @@ def test_a_page_on_another_ground_is_covered_in_that_ground(qtbot):
 def test_a_pane_opened_grows_open_to_its_width(qtbot):
     from qtpy.QtWidgets import QLabel, QMainWindow
 
+    pytest.importorskip("PySide6QtAds")
     from fxgui.fxdocking import FXDockArea
 
     window = QMainWindow()
@@ -236,6 +237,7 @@ def test_a_pane_opened_grows_open_to_its_width(qtbot):
 def test_a_pane_show_dock_opens_grows_open_too(qtbot):
     from qtpy.QtWidgets import QLabel, QMainWindow
 
+    pytest.importorskip("PySide6QtAds")
     from fxgui.fxdocking import FXDockArea
 
     window = QMainWindow()
@@ -265,6 +267,7 @@ def _settled_sides(qtbot):
     """A window with a main and a side pane, past its own settling."""
     from qtpy.QtWidgets import QLabel, QMainWindow
 
+    pytest.importorskip("PySide6QtAds")
     from fxgui.fxdocking import FXDockArea
 
     window = QMainWindow()
@@ -334,6 +337,7 @@ def test_a_pane_the_layout_opens_takes_its_width_at_once(qtbot):
     """A window building or restoring its panes grows none of them."""
     from qtpy.QtWidgets import QLabel, QMainWindow
 
+    pytest.importorskip("PySide6QtAds")
     from fxgui.fxdocking import FXDockArea
 
     window = QMainWindow()

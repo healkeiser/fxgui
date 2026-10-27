@@ -308,17 +308,22 @@ TEXT_CONTRAST = 4.5
 # Least contrast between text and muted text, so the two read as two ranks.
 MUTED_STEP = 1.5
 
-# A spin box's padding that makes it a line edit's height: PySide6 6.5 sizes
-# one 3 px shorter than later Qt for the same padding.
-# ponytail: measured on 6.5.3 and 6.11.2 only; move the bound if a version
-# between them measures otherwise.
-_SPIN_PADDING = (
-    "4px 8px" if _compat.QT_VERSION < (6, 6) else "3px 8px 2px 8px"
-)
+# A spin box's height with no vertical padding, over its line of text (Qt
+# holds that line to 14 px at least): PySide6 6.5 sizes one 3 px shorter.
+# ponytail: measured on 6.5.3, 6.11.1 and 6.12.0 only; move the bound if a
+# version between them measures otherwise.
+_SPIN_BASE = 4 if _compat.QT_VERSION < (6, 6) else 7
+_SPIN_LINE_FLOOR = 14
+# A field's padding and border, top and bottom together, in style.qss; a
+# push button's: 6 px of padding and a 1 px border each side.
+_FIELD_BOX = 10
+_BUTTON_BOX = 14
+# A menu or popup row's icon, which its line never falls below.
+_ROW_ICON = 16
 
 # A highlighted list row's text step to its resting place: from Qt 6.6 the
 # native resting row sits 1 px further right; trees do not move.
-# ponytail: measured on 6.5.3 and 6.11.1 only, as `_SPIN_PADDING`.
+# ponytail: measured on 6.5.3 and 6.11.1 only, as `_SPIN_BASE`.
 _LIST_TEXT_STEP = "0px" if _compat.QT_VERSION < (6, 6) else "1px"
 
 # The body text size, in pixels, of every themed root.
@@ -930,8 +935,10 @@ def _primary_button_fills(
 
 def control_height(widget: QWidget) -> int:
     """Return the height a push button comes to in `widget`'s font."""
-    # QPushButton in style.qss: 6 px of padding and a 1 px border each side.
-    return widget.fontMetrics().height() + 14
+    # A line measured as a push button measures its text: rounded up from
+    # the font's real line, where `height()` rounds it to nearest.
+    line = widget.fontMetrics().size(Qt.TextShowMnemonic, "Ag").height()
+    return line + _BUTTON_BOX
 
 
 def _to_oklab(color: QColor) -> Tuple[float, float, float]:
@@ -1249,6 +1256,32 @@ def _is_light(surface: str) -> bool:
     return QColor(surface).lightness() > 128
 
 
+def _line_tokens(theme_name: str) -> Dict[str, str]:
+    """Return the sizes that line controls and rows up in the theme's font.
+
+    Each control rounds its own line, so no padding alone lines them up for
+    every font: a line edit, a combo box and a spin box come to a push
+    button's height, and a menu row to a list popup's.
+    """
+    if QGuiApplication.instance() is None:
+        # No font to measure yet: a root registers later, and rebuilds.
+        line = text_line = FONT_SIZE + 3
+    else:
+        metrics = QFontMetrics(font(theme_name))
+        line = metrics.height()
+        text_line = metrics.size(Qt.TextShowMnemonic, "Ag").height()
+    height = text_line + _BUTTON_BOX
+    spare = height - max(line, _SPIN_LINE_FLOOR) - _SPIN_BASE
+    top, bottom = (spare + 1) // 2, spare // 2
+    return {
+        "@field_inner": f"{height - _FIELD_BOX}px",
+        "@spin_padding": f"{top}px 8px {bottom}px 8px",
+        # A popup row's line as a list measures it; with an icon, its size.
+        "@text_line": f"{text_line}px",
+        "@row_line": f"{max(text_line, _ROW_ICON)}px",
+    }
+
+
 def _token_map(theme_name: str) -> Dict[str, str]:
     """Build the ``@token`` -> value map for a theme.
 
@@ -1356,7 +1389,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     tokens["@pane_gap_half"] = f"{PANE_GAP // 2}px"
     tokens["@pane_gap"] = f"{PANE_GAP}px"
     tokens["@tab_padding"] = f"{TAB_PADDING}px"
-    tokens["@spin_padding"] = _SPIN_PADDING
+    tokens.update(_line_tokens(theme_name))
     tokens["@list_text_step"] = _LIST_TEXT_STEP
 
     # url(~icons/...) in QSS: the folder of the theme being resolved, which
@@ -2186,6 +2219,10 @@ _KEYBOARD_REASONS = (
 
 def _is_stacked_page(widget: QWidget) -> bool:
     """Whether `widget` is a page a stacked layout brings to the front."""
+    # PySide6 6.5 keeps a stale wrapper for a C++-made widget's parent, and
+    # hands it back for a later widget at that address: pages are Python's.
+    if _compat.created_by_python and not _compat.created_by_python(widget):
+        return False
     parent = _compat.parent_widget(widget)
     return (
         parent is not None
@@ -2568,7 +2605,6 @@ _FOCUS_EVENTS = frozenset((
     QEvent.Polish,
     QEvent.Show,
 ))
-
 
 class _FocusVisibility(QObject):
     """Mark a themed widget's focus visible when it came by keyboard.

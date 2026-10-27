@@ -255,14 +255,16 @@ QMenu::icon:checked
     border-radius: @small_radius;
 }
 
-/* A 28 px row at the 12 px body font. The pointer's item is a neutral
-   fill, as a hovered row's: the accent is kept for what is chosen. */
+/* Its line as a list popup's row measures it, so the two stand alike. The
+   pointer's item is a neutral fill, as a hovered row's: the accent is kept
+   for what is chosen. */
 QMenu::item
 {
     background-color: transparent;
     border: none;
     border-radius: @button_radius;
     padding: 8px 24px;
+    min-height: @text_line;
 }
 
 QMenu::item:selected
@@ -351,6 +353,18 @@ QLineEdit
     border: 1px solid @border_light;
     border-radius: @button_radius;
     color: @text;
+    /* A push button's height in the theme's font, worked out by fxstyle. */
+    min-height: @field_inner;
+    max-height: @field_inner;
+}
+
+/* A box's own field, or a cell's editor, takes the room it is given. */
+QComboBox QLineEdit,
+QAbstractSpinBox QLineEdit,
+QAbstractItemView QLineEdit
+{
+    min-height: 0px;
+    max-height: 16777215px;
 }
 
 /* A search bar is Lumen's ghost field: no edge, filled while hovered or
@@ -621,6 +635,8 @@ QComboBox
     border-radius: @button_radius;
     padding: 4px 6px;
     min-width: 75px;
+    min-height: @field_inner;
+    max-height: @field_inner;
     /* A list popup: the menu-style one ticks and indents the current row. */
     combobox-popup: 0;
 }
@@ -766,7 +782,7 @@ QPushButton[fxRole="primary"]:disabled
 }
 
 QAbstractSpinBox {
-    /* A line edit's height; fxstyle picks the padding per Qt version. */
+    /* A push button's height: fxstyle works the padding out per font and Qt. */
     padding: @spin_padding;
     border: 1px solid @border_light;
     background-color: transparent;
@@ -852,6 +868,9 @@ ads--CDockWidgetTab[activeTab="true"]
     /* One gap above, below and between pills: twice the side margin. */
     margin: @pane_gap @pane_gap_half;
     padding: 3px @tab_padding;
+    /* A dock tab's title is a label, which rounds its line up: so does a
+       tab bar's, or the two stand a pixel apart on some fonts. */
+    min-height: @text_line;
 }
 
 /* The first pill stands as far off the strip's start as off its top. */
@@ -1101,7 +1120,7 @@ QComboBox QAbstractItemView::item,
 QAbstractItemView[fxPopup="true"]::item {
     padding: 8px 0px;
     min-height: 0px;
-    max-height: 16px;
+    max-height: @row_line;
 }
 
 /* A combo box's rows draw no native border for a host's margin to undo. */

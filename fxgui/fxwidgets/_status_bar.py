@@ -511,7 +511,28 @@ class FXStatusBar(QStatusBar):
     def showEvent(self, event) -> None:
         """Run the busy line again, if it ran when the bar hid."""
         super().showEvent(event)
+        self._hold_message_room()
         self._run_busy_line()
+
+    def changeEvent(self, event) -> None:
+        """Measure the message's room again under a new font or sheet."""
+        super().changeEvent(event)
+        if event.type() in (QEvent.FontChange, QEvent.StyleChange):
+            self._hold_message_room()
+
+    def _hold_message_room(self) -> None:
+        """Keep a message's line in the bar while none shows.
+
+        Rich text rounds its line up where plain text rounds it to nearest,
+        so the first message would otherwise make the bar a pixel taller.
+        """
+        # A sheet can reach the bar while `__init__` still builds it.
+        label = getattr(self, "message_label", None)
+        row = getattr(self, "_left", None)
+        if label is None or row is None:
+            return
+        label.ensurePolished()
+        row.setMinimumHeight(label.sizeHint().height())
 
     def hideEvent(self, event) -> None:
         """Stop the busy line's timer while nobody can see it."""

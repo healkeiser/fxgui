@@ -39,6 +39,8 @@ def _top_row(bar):
 def test_busy_paints_a_line_across_the_top_and_moves_nothing(qtbot):
     window = _window(qtbot)
     bar = window.statusBar()
+    # The window's first pass can come before its labels take their font.
+    qtbot.waitUntil(lambda: bar.height() == bar.sizeHint().height())
     resting = _top_row(bar)
     was = (window.centralWidget().geometry(), bar.geometry())
 
