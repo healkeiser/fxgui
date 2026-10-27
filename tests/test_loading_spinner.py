@@ -65,6 +65,29 @@ def test_set_visible_covers_the_parent_and_spins(qtbot):
     assert not overlay._spinner.is_spinning()
 
 
+def test_an_overlay_keeps_its_python_side_while_qt_keeps_it(qtbot):
+    """An overlay on a viewport Qt made is held until Qt destroys it."""
+    from qtpy.QtWidgets import QTreeWidget
+
+    from fxgui import _compat
+
+    tree = QTreeWidget()
+    qtbot.addWidget(tree)
+    overlay = FXLoadingOverlay(tree.viewport(), "Loading")
+
+    assert any(held is overlay for held in _compat._held.values())
+
+
+def test_a_parentless_overlay_is_not_held(qtbot):
+    """Nothing would ever let go of a parentless overlay, so none is held."""
+    from fxgui import _compat
+
+    overlay = FXLoadingOverlay()
+    qtbot.addWidget(overlay)
+
+    assert not any(held is overlay for held in _compat._held.values())
+
+
 def test_the_overlay_carries_no_dead_sheet(qtbot):
     parent = QWidget()
     qtbot.addWidget(parent)

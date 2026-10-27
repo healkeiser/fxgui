@@ -9,7 +9,7 @@ from qtpy.QtGui import QColor, QPainter, QPen
 from qtpy.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 # Internal
-from fxgui import fxstyle
+from fxgui import _compat, fxstyle
 
 
 fxstyle.register_widget_style(
@@ -161,6 +161,8 @@ class FXLoadingOverlay(QWidget):
         self.setAttribute(Qt.WA_TransparentForMouseEvents, not block_input)
         if parent is not None:
             parent.installEventFilter(self)
+            # A view's viewport is made by Qt, which keeps it past Python.
+            _compat.hold(self)
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignCenter)
