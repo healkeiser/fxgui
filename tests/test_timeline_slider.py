@@ -221,6 +221,9 @@ def test_a_lost_release_ends_the_sweep_and_requests_nothing(qtbot, qapp):
         _mouse(QEvent.MouseButtonPress, track, 60, Qt.LeftButton,
                Qt.ShiftModifier)
     )
+    track.mouseMoveEvent(
+        _mouse(QEvent.MouseMove, track, 70, Qt.LeftButton, Qt.ShiftModifier)
+    )
 
     # The release went to another window: hover arrives with no button.
     track.mouseMoveEvent(
@@ -230,6 +233,68 @@ def test_a_lost_release_ends_the_sweep_and_requests_nothing(qtbot, qapp):
     assert asked == []
     assert _loop(timeline) == (10, 30)
     assert timeline.current_frame() == 50, "hover does not scrub"
+
+
+def test_a_press_after_a_lost_release_scrubs(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, show_loop_controls=True
+    )
+    asked = []
+    timeline.loop_region_requested.connect(lambda a, b: asked.append((a, b)))
+    track = timeline._track_widget
+    held, shift = Qt.LeftButton, Qt.ShiftModifier
+    track.mousePressEvent(
+        _mouse(QEvent.MouseButtonPress, track, 20, held, shift)
+    )
+    track.mouseMoveEvent(_mouse(QEvent.MouseMove, track, 70, held, shift))
+
+    # The release was lost and no move came: the next press is a plain one.
+    _sweep(track, 40, 45, Qt.NoModifier)
+
+    assert asked == []
+    assert _loop(timeline) is None
+    assert timeline.current_frame() == 45
+
+
+def test_a_shift_release_far_from_its_press_requests_the_loop(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, show_loop_controls=True
+    )
+    asked = []
+    timeline.loop_region_requested.connect(lambda a, b: asked.append((a, b)))
+    track = timeline._track_widget
+    shift = Qt.ShiftModifier
+    track.mousePressEvent(
+        _mouse(QEvent.MouseButtonPress, track, 20, Qt.LeftButton, shift)
+    )
+
+    track.mouseReleaseEvent(
+        _mouse(QEvent.MouseButtonRelease, track, 70, Qt.NoButton, shift)
+    )
+
+    assert asked == [(20, 70)]
+
+
+def test_a_sweep_keeps_the_loop_s_colour_and_brackets(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, show_loop_controls=True
+    )
+    timeline.set_region("loop", 10, 30, "#ff0000")
+    track = timeline._track_widget
+    held, shift = Qt.LeftButton, Qt.ShiftModifier
+    track.mousePressEvent(
+        _mouse(QEvent.MouseButtonPress, track, 20, held, shift)
+    )
+    track.mouseMoveEvent(_mouse(QEvent.MouseMove, track, 70, held, shift))
+    assert timeline._regions["loop"]["color"] == "#ff0000"
+
+    track.mouseReleaseEvent(
+        _mouse(QEvent.MouseButtonRelease, track, 70, Qt.NoButton, shift)
+    )
+
+    loop = timeline._regions["loop"]
+    assert (loop["start"], loop["end"], loop["color"]) == (10, 30, "#ff0000")
+    assert loop["brackets"] is False
 
 
 def test_a_scrub_whose_release_was_lost_stops_on_hover(qtbot, qapp):
@@ -254,6 +319,8 @@ def test_a_shift_click_that_drifts_a_pixel_requests_nothing(qtbot, qapp):
     asked = []
     timeline.loop_region_requested.connect(lambda a, b: asked.append((a, b)))
     track = timeline._track_widget
+    # A sweep before leaves nothing that counts the drift as a move.
+    _sweep(track, 100, 900)
     held, shift = Qt.LeftButton, Qt.ShiftModifier
     press = _mouse(QEvent.MouseButtonPress, track, 500, held, shift)
     drift = QPointF(press.position().x() + 1, press.position().y())
@@ -267,7 +334,7 @@ def test_a_shift_click_that_drifts_a_pixel_requests_nothing(qtbot, qapp):
         Qt.LeftButton, Qt.NoButton, shift,
     ))
 
-    assert asked == []
+    assert asked == [(100, 900)]
     assert _loop(timeline) is None
 
 
