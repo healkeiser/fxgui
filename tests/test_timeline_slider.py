@@ -1,8 +1,8 @@
 """Timeline zoom, frame 0, and the range spinboxes keep the view consistent."""
 
 # Third-party
-from qtpy.QtCore import QPoint, QPointF, Qt
-from qtpy.QtGui import QWheelEvent
+from qtpy.QtCore import QEvent, QPoint, QPointF, Qt
+from qtpy.QtGui import QMouseEvent, QWheelEvent
 from qtpy.QtTest import QTest
 
 # Internal
@@ -116,6 +116,82 @@ def test_the_tipped_keys_drive_the_timeline(qtbot, qapp):
     assert marks == [1, 1]
     assert timeline._is_playing
     timeline.stop()
+
+
+def _mouse(kind, track, frame, buttons, modifiers):
+    """Return a mouse event at `frame`'s x on `track`, no cursor moved."""
+    first, last = track._timeline.view_range()
+    usable = track.width() - 2 * track.EDGE_PAD
+    x = track.EDGE_PAD + (frame - first) / (last - first) * usable
+    point = QPointF(x, track.height() / 2)
+    button = Qt.NoButton if kind == QEvent.MouseMove else Qt.LeftButton
+    return QMouseEvent(
+        kind, point, track.mapToGlobal(point), button, buttons, modifiers
+    )
+
+
+def _sweep(track, start, end, modifiers=Qt.ShiftModifier):
+    held = Qt.LeftButton
+    track.mousePressEvent(
+        _mouse(QEvent.MouseButtonPress, track, start, held, modifiers)
+    )
+    track.mouseMoveEvent(_mouse(QEvent.MouseMove, track, end, held, modifiers))
+    track.mouseReleaseEvent(
+        _mouse(QEvent.MouseButtonRelease, track, end, Qt.NoButton, modifiers)
+    )
+
+
+def test_a_shift_drag_on_the_track_requests_the_swept_loop(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, current_frame=50,
+        show_loop_controls=True,
+    )
+    asked = []
+    timeline.loop_region_requested.connect(lambda a, b: asked.append((a, b)))
+
+    _sweep(timeline._track_widget, 70, 20)
+
+    assert asked == [(20, 70)]
+    assert timeline.current_frame() == 50, "a sweep does not scrub"
+
+
+def test_a_plain_drag_scrubs_and_requests_no_loop(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, show_loop_controls=True
+    )
+    asked = []
+    timeline.loop_region_requested.connect(lambda a, b: asked.append((a, b)))
+
+    _sweep(timeline._track_widget, 20, 70, Qt.NoModifier)
+
+    assert asked == []
+    assert timeline.current_frame() == 70
+
+
+def test_a_shift_click_keeps_the_loop_it_found(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, show_loop_controls=True
+    )
+    timeline.set_loop_region(10, 30)
+    asked = []
+    timeline.loop_region_requested.connect(lambda a, b: asked.append((a, b)))
+
+    _sweep(timeline._track_widget, 60, 60)
+
+    assert asked == []
+    loop = timeline._regions["loop"]
+    assert (loop["start"], loop["end"]) == (10, 30)
+
+
+def test_without_loop_controls_a_shift_drag_scrubs(qtbot, qapp):
+    timeline = _timeline(qtbot, start_frame=1, end_frame=100)
+    asked = []
+    timeline.loop_region_requested.connect(lambda a, b: asked.append((a, b)))
+
+    _sweep(timeline._track_widget, 20, 70)
+
+    assert asked == []
+    assert timeline.current_frame() == 70
 
 
 def test_a_click_on_the_track_gives_the_timeline_its_keys(qtbot, qapp):

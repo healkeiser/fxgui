@@ -73,7 +73,8 @@ class FXTimelineSlider(QWidget):
     - Named marker layers (lines or a top strip) and named regions, mapped
       through the zoomed window. The widget assigns no meaning to a layer.
     - Optional in/out controls (`show_loop_controls`) that request marking
-      the current frame; the consumer typically calls `set_loop_region`.
+      the current frame, and a Shift-drag on the track that requests a
+      whole range; the consumer typically calls `set_loop_region`.
     - Optional keyframe navigation (`show_keyframe_controls`).
     - A hover line with the hovered frame number.
     - Narrow, the "below" layout drops the go-to-start and go-to-end
@@ -114,6 +115,8 @@ class FXTimelineSlider(QWidget):
             window changes (zoom, pan, or reset).
         in_point_requested: Mark-in pressed; carries the current frame.
         out_point_requested: Mark-out pressed; carries the current frame.
+        loop_region_requested: A Shift-drag on the track ended; carries
+            its (first, last) frames.
         loop_toggled: Emitted with the new loop playback state.
 
     Examples:
@@ -132,6 +135,7 @@ class FXTimelineSlider(QWidget):
     view_changed = Signal(int, int)
     in_point_requested = Signal(int)
     out_point_requested = Signal(int)
+    loop_region_requested = Signal(int, int)
     loop_toggled = Signal(bool)
 
     # Smallest zoomable window, in frames.
@@ -259,10 +263,12 @@ class FXTimelineSlider(QWidget):
         # from the go-to-start and go-to-end glyphs.
         self._mark_in_btn = self._button(
             "login", self._request_in,
-            "Mark In", "Set the loop in point at the current frame", "I")
+            "Mark In", "Set the loop in point at the current frame; "
+            "Shift-drag the track to set both", "I")
         self._mark_out_btn = self._button(
             "logout", self._request_out,
-            "Mark Out", "Set the loop out point at the current frame", "O")
+            "Mark Out", "Set the loop out point at the current frame; "
+            "Shift-drag the track to set both", "O")
 
         self._track_widget = _TimelineTrack(self)
         self._track_widget.setMinimumHeight(24)
@@ -846,6 +852,10 @@ class _TimelineTrack(QWidget):
         # drags still move the window one frame at a time).
         self._pan_last_x: Optional[float] = None
         self._pan_accum = 0.0
+        # Shift-drag loop sweep: the frame it started on, and the loop
+        # region it replaces, put back when the drag never moved.
+        self._sweep_from: Optional[int] = None
+        self._sweep_replaced: Optional[dict] = None
         # Hovered frame (crosshair-style indicator), None when outside.
         self._hover_frame: Optional[int] = None
         self._tick_key: tuple = ()
@@ -1062,10 +1072,17 @@ class _TimelineTrack(QWidget):
         return ticks
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Left = scrub; middle = start panning the zoomed window."""
+        """Left = scrub; Shift+left = sweep a loop; middle = pan the window."""
         # A click on the track gives the timeline its keys.
         self._timeline.setFocus(Qt.MouseFocusReason)
-        if event.button() == Qt.LeftButton:
+        if (
+            event.button() == Qt.LeftButton
+            and event.modifiers() & Qt.ShiftModifier
+            and self._timeline._show_loop_controls
+        ):
+            self._sweep_from = self._frame_at(event.position().x())
+            self._sweep_replaced = self._timeline._regions.get("loop")
+        elif event.button() == Qt.LeftButton:
             self._timeline._is_dragging = True
             self._timeline.set_frame(self._frame_at(event.position().x()))
         elif event.button() == Qt.MiddleButton:
@@ -1083,7 +1100,10 @@ class _TimelineTrack(QWidget):
         if frame != self._hover_frame:
             self._hover_frame = frame
             self.update()
-        if self._timeline._is_dragging:
+        if self._sweep_from is not None:
+            # Drawn as it grows; the consumer's answer replaces it.
+            self._timeline.set_loop_region(self._sweep_from, frame)
+        elif self._timeline._is_dragging:
             self._timeline.set_frame(frame)
 
     def leaveEvent(self, event) -> None:
@@ -1095,11 +1115,27 @@ class _TimelineTrack(QWidget):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Handle mouse release."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and self._sweep_from is not None:
+            self._end_sweep(self._frame_at(event.position().x()))
+        elif event.button() == Qt.LeftButton:
             self._timeline._is_dragging = False
         elif event.button() == Qt.MiddleButton:
             self._pan_last_x = None
             self.setCursor(Qt.PointingHandCursor)
+
+    def _end_sweep(self, frame: int) -> None:
+        """Request the swept range; a sweep that never moved changes nothing."""
+        start, replaced = self._sweep_from, self._sweep_replaced
+        self._sweep_from = self._sweep_replaced = None
+        if frame != start:
+            self._timeline.loop_region_requested.emit(
+                min(start, frame), max(start, frame)
+            )
+        elif replaced is None:
+            self._timeline.clear_region("loop")
+        else:
+            self._timeline._regions["loop"] = replaced
+            self.update()
 
     def _x_to_ratio(self, x: float) -> float:
         """Map a widget x to the 0..1 track ratio, inset like the paint."""
