@@ -275,6 +275,36 @@ def test_a_shift_release_far_from_its_press_requests_the_loop(qtbot, qapp):
     assert asked == [(20, 70)]
 
 
+def test_a_shift_press_ends_a_scrub_whose_release_was_lost(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, show_loop_controls=True
+    )
+    track = timeline._track_widget
+    held = Qt.LeftButton
+    track.mousePressEvent(
+        _mouse(QEvent.MouseButtonPress, track, 30, held, Qt.NoModifier)
+    )
+    _sweep(track, 60, 80)
+
+    # A popup ate the next press: a held move reaches the track alone.
+    track.mouseMoveEvent(
+        _mouse(QEvent.MouseMove, track, 90, held, Qt.NoModifier)
+    )
+
+    assert timeline.current_frame() == 30
+
+
+def test_a_sweep_puts_back_a_bracketed_loop_with_its_brackets(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, show_loop_controls=True
+    )
+    timeline.set_loop_region(10, 30)
+
+    _sweep(timeline._track_widget, 20, 70)
+
+    assert timeline._regions["loop"]["brackets"] is True
+
+
 def test_a_sweep_keeps_the_loop_s_colour_and_brackets(qtbot, qapp):
     timeline = _timeline(
         qtbot, start_frame=1, end_frame=100, show_loop_controls=True

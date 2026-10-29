@@ -116,8 +116,8 @@ class FXTimelineSlider(QWidget):
             window changes (zoom, pan, or reset).
         in_point_requested: Mark-in pressed; carries the current frame.
         out_point_requested: Mark-out pressed; carries the current frame.
-        loop_region_requested: A Shift-drag on the track, past the drag
-            distance, was released there; carries its (first, last) frames.
+        loop_region_requested: A Shift-drag from the track, past the drag
+            distance, was released; carries its (first, last) frames.
         loop_toggled: Emitted with the new loop playback state.
 
     Examples:
@@ -1079,9 +1079,10 @@ class _TimelineTrack(QWidget):
         # A click on the track gives the timeline its keys.
         self._timeline.setFocus(Qt.MouseFocusReason)
         if event.button() == Qt.LeftButton:
-            # A sweep whose release went to another window, with no move
-            # since to end it.
+            # A sweep or scrub whose release went to another window ends
+            # here, even with no move since.
             self._end_sweep(None)
+            self._timeline._is_dragging = False
         if (
             event.button() == Qt.LeftButton
             and event.modifiers() & Qt.ShiftModifier
