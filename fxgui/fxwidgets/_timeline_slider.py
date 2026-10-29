@@ -16,6 +16,7 @@ from qtpy.QtGui import (
     QPolygonF,
 )
 from qtpy.QtWidgets import (
+    QApplication,
     QDoubleSpinBox,
     QGridLayout,
     QHBoxLayout,
@@ -852,9 +853,11 @@ class _TimelineTrack(QWidget):
         # drags still move the window one frame at a time).
         self._pan_last_x: Optional[float] = None
         self._pan_accum = 0.0
-        # Shift-drag loop sweep: the frame it started on, and the loop
-        # region it replaces, put back when the drag never moved.
+        # Shift-drag loop sweep: where it started, whether it passed the
+        # drag distance, and the loop region it draws over until release.
         self._sweep_from: Optional[int] = None
+        self._sweep_x = 0.0
+        self._sweep_moved = False
         self._sweep_replaced: Optional[dict] = None
         # Hovered frame (crosshair-style indicator), None when outside.
         self._hover_frame: Optional[int] = None
@@ -1080,7 +1083,8 @@ class _TimelineTrack(QWidget):
             and event.modifiers() & Qt.ShiftModifier
             and self._timeline._show_loop_controls
         ):
-            self._sweep_from = self._frame_at(event.position().x())
+            self._sweep_x = event.position().x()
+            self._sweep_from = self._frame_at(self._sweep_x)
             self._sweep_replaced = self._timeline._regions.get("loop")
         elif event.button() == Qt.LeftButton:
             self._timeline._is_dragging = True
@@ -1100,11 +1104,23 @@ class _TimelineTrack(QWidget):
         if frame != self._hover_frame:
             self._hover_frame = frame
             self.update()
-        if self._sweep_from is not None:
-            # Drawn as it grows; the consumer's answer replaces it.
-            self._timeline.set_loop_region(self._sweep_from, frame)
-        elif self._timeline._is_dragging:
+        # No button held: the release went to another window.
+        held = bool(event.buttons() & Qt.LeftButton)
+        if self._sweep_from is not None and not held:
+            self._end_sweep(None)
+        elif self._sweep_from is not None:
+            far = abs(x - self._sweep_x) >= QApplication.startDragDistance()
+            self._sweep_moved = self._sweep_moved or far
+            if self._sweep_moved:
+                # Drawn as it grows; put back before the request is sent.
+                replaced = self._sweep_replaced or {}
+                self._timeline.set_loop_region(
+                    self._sweep_from, frame, replaced.get("color")
+                )
+        elif self._timeline._is_dragging and held:
             self._timeline.set_frame(frame)
+        else:
+            self._timeline._is_dragging = False
 
     def leaveEvent(self, event) -> None:
         """Clear the hover indicator when the cursor leaves the track."""
@@ -1123,19 +1139,28 @@ class _TimelineTrack(QWidget):
             self._pan_last_x = None
             self.setCursor(Qt.PointingHandCursor)
 
-    def _end_sweep(self, frame: int) -> None:
-        """Request the swept range; a sweep that never moved changes nothing."""
+    def _end_sweep(self, frame: Optional[int]) -> None:
+        """Put the loop back, then request the swept range ending at `frame`.
+
+        `None`, or a sweep that never moved past the drag distance, requests
+        nothing: the loop stays as the consumer last set it.
+        """
         start, replaced = self._sweep_from, self._sweep_replaced
+        if start is None:
+            return
+        moved = self._sweep_moved
         self._sweep_from = self._sweep_replaced = None
-        if frame != start:
+        self._sweep_moved = False
+        if replaced is None:
+            self._timeline.clear_region("loop")
+        else:
+            self._timeline.set_loop_region(
+                replaced["start"], replaced["end"], replaced["color"]
+            )
+        if frame is not None and moved and frame != start:
             self._timeline.loop_region_requested.emit(
                 min(start, frame), max(start, frame)
             )
-        elif replaced is None:
-            self._timeline.clear_region("loop")
-        else:
-            self._timeline._regions["loop"] = replaced
-            self.update()
 
     def _x_to_ratio(self, x: float) -> float:
         """Map a widget x to the 0..1 track ratio, inset like the paint."""

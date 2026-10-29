@@ -168,6 +168,119 @@ def test_a_plain_drag_scrubs_and_requests_no_loop(qtbot, qapp):
     assert timeline.current_frame() == 70
 
 
+def _loop(timeline):
+    loop = timeline._regions.get("loop")
+    return None if loop is None else (loop["start"], loop["end"])
+
+
+def test_a_sweep_draws_as_it_grows_then_leaves_the_loop_to_the_consumer(
+    qtbot, qapp
+):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, show_loop_controls=True
+    )
+    track = timeline._track_widget
+    held, shift = Qt.LeftButton, Qt.ShiftModifier
+    track.mousePressEvent(
+        _mouse(QEvent.MouseButtonPress, track, 20, held, shift)
+    )
+    track.mouseMoveEvent(_mouse(QEvent.MouseMove, track, 70, held, shift))
+    assert _loop(timeline) == (20, 70)
+
+    track.mouseReleaseEvent(
+        _mouse(QEvent.MouseButtonRelease, track, 70, Qt.NoButton, shift)
+    )
+
+    assert _loop(timeline) is None, "a consumer that ignores it shows none"
+
+
+def test_a_plain_drag_after_a_sweep_scrubs(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, show_loop_controls=True
+    )
+    asked = []
+    timeline.loop_region_requested.connect(lambda a, b: asked.append((a, b)))
+    _sweep(timeline._track_widget, 20, 70)
+
+    _sweep(timeline._track_widget, 30, 40, Qt.NoModifier)
+
+    assert asked == [(20, 70)]
+    assert timeline.current_frame() == 40
+
+
+def test_a_lost_release_ends_the_sweep_and_requests_nothing(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, current_frame=50,
+        show_loop_controls=True,
+    )
+    timeline.set_loop_region(10, 30)
+    asked = []
+    timeline.loop_region_requested.connect(lambda a, b: asked.append((a, b)))
+    track = timeline._track_widget
+    track.mousePressEvent(
+        _mouse(QEvent.MouseButtonPress, track, 60, Qt.LeftButton,
+               Qt.ShiftModifier)
+    )
+
+    # The release went to another window: hover arrives with no button.
+    track.mouseMoveEvent(
+        _mouse(QEvent.MouseMove, track, 80, Qt.NoButton, Qt.NoModifier)
+    )
+
+    assert asked == []
+    assert _loop(timeline) == (10, 30)
+    assert timeline.current_frame() == 50, "hover does not scrub"
+
+
+def test_a_scrub_whose_release_was_lost_stops_on_hover(qtbot, qapp):
+    timeline = _timeline(qtbot, start_frame=1, end_frame=100)
+    track = timeline._track_widget
+    track.mousePressEvent(
+        _mouse(QEvent.MouseButtonPress, track, 30, Qt.LeftButton,
+               Qt.NoModifier)
+    )
+
+    track.mouseMoveEvent(
+        _mouse(QEvent.MouseMove, track, 80, Qt.NoButton, Qt.NoModifier)
+    )
+
+    assert timeline.current_frame() == 30
+
+
+def test_a_shift_click_that_drifts_a_pixel_requests_nothing(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=1000, show_loop_controls=True
+    )
+    asked = []
+    timeline.loop_region_requested.connect(lambda a, b: asked.append((a, b)))
+    track = timeline._track_widget
+    held, shift = Qt.LeftButton, Qt.ShiftModifier
+    press = _mouse(QEvent.MouseButtonPress, track, 500, held, shift)
+    drift = QPointF(press.position().x() + 1, press.position().y())
+    track.mousePressEvent(press)
+    track.mouseMoveEvent(QMouseEvent(
+        QEvent.MouseMove, drift, track.mapToGlobal(drift), Qt.NoButton,
+        held, shift,
+    ))
+    track.mouseReleaseEvent(QMouseEvent(
+        QEvent.MouseButtonRelease, drift, track.mapToGlobal(drift),
+        Qt.LeftButton, Qt.NoButton, shift,
+    ))
+
+    assert asked == []
+    assert _loop(timeline) is None
+
+
+def test_a_shift_click_with_no_loop_leaves_none(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, start_frame=1, end_frame=100, show_loop_controls=True
+    )
+
+    _sweep(timeline._track_widget, 60, 60)
+
+    assert _loop(timeline) is None
+
+
 def test_a_shift_click_keeps_the_loop_it_found(qtbot, qapp):
     timeline = _timeline(
         qtbot, start_frame=1, end_frame=100, show_loop_controls=True

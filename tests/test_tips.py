@@ -615,8 +615,16 @@ def test_library_tooltips_carry_their_words(qtbot):
             ("Loop Playback", "Restart from the first frame at the end"),
             ("Previous Keyframe", "Jump to the nearest keyframe before"),
             ("Next Keyframe", "Jump to the nearest keyframe after"),
-            ("Mark In", "Set the loop in point at the current frame"),
-            ("Mark Out", "Set the loop out point at the current frame"),
+            (
+                "Mark In",
+                "Set the loop in point at the current frame; "
+                "Shift-drag the track to set both",
+            ),
+            (
+                "Mark Out",
+                "Set the loop out point at the current frame; "
+                "Shift-drag the track to set both",
+            ),
         ],
     }
 

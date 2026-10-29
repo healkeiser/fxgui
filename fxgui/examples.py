@@ -522,15 +522,21 @@ def _timeline_page() -> QWidget:
         color="feedback_error_foreground",
         style="line",
     )
-    # The in and out buttons only ask; the caller sets the loop region.
+    # The in and out buttons and a Shift-drag only ask; the caller sets the
+    # loop region.
     loop = {"in": 1040, "out": 1120}
 
     def mark(which, frame):
         loop[which] = frame
         full.set_loop_region(loop["in"], loop["out"])
 
+    def swept(first, last):
+        loop.update({"in": first, "out": last})
+        full.set_loop_region(first, last)
+
     full.in_point_requested.connect(lambda frame: mark("in", frame))
     full.out_point_requested.connect(lambda frame: mark("out", frame))
+    full.loop_region_requested.connect(swept)
     full.set_loop_region(loop["in"], loop["out"])
 
     return _page(
