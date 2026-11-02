@@ -22,6 +22,7 @@ _GONE = {
         "sync_colors_with_theme", "refresh_all_icons", "_icon_widgets",
         "_theme_ink", "_get_icon_cached", "_get_pixmap_cached",
         "_get_pixmap_internal", "clear_icon_cache",
+        "set_default_library", "default_library", "_default_library",
     ),
     "fxgui.fxstyle": (
         "FXThemeAware", "invalidate_standard_icon_map", "theme_manager",

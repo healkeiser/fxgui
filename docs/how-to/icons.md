@@ -48,8 +48,9 @@ extension: a `get_icon` call that leaves one out takes it from there.
 ### Name the library, the size and the colour per call
 
 Without `library`, `get_icon` looks in "lucide", and the name is written as
-Lucide spells it (`chevron-down`, `house`). Every other default can
-be overridden on the call itself:
+Lucide spells it (`chevron-down`, `house`). Code written for 13.x used
+Material's names: [Moving from 13.x](../moving-from-13.md) lists the
+renames. Every other default can be overridden on the call itself:
 
 ```python
 from fxgui import fxicons

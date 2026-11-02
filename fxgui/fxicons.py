@@ -50,8 +50,6 @@ from fxgui import _compat, fxconstants
 __all__ = [
     "add_library",
     "badged",
-    "default_library",
-    "set_default_library",
     "get_icon_path",
     "get_icon",
     "get_pixmap",
@@ -182,41 +180,17 @@ _libraries_info = {
         "defaults": {**_LIBRARY_DEFAULTS, "color": "icon"},
     },
 }
-# Where a name with no library resolves; see `set_default_library`.
-_default_library = "lucide"
+# Where a name with no library resolves.
+_DEFAULT_LIBRARY = "lucide"
 # Old library names, still accepted.
 _LIBRARY_ALIASES = {"dcc": "brands"}
-
-
-def set_default_library(library: str) -> None:
-    """Draw every icon named without a library from `library`.
-
-    A name with no library is then written in `library`'s own spelling.
-    Call it before any icon is made.
-
-    Raises:
-        ValueError: If no library is called `library`.
-
-    Examples:
-        >>> fxicons.set_default_library("material")
-    """
-    global _default_library
-    library = _LIBRARY_ALIASES.get(library, library)
-    if library not in _libraries_info:
-        raise ValueError(f"No icon library named {library!r}.")
-    _default_library = library
-
-
-def default_library() -> str:
-    """Return the library a name with no library resolves in."""
-    return _default_library
 
 
 def _pick(icon_name: str, library: Optional[str]) -> Tuple[str, str]:
     """Return the name and library a requested icon is drawn from."""
     if library:
         return icon_name, _LIBRARY_ALIASES.get(library, library)
-    return icon_name, _default_library
+    return icon_name, _DEFAULT_LIBRARY
 
 
 def add_library(
@@ -471,7 +445,6 @@ def _resolved(library, width, height, color, icon_name):
     A full-colour icon answers no colour, whatever was asked; a single-colour
     mark in a full-colour library defaults to the "icon" token.
     """
-    library = _LIBRARY_ALIASES.get(library, library) or _default_library
     info = _libraries_info[library]
     defaults = info["defaults"]
     recolors = info["recolor"] or icon_name in info.get("recolor_names", ())
