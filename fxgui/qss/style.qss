@@ -138,7 +138,7 @@ QAbstractItemView::indicator:indeterminate
 {
     background: @accent_primary;
     border-color: @accent_primary;
-    image: ~icon(remove, text_on_accent_primary, 16);
+    image: ~icon(minus, text_on_accent_primary, 16);
 }
 
 /* A radio's dot is the dark ink at the middle of the orange disc. */
@@ -308,11 +308,11 @@ QMenu::right-arrow {
     margin: 5px;
     width: 16px;
     height: 16px;
-    image: ~icon(chevron_right, icon);
+    image: ~icon(chevron-right, icon);
 }
 
 QMenu::right-arrow:selected {
-    image: ~icon(chevron_right, icon);
+    image: ~icon(chevron-right, icon);
 }
 
 
@@ -688,14 +688,14 @@ QComboBox::drop-down
 
 QComboBox::down-arrow
 {
-    image: ~icon(expand_more, icon);
+    image: ~icon(chevron-down, icon);
     width: 16px;
     height: 16px;
 }
 
 QComboBox::down-arrow:disabled
 {
-    image: ~icon(expand_more, text_disabled);
+    image: ~icon(chevron-down, text_disabled);
 }
 
 /* A date edit with a calendar popup opens it from a combo box's arrow. */
@@ -709,25 +709,25 @@ QDateTimeEdit::drop-down
 
 QDateTimeEdit::down-arrow
 {
-    image: ~icon(expand_more, icon);
+    image: ~icon(chevron-down, icon);
     width: 16px;
     height: 16px;
 }
 
 QDateTimeEdit::down-arrow:disabled
 {
-    image: ~icon(expand_more, text_disabled);
+    image: ~icon(chevron-down, text_disabled);
 }
 
 QCalendarWidget QToolButton#qt_calendar_prevmonth
 {
-    qproperty-icon: ~icon(chevron_left, icon);
+    qproperty-icon: ~icon(chevron-left, icon);
     qproperty-iconSize: 16px;
 }
 
 QCalendarWidget QToolButton#qt_calendar_nextmonth
 {
-    qproperty-icon: ~icon(chevron_right, icon);
+    qproperty-icon: ~icon(chevron-right, icon);
     qproperty-iconSize: 16px;
 }
 
@@ -934,19 +934,19 @@ QTabBar QToolButton::left-arrow {
 }
 
 QTabBar QToolButton::right-arrow {
-    image: ~icon(chevron_right, icon);
+    image: ~icon(chevron-right, icon);
 }
 
 QTabBar QToolButton::left-arrow {
-    image: ~icon(chevron_left, icon);
+    image: ~icon(chevron-left, icon);
 }
 
 QTabBar QToolButton::right-arrow:disabled {
-    image: ~icon(chevron_right, text_disabled);
+    image: ~icon(chevron-right, text_disabled);
 }
 
 QTabBar QToolButton::left-arrow:disabled {
-    image: ~icon(chevron_left, text_disabled);
+    image: ~icon(chevron-left, text_disabled);
 }
 
 /* The glyph keeps its button's left: the button widens to the left.
@@ -1043,11 +1043,11 @@ QTreeView::branch:has-children {
 }
 
 QTreeView::branch:has-children:closed {
-    image: ~icon(chevron_right, icon);
+    image: ~icon(chevron-right, icon);
 }
 
 QTreeView::branch:has-children:open {
-    image: ~icon(expand_more, icon);
+    image: ~icon(chevron-down, icon);
 }
 
 /* A row has no padding in any state: Qt 6.5 skips an item's padding on
@@ -1309,7 +1309,7 @@ QToolButton:checked {
 
 /* the subcontrol below is used only in the InstantPopup or DelayedPopup mode */
 QToolButton::menu-indicator {
-    image: ~icon(expand_more, icon, 12);
+    image: ~icon(chevron-down, icon, 12);
     width: 12px;
     height: 12px;
     subcontrol-origin: padding;
@@ -1327,18 +1327,18 @@ QToolButton::menu-button {
 }
 
 QToolButton::menu-arrow {
-    image: ~icon(expand_more, icon, 12);
+    image: ~icon(chevron-down, icon, 12);
     width: 12px;
     height: 12px;
 }
 
 QToolButton::menu-arrow:disabled {
-    image: ~icon(expand_more, text_disabled, 12);
+    image: ~icon(chevron-down, text_disabled, 12);
 }
 
 
 QPushButton::menu-indicator  {
-    image: ~icon(expand_more, icon, 12);
+    image: ~icon(chevron-down, icon, 12);
     subcontrol-origin: padding;
     subcontrol-position: right;
     width: 12px;
@@ -1346,7 +1346,7 @@ QPushButton::menu-indicator  {
 }
 
 QPushButton::menu-indicator:disabled {
-    image: ~icon(expand_more, text_disabled, 12);
+    image: ~icon(chevron-down, text_disabled, 12);
 }
 
 
@@ -1447,7 +1447,7 @@ QToolBox::tab {
     border-radius: @button_radius;
     min-height: 28px;
     padding-left: 4px;
-    image: ~icon(chevron_right, icon);
+    image: ~icon(chevron-right, icon);
     image-position: left;
 }
 
@@ -1457,7 +1457,7 @@ QToolBox::tab:hover {
 
 QToolBox::tab:selected {
     font-weight: 600;
-    image: ~icon(expand_more, icon);
+    image: ~icon(chevron-down, icon);
 }
 
 

@@ -245,7 +245,7 @@ def _flat(qtbot, theme="dark", on_frame=False, enabled=True):
     sink = QPushButton("sink")
     button = QPushButton()
     button.setProperty("fxRole", "flat")
-    fxicons.set_icon(button, "arrow_back")
+    fxicons.set_icon(button, "arrow-left")
     button.setEnabled(enabled)
     layout.addWidget(sink)
     layout.addWidget(button)

@@ -63,7 +63,7 @@ class FXTagChip(QFrame):
             self.remove_button.clicked.connect(self._on_remove)
             layout.addWidget(self.remove_button)
             fxicons.set_icon(
-                self.remove_button, "close", color="icon_on_accent_primary")
+                self.remove_button, "x", color="icon_on_accent_primary")
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 

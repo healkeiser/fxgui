@@ -30,7 +30,7 @@ def test_a_hovered_tool_button_shows_its_icon_on_the_hover_fill(
     button = QToolButton(window)
     button.setAutoRaise(True)
     button.setIconSize(QSize(24, 24))
-    fxicons.set_icon(button, "close")
+    fxicons.set_icon(button, "x")
     QVBoxLayout(window).addWidget(button)
     window.show()
     qtbot.waitExposed(window)

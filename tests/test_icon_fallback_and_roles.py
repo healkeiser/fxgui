@@ -37,7 +37,7 @@ def test_an_uncurated_name_still_raises_without_a_fallback(qtbot, qapp):
 
 
 def test_a_fallback_name_answers_for_an_uncurated_one(qtbot, qapp):
-    icon = fxicons.get_icon(UNCURATED, library="brands", fallback="apps")
+    icon = fxicons.get_icon(UNCURATED, library="brands", fallback="layout-grid")
 
     assert not icon.isNull()
 
@@ -47,21 +47,21 @@ def test_the_fallback_is_looked_up_in_the_default_library(qtbot, qapp):
     library that just failed to carry the name is the least likely place
     for the stand-in, and the general-purpose set is where it lives.
 
-    "apps" is a material icon and is in no "brands" library at all, so a
+    "layout-grid" is a Lucide icon and is in no "brands" library, so a
     fallback resolved in `library` would raise here.
     """
     with pytest.raises(FileNotFoundError):
-        fxicons.get_icon("apps", library="brands")
+        fxicons.get_icon("layout-grid", library="brands")
 
     assert not fxicons.get_icon(
-        UNCURATED, library="brands", fallback="apps"
+        UNCURATED, library="brands", fallback="layout-grid"
     ).isNull()
 
 
 def test_a_curated_name_is_unaffected_by_a_fallback(qtbot, qapp):
     """A fallback is a fallback, not a substitution."""
     with_fallback = fxicons.get_icon(
-        CURATED, library="brands", fallback="apps"
+        CURATED, library="brands", fallback="layout-grid"
     )
     without = fxicons.get_icon(CURATED, library="brands")
 
@@ -91,7 +91,7 @@ def test_the_fallback_keeps_the_size_and_colour_asked_for(qtbot, qapp):
     """A stand-in that came out at another size would be visible as a
     layout jump on exactly the rows that fell back."""
     icon = fxicons.get_icon(
-        UNCURATED, library="brands", width=32, height=32, fallback="apps"
+        UNCURATED, library="brands", width=32, height=32, fallback="layout-grid"
     )
 
     assert icon.availableSizes(), "it rendered something"

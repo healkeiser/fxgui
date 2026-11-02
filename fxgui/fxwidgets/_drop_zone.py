@@ -117,7 +117,7 @@ class FXDropZone(QWidget):
         accept_mode: str = "files",
         extensions: Optional[Set[str]] = None,
         multiple: bool = True,
-        icon_name: str = "upload_file",
+        icon_name: str = "file-up",
         show_formats: bool = True,
         show_buttons: bool = True,
         show_tree: bool = True,
@@ -222,7 +222,7 @@ class FXDropZone(QWidget):
             self._clear_btn.setFocusPolicy(Qt.NoFocus)
             self._clear_btn.setEnabled(False)
             self._clear_btn.clicked.connect(self.clear)
-            fxicons.set_icon(self._clear_btn, "clear")
+            fxicons.set_icon(self._clear_btn, "x")
             button_layout.addWidget(self._clear_btn)
 
             button_layout.addStretch()
@@ -276,7 +276,7 @@ class FXDropZone(QWidget):
                 item.setText(2, "-")
             else:
                 item.setText(1, path.suffix.upper().lstrip(".") or "File")
-                item.setIcon(0, fxicons.get_icon("description"))
+                item.setIcon(0, fxicons.get_icon("file-text"))
                 item.setText(2, _size_text(path))
             self._file_tree.addTopLevelItem(item)
 
@@ -295,13 +295,13 @@ class FXDropZone(QWidget):
             return
         path = item.data(0, Qt.UserRole)
         menu = QMenu(self)
-        menu.addAction(fxicons.get_icon("delete"), "Remove").triggered.connect(
+        menu.addAction(fxicons.get_icon("trash"), "Remove").triggered.connect(
             lambda _=False: self._remove_file(path)
         )
         if len(self._selected_files) > 1:
             menu.addSeparator()
             menu.addAction(
-                fxicons.get_icon("clear"), "Remove All"
+                fxicons.get_icon("x"), "Remove All"
             ).triggered.connect(self.clear)
         at = self._file_tree.viewport().mapToGlobal(position)
         fxutils.popup_menu(menu, at)
@@ -434,7 +434,7 @@ class FXDropZone(QWidget):
         if self._show_buttons:
             fxicons.set_icon(
                 self._browse_btn,
-                "folder_open" if value == "folders" else "file_open",
+                "folder-open" if value == "folders" else "file-input",
             )
 
     def extensions(self) -> Optional[Set[str]]:

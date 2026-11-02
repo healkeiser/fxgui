@@ -1,13 +1,14 @@
 """Icons from the bundled libraries, drawn in the theme's colours.
 
-Material, Font Awesome, Simple Icons, Beacon and the full-colour brand logos
-(DCCs, renderers, pipeline tools) with their one-colour marks.
+Lucide (the default), Material, Font Awesome, Simple Icons, Beacon and the
+full-colour brand logos (DCCs, renderers, pipeline tools) with their
+one-colour marks.
 An icon names theme tokens for its inks; `_ThemedIconEngine` resolves them
 each time Qt draws it and keeps the drawings in `QPixmapCache`.
 
 Examples:
     >>> from fxgui.fxicons import get_icon
-    >>> icon = get_icon("home")
+    >>> icon = get_icon("house")
     >>> colored_icon = get_icon("settings", color="#FF5722")
     >>> logo = get_icon("houdini", library="brands")
 """
@@ -174,8 +175,7 @@ _libraries_info = {
         "pattern": "{root}/{library}/icons/{icon_name}.{extension}",
         "defaults": {**_LIBRARY_DEFAULTS, "style": "solid", "color": "icon"},
     },
-    # Lucide, the web apps' line icons; `lucide_names.yaml` reads a Material
-    # name as its Lucide twin.
+    # Lucide, the web apps' line icons.
     "lucide": {
         "recolor": True,
         "pattern": "{root}/{library}/{extension}/{icon_name}.{extension}",
@@ -183,10 +183,7 @@ _libraries_info = {
     },
 }
 # Where a name with no library resolves; see `set_default_library`.
-_default_library = "material"
-# The library every name is written in, and what one missing elsewhere
-# falls back to.
-_NAMED_IN = "material"
+_default_library = "lucide"
 # Old library names, still accepted.
 _LIBRARY_ALIASES = {"dcc": "brands"}
 
@@ -194,15 +191,14 @@ _LIBRARY_ALIASES = {"dcc": "brands"}
 def set_default_library(library: str) -> None:
     """Draw every icon named without a library from `library`.
 
-    Names stay Material's: a library shipping `<library>_names.yaml` reads
-    each through it, and one it lacks keeps its Material icon. Call it
-    before any icon is made.
+    A name with no library is then written in `library`'s own spelling.
+    Call it before any icon is made.
 
     Raises:
         ValueError: If no library is called `library`.
 
     Examples:
-        >>> fxicons.set_default_library("lucide")
+        >>> fxicons.set_default_library("material")
     """
     global _default_library
     library = _LIBRARY_ALIASES.get(library, library)
@@ -216,32 +212,11 @@ def default_library() -> str:
     return _default_library
 
 
-@functools.lru_cache(maxsize=None)
-def _names(library: str) -> Dict[str, str]:
-    """Return `library`'s Material name to its own, empty without a table."""
-    # Imported here, as fxstyle reads its own YAML: only a library with a
-    # table pays for the import.
-    import yaml
-
-    table = fxconstants.ICONS_ROOT / f"{library}_names.yaml"
-    if not table.exists():
-        return {}
-    return yaml.safe_load(table.read_text(encoding="utf-8")) or {}
-
-
 def _pick(icon_name: str, library: Optional[str]) -> Tuple[str, str]:
     """Return the name and library a requested icon is drawn from."""
     if library:
         return icon_name, _LIBRARY_ALIASES.get(library, library)
-    if _default_library == _NAMED_IN:
-        return icon_name, _NAMED_IN
-    names = _names(_default_library)
-    if icon_name in names:
-        return names[icon_name], _default_library
-    # A name in the library's own spelling, as Lucide's hyphens.
-    if "-" in icon_name:
-        return icon_name, _default_library
-    return icon_name, _NAMED_IN
+    return icon_name, _default_library
 
 
 def add_library(
@@ -328,7 +303,7 @@ def get_icon_path(
         str: The path of the icon.
 
     Examples:
-        >>> get_icon_path("add")
+        >>> get_icon_path("plus")
         >>> get_icon_path("lemon", library="fontawesome")
     """
 
@@ -542,7 +517,7 @@ def get_pixmap(
         QPixmap: The caller's own pixmap; changing it touches no other.
 
     Examples:
-        >>> get_pixmap("add", color="red")
+        >>> get_pixmap("plus", color="red")
         >>> get_pixmap("lemon", library="fontawesome")
     """
 
@@ -745,7 +720,7 @@ def get_icon(
         QIcon: The caller's own icon; deleting it touches no other.
 
     Examples:
-        >>> get_icon("add", color="red")
+        >>> get_icon("plus", color="red")
         >>> get_icon("send", color="icon_on_accent_primary",
         ...          inks={"active": "icon_on_accent_secondary"})
         >>> get_icon("lemon", library="fontawesome")
@@ -753,7 +728,7 @@ def get_icon(
         Mapping open-ended studio data onto a curated set, where a name
         that is not in it is ordinary rather than exceptional:
 
-        >>> get_icon("houdini", library="brands", fallback="apps")
+        >>> get_icon("houdini", library="brands", fallback="layout-grid")
         >>> get_icon(whatever_the_tracker_said, fallback=QIcon())
     """
 

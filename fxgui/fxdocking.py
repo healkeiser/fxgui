@@ -105,10 +105,10 @@ _CENTRAL = "central"
 
 # Each button QtAds draws, by object name, to its icon slot and name.
 _BUTTONS = {
-    "tabCloseButton": (ads.TabCloseIcon, "close"),
-    "dockAreaCloseButton": (ads.DockAreaCloseIcon, "close"),
-    "detachGroupButton": (ads.DockAreaUndockIcon, "open_in_new"),
-    "tabsMenuButton": (ads.DockAreaMenuIcon, "expand_more"),
+    "tabCloseButton": (ads.TabCloseIcon, "x"),
+    "dockAreaCloseButton": (ads.DockAreaCloseIcon, "x"),
+    "detachGroupButton": (ads.DockAreaUndockIcon, "external-link"),
+    "tabsMenuButton": (ads.DockAreaMenuIcon, "chevron-down"),
 }
 
 _configured = False

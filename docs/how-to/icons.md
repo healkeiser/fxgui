@@ -2,7 +2,7 @@
 
 ## Use `fxicons`
 
-[fxicons](../technical/fxgui/fxicons.md) is a module that provides a way to use library icons in your applications. It comes with 5 libraries by default: "material", "fontawesome", "simple", "brands", and "beacon". You can add your own libraries by using the `add_library` function.
+[fxicons](../technical/fxgui/fxicons.md) is a module that provides a way to use library icons in your applications. It comes with 6 libraries: "lucide" (the default), "material", "fontawesome", "simple", "brands", and "beacon". You can add your own libraries by using the `add_library` function.
 
 "brands" holds the logos of the tools a studio uses: DCCs, renderers, trackers, file formats and dev tools. It used to be called "dcc", and that name still works.
 
@@ -13,7 +13,7 @@ from qtpy.QtWidgets import QPushButton
 from fxgui import fxicons
 
 button = QPushButton()
-button.setIcon(fxicons.get_icon("home"))
+button.setIcon(fxicons.get_icon("house"))
 ```
 
 ### Add a Custom Library
@@ -47,14 +47,15 @@ extension: a `get_icon` call that leaves one out takes it from there.
 
 ### Name the library, the size and the colour per call
 
-Without `library`, `get_icon` looks in "material". Every other default can
+Without `library`, `get_icon` looks in "lucide", and the name is written as
+Lucide spells it (`chevron-down`, `house`). Every other default can
 be overridden on the call itself:
 
 ```python
 from fxgui import fxicons
 
 icon = fxicons.get_icon("houdini", library="brands")
-small_red = fxicons.get_icon("home", width=32, height=32, color="red")
+small_red = fxicons.get_icon("house", width=32, height=32, color="red")
 ```
 
 ### A Name the Library Does Not Carry
@@ -71,7 +72,7 @@ tool = "my_inhouse_tool"  # a name read from your tracker
 
 # A tool the "brands" library carries a logo for gets it; anything
 # else gets the general-purpose icon rather than no icon at all.
-icon = fxicons.get_icon(tool, library="brands", fallback="apps")
+icon = fxicons.get_icon(tool, library="brands", fallback="layout-grid")
 ```
 
 A fallback **name** is looked up in the *default* library, not in the one
@@ -136,10 +137,10 @@ from fxgui import fxicons, fxwidgets
 indicator = fxwidgets.FXIconLabel()
 
 # Follows the theme: the error colour of whichever theme is on.
-fxicons.set_icon(indicator, "error", color="feedback_error_foreground")
+fxicons.set_icon(indicator, "circle-alert", color="feedback_error_foreground")
 
 # Stays red in every theme.
-fxicons.set_icon(indicator, "error", color="#ff0000")
+fxicons.set_icon(indicator, "circle-alert", color="#ff0000")
 ```
 
 ### The other states
@@ -149,7 +150,7 @@ three that are not the resting one, each a token or a colour:
 
 | Mode | When Qt uses it | Default ink |
 |------|-----------------|-------------|
-| `color` (Normal) | At rest | The library's default, `"icon"` for material, fontawesome and simple |
+| `color` (Normal) | At rest | The library's default, `"icon"` for lucide, material, fontawesome and simple |
 | `"active"` | A hovered tool button or toolbar button, a focused push button, a menu's highlighted row | The resting ink; `"icon_on_accent_primary"` on a menu's highlighted row, which is the accent |
 | `"selected"` | A selected item-view row | `"icon_on_accent_primary"` |
 | `"disabled"` | A disabled widget | `"text_disabled"` |
@@ -174,7 +175,7 @@ own pixels in every mode, whatever colour you ask for.
 
 Where icons share one ink, as the rows of a command palette do, ask for a
 DCC's one-colour mark: its name plus `_mark`, such as `houdini_mark`. It is
-drawn in the theme's icon ink, like a material icon. Marks exist for
+drawn in the theme's icon ink, like a Lucide icon. Marks exist for
 Houdini, Maya, Nuke, Blender, Cinema 4D, DaVinci Resolve, Unreal Engine,
 After Effects, Photoshop and Substance Painter.
 

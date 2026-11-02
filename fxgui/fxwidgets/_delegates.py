@@ -1641,7 +1641,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             painter.setPen(Qt.NoPen)
             painter.setBrush(QBrush(QColor(fill)))
             painter.drawRoundedRect(box, radius, radius)
-            name = "remove" if option.checkState == Qt.PartiallyChecked else "check"
+            name = "minus" if option.checkState == Qt.PartiallyChecked else "check"
             token = "selection" if selected else "text_on_accent_primary"
             _mark(name, token).paint(painter, rect)
         painter.restore()
@@ -1748,7 +1748,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             Qt.AlignLeft | Qt.AlignVCenter,
             str(index.data(self.PICKER_TEXT_ROLE) or ""),
         )
-        _mark("expand_more", "text_muted").paint(
+        _mark("chevron-down", "text_muted").paint(
             painter,
             QRect(
                 chevron_left,

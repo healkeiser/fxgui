@@ -69,7 +69,7 @@ class FXPasswordLineEdit(FXIconLineEdit):
     def __init__(
         self, parent: Optional[QWidget] = None, icon_position: str = "right"
     ):
-        super().__init__(parent, "visibility", icon_position)
+        super().__init__(parent, "eye", icon_position)
         self.setEchoMode(QLineEdit.Password)
         self._icon_action.setCheckable(True)
         self._icon_action.setToolTip("Show or hide the password")
@@ -80,7 +80,7 @@ class FXPasswordLineEdit(FXIconLineEdit):
         """Show the text while `shown`, and swap the eye icon to match."""
         self.setEchoMode(QLineEdit.Normal if shown else QLineEdit.Password)
         fxicons.set_icon(
-            self._icon_action, "visibility_off" if shown else "visibility"
+            self._icon_action, "eye-off" if shown else "eye"
         )
 
 

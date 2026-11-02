@@ -58,7 +58,7 @@ def _joined(parent):
 TEXT = {
     "QPushButton": lambda p: QPushButton("Cancel", p),
     "FXPrimaryButton": lambda p: FXPrimaryButton("Post", p),
-    "FXIconButton": lambda p: FXIconButton("mood", p),
+    "FXIconButton": lambda p: FXIconButton("smile", p),
     "FXSplitButton": _split,
     "FXJoinedGroup": _joined,
     "QLineEdit": QLineEdit,

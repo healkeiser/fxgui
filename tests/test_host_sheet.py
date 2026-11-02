@@ -96,7 +96,7 @@ class _Probe(FXMainWindow):
         self.setCentralWidget(QLabel("body"))
         item = FXStatusItem()
         self.statusBar().add_item(item)
-        item.show_state("Valentin Beaumont", "cloud_done")
+        item.show_state("Valentin Beaumont", "cloud-check")
 
 
 @pytest.mark.parametrize("sheet", _houdini_sheets())
@@ -183,7 +183,7 @@ def _gallery():
 def _menu(parent):
     """Return a menu with every kind of entry: icon, ticks, rule, submenu."""
     menu = QMenu(parent)
-    menu.addAction(fxicons.get_icon("refresh"), "With an icon")
+    menu.addAction(fxicons.get_icon("refresh-cw"), "With an icon")
     ticked = menu.addAction("Ticked")
     ticked.setCheckable(True)
     ticked.setChecked(True)

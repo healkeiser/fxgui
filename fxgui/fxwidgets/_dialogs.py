@@ -149,7 +149,7 @@ class FXFloatingDialog(QDialog):
     def set_dialog_icon(self, icon: Optional[QPixmap] = None) -> None:
         """Set the title's icon; `None` is the theme's home icon."""
         self._icon_label.setIcon(
-            QIcon(icon) if icon else fxicons.get_icon("home"))
+            QIcon(icon) if icon else fxicons.get_icon("house"))
 
     def set_dialog_title(self, title: Optional[str] = None) -> None:
         """Set the title; `None` or empty reads "Floating Dialog"."""

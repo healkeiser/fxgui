@@ -98,7 +98,7 @@ class FXCollapsibleWidget(QWidget):
 
         self._toggle_btn = QToolButton()
         self._toggle_btn.setObjectName("fx_collapsible_toggle")
-        fxicons.set_icon(self._toggle_btn, "chevron_right")
+        fxicons.set_icon(self._toggle_btn, "chevron-right")
         self._toggle_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         self._icon_label = FXIconLabel()
@@ -198,7 +198,7 @@ class FXCollapsibleWidget(QWidget):
             return
 
         self._is_expanded = True
-        fxicons.set_icon(self._toggle_btn, "expand_more")
+        fxicons.set_icon(self._toggle_btn, "chevron-down")
 
         self._mark_expanded(True)
 
@@ -211,7 +211,7 @@ class FXCollapsibleWidget(QWidget):
             return
 
         self._is_expanded = False
-        fxicons.set_icon(self._toggle_btn, "chevron_right")
+        fxicons.set_icon(self._toggle_btn, "chevron-right")
 
         self._mark_expanded(False)
 

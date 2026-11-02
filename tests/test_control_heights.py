@@ -84,6 +84,6 @@ def test_a_plain_tool_button_keeps_its_size_with_its_reserved_edge(qtbot):
     from fxgui import fxicons
 
     button = QToolButton()
-    fxicons.set_icon(button, "home")
+    fxicons.set_icon(button, "house")
     height, _ = _heights(qtbot, lambda: button, QPushButton)
     assert height == 16 + 2 * (2 + 2 + 1) + 3

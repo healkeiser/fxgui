@@ -46,8 +46,8 @@ class FXRatingWidget(QWidget):
         allow_half: bool = False,
         icon_size: int = 20,
         filled_icon: str = "star",
-        empty_icon: str = "star_border",
-        half_icon: str = "star_half",
+        empty_icon: str = "star",
+        half_icon: str = "star-half",
     ):
         super().__init__(parent)
 

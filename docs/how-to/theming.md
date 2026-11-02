@@ -613,11 +613,11 @@ fxstyle.register_widget_style("""
 """)
 ```
 
-An image in a rule names an icon and a token: `image: ~icon(expand_more,
-icon);` draws the icon library's `expand_more` in the theme's `@icon`
+An image in a rule names an icon and a token: `image: ~icon(chevron-down,
+icon);` draws the icon library's `chevron-down` in the theme's `@icon`
 colour. Every arrow and chevron of the base sheet is drawn this way. The
 icon is written as a PNG at 16 px, and at 2x and 3x for scaled screens;
-give the size the rule draws it at as a third value, `~icon(expand_more,
+give the size the rule draws it at as a third value, `~icon(chevron-down,
 icon, 12)`, or Qt shrinks the 16 px picture and blurs it. A PNG, unlike
 an SVG, needs no Qt plugin, which some DCCs fail to load.
 

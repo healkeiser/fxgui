@@ -155,7 +155,7 @@ class FXNotificationBanner(QFrame):
         ...     parent=window,
         ...     message="New version available!",
         ...     title="Update",
-        ...     icon="system_update",
+        ...     icon="monitor-down",
         ... )
         >>> banner.show()
         >>>
@@ -320,7 +320,7 @@ class FXNotificationBanner(QFrame):
         """Set the severity icon and the close icon, in theme ink tokens."""
         if self._severity_type is None:
             shown = fxicons.get_icon(
-                self._custom_icon or "notifications", color="text")
+                self._custom_icon or "bell", color="text")
         elif self._custom_icon:
             kind = severity(self._severity_type)
             shown = fxicons.get_icon(
@@ -329,7 +329,7 @@ class FXNotificationBanner(QFrame):
             shown = severity_icon(self._severity_type)
         self._icon_label.setIcon(shown)
         if self._closable:
-            fxicons.set_icon(self._close_button, "close", color="text_muted")
+            fxicons.set_icon(self._close_button, "x", color="text_muted")
 
     def show(self, unique: bool = False) -> bool:
         """Show the notification with slide-in animation from the right.

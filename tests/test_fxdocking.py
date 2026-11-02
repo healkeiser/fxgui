@@ -174,7 +174,7 @@ def test_the_icons_qtads_draws_leave_fxgui_s_cached_icons_alive(qtbot):
     _window(qtbot)
 
     # QtAds deletes the icon it is given; fxgui's own must stay Python's.
-    for name in ("close", "open_in_new", "expand_more"):
+    for name in ("x", "external-link", "chevron-down"):
         cached = fxicons.get_icon(name)
         assert Shiboken.isValid(cached), name
         assert Shiboken.ownedByPython(cached), name

@@ -29,10 +29,10 @@ def _index(qtbot, icon):
 
 def test_an_icon_widens_the_mark_to_the_icon(qtbot, qapp):
     plain, index, option, _view = _index(qtbot, "")
-    iconned, icon_index, icon_option, _held = _index(qtbot, "check_circle")
+    iconned, icon_index, icon_option, _held = _index(qtbot, "circle-check")
     dot = plain._indicator_metrics(index, option).label_width
     marks = iconned._indicator_metrics(icon_index, icon_option)
-    assert marks.label_icon == "check_circle"
+    assert marks.label_icon == "circle-check"
     assert marks.label_width - dot == (
         FXThumbnailDelegate._LABEL_ICON - FXThumbnailDelegate._LABEL_MARK
     )

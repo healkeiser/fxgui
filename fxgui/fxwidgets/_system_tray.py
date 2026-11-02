@@ -44,7 +44,7 @@ class FXSystemTray(QSystemTrayIcon):
             parent,
         )
         self.quit_action = fxutils.create_action(
-            self, "Quit", trigger=self.quit, icon_name="close")
+            self, "Quit", trigger=self.quit, icon_name="x")
         # Held here: the tray does not own the menu it is given.
         self._menu = QMenu()
         self._menu.addAction(self.quit_action)

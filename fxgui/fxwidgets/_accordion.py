@@ -34,7 +34,7 @@ class FXAccordion(QWidget):
     Examples:
         >>> accordion = FXAccordion()
         >>> accordion.add_section("General", general_content, icon="settings")
-        >>> accordion.add_section("Advanced", advanced_content, icon="tune")
+        >>> accordion.add_section("Advanced", advanced_content, icon="sliders-horizontal")
         >>> accordion.add_section("Info", info_content, icon="info")
     """
 

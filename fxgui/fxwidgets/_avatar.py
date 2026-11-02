@@ -146,7 +146,7 @@ class FXAvatar(QWidget):
         if not initials:
             side = round(size * 0.6)
             glyph = fxicons.get_pixmap(
-                "person", side, side, color=ink,
+                "user", side, side, color=ink,
                 dpr=self.devicePixelRatioF())
             offset = (size - side) / 2
             painter.drawPixmap(QRectF(offset, offset, side, side), glyph,

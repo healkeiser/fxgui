@@ -72,10 +72,10 @@ def test_the_task_icon_wears_the_icon_token(qtbot):
     from fxgui import fxicons
     from fxgui.fxwidgets import FXIconLabel
 
-    _host, card = _card(qtbot, title="Render", icon="movie")
+    _host, card = _card(qtbot, title="Render", icon="film")
     task_icon = card.findChildren(FXIconLabel)[0]
 
-    expected = fxicons.get_icon("movie", color="icon").pixmap(18, 18)
+    expected = fxicons.get_icon("film", color="icon").pixmap(18, 18)
     assert task_icon.pixmap().toImage() == expected.toImage()
     assert card._title_label.property(fxstyle.TITLE_PROPERTY) == "section"
 

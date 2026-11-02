@@ -395,7 +395,7 @@ def _launch(ran):
         return FXCommand(name, lambda: ran.append(name))
 
     return FXCommand(
-        "Launch", icon="rocket_launch",
+        "Launch", icon="rocket",
         choices=lambda: [
             flavor("Blender"),
             FXCommand("Houdini", choices=lambda: [

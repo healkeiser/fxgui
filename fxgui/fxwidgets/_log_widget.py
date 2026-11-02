@@ -254,7 +254,7 @@ class FXOutputLogWidget(QWidget):
         search_layout.addWidget(self.search_count_label)
 
         self.prev_button = QPushButton("Previous")
-        fxicons.set_icon(self.prev_button, "keyboard_arrow_left")
+        fxicons.set_icon(self.prev_button, "chevron-left")
         self.prev_button.clicked.connect(self._find_previous)
         apply_tip(
             self.prev_button,
@@ -265,13 +265,13 @@ class FXOutputLogWidget(QWidget):
         search_layout.addWidget(self.prev_button)
 
         self.next_button = QPushButton("Next")
-        fxicons.set_icon(self.next_button, "keyboard_arrow_right")
+        fxicons.set_icon(self.next_button, "chevron-right")
         self.next_button.clicked.connect(self._find_next)
         apply_tip(self.next_button, "Find Next", "Find next match", "Enter")
         search_layout.addWidget(self.next_button)
 
         self.close_search_button = QPushButton("")
-        fxicons.set_icon(self.close_search_button, "close")
+        fxicons.set_icon(self.close_search_button, "x")
         apply_tip(
             self.close_search_button,
             "Close Search",
@@ -284,7 +284,7 @@ class FXOutputLogWidget(QWidget):
         self._search_bar.hide()
 
         self.clear_button = QPushButton("Clear")
-        fxicons.set_icon(self.clear_button, "delete")
+        fxicons.set_icon(self.clear_button, "trash")
         self.clear_button.clicked.connect(self.clear_log)
         apply_tip(self.clear_button, "Clear Log", "Clear all log messages")
 
@@ -295,7 +295,7 @@ class FXOutputLogWidget(QWidget):
         self.filter_label = QLabel("")
         filter_layout.addWidget(self.filter_label)
         self.show_all_button = QPushButton("Show all")
-        fxicons.set_icon(self.show_all_button, "filter_alt_off")
+        fxicons.set_icon(self.show_all_button, "funnel-x")
         # A bound method, not a lambda: a lambda holding `self` is a cycle.
         self.show_all_button.clicked.connect(self.show_all_levels)
         apply_tip(

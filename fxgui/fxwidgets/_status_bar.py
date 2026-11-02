@@ -99,7 +99,7 @@ class FXStatusItem(QToolButton):
             that takes no mouse. Defaults to `True`.
 
     Examples:
-        >>> item = FXStatusItem("3", "warning")
+        >>> item = FXStatusItem("3", "triangle-alert")
         >>> window.statusBar().add_item(item)
         >>> item.clicked.connect(show_log)
     """

@@ -86,7 +86,7 @@ def test_a_branch_chevron_is_drawn_in_the_16_px_box(qtbot, theme, delegate):
 
     image = tree.viewport().grab(branch).toImage()
     drawn = _extent(image, fxstyle.colors().icon)
-    glyph = _glyph("expand_more", image.pixelColor(1, 1))
+    glyph = _glyph("chevron-down", image.pixelColor(1, 1))
 
     assert _same_box(drawn, glyph), (drawn, glyph)
     window.close()

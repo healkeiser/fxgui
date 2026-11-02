@@ -189,7 +189,7 @@ class FXFilePathWidget(QWidget):
         self._mode = mode
         fxicons.set_icon(
             self._browse_btn,
-            "folder_open" if mode == "folder" else "file_open",
+            "folder-open" if mode == "folder" else "file-input",
         )
         self._validation_timer.start()
 
@@ -262,13 +262,13 @@ class FXFilePathWidget(QWidget):
             return
 
         if not self._input.text():
-            icon, ink, tip = "remove", "text_disabled", "No path entered"
+            icon, ink, tip = "minus", "text_disabled", "No path entered"
         elif self._is_valid:
             icon, ink, tip = (
-                "check_circle", "feedback_success_foreground", "Path exists")
+                "circle-check", "feedback_success_foreground", "Path exists")
         else:
             icon, ink, tip = (
-                "error", "feedback_error_foreground", "Path does not exist")
+                "circle-alert", "feedback_error_foreground", "Path does not exist")
         fxicons.set_icon(self._indicator, icon, color=ink)
         self._indicator.setToolTip(tip)
 

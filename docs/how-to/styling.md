@@ -39,9 +39,9 @@ one way to theme a window, and it follows every switch. See [Theming](theming.md
 and the font each carry, reading colours (`fxstyle.colors()`), and
 registering your own widget styles (`register_widget_style()`).
 
-## Apply the Custom Google Material Icons
+## Apply the Custom Icons
 
-You can find a `QProxyStyle` subclass in [fxstyle](../technical/fxgui/fxstyle.md), called `FXProxyStyle`. When used on a `QApplication` instance, it allows you to switch the defaults icons provided by `Qt` for Google Material icons.
+You can find a `QProxyStyle` subclass in [fxstyle](../technical/fxgui/fxstyle.md), called `FXProxyStyle`. When used on a `QApplication` instance, it swaps the default icons `Qt` provides for icons of the default library (Lucide).
 
 ``` python
 from qtpy.QtWidgets import QApplication
@@ -89,7 +89,7 @@ from fxgui import fxstyle, fxwidgets
 application = fxwidgets.FXApplication()
 window = fxwidgets.FXMainWindow(title="My App", framed=True)
 window.set_banner_text("My App")
-window.set_banner_icon("widgets")
+window.set_banner_icon("layout-dashboard")
 
 body = QWidget()
 fxstyle.mark_as_frame(body)
@@ -151,7 +151,7 @@ from fxgui import fxicons
 
 back = QPushButton()
 back.setProperty("fxRole", "flat")
-fxicons.set_icon(back, "arrow_back")
+fxicons.set_icon(back, "arrow-left")
 ```
 
 Set the property before the button is shown, or call `fxutils.repolish(button)` after changing it.

@@ -153,6 +153,6 @@ def test_the_placeholder_glyph_renders_at_the_avatar_ratio(
 def test_get_pixmap_takes_a_ratio(qapp):
     from fxgui import fxicons
 
-    pixmap = fxicons.get_pixmap("person", 16, 16, dpr=2.0)
+    pixmap = fxicons.get_pixmap("user", 16, 16, dpr=2.0)
     assert pixmap.size() == QSize(32, 32)
     assert pixmap.devicePixelRatio() == 2.0

@@ -201,8 +201,8 @@ def test_every_arrow_in_the_sheet_is_a_chevron(theme):
     sheet = fxstyle._build_stylesheet(theme)
     assert "~icon(" not in sheet
     assert not re.search(r"_arrow(_disabled)?.svg", sheet)
-    for name in ("expand_more", "chevron_right"):
-        assert f"/{name}_" in sheet, name
+    for name in ("chevron-down", "chevron-right"):
+        assert f"_{name}_" in sheet, name
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])

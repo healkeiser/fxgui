@@ -37,7 +37,7 @@ def _show(qtbot, window, child):
 
 def test_the_icon_button_is_round_and_fills_on_hover(qtbot, window):
     button = _show(
-        qtbot, window, FXIconButton("mood", window, tip="Emoji", size=28))
+        qtbot, window, FXIconButton("smile", window, tip="Emoji", size=28))
     tokens = fxstyle._token_map("dark")
     assert button.size().width() == button.size().height() == 28
     assert button.iconSize().width() == 16
@@ -48,20 +48,20 @@ def test_the_icon_button_is_round_and_fills_on_hover(qtbot, window):
 
 
 def test_the_icon_button_rests_without_a_fill(qtbot, window):
-    button = _show(qtbot, window, FXIconButton("mood", window))
+    button = _show(qtbot, window, FXIconButton("smile", window))
     tokens = fxstyle._token_map("dark")
     assert near(pixel(window, button, 14, 3), tokens["@surface"])
 
 
 def test_the_tip_is_the_house_rich_tooltip(qtbot, window):
-    button = FXIconButton("mood", window, tip="Insert an emoji")
+    button = FXIconButton("smile", window, tip="Insert an emoji")
     assert "Insert an emoji" in button.toolTip()
     assert button.statusTip() == "Insert an emoji"
 
 
 def test_checkable_toggles_on_click_and_swaps_icon_and_fill(qtbot, window):
     button = _show(qtbot, window, FXIconButton(
-        "visibility_off", window, checkable=True, checked_icon="visibility"))
+        "eye-off", window, checkable=True, checked_icon="eye"))
     tokens = fxstyle._token_map("dark")
     off = button.icon().pixmap(16, 16).toImage()
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
@@ -165,7 +165,7 @@ def test_keyboard_focus_on_a_child_lights_the_outline(qtbot, window):
 def test_building_them_with_a_parent_opens_no_window(qtbot, window):
     before = {id(w) for w in QApplication.topLevelWidgets() if w.isVisible()}
     _group(qtbot, window, lambda p: FXPrimaryButton("Post", p))
-    window.layout().addWidget(FXIconButton("mood", window))
+    window.layout().addWidget(FXIconButton("smile", window))
     QApplication.processEvents()
     after = {id(w) for w in QApplication.topLevelWidgets() if w.isVisible()}
     assert after - before == {id(window)}
@@ -231,8 +231,8 @@ def test_a_hidden_first_child_takes_the_divider_with_it(qtbot, window):
 def test_the_icon_button_renders_at_its_own_pixel_ratio(qtbot, window,
                                                         monkeypatch):
     """A second screen can be denser than the primary one."""
-    button = FXIconButton("visibility_off", window, checkable=True,
-                          checked_icon="visibility")
+    button = FXIconButton("eye-off", window, checkable=True,
+                          checked_icon="eye")
     for checked in (False, True):
         button.setChecked(checked)
         pixmap = button.icon().pixmap(QSize(16, 16), 2.0)
@@ -254,8 +254,8 @@ def test_a_hovered_checked_icon_takes_the_hover_ink(
     patched = dict(colors, themes={**colors["themes"], "split": split})
     monkeypatch.setattr(fxstyle, "get_colors", lambda: patched)
     fxstyle.apply_theme("split")
-    button = FXIconButton("visibility_off", window, checkable=True,
-                          checked_icon="visibility")
+    button = FXIconButton("eye-off", window, checkable=True,
+                          checked_icon="eye")
     for checked, token in ((True, "@icon_on_accent_secondary"),
                            (False, "@icon")):
         button.setChecked(checked)
@@ -270,14 +270,14 @@ def test_a_hovered_checked_icon_takes_the_hover_ink(
 
 
 def test_the_icon_button_is_a_push_button_s_height_by_default(qtbot, window):
-    button = _show(qtbot, window, FXIconButton("mood", window))
+    button = _show(qtbot, window, FXIconButton("smile", window))
     assert button.width() == button.height() == fxstyle.control_height(button)
 
 
 def test_the_icon_button_round_comes_from_the_theme_not_its_own_sheet(
     qtbot, window
 ):
-    button = _show(qtbot, window, FXIconButton("mood", window, size=40))
+    button = _show(qtbot, window, FXIconButton("smile", window, size=40))
     tokens = fxstyle._token_map("dark")
     hover(qtbot, button)
     assert button.styleSheet() == ""
@@ -289,12 +289,12 @@ def test_a_new_icon_button_size_restyles_no_root(qtbot, window, monkeypatch):
     calls = []
     monkeypatch.setattr(fxstyle, "_reapply_to_roots", lambda: calls.append(1))
     for size in (23, 37, 51):
-        FXIconButton("mood", window, size=size)
+        FXIconButton("smile", window, size=size)
     assert calls == []
 
 
 def test_an_odd_size_icon_button_is_round(qtbot, window):
-    button = _show(qtbot, window, FXIconButton("mood", window, size=37))
+    button = _show(qtbot, window, FXIconButton("smile", window, size=37))
     tokens = fxstyle._token_map("dark")
     hover(qtbot, button)
     assert near(pixel(window, button, 18, 3), tokens["@state_hover"])

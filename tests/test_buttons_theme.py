@@ -81,7 +81,7 @@ def _drawn(button, mode=QIcon.Normal) -> set:
 
 def test_the_icon_button_icon_follows_a_switch(qtbot, qapp):
     fxstyle.apply_theme("dark")
-    button = FXIconButton("visibility", checkable=True)
+    button = FXIconButton("eye", checkable=True)
     qtbot.addWidget(button)
     assert _drawn(button) == _hex(fxstyle.colors().icon)
     assert _drawn(button, QIcon.Active) == _hex(fxstyle.colors().icon)
@@ -99,12 +99,12 @@ def test_icon_only_widgets_hold_no_theme_connection(qtbot, qapp):
     before = _receivers()
     widgets = [
         FXPrimaryButton("Post", icon="send"),
-        FXIconButton("visibility"),
+        FXIconButton("eye"),
         FXCollapsibleWidget(title="T", icon="settings"),
         FXDropZone(),
         FXFilePathWidget(validate=True),
         FXNotificationBanner(message="hi"),
-        FXProgressCard(title="Task", icon="task"),
+        FXProgressCard(title="Task", icon="clipboard-check"),
         FXRatingWidget(),
         FXTagChip("tag"),
     ]

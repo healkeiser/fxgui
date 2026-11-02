@@ -77,7 +77,7 @@ def test_the_name_moves_to_the_menu_bar_corner(qtbot):
 
 def test_the_corner_takes_the_banner_icon(qtbot):
     window = _window(qtbot)
-    window.set_banner_icon("widgets")
+    window.set_banner_icon("layout-dashboard")
     corner = window.menuBar().cornerWidget()
 
     assert corner.isAncestorOf(window.banner_icon)
@@ -168,7 +168,7 @@ def test_a_disabled_tool_button_on_the_frame_shows_no_box(qtbot, theme):
     window = _window(qtbot, theme=theme)
     button = QToolButton()
     button.setPopupMode(QToolButton.MenuButtonPopup)
-    fxicons.set_icon(button, "home")
+    fxicons.set_icon(button, "house")
     button.setEnabled(False)
     window.toolbar.addWidget(button)
     qtbot.wait(10)
@@ -272,7 +272,7 @@ def test_the_corner_title_is_inset_like_the_first_menu(qtbot, theme):
     """The name ends as far from the right edge as "File" starts from the
     left one."""
     window = _window(qtbot, theme=theme)
-    window.set_banner_icon("widgets")
+    window.set_banner_icon("layout-dashboard")
     qtbot.wait(10)
     bar = window.menuBar()
     image = bar.grab().toImage()

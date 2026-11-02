@@ -247,7 +247,7 @@ class FXBreadcrumb(QWidget):
         self,
         parent: Optional[QWidget] = None,
         separator: str = "/",
-        home_icon: str = "home",
+        home_icon: str = "house",
         show_navigation: bool = False,
         path_separator: str = "/",
         home_path: Optional[List[str]] = None,
@@ -278,7 +278,7 @@ class FXBreadcrumb(QWidget):
             self._back_button = QPushButton()
             self._back_button.setCursor(Qt.PointingHandCursor)
             self._back_button.setFixedSize(side, side)
-            fxicons.set_icon(self._back_button, "arrow_back")
+            fxicons.set_icon(self._back_button, "arrow-left")
             self._back_button.clicked.connect(self.go_back)
             apply_tip(
                 self._back_button,
@@ -289,7 +289,7 @@ class FXBreadcrumb(QWidget):
             self._forward_button = QPushButton()
             self._forward_button.setCursor(Qt.PointingHandCursor)
             self._forward_button.setFixedSize(side, side)
-            fxicons.set_icon(self._forward_button, "arrow_forward")
+            fxicons.set_icon(self._forward_button, "arrow-right")
             self._forward_button.clicked.connect(self.go_forward)
             apply_tip(
                 self._forward_button,

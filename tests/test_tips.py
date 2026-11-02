@@ -706,7 +706,7 @@ def test_a_later_tip_keeps_a_name_the_caller_chose(qtbot):
 def test_icon_only_buttons_carry_a_name(qtbot):
     from fxgui.fxwidgets import FXEmojiButton, FXEmojiPicker, FXIconButton
 
-    icon = FXIconButton("attach_file", tip="Attach")
+    icon = FXIconButton("paperclip", tip="Attach")
     emoji = FXEmojiButton()
     picker = FXEmojiPicker()
     for widget in (icon, emoji, picker):

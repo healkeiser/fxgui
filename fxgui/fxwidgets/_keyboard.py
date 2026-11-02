@@ -195,8 +195,8 @@ class FXFilteredTree(QWidget):
         super().__init__(parent)
         self.tree = FXKeyboardTree() if tree is None else tree
         self.filter_bar = FXSearchBar(placeholder=placeholder)
-        self.expand_button = self._fold_button("unfold_more", "Expand all")
-        self.collapse_button = self._fold_button("unfold_less", "Collapse all")
+        self.expand_button = self._fold_button("chevrons-up-down", "Expand all")
+        self.collapse_button = self._fold_button("chevrons-down-up", "Collapse all")
         self.expand_button.clicked.connect(self.tree.expandAll)
         self.collapse_button.clicked.connect(self.tree.collapseAll)
         self.filter_bar.search_changed.connect(self._filter)

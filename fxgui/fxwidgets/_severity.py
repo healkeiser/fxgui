@@ -28,12 +28,12 @@ class _Severity(NamedTuple):
 
 
 SEVERITIES = {
-    CRITICAL: _Severity("Critical", "cancel", "error", logging.CRITICAL),
-    ERROR: _Severity("Error", "error", "error", logging.ERROR),
-    WARNING: _Severity("Warning", "warning", "warning", logging.WARNING),
-    SUCCESS: _Severity("Success", "check_circle", "success", logging.INFO),
+    CRITICAL: _Severity("Critical", "circle-x", "error", logging.CRITICAL),
+    ERROR: _Severity("Error", "circle-alert", "error", logging.ERROR),
+    WARNING: _Severity("Warning", "triangle-alert", "warning", logging.WARNING),
+    SUCCESS: _Severity("Success", "circle-check", "success", logging.INFO),
     INFO: _Severity("Info", "info", "info", logging.INFO),
-    DEBUG: _Severity("Debug", "bug_report", "debug", logging.DEBUG),
+    DEBUG: _Severity("Debug", "bug", "debug", logging.DEBUG),
 }
 
 

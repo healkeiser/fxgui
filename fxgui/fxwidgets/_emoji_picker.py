@@ -261,7 +261,7 @@ class FXEmojiButton(FXIconButton):
         size: int = 28,
     ):
         super().__init__(
-            "add_reaction", parent, tip="Insert an emoji", size=size
+            "smile-plus", parent, tip="Insert an emoji", size=size
         )
         self._emojis = emojis
         self._picker: Optional[FXEmojiPicker] = None

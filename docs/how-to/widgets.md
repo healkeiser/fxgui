@@ -30,7 +30,7 @@ class MyWidget(QWidget):
 
         # Use fxicons for theme-aware icons
         home_button = QPushButton("Home")
-        fxicons.set_icon(home_button, "home")
+        fxicons.set_icon(home_button, "house")
 
         settings_button = QPushButton("Settings")
         fxicons.set_icon(settings_button, "settings")

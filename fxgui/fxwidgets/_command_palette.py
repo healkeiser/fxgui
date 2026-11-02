@@ -65,7 +65,7 @@ class FXCommand:
             matched by the search.
         enabled: False shows the row greyed; picking it shows `tip`.
         tip: Shown under the list while the row is current.
-        icon: An icon's name, drawn left of the label: a material one, or
+        icon: An icon's name, drawn left of the label: one of the default library, or
             `library:name` for another library, such as `brands:houdini_mark`.
         choices: Picking the row lists what this returns, in place, to pick
             one; a choice with its own `choices` steps in again.
@@ -425,7 +425,7 @@ class FXCommandPalette(QFrame):
         if not library:
             return fxicons.get_icon(icon_name)
         # A library icon may be missing, as a DCC with no mark yet.
-        return fxicons.get_icon(icon_name, library=library, fallback="apps")
+        return fxicons.get_icon(icon_name, library=library, fallback="layout-grid")
 
     def _placeholder(self, text: str) -> None:
         item = QTreeWidgetItem([text])

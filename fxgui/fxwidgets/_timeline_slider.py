@@ -233,19 +233,19 @@ class FXTimelineSlider(QWidget):
             self.view_changed.connect(self._sync_view_spinboxes)
 
         self._goto_start_btn = self._button(
-            "skip_previous", self.go_to_start,
+            "skip-back", self.go_to_start,
             "Go to Start", "Jump to the first frame", "Home")
         self._prev_btn = self._button(
-            "chevron_left", self.previous_frame,
+            "chevron-left", self.previous_frame,
             "Previous Frame", "Go back one frame", "Left")
         self._play_btn = self._button(
-            "play_arrow", self.toggle_playback,
+            "play", self.toggle_playback,
             "Play", "Start playback", "Space")
         self._next_btn = self._button(
-            "chevron_right", self.next_frame,
+            "chevron-right", self.next_frame,
             "Next Frame", "Go forward one frame", "Right")
         self._goto_end_btn = self._button(
-            "skip_next", self.go_to_end,
+            "skip-forward", self.go_to_end,
             "Go to End", "Jump to the last frame", "End")
         # The loop button's checked state is the one record of loop playback.
         self._loop_btn = self._button(
@@ -255,19 +255,19 @@ class FXTimelineSlider(QWidget):
         self._loop_btn.setChecked(True)
         self._loop_btn.toggled.connect(self.loop_toggled)
         self._prev_key_btn = self._button(
-            "keyboard_double_arrow_left", self.go_to_previous_keyframe,
+            "chevrons-left", self.go_to_previous_keyframe,
             "Previous Keyframe", "Jump to the nearest keyframe before")
         self._next_key_btn = self._button(
-            "keyboard_double_arrow_right", self.go_to_next_keyframe,
+            "chevrons-right", self.go_to_next_keyframe,
             "Next Keyframe", "Jump to the nearest keyframe after")
         # login/logout read as entering and leaving the range, and differ
         # from the go-to-start and go-to-end glyphs.
         self._mark_in_btn = self._button(
-            "login", self._request_in,
+            "log-in", self._request_in,
             "Mark In", "Set the loop in point at the current frame; "
             "Shift-drag the track to set both", "I")
         self._mark_out_btn = self._button(
-            "logout", self._request_out,
+            "log-out", self._request_out,
             "Mark Out", "Set the loop out point at the current frame; "
             "Shift-drag the track to set both", "O")
 
@@ -809,7 +809,7 @@ class FXTimelineSlider(QWidget):
         """Stop playback."""
         self._is_playing = False
         self._playback_timer.stop()
-        fxicons.set_icon(self._play_btn, "play_arrow")
+        fxicons.set_icon(self._play_btn, "play")
         apply_tip(self._play_btn, "Play", "Start playback", "Space")
         self.playback_stopped.emit()
 

@@ -30,7 +30,7 @@ class FXPrimaryButton(QPushButton):
     Args:
         text: The button's label, or its parent as with QPushButton.
         parent: Parent widget.
-        icon: A material icon name, drawn in the on-accent icon colour.
+        icon: An icon name, drawn in the on-accent icon colour.
 
     Examples:
         >>> post = FXPrimaryButton("Post", form, icon="send")
@@ -54,7 +54,7 @@ class FXPrimaryButton(QPushButton):
         self.setProperty("fxRole", "primary")
 
     def set_icon_name(self, icon: str) -> None:
-        """Draw the material icon `icon` in the on-accent icon colour."""
+        """Draw the icon `icon` in the on-accent icon colour."""
         # Qt draws a hovered push button's icon in Normal mode, so the
         # hover fill's ink is a second icon swapped in; each resolves its
         # token when drawn.
@@ -132,7 +132,7 @@ class FXIconButton(QToolButton):
     """A round, flat icon button, filled with the accent when checked.
 
     Args:
-        icon: A material icon name.
+        icon: An icon name.
         parent: Parent widget.
         tip: The tooltip, set through `apply_tip`.
         checkable: Whether a click toggles the button.
@@ -141,8 +141,8 @@ class FXIconButton(QToolButton):
             push button's height.
 
     Examples:
-        >>> eye = FXIconButton("visibility_off", bar, tip="Show to client",
-        ...                    checkable=True, checked_icon="visibility")
+        >>> eye = FXIconButton("eye-off", bar, tip="Show to client",
+        ...                    checkable=True, checked_icon="eye")
     """
 
     def __init__(

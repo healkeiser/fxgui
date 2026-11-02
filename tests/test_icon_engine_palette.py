@@ -142,8 +142,8 @@ def test_an_icon_copy_that_detaches_still_draws(qapp):
 
 
 def test_two_thousand_icon_draws_fit_a_small_budget(qtbot):
-    names = ["check", "close", "save", "add", "delete", "folder", "home",
-             "search", "settings", "refresh"]
+    names = ["check", "x", "save", "plus", "trash", "folder", "house",
+             "search", "settings", "refresh-cw"]
     view = QListWidget()
     qtbot.addWidget(view)
     view.setIconSize(QSize(16, 16))

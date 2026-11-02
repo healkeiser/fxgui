@@ -225,13 +225,13 @@ class FXMainWindow(QMainWindow):
     def _create_actions(self) -> None:
         """Create the actions for the window."""
         self.about_action = fxutils.create_action(
-            self, "About", trigger=self._show_about_dialog, icon_name="help")
+            self, "About", trigger=self._show_about_dialog, icon_name="circle-question-mark")
         self.close_action = fxutils.create_action(
             self,
             "Close",
             trigger=self.close,
             shortcut="Ctrl+Alt+q",
-            icon_name="close",
+            icon_name="x",
         )
         self.window_on_top_action = fxutils.create_action(
             self,
@@ -239,21 +239,21 @@ class FXMainWindow(QMainWindow):
             trigger=self._toggle_window_on_top,
             shortcut="Ctrl+Shift+t",
             checkable=True,
-            icon_name="hdr_strong",
+            icon_name="sun",
         )
         self.minimize_window_action = fxutils.create_action(
             self,
             "Minimize",
             trigger=self.showMinimized,
             shortcut="Ctrl+Alt+m",
-            icon_name="minimize",
+            icon_name="minimize-2",
         )
         self.maximize_window_action = fxutils.create_action(
             self,
             "Maximize",
             trigger=self.showMaximized,
             shortcut="Ctrl+Alt+f",
-            icon_name="maximize",
+            icon_name="maximize-2",
         )
 
         group = QActionGroup(self)
@@ -286,10 +286,10 @@ class FXMainWindow(QMainWindow):
             self,
             "Documentation",
             trigger=self._open_documentation,
-            icon_name="menu_book",
+            icon_name="book-open",
         )
         self.refresh_action = fxutils.create_action(
-            self, "Refresh", shortcut="Ctrl+Alt+r", icon_name="refresh")
+            self, "Refresh", shortcut="Ctrl+Alt+r", icon_name="refresh-cw")
 
     def _create_menus(self, bar: QMenuBar) -> None:
         """Build fxgui's File, Window and Help menus on `bar`."""
@@ -313,14 +313,14 @@ class FXMainWindow(QMainWindow):
         window_menu.addAction(self.window_on_top_action)
         window_menu.addSeparator()
         theme_menu = menu("Theme", _MENU_NAMES["theme_menu"], window_menu)
-        fxicons.set_icon(theme_menu, "brightness_4")
+        fxicons.set_icon(theme_menu, "sun-moon")
         for action in self.theme_actions.values():
             theme_menu.addAction(action)
         window_menu.addMenu(theme_menu)
         size_menu = menu(
             "Row size", _MENU_NAMES["row_size_menu"], window_menu
         )
-        fxicons.set_icon(size_menu, "density_medium")
+        fxicons.set_icon(size_menu, "rows-3")
         for action in self.row_size_actions.values():
             size_menu.addAction(action)
         window_menu.addMenu(size_menu)

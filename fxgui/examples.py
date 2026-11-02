@@ -116,7 +116,7 @@ def _control_row() -> QHBoxLayout:
     row = QHBoxLayout()
     for widget in (
         QPushButton("Cancel"),
-        fxwidgets.FXIconButton("mood"),
+        fxwidgets.FXIconButton("smile"),
         split,
         joined,
         QLineEdit("sh0010"),
@@ -136,16 +136,16 @@ def _control_row() -> QHBoxLayout:
 def _buttons_page() -> QWidget:
     composer = []
     for icon_name, text in (
-        ("mood", "Insert an emoji"),
-        ("attach_file", "Attach a file"),
+        ("smile", "Insert an emoji"),
+        ("paperclip", "Attach a file"),
     ):
         composer.append(fxwidgets.FXIconButton(icon_name, tip=text))
     composer.append(
         fxwidgets.FXIconButton(
-            "visibility_off",
+            "eye-off",
             tip="Show to the client",
             checkable=True,
-            checked_icon="visibility",
+            checked_icon="eye",
         )
     )
     joined = fxwidgets.FXJoinedGroup()
@@ -293,9 +293,9 @@ def _display_page() -> QWidget:
 
     icons = []
     for key, icon_name in (
-        ("success", "check_circle"),
-        ("warning", "warning"),
-        ("error", "error"),
+        ("success", "circle-check"),
+        ("warning", "triangle-alert"),
+        ("error", "circle-alert"),
         ("info", "info"),
     ):
         label = fxwidgets.FXIconLabel(size=18)
@@ -365,7 +365,7 @@ def _display_page() -> QWidget:
                 title="Rendering sh0010",
                 description="Frame 42 of 100",
                 progress=42,
-                icon="movie",
+                icon="film",
             ),
             bar,
         ),
@@ -383,8 +383,8 @@ def _display_page() -> QWidget:
 def _containers_page() -> QWidget:
     accordion = fxwidgets.FXAccordion()
     for title, icon_name in (
-        ("Render", "movie"),
-        ("Cache", "storage"),
+        ("Render", "film"),
+        ("Cache", "database"),
         ("Output", "folder"),
     ):
         form = QFormLayout()
@@ -429,7 +429,7 @@ def _thumbnail_tree() -> QTreeWidget:
     thumbnail = str(IMAGES_ROOT / "missing_image.png")
     for episode in ("ep101", "ep102"):
         top = QTreeWidgetItem(tree, [episode, "", "In progress"])
-        top.setIcon(0, get_icon("movie"))
+        top.setIcon(0, get_icon("film"))
         top.setData(0, delegate.DESCRIPTION_ROLE, "Episode")
         # A token name, so each card follows every theme switch.
         top.setData(0, Qt.BackgroundRole, "surface")
@@ -548,7 +548,7 @@ def _timeline_page() -> QWidget:
                 "middle-button drag pans."
             ),
             full,
-            _row(_button("Reset view", full.reset_view, "fit_screen")),
+            _row(_button("Reset view", full.reset_view, "scan")),
         ),
     )
 
@@ -607,8 +607,8 @@ def _open_framed(gallery: QWidget) -> None:
     )
     window.setWindowFlag(Qt.Window)
     row = fxwidgets.FXCommandRow(margins=(6, 6, 6, 0))
-    row.addAction(get_icon("arrow_back"), "Back")
-    row.addAction(get_icon("refresh"), "Refresh")
+    row.addAction(get_icon("arrow-left"), "Back")
+    row.addAction(get_icon("refresh-cw"), "Refresh")
     window.addToolBar(Qt.TopToolBarArea, row)
     window.setCentralWidget(_framed_body())
     window.resize(760, 480)
@@ -668,12 +668,12 @@ def _grab_into(gallery: QWidget, label: QLabel) -> None:
 
 def _windows_page(window: fxwidgets.FXMainWindow) -> QWidget:
     bar = window.statusBar()
-    warnings = fxwidgets.FXStatusItem("3", "warning")
+    warnings = fxwidgets.FXStatusItem("3", "triangle-alert")
     warnings.set_tip("Warnings", "Show the log")
     warnings.clicked.connect(lambda: _LOGGER.warning("3 warnings"))
     bar.add_item(warnings)
     bar.add_item(
-        fxwidgets.FXStatusItem("Online", "cloud_done", clickable=False),
+        fxwidgets.FXStatusItem("Online", "cloud-check", clickable=False),
         side="right",
     )
     busy = QCheckBox("Busy")
@@ -714,7 +714,7 @@ def _windows_page(window: fxwidgets.FXMainWindow) -> QWidget:
             ),
             fxwidgets.FXCommand(
                 "Publish", lambda: None, enabled=False,
-                tip="Nothing to publish", icon="publish",
+                tip="Nothing to publish", icon="upload",
             ),
         ],
     )

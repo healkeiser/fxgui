@@ -18,7 +18,7 @@ Custom Python classes and utilities tailored for Qt built UI, in VFX-oriented DC
 
 - **Multi-DCC Support**: Works seamlessly in Houdini, Maya, Nuke, and standalone Python
 - **Theme System**: Dark/light themes with automatic persistence and easy customization
-- **Icon Libraries**: Built-in Material Icons, Font Awesome, Simple Icons, and DCC-specific icons
+- **Icon Libraries**: Built-in Lucide (the default), Material Icons, Font Awesome, Simple Icons, and DCC-specific icons
 - **Theme-Aware Icons**: Icons automatically update colors when switching themes
 - **Custom Widgets**: Pre-styled widgets including main windows, splash screens, collapsible panels, and more
 - **Configuration Management**: Persistent settings via QSettings with INI format

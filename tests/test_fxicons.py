@@ -177,7 +177,7 @@ def _count_calls(monkeypatch, module, name):
 def test_get_icon_reads_the_colour_cache(qapp, monkeypatch):
     fxstyle.colors()
     depth = _count_calls(monkeypatch, fxstyle, "_depth_colors")
-    for name in ("add", "close", "save"):
+    for name in ("plus", "x", "save"):
         fxicons.get_icon(name)
 
     assert depth == []

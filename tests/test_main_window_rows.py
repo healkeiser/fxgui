@@ -129,7 +129,7 @@ def test_a_bare_blank_on_a_framed_row_shows_the_frame(qtbot):
 def _corner_tools(qtbot, window):
     tools = QToolBar("Tools")
     tools.setIconSize(QSize(17, 17))
-    tools.addAction(fxicons.get_icon("refresh"), "Refresh")
+    tools.addAction(fxicons.get_icon("refresh-cw"), "Refresh")
     window.add_corner_widget(tools)
     return tools
 
@@ -139,7 +139,7 @@ def test_a_corner_tool_shown_later_is_placed_not_overflowed(qtbot):
     tools = _corner_tools(qtbot, window)
     _shown(qtbot, window)
 
-    later = tools.addAction(fxicons.get_icon("play_arrow"), "Run")
+    later = tools.addAction(fxicons.get_icon("play"), "Run")
     QApplication.processEvents()
     QApplication.processEvents()
 
@@ -177,7 +177,7 @@ def _with_row(window):
 
 def _icon_button():
     button = QPushButton()
-    button.setIcon(fxicons.get_icon("arrow_back"))
+    button.setIcon(fxicons.get_icon("arrow-left"))
     return button
 
 
@@ -227,7 +227,7 @@ def test_corner_tools_show_the_menu_bar_through(qtbot, framed, theme):
     fxstyle.apply_theme(theme)
     window = FXMainWindow(framed=framed)
     tools = _corner_tools(qtbot, window)
-    idle = tools.addAction(fxicons.get_icon("play_arrow"), "Run")
+    idle = tools.addAction(fxicons.get_icon("play"), "Run")
     idle.setEnabled(False)
     _shown(qtbot, window)
     bar = window.menuBar()
