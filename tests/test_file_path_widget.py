@@ -21,6 +21,16 @@ def test_checks_run_on_the_pool_not_on_owned_threads(qtbot, qapp, tmp_path):
     assert widget.findChildren(QThread) == []
 
 
+def test_a_missing_path_shows_the_error_indicator(qtbot, qapp, tmp_path):
+    widget = FXFilePathWidget(mode="file")
+    qtbot.addWidget(widget)
+    with qtbot.waitSignal(widget.path_valid) as blocker:
+        widget.set_path(str(tmp_path / "missing"))
+        widget._do_validation()
+    assert blocker.args == [False]
+    assert widget._indicator.toolTip() == "Path does not exist"
+
+
 def test_a_multi_file_drop_keeps_every_file(qtbot, qapp, tmp_path):
     widget = FXFilePathWidget(mode="files")
     qtbot.addWidget(widget)

@@ -124,3 +124,17 @@ def test_size_hint_makes_room_for_the_box(qtbot):
 
     box = _check_rect(ticked_tree, ticked_index)
     assert with_box - without >= box.width()
+
+
+def test_a_ticked_and_a_half_ticked_row_paint_their_marks(qtbot):
+    """Each state paints its own mark over the filled box: no two alike."""
+
+    tree, _, item = _tree(qtbot, checkable=True, title="")
+    box = _check_rect(tree, tree.model().index(0, 0))
+    painted = {}
+    for state in (Qt.Unchecked, Qt.Checked, Qt.PartiallyChecked):
+        item.setCheckState(0, state)
+        painted[state] = _painted(tree, box)
+    assert painted[Qt.Checked] != painted[Qt.PartiallyChecked]
+    assert painted[Qt.Checked] != painted[Qt.Unchecked]
+    assert painted[Qt.PartiallyChecked] != painted[Qt.Unchecked]

@@ -260,7 +260,7 @@ class FXTimelineSlider(QWidget):
         self._next_key_btn = self._button(
             "chevrons-right", self.go_to_next_keyframe,
             "Next Keyframe", "Jump to the nearest keyframe after")
-        # login/logout read as entering and leaving the range, and differ
+        # log-in/log-out read as entering and leaving the range, and differ
         # from the go-to-start and go-to-end glyphs.
         self._mark_in_btn = self._button(
             "log-in", self._request_in,

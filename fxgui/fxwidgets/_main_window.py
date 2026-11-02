@@ -239,21 +239,21 @@ class FXMainWindow(QMainWindow):
             trigger=self._toggle_window_on_top,
             shortcut="Ctrl+Shift+t",
             checkable=True,
-            icon_name="sun",
+            icon_name="pin",
         )
         self.minimize_window_action = fxutils.create_action(
             self,
             "Minimize",
             trigger=self.showMinimized,
             shortcut="Ctrl+Alt+m",
-            icon_name="minimize-2",
+            icon_name="minus",
         )
         self.maximize_window_action = fxutils.create_action(
             self,
             "Maximize",
             trigger=self.showMaximized,
             shortcut="Ctrl+Alt+f",
-            icon_name="maximize-2",
+            icon_name="square",
         )
 
         group = QActionGroup(self)

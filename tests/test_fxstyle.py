@@ -11,7 +11,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QLabel, QTreeWidget, QVBoxLayout, QWidget
 
 # Internal
-from fxgui import fxstyle
+from fxgui import fxicons, fxstyle
 
 
 def _count_calls(monkeypatch, module, name):
@@ -190,6 +190,21 @@ def test_the_proxy_style_answers_qts_standard_icons_with_themed_ones(qapp):
     icon = style.standardIcon(QStyle.SP_MessageBoxCritical)
     assert icon is fxstyle._standard_icons()[QStyle.SP_MessageBoxCritical]
     assert not icon.pixmap(16, 16).isNull()
+
+
+@pytest.mark.parametrize(("pixmap", "name"), [
+    ("SP_TitleBarNormalButton", "copy"),
+    ("SP_RestoreDefaultsButton", "rotate-ccw"),
+    ("SP_TitleBarMinButton", "minus"),
+    ("SP_TitleBarMaxButton", "square"),
+    ("SP_FileDialogToParent", "folder-up"),
+])
+def test_a_window_and_dialog_icon_draws_its_chosen_glyph(qapp, pixmap, name):
+    from qtpy.QtWidgets import QStyle
+
+    drawn = fxstyle.FXProxyStyle().standardIcon(getattr(QStyle, pixmap))
+    assert drawn.pixmap(16, 16).toImage() == fxicons.get_icon(
+        name).pixmap(16, 16).toImage()
 
 
 # -- colors() -----------------------------------------------------------

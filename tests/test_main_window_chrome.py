@@ -188,3 +188,17 @@ def test_the_fit_is_still_bounded_by_the_screen(qtbot):
     available = window.screen().availableGeometry()
     assert window.height() <= available.height()
     assert window.width() <= available.width()
+
+
+def test_the_window_menu_draws_its_chosen_glyphs(qtbot, qapp):
+    from fxgui import fxicons
+
+    window = FXMainWindow()
+    qtbot.addWidget(window)
+    for action, name in [
+        (window.window_on_top_action, "pin"),
+        (window.minimize_window_action, "minus"),
+        (window.maximize_window_action, "square"),
+    ]:
+        assert action.icon().pixmap(16, 16).toImage() == fxicons.get_icon(
+            name).pixmap(16, 16).toImage(), name
