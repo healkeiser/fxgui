@@ -3,6 +3,7 @@
 # Built-in
 import gc
 import inspect
+import tempfile
 from pathlib import Path
 
 # Third-party
@@ -11,7 +12,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QLabel, QTreeWidget, QVBoxLayout, QWidget
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import fxconfig, fxicons, fxstyle
 
 
 def _count_calls(monkeypatch, module, name):
@@ -52,10 +53,22 @@ def test_token_replacement_takes_the_longest_key_first():
     assert "@" not in out
 
 
-def test_an_unknown_longer_token_is_left_whole():
-    tokens = {"@surface": "#302f2f"}
-    out = fxstyle._substitute("a { x: @surface_raised; y: @surface; }", tokens)
-    assert out == "a { x: @surface_raised; y: #302f2f; }"
+def test_a_hyphenated_token_is_replaced_whole():
+    tokens = {"@brand": "#111111", "@brand-accent": "#222222"}
+    out = fxstyle._substitute("a { x: @brand-accent; y: @brand; }", tokens)
+    assert out == "a { x: #222222; y: #111111; }"
+
+
+def test_an_alpha_glued_to_a_token_is_kept():
+    tokens = {"@accent_primary": "#2196f3"}
+    out = fxstyle._substitute("a { x: @accent_primary80; }", tokens)
+    assert out == "a { x: #2196f380; }"
+
+
+def test_a_replaced_value_is_not_read_for_a_token_again():
+    tokens = {"@alias": "@b", "@b": "#333333"}
+    out = fxstyle._substitute("a { x: @alias; y: @b; }", tokens)
+    assert out == "a { x: @b; y: #333333; }"
 
 
 def test_the_sheet_is_built_once_per_theme(qapp, monkeypatch):
@@ -70,7 +83,7 @@ def test_the_sheet_is_built_once_per_theme(qapp, monkeypatch):
     assert resolves == []
 
 
-def test_a_cached_sheet_follows_every_input(qapp, tmp_path):
+def test_a_cached_sheet_follows_every_input(qapp, tmp_path, monkeypatch):
     before = fxstyle._build_stylesheet("dark")
     fxstyle.register_widget_style("FXCacheProbe { border: 1px solid @border; }")
     assert "FXCacheProbe" in fxstyle._build_stylesheet("dark")
@@ -80,6 +93,43 @@ def test_a_cached_sheet_follows_every_input(qapp, tmp_path):
     )
     assert "#123456" in fxstyle._build_stylesheet("dark")
     assert "#123456" not in before
+
+    monkeypatch.setattr(fxstyle, "_colors", {
+        **fxstyle.get_colors(), "fonts": {"title": "FXProbeFamily"}})
+    assert "FXProbeFamily" not in fxstyle._build_stylesheet("dark")
+
+    # A family added straight through Qt, not through register_fonts.
+    real = fxstyle.QFontDatabase
+
+    class Fonts(real):
+        @staticmethod
+        def families(*args):
+            return [*real.families(*args), "FXProbeFamily"]
+
+    monkeypatch.setattr(fxstyle, "QFontDatabase", Fonts)
+    assert "FXProbeFamily" in fxstyle._build_stylesheet("dark")
+
+    rows = fxstyle._build_stylesheet("dark")
+    monkeypatch.setattr(fxstyle, "_row_size", "small")
+    assert fxstyle._build_stylesheet("dark") != rows
+
+    other = tmp_path / "other_temp"
+    other.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(other))
+    assert other.as_posix() in fxstyle._build_stylesheet("dark")
+
+    images = fxstyle._SHEET_URL.findall(fxstyle._build_stylesheet("dark"))
+    assert images
+    Path(images[0]).unlink()
+    fxstyle._build_stylesheet("dark")
+    assert Path(images[0]).exists()
+
+    fxconfig.set_application_name("fxgui_cache_probe")
+    fxconfig.set_value(fxstyle._SETTINGS_ROW_SIZE_KEY, "big")
+    fxconfig.set_application_name("fxgui")
+    normal = fxstyle._build_stylesheet("dark")
+    fxconfig.set_application_name("fxgui_cache_probe")
+    assert fxstyle._build_stylesheet("dark") != normal
 
 
 def test_every_token_family_resolves(qapp):

@@ -93,9 +93,10 @@ def test_a_drop_on_the_field_reaches_the_widget(qtbot, qapp):
 
 
 def _blocked_disk(monkeypatch):
-    """Make every disk check in the widget wait until the event is set."""
+    """Make every path a share whose check waits until the event is set."""
     import threading
 
+    from fxgui import _compat
     from fxgui.fxwidgets import _file_path_widget
 
     gate = threading.Event()
@@ -106,7 +107,71 @@ def _blocked_disk(monkeypatch):
         return real(path, mode)
 
     monkeypatch.setattr(_file_path_widget, "_path_is_valid", slow)
+    monkeypatch.setattr(_compat, "can_stall", lambda _path: True)
     return gate
+
+
+def _dead_share(monkeypatch):
+    """Make a check of a share path hang until the event is set, then pass."""
+    import threading
+
+    from fxgui.fxwidgets import _file_path_widget
+
+    gate = threading.Event()
+    real = _file_path_widget._path_is_valid
+
+    def hang(path, mode):
+        if path.startswith(("\\\\", "//")):
+            gate.wait(10)
+            return True
+        return real(path, mode)
+
+    monkeypatch.setattr(_file_path_widget, "_path_is_valid", hang)
+    return gate
+
+
+def _drop(widget, path):
+    mime = QMimeData()
+    mime.setUrls([QUrl.fromLocalFile(path)])
+    widget.dropEvent(
+        QDropEvent(QPointF(5, 5), Qt.CopyAction, mime, Qt.LeftButton, Qt.NoModifier)
+    )
+
+
+def test_stuck_share_checks_never_hold_up_a_local_one(
+    qtbot, qapp, tmp_path, monkeypatch
+):
+    gate = _dead_share(monkeypatch)
+    stuck = FXFilePathWidget(mode="folder")
+    qtbot.addWidget(stuck)
+    try:
+        for share in (r"\\dead\a", r"\\dead\b", r"\\dead\c"):
+            stuck.set_path(share)
+            stuck._do_validation()
+        widget = FXFilePathWidget(mode="folder")
+        qtbot.addWidget(widget)
+        widget.set_path(str(tmp_path))
+        widget._do_validation()
+        assert widget.is_valid()
+        _drop(widget, str(tmp_path / "missing"))
+        _drop(widget, str(tmp_path))
+        assert widget.path() == QUrl.fromLocalFile(str(tmp_path)).toLocalFile()
+    finally:
+        gate.set()
+
+
+def test_only_the_latest_drop_lands(qtbot, qapp, tmp_path, monkeypatch):
+    gate = _dead_share(monkeypatch)
+    widget = FXFilePathWidget(mode="folder")
+    qtbot.addWidget(widget)
+    _drop(widget, "//dead/share")
+    _drop(widget, str(tmp_path))
+    local = QUrl.fromLocalFile(str(tmp_path)).toLocalFile()
+    assert widget.path() == local
+    gate.set()
+    # The share's late answer arrives, and is not shown.
+    qtbot.wait(300)
+    assert widget.path() == local
 
 
 def test_a_stuck_check_leaves_the_host_pool_free(qtbot, qapp, tmp_path, monkeypatch):

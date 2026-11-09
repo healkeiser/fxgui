@@ -24,7 +24,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxcore, fxstyle, fxwidgets
+from fxgui import _compat, fxcore, fxstyle, fxwidgets
 from fxgui.fxcore import FXSortFilterProxyModel
 from fxgui.fxwidgets import FXThumbnailDelegate
 from fxgui.fxwidgets import _delegates
@@ -162,26 +162,46 @@ def _thumbnails_read(qtbot):
 
 
 def _framed_the_old_way(delegate, path, ratio):
-    """The framed thumbnail as paint built it, reading the file in place."""
-    from qtpy.QtGui import QPixmap
+    """The framed thumbnail as paint built it, read in place, drawn here."""
+    from qtpy.QtCore import QPointF, QRectF
+    from qtpy.QtGui import QBrush, QPainterPath, QPen, QPixmap
 
-    reads = _delegates._thumbnail_reads
-    size = (
-        round(delegate._THUMBNAIL_WIDTH * ratio),
-        round(delegate._THUMBNAIL_HEIGHT * ratio),
+    theme = fxstyle.colors()
+    width, height = delegate._THUMBNAIL_WIDTH, delegate._THUMBNAIL_HEIGHT
+    source = QPixmap(path).scaled(
+        round(width * ratio), round(height * ratio),
+        Qt.KeepAspectRatio, Qt.SmoothTransformation,
     )
-
-    class Inline:
-        def source(self, path, _size, _widget):
-            return 1.0, QPixmap(path).scaled(
-                size[0], size[1], Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
-
-    _delegates._thumbnail_reads = lambda: Inline()
-    try:
-        return delegate._bordered_thumbnail(path, ratio).toImage()
-    finally:
-        _delegates._thumbnail_reads = reads
+    source.setDevicePixelRatio(ratio)
+    outer_width = width + delegate._THUMBNAIL_BORDER
+    outer_height = height + delegate._THUMBNAIL_BORDER
+    framed = QPixmap(round(outer_width * ratio), round(outer_height * ratio))
+    framed.setDevicePixelRatio(ratio)
+    framed.fill(Qt.transparent)
+    frame = QRectF(0.5, 0.5, outer_width - 1, outer_height - 1)
+    radius = fxstyle.SMALL_RADIUS
+    painter = QPainter(framed)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setRenderHint(QPainter.SmoothPixmapTransform)
+    painter.setPen(Qt.NoPen)
+    painter.setBrush(QBrush(QColor(theme.surface_sunken)))
+    painter.drawRoundedRect(frame, radius, radius)
+    corners = QPainterPath()
+    corners.addRoundedRect(frame, radius, radius)
+    painter.setClipPath(corners)
+    painter.drawPixmap(
+        QPointF(
+            1 + (width - source.width() / ratio) / 2,
+            1 + (height - source.height() / ratio) / 2,
+        ),
+        source,
+    )
+    painter.setClipping(False)
+    painter.setPen(QPen(QColor(theme.border_light), 1))
+    painter.setBrush(Qt.NoBrush)
+    painter.drawRoundedRect(frame, radius, radius)
+    painter.end()
+    return framed.toImage()
 
 
 def _sample_image(path, alpha):
@@ -206,13 +226,13 @@ def test_a_local_thumbnail_shows_on_the_first_paint(qtbot, tmp_path, alpha):
 
     framed = delegate._bordered_thumbnail(str(image), 2.0).toImage()
 
-    assert not _delegates._can_stall(str(image))
+    assert not _compat.can_stall(str(image))
     assert framed == expected
 
 
 def test_a_share_path_can_stall():
-    assert _delegates._can_stall(r"\\server\share\shot.png")
-    assert _delegates._can_stall("//server/share/shot.png")
+    assert _compat.can_stall(r"\\server\share\shot.png")
+    assert _compat.can_stall("//server/share/shot.png")
 
 
 @pytest.mark.parametrize("alpha", [False, True])
@@ -221,7 +241,7 @@ def test_a_thumbnail_read_off_thread_is_the_one_paint_read(
 ):
     from qtpy.QtGui import QPixmapCache
 
-    monkeypatch.setattr(_delegates, "_can_stall", lambda _path: True)
+    monkeypatch.setattr(_compat, "can_stall", lambda _path: True)
     image = tmp_path / "c.png"
     _sample_image(image, alpha)
     delegate = FXThumbnailDelegate()
@@ -236,12 +256,32 @@ def test_a_thumbnail_read_off_thread_is_the_one_paint_read(
     assert framed == expected
 
 
+def test_an_evicted_source_keeps_its_framed_thumbnail(
+    qtbot, tmp_path, monkeypatch
+):
+    from qtpy.QtGui import QPixmapCache
+
+    monkeypatch.setattr(_compat, "can_stall", lambda _path: True)
+    image = tmp_path / "e.png"
+    _sample_image(image, False)
+    QPixmapCache.clear()
+    delegate = FXThumbnailDelegate()
+    delegate._bordered_thumbnail(str(image), 1.0)
+    _thumbnails_read(qtbot)
+    framed = delegate._bordered_thumbnail(str(image), 1.0).toImage()
+
+    _delegates._thumbnail_reads()._sources.clear()
+
+    assert delegate._bordered_thumbnail(str(image), 1.0).toImage() == framed
+    _thumbnails_read(qtbot)
+
+
 def test_paint_never_reads_a_share(qtbot, monkeypatch, tmp_path):
     import threading
 
     from qtpy.QtGui import QPixmapCache
 
-    monkeypatch.setattr(_delegates, "_can_stall", lambda _path: True)
+    monkeypatch.setattr(_compat, "can_stall", lambda _path: True)
     painting = threading.current_thread()
     on_ui = []
     getmtime = os.path.getmtime
@@ -265,6 +305,50 @@ def test_paint_never_reads_a_share(qtbot, monkeypatch, tmp_path):
     tree.viewport().grab()
 
     assert on_ui == [False]
+
+
+def test_stuck_share_reads_let_another_reader_start(
+    qtbot, monkeypatch, tmp_path
+):
+    import threading
+    from types import SimpleNamespace
+
+    clock = [1000.0]
+    monkeypatch.setattr(
+        _delegates, "time", SimpleNamespace(monotonic=lambda: clock[0])
+    )
+    monkeypatch.setattr(_compat, "can_stall", lambda _path: True)
+    gate = threading.Event()
+    asked = []
+    real = _delegates._read_thumbnail
+
+    def read(path, known, size):
+        asked.append(path)
+        if path.startswith("stuck"):
+            gate.wait(10)
+        return real(path, known, size)
+
+    monkeypatch.setattr(_delegates, "_read_thumbnail", read)
+    image = tmp_path / "good.png"
+    QImage(8, 8, QImage.Format_RGB32).save(str(image))
+    reads = _delegates._ThumbnailReads()
+    size = (8, 8)
+    try:
+        reads.source("stuck_a", size, None)
+        reads.source("stuck_b", size, None)
+        reads.source(str(image), size, None)
+        qtbot.waitUntil(lambda: len(asked) == 2)
+        qtbot.wait(100)
+        assert str(image) not in asked
+
+        clock[0] += _delegates._STUCK_SECONDS
+        reads.source(str(image), size, None)
+        qtbot.waitUntil(lambda: str(image) in reads._stamps)
+        reads.source("stuck_a", size, None)
+        qtbot.waitUntil(lambda: asked.count("stuck_a") == 2)
+        assert len(reads._busy_since) <= _delegates._THUMBNAIL_READER_CAP
+    finally:
+        gate.set()
 
 
 def test_the_remembered_stamps_are_bounded(qtbot, monkeypatch, tmp_path):

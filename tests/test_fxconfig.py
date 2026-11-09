@@ -78,6 +78,28 @@ def test_a_new_application_reads_its_own_theme_and_row_size(qapp):
         fxstyle.get_default_theme())["surface"]
 
 
+def test_a_new_application_restyles_live_roots(qtbot):
+    from qtpy.QtWidgets import QWidget
+
+    from fxgui import fxstyle
+
+    root = QWidget()
+    qtbot.addWidget(root)
+    fxstyle.register_themed_root(root)
+    fxstyle.apply_theme("light")
+    light_sheet = root.styleSheet()
+    received = []
+    note = received.append
+    fxstyle.theme_changed.connect(note)
+    try:
+        fxconfig.set_application_name("fxgui_restyle_tool")
+    finally:
+        fxstyle.theme_changed.disconnect(note)
+
+    assert received == [fxstyle.get_default_theme()]
+    assert root.styleSheet() != light_sheet
+
+
 @pytest.mark.parametrize("bad_name", ["", "   ", "a/b", "a\\b", ".."])
 def test_set_application_name_rejects_unsafe_names(bad_name):
     with pytest.raises(ValueError):

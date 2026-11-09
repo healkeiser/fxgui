@@ -10,6 +10,8 @@ Icons carry per-state pixmaps:
 """
 
 
+from pathlib import Path
+
 import pytest
 from qtpy.QtGui import QColor, QIcon, QImage, QPixmap, QPixmapCache
 from qtpy.QtCore import QPoint, QSize
@@ -221,6 +223,26 @@ def test_an_opaque_png_icon_recolours(qapp, monkeypatch, tmp_path):
     pixmap = fxicons.get_pixmap("square", library="studio", dpr=1.0)
 
     assert pixmap.toImage().pixelColor(4, 4) == QColor("#00ff00")
+
+
+def test_a_deleted_icon_file_is_not_served_from_the_cache(
+    qapp, monkeypatch, tmp_path
+):
+    _png_library(monkeypatch, tmp_path)
+    path = fxicons.get_icon_path("square", library="studio")
+
+    Path(path).unlink()
+
+    with pytest.raises(FileNotFoundError):
+        fxicons.get_icon_path("square", library="studio")
+
+
+def test_a_deleted_extracted_icon_is_extracted_again(qapp):
+    path = Path(fxicons.get_icon_path("add", library="material"))
+
+    path.unlink()
+
+    assert Path(fxicons.get_icon_path("add", library="material")).exists()
 
 
 def test_a_library_stating_some_defaults_takes_the_rest(

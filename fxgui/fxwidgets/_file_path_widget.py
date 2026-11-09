@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import _compat, fxicons, fxstyle
 from fxgui._compat import is_valid as is_valid_object
 from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._tips import apply_tip
@@ -81,14 +81,18 @@ def _work() -> None:
         _relay.finished.emit(widget_ref, slot, args)
 
 
-def _check_off_thread(
-    widget: QWidget, slot: str, check: Callable[[], Tuple]
+def _check(
+    widget: QWidget, slot: str, check: Callable[[], Tuple], paths: List[str]
 ) -> None:
-    """Run `check` on a daemon worker and call `widget.slot(*result)`.
+    """Call `widget.slot(*check())`, on a daemon worker if a path may stall.
 
     Not the host's `QThreadPool`: a stuck check would starve it and hold
-    its quit; a daemon thread never delays the process exit.
+    its quit; a daemon thread never delays the process exit. A local path
+    is checked at once, so stuck shares never hold it up.
     """
+    if not any(_compat.can_stall(path) for path in paths):
+        getattr(widget, slot)(*check())
+        return
     global _relay
     if _relay is None:
         _relay = _Relay()
@@ -148,6 +152,8 @@ class FXFilePathWidget(QWidget):
         self._default_path = default_path or os.path.expanduser("~")
         self._validate = validate
         self._is_valid = False
+        # Only the latest drop's result lands; an earlier one may answer late.
+        self._drop_ticket = 0
 
         self._validation_timer = QTimer(self)
         self._validation_timer.setSingleShot(True)
@@ -270,10 +276,11 @@ class FXFilePathWidget(QWidget):
 
         # A share that does not answer stalls the check, never the UI.
         mode = self._mode
-        _check_off_thread(
+        _check(
             self,
             "_on_validation_finished",
             lambda: (path, _path_is_valid(path, mode)),
+            path.split(";"),
         )
 
     def _on_validation_finished(self, path: str, is_valid: bool) -> None:
@@ -308,11 +315,16 @@ class FXFilePathWidget(QWidget):
         """Take the dropped paths that exist, checked off the UI thread."""
         paths = [url.toLocalFile() for url in event.mimeData().urls()]
         mode = self._mode
-        _check_off_thread(
-            self, "_on_drop_checked", lambda: (_droppable(paths, mode),)
+        self._drop_ticket += 1
+        ticket = self._drop_ticket
+        _check(
+            self,
+            "_on_drop_checked",
+            lambda: (ticket, _droppable(paths, mode)),
+            paths,
         )
 
-    def _on_drop_checked(self, paths: List[str]) -> None:
-        """Show the dropped paths that passed the check."""
-        if paths:
+    def _on_drop_checked(self, ticket: int, paths: List[str]) -> None:
+        """Show the dropped paths that passed the check, if still the latest."""
+        if ticket == self._drop_ticket and paths:
             self._input.setText(";".join(paths))

@@ -92,8 +92,8 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         # The filter text lives in seq2, which SequenceMatcher analyses once.
         self._matcher = SequenceMatcher(b="")
         self._scores: Dict[str, float] = {}
-        # Each source row's score, keyed by its key-column index, so sorting
-        # never re-reads a row's text.
+        # Each source cell's score, keyed by row and column, so sorting
+        # never re-reads a cell's text.
         self._row_scores: Dict[Tuple[int, int, int], float] = {}
         self.sort(0, Qt.AscendingOrder)
 
@@ -119,6 +119,9 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
             model.rowsAboutToBeInserted,
             model.rowsAboutToBeRemoved,
             model.rowsAboutToBeMoved,
+            model.columnsAboutToBeInserted,
+            model.columnsAboutToBeRemoved,
+            model.columnsAboutToBeMoved,
             model.modelAboutToBeReset,
             model.layoutAboutToBeChanged,
         )
@@ -159,11 +162,8 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         # -1 (every column) reads the first one.
         return max(self.filterKeyColumn(), 0)
 
-    def _row_score(self, index: QModelIndex) -> float:
-        """Return the score of source `index`'s row, kept per row."""
-        column = self._key_column()
-        if index.column() != column:
-            index = index.sibling(index.row(), column)
+    def _cell_score(self, index: QModelIndex) -> float:
+        """Return the score of source `index`, kept per row and column."""
         key = (index.row(), index.column(), index.internalId())
         found = self._row_scores.get(key)
         if found is None:
@@ -186,10 +186,10 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         return bool(text) and score >= self._ratio
 
     def lessThan(self, left: QModelIndex, right: QModelIndex) -> bool:
-        """Rank the higher score first; ties keep the source order."""
+        """Rank the higher score in the sorted column first; ties keep order."""
         if self._active():
-            left_score = self._row_score(left)
-            right_score = self._row_score(right)
+            left_score = self._cell_score(left)
+            right_score = self._cell_score(right)
             if left_score != right_score:
                 return left_score > right_score
         return left.row() < right.row()

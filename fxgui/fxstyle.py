@@ -443,12 +443,24 @@ def _invalidate_theme_namespace() -> None:
 
 def _cached_sheet(key: tuple, build: Callable[[], str]) -> str:
     """Return the text `build` makes for `key`, built once per colour file."""
+    # A font added straight through Qt changes which family a token names.
+    if QGuiApplication.instance():
+        key = (*key, hash(tuple(QFontDatabase.families())))
     # The entry holds the colour mapping itself, so its id is never reused.
     source = get_colors()
     entry = _sheet_cache.get(key)
-    if entry is None or entry[0] is not source:
+    if entry is None or entry[0] is not source or not _images_exist(entry[1]):
         entry = _sheet_cache[key] = (source, build())
     return entry[1]
+
+
+_SHEET_URL = re.compile(r'url\("([^"]+/fxgui/sheet_icons/[^"]+)"\)')
+
+
+def _images_exist(sheet: str) -> bool:
+    """Return whether every image `_sheet_icon` drew for a sheet is on disk."""
+    # The temp folder may be cleaned while the application runs.
+    return all(os.path.exists(path) for path in _SHEET_URL.findall(sheet))
 
 
 def _colour_tokens(theme_name: str) -> Dict[str, str]:
@@ -1448,8 +1460,16 @@ _SHEET_ICON = re.compile(r"~icon\(([\w-]+),\s*(\w+)(?:,\s*(\d+))?\)")
 # `url(~icons/name.svg[, px])`: an image of the theme's light or dark sheet
 # set, INDICATOR_SIZE unless sized.
 _SHEET_SVG = re.compile(r"url\(~icons/(\w+)\.svg(?:,\s*(\d+))?\)")
-# A whole `@token`, or the `~icons` folder.
-_PLACEHOLDER = re.compile(r"@\w+|~icons")
+
+
+@lru_cache(maxsize=8)
+def _placeholder(keys: Tuple[str, ...]) -> "re.Pattern":
+    """Return one pattern matching any key, the longest first."""
+    # A prefix match is kept: `@accent_primary80` is the token plus an alpha.
+    ordered = sorted(keys, key=len, reverse=True)
+    return re.compile("|".join(map(re.escape, ordered)))
+
+
 # Qt loads `name@2x.png` beside `name.png` on a screen scaled past 100%.
 _SHEET_SCALES = (3, 2, 1)
 
@@ -1498,7 +1518,7 @@ def _sheet_icon(
 
 
 def _substitute(qss: str, tokens: Dict[str, str]) -> str:
-    """Replace each whole placeholder; an unknown one stays as written."""
+    """Replace each placeholder, longest first so @border spares @border_light."""
 
     def icon(match: "re.Match") -> str:
         name, color = match.group(1), tokens.get(f"@{match.group(2)}")
@@ -1518,8 +1538,11 @@ def _substitute(qss: str, tokens: Dict[str, str]) -> str:
 
     qss = _SHEET_ICON.sub(icon, qss)
     qss = _SHEET_SVG.sub(sheet_svg, qss)
-    return _PLACEHOLDER.sub(
-        lambda match: tokens.get(match.group(0), match.group(0)), qss
+    if not tokens:
+        return qss
+    # One pass: a value put in is never read for a token again.
+    return _placeholder(tuple(tokens)).sub(
+        lambda match: tokens[match.group(0)], qss
     )
 
 
@@ -1645,11 +1668,18 @@ def row_size() -> str:
 
 
 def _forget_saved_settings() -> None:
-    """Re-read the theme and row size from the settings file on next use."""
+    """Re-read the theme and row size from the settings file, re-styling."""
     global _theme, _row_size
+    before = (_theme, _row_size)
     _theme = None
     _row_size = None
     _invalidate_theme_namespace()
+    # Live roots wear the old file's theme: re-apply when the new one differs.
+    if _themed_roots and any(
+        old is not None and old != new
+        for old, new in zip(before, (get_theme(), row_size()))
+    ):
+        _colors_changed()
 
 
 def row_height() -> int:

@@ -9,11 +9,15 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 __all__ = [
-    "QT_VERSION", "created_by_python", "find_pixmap", "hold", "is_valid",
-    "parent_widget",
+    "QT_VERSION", "can_stall", "created_by_python", "find_pixmap", "hold",
+    "is_valid", "parent_widget",
 ]
 
 # Built-in
+import ctypes
+import functools
+import os
+import sys
 from typing import Optional
 
 # Third-party
@@ -42,6 +46,28 @@ except ImportError:
         except TypeError:
             # Not a sip-wrapped object; assume alive.
             return True
+
+
+_DRIVE_REMOTE = 4
+
+
+@functools.lru_cache(maxsize=None)
+def _remote_drive(root: str) -> bool:
+    """Return whether Windows reports drive `root` (``"X:\\"``) as remote."""
+    try:
+        return ctypes.windll.kernel32.GetDriveTypeW(root) == _DRIVE_REMOTE
+    except (AttributeError, OSError):
+        return False
+
+
+def can_stall(path: str) -> bool:
+    """Return whether reading `path` may wait on a network share."""
+    if path.startswith(("\\\\", "//")):
+        return True
+    if sys.platform != "win32":
+        return False
+    drive = os.path.splitdrive(os.path.abspath(path))[0]
+    return bool(drive) and _remote_drive(drive.upper() + "\\")
 
 
 def find_pixmap(key: str) -> Optional[QPixmap]:

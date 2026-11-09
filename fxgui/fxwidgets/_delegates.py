@@ -1,11 +1,9 @@
 """Item delegates for tree and list views."""
 
 # Built-in
-import ctypes
 import functools
 import os
 import queue
-import sys
 import threading
 import time
 import weakref
@@ -69,6 +67,10 @@ _STAMP_LIMIT = 4096
 _SOURCE_LIMIT = 256
 # A share that does not answer holds a reader; two keep the other one going.
 _THUMBNAIL_READERS = 2
+# A read this old is stuck: its path may be asked again, and with every
+# reader stuck one more starts, up to the cap.
+_STUCK_SECONDS = 30.0
+_THUMBNAIL_READER_CAP = 4
 
 _OWNS_ROW = "fxOwnsRow"
 
@@ -111,28 +113,6 @@ def _hover_reading(ground: str, hover: str, floor: float) -> str:
     return fxstyle.step_toward(ground, fxstyle._pole_from(ground), reads)
 
 
-_DRIVE_REMOTE = 4
-
-
-@functools.lru_cache(maxsize=None)
-def _remote_drive(root: str) -> bool:
-    """Return whether Windows reports drive `root` (``"X:\\"``) as remote."""
-    try:
-        return ctypes.windll.kernel32.GetDriveTypeW(root) == _DRIVE_REMOTE
-    except (AttributeError, OSError):
-        return False
-
-
-def _can_stall(path: str) -> bool:
-    """Return whether reading `path` may wait on a network share."""
-    if path.startswith(("\\\\", "//")):
-        return True
-    if sys.platform != "win32":
-        return False
-    drive = os.path.splitdrive(os.path.abspath(path))[0]
-    return bool(drive) and _remote_drive(drive.upper() + "\\")
-
-
 def _read_thumbnail(
     path: str, known: Optional[float], size: Tuple[int, int]
 ) -> Tuple[Optional[float], Optional[QImage]]:
@@ -173,8 +153,10 @@ class _ThumbnailReads(QObject):
     def __init__(self) -> None:
         super().__init__()
         self._jobs: "queue.Queue" = queue.Queue()
-        self._readers: List[threading.Thread] = []
-        self._waiting: Dict[tuple, "weakref.WeakSet"] = {}
+        # When each reader took its current job, None while it is idle.
+        self._busy_since: List[Optional[float]] = []
+        # (path, size) -> (when it was asked, the views to repaint).
+        self._waiting: Dict[tuple, Tuple[float, "weakref.WeakSet"]] = {}
         self._stamps: "OrderedDict[str, Tuple[float, Optional[float]]]" = (
             OrderedDict()
         )
@@ -196,7 +178,7 @@ class _ThumbnailReads(QObject):
         if not stale and (stamp is None or source is not None):
             return stamp, source
         known = stamp if source is not None else None
-        if _can_stall(path):
+        if _compat.can_stall(path):
             self._ask(path, known, size, widget)
             return stamp, source
         # A local disk answers at once: read now, so the first paint shows it.
@@ -205,28 +187,44 @@ class _ThumbnailReads(QObject):
         return stamp, self._sources.get((path, stamp, size))
 
     def _ask(self, path, known, size, widget) -> None:
-        views = self._waiting.get((path, size))
+        now = time.monotonic()
+        asked, views = self._waiting.get((path, size), (None, None))
         if views is None:
-            views = self._waiting[(path, size)] = weakref.WeakSet()
+            views = weakref.WeakSet()
+        if asked is None or now - asked >= _STUCK_SECONDS:
+            self._waiting[(path, size)] = (now, views)
             self._jobs.put((path, known, size))
-            if len(self._readers) < _THUMBNAIL_READERS:
-                reader = threading.Thread(
-                    target=self._work, name="fxgui-thumbnail", daemon=True
-                )
-                self._readers.append(reader)
-                reader.start()
+            self._add_reader(now)
         if isinstance(widget, QAbstractItemView):
             widget = widget.viewport()
         if widget is not None:
             views.add(widget)
 
-    def _work(self) -> None:
+    def _add_reader(self, now: float) -> None:
+        """Start a reader while under two, or under the cap with all stuck."""
+        count = len(self._busy_since)
+        stuck = all(
+            since is not None and now - since >= _STUCK_SECONDS
+            for since in self._busy_since
+        )
+        if count < _THUMBNAIL_READERS or (
+            count < _THUMBNAIL_READER_CAP and stuck
+        ):
+            self._busy_since.append(None)
+            threading.Thread(
+                target=self._work, args=(count,), name="fxgui-thumbnail",
+                daemon=True,
+            ).start()
+
+    def _work(self, slot: int) -> None:
         while True:
             path, known, size = self._jobs.get()
+            self._busy_since[slot] = time.monotonic()
             try:
                 found = _read_thumbnail(path, known, size)
             except Exception:  # noqa: BLE001 - a reader must outlive a bad file
                 found = (None, None)
+            self._busy_since[slot] = None
             self._read.emit((path, size) + found)
 
     @Slot(object)
@@ -242,7 +240,7 @@ class _ThumbnailReads(QObject):
             while len(self._sources) > _SOURCE_LIMIT:
                 self._sources.popitem(last=False)
             changed = True
-        views = self._waiting.pop((path, size), ())
+        _asked, views = self._waiting.pop((path, size), (None, ()))
         if changed:
             for view in list(views):
                 if _compat.is_valid(view):
@@ -1506,18 +1504,24 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         theme = fxstyle.colors()
         width, height = self._THUMBNAIL_WIDTH, self._THUMBNAIL_HEIGHT
         size = (round(width * ratio), round(height * ratio))
+        def key(path: str, stamp: Optional[float]) -> str:
+            return (
+                f"fxgui.thumbnail|{path}|{stamp}|{ratio}"
+                f"|{width}x{height}"
+                f"|{theme.surface_sunken}|{theme.border_light}"
+            )
+
         stamp, source = None, None
         if path:
             path = str(path)
             stamp, source = _thumbnail_reads().source(path, size, widget)
         if source is None:
+            # Its picture left the source cache, but the frame may still be held.
+            cached = stamp is not None and _compat.find_pixmap(key(path, stamp))
+            if cached:
+                return cached
             path, stamp = "", None
-        key = (
-            f"fxgui.thumbnail|{path}|{stamp}|{ratio}"
-            f"|{width}x{height}"
-            f"|{theme.surface_sunken}|{theme.border_light}"
-        )
-        cached = _compat.find_pixmap(key)
+        cached = _compat.find_pixmap(key(path, stamp))
         if cached is not None:
             return cached
 
@@ -1559,7 +1563,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.drawRoundedRect(frame, radius, radius)
         painter.end()
 
-        QPixmapCache.insert(key, framed)
+        QPixmapCache.insert(key(path, stamp), framed)
         return framed
 
     def _draw_title_and_description(

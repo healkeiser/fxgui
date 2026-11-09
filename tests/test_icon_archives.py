@@ -40,7 +40,10 @@ def test_a_found_icon_is_not_looked_for_again(qapp, monkeypatch):
     import os
 
     fxicons.get_icon("star")
-    fxicons.get_icon_path("add", library="material")
+    found = {
+        fxicons.get_icon_path("star"),
+        fxicons.get_icon_path("add", library="material"),
+    }
     stats = []
     stat = os.stat
     monkeypatch.setattr(
@@ -51,7 +54,8 @@ def test_a_found_icon_is_not_looked_for_again(qapp, monkeypatch):
     fxicons.get_icon("star")
     fxicons.get_icon_path("add", library="material")
 
-    assert stats == []
+    # Only the found file is checked, once, in case it was deleted.
+    assert sorted(str(args[0]) for args in stats) == sorted(found)
 
 
 def test_an_icon_missing_from_the_zip_raises():

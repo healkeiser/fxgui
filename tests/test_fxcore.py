@@ -128,6 +128,38 @@ def test_the_filter_reads_the_key_column(qapp):
     assert _visible(proxy) == ["beta"]
 
 
+def _two_column_proxy(rows):
+    model = QStandardItemModel()
+    for row in rows:
+        model.appendRow([QStandardItem(text) for text in row])
+    proxy = FXSortFilterProxyModel(ratio=0.1)
+    proxy.setSourceModel(model)
+    proxy._test_model = model
+    proxy.set_filter_text("abcd")
+    return proxy, model
+
+
+def test_rows_rank_by_the_sorted_column(qapp):
+    proxy, _model = _two_column_proxy([("abcx", "abzz"), ("abzz", "abcx")])
+
+    proxy.sort(1)
+
+    assert _visible(proxy) == ["abzz", "abcx"]
+
+
+def test_a_new_column_is_scored_afresh(qapp):
+    proxy, model = _two_column_proxy([("abcx", "abzz"), ("abzz", "abcx")])
+    proxy.sort(1)
+
+    model.insertColumn(0, [QStandardItem("abcx"), QStandardItem("abcx")])
+    proxy.sort(1)
+
+    # Column 1 is now the old column 0, where row 0 ranks first.
+    assert [
+        proxy.index(row, 1).data() for row in range(proxy.rowCount())
+    ] == ["abcx", "abzz"]
+
+
 def test_rows_rank_by_their_own_score_after_a_removal(qapp):
     proxy = _proxy_with(["abcx", "abzz", "abcd"], ratio=0.1)
     proxy.set_filter_text("abcd")

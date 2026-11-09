@@ -298,11 +298,13 @@ def get_icon_path(
         root=root,
     ).replace("\\", "/")
 
-    # Icons are read-only package data: a path found once stays found.
+    # A found path is checked again: a temp folder cleaner may delete it.
     key = (path, tempfile.gettempdir())
-    found = _found_paths.get(key)
-    if found is not None:
+    found = _found_paths.pop(key, None)
+    if found is not None and os.path.exists(found):
+        _found_paths[key] = found
         return found
+    found = None
     if Path(path).exists():
         found = path
     else:
