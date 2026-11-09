@@ -738,3 +738,34 @@ def test_apply_tip_shows_the_theme_in_force_when_it_shows(qtbot):
         "Save", "Write the scene to disk", "Ctrl+S"
     )
     QToolTip.hideText()
+
+
+def test_importing_on_a_worker_thread_leaves_no_filter_there(qapp):
+    import importlib.util
+    import threading
+
+    from qtpy.QtCore import QObject
+
+    spec = importlib.util.find_spec("fxgui.fxwidgets._tips")
+    found = {}
+
+    def load():
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        found["module"] = module
+        found["threads"] = [
+            value.thread()
+            for value in vars(module).values()
+            if isinstance(value, QObject)
+        ]
+
+    worker = threading.Thread(target=load)
+    worker.start()
+    worker.join()
+
+    assert all(thread == qapp.thread() for thread in found["threads"])
+    button = QPushButton()
+    found["module"].apply_tip(button, "Save")
+    refresher = found["module"]._refresher
+    assert refresher.thread() == qapp.thread()
+    assert refresher.parent() is qapp

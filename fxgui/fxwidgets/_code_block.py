@@ -56,6 +56,11 @@ def code_color(token: str) -> QColor:
     return QColor(f"#{colour}" if colour else fxstyle.colors().text)
 
 
+def _utf16_length(text: str) -> int:
+    """Return the length of `text` as Qt counts it, in UTF-16 code units."""
+    return len(text.encode("utf-16-le")) // 2
+
+
 class FXPygmentsHighlighter(QSyntaxHighlighter):
     """Syntax highlighter using Pygments for multi-language support.
 
@@ -150,8 +155,9 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
         position = 0
         for token_type, value in lex(text, self._lexer) if text else ():
             if value:
-                self._spans.append((position, position + len(value), token_type))
-                position += len(value)
+                size = _utf16_length(value)
+                self._spans.append((position, position + size, token_type))
+                position += size
         self._span_starts = [span[0] for span in self._spans]
 
     def highlightBlock(self, text: str) -> None:
@@ -160,7 +166,8 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
             return
         self._lex_document()
         block_start = self.currentBlock().position()
-        block_end = block_start + len(text)
+        length = _utf16_length(text)
+        block_end = block_start + length
         index = max(0, bisect.bisect_right(self._span_starts, block_start) - 1)
         end_type = None
         for start, end, token_type in self._spans[index:]:
@@ -168,7 +175,7 @@ class FXPygmentsHighlighter(QSyntaxHighlighter):
                 break
             end_type = token_type
             rel_start = max(0, start - block_start)
-            rel_end = min(len(text), end - block_start)
+            rel_end = min(length, end - block_start)
             if rel_end > rel_start:
                 fmt = self._get_format_for_token(token_type)
                 if fmt:

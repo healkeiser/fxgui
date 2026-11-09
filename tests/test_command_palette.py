@@ -202,6 +202,19 @@ def test_a_slow_load_does_not_overwrite_a_newer_one(qtbot):
     assert "sh0020 new" not in _labels(palette)
 
 
+def test_a_load_landing_after_the_palette_is_deleted_is_dropped(qtbot, qapp):
+    from qtpy.QtCore import QEvent
+
+    window = _window(qtbot)
+    palette = FXCommandPalette(window, lambda: _commands([]))
+    held = []
+    palette.open_go_to(held.append, lambda _row: None)
+    palette.deleteLater()
+    qapp.sendPostedEvents(None, QEvent.DeferredDelete)
+
+    held[0]([("late", "sh0030 late")])
+
+
 def test_a_leading_angle_switches_go_to_to_commands(qtbot):
     window = _window(qtbot)
     palette = FXCommandPalette(window, lambda: _commands([]))

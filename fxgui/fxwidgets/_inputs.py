@@ -171,14 +171,17 @@ class FXValidatedLineEdit(QLineEdit):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Shake when a typed character changed nothing: it was rejected."""
-        before = (self.text(), self.cursorPosition())
+        # The selection too: a selected character retyped as itself leaves
+        # the text and cursor as they were, but was taken.
+        before = (self.text(), self.cursorPosition(), self.selectedText())
         super().keyPressEvent(event)
         typed = event.text()
         if (
             self.validator() is not None
             and typed
             and typed.isprintable()
-            and (self.text(), self.cursorPosition()) == before
+            and (self.text(), self.cursorPosition(), self.selectedText())
+            == before
         ):
             self._show_rejection_feedback()
 

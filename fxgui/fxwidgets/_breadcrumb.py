@@ -398,6 +398,8 @@ class FXBreadcrumb(QWidget):
             and isinstance(obj, QWidget)
             and obj is not self
             and not self.isAncestorOf(obj)
+            # A press in a popup, the editor's own context menu included.
+            and obj.window().windowType() != Qt.WindowType.Popup
         ):
             self.exit_edit_mode()
         if obj == self._line_edit:
@@ -405,7 +407,10 @@ class FXBreadcrumb(QWidget):
                 if event.key() == Qt.Key_Escape:
                     self.exit_edit_mode()
                     return True
-            elif event.type() == QEvent.Type.FocusOut:
+            elif (
+                event.type() == QEvent.Type.FocusOut
+                and event.reason() != Qt.FocusReason.PopupFocusReason
+            ):
                 self.exit_edit_mode()
         return super().eventFilter(obj, event)
 

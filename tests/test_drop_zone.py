@@ -220,3 +220,54 @@ def test_an_empty_extension_set_accepts_everything_as_none_does(
     event, _mime = _drag(notes)
     zone.dragEnterEvent(event)
     assert event.isAccepted()
+
+
+def test_browse_keeps_the_filter_and_flashes_when_nothing_is_left(
+    qtbot, qapp, tmp_path, monkeypatch
+):
+    from qtpy.QtWidgets import QFileDialog
+
+    other = tmp_path / "notes.txt"
+    other.write_text("x")
+    zone = FXDropZone(extensions={".png"})
+    qtbot.addWidget(zone)
+    monkeypatch.setattr(
+        QFileDialog, "getOpenFileNames", lambda *a, **k: ([str(other)], "")
+    )
+
+    zone._browse()
+
+    assert zone.selected_files() == []
+    assert zone._drop_area.property("dropState") == "error"
+
+
+def test_a_drag_stops_checking_the_disk_at_the_first_path_taken(
+    qtbot, qapp, tmp_path, monkeypatch
+):
+    from pathlib import Path
+
+    paths = []
+    for name in ("a.png", "b.png", "c.png"):
+        (tmp_path / name).write_text("x")
+        paths.append(tmp_path / name)
+    checked = []
+    real_exists = Path.exists
+
+    def counting_exists(self, *args, **kwargs):
+        if self in paths:
+            checked.append(self)
+        return real_exists(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "exists", counting_exists)
+    zone = FXDropZone()
+    qtbot.addWidget(zone)
+    mime = QMimeData()
+    mime.setUrls([QUrl.fromLocalFile(str(path)) for path in paths])
+    event = QDragEnterEvent(
+        QPoint(5, 5), Qt.CopyAction, mime, Qt.LeftButton, Qt.NoModifier
+    )
+
+    zone.dragEnterEvent(event)
+
+    assert event.isAccepted()
+    assert len(checked) == 1

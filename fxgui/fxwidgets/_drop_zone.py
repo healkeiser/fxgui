@@ -3,7 +3,7 @@
 # Built-in
 import os
 from pathlib import Path
-from typing import Iterable, List, Optional, Set
+from typing import Iterable, Iterator, List, Optional, Set
 
 # Third-party
 from qtpy.QtCore import QLocale, Qt, QTimer, Signal
@@ -31,14 +31,16 @@ from fxgui.fxwidgets._labels import FXIconLabel
 ACCEPT_MODES = ("files", "folders", "both")
 
 
-def _local_paths(event) -> List[Path]:
-    """Return the existing local paths a drag or drop event carries."""
-    paths = [
-        Path(url.toLocalFile())
-        for url in event.mimeData().urls()
-        if url.isLocalFile()
-    ]
-    return [path for path in paths if path.exists()]
+def _local_paths(event) -> Iterator[Path]:
+    """Yield the existing local paths a drag or drop event carries.
+
+    Lazy, so a drag over a slow share stops at the first path it takes.
+    """
+    for url in event.mimeData().urls():
+        if url.isLocalFile():
+            path = Path(url.toLocalFile())
+            if path.exists():
+                yield path
 
 
 def _size_text(path: Path) -> str:
@@ -354,10 +356,20 @@ class FXDropZone(QWidget):
         self.files_dropped.emit(list(new_files))
         return True
 
-    def _take(self, paths: List[Path]) -> None:
-        """Add paths the user gave; without a list, flash the area."""
-        if self._on_files_added(paths) and not self._show_tree:
+    def _take(self, paths: List[Path]) -> bool:
+        """Add the paths the zone takes; flash in error if it takes none.
+
+        Returns:
+            Whether any of `paths` is one the zone takes.
+        """
+        accepted = [path for path in paths if self._accepts(path)]
+        if not accepted:
+            if paths:
+                self._flash_feedback("error")
+            return False
+        if self._on_files_added(accepted) and not self._show_tree:
             self._flash_feedback("success")
+        return True
 
     def _accepts(self, path: Path) -> bool:
         """Return whether this zone takes `path`, by mode and extension."""
@@ -388,15 +400,10 @@ class FXDropZone(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         """Add the accepted paths; edge the area in error if none were."""
         self._set_drop_state("idle")
-        paths = _local_paths(event)
-        accepted = [path for path in paths if self._accepts(path)]
-        if not accepted:
-            if paths:
-                self._flash_feedback("error")
+        if self._take(list(_local_paths(event))):
+            event.acceptProposedAction()
+        else:
             event.ignore()
-            return
-        self._take(accepted)
-        event.acceptProposedAction()
 
     # Public API
 

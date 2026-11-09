@@ -47,6 +47,24 @@ def test_a_mention_deleted_from_the_text_is_no_mention(qtbot):
     assert box.mentions() == ()
 
 
+def test_a_homonym_chosen_again_names_only_the_last(qtbot):
+    _host, box = _box(qtbot, people={"a": "Anne Martin", "b": "Anne Martin"})
+    box.insert_mention("a")
+    box.clear()
+    box.insert_mention("b")
+
+    assert box.mentions() == ("b",)
+
+
+def test_a_short_name_inside_a_longer_one_is_no_mention(qtbot):
+    _host, box = _box(qtbot, people={"a": "Anne Martin", "c": "Anne"})
+    box.insert_mention("c")
+    box.clear()
+    box.insert_mention("a")
+
+    assert box.mentions() == ("a",)
+
+
 def test_typing_an_at_offers_people_by_name(qtbot):
     _host, box = _box(qtbot)
 
@@ -256,3 +274,23 @@ def test_a_deleted_reply_leaves_the_line_drawable(qtbot):
 
     assert not drawn.path().isEmpty()
     drawn.grab()
+
+
+def test_a_new_join_stops_watching_the_faces_it_left(qtbot):
+    thread, _drawn, head, faces = _thread(qtbot)
+    seen = []
+
+    class Watching(FXThreadLine):
+        def eventFilter(self, watched, event):
+            seen.append(watched)
+            return super().eventFilter(watched, event)
+
+    line = Watching(thread)
+    line.join(head, faces)
+    line.join(head, faces[:1])
+    seen.clear()
+
+    faces[-1].parentWidget().move(5, 5)
+    faces[-1].move(3, 3)
+
+    assert faces[-1] not in seen and faces[-1].parentWidget() not in seen

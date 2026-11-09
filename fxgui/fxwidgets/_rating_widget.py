@@ -95,6 +95,10 @@ class FXRatingWidget(QWidget):
         if not self._allow_half:
             # Half up: round() takes 2.5 to 2 but 3.5 to 4.
             rating = int(rating + 0.5)
+        elif rating * 2 != int(rating * 2):
+            # To the nearest half star, half up as above; a value already
+            # on a half keeps its type.
+            rating = int(rating * 2 + 0.5) / 2
 
         if rating != self._rating:
             self._rating = rating

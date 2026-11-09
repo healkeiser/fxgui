@@ -2,11 +2,13 @@
 
 # Built-in
 import os
+import queue
+import threading
 import weakref
-from typing import Optional
+from typing import Callable, List, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QObject, QRunnable, Qt, QThreadPool, QTimer, Signal
+from qtpy.QtCore import QObject, Qt, QTimer, Signal
 from qtpy.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -40,36 +42,62 @@ def _path_is_valid(path: str, mode: str) -> bool:
     return os.path.isfile(path)
 
 
-class _Relay(QObject):
-    """Carries a pool check's result back to the UI thread."""
+def _droppable(paths: List[str], mode: str) -> List[str]:
+    """Return the dropped paths the field takes in `mode`."""
+    if mode == "files":
+        return [p for p in paths if os.path.isfile(p)]
+    return paths[:1] if paths and _path_is_valid(paths[0], mode) else []
 
-    finished = Signal(object, str, bool)
+
+class _Relay(QObject):
+    """Carries a worker's result back to the UI thread."""
+
+    finished = Signal(object, str, object)
 
 
 _relay: Optional[_Relay] = None
+_jobs: "queue.SimpleQueue" = queue.SimpleQueue()
+_workers: List[threading.Thread] = []
+# A share that does not answer holds a worker; two keep a second share
+# checking without flooding the process with stuck threads.
+_WORKER_COUNT = 2
 
 
-def _deliver(widget_ref, path: str, is_valid: bool) -> None:
+def _deliver(widget_ref, slot: str, args: tuple) -> None:
     """Hand a result to its widget if the widget is still alive."""
     widget = widget_ref()
     if widget is not None and is_valid_object(widget):
-        widget._on_validation_finished(path, is_valid)
+        getattr(widget, slot)(*args)
 
 
-class _PathCheck(QRunnable):
-    """One path check on the global thread pool."""
+def _work() -> None:
+    """Run disk checks forever, posting each result to the UI thread."""
+    while True:
+        widget_ref, slot, check = _jobs.get()
+        try:
+            args = check()
+        except Exception:  # noqa: BLE001 - a failed check must not kill the worker
+            continue
+        _relay.finished.emit(widget_ref, slot, args)
 
-    def __init__(self, widget_ref, path: str, mode: str):
-        super().__init__()
-        self._widget_ref = widget_ref
-        self._path = path
-        self._mode = mode
 
-    def run(self) -> None:
-        """Check the path and post the result to the UI thread."""
-        _relay.finished.emit(
-            self._widget_ref, self._path, _path_is_valid(self._path, self._mode)
-        )
+def _check_off_thread(
+    widget: QWidget, slot: str, check: Callable[[], Tuple]
+) -> None:
+    """Run `check` on a daemon worker and call `widget.slot(*result)`.
+
+    Not the host's `QThreadPool`: a stuck check would starve it and hold
+    its quit; a daemon thread never delays the process exit.
+    """
+    global _relay
+    if _relay is None:
+        _relay = _Relay()
+        _relay.finished.connect(_deliver)
+    _jobs.put((weakref.ref(widget), slot, check))
+    if len(_workers) < _WORKER_COUNT:
+        worker = threading.Thread(target=_work, name="fxgui-path-check", daemon=True)
+        _workers.append(worker)
+        worker.start()
 
 
 class FXFilePathWidget(QWidget):
@@ -241,12 +269,11 @@ class FXFilePathWidget(QWidget):
             return
 
         # A share that does not answer stalls the check, never the UI.
-        global _relay
-        if _relay is None:
-            _relay = _Relay()
-            _relay.finished.connect(_deliver)
-        QThreadPool.globalInstance().start(
-            _PathCheck(weakref.ref(self), path, self._mode)
+        mode = self._mode
+        _check_off_thread(
+            self,
+            "_on_validation_finished",
+            lambda: (path, _path_is_valid(path, mode)),
         )
 
     def _on_validation_finished(self, path: str, is_valid: bool) -> None:
@@ -278,11 +305,14 @@ class FXFilePathWidget(QWidget):
             event.acceptProposedAction()
 
     def dropEvent(self, event) -> None:
-        """Handle file drop."""
+        """Take the dropped paths that exist, checked off the UI thread."""
         paths = [url.toLocalFile() for url in event.mimeData().urls()]
-        if self._mode == "files":
-            paths = [p for p in paths if os.path.isfile(p)]
-            if paths:
-                self._input.setText(";".join(paths))
-        elif paths and _path_is_valid(paths[0], self._mode):
-            self._input.setText(paths[0])
+        mode = self._mode
+        _check_off_thread(
+            self, "_on_drop_checked", lambda: (_droppable(paths, mode),)
+        )
+
+    def _on_drop_checked(self, paths: List[str]) -> None:
+        """Show the dropped paths that passed the check."""
+        if paths:
+            self._input.setText(";".join(paths))

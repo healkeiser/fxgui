@@ -1,14 +1,22 @@
 """One running copy of an application per name, and a way to wake it."""
 
 # Built-in
+import hashlib
+import os
+import time
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import QObject, Signal, Slot
+from qtpy.QtCore import QDir, QLockFile, QObject, QThread, Signal, Slot
 
 
 # Long enough for a named pipe on a loaded machine, unfelt on first start.
 _PROBE_MS = 300
+
+# How long a start that lost the lock keeps knocking while the winner,
+# started in the same instant, comes up to listen.
+_REACH_SECONDS = 5.0
+_RETRY_MS = 50
 
 # A message is a wake-up note, not a transfer: anything longer is dropped.
 MAX_MESSAGE_BYTES = 64 * 1024
@@ -34,7 +42,7 @@ class FXSingleInstance(QObject):
 
     Raises:
         RuntimeError: From `claim`, when no copy runs but the name cannot
-            be listened on.
+            be listened on, or the copy holding it never answers.
 
     Examples:
         >>> instance = FXSingleInstance(f"my-app-{getpass.getuser()}")
@@ -51,6 +59,7 @@ class FXSingleInstance(QObject):
         super().__init__(parent)
         self._name = name
         self._server = None
+        self._lock = None
 
     def claim(self, message: str = "") -> bool:
         """Take the name, or hand `message` to the copy holding it.
@@ -66,24 +75,29 @@ class FXSingleInstance(QObject):
 
         Raises:
             ValueError: If `message` is longer than `MAX_MESSAGE_BYTES`.
+            RuntimeError: The name cannot be listened on, or the copy
+                holding it never answers.
         """
-        from qtpy.QtNetwork import QLocalServer, QLocalSocket
+        from qtpy.QtNetwork import QLocalServer
 
         payload = message.encode("utf-8")
         if len(payload) > MAX_MESSAGE_BYTES:
             raise ValueError(
                 f"a message holds at most {MAX_MESSAGE_BYTES} bytes, "
                 f"got {len(payload)}")
-        probe = QLocalSocket()
-        probe.connectToServer(self._name)
-        if probe.waitForConnected(_PROBE_MS):
-            if payload:
-                probe.write(payload)
-                probe.waitForBytesWritten(_PROBE_MS)
-            probe.disconnectFromServer()
-            # Unwritten bytes keep it closing; leaving now would lose them.
-            if probe.state() != QLocalSocket.LocalSocketState.UnconnectedState:
-                probe.waitForDisconnected(_PROBE_MS)
+        # Windows lets two servers listen on one name, so two starts in the
+        # same instant would both win the probe: a lock file picks one.
+        digest = hashlib.sha256(self._name.encode("utf-8")).hexdigest()[:24]
+        lock = QLockFile(os.path.join(QDir.tempPath(), f"fxgui-{digest}.lock"))
+        # Stale only when its process is gone, however long a copy runs.
+        lock.setStaleLockTime(0)
+        if not lock.tryLock(0):
+            deadline = time.monotonic() + _REACH_SECONDS
+            while not self._hand_over(payload):
+                if time.monotonic() > deadline:
+                    raise RuntimeError(
+                        f"the copy holding {self._name!r} does not answer")
+                QThread.msleep(_RETRY_MS)
             return False
         # A crash leaves the socket file on some platforms; on Windows a no-op.
         QLocalServer.removeServer(self._name)
@@ -91,11 +105,30 @@ class FXSingleInstance(QObject):
         # Another account on the machine cannot hand this copy a message.
         server.setSocketOptions(QLocalServer.SocketOption.UserAccessOption)
         if not server.listen(self._name):
-            # Not "another copy runs": that copy would have answered.
+            lock.unlock()
             raise RuntimeError(
                 f"cannot listen on {self._name!r}: {server.errorString()}")
         server.newConnection.connect(self._on_connection)
         self._server = server
+        self._lock = lock
+        self.destroyed.connect(lock.unlock)
+        return True
+
+    def _hand_over(self, payload: bytes) -> bool:
+        """Hand `payload` to the copy listening on the name, if one answers."""
+        from qtpy.QtNetwork import QLocalSocket
+
+        probe = QLocalSocket()
+        probe.connectToServer(self._name)
+        if not probe.waitForConnected(_PROBE_MS):
+            return False
+        if payload:
+            probe.write(payload)
+            probe.waitForBytesWritten(_PROBE_MS)
+        probe.disconnectFromServer()
+        # Unwritten bytes keep it closing; leaving now would lose them.
+        if probe.state() != QLocalSocket.LocalSocketState.UnconnectedState:
+            probe.waitForDisconnected(_PROBE_MS)
         return True
 
     @Slot()

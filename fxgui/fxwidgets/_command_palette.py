@@ -24,6 +24,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui._compat import is_valid
 
 
 fxstyle.register_widget_style(
@@ -266,8 +267,9 @@ class FXCommandPalette(QFrame):
         ticket = self._ticket
 
         def landed(entries: List[Tuple[str, str]]) -> None:
-            # A load that lands after a newer opening is out of date.
-            if ticket != self._ticket:
+            # A load that lands after a newer opening, or after the
+            # palette is deleted, is out of date.
+            if not is_valid(self) or ticket != self._ticket:
                 return
             self._go_to = [
                 FXCommand(words, partial(select, row_id))

@@ -27,12 +27,14 @@ from qtpy.QtWidgets import (
     QSizePolicy,
     QTableWidgetItem,
     QToolTip,
+    QApplication,
     QTreeWidgetItem,
     QWidget,
 )
 
 # Internal
 from fxgui import fxstyle
+from fxgui._compat import is_valid
 
 
 # Where apply_tip keeps a tip's (title, body, shortcut): a property on a
@@ -262,7 +264,23 @@ class _TipRefresh(QObject):
         action.setToolTip(tip(*action.property(_PARTS)))
 
 
-_REFRESH = _TipRefresh()
+_refresher: Optional[_TipRefresh] = None
+
+
+def _refresh() -> _TipRefresh:
+    """Return the one refresher, made on first use in the GUI thread.
+
+    Not at import: a module imported on a worker thread would leave the
+    filter living there, and Qt calls a filter only in its own thread.
+    """
+    global _refresher
+    if _refresher is None or not is_valid(_refresher):
+        _refresher = _TipRefresh()
+        application = QApplication.instance()
+        if application is not None:
+            _refresher.moveToThread(application.thread())
+            _refresher.setParent(application)
+    return _refresher
 
 
 def _view_of(item) -> QAbstractItemView:
@@ -319,7 +337,7 @@ def apply_tip(
     plain = f"{title} - {body}" if body else title
 
     if isinstance(target, (QTreeWidgetItem, QListWidgetItem, QTableWidgetItem)):
-        _view_of(target).viewport().installEventFilter(_REFRESH)
+        _view_of(target).viewport().installEventFilter(_refresh())
         if isinstance(target, QTreeWidgetItem):
             for column in range(max(target.columnCount(), 1)):
                 target.setData(column, _PARTS_ROLE, parts)
@@ -335,9 +353,9 @@ def apply_tip(
         # A tool button or menu reads the action's tooltip; hover comes
         # first, so the action is rebuilt then.
         if target.property(_PARTS) is None:
-            target.hovered.connect(_REFRESH.refresh_action)
+            target.hovered.connect(_refresh().refresh_action)
     elif isinstance(target, QWidget):
-        target.installEventFilter(_REFRESH)
+        target.installEventFilter(_refresh())
     if hasattr(target, "setProperty"):
         target.setProperty(_PARTS, parts)
 

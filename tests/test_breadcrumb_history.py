@@ -1,9 +1,10 @@
 """A segment click is a navigation: history records it, back returns."""
 
 # Third-party
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QEvent, QPoint, Qt
+from qtpy.QtGui import QFocusEvent
 from qtpy.QtTest import QTest
-from qtpy.QtWidgets import QApplication, QPushButton
+from qtpy.QtWidgets import QApplication, QMenu, QPushButton
 
 # Internal
 from fxgui.fxwidgets import FXBreadcrumb
@@ -116,3 +117,23 @@ def test_a_window_echoing_where_back_went_keeps_forward(qtbot, qapp):
     assert crumb.can_go_forward(), "the echo filed no new place"
     crumb.go_forward()
     assert crumb.path() == PATH[:2]
+
+
+def test_the_editor_survives_its_own_context_menu(qtbot, qapp):
+    crumb = _crumb(qtbot)
+    crumb.enter_edit_mode()
+    QApplication.sendEvent(
+        crumb._line_edit,
+        QFocusEvent(QEvent.Type.FocusOut, Qt.FocusReason.PopupFocusReason),
+    )
+    assert crumb.is_editing()
+
+    menu = QMenu()
+    menu.addAction("Copy")
+    menu.popup(crumb.mapToGlobal(crumb.rect().center()))
+    qtbot.waitExposed(menu)
+    QTest.mousePress(menu, Qt.LeftButton, pos=QPoint(4, 4))
+    QTest.mouseRelease(menu, Qt.LeftButton, pos=QPoint(4, 4))
+    menu.close()
+    assert crumb.is_editing()
+    crumb.exit_edit_mode()

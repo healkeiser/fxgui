@@ -98,3 +98,53 @@ def test_a_message_over_the_limit_wakes_instead(qtbot):
         sender.disconnectFromServer()
 
     assert messaged == []
+
+
+# Claims the moment a go file appears.
+_RACE = "\n".join(
+    (
+        "import os, sys, time",
+        "from qtpy.QtCore import QCoreApplication",
+        "from qtpy import QtNetwork",
+        "from fxgui.fxwidgets import FXSingleInstance",
+        "app = QCoreApplication([])",
+        "print('ready', flush=True)",
+        "while not os.path.exists(sys.argv[2]):",
+        "    time.sleep(0.002)",
+        "sys.exit(FXSingleInstance(sys.argv[1]).claim('late'))",
+    )
+)
+
+
+def test_a_start_racing_one_not_yet_listening_hands_over(
+    qtbot, tmp_path, monkeypatch
+):
+    import time
+
+    from qtpy.QtNetwork import QLocalServer
+
+    go = tmp_path / "go"
+    racer = subprocess.Popen(
+        [sys.executable, "-c", _RACE, _name("race"), str(go)],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    assert racer.stdout.readline().strip() == "ready"
+    real_listen = QLocalServer.listen
+
+    def slow_listen(server, name):
+        # The other start probes while this one has yet to listen.
+        go.write_text("")
+        time.sleep(1.5)
+        return real_listen(server, name)
+
+    monkeypatch.setattr(QLocalServer, "listen", slow_listen)
+    first = FXSingleInstance(_name("race"))
+    said = []
+    first.messaged.connect(said.append)
+    first.woken.connect(lambda: said.append("woken"))
+    assert first.claim()
+
+    qtbot.waitUntil(lambda: bool(said), timeout=10000)
+    assert said == ["late"]
+    assert racer.wait(15) == 0, "the racing start also took the name"

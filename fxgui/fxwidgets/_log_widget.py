@@ -66,8 +66,13 @@ class FXOutputLogHandler(logging.Handler):
             self.detach()
             return
         try:
-            # The signal hands the text to the widget's thread.
-            widget.log_message.emit(self.format(record), record.levelno)
+            text = self.format(record)
+            try:
+                # The signal hands the text to the widget's thread.
+                widget.log_message.emit(text, record.levelno)
+            except RuntimeError:
+                # Deleted on its own thread since the check above.
+                self.detach()
         except Exception:  # noqa: BLE001 - logging's own handler contract
             self.handleError(record)
 

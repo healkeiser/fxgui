@@ -98,3 +98,32 @@ def test_mid_and_tail_ansi_segments_share_one_format(qtbot, qapp):
     )
     assert formats == [(error, 128, True)] * len(formats)
     assert formats
+
+
+def test_a_widget_deleted_between_check_and_emit_detaches_quietly(
+    qtbot, qapp, monkeypatch
+):
+    pane = FXOutputLogWidget()
+    qtbot.addWidget(pane)
+    handler = FXOutputLogHandler(pane)
+    logger = logging.getLogger("fxgui.test.race")
+    logger.addHandler(handler)
+    errors = []
+    handler.handleError = lambda record: errors.append(record)
+
+    class _Gone:
+        def emit(self, *_args):
+            raise RuntimeError("Internal C++ object already deleted.")
+
+    class _Racing:
+        log_message = _Gone()
+
+    monkeypatch.setattr(
+        FXOutputLogHandler, "log_widget", property(lambda self: _Racing())
+    )
+    try:
+        logger.warning("as the pane dies")
+        assert errors == []
+        assert handler not in logger.handlers
+    finally:
+        logger.removeHandler(handler)

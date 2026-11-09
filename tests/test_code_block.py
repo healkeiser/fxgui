@@ -37,6 +37,17 @@ def test_leading_blank_lines_do_not_shift_the_colours(qapp):
     assert _format_at(document, 2, 4) != _string_colour(highlighter)
 
 
+def test_emoji_before_a_token_do_not_shift_its_colour(qapp):
+    edit = QPlainTextEdit()
+    document = edit.document()
+    highlighter = FXPygmentsHighlighter(document, "python")
+    qapp.processEvents()
+    # Each emoji is two UTF-16 units to Qt, one character to Python.
+    document.setPlainText("s = '\U0001F680\U0001F680'\nx = 'text'")
+    assert _format_at(document, 1, 9) == _string_colour(highlighter)
+    assert _format_at(document, 1, 2) != _string_colour(highlighter)
+
+
 def test_opening_a_multiline_string_recolours_the_lines_below(qapp):
     edit = QPlainTextEdit()
     document = edit.document()

@@ -59,6 +59,16 @@ def test_rating_widget_half_star_step(qtbot):
     assert rating.rating() == 0.5
 
 
+@pytest.mark.parametrize("given, kept", [(2.7, 2.5), (2.8, 3.0), (2.25, 2.5)])
+def test_a_half_star_rating_lands_on_a_half(qtbot, given, kept):
+    rating = FXRatingWidget(max_rating=5, allow_half=True)
+    qtbot.addWidget(rating)
+
+    rating.set_rating(given)
+
+    assert rating.rating() == kept
+
+
 def test_range_slider_keyboard(qtbot):
     slider = FXRangeSlider(minimum=0, maximum=100, low=10, high=90)
     qtbot.addWidget(slider)

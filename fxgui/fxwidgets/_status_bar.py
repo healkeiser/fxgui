@@ -486,6 +486,9 @@ class FXStatusBar(QStatusBar):
 
     def set_busy(self, busy: bool) -> None:
         """Run the busy line along the top edge, or stop it."""
+        # A repeated call must not send the running line back to the start.
+        if bool(busy) == self._busy:
+            return
         self._busy = bool(busy)
         self._busy_line.stop()
         self._run_busy_line()

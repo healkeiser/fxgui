@@ -133,3 +133,14 @@ def test_busy_shows_over_a_hidden_status_line(qtbot):
     _run_to(qtbot, bar, 0.2)
 
     assert _top_row(bar) != resting
+
+
+def test_busy_again_keeps_the_line_where_it_is(qtbot):
+    window = _window(qtbot)
+    bar = window.statusBar()
+    bar.set_busy(True)
+    _run_to(qtbot, bar, 0.3)
+
+    bar.set_busy(True)
+
+    assert bar._busy_line.currentValue() >= 0.3

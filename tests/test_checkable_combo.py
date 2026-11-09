@@ -101,3 +101,19 @@ def test_the_closed_combo_reads_its_ticks(qtbot):
     combo.set_checked_items(["cache", "plate"])
 
     assert combo.display_text() == "cache, plate"
+
+
+def test_removing_or_clearing_ticked_rows_says_so(qtbot):
+    combo = FXCheckableComboBox()
+    qtbot.addWidget(combo)
+    said = []
+    combo.checked_changed.connect(said.append)
+    combo.add_items(CHOICES)
+    combo.set_checked_items(["render"])
+
+    combo.clear()
+    combo.add_items(CHOICES)
+    combo.set_checked_items(["render"])
+    combo.removeItem(0)
+
+    assert said == [["render"], [], ["render"], []]

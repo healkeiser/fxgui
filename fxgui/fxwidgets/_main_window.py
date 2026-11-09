@@ -190,8 +190,34 @@ class FXMainWindow(QMainWindow):
         # A themed root; fxstyle skips it under a themed application.
         fxstyle.register_themed_root(self)
         fxstyle.theme_changed.connect(self._on_theme_changed)
+        self._scope_shortcuts()
 
     # Private methods
+    def _scope_shortcuts(self) -> None:
+        """Hold the window's shortcuts to this widget while it is embedded.
+
+        Window-wide, an embedded copy's Ctrl+Alt+Q would close it from
+        anywhere in the host's window.
+        """
+        actions = [
+            getattr(self, name, None)
+            for name in (
+                "close_action",
+                "window_on_top_action",
+                "minimize_window_action",
+                "maximize_window_action",
+                "refresh_action",
+            )
+        ]
+        embedded = not self.isWindow()
+        for action in filter(None, actions):
+            action.setShortcutContext(
+                Qt.WidgetWithChildrenShortcut if embedded else Qt.WindowShortcut
+            )
+            # A menu's action matches a widget scope only through a widget.
+            if embedded and action not in self.actions():
+                self.addAction(action)
+
     def _set_window_icon(self, icon: Optional[Union[str, QIcon]]) -> None:
         """Set the window icon: a `QIcon`, a path, the app's, or fxgui's logo."""
         if isinstance(icon, QIcon):
@@ -565,6 +591,8 @@ class FXMainWindow(QMainWindow):
 
     def event(self, event: QEvent) -> bool:
         """Route status tips after the items; watch a framed window's bands."""
+        if event.type() == QEvent.ParentChange:
+            self._scope_shortcuts()
         if (
             event.type() == QEvent.ChildPolished
             and getattr(self, "_framed", False)

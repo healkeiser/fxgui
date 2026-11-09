@@ -62,6 +62,29 @@ def test_rejection_keeps_the_callers_margins_and_sheet(qtbot, qapp):
     assert edit.styleSheet() == sheet
 
 
+def test_a_selected_character_retyped_as_itself_is_no_rejection(qtbot, qapp):
+    edit = _validated(qtbot)
+    edit.setText("abc")
+    edit.setSelection(1, 1)
+
+    QTest.keyClicks(edit, "b")
+
+    assert edit.text() == "abc"
+    assert not _animating(edit)
+
+
+def test_a_rejected_key_over_a_selection_still_shakes(qtbot, qapp):
+    edit = _validated(qtbot)
+    edit.setText("abc")
+    edit.setSelection(1, 1)
+
+    QTest.keyClicks(edit, "1")
+
+    assert edit.text() == "abc"
+    assert _animating(edit)
+    qtbot.waitUntil(lambda: not _animating(edit))
+
+
 def test_a_finished_flash_leaves_no_border(qtbot, qapp):
     edit = _validated(qtbot)
     _reject(qtbot, edit)

@@ -41,7 +41,12 @@ class FXCheckableComboBox(QComboBox):
         self._said: List[str] = []
         self._setting = False
         self.setModel(QStandardItemModel(self))
-        self.model().itemChanged.connect(self._on_item_changed)
+        model = self.model()
+        model.itemChanged.connect(self._on_item_changed)
+        # A ticked row removed, or a reset, changes what is ticked too.
+        model.rowsInserted.connect(self._on_item_changed)
+        model.rowsRemoved.connect(self._on_item_changed)
+        model.modelReset.connect(self._on_item_changed)
         self.view().viewport().installEventFilter(self)
         self.view().installEventFilter(self)
 

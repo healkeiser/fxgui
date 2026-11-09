@@ -117,15 +117,28 @@ class FXMentionEdit(QPlainTextEdit):
                 cursor.deletePreviousChar()
         cursor.insertText(f"@{name} ")
         self.setTextCursor(cursor)
+        # The text cannot tell homonyms apart: the last one chosen is meant.
+        self._chosen = {
+            other: written for other, written in self._chosen.items()
+            if written != name or other == person
+        }
         self._chosen[person] = name
         self.completer.popup().hide()
 
     def mentions(self) -> Tuple[str, ...]:
         """Return the ids the text still names, in the order chosen."""
         text = self.toPlainText()
+        # Longest first: "@Anne Martin" names Anne Martin, not also Anne.
+        names = sorted(set(self._chosen.values()), key=len, reverse=True)
+        written = set()
+        at = text.find("@")
+        while at >= 0:
+            name = next((n for n in names if text.startswith(n, at + 1)), None)
+            if name is not None:
+                written.add(name)
+            at = text.find("@", at + 1)
         return tuple(
-            person for person, name in self._chosen.items()
-            if f"@{name}" in text
+            person for person, name in self._chosen.items() if name in written
         )
 
     def kept(self) -> Tuple[str, Dict[str, str]]:
@@ -241,18 +254,27 @@ class FXThreadLine(QWidget):
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._head: Optional[QWidget] = None
         self._faces: List[QWidget] = []
+        # What the last `join` watches, so the next one lets go of it.
+        self._watched: List[QWidget] = []
         self._thread = thread
         thread.installEventFilter(self)
 
     def join(self, head: QWidget, faces: Sequence[QWidget]) -> None:
         """Draw the line from under `head` to each of `faces` shown."""
         self._head, self._faces = head, list(faces)
+        for watched in self._watched:
+            if _compat.is_valid(watched):
+                watched.removeEventFilter(self)
         # Their moves, not this widget's: a wrapped reply moves the faces,
         # and a card growing above moves the cards below it.
-        for face in (head, *faces):
-            for watched in (face, face.parentWidget()):
-                if watched is not None:
-                    watched.installEventFilter(self)
+        self._watched = [
+            watched
+            for face in (head, *faces)
+            for watched in (face, face.parentWidget())
+            if watched is not None and watched is not self._thread
+        ]
+        for watched in self._watched:
+            watched.installEventFilter(self)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Follow the thread's size, and a face that moves or hides."""
