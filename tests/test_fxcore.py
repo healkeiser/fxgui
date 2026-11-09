@@ -101,6 +101,44 @@ def test_filtering_survives_non_text_data(qapp):
     assert proxy.index(0, 0).data(Qt.ForegroundRole) is not None
 
 
+def test_sorting_reads_each_row_once(qapp, monkeypatch):
+    from fxgui import fxcore
+
+    words = ["item%03d_%s" % (i, "xyz"[i % 3]) for i in range(200)]
+    proxy = _proxy_with(words)
+    reads = _count_calls(monkeypatch, fxcore, "_text")
+
+    proxy.set_filter_text("item")
+
+    assert proxy.rowCount() == 200
+    assert len(reads) <= 200
+
+
+def test_the_filter_reads_the_key_column(qapp):
+    model = QStandardItemModel()
+    for name, tag in (("alpha", "zzz"), ("beta", "comp"), ("gamma", "qqq")):
+        model.appendRow([QStandardItem(name), QStandardItem(tag)])
+    proxy = FXSortFilterProxyModel(ratio=0.9)
+    proxy.setSourceModel(model)
+    proxy._test_model = model
+
+    proxy.setFilterKeyColumn(1)
+    proxy.set_filter_text("comp")
+
+    assert _visible(proxy) == ["beta"]
+
+
+def test_rows_rank_by_their_own_score_after_a_removal(qapp):
+    proxy = _proxy_with(["abcx", "abzz", "abcd"], ratio=0.1)
+    proxy.set_filter_text("abcd")
+    model = proxy._test_model
+
+    model.removeRows(0, 1)
+    model.setData(model.index(0, 0), "abzz")
+
+    assert _visible(proxy) == ["abcd", "abzz"]
+
+
 def test_match_colour_reads_the_cache(qapp, monkeypatch):
     fxstyle.colors()
     depth = _count_calls(monkeypatch, fxstyle, "_depth_colors")

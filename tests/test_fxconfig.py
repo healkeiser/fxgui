@@ -64,6 +64,20 @@ def test_get_value_answers_in_the_defaults_type(qapp):
     assert fxconfig.get_value("probe/missing", 7) == 7
 
 
+def test_a_new_application_reads_its_own_theme_and_row_size(qapp):
+    from fxgui import fxstyle
+
+    fxstyle.apply_theme("light")
+    fxstyle.apply_row_size("small")
+
+    fxconfig.set_application_name("fxgui_other_tool")
+
+    assert fxstyle.get_theme() == fxstyle.get_default_theme()
+    assert fxstyle.row_size() == fxstyle._DEFAULT_ROW_SIZE
+    assert fxstyle.colors().surface == fxstyle._colour_tokens(
+        fxstyle.get_default_theme())["surface"]
+
+
 @pytest.mark.parametrize("bad_name", ["", "   ", "a/b", "a\\b", ".."])
 def test_set_application_name_rejects_unsafe_names(bad_name):
     with pytest.raises(ValueError):

@@ -68,7 +68,7 @@ def test_size_and_paint_agree_on_a_falsy_thumbnail_role(qtbot):
     option.rect = tree.visualRect(index)
     assert delegate._has_thumbnail(index)
     height = delegate.sizeHint(option, index).height()
-    assert height == delegate._THUMBNAIL_ROW_HEIGHT == fxstyle.row_height()
+    assert height == fxstyle.row_height()
 
 
 def test_a_selected_title_is_painted_in_the_highlighted_text_color(qtbot):

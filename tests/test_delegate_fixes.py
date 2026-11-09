@@ -32,6 +32,35 @@ def _tree(qtbot):
     return tree, delegate
 
 
+def test_a_status_icon_is_not_made_again_on_each_paint(qtbot, monkeypatch):
+    from qtpy.QtGui import QImage, QPainter
+
+    from fxgui import fxicons
+
+    delegate = FXThumbnailDelegate()
+    canvas = QImage(200, 40, QImage.Format_ARGB32)
+    painter = QPainter(canvas)
+    draw = lambda: delegate._draw_status_label(  # noqa: E731
+        painter, QRect(0, 0, 200, 40), 0, 200, 0, QColor("#ff0000"),
+        "WIP", QFont(), icon="check",
+    )
+    made = []
+    try:
+        draw()
+        get_icon = fxicons.get_icon
+        monkeypatch.setattr(
+            fxicons, "get_icon",
+            lambda *args, **kwargs: made.append(args) or get_icon(
+                *args, **kwargs),
+        )
+        for _ in range(3):
+            draw()
+    finally:
+        painter.end()
+
+    assert made == []
+
+
 def _raw_option(tree, index):
     option = QStyleOptionViewItem()
     option.rect = tree.visualRect(index)
@@ -42,21 +71,25 @@ def _raw_option(tree, index):
 
 def test_a_thumbnail_is_loaded_once_across_paints(qtbot, monkeypatch):
     loads = []
-    real = _delegates.QPixmap
+    real = _delegates.QImage
 
-    class CountingPixmap(real):
+    class CountingImage(real):
         def __init__(self, *args):
             if args and isinstance(args[0], str):
                 loads.append(args[0])
             super().__init__(*args)
 
-    monkeypatch.setattr(_delegates, "QPixmap", CountingPixmap)
+    monkeypatch.setattr(_delegates, "QImage", CountingImage)
     QPixmapCache.clear()
+    reads = _delegates._thumbnail_reads()
+    reads._stamps.clear()
+    reads._sources.clear()
     tree, _ = _tree(qtbot)
     item = QTreeWidgetItem(tree, ["Shot"])
     item.setData(0, FXThumbnailDelegate.THUMBNAIL_PATH_ROLE, _IMAGE)
-    tree.viewport().grab()
-    tree.viewport().grab()
+    for _ in range(3):
+        tree.viewport().grab()
+        qtbot.waitUntil(lambda: not reads._waiting, timeout=5000)
     assert loads.count(_IMAGE) == 1
 
 

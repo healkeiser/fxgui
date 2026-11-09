@@ -72,3 +72,16 @@ def test_a_hovered_plain_row_reads_off_the_view(qtbot, theme):
     assert fill == fxstyle.colors().state_hover.lower()
     assert fxstyle.get_contrast_ratio(fill, ground) >= (
         fxstyle.STATE_MIN_CONTRAST)
+
+
+def test_a_card_hover_follows_a_changed_state_contrast(qapp, monkeypatch):
+    from fxgui.fxwidgets import _delegates
+
+    card = QColor(fxstyle.colors().state_hover)
+    stepped = _delegates._hover_on(card)
+    assert stepped != card.name()
+
+    # A colour file lowering the floor, under the same theme name.
+    monkeypatch.setattr(fxstyle, "state_contrast", lambda *_args: 1.0)
+
+    assert _delegates._hover_on(card) == fxstyle.colors().state_hover

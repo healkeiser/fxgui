@@ -23,6 +23,7 @@ __email__ = "valentin.onze@gmail.com"
 ###### Imports
 
 # Built-in
+import contextlib
 import hashlib
 import os
 import re
@@ -429,12 +430,25 @@ _default_theme = _DEFAULT_THEME  # What load_saved_theme() falls back to
 _theme_namespace = None  # Cached FXThemeColors for the current theme
 _widget_fragments: "OrderedDict[str, str]" = OrderedDict()
 _themed_roots: "weakref.WeakSet" = weakref.WeakSet()
+# Built sheets and host rules: key -> (the colour file read, the text).
+_sheet_cache: Dict[tuple, Tuple[dict, str]] = {}
 
 
 def _invalidate_theme_namespace() -> None:
     """Drop the cached colours; every change of theme, file or font calls it."""
     global _theme_namespace
     _theme_namespace = None
+    _sheet_cache.clear()
+
+
+def _cached_sheet(key: tuple, build: Callable[[], str]) -> str:
+    """Return the text `build` makes for `key`, built once per colour file."""
+    # The entry holds the colour mapping itself, so its id is never reused.
+    source = get_colors()
+    entry = _sheet_cache.get(key)
+    if entry is None or entry[0] is not source:
+        entry = _sheet_cache[key] = (source, build())
+    return entry[1]
 
 
 def _colour_tokens(theme_name: str) -> Dict[str, str]:
@@ -1434,6 +1448,8 @@ _SHEET_ICON = re.compile(r"~icon\(([\w-]+),\s*(\w+)(?:,\s*(\d+))?\)")
 # `url(~icons/name.svg[, px])`: an image of the theme's light or dark sheet
 # set, INDICATOR_SIZE unless sized.
 _SHEET_SVG = re.compile(r"url\(~icons/(\w+)\.svg(?:,\s*(\d+))?\)")
+# A whole `@token`, or the `~icons` folder.
+_PLACEHOLDER = re.compile(r"@\w+|~icons")
 # Qt loads `name@2x.png` beside `name.png` on a screen scaled past 100%.
 _SHEET_SCALES = (3, 2, 1)
 
@@ -1448,9 +1464,13 @@ def _sheet_icon(
     the rule draws it at: Qt blurs a PNG it scales down.
     """
     folder = Path(tempfile.gettempdir()) / "fxgui" / "sheet_icons"
-    stem = f"{stem}_{size}"
+    # The temp folder is shared by every fxgui install: the name carries
+    # which file, at which size and version, it was drawn from.
+    source = f"{os.path.abspath(svg)}|{size}|{os.stat(svg).st_mtime_ns}"
+    digest = hashlib.sha1(source.encode("utf-8")).hexdigest()[:8]
+    stem = f"{stem}_{size}_{digest}"
     path = folder / f"{stem}.png"
-    if not path.exists() or path.stat().st_mtime < os.stat(svg).st_mtime:
+    if not path.exists():
         folder.mkdir(parents=True, exist_ok=True)
         # The plain file goes last: its presence says the set is whole.
         for scale in _SHEET_SCALES:
@@ -1463,14 +1483,22 @@ def _sheet_icon(
             part = target.with_name(f"{target.name}.{os.getpid()}.part")
             if not pixmap.save(str(part), "PNG"):
                 raise OSError(f"Cannot write {part}")
-            os.replace(part, target)
+            try:
+                os.replace(part, target)
+            except OSError:
+                # Windows refuses while another app holds the target open;
+                # by its name, that file is this same image.
+                if not target.exists():
+                    raise
+                with contextlib.suppress(OSError):
+                    os.remove(part)
     # Quoted: Qt drops the whole sheet over a `$` in a bare url, and the
     # temp folder of a Windows service account ends in one.
     return f'url("{path.as_posix()}")'
 
 
 def _substitute(qss: str, tokens: Dict[str, str]) -> str:
-    """Replace each placeholder, longest first so @border spares @border_light."""
+    """Replace each whole placeholder; an unknown one stays as written."""
 
     def icon(match: "re.Match") -> str:
         name, color = match.group(1), tokens.get(f"@{match.group(2)}")
@@ -1490,9 +1518,9 @@ def _substitute(qss: str, tokens: Dict[str, str]) -> str:
 
     qss = _SHEET_ICON.sub(icon, qss)
     qss = _SHEET_SVG.sub(sheet_svg, qss)
-    for key in sorted(tokens, key=len, reverse=True):
-        qss = qss.replace(key, tokens[key])
-    return qss
+    return _PLACEHOLDER.sub(
+        lambda match: tokens.get(match.group(0), match.group(0)), qss
+    )
 
 
 def resolve(qss: str, theme: Optional[str] = None) -> str:
@@ -1616,6 +1644,14 @@ def row_size() -> str:
     return _row_size
 
 
+def _forget_saved_settings() -> None:
+    """Re-read the theme and row size from the settings file on next use."""
+    global _theme, _row_size
+    _theme = None
+    _row_size = None
+    _invalidate_theme_namespace()
+
+
 def row_height() -> int:
     """Return the height, in pixels, of a list or tree row."""
     return ROW_SIZES[row_size()]
@@ -1733,6 +1769,12 @@ def set_style(widget: QWidget, style: str = None) -> "FXProxyStyle":
 
 
 ###### Style Classes
+
+
+@lru_cache(maxsize=2)
+def _sort_arrow(name: str) -> QIcon:
+    """Return a header's sort arrow; its token is read at each draw."""
+    return fxicons.get_icon(name, color="icon")
 
 
 @lru_cache(maxsize=1)
@@ -1893,9 +1935,9 @@ class FXProxyStyle(QProxyStyle):
         ):
             # Qt names an ascending sort SortDown; Lumen marks it arrow-up.
             up = option.sortIndicator == QStyleOptionHeader.SortDown
-            fxicons.get_icon(
-                "arrow-up" if up else "arrow-down", color="icon"
-            ).paint(painter, option.rect)
+            _sort_arrow("arrow-up" if up else "arrow-down").paint(
+                painter, option.rect
+            )
             return
         super().drawPrimitive(element, option, painter, widget)
         if element == QStyle.PE_PanelItemViewItem and isinstance(
@@ -2105,13 +2147,20 @@ def _font_stylesheet(theme: Optional[str] = None) -> str:
 
 def _build_stylesheet(theme: Optional[str] = None) -> str:
     """Return the title rules, `STYLE_FILE` and every fragment, resolved."""
-    parts = [
-        _font_stylesheet(theme),
-        STYLE_FILE.read_text(encoding="utf-8"),
-        _BRANCH_RULES,
-    ]
-    parts.extend(_widget_fragments.values())
-    return resolve("\n".join(parts), theme)
+    theme = theme or get_theme()
+
+    def build() -> str:
+        parts = [
+            _font_stylesheet(theme),
+            STYLE_FILE.read_text(encoding="utf-8"),
+            _BRANCH_RULES,
+        ]
+        parts.extend(_widget_fragments.values())
+        return resolve("\n".join(parts), theme)
+
+    # The sheet's images live in the temp folder, so it is part of the key.
+    key = ("sheet", theme, row_size(), tempfile.gettempdir())
+    return _cached_sheet(key, build)
 
 
 def register_widget_style(qss: str) -> None:
@@ -2136,6 +2185,7 @@ def register_widget_style(qss: str) -> None:
     if key in _widget_fragments:
         return
     _widget_fragments[key] = qss
+    _sheet_cache.clear()
     _reapply_to_roots()
 
 
@@ -2223,9 +2273,13 @@ QPushButton::menu-indicator {{ left: 0px; }}
 def _host_rules(theme: Optional[str] = None) -> str:
     """Return the host rules resolved, with the body weight if one is set."""
     theme = theme or get_theme()
-    weight, _hinting = _shape(theme, "body")
-    extra = f" font-weight: {weight};" if weight is not None else ""
-    return resolve(_HOST_RULES.replace("@weight", extra), theme)
+
+    def build() -> str:
+        weight, _hinting = _shape(theme, "body")
+        extra = f" font-weight: {weight};" if weight is not None else ""
+        return resolve(_HOST_RULES.replace("@weight", extra), theme)
+
+    return _cached_sheet(("host", theme), build)
 
 
 # Set on a parentless list Qt shows as a popup (a completer's), which no

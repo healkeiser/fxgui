@@ -4,6 +4,7 @@
 import os
 
 # Third-party
+import pytest
 from qtpy.QtCore import QRect, Qt
 from qtpy.QtGui import (
     QColor,
@@ -151,7 +152,128 @@ def test_a_thumbnail_is_stat_once_per_window(qtbot, monkeypatch, tmp_path):
     delegate = FXThumbnailDelegate()
     for _ in range(5):
         delegate._bordered_thumbnail(str(image), 1.0)
+        _thumbnails_read(qtbot)
     assert len(calls) == 1
+
+
+def _thumbnails_read(qtbot):
+    reads = _delegates._thumbnail_reads()
+    qtbot.waitUntil(lambda: not reads._waiting, timeout=5000)
+
+
+def _framed_the_old_way(delegate, path, ratio):
+    """The framed thumbnail as paint built it, reading the file in place."""
+    from qtpy.QtGui import QPixmap
+
+    reads = _delegates._thumbnail_reads
+    size = (
+        round(delegate._THUMBNAIL_WIDTH * ratio),
+        round(delegate._THUMBNAIL_HEIGHT * ratio),
+    )
+
+    class Inline:
+        def source(self, path, _size, _widget):
+            return 1.0, QPixmap(path).scaled(
+                size[0], size[1], Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+
+    _delegates._thumbnail_reads = lambda: Inline()
+    try:
+        return delegate._bordered_thumbnail(path, ratio).toImage()
+    finally:
+        _delegates._thumbnail_reads = reads
+
+
+def _sample_image(path, alpha):
+    source = QImage(
+        97, 41, QImage.Format_ARGB32 if alpha else QImage.Format_RGB32
+    )
+    for x in range(97):
+        for y in range(41):
+            source.setPixelColor(x, y, QColor(x * 2, y * 5, 90, 60 + y * 4))
+    source.save(str(path))
+
+
+@pytest.mark.parametrize("alpha", [False, True])
+def test_a_local_thumbnail_shows_on_the_first_paint(qtbot, tmp_path, alpha):
+    from qtpy.QtGui import QPixmapCache
+
+    image = tmp_path / "local.png"
+    _sample_image(image, alpha)
+    delegate = FXThumbnailDelegate()
+    expected = _framed_the_old_way(delegate, str(image), 2.0)
+    QPixmapCache.clear()
+
+    framed = delegate._bordered_thumbnail(str(image), 2.0).toImage()
+
+    assert not _delegates._can_stall(str(image))
+    assert framed == expected
+
+
+def test_a_share_path_can_stall():
+    assert _delegates._can_stall(r"\\server\share\shot.png")
+    assert _delegates._can_stall("//server/share/shot.png")
+
+
+@pytest.mark.parametrize("alpha", [False, True])
+def test_a_thumbnail_read_off_thread_is_the_one_paint_read(
+    qtbot, tmp_path, monkeypatch, alpha
+):
+    from qtpy.QtGui import QPixmapCache
+
+    monkeypatch.setattr(_delegates, "_can_stall", lambda _path: True)
+    image = tmp_path / "c.png"
+    _sample_image(image, alpha)
+    delegate = FXThumbnailDelegate()
+    expected = _framed_the_old_way(delegate, str(image), 2.0)
+    QPixmapCache.clear()
+
+    first = delegate._bordered_thumbnail(str(image), 2.0).toImage()
+    _thumbnails_read(qtbot)
+    framed = delegate._bordered_thumbnail(str(image), 2.0).toImage()
+
+    assert first != expected
+    assert framed == expected
+
+
+def test_paint_never_reads_a_share(qtbot, monkeypatch, tmp_path):
+    import threading
+
+    from qtpy.QtGui import QPixmapCache
+
+    monkeypatch.setattr(_delegates, "_can_stall", lambda _path: True)
+    painting = threading.current_thread()
+    on_ui = []
+    getmtime = os.path.getmtime
+    monkeypatch.setattr(
+        _delegates.os.path, "getmtime",
+        lambda path: on_ui.append(threading.current_thread() is painting)
+        or getmtime(path),
+    )
+    image = tmp_path / "d.png"
+    QImage(8, 8, QImage.Format_RGB32).save(str(image))
+    QPixmapCache.clear()
+    tree = QTreeWidget()
+    qtbot.addWidget(tree)
+    tree.setItemDelegate(FXThumbnailDelegate(tree))
+    item = QTreeWidgetItem(tree, ["Shot"])
+    item.setData(0, FXThumbnailDelegate.THUMBNAIL_PATH_ROLE, str(image))
+    tree.resize(300, 120)
+
+    tree.viewport().grab()
+    _thumbnails_read(qtbot)
+    tree.viewport().grab()
+
+    assert on_ui == [False]
+
+
+def test_the_remembered_stamps_are_bounded(qtbot, monkeypatch, tmp_path):
+    monkeypatch.setattr(_delegates, "_STAMP_LIMIT", 3)
+    delegate = FXThumbnailDelegate()
+    for name in "abcdef":
+        delegate._bordered_thumbnail(str(tmp_path / name), 1.0)
+    _thumbnails_read(qtbot)
+    assert len(_delegates._thumbnail_reads()._stamps) <= 3
 
 
 def test_the_thumbnail_frame_is_the_border_light_token(qtbot, tmp_path):

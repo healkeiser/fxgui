@@ -556,7 +556,7 @@ def test_the_floor_follows_the_indicators_the_row_shows(qtbot, pill, dot):
         option.rect.left(),
         option.rect.top(),
         floor,
-        delegate._THUMBNAIL_ROW_HEIGHT,
+        fxstyle.row_height(),
     )
     label_width, dot_width, _ = delegate._indicator_metrics(index, QStyleOptionViewItem())[:3]
     label_x, dot_x = delegate._indicator_left(row, label_width, dot_width)

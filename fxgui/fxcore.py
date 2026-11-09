@@ -13,10 +13,16 @@ __email__ = "valentin.onze@gmail.com"
 
 # Built-in
 from difflib import SequenceMatcher
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 # Third-party
-from qtpy.QtCore import QModelIndex, QSortFilterProxyModel, Qt, Slot
+from qtpy.QtCore import (
+    QAbstractItemModel,
+    QModelIndex,
+    QSortFilterProxyModel,
+    Qt,
+    Slot,
+)
 from qtpy.QtGui import QBrush, QColor
 from qtpy.QtWidgets import QWidget
 
@@ -86,13 +92,46 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
         # The filter text lives in seq2, which SequenceMatcher analyses once.
         self._matcher = SequenceMatcher(b="")
         self._scores: Dict[str, float] = {}
+        # Each source row's score, keyed by its key-column index, so sorting
+        # never re-reads a row's text.
+        self._row_scores: Dict[Tuple[int, int, int], float] = {}
         self.sort(0, Qt.AscendingOrder)
+
+    def setSourceModel(self, model: Optional[QAbstractItemModel]) -> None:
+        """Set the source model and forget the row scores when it changes."""
+        old = self.sourceModel()
+        if old is not None:
+            for signal in self._row_signals(old):
+                try:
+                    signal.disconnect(self._forget_rows)
+                except (RuntimeError, TypeError):
+                    pass
+        self._row_scores.clear()
+        super().setSourceModel(model)
+        if model is not None:
+            for signal in self._row_signals(model):
+                signal.connect(self._forget_rows)
+
+    @staticmethod
+    def _row_signals(model: QAbstractItemModel) -> tuple:
+        return (
+            model.dataChanged,
+            model.rowsAboutToBeInserted,
+            model.rowsAboutToBeRemoved,
+            model.rowsAboutToBeMoved,
+            model.modelAboutToBeReset,
+            model.layoutAboutToBeChanged,
+        )
+
+    def _forget_rows(self, *_args: Any) -> None:
+        self._row_scores.clear()
 
     @Slot(str)
     def set_filter_text(self, text: str) -> None:
         """Filter and rank the rows by `text`."""
         self._matcher.set_seq2(text.lower())
         self._scores.clear()
+        self._row_scores.clear()
         self.invalidate()
 
     def ratio(self) -> float:
@@ -116,20 +155,41 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
     def _active(self) -> bool:
         return bool(self._matcher.b) and self._ratio > 0.0
 
+    def _key_column(self) -> int:
+        # -1 (every column) reads the first one.
+        return max(self.filterKeyColumn(), 0)
+
+    def _row_score(self, index: QModelIndex) -> float:
+        """Return the score of source `index`'s row, kept per row."""
+        column = self._key_column()
+        if index.column() != column:
+            index = index.sibling(index.row(), column)
+        key = (index.row(), index.column(), index.internalId())
+        found = self._row_scores.get(key)
+        if found is None:
+            found = self._row_scores[key] = self.score(_text(index))
+        return found
+
     def filterAcceptsRow(
         self, source_row: int, source_parent: QModelIndex
     ) -> bool:
-        """Keep a row whose score reaches the ratio."""
+        """Keep a row whose key-column score reaches the ratio."""
         if not self._active():
             return True
-        text = _text(self.sourceModel().index(source_row, 0, source_parent))
-        return bool(text) and self.score(text) >= self._ratio
+        index = self.sourceModel().index(
+            source_row, self._key_column(), source_parent
+        )
+        text = _text(index)
+        # Always re-scored: Qt filters a changed row before it says so.
+        key = (index.row(), index.column(), index.internalId())
+        score = self._row_scores[key] = self.score(text)
+        return bool(text) and score >= self._ratio
 
     def lessThan(self, left: QModelIndex, right: QModelIndex) -> bool:
         """Rank the higher score first; ties keep the source order."""
         if self._active():
-            left_score = self.score(_text(left))
-            right_score = self.score(_text(right))
+            left_score = self._row_score(left)
+            right_score = self._row_score(right)
             if left_score != right_score:
                 return left_score > right_score
         return left.row() < right.row()

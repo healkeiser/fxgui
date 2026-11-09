@@ -18,6 +18,7 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 # Built-in
+import contextlib
 import functools
 import os
 from pathlib import Path
@@ -297,16 +298,27 @@ def get_icon_path(
         root=root,
     ).replace("\\", "/")
 
+    # Icons are read-only package data: a path found once stays found.
+    key = (path, tempfile.gettempdir())
+    found = _found_paths.get(key)
+    if found is not None:
+        return found
     if Path(path).exists():
-        return path
-    # A library shipped as `<root>/<library>.zip` holds the same paths.
-    archive = Path(root) / f"{library}.zip"
-    if archive.exists():
-        member = Path(path).relative_to(Path(root) / library).as_posix()
-        extracted = _extracted(str(archive), member)
-        if extracted:
-            return extracted
-    raise FileNotFoundError(f"Icon path '{path}' does not exist.")
+        found = path
+    else:
+        # A library shipped as `<root>/<library>.zip` holds the same paths.
+        archive = Path(root) / f"{library}.zip"
+        if archive.exists():
+            member = Path(path).relative_to(Path(root) / library).as_posix()
+            found = _extracted(str(archive), member)
+    if not found:
+        raise FileNotFoundError(f"Icon path '{path}' does not exist.")
+    _found_paths[key] = found
+    return found
+
+
+# (icon path, temp folder) -> the file to read; a miss is never kept.
+_found_paths: Dict[tuple, str] = {}
 
 
 @functools.lru_cache(maxsize=None)
@@ -336,7 +348,14 @@ def _extracted(archive: str, member: str) -> Optional[str]:
     # Written aside then renamed, so a second process never reads half a file.
     partial = target.with_name(f"{target.name}.{os.getpid()}.part")
     partial.write_bytes(data)
-    os.replace(partial, target)
+    try:
+        os.replace(partial, target)
+    except OSError:
+        # Windows refuses while another process holds the target it wrote.
+        if not target.exists():
+            raise
+        with contextlib.suppress(OSError):
+            partial.unlink()
     return target.as_posix()
 
 
@@ -617,6 +636,12 @@ def _menu_painting() -> bool:
     """
     from qtpy.QtWidgets import QApplication, QMenu
 
+    popup = QApplication.activePopupWidget()
+    if isinstance(popup, QMenu) and popup.testAttribute(
+        Qt.WA_WState_InPaintEvent
+    ):
+        return True
+    # A parent menu under an open submenu, or a torn-off one.
     return any(
         isinstance(widget, QMenu)
         and widget.testAttribute(Qt.WA_WState_InPaintEvent)

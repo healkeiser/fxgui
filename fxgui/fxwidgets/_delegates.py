@@ -1,10 +1,16 @@
 """Item delegates for tree and list views."""
 
 # Built-in
+import ctypes
 import functools
 import os
+import queue
+import sys
+import threading
 import time
-from typing import Dict, NamedTuple, Optional, Tuple
+import weakref
+from collections import OrderedDict
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import (
@@ -29,6 +35,7 @@ from qtpy.QtGui import (
     QFont,
     QFontMetrics,
     QIcon,
+    QImage,
     QPainter,
     QPainterPath,
     QPalette,
@@ -55,9 +62,13 @@ _FALLBACK_THUMBNAIL = fxconstants.IMAGES_ROOT / "missing_image.png"
 
 # A thumbnail's mtime is trusted this long before the share is asked again.
 _STAT_SECONDS = 2.0
-# ponytail: one entry per path ever shown, never pruned; bound it if a view
-# ever walks millions of files.
-_stamps: Dict[str, Tuple[float, Optional[float]]] = {}
+# Paths whose mtime is remembered, the least recently checked dropped first.
+_STAMP_LIMIT = 4096
+# Scaled thumbnails kept, the least recently drawn dropped first: more rows
+# than any screen shows.
+_SOURCE_LIMIT = 256
+# A share that does not answer holds a reader; two keep the other one going.
+_THUMBNAIL_READERS = 2
 
 _OWNS_ROW = "fxOwnsRow"
 
@@ -84,36 +95,164 @@ def _hover_on(card: Optional[QColor]) -> str:
     hover = fxstyle.colors().state_hover
     if card is None:
         return hover
-    return _hover_reading(card.name(), hover, fxstyle.get_theme())
+    return _hover_reading(card.name(), hover, fxstyle.state_contrast())
 
 
+# Keyed on the contrast itself: a colour file can change it under one name.
 @functools.lru_cache(maxsize=256)
-def _hover_reading(ground: str, hover: str, theme: str) -> str:
-    """Return `hover`, stepped until it reads on `ground` in `theme`."""
-    floor = fxstyle.state_contrast(theme)
+def _hover_reading(ground: str, hover: str, floor: float) -> str:
+    """Return `hover`, stepped until it reads on `ground` at `floor`."""
 
     def reads(color: str) -> bool:
         return fxstyle.get_contrast_ratio(color, ground) >= floor
 
     if reads(hover):
         return hover
-    pole = max(("#000000", "#ffffff"),
-               key=lambda end: fxstyle.get_contrast_ratio(end, ground))
-    return fxstyle.step_toward(ground, pole, reads)
+    return fxstyle.step_toward(ground, fxstyle._pole_from(ground), reads)
 
 
-def _mtime(path: str) -> Optional[float]:
-    """Return a file's mtime, asking the disk at most once per window."""
-    now = time.monotonic()
-    seen = _stamps.get(path)
-    if seen is not None and now - seen[0] < _STAT_SECONDS:
-        return seen[1]
+_DRIVE_REMOTE = 4
+
+
+@functools.lru_cache(maxsize=None)
+def _remote_drive(root: str) -> bool:
+    """Return whether Windows reports drive `root` (``"X:\\"``) as remote."""
+    try:
+        return ctypes.windll.kernel32.GetDriveTypeW(root) == _DRIVE_REMOTE
+    except (AttributeError, OSError):
+        return False
+
+
+def _can_stall(path: str) -> bool:
+    """Return whether reading `path` may wait on a network share."""
+    if path.startswith(("\\\\", "//")):
+        return True
+    if sys.platform != "win32":
+        return False
+    drive = os.path.splitdrive(os.path.abspath(path))[0]
+    return bool(drive) and _remote_drive(drive.upper() + "\\")
+
+
+def _read_thumbnail(
+    path: str, known: Optional[float], size: Tuple[int, int]
+) -> Tuple[Optional[float], Optional[QImage]]:
+    """Return a file's mtime and, unless it is `known`, its scaled picture.
+
+    A QImage, which a reader thread may make: a QPixmap is the UI thread's.
+    """
     try:
         stamp = os.path.getmtime(path)
     except (OSError, TypeError):
-        stamp = None
-    _stamps[path] = (now, stamp)
-    return stamp
+        return None, None
+    if stamp == known:
+        return stamp, None
+    image = QImage(path)
+    if image.isNull():
+        image = QImage(str(_FALLBACK_THUMBNAIL))
+    # The format a QPixmap holds it in, so it scales as one would.
+    image = image.convertToFormat(
+        QImage.Format_ARGB32_Premultiplied
+        if image.hasAlphaChannel()
+        else QImage.Format_RGB32
+    )
+    return stamp, image.scaled(
+        size[0], size[1], Qt.KeepAspectRatio, Qt.SmoothTransformation
+    )
+
+
+class _ThumbnailReads(QObject):
+    """Read thumbnails, a share's off the UI thread, then repaint the views.
+
+    A local file is read at once, so the first paint shows it; a share
+    that stalls would freeze every repaint, so it is read aside. Daemon
+    threads, not a QThreadPool, whose teardown waits for a stuck read.
+    """
+
+    _read = Signal(object)
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._jobs: "queue.Queue" = queue.Queue()
+        self._readers: List[threading.Thread] = []
+        self._waiting: Dict[tuple, "weakref.WeakSet"] = {}
+        self._stamps: "OrderedDict[str, Tuple[float, Optional[float]]]" = (
+            OrderedDict()
+        )
+        # Scaled pictures, kept here: QPixmapCache evicting one under a full
+        # screen of rows would have each read repaint into the next.
+        self._sources: "OrderedDict[tuple, QPixmap]" = OrderedDict()
+        self._read.connect(self._store)
+
+    def source(
+        self, path: str, size: Tuple[int, int], widget: Optional[QWidget]
+    ) -> Tuple[Optional[float], Optional[QPixmap]]:
+        """Return the file's last mtime and picture; read it when stale."""
+        seen = self._stamps.get(path)
+        stamp = seen[1] if seen else None
+        source = self._sources.get((path, stamp, size))
+        if source is not None:
+            self._sources.move_to_end((path, stamp, size))
+        stale = seen is None or time.monotonic() - seen[0] >= _STAT_SECONDS
+        if not stale and (stamp is None or source is not None):
+            return stamp, source
+        known = stamp if source is not None else None
+        if _can_stall(path):
+            self._ask(path, known, size, widget)
+            return stamp, source
+        # A local disk answers at once: read now, so the first paint shows it.
+        self._store((path, size) + _read_thumbnail(path, known, size))
+        stamp = self._stamps[path][1]
+        return stamp, self._sources.get((path, stamp, size))
+
+    def _ask(self, path, known, size, widget) -> None:
+        views = self._waiting.get((path, size))
+        if views is None:
+            views = self._waiting[(path, size)] = weakref.WeakSet()
+            self._jobs.put((path, known, size))
+            if len(self._readers) < _THUMBNAIL_READERS:
+                reader = threading.Thread(
+                    target=self._work, name="fxgui-thumbnail", daemon=True
+                )
+                self._readers.append(reader)
+                reader.start()
+        if isinstance(widget, QAbstractItemView):
+            widget = widget.viewport()
+        if widget is not None:
+            views.add(widget)
+
+    def _work(self) -> None:
+        while True:
+            path, known, size = self._jobs.get()
+            try:
+                found = _read_thumbnail(path, known, size)
+            except Exception:  # noqa: BLE001 - a reader must outlive a bad file
+                found = (None, None)
+            self._read.emit((path, size) + found)
+
+    @Slot(object)
+    def _store(self, result: tuple) -> None:
+        path, size, stamp, image = result
+        seen = self._stamps.pop(path, None)
+        self._stamps[path] = (time.monotonic(), stamp)
+        while len(self._stamps) > _STAMP_LIMIT:
+            self._stamps.popitem(last=False)
+        changed = seen is None or seen[1] != stamp
+        if image is not None:
+            self._sources[(path, stamp, size)] = QPixmap.fromImage(image)
+            while len(self._sources) > _SOURCE_LIMIT:
+                self._sources.popitem(last=False)
+            changed = True
+        views = self._waiting.pop((path, size), ())
+        if changed:
+            for view in list(views):
+                if _compat.is_valid(view):
+                    view.update()
+
+
+@functools.lru_cache(maxsize=1)
+def _thumbnail_reads() -> _ThumbnailReads:
+    """Return the one reader every delegate shares, made on the UI thread."""
+    return _ThumbnailReads()
 
 
 def _style(widget: Optional[QWidget]) -> QStyle:
@@ -174,9 +313,9 @@ def _fallback_source() -> QPixmap:
     return QPixmap(str(_FALLBACK_THUMBNAIL))
 
 
-@functools.lru_cache(maxsize=None)
+@functools.lru_cache(maxsize=256)
 def _mark(name: str, token: str) -> QIcon:
-    """Return a check box mark; its token is read each time it is drawn."""
+    """Return a mark in a token or colour, the token read at each draw."""
     return fxicons.get_icon(name, color=token)
 
 
@@ -600,11 +739,6 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             + self._THUMBNAIL_BORDER
             + self._THUMBNAIL_MARGIN * 2
         )
-
-    @property
-    def _THUMBNAIL_ROW_HEIGHT(self) -> int:
-        """The height of a row with a thumbnail: the row size's."""
-        return fxstyle.row_height()
 
     def _init(
         self, option: QStyleOptionViewItem, index: QModelIndex
@@ -1030,7 +1164,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         )
         painter.setRenderHint(QPainter.Antialiasing)
         if icon:
-            fxicons.get_icon(icon, color=color.name()).paint(
+            _mark(icon, color.name()).paint(
                 painter, mark.toRect()
             )
         else:
@@ -1356,33 +1490,43 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.setFont(self._badge_font(option))
         painter.drawText(rect, Qt.AlignRight | Qt.AlignVCenter, str(count))
 
-    def _bordered_thumbnail(self, path: Optional[str], ratio: float) -> QPixmap:
+    def _bordered_thumbnail(
+        self,
+        path: Optional[str],
+        ratio: float,
+        widget: Optional[QWidget] = None,
+    ) -> QPixmap:
         """Return the framed thumbnail for a path at a pixel ratio, cached.
 
         Keyed by path, mtime, ratio, size and the two tokens it is drawn
         in, so an edited file, a row size or a theme switch builds afresh.
+        The file is read off the UI thread: until it is, the fallback
+        shows and `widget` is repainted once it arrives.
         """
         theme = fxstyle.colors()
-        stamp = _mtime(path) if path else None
+        width, height = self._THUMBNAIL_WIDTH, self._THUMBNAIL_HEIGHT
+        size = (round(width * ratio), round(height * ratio))
+        stamp, source = None, None
+        if path:
+            path = str(path)
+            stamp, source = _thumbnail_reads().source(path, size, widget)
+        if source is None:
+            path, stamp = "", None
         key = (
             f"fxgui.thumbnail|{path}|{stamp}|{ratio}"
-            f"|{self._THUMBNAIL_WIDTH}x{self._THUMBNAIL_HEIGHT}"
+            f"|{width}x{height}"
             f"|{theme.surface_sunken}|{theme.border_light}"
         )
         cached = _compat.find_pixmap(key)
         if cached is not None:
             return cached
 
-        source = QPixmap(str(path)) if stamp is not None else QPixmap()
-        if source.isNull():
-            source = _fallback_source()
-        width, height = self._THUMBNAIL_WIDTH, self._THUMBNAIL_HEIGHT
-        source = source.scaled(
-            round(width * ratio),
-            round(height * ratio),
-            Qt.KeepAspectRatio,
-            Qt.SmoothTransformation,
-        )
+        if source is None:
+            source = _fallback_source().scaled(
+                size[0], size[1], Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+        else:
+            source = QPixmap(source)
         source.setDevicePixelRatio(ratio)
         outer_width = width + self._THUMBNAIL_BORDER
         outer_height = height + self._THUMBNAIL_BORDER
@@ -1470,7 +1614,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         """Draw column 0's thumbnail, its icon overlay, title and description."""
         ratio = painter.device().devicePixelRatioF()
         thumbnail = self._bordered_thumbnail(
-            index.data(self.THUMBNAIL_PATH_ROLE), ratio
+            index.data(self.THUMBNAIL_PATH_ROLE), ratio, option.widget
         )
         outer_width = self._THUMBNAIL_WIDTH + self._THUMBNAIL_BORDER
         outer_height = self._THUMBNAIL_HEIGHT + self._THUMBNAIL_BORDER

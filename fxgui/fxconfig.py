@@ -15,6 +15,7 @@ __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
 
 # Built-in
+import sys
 from typing import Any, Optional
 
 # Third-party
@@ -50,8 +51,14 @@ def set_application_name(name: str) -> None:
         raise ValueError(
             f"Application name '{name}' must not contain path separators."
         )
-    _APP_NAME = name.strip()
+    name = name.strip()
+    changed = name != _APP_NAME
+    _APP_NAME = name
     _settings_instance = None
+    # fxstyle holds the theme and row size it read from the old file.
+    fxstyle = sys.modules.get("fxgui.fxstyle")
+    if changed and fxstyle is not None:
+        fxstyle._forget_saved_settings()
 
 
 def _settings() -> QSettings:

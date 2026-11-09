@@ -240,6 +240,28 @@ def test_a_library_stating_some_defaults_takes_the_rest(
     assert pixmap.width() == 8 and pixmap.height() == 48
 
 
+def test_a_painting_popup_menu_is_found_without_a_window_scan(
+    qapp, monkeypatch
+):
+    from qtpy.QtCore import Qt
+    from qtpy.QtWidgets import QApplication, QMenu
+
+    menu = QMenu()
+    menu.setAttribute(Qt.WA_WState_InPaintEvent, True)
+    scans = []
+    monkeypatch.setattr(
+        QApplication, "activePopupWidget", staticmethod(lambda: menu))
+    monkeypatch.setattr(
+        QApplication, "topLevelWidgets",
+        staticmethod(lambda: scans.append(1) or []))
+    try:
+        assert fxicons._menu_painting()
+    finally:
+        menu.setAttribute(Qt.WA_WState_InPaintEvent, False)
+
+    assert scans == []
+
+
 def test_a_library_default_outside_the_five_keys_is_refused():
     with pytest.raises(ValueError, match="sizes"):
         fxicons.add_library("bad", "{root}/{icon_name}.svg", {"sizes": 8})

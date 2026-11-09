@@ -52,6 +52,36 @@ def test_token_replacement_takes_the_longest_key_first():
     assert "@" not in out
 
 
+def test_an_unknown_longer_token_is_left_whole():
+    tokens = {"@surface": "#302f2f"}
+    out = fxstyle._substitute("a { x: @surface_raised; y: @surface; }", tokens)
+    assert out == "a { x: @surface_raised; y: #302f2f; }"
+
+
+def test_the_sheet_is_built_once_per_theme(qapp, monkeypatch):
+    fxstyle._build_stylesheet("dark")
+    fxstyle._host_rules("dark")
+    resolves = _count_calls(monkeypatch, fxstyle, "resolve")
+
+    for _ in range(3):
+        fxstyle._build_stylesheet("dark")
+        fxstyle._host_rules("dark")
+
+    assert resolves == []
+
+
+def test_a_cached_sheet_follows_every_input(qapp, tmp_path):
+    before = fxstyle._build_stylesheet("dark")
+    fxstyle.register_widget_style("FXCacheProbe { border: 1px solid @border; }")
+    assert "FXCacheProbe" in fxstyle._build_stylesheet("dark")
+
+    fxstyle.overlay_color_file(
+        _yaml(tmp_path, "themes:\n  dark:\n    accent_primary: '#123456'\n")
+    )
+    assert "#123456" in fxstyle._build_stylesheet("dark")
+    assert "#123456" not in before
+
+
 def test_every_token_family_resolves(qapp):
     sheet = fxstyle._build_stylesheet("dark")
     assert sheet
@@ -72,8 +102,8 @@ def test_resolve_icons_path(qapp):
     dark = fxstyle.resolve("url(~icons/close.svg)", "dark")
     light = fxstyle.resolve("url(~icons/close.svg)", "light")
     assert "~icons" not in dark
-    assert "/stylesheet_dark_close_18.png" in dark
-    assert "/stylesheet_light_close_18.png" in light
+    assert "/stylesheet_dark_close_18_" in dark
+    assert "/stylesheet_light_close_18_" in light
 
 
 def test_token_map_flattens_feedback_colors(qapp):
@@ -422,6 +452,69 @@ def test_a_sheet_icon_cut_off_mid_write_is_written_whole_next_time(
         key=lambda color: color.alpha(),
     )
     assert solid.alpha() > 128 and solid.name() == "#123456"
+
+
+def test_a_header_paints_its_sort_arrow_without_a_new_icon(qapp, monkeypatch):
+    from qtpy.QtCore import QRect
+    from qtpy.QtGui import QImage, QPainter
+    from qtpy.QtWidgets import QStyle, QStyleOptionHeader
+
+    style = fxstyle.FXProxyStyle()
+    option = QStyleOptionHeader()
+    option.rect = QRect(0, 0, 16, 16)
+    option.sortIndicator = QStyleOptionHeader.SortDown
+    canvas = QImage(16, 16, QImage.Format_ARGB32)
+    painter = QPainter(canvas)
+    try:
+        style.drawPrimitive(QStyle.PE_IndicatorHeaderArrow, option, painter)
+        made = _count_calls(monkeypatch, fxicons, "get_icon")
+        for _ in range(3):
+            style.drawPrimitive(
+                QStyle.PE_IndicatorHeaderArrow, option, painter
+            )
+    finally:
+        painter.end()
+
+    assert made == []
+
+
+def test_two_svgs_with_one_stem_get_two_images(qapp, tmp_path):
+    svgs = []
+    for folder, fill in (("a", "#ff0000"), ("b", "#00ff00")):
+        (tmp_path / folder).mkdir()
+        svg = tmp_path / folder / "mark.svg"
+        svg.write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">'
+            f'<rect width="16" height="16" fill="{fill}"/></svg>',
+            encoding="utf-8",
+        )
+        svgs.append(str(svg))
+
+    urls = {fxstyle._sheet_icon(svg, "mark", 16) for svg in svgs}
+
+    assert len(urls) == 2
+
+
+def test_a_sheet_icon_held_open_elsewhere_is_kept(qapp, monkeypatch):
+    import os
+
+    svg = fxicons.get_icon_path("check")
+    url = fxstyle._sheet_icon(svg, "check_abcdef", 16, "#abcdef")
+    png = Path(url[len('url("'):-2])
+    # A set cut off before its plain file; Windows locks the @2x/@3x ones.
+    png.unlink()
+    replace = os.replace
+
+    def locked(part, target):
+        if Path(target).exists():
+            raise PermissionError("held open by another app")
+        replace(part, target)
+
+    monkeypatch.setattr(os, "replace", locked)
+
+    assert fxstyle._sheet_icon(svg, "check_abcdef", 16, "#abcdef") == url
+    assert png.is_file()
+    assert not list(png.parent.glob("*.part"))
 
 
 def test_a_sheet_under_a_dollar_folder_still_parses(
