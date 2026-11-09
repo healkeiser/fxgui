@@ -107,10 +107,11 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
                 except (RuntimeError, TypeError):
                     pass
         self._row_scores.clear()
-        super().setSourceModel(model)
+        # Before Qt's own slots, so its re-sort after dataChanged reads fresh scores.
         if model is not None:
             for signal in self._row_signals(model):
                 signal.connect(self._forget_rows)
+        super().setSourceModel(model)
 
     @staticmethod
     def _row_signals(model: QAbstractItemModel) -> tuple:

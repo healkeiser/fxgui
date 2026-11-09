@@ -193,7 +193,7 @@ class _ThumbnailReads(QObject):
             views = weakref.WeakSet()
         if asked is None or now - asked >= _STUCK_SECONDS:
             self._waiting[(path, size)] = (now, views)
-            self._jobs.put((path, known, size))
+            self._jobs.put((path, known, size, now))
             self._add_reader(now)
         if isinstance(widget, QAbstractItemView):
             widget = widget.viewport()
@@ -218,7 +218,10 @@ class _ThumbnailReads(QObject):
 
     def _work(self, slot: int) -> None:
         while True:
-            path, known, size = self._jobs.get()
+            path, known, size, asked = self._jobs.get()
+            # A re-ask superseded this job, or its answer already landed.
+            if self._waiting.get((path, size), (None,))[0] != asked:
+                continue
             self._busy_since[slot] = time.monotonic()
             try:
                 found = _read_thumbnail(path, known, size)

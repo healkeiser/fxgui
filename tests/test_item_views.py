@@ -351,6 +351,43 @@ def test_stuck_share_reads_let_another_reader_start(
         gate.set()
 
 
+def test_a_re_asked_read_runs_once_when_the_share_recovers(
+    qtbot, monkeypatch
+):
+    import threading
+    from types import SimpleNamespace
+
+    clock = [1000.0]
+    monkeypatch.setattr(
+        _delegates, "time", SimpleNamespace(monotonic=lambda: clock[0])
+    )
+    monkeypatch.setattr(_compat, "can_stall", lambda _path: True)
+    gate = threading.Event()
+    done = []
+
+    def read(path, known, size):
+        gate.wait(10)
+        done.append(path)
+        return 1.0, None
+
+    monkeypatch.setattr(_delegates, "_read_thumbnail", read)
+    reads = _delegates._ThumbnailReads()
+    paths = [f"//share/{index}.png" for index in range(6)]
+    try:
+        for _round in range(5):
+            for path in paths:
+                reads.source(path, (8, 8), None)
+            clock[0] += _delegates._STUCK_SECONDS
+    finally:
+        gate.set()
+    qtbot.waitUntil(lambda: not reads._waiting)
+    qtbot.wait(100)
+
+    # Past the reads already under way, each path is read once.
+    assert sorted(set(done)) == sorted(paths)
+    assert len(done) <= len(paths) + len(reads._busy_since)
+
+
 def test_the_remembered_stamps_are_bounded(qtbot, monkeypatch, tmp_path):
     monkeypatch.setattr(_delegates, "_STAMP_LIMIT", 3)
     delegate = FXThumbnailDelegate()

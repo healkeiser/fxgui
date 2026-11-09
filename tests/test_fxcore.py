@@ -171,6 +171,22 @@ def test_rows_rank_by_their_own_score_after_a_removal(qapp):
     assert _visible(proxy) == ["abcd", "abzz"]
 
 
+def test_an_edit_to_the_sorted_column_resorts_on_fresh_scores(qapp):
+    rows = [("apple", "apple"), ("apple", "zzzz"), ("apple", "appl")]
+    proxy, model = _two_column_proxy(rows)
+    proxy.set_filter_text("apple")
+    proxy.sort(1)
+
+    model.item(1, 1).setText("apple")
+
+    fresh = FXSortFilterProxyModel(ratio=0.1)
+    fresh.setSourceModel(model)
+    fresh.set_filter_text("apple")
+    fresh.sort(1)
+    column = lambda p: [p.index(r, 1).data() for r in range(p.rowCount())]
+    assert column(proxy) == column(fresh)
+
+
 def test_match_colour_reads_the_cache(qapp, monkeypatch):
     fxstyle.colors()
     depth = _count_calls(monkeypatch, fxstyle, "_depth_colors")

@@ -443,15 +443,22 @@ def _invalidate_theme_namespace() -> None:
 
 def _cached_sheet(key: tuple, build: Callable[[], str]) -> str:
     """Return the text `build` makes for `key`, built once per colour file."""
-    # A font added straight through Qt changes which family a token names.
-    if QGuiApplication.instance():
-        key = (*key, hash(tuple(QFontDatabase.families())))
+    _watch_fonts()
     # The entry holds the colour mapping itself, so its id is never reused.
     source = get_colors()
     entry = _sheet_cache.get(key)
     if entry is None or entry[0] is not source or not _images_exist(entry[1]):
         entry = _sheet_cache[key] = (source, build())
     return entry[1]
+
+
+def _watch_fonts() -> None:
+    """Drop the built sheets whenever Qt's fonts change, watched once per app."""
+    # A font added straight through Qt changes which family a token names.
+    app = QGuiApplication.instance()
+    if app is not None and not app.property("_fxgui_watches_fonts"):
+        app.setProperty("_fxgui_watches_fonts", True)
+        app.fontDatabaseChanged.connect(_invalidate_theme_namespace)
 
 
 _SHEET_URL = re.compile(r'url\("([^"]+/fxgui/sheet_icons/[^"]+)"\)')
@@ -1462,14 +1469,6 @@ _SHEET_ICON = re.compile(r"~icon\(([\w-]+),\s*(\w+)(?:,\s*(\d+))?\)")
 _SHEET_SVG = re.compile(r"url\(~icons/(\w+)\.svg(?:,\s*(\d+))?\)")
 
 
-@lru_cache(maxsize=8)
-def _placeholder(keys: Tuple[str, ...]) -> "re.Pattern":
-    """Return one pattern matching any key, the longest first."""
-    # A prefix match is kept: `@accent_primary80` is the token plus an alpha.
-    ordered = sorted(keys, key=len, reverse=True)
-    return re.compile("|".join(map(re.escape, ordered)))
-
-
 # Qt loads `name@2x.png` beside `name.png` on a screen scaled past 100%.
 _SHEET_SCALES = (3, 2, 1)
 
@@ -1538,12 +1537,9 @@ def _substitute(qss: str, tokens: Dict[str, str]) -> str:
 
     qss = _SHEET_ICON.sub(icon, qss)
     qss = _SHEET_SVG.sub(sheet_svg, qss)
-    if not tokens:
-        return qss
-    # One pass: a value put in is never read for a token again.
-    return _placeholder(tuple(tokens)).sub(
-        lambda match: tokens[match.group(0)], qss
-    )
+    for key in sorted(tokens, key=len, reverse=True):
+        qss = qss.replace(key, tokens[key])
+    return qss
 
 
 def resolve(qss: str, theme: Optional[str] = None) -> str:

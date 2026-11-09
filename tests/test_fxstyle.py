@@ -65,10 +65,10 @@ def test_an_alpha_glued_to_a_token_is_kept():
     assert out == "a { x: #2196f380; }"
 
 
-def test_a_replaced_value_is_not_read_for_a_token_again():
-    tokens = {"@alias": "@b", "@b": "#333333"}
-    out = fxstyle._substitute("a { x: @alias; y: @b; }", tokens)
-    assert out == "a { x: @b; y: #333333; }"
+def test_a_token_in_a_longer_token_s_value_is_replaced_too():
+    tokens = {"@panel_edge": "1px solid @border", "@border": "#333333"}
+    out = fxstyle._substitute("a { x: @panel_edge; y: @border; }", tokens)
+    assert out == "a { x: 1px solid #333333; y: #333333; }"
 
 
 def test_the_sheet_is_built_once_per_theme(qapp, monkeypatch):
@@ -107,6 +107,7 @@ def test_a_cached_sheet_follows_every_input(qapp, tmp_path, monkeypatch):
             return [*real.families(*args), "FXProbeFamily"]
 
     monkeypatch.setattr(fxstyle, "QFontDatabase", Fonts)
+    qapp.fontDatabaseChanged.emit()
     assert "FXProbeFamily" in fxstyle._build_stylesheet("dark")
 
     rows = fxstyle._build_stylesheet("dark")

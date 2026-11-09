@@ -152,7 +152,7 @@ def test_stuck_share_checks_never_hold_up_a_local_one(
         qtbot.addWidget(widget)
         widget.set_path(str(tmp_path))
         widget._do_validation()
-        assert widget.is_valid()
+        qtbot.waitUntil(widget.is_valid)
         _drop(widget, str(tmp_path / "missing"))
         _drop(widget, str(tmp_path))
         assert widget.path() == QUrl.fromLocalFile(str(tmp_path)).toLocalFile()
@@ -206,3 +206,87 @@ def test_a_drop_checks_the_disk_off_the_ui_thread(qtbot, qapp, tmp_path, monkeyp
     assert took < 1, "the drop waited on the disk"
     qtbot.waitUntil(lambda: widget.path() != "")
     assert widget.path() == QUrl.fromLocalFile(str(tmp_path)).toLocalFile()
+
+
+def test_a_typed_local_path_is_checked_off_the_ui_thread(
+    qtbot, qapp, tmp_path, monkeypatch
+):
+    import threading
+
+    from fxgui import _compat
+    from fxgui.fxwidgets import _file_path_widget
+
+    monkeypatch.setattr(_compat, "can_stall", lambda _path: False)
+    threads = []
+    real = _file_path_widget._path_is_valid
+
+    def record(path, mode):
+        threads.append(threading.current_thread())
+        return real(path, mode)
+
+    monkeypatch.setattr(_file_path_widget, "_path_is_valid", record)
+    widget = FXFilePathWidget(mode="folder")
+    qtbot.addWidget(widget)
+    widget.set_path(str(tmp_path))
+    widget._do_validation()
+
+    qtbot.waitUntil(widget.is_valid)
+    assert threading.main_thread() not in threads
+
+
+def test_only_the_latest_check_of_one_text_lands(qtbot, qapp, monkeypatch):
+    import threading
+
+    from fxgui.fxwidgets import _file_path_widget
+
+    gate = threading.Event()
+    answers = iter([True, False])
+
+    def answer(path, mode):
+        found = next(answers)
+        if found:
+            gate.wait(10)
+        return found
+
+    monkeypatch.setattr(_file_path_widget, "_path_is_valid", answer)
+    widget = FXFilePathWidget(mode="folder")
+    qtbot.addWidget(widget)
+    widget.set_path(r"\\srv\gone")
+    with qtbot.waitSignal(widget.path_valid):
+        widget._do_validation()
+        widget._do_validation()
+    gate.set()
+    qtbot.wait(200)
+
+    assert not widget.is_valid()
+
+
+def test_at_the_thread_cap_only_the_newest_check_waits(
+    qtbot, qapp, tmp_path, monkeypatch
+):
+    from fxgui.fxwidgets import _file_path_widget
+
+    gate = _dead_share(monkeypatch)
+    monkeypatch.setattr(_file_path_widget, "_THREAD_CAP", 1)
+    checked = []
+    hang = _file_path_widget._path_is_valid
+
+    def record(path, mode):
+        checked.append(path)
+        return hang(path, mode)
+
+    monkeypatch.setattr(_file_path_widget, "_path_is_valid", record)
+    widget = FXFilePathWidget(mode="folder")
+    qtbot.addWidget(widget)
+    try:
+        widget.set_path(r"\\dead\share")
+        widget._do_validation()
+        qtbot.waitUntil(lambda: bool(checked))
+        for name in ("a", "b", str(tmp_path)):
+            widget.set_path(name)
+            widget._do_validation()
+    finally:
+        gate.set()
+
+    qtbot.waitUntil(widget.is_valid)
+    assert checked == [r"\\dead\share", str(tmp_path)]

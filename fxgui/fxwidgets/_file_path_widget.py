@@ -2,9 +2,9 @@
 
 # Built-in
 import os
-import queue
 import threading
 import weakref
+from collections import OrderedDict
 from typing import Callable, List, Optional, Tuple
 
 # Third-party
@@ -56,11 +56,13 @@ class _Relay(QObject):
 
 
 _relay: Optional[_Relay] = None
-_jobs: "queue.SimpleQueue" = queue.SimpleQueue()
-_workers: List[threading.Thread] = []
-# A share that does not answer holds a worker; two keep a second share
-# checking without flooding the process with stuck threads.
-_WORKER_COUNT = 2
+_lock = threading.Lock()
+_live = 0
+# (widget, slot) -> its newest check waiting for a thread; older ones drop.
+_pending: "OrderedDict[tuple, tuple]" = OrderedDict()
+# A share that does not answer holds its thread; the cap keeps dead shares
+# from flooding the process with stuck threads.
+_THREAD_CAP = 4
 
 
 def _deliver(widget_ref, slot: str, args: tuple) -> None:
@@ -70,38 +72,50 @@ def _deliver(widget_ref, slot: str, args: tuple) -> None:
         getattr(widget, slot)(*args)
 
 
-def _work() -> None:
-    """Run disk checks forever, posting each result to the UI thread."""
-    while True:
-        widget_ref, slot, check = _jobs.get()
+def _work(job: tuple) -> None:
+    """Run a check, then any waiting one, posting results to the UI thread."""
+    global _live
+    while job is not None:
+        widget_ref, slot, check = job
         try:
-            args = check()
-        except Exception:  # noqa: BLE001 - a failed check must not kill the worker
-            continue
-        _relay.finished.emit(widget_ref, slot, args)
+            _relay.finished.emit(widget_ref, slot, check())
+        except Exception:  # noqa: BLE001 - a failed check must not kill the thread
+            pass
+        with _lock:
+            job = _pending.popitem(last=False)[1] if _pending else None
+            if job is None:
+                _live -= 1
 
 
 def _check(
-    widget: QWidget, slot: str, check: Callable[[], Tuple], paths: List[str]
+    widget: QWidget,
+    slot: str,
+    check: Callable[[], Tuple],
+    paths: Optional[List[str]] = None,
 ) -> None:
-    """Call `widget.slot(*check())`, on a daemon worker if a path may stall.
+    """Call `widget.slot(*check())` on a daemon thread of its own.
 
     Not the host's `QThreadPool`: a stuck check would starve it and hold
-    its quit; a daemon thread never delays the process exit. A local path
-    is checked at once, so stuck shares never hold it up.
+    its quit; a daemon thread never delays the process exit. Given
+    `paths` none of which may stall, the check runs at once instead.
     """
-    if not any(_compat.can_stall(path) for path in paths):
+    if paths is not None and not any(_compat.can_stall(p) for p in paths):
         getattr(widget, slot)(*check())
         return
-    global _relay
+    global _relay, _live
     if _relay is None:
         _relay = _Relay()
         _relay.finished.connect(_deliver)
-    _jobs.put((weakref.ref(widget), slot, check))
-    if len(_workers) < _WORKER_COUNT:
-        worker = threading.Thread(target=_work, name="fxgui-path-check", daemon=True)
-        _workers.append(worker)
-        worker.start()
+    job = (weakref.ref(widget), slot, check)
+    with _lock:
+        if _live >= _THREAD_CAP:
+            _pending.pop((id(widget), slot), None)
+            _pending[(id(widget), slot)] = job
+            return
+        _live += 1
+    threading.Thread(
+        target=_work, args=(job,), name="fxgui-path-check", daemon=True
+    ).start()
 
 
 class FXFilePathWidget(QWidget):
@@ -152,7 +166,8 @@ class FXFilePathWidget(QWidget):
         self._default_path = default_path or os.path.expanduser("~")
         self._validate = validate
         self._is_valid = False
-        # Only the latest drop's result lands; an earlier one may answer late.
+        # Only the latest check's result lands; an earlier one may answer late.
+        self._check_ticket = 0
         self._drop_ticket = 0
 
         self._validation_timer = QTimer(self)
@@ -274,18 +289,21 @@ class FXFilePathWidget(QWidget):
             self.path_valid.emit(self._is_valid)
             return
 
-        # A share that does not answer stalls the check, never the UI.
+        # Always off the UI thread: a typed path may sit on any mount.
         mode = self._mode
+        self._check_ticket += 1
+        ticket = self._check_ticket
         _check(
             self,
             "_on_validation_finished",
-            lambda: (path, _path_is_valid(path, mode)),
-            path.split(";"),
+            lambda: (ticket, path, _path_is_valid(path, mode)),
         )
 
-    def _on_validation_finished(self, path: str, is_valid: bool) -> None:
-        """Handle validation result from background thread."""
-        if path == self._input.text():
+    def _on_validation_finished(
+        self, ticket: int, path: str, is_valid: bool
+    ) -> None:
+        """Show the check's result if it is the latest, for the current text."""
+        if ticket == self._check_ticket and path == self._input.text():
             self._is_valid = is_valid
             self._update_indicator()
             self.path_valid.emit(self._is_valid)
