@@ -103,6 +103,10 @@ _NO_SCROLL = ads.CDockWidget.eInsertMode.ForceNoScrollArea
 
 _CENTRAL = "central"
 
+# Set on a pane whose content was deleted: QtAds still hands out the
+# dangling pointer, and reading it crashes.
+_EMPTY = "fxEmpty"
+
 # Each button QtAds draws, by object name, to its icon slot and name.
 _BUTTONS = {
     "tabCloseButton": (ads.TabCloseIcon, "x"),
@@ -196,6 +200,11 @@ def _bare(tab: "ads.CDockWidgetTab") -> None:
     layout.invalidate()
 
 
+def _content(held: "ads.CDockWidget") -> Optional[QWidget]:
+    """Return `held`'s content, or None once it was deleted."""
+    return None if held.property(_EMPTY) else held.widget()
+
+
 def _open(held: "ads.CDockWidget") -> None:
     """Grow a pane just opened from nothing, its content sliding in."""
     if not fxstyle.motion():
@@ -210,7 +219,10 @@ def _grow(held: "ads.CDockWidget") -> None:
     """
     area = held.dockAreaWidget()
     splitter = _compat.parent_widget(area) if area is not None else None
-    if not isinstance(splitter, QSplitter) or splitter.count() < 2:
+    body = _content(held)
+    if body is None or not isinstance(splitter, QSplitter):
+        return
+    if splitter.count() < 2:
         return
     index = splitter.indexOf(area)
     final = splitter.sizes()
@@ -220,7 +232,7 @@ def _grow(held: "ads.CDockWidget") -> None:
     start = list(final)
     start[beside] += start[index]
     start[index] = 0
-    fxstyle._Reveal.over(held.widget(), moving=False)
+    fxstyle._Reveal.over(body, moving=False)
     floor = area.minimumSize()
     area.setMinimumSize(0, 0)
 
@@ -265,11 +277,11 @@ def _floor(area: "ads.CDockAreaWidget") -> None:
     grows later, or comes to the front, is squeezed under it.
     """
     held = area.currentDockWidget()
-    if held is None or held.widget() is None:
+    body = _content(held) if held is not None else None
+    if body is None:
         return
     pad = held.layout().contentsMargins()
     # As Qt's layouts do: a minimum the content set beats its hint.
-    body = held.widget()
     need = body.minimumSizeHint().expandedTo(body.minimumSize()) + QSize(
         pad.left() + pad.right(), pad.top() + pad.bottom())
     # From the border and the bar, never live sizes: a size caught
@@ -287,12 +299,22 @@ def _floor(area: "ads.CDockAreaWidget") -> None:
 
 
 class _Floor(QObject):
-    """Floor a pane's area again whenever the pane's content re-lays out."""
+    """Floor a pane's area again whenever the pane's content re-lays out.
+
+    Marks the pane empty once its content is deleted; the pane stays.
+    """
 
     def __init__(self, held: "ads.CDockWidget") -> None:
         super().__init__(held)
         self._held = held
-        held.widget().installEventFilter(self)
+        body = held.widget()
+        body.installEventFilter(self)
+        body.destroyed.connect(self._emptied)
+
+    def _emptied(self) -> None:
+        # Also sent as the pane itself goes, its wrapper already invalid.
+        if _compat.is_valid(self._held):
+            self._held.setProperty(_EMPTY, True)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Re-floor on a layout pass or a show of the pane's content."""
@@ -319,9 +341,14 @@ def restorable(state: bytes, built: bytes) -> bool:
     Not when it names other panes, which would close the ones it misses,
     nor when it tucks one in a side bar, which reopens it hidden.
     """
+    return _restorable(state, built, set())
+
+
+def _restorable(state: bytes, built: bytes, ignore: Set[bytes]) -> bool:
+    """Say what `restorable` says, the panes named in `ignore` left out."""
     saved = _xml(state)
-    return b"<SideBar" not in saved and _pane_names(saved) == _pane_names(
-        _xml(built)
+    return b"<SideBar" not in saved and _pane_names(saved) - ignore == (
+        _pane_names(_xml(built)) - ignore
     )
 
 
@@ -514,8 +541,9 @@ class FXDockArea(QWidget):
 
     def _reveal(self, held: "ads.CDockWidget") -> None:
         """Fade `held` in, unless its window is still coming up."""
-        if self._settled():
-            fxstyle._Reveal.over(held.widget())
+        body = _content(held)
+        if body is not None and self._settled():
+            fxstyle._Reveal.over(body)
 
     def show_dock(self, name: str) -> None:
         """Open the pane `name`, in front of its tabs and its window.
@@ -582,7 +610,10 @@ class FXDockArea(QWidget):
 
         Refused when `restorable` says no against the panes docked now.
         """
-        if not restorable(state, bytes(self._docks.saveState())):
+        # An unfilled centre is docked until the first show drops it, so a
+        # layout saved on either side of that show may name it or not.
+        ignore = {_CENTRAL.encode()} if self._placeholder else set()
+        if not _restorable(state, bytes(self._docks.saveState()), ignore):
             return False
         if self._built is None:
             self._pending = bytes(state)
@@ -812,6 +843,9 @@ class FXDockArea(QWidget):
         for shortcut in window.findChildren(
             QShortcut, options=Qt.FindDirectChildrenOnly
         ):
+            # Already live everywhere: a copy makes the key ambiguous.
+            if shortcut.context() == Qt.ApplicationShortcut:
+                continue
             copy = QShortcut(shortcut.key(), floating)
             copy.setContext(shortcut.context())
             copy.activated.connect(shortcut.activated)

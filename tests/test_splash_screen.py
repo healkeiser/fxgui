@@ -110,6 +110,25 @@ def test_a_message_shows_in_the_panel(qtbot):
     assert splash.message_label.text() == "Loading shots"
 
 
+def test_rounded_corners_show_through_and_paint_once(qtbot):
+    drawn = []
+
+    class Counted(FXSplashScreen):
+        def drawContents(self, painter):
+            drawn.append(True)
+            super().drawContents(painter)
+
+    splash = Counted(corner_radius=40)
+    qtbot.addWidget(splash)
+    splash.showMessage("Loading shots")
+
+    image = splash.grab().toImage()
+
+    assert image.pixelColor(1, 1).alpha() == 0
+    assert image.pixelColor(400, 225).alpha() == 255
+    assert drawn == [], "the panel's label writes the message, not Qt"
+
+
 def test_a_click_hides_the_splash(qtbot):
     splash = FXSplashScreen()
     qtbot.addWidget(splash)

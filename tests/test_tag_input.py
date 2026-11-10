@@ -129,6 +129,30 @@ def test_a_bulk_set_says_tags_changed_once(qtbot, qapp):
     assert received == [["comp", "lighting", "fx"]]
 
 
+def test_a_set_keeps_the_chips_of_tags_that_stay(qtbot, qapp):
+    tags = FXTagInput()
+    qtbot.addWidget(tags)
+    tags.set_tags(["comp", "lighting", "fx"])
+    kept = {chip.text(): chip for chip in _chips(tags)}
+    said = []
+    tags.tag_added.connect(lambda tag: said.append(("added", tag)))
+    tags.tag_removed.connect(lambda tag: said.append(("removed", tag)))
+    tags.tags_changed.connect(lambda tags: said.append(("changed", tags)))
+
+    tags.set_tags(["comp", "lighting", "fx"])
+    assert said == []
+
+    tags.set_tags(["fx", "anim", "comp"])
+    assert said == [
+        ("removed", "lighting"),
+        ("added", "anim"),
+        ("changed", ["fx", "anim", "comp"]),
+    ]
+    chips = _chips(tags)
+    assert [chip.text() for chip in chips] == ["fx", "anim", "comp"]
+    assert chips[0] is kept["fx"] and chips[2] is kept["comp"]
+
+
 def test_the_chip_label_takes_the_root_font_size(qtbot, qapp):
     assert "font-size" not in fxstyle._build_stylesheet().split(
         "FXTagChip QLabel")[1].split("}")[0]

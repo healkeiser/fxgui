@@ -284,10 +284,12 @@ class FXSplashScreen(QSplashScreen):
         painter.end()
 
     def event(self, event: QEvent) -> bool:
-        """Handle an event, skipping Qt's wait in the Show event."""
+        """Handle an event, skipping Qt's wait in Show and its own paint."""
         # Qt 6.7+ waits there for the window to map, which only happens after
         # the Show event returns: every show paid the full 1 s timeout.
-        if event.type() == QEvent.Show:
+        # QSplashScreen paints the whole pixmap and the message on Paint,
+        # under `paintEvent`, which leaves the rounded corners opaque.
+        if event.type() in (QEvent.Show, QEvent.Paint):
             return QWidget.event(self, event)
         return super().event(event)
 

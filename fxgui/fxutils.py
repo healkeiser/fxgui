@@ -76,6 +76,11 @@ _DWMWCP_ROUND = 2
 
 _HTML_TAG = re.compile(r"<[^>]+>")
 
+# What Markdown (with "extra") reads as markup: text without any of it comes
+# out of the conversion with its whitespace collapsed and nothing else.
+_MARKUP = re.compile(
+    r"[\\`*_{}\[\]<>#&|~]|^\s*(?:[-+=:]|\d+[.)])", re.MULTILINE)
+
 
 @functools.lru_cache(maxsize=1)
 def _markdown():
@@ -191,7 +196,6 @@ def add_shadow(
     return shadow
 
 
-@functools.lru_cache(maxsize=1024)
 def markdown_to_plain_text(text: str) -> str:
     """Return `text` with its Markdown formatting removed.
 
@@ -200,7 +204,16 @@ def markdown_to_plain_text(text: str) -> str:
     markdown = _markdown() if text and text != "-" else None
     if markdown is None:
         return text
-    rendered = markdown.markdown(text, extensions=["extra", "nl2br"])
+    if not _MARKUP.search(text):
+        # Not converted: a tree of plain descriptions would churn the cache.
+        return " ".join(text.split())
+    return _rendered_plain(text)
+
+
+@functools.lru_cache(maxsize=1024)
+def _rendered_plain(text: str) -> str:
+    """Return Markdown `text` converted, as plain text."""
+    rendered = _markdown().markdown(text, extensions=["extra", "nl2br"])
     plain = html.unescape(_HTML_TAG.sub("", rendered))
     return " ".join(plain.split())
 

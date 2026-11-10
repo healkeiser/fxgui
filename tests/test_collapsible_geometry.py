@@ -111,6 +111,29 @@ def test_a_row_added_after_opening_is_not_clipped(qtbot, qapp):
     assert section._content_area.minimumHeight() > before
 
 
+def test_an_open_section_shrinks_with_its_content(qtbot, qapp):
+    section = _section(max_content_height=0)
+    _host = _nested_host(qtbot, section)
+    section.expand(animate=False)
+    _settled()
+    full = section._content_area.height()
+    rows = section._content_area.widget().layout()
+
+    for index in range(2, ROWS):
+        rows.itemAt(index).widget().hide()
+    qtbot.waitUntil(lambda: section._content_area.height() < full)
+    _settled()
+
+    fresh = FXCollapsibleWidget(title="Settings", max_content_height=0)
+    fresh.set_content_layout(_rows())
+    for index in range(2, ROWS):
+        fresh._content_area.widget().layout().itemAt(index).widget().hide()
+    _fresh_host = _nested_host(qtbot, fresh)
+    fresh.expand(animate=False)
+    _settled()
+    assert section._content_area.height() == fresh._content_area.height()
+
+
 def test_a_requested_cap_is_still_a_cap(qtbot, qapp):
     limit = 60
     section = _section(max_content_height=limit)

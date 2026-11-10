@@ -12,7 +12,13 @@ import pytest
 ads = pytest.importorskip("PySide6QtAds")
 
 from qtpy.QtCore import QPoint, QRect, Qt  # noqa: E402
-from qtpy.QtGui import QAction, QColor, QFont, QKeySequence  # noqa: E402
+from qtpy.QtGui import (  # noqa: E402
+    QAction,
+    QColor,
+    QFont,
+    QKeySequence,
+    QShortcut,
+)
 from qtpy.QtTest import QTest  # noqa: E402
 from qtpy.QtWidgets import (  # noqa: E402
     QAbstractButton,
@@ -415,6 +421,34 @@ def test_a_layout_restored_after_the_first_show_applies_at_once(qtbot):
     assert not second.panes["side"].isVisible()
 
 
+def _bodiless(qtbot, show):
+    window = QMainWindow()
+    window.docks = fxdocking.FXDockArea()
+    window.setCentralWidget(window.docks)
+    window.side = QLabel("side")
+    window.docks.add_dock("side", "Side", window.side, "left")
+    window.docks.add_dock("right", "Right", QLabel("right"), "right")
+    qtbot.addWidget(window)
+    window.resize(600, 400)
+    if show:
+        window.show()
+        qtbot.waitExposed(window)
+    return window
+
+
+def test_a_bodiless_area_takes_its_saved_layout_before_the_first_show(qtbot):
+    first = _bodiless(qtbot, show=True)
+    first.docks.manager().findDockWidget("side").toggleView(False)
+    state = first.docks.save_state()
+
+    second = _bodiless(qtbot, show=False)
+    assert second.docks.restore_state(state)
+    second.show()
+    qtbot.waitExposed(second)
+
+    assert not second.side.isVisible()
+
+
 def test_reset_layout_brings_a_closed_pane_back(qtbot):
     first = _window(qtbot)
     first.toggles["side"].trigger()
@@ -755,6 +789,46 @@ def test_a_tabbed_pane_floors_to_the_tab_in_front(qtbot):
     assert area.minimumHeight() < floor, "the floor follows the tab in front"
 
 
+_DELETED_CONTENT = """
+import shiboken6
+from qtpy.QtWidgets import QApplication, QLabel, QMainWindow
+app = QApplication([])
+from fxgui import fxdocking
+window = QMainWindow()
+docks = fxdocking.FXDockArea()
+window.setCentralWidget(docks)
+docks.set_central(QLabel("body"))
+gone = QLabel("gone")
+docks.add_dock("gone", "Gone", gone, "left")
+docks.add_dock("kept", "Kept", QLabel("kept"), "left")
+window.resize(600, 400)
+window.show()
+for _ in range(5):
+    app.processEvents()
+shiboken6.delete(gone)
+app.processEvents()
+for name in ("kept", "gone", "kept"):
+    docks.manager().findDockWidget(name).setAsCurrentTab()
+    app.processEvents()
+assert docks.manager().findDockWidget("gone") is not None
+print("switched")
+"""
+
+
+def test_switching_to_a_pane_whose_content_was_deleted_does_not_crash(
+    tmp_path,
+):
+    # A child process: the crash is a native access violation.
+    env = dict(os.environ, QT_QPA_PLATFORM="offscreen",
+               PYTHONPATH=os.pathsep.join(sys.path), APPDATA=str(tmp_path))
+    done = subprocess.run(
+        [sys.executable, "-c", isolated(_DELETED_CONTENT)], env=env,
+        capture_output=True, text=True, timeout=120, check=False)
+
+    assert done.returncode == 0, done.stderr[-2000:]
+    assert "switched" in done.stdout
+
+
 def test_a_theme_change_after_a_layout_restore_raises_nothing(qtbot):
     window = _three(qtbot)
     window.docks.restore_state(window.docks.save_state())
@@ -903,6 +977,25 @@ def test_a_window_key_answers_in_its_floating_pane(qtbot):
                    Qt.ControlModifier | Qt.ShiftModifier)
 
     qtbot.waitUntil(lambda: window.ran == ["window"])
+
+
+def test_an_application_key_still_answers_once_a_pane_floats(qtbot):
+    window = _window(qtbot, ("side",), show=False)
+    fired, ambiguous = [], []
+    key = QShortcut(QKeySequence("Ctrl+Shift+K"), window)
+    key.setContext(Qt.ApplicationShortcut)
+    key.activated.connect(lambda: fired.append(True))
+    key.activatedAmbiguously.connect(lambda: ambiguous.append(True))
+    _activated(qtbot, window)
+    held = window.docks.manager().findDockWidget("side")
+    held.setFloating()
+    qtbot.waitExposed(held.floatingDockContainer())
+    window.activateWindow()
+
+    QTest.keyClick(window, Qt.Key_K, Qt.ControlModifier | Qt.ShiftModifier)
+
+    qtbot.waitUntil(lambda: fired == [True])
+    assert ambiguous == []
 
 
 def test_a_widget_s_own_key_stays_out_of_a_floating_pane(qtbot):

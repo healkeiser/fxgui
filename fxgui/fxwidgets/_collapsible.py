@@ -11,6 +11,7 @@ from qtpy.QtCore import (
     QObject,
     QParallelAnimationGroup,
     QPropertyAnimation,
+    QSize,
     Qt,
     Signal,
 )
@@ -30,6 +31,14 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXIconLabel
+
+
+class _FitArea(QScrollArea):
+    """A scroll area whose height hint is its floor, the section's height."""
+
+    def sizeHint(self) -> QSize:
+        # QScrollArea keeps its content's first hint, so it never shrinks.
+        return QSize(super().sizeHint().width(), self.minimumHeight())
 
 
 class FXCollapsibleWidget(QWidget):
@@ -115,7 +124,7 @@ class FXCollapsibleWidget(QWidget):
         header_layout.addWidget(self._title_label)
         header_layout.addStretch()
 
-        self._content_area = QScrollArea()
+        self._content_area = _FitArea()
         self._content_area.setWidgetResizable(True)
         self._content_area.setFrameShape(QFrame.NoFrame)
         # Start with scrollbars off to prevent flicker on first animation
@@ -160,7 +169,7 @@ class FXCollapsibleWidget(QWidget):
             self.set_icon(icon)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Toggle on a left click anywhere on the header."""
+        """Toggle on a header click; refit an open section to its content."""
         if (
             watched is self._header
             and event.type() == QEvent.MouseButtonPress
@@ -168,6 +177,13 @@ class FXCollapsibleWidget(QWidget):
         ):
             self.toggle()
             return True
+        if (
+            event.type() == QEvent.LayoutRequest
+            and watched is self._content_area.widget()
+            and self._is_expanded
+            and self._animation.state() != QAbstractAnimation.Running
+        ):
+            self._on_animation_finished()
         return super().eventFilter(watched, event)
 
     def is_expanded(self) -> bool:
@@ -307,6 +323,7 @@ class FXCollapsibleWidget(QWidget):
     def set_content_widget(self, widget: QWidget) -> None:
         """Show `widget` as the content."""
         self._content_area.setWidget(widget)
+        widget.installEventFilter(self)
 
     def set_icon(self, icon: Union[QIcon, str, None]) -> None:
         """Set an icon to display before the title.

@@ -1,7 +1,7 @@
 """Tag/chip input widget."""
 
 # Built-in
-from typing import List, Optional
+from typing import List, Optional, Union
 
 # Third-party
 from qtpy.QtCore import Qt, Signal
@@ -158,12 +158,40 @@ class FXTagInput(QWidget):
         self.set_tags([])
 
     def set_tags(self, tags: List[str]) -> None:
-        """Replace the tags, saying `tags_changed` once."""
+        """Replace the tags, saying `tags_changed` once if they changed.
+
+        A chip whose tag stays is kept: only real removals and additions
+        say `tag_removed` and `tag_added`.
+        """
         before = self.tags()
-        for chip in list(self._chips):
+        wanted: List[str] = []
+        for tag in (tag.strip() for tag in tags):
+            if (
+                tag
+                and (self._allow_duplicates or tag not in wanted)
+                and not (self._max_tags > 0 and len(wanted) >= self._max_tags)
+            ):
+                wanted.append(tag)
+        spare = list(self._chips)
+        plan: List[Union[FXTagChip, str]] = []
+        for tag in wanted:
+            chip = next((chip for chip in spare if chip.text() == tag), None)
+            if chip is None:
+                plan.append(tag)
+            else:
+                spare.remove(chip)
+                plan.append(chip)
+        for chip in spare:
             self._drop(chip)
-        for tag in tags:
-            self._add(tag)
+        self._chips = []
+        for entry in plan:
+            if isinstance(entry, str):
+                self._add(entry)
+            else:
+                # Re-laid out in the new order.
+                self._tags_layout.removeWidget(entry)
+                self._tags_layout.addWidget(entry)
+                self._chips.append(entry)
         if self.tags() != before:
             self.tags_changed.emit(self.tags())
 

@@ -604,6 +604,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         self._fade_timer = QTimer(self)
         self._fade_timer.setInterval(16)
         self._fade_timer.timeout.connect(self._fade_step)
+        # The row being painted and its description, read once per paint.
+        self._painting: Optional[Tuple[QModelIndex, str]] = None
 
     @property
     def focus_ring(self) -> str:
@@ -773,6 +775,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         "" as well in a row too short for a second line.
         """
+        painting = self._painting
+        if painting is not None and painting[0] == index:
+            return painting[1]
         text = index.data(self.DESCRIPTION_ROLE)
         if not text or text == "-":
             return ""
@@ -1983,6 +1988,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.save()
         painter.setClipRect(opt.rect)
         if index.column() == 0:
+            self._painting = None
+            self._painting = (QModelIndex(index), self._description(index))
             # Everything below reads its left edge off `opt.rect`, so
             # narrowing it moves the row over to the right of the box.
             check_rect = self._check_rect(opt)
@@ -2004,6 +2011,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                     self._is_tall(opt.rect, has_thumbnail),
                     self._indicator_metrics(index, opt, fit=True).footprint,
                 )
+            self._painting = None
         else:
             picker = self._picker_rect(opt, index)
             if picker is None:

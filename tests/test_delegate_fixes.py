@@ -127,6 +127,57 @@ def test_the_markdown_import_is_not_retried_per_call(monkeypatch):
     assert len(attempts) <= 1
 
 
+class _CountingMarkdown:
+    def __init__(self):
+        self.seen = []
+
+    def markdown(self, text, **kwargs):
+        self.seen.append(text)
+        return text
+
+
+def test_plain_text_skips_the_markdown_conversion(monkeypatch):
+    fake = _CountingMarkdown()
+    monkeypatch.setattr(fxutils, "_markdown", lambda: fake)
+
+    plain = fxutils.markdown_to_plain_text("Shot  0417\nlayout pass, v3")
+    fxutils.markdown_to_plain_text("**Shot** 0417 skips nothing")
+
+    assert plain == "Shot 0417 layout pass, v3"
+    assert fake.seen == ["**Shot** 0417 skips nothing"]
+
+
+def test_a_row_reads_its_description_once_per_paint(qtbot, monkeypatch):
+    from qtpy.QtGui import QImage, QPainter
+
+    tree, delegate = _tree(qtbot)
+    delegate.show_thumbnail = False
+    item = QTreeWidgetItem(tree, ["sh010"])
+    item.setData(0, FXThumbnailDelegate.DESCRIPTION_ROLE, "**Layout** pass")
+    item.setData(0, FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, "WIP")
+    item.setData(0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, "#ff8800")
+    QTreeWidgetItem(item, ["child"])
+    monkeypatch.setattr(fxstyle, "row_height", lambda: 48)
+    index = tree.model().index(0, 0)
+    option = QStyleOptionViewItem()
+    option.rect = QRect(0, 0, 300, 48)
+    option.widget = tree
+    option.font = tree.font()
+    read = []
+    convert = fxutils.markdown_to_plain_text
+    monkeypatch.setattr(
+        fxutils, "markdown_to_plain_text",
+        lambda text: read.append(text) or convert(text))
+    canvas = QImage(300, 48, QImage.Format_ARGB32)
+    painter = QPainter(canvas)
+    try:
+        delegate.paint(painter, option, index)
+    finally:
+        painter.end()
+
+    assert read == ["**Layout** pass"]
+
+
 def test_the_picker_menu_is_parented_and_opened_at_a_global_point(
     qtbot, monkeypatch
 ):
