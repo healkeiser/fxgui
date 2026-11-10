@@ -218,6 +218,11 @@ def _rendered_plain(text: str) -> str:
     return " ".join(plain.split())
 
 
+# Kept for callers of the cache the public function used to carry.
+markdown_to_plain_text.cache_clear = _rendered_plain.cache_clear  # type: ignore[attr-defined]
+markdown_to_plain_text.cache_info = _rendered_plain.cache_info  # type: ignore[attr-defined]
+
+
 def repolish(widget: QWidget) -> None:
     """Force re-evaluation of the stylesheet rules for a widget.
 

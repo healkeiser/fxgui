@@ -315,6 +315,8 @@ class _Floor(QObject):
         # Also sent as the pane itself goes, its wrapper already invalid.
         if _compat.is_valid(self._held):
             self._held.setProperty(_EMPTY, True)
+            # QtAds keeps its own pointer to the content: drop it too.
+            self._held.takeWidget()
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Re-floor on a layout pass or a show of the pane's content."""

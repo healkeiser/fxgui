@@ -1988,30 +1988,31 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.save()
         painter.setClipRect(opt.rect)
         if index.column() == 0:
-            self._painting = None
             self._painting = (QModelIndex(index), self._description(index))
-            # Everything below reads its left edge off `opt.rect`, so
-            # narrowing it moves the row over to the right of the box.
-            check_rect = self._check_rect(opt)
-            if check_rect is not None:
-                self._draw_check_indicator(painter, opt, check_rect)
-                opt.rect.setLeft(check_rect.right() + 1)
-            has_thumbnail = self._has_thumbnail(index)
-            if has_thumbnail:
-                self._draw_thumbnail_content(painter, opt, index)
-            else:
-                self._draw_icon_and_text(painter, opt, index)
-            self._draw_status_indicators(painter, opt, index, has_thumbnail)
-            if self._child_count_width(index, opt):
-                self._draw_child_count(
-                    painter,
-                    opt.rect,
-                    index.model().rowCount(index),
-                    opt,
-                    self._is_tall(opt.rect, has_thumbnail),
-                    self._indicator_metrics(index, opt, fit=True).footprint,
-                )
-            self._painting = None
+            try:
+                # Everything below reads its left edge off `opt.rect`, so
+                # narrowing it moves the row over to the right of the box.
+                check_rect = self._check_rect(opt)
+                if check_rect is not None:
+                    self._draw_check_indicator(painter, opt, check_rect)
+                    opt.rect.setLeft(check_rect.right() + 1)
+                has_thumbnail = self._has_thumbnail(index)
+                if has_thumbnail:
+                    self._draw_thumbnail_content(painter, opt, index)
+                else:
+                    self._draw_icon_and_text(painter, opt, index)
+                self._draw_status_indicators(painter, opt, index, has_thumbnail)
+                if self._child_count_width(index, opt):
+                    self._draw_child_count(
+                        painter,
+                        opt.rect,
+                        index.model().rowCount(index),
+                        opt,
+                        self._is_tall(opt.rect, has_thumbnail),
+                        self._indicator_metrics(index, opt, fit=True).footprint,
+                    )
+            finally:
+                self._painting = None
         else:
             picker = self._picker_rect(opt, index)
             if picker is None:
