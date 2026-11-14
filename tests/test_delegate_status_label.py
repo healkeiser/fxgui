@@ -163,7 +163,10 @@ def test_a_pale_mark_is_stepped_to_read_on_the_row(qtbot):
 
 
 def test_a_squeezed_neutral_tag_hides_and_frees_its_room(qtbot):
-    tree, delegate, index = _tree_with_item(qtbot, title=LONG_TITLE)
+    # Narrow enough that the title squeezes the tag on any platform's font.
+    tree, delegate, index = _tree_with_item(
+        qtbot, title=LONG_TITLE, width=200
+    )
     option = _option_for(tree, index)
 
     squeezed = delegate._indicator_metrics(index, option, fit=True)
