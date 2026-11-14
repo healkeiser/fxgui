@@ -680,6 +680,15 @@ def test_apply_tip_status_is_title_only_without_body(qtbot):
     assert button.statusTip() == "Back"
 
 
+def test_apply_tip_status_without_a_title_is_the_body(qtbot):
+    button = QPushButton()
+    qtbot.addWidget(button)
+
+    _tips.apply_tip(button, "", "Write the scene")
+
+    assert button.statusTip() == "Write the scene"
+
+
 def test_apply_tip_tolerates_missing_status_tip(qtbot):
     """Not every tooltip target carries a status tip; the guard must hold."""
 

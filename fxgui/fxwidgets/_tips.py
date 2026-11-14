@@ -486,7 +486,7 @@ def apply_tip(
         "hint": hint,
     }
     html = tip(**parts)
-    plain = f"{title} - {body}" if body else title
+    plain = " - ".join(part for part in (title, body) if part)
     described = "\n".join(
         line
         for line in (
