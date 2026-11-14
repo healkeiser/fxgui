@@ -195,3 +195,9 @@ def test_match_colour_reads_the_cache(qapp, monkeypatch):
         FXSortFilterProxyModel._match_color(ratio)
 
     assert depth == []
+
+
+def test_without_a_filter_rows_keep_the_source_order(qapp):
+    proxy = _proxy_with(["banana", "apple", "cherry"])
+    proxy.sort(0)
+    assert _visible(proxy) == ["banana", "apple", "cherry"]

@@ -61,6 +61,10 @@ class FXSortFilterProxyModel(QSortFilterProxyModel):
     recursive filtering on, a parent stays while one of its children
     matches.
 
+    Rows keep the source model's order until a filter ranks them, and rows
+    with the same score keep it too. The proxy sorts itself to rank, so a
+    view's header click does not sort by value: sort the source model.
+
     Examples:
         >>> model = QStringListModel(["apple", "banana", "cherry"])
         >>> proxy = FXSortFilterProxyModel()
