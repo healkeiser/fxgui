@@ -22,6 +22,8 @@ class FXCheckableComboBox(QComboBox):
     three values would take three openings. Here a click or Space ticks
     the row and the popup stays; the closed combo reads the ticked rows.
 
+    `currentText()` is Qt's current row, not the ticks: read `checked_items()` or `display_text()`.
+
     Args:
         parent: Parent widget.
 
@@ -118,7 +120,7 @@ class FXCheckableComboBox(QComboBox):
 
     def _toggle(self, row: int) -> None:
         item = self.model().item(row) if row >= 0 else None
-        if item is not None:
+        if item is not None and item.isEnabled():
             item.setCheckState(
                 Qt.Unchecked
                 if item.checkState() == Qt.Checked
@@ -129,6 +131,8 @@ class FXCheckableComboBox(QComboBox):
         if self._setting:
             return
         self.update()
+        # A screen reader reads Qt's current row; the ticks are the value.
+        self.setAccessibleDescription(self.display_text())
         checked = self.checked_items()
         if checked != self._said:
             self._said = checked

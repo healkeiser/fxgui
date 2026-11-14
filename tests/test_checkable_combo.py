@@ -117,3 +117,14 @@ def test_removing_or_clearing_ticked_rows_says_so(qtbot):
     combo.removeItem(0)
 
     assert said == [["render"], [], ["render"], []]
+
+
+def test_a_disabled_row_is_never_ticked(qtbot):
+    combo = _opened(qtbot)
+    combo.model().item(1).setEnabled(False)
+
+    _click_row(combo, 1)
+    assert combo.checked_items() == []
+
+    _click_row(combo, 0)
+    assert combo.accessibleDescription() == "render"
