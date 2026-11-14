@@ -177,7 +177,8 @@ class FXValidatedLineEdit(QLineEdit):
         super().keyPressEvent(event)
         typed = event.text()
         if (
-            self.validator() is not None
+            not self.isReadOnly()
+            and self.validator() is not None
             and typed
             and typed.isprintable()
             and (self.text(), self.cursorPosition(), self.selectedText())

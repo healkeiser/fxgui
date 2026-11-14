@@ -191,3 +191,10 @@ def test_enter_in_a_dialog_s_password_field_accepts_the_dialog(qtbot):
 
     assert dialog.result() == QDialog.Accepted
     assert secret.echoMode() == QLineEdit.Password
+
+
+def test_a_read_only_field_never_shakes(qtbot):
+    edit = _validated(qtbot)
+    edit.setReadOnly(True)
+    QTest.keyClicks(edit, "1")
+    assert not _animating(edit)
