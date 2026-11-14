@@ -36,7 +36,7 @@ def themed_app(qapp):
     sheet, font, palette = qapp.styleSheet(), qapp.font(), qapp.palette()
     fxstyle.register_themed_root(qapp)
     yield qapp
-    fxstyle._themed_roots.discard(qapp)
+    fxstyle.unregister_themed_root(qapp)
     qapp.setStyleSheet(sheet)
     qapp.setFont(font)
     qapp.setPalette(palette)

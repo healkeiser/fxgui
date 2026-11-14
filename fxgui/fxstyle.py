@@ -190,6 +190,7 @@ __all__ = [
     "set_default_theme",
     "get_default_theme",
     "register_themed_root",
+    "unregister_themed_root",
     "palette",
     "font",
     "control_height",
@@ -2357,6 +2358,18 @@ def register_themed_root(root: QObject) -> None:
     _themed_roots.add(root)
     _watch_focus()
     _apply_to_root(root, _build_stylesheet(), palette(), font())
+
+
+def unregister_themed_root(root: QObject) -> None:
+    """Forget `root`: later theme switches no longer restyle it.
+
+    Restores nothing: `root` keeps the sheet, palette and font it wears
+    until you set others. Forgetting a root never registered does nothing.
+
+    Args:
+        root: A widget or QApplication given to `register_themed_root`.
+    """
+    _themed_roots.discard(root)
 
 
 def _reapply_to_roots() -> None:

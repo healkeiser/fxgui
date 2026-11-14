@@ -435,6 +435,25 @@ def test_dead_roots_drop_out(qtbot):
     fxstyle._reapply_to_roots()
 
 
+def test_an_unregistered_root_is_left_alone_by_a_switch(qtbot):
+    root = QWidget()
+    qtbot.addWidget(root)
+    fxstyle.register_themed_root(root)
+    worn = root.styleSheet()
+
+    fxstyle.unregister_themed_root(root)
+    fxstyle.apply_theme("light" if fxstyle.get_theme() != "light" else "dark")
+
+    assert root not in fxstyle._themed_roots
+    assert root.styleSheet() == worn
+
+
+def test_unregistering_an_unknown_root_does_nothing(qtbot):
+    stranger = QWidget()
+    qtbot.addWidget(stranger)
+    fxstyle.unregister_themed_root(stranger)
+
+
 def test_a_root_switched_before_its_first_show_wears_the_new_theme(qtbot):
     from fxgui.fxwidgets import FXKeycap
 

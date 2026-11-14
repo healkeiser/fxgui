@@ -325,7 +325,7 @@ def test_the_body_weight_reaches_a_themed_app(qtbot, qapp, monkeypatch):
         qtbot.addWidget(label)
         assert label.font().weight() == QFont.Medium
     finally:
-        fxstyle._themed_roots.discard(qapp)
+        fxstyle.unregister_themed_root(qapp)
         qapp.setStyleSheet("")
         qapp.setFont(font)
 

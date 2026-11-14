@@ -89,7 +89,7 @@ def themed(qapp):
     qapp.setCursorFlashTime(0)
     yield qapp
     qapp.setCursorFlashTime(flash)
-    fxstyle._themed_roots.discard(qapp)
+    fxstyle.unregister_themed_root(qapp)
     qapp.setStyleSheet(previous)
     qapp.setPalette(palette)
     qapp.setFont(font)
@@ -575,7 +575,7 @@ def test_ring_paints_on_every_shipped_theme(qtbot, qapp):
                 window.close()
             QApplication.processEvents()
     finally:
-        fxstyle._themed_roots.discard(qapp)
+        fxstyle.unregister_themed_root(qapp)
         qapp.setStyleSheet(previous)
         qapp.setPalette(palette)
         qapp.setFont(font)

@@ -366,6 +366,10 @@ the old colours.
 A registered widget carries the `fxThemedRoot` property
 (`fxstyle.ROOT_PROPERTY`), which a stylesheet may select on.
 
+`fxstyle.unregister_themed_root(root)` forgets a root: later switches skip
+it. It keeps the sheet, palette and font it wears; reset them yourself if
+you need to, as a test fixture does.
+
 ## Reacting to Theme Changes
 
 `fxstyle.theme_changed` is a signal emitted after a switch, with the new

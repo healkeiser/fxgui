@@ -134,7 +134,7 @@ def app_root(qtbot, qapp):
     qtbot.addWidget(window)
     QVBoxLayout(window)
     yield window
-    fxstyle._themed_roots.discard(qapp)
+    fxstyle.unregister_themed_root(qapp)
     qapp.setStyleSheet(sheet)
     qapp.setFont(font)
     qapp.setPalette(palette)
