@@ -1,9 +1,8 @@
 # AI
 tmpclaude*
 
-# Node.js modules and lock files
+# Node.js modules
 node_modules/
-package-lock.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

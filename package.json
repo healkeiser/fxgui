@@ -3,6 +3,6 @@
         "changelog": "auto-changelog -p --unreleased"
     },
     "devDependencies": {
-        "auto-changelog": "^2.5.0"
+        "auto-changelog": "2.7.0"
     }
 }

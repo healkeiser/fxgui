@@ -2,7 +2,7 @@
 # 1. Generate changelog from conventional commits
 # 2. Create a GitHub release with changelog content
 # 3. Build and publish Python package to PyPI
-# 4. Deploy documentation to GitHub Pages
+# Docs deploy from docs.yml on the same tag push, not from here.
 
 name: Release
 
@@ -26,7 +26,7 @@ on:
         type: boolean
         default: false
       skip-docs:
-        description: "Skip documentation deployment"
+        description: "Ignored: docs.yml deploys the docs on a tag push"
         type: boolean
         default: false
       skip-pypi:
@@ -41,15 +41,16 @@ on:
         description: "PyPI password/token for package publishing"
         required: false
 
+# Each job asks for what it needs; nothing else may write.
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 
 jobs:
   # Step 1: Generate changelog FIRST so it can be included in the release
   generate-changelog:
     name: Generate Changelog
+    permissions:
+      contents: write # pushes the CHANGELOG commit
     if: ${{ inputs.skip-changelog != true }}
     runs-on: ubuntu-latest
     outputs:
@@ -79,7 +80,8 @@ jobs:
 
       - name: Install dependencies
         if: steps.check-npm.outputs.exists == 'true'
-        run: npm install && npm install -g auto-changelog
+        # The lock pins auto-changelog and everything it pulls in.
+        run: npm ci
 
       - name: Generate changelog
         if: steps.check-npm.outputs.exists == 'true'
@@ -139,10 +141,6 @@ jobs:
           echo "$SECTION" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Remove package-lock.json
-        if: steps.check-npm.outputs.exists == 'true'
-        run: rm -f package-lock.json
-
       - name: Commit and push changelog
         if: steps.check-npm.outputs.exists == 'true'
         run: |
@@ -159,6 +157,8 @@ jobs:
   # Step 2: Create release WITH changelog content
   create-release:
     name: Create GitHub Release
+    permissions:
+      contents: write # creates the draft release
     needs: generate-changelog
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
@@ -184,10 +184,14 @@ jobs:
   # Step 3: Build and publish to PyPI
   tests:
     name: Tests
+    permissions:
+      contents: read
     uses: ./.github/workflows/tests.yml
 
   publish-pypi:
     name: Publish to PyPI
+    permissions:
+      contents: read
     needs: [create-release, tests]
     if: ${{ always() && !cancelled() && needs.create-release.result == 'success' && needs.tests.result == 'success' && inputs.skip-pypi != true && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
@@ -212,6 +216,29 @@ jobs:
         run: |
           python -m build
 
+      # To switch to trusted publishing (PyPI trusts this workflow, no stored
+      # token):
+      # 1. On https://pypi.org/manage/project/fxgui/settings/publishing/ add a
+      #    GitHub publisher: owner healkeiser, repository fxgui, workflow
+      #    release.yml, environment pypi.
+      # 2. In this job, beside runs-on:, add
+      #      environment:
+      #        name: pypi
+      #        url: https://pypi.org/p/fxgui
+      #    and make its permissions
+      #      contents: read
+      #      id-token: write
+      # 3. Install only `build` above (no setuptools, wheel, twine).
+      # 4. Replace this step, env: included, with
+      #      - name: Publish package to PyPI
+      #        uses: pypa/gh-action-pypi-publish@release/v1
+      # 5. Keep the PYPI_* secrets under workflow_call (a caller may pass
+      #    them) with the description "Unused: PyPI trusted publishing".
+      # 6. After the first release published this way, revoke the PyPI API
+      #    token and delete the PYPI_USERNAME and PYPI_PASSWORD repository
+      #    secrets.
+      # Renaming release.yml or the pypi environment later breaks publishing
+      # until the PyPI publisher is changed to match.
       - name: Publish package to PyPI
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
