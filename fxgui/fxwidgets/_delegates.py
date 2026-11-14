@@ -1050,7 +1050,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         title = str(index.data(Qt.DisplayRole) or "")
         label_inset, dot_inset = self._indicator_insets(label_width, dot_width)
         right_margin = (
-            self._TEXT_RIGHT_MARGIN if has_thumbnail else self._ICON_MARGIN
+            self._TEXT_RIGHT_MARGIN if has_thumbnail else self.ICON_MARGIN
         )
         room = (
             option.rect.left()
@@ -1097,9 +1097,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         """Return the first x clear of the thumbnail, or of the icon."""
         if has_thumbnail:
             return option.rect.left() + self._THUMBNAIL_SPAN
-        left = option.rect.left() + self._ICON_MARGIN
+        left = option.rect.left() + self.ICON_MARGIN
         if self._has_icon(option):
-            left += self._ICON_SIZE + self._ICON_MARGIN
+            left += self.ICON_SIZE + self.ICON_MARGIN
         return left
 
     @staticmethod
@@ -1944,10 +1944,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     def _icon_rect(self, rect: QRect) -> QRect:
         """Return where a decoration icon sits at the left of `rect`."""
         return QRect(
-            rect.left() + self._ICON_MARGIN,
-            rect.top() + (rect.height() - self._ICON_SIZE) // 2,
-            self._ICON_SIZE,
-            self._ICON_SIZE,
+            rect.left() + self.ICON_MARGIN,
+            rect.top() + (rect.height() - self.ICON_SIZE) // 2,
+            self.ICON_SIZE,
+            self.ICON_SIZE,
         )
 
     def _draw_icon_and_text(
@@ -1969,7 +1969,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             option,
             index,
             self._text_left(option, index, False),
-            self._content_right_limit(option, index, self._ICON_MARGIN),
+            self._content_right_limit(option, index, self.ICON_MARGIN),
             bold=bool(self._description(index)),
         )
 
@@ -1980,11 +1980,11 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         index: QModelIndex,
     ) -> None:
         """Draw the icon and text of a column other than 0."""
-        text_x = option.rect.left() + self._ICON_MARGIN
+        text_x = option.rect.left() + self.ICON_MARGIN
         if self._has_icon(option):
             icon_rect = self._icon_rect(option.rect)
             _paint_icon(painter, option.icon, icon_rect, option.state)
-            text_x = icon_rect.right() + 1 + self._ICON_MARGIN
+            text_x = icon_rect.right() + 1 + self.ICON_MARGIN
 
         text = index.data(Qt.DisplayRole)
         if not text:
@@ -1997,7 +1997,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             else self._text_color(option))
         painter.setFont(option.font)
         alignment = Qt.AlignLeft | Qt.AlignVCenter
-        right_inset = self._ICON_MARGIN
+        right_inset = self.ICON_MARGIN
         if index.column() == self.picker_column:
             alignment = Qt.AlignRight | Qt.AlignVCenter
             right_inset = self._picker_text_inset()
@@ -2080,7 +2080,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             else QFont(opt.font)
         )
         right_margin = (
-            self._TEXT_RIGHT_MARGIN if has_thumbnail else self._ICON_MARGIN
+            self._TEXT_RIGHT_MARGIN if has_thumbnail else self.ICON_MARGIN
         )
         total = (
             self._check_width(opt, index)
