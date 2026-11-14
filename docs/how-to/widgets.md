@@ -90,6 +90,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXElidedLabel` | Label that cuts its text with "..." when it does not fit |
 | `FXEmojiButton` | Round icon button that opens an `FXEmojiPicker` and can insert into an editor |
 | `FXEmojiPicker` | Popup grid of emoji, keyboard navigable |
+| `FXEmptyState` | What a pane shows before it has content: an icon, the action to take in bold, what it brings muted (see [Empty Panes](#empty-panes)) |
 | `FXFilePathWidget` | File or folder path field with a browse button |
 | `FXFilteredTree` | An `FXKeyboardTree` under a filter bar, with expand-all and collapse-all; `actions=` puts a row of buttons under the tree |
 | `FXFloatingDialog` | Dialog that opens at the pointer |
@@ -116,6 +117,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXRangeSlider` | Slider with two handles for a low and a high value |
 | `FXRatingWidget` | Star rating input, halves optional |
 | `FXResizedScrollArea` | Scroll area whose height follows its content, between a floor and a cap |
+| `FXScrollShadow` | A line and a fade where a scroll area cuts its content off below; gone at the end |
 | `FXSearchBar` | Search field with a clear button and a debounced search signal |
 | `FXSeating` | Seats a tray panel in the screen corner nearest its icon and slides it in |
 | `FXSingleInstance` | Lock on a local socket name; a second start wakes the first |
@@ -260,6 +262,41 @@ typing, even though Windows reports AltGr as Ctrl+Alt.
     on AZERTY `/` is Shift+`:`. A window shortcut of one character also
     wins over typing on the tree. So keep single-character shortcuts off
     windows that hold a filtered tree, or use a chord such as `Ctrl+F`.
+
+## Empty Panes
+
+A pane with nothing to show yet says what to do next. `FXEmptyState`
+centres an icon, the action in bold and, under it, what that action
+brings, in the muted ink:
+
+``` python
+from fxgui.fxwidgets import FXEmptyState
+
+empty = FXEmptyState("inbox", "Pick a task", "Its files and versions show here")
+empty.set_prompt("search", "Search again", "Nothing matched")
+action, detail = empty.prompt()
+```
+
+An empty detail hides the second line. A disabled empty state keeps its
+icon muted, so a pane switched off still reads its ask.
+
+`FXScrollShadow(area)` draws a line and a fade over the bottom of a
+scroll area's viewport, where it cuts its content off, and hides once the
+area is scrolled to the end or has nothing to scroll. It reads the
+theme's `shadow` and `border` each time it paints.
+
+## Tab Order
+
+`fxutils.set_tab_order(widgets)` chains widgets into exactly the order
+given; Shift+Tab walks it back. A compound widget whose focus a proxy
+takes (an inner line edit) chains through that proxy, which a bare
+`QWidget.setTabOrder` would not move.
+
+``` python
+from fxgui import fxutils
+
+fxutils.set_tab_order([name_edit, path_widget, ok_button])
+```
 
 ## Tooltips
 

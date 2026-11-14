@@ -141,6 +141,27 @@ Call `fxstyle.mark_as_frame(widget, False)` to remove the mark. A plain label ha
 
 For the 1 px edge of a pane sitting on the frame, use the `@pane_border` token (or `fxstyle.colors().pane_border`) rather than `@border`: in some themes `border` is nearly the frame's own color.
 
+## Ink Text in a Theme Colour
+
+`fxstyle.ink(widget, token)` writes a widget's text in one theme colour
+through the stylesheet, so it follows every theme switch with no call of
+your own. An inked label also has no fill of its own: it shows what it
+sits on.
+
+```python
+from qtpy.QtWidgets import QLabel
+from fxgui import fxstyle
+
+hint = QLabel("Drop files here")
+fxstyle.ink(hint, "text_muted")
+fxstyle.ink(hint, None)  # Back to the default ink
+```
+
+The tokens are `fxstyle.INKS`: `text`, `text_muted`, `text_strong`,
+`text_disabled`, `accent_primary` and `feedback_<level>_foreground` for
+`debug`, `info`, `success`, `warning` and `error`. Any other raises
+`ValueError`.
+
 ## Flat Icon Buttons
 
 An icon-only `QPushButton` given the `fxRole="flat"` property has no box: it shows a fill on hover and a darker one when pressed, an accent border when it has keyboard focus, and nothing when disabled.
