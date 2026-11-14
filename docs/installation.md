@@ -82,4 +82,4 @@ zensical build    # Write the site to site/
 ## DCC Integration
 
 !!! question
-    In order to have access to the module inside your application, make sure to add `fxgui` to the `$PYTHONPATH` of the DCCs. For Houdini, you can find the `houdini_package.json` example file.
+    A DCC's Python only sees fxgui if it is on its `PYTHONPATH`. For Houdini, install fxgui and its dependencies into a folder of their own with a Python of the same version as Houdini's (3.11 for Houdini 21): `python3.11 -m pip install --target C:/path/to/fxgui_libs fxgui`. PySide6 is not installed, since fxgui does not depend on it. Then copy [houdini_package.json](https://github.com/healkeiser/fxgui/blob/main/houdini_package.json) into Houdini's `packages` folder and set `FXGUI_LIBS` in it to that folder.

@@ -19,8 +19,8 @@
     <!-- <img src="https://img.shields.io/badge/maintenance-deprecated-red.svg?&label=Maintenance">&nbsp;&nbsp; -->
     <!-- License -->
     <img src="https://img.shields.io/github/license/healkeiser/fxgui?&label=License"/> &nbsp;&nbsp;
-    <!-- GitHub build workflow -->
-    <img src="https://img.shields.io/github/actions/workflow/status/healkeiser/fxgui/release.yml?&label=Build&logo=github-actions&logoColor=white" alt="Build"> &nbsp;&nbsp;
+    <!-- Tests workflow -->
+    <a href="https://github.com/healkeiser/fxgui/actions/workflows/tests.yml"><img src="https://img.shields.io/github/actions/workflow/status/healkeiser/fxgui/tests.yml?branch=main&label=Tests&logo=github-actions&logoColor=white" alt="Tests"></a> &nbsp;&nbsp;
     <!-- PyPI version-->
     <a href="https://pypi.org/project/fxgui"><img src="https://img.shields.io/pypi/v/fxgui?&logo=pypi&logoColor=white&label=Version" alt="PyPI Version"/></a> &nbsp;&nbsp;
     <!-- PyPI downloads -->
@@ -45,7 +45,6 @@
 - [Installation](#installation)
 - [Example](#example)
 - [Documentation](#documentation)
-- [Screenshots](#screenshots)
 - [Contact](#contact)
 
 
@@ -108,7 +107,7 @@ zensical build    # Write the site to site/
 ```
 
 > [!IMPORTANT]
-> In order to have access to the module inside your application, make sure to add `fxgui` to the `$PYTHONPATH` of the DCCs. For Houdini, you can find the [`houdini_package.json` example file](./houdini_package.json).
+> A DCC's Python only sees fxgui if it is on its `PYTHONPATH`. For Houdini, install fxgui and its dependencies into a folder of their own with a Python of the same version as Houdini's (3.11 for Houdini 21): `python3.11 -m pip install --target C:/path/to/fxgui_libs fxgui`. PySide6 is not installed, since fxgui does not depend on it. Then copy [`houdini_package.json`](./houdini_package.json) into Houdini's `packages` folder and set `FXGUI_LIBS` in it to that folder.
 
 
 
