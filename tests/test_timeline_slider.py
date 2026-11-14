@@ -609,3 +609,29 @@ def test_zoom_view_is_the_wheel_s_zoom(qtbot, qapp):
     assert called.view_range() == wheeled.view_range() != (1, 200)
     called.zoom_view(-1, 0.5)
     assert called.view_range() != wheeled.view_range()
+
+
+def test_turning_loop_off_after_a_wrap_plays_on_to_the_end(
+    qtbot, qapp, monkeypatch
+):
+    from fxgui.fxwidgets import _timeline_slider
+
+    timeline = _timeline(qtbot, start_frame=1, end_frame=10, current_frame=9)
+    now = [0.0]
+    monkeypatch.setattr(_timeline_slider.time, "perf_counter", lambda: now[0])
+    timeline.play()
+    timeline._playback_timer.stop()
+    now[0] += 4 / 24
+    timeline._on_playback_tick()
+    assert timeline.current_frame() == 3
+
+    timeline.set_loop_playback(False)
+    now[0] += 1 / 24 + 1e-6
+    timeline._on_playback_tick()
+    assert timeline.current_frame() == 4
+    assert timeline._is_playing
+
+    now[0] += 10 / 24
+    timeline._on_playback_tick()
+    assert timeline.current_frame() == 10
+    assert not timeline._is_playing

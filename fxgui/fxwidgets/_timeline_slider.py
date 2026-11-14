@@ -830,7 +830,11 @@ class FXTimelineSlider(QWidget):
                 self.stop()
                 return
             length = self._end_frame - self._start_frame + 1
-            frame = self._start_frame + (frame - self._start_frame) % length
+            loops = (frame - self._start_frame) // length
+            # The clock counts from the wrapped frame, so loop off later
+            # plays on to the end instead of stopping at once.
+            self._anchor_frame -= loops * length
+            frame -= loops * length
         self._ticking = True
         try:
             self.set_frame(frame)
