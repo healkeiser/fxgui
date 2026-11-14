@@ -197,6 +197,20 @@ def test_a_filtered_tree_narrows_as_its_bar_changes(qtbot):
     assert not top.isHidden()
 
 
+def test_a_refilled_tree_keeps_the_filter_once_refiltered(qtbot):
+    panel = FXFilteredTree()
+    _window = _shown(qtbot, panel)
+    QTreeWidgetItem(panel.tree, ["Beauty"])
+    panel.filter_bar.setText("beau")
+    panel.refilter()
+    late = QTreeWidgetItem(panel.tree, ["Other"])
+    assert not late.isHidden()
+
+    panel.refilter()
+
+    assert late.isHidden()
+
+
 def test_a_filtered_tree_takes_typing_and_folds(qtbot):
     panel = FXFilteredTree()
     _window = _shown(qtbot, panel)

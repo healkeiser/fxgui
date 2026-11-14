@@ -234,6 +234,10 @@ class FXFilteredTree(QWidget):
     def _filter(self, text: str) -> None:
         fxutils.filter_tree(self.tree, text)
 
+    def refilter(self) -> None:
+        """Filter the tree again by the bar's text, after refilling it."""
+        self._filter(self.filter_bar.text())
+
     def _fold_button(self, icon: str, tip: str) -> QToolButton:
         button = QToolButton(self)
         button.setAutoRaise(True)
