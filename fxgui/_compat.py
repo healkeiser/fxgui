@@ -17,8 +17,11 @@ __all__ = [
 import ctypes
 import functools
 import os
+import posixpath
+import re
 import sys
-from typing import Optional
+import time
+from typing import Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import qVersion
@@ -60,10 +63,62 @@ def _remote_drive(root: str) -> bool:
         return False
 
 
+# File system types whose reads go over the network.
+_NETWORK_FS = frozenset({
+    "nfs", "nfs4", "cifs", "smb3", "smbfs", "fuse.sshfs",
+    "ceph", "fuse.ceph-fuse", "glusterfs", "fuse.glusterfs",
+})
+# `can_stall` runs while painting: the mount table is read this seldom.
+_MOUNTS_TTL = 30.0
+# (when read, network mount points longest first), or None before the first read.
+_mounts_cache: Optional[Tuple[float, Tuple[str, ...]]] = None
+
+
+def _read_mounts() -> str:
+    """Return the Linux mount table, or "" when it cannot be read."""
+    try:
+        with open("/proc/mounts", encoding="utf-8", errors="replace") as table:
+            return table.read()
+    except OSError:
+        return ""
+
+
+def _network_mounts() -> Tuple[str, ...]:
+    """Return the network mount points, longest first, re-read every 30 s."""
+    global _mounts_cache
+    now = time.monotonic()
+    if _mounts_cache is not None and now - _mounts_cache[0] < _MOUNTS_TTL:
+        return _mounts_cache[1]
+    points = []
+    for line in _read_mounts().splitlines():
+        fields = line.split()
+        if len(fields) >= 3 and fields[2] in _NETWORK_FS:
+            # The table writes a space in a mount point as \040.
+            points.append(re.sub(
+                r"\\([0-7]{3})", lambda m: chr(int(m.group(1), 8)), fields[1]))
+    _mounts_cache = (now, tuple(sorted(points, key=len, reverse=True)))
+    return _mounts_cache[1]
+
+
+def _on_network_mount(path: str) -> bool:
+    """Return whether the POSIX `path` lies under a network mount."""
+    path = posixpath.abspath(path)
+    for point in _network_mounts():
+        if point == "/" or path == point or path.startswith(point + "/"):
+            return True
+    return False
+
+
 def can_stall(path: str) -> bool:
-    """Return whether reading `path` may wait on a network share."""
+    """Return whether reading `path` may wait on a network share.
+
+    On macOS only UNC-style paths count: `os.statvfs` does not say which
+    file system a path is on.
+    """
     if path.startswith(("\\\\", "//")):
         return True
+    if sys.platform.startswith("linux"):
+        return _on_network_mount(path)
     if sys.platform != "win32":
         return False
     drive = os.path.splitdrive(os.path.abspath(path))[0]
