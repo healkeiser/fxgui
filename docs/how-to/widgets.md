@@ -219,6 +219,29 @@ ROW_COLOR_ROLE = FXThumbnailDelegate.FIRST_FREE_ROLE + 1
 A role added to the delegate moves `FIRST_FREE_ROLE` up, and every role
 derived from it moves too.
 
+## Keyboard Trees
+
+`FXKeyboardTree.type_into(field)` sends what is typed on the tree to a
+filter field, and `FXFilteredTree` does it for you. So a tree needs no
+"focus the filter" shortcut: start typing.
+
+``` python
+from fxgui.fxwidgets import FXFilteredTree
+
+tree = FXFilteredTree(placeholder="Filter shots...")
+# Typing on tree.tree goes to tree.filter_bar.
+```
+
+Ctrl, Alt and Meta chords stay commands. A character typed with AltGr is
+typing, even though Windows reports AltGr as Ctrl+Alt.
+
+!!! note
+    A shortcut made of one symbol (`/`, `?`) depends on the keyboard
+    layout. Qt matches the character typed, not the key's position, so
+    on AZERTY `/` is Shift+`:`. A window shortcut of one character also
+    wins over typing on the tree. So keep single-character shortcuts off
+    windows that hold a filtered tree, or use a chord such as `Ctrl+F`.
+
 ## Tooltips
 
 `apply_tip` is fxgui's tooltip. It hands Qt's own `setToolTip` a small HTML string, and sets a markup-free status tip for the window's status bar:
