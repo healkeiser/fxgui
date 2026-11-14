@@ -190,8 +190,8 @@ def test_a_colour_file_without_dark_fills_from_the_default(qapp, tmp_path):
 
 
 def test_token_map_computes_on_accent_when_theme_omits_them(qapp, monkeypatch):
-    # Only when dark itself omits the on-accent keys does the computed
-    # fallback run (the baseline merge fills them in for any other theme).
+    # dark computes its own inks only when it omits them; another theme that
+    # omits them never takes dark's (see the test below).
     colors = fxstyle.get_colors()
     themes = dict(colors["themes"])
     themes["dark"] = {
@@ -204,6 +204,19 @@ def test_token_map_computes_on_accent_when_theme_omits_them(qapp, monkeypatch):
     expected = fxstyle._pole_from(themes["dark"]["accent_primary"])
     assert tokens["@text_on_accent_primary"] == expected
     assert tokens["@icon_on_accent_primary"] == expected
+
+
+def test_a_theme_an_overlay_adds_computes_its_own_on_accent_inks(
+        qapp, tmp_path):
+    fxstyle.overlay_color_file(_yaml(tmp_path, (
+        "themes:\n  sunny:\n"
+        "    accent_primary: '#ffeb3b'\n    accent_secondary: '#fdd835'\n")))
+    tokens = fxstyle._token_map("sunny")
+    # A yellow accent reads with black, not dark's white (1.22:1).
+    for key in ("text_on_accent_primary", "icon_on_accent_primary",
+                "text_on_accent_secondary", "icon_on_accent_secondary"):
+        assert tokens[f"@{key}"] == "#000000", key
+    assert fxstyle._token_map("dark")["@text_on_accent_primary"] == "#ffffff"
 
 
 _TEXT_GROUNDS = ("surface", "surface_sunken", "surface_alt", "well", "frame",

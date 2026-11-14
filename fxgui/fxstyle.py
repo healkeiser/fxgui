@@ -493,6 +493,10 @@ def _read_yaml(path) -> dict:
         return yaml.load(in_file, Loader=loader) or {}
 
 
+# Inks worked out from a theme's own accents when it omits them.
+_ON_ACCENT_KEYS = ("text_on_accent", "icon_on_accent")
+
+
 @lru_cache(maxsize=1)
 def _builtin_theme() -> dict:
     """Return the default file's dark theme, the baseline for every key.
@@ -503,7 +507,7 @@ def _builtin_theme() -> dict:
     theme = _read_yaml(DEFAULT_COLOR_FILE)["themes"][_DEFAULT_THEME]
     return {
         key: value for key, value in theme.items()
-        if not key.startswith(("text_on_accent", "icon_on_accent"))
+        if not key.startswith(_ON_ACCENT_KEYS)
     }
 
 
@@ -518,13 +522,20 @@ def state_contrast(theme_name: Optional[str] = None) -> float:
 
 
 def _theme_data(theme_name: str) -> dict:
-    """Return a theme's raw values over the file's dark and the built-in dark."""
+    """Return a theme's raw values over the file's dark and the built-in dark.
+
+    A theme of the file other than dark takes no on-accent ink from dark:
+    dark's white was chosen for dark's accent, and an omitted ink is
+    computed from the theme's own. An unknown name is dark itself.
+    """
     themes = get_colors().get("themes", {})
-    return {
-        **_builtin_theme(),
-        **themes.get(_DEFAULT_THEME, {}),
-        **themes.get(theme_name, {}),
-    }
+    dark = themes.get(_DEFAULT_THEME, {})
+    if theme_name != _DEFAULT_THEME and theme_name in themes:
+        dark = {
+            key: value for key, value in dark.items()
+            if not key.startswith(_ON_ACCENT_KEYS)
+        }
+    return {**_builtin_theme(), **dark, **themes.get(theme_name, {})}
 
 
 def _deep_merge(base: dict, over: dict) -> dict:
