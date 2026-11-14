@@ -38,7 +38,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 |------|---------|
 | `accent_primary` | Keyboard focus, the current item, a filled span, the primary action |
 | `accent_secondary` | A primary button's hover fill and a pressed menu item; never a hover fill |
-| `selection` | *(Optional)* A selected row's fill. Omitted, `accent_primary` at 15% over `surface` (`fxstyle.SELECTION_TINT`, mixed in OKLab), so the row keeps the theme's own text |
+| `selection` | *(Optional)* A selected row's fill. Omitted, `accent_primary` at 15% over `surface` (`fxstyle.SELECTION_TINT`, mixed in OKLab), stepped toward `accent_primary` until it visibly differs from `surface`, `surface_sunken` and `well`, so the row keeps the theme's own text |
 | `selection_border` | *(Optional)* The ring around a selected thumbnail row. `accent_primary` if omitted |
 
 ### Surface Colors (Backgrounds)
@@ -89,8 +89,8 @@ An omitted `text_on_accent_*` is black or white, whichever reads better on the a
 
 | Role | Purpose |
 |------|---------|
-| `state_hover` | *(Optional)* Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Omitted, `text` at 5% over `surface`. Pushed to 1.2:1 off `surface`, `surface_sunken` and `well` when closer |
-| `state_pressed` | *(Optional)* Pressed and checked fills, an open menu bar item, the current tab's pill. Omitted, `text` at 10% over `surface`. Pushed to 1.2:1 off `state_hover` (`fxstyle.STATE_MIN_CONTRAST`) when closer |
+| `state_hover` | *(Optional)* Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Omitted, `text` at 5% over `surface`. Pushed to 1.2:1 off `surface`, `surface_sunken`, `surface_alt`, `well` and `frame` when closer |
+| `state_pressed` | *(Optional)* Pressed and checked fills, an open menu bar item, the current tab's pill. Omitted, `text` at 10% over `surface`. Pushed to 1.2:1 off `state_hover` and the grounds above (`fxstyle.STATE_MIN_CONTRAST`) when closer; omitted, also pushed past `state_hover`, toward black or white |
 | `state_contrast` | *(Optional)* That 1.2:1 floor, for a brand that holds its fills closer, as Lumen's do |
 
 ### Scrollbar Colors

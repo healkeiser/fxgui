@@ -94,7 +94,8 @@ fonts:
 #   accent_primary    - Selection (unless `selection` is set), keyboard focus, the current item, the primary action
 #   accent_secondary  - A primary button's hover fill and a pressed menu item
 #   selection         - (Optional) Fill of a selected row, list item or menu item; accent_primary at 15% over
-#                       surface if omitted; its text and icon inks are the theme's own, made to read on it
+#                       surface if omitted, stepped toward accent_primary until it visibly differs from surface,
+#                       surface_sunken and well; its text and icon inks are the theme's own, made to read on it
 #   selection_border  - (Optional) Ring a thumbnail delegate draws around a selected row, accent_primary if omitted
 #
 # Surface Colors (Backgrounds):
@@ -122,9 +123,9 @@ fonts:
 #
 # Interactive State Colors:
 #   state_hover       - (Optional) Hover fill of rows, buttons, tool buttons and tabs; text at 5% over surface if
-#                       omitted; held to 1.2:1 on surface, surface_sunken and well
+#                       omitted; held to 1.2:1 on surface, surface_sunken, surface_alt, well and frame
 #   state_pressed     - (Optional) Pressed and checked fills; text at 10% over surface if omitted; pushed to
-#                       1.2:1 from state_hover
+#                       1.2:1 from state_hover and those grounds; when omitted, past state_hover
 #   state_contrast    - (Optional) The 1.2:1 floor above, lowered by a brand that holds its states closer
 #
 # Feedback Colors (feedback: <level>: foreground, background), level debug, info, success, warning, error:
