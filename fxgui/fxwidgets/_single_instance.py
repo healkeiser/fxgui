@@ -50,6 +50,7 @@ class FXSingleInstance(QObject):
         ...     sys.exit(0)  # the running copy has been handed the text
         >>> instance.woken.connect(window.show)
         >>> instance.messaged.connect(window.open_arguments)
+        >>> # A restart: while not instance.try_claim(): wait, then retry
     """
 
     woken = Signal()
@@ -78,19 +79,15 @@ class FXSingleInstance(QObject):
             RuntimeError: The name cannot be listened on, or the copy
                 holding it never answers.
         """
-        from qtpy.QtNetwork import QLocalServer
-
         payload = message.encode("utf-8")
         if len(payload) > MAX_MESSAGE_BYTES:
             raise ValueError(
                 f"a message holds at most {MAX_MESSAGE_BYTES} bytes, "
                 f"got {len(payload)}")
-        # Windows lets two servers listen on one name, so two starts in the
-        # same instant would both win the probe: a lock file picks one.
-        digest = hashlib.sha256(self._name.encode("utf-8")).hexdigest()[:24]
-        lock = QLockFile(os.path.join(QDir.tempPath(), f"fxgui-{digest}.lock"))
-        # Stale only when its process is gone, however long a copy runs.
-        lock.setStaleLockTime(0)
+        # Already the holder: handing over would knock on itself.
+        if self._lock is not None:
+            return True
+        lock = self._lock_file()
         if not lock.tryLock(0):
             deadline = time.monotonic() + _REACH_SECONDS
             while not self._hand_over(payload):
@@ -99,6 +96,49 @@ class FXSingleInstance(QObject):
                         f"the copy holding {self._name!r} does not answer")
                 QThread.msleep(_RETRY_MS)
             return False
+        self._listen(lock)
+        return True
+
+    def try_claim(self) -> bool:
+        """Take the name if no copy holds it; never contact the holder.
+
+        For a start that must wait for a copy on its way out, such as a
+        restart: call it until it returns True, pausing between calls.
+        `claim` instead hands a message to a running copy.
+
+        Returns:
+            True when this process holds the name, now or already.
+
+        Raises:
+            RuntimeError: No copy holds the name, but it cannot be
+                listened on.
+        """
+        if self._lock is not None:
+            return True
+        lock = self._lock_file()
+        if not lock.tryLock(0):
+            return False
+        self._listen(lock)
+        return True
+
+    def _lock_file(self) -> QLockFile:
+        """Return the lock file that picks one holder of the name."""
+        # Windows lets two servers listen on one name, so two starts in the
+        # same instant would both win the probe: a lock file picks one.
+        digest = hashlib.sha256(self._name.encode("utf-8")).hexdigest()[:24]
+        lock = QLockFile(os.path.join(QDir.tempPath(), f"fxgui-{digest}.lock"))
+        # Stale only when its process is gone, however long a copy runs.
+        lock.setStaleLockTime(0)
+        return lock
+
+    def _listen(self, lock: QLockFile) -> None:
+        """Listen on the name under the held `lock`.
+
+        Raises:
+            RuntimeError: The name cannot be listened on.
+        """
+        from qtpy.QtNetwork import QLocalServer
+
         # A crash leaves the socket file on some platforms; on Windows a no-op.
         QLocalServer.removeServer(self._name)
         server = QLocalServer(self)
@@ -112,7 +152,6 @@ class FXSingleInstance(QObject):
         self._server = server
         self._lock = lock
         self.destroyed.connect(lock.unlock)
-        return True
 
     def _hand_over(self, payload: bytes) -> bool:
         """Hand `payload` to the copy listening on the name, if one answers."""

@@ -34,6 +34,39 @@ def test_a_released_name_can_be_claimed_again(qtbot):
     assert FXSingleInstance(_name("again")).claim()
 
 
+def test_try_claim_takes_a_free_name_and_never_wakes_the_holder(qtbot):
+    first = FXSingleInstance(_name("try"))
+    assert first.try_claim()
+    woken = []
+    first.woken.connect(lambda: woken.append(True))
+
+    assert not FXSingleInstance(_name("try")).try_claim()
+    qtbot.wait(200)
+
+    assert woken == []
+
+
+def test_try_claim_takes_a_name_once_its_holder_is_gone(qtbot):
+    first = FXSingleInstance(_name("try-again"))
+    assert first.claim()
+    first.deleteLater()
+    qtbot.wait(50)
+
+    assert FXSingleInstance(_name("try-again")).try_claim()
+
+
+def test_the_holder_claiming_again_keeps_the_name_at_once(qtbot):
+    import time
+
+    first = FXSingleInstance(_name("twice"))
+    assert first.claim()
+
+    start = time.monotonic()
+    assert first.claim("again")
+    assert first.try_claim()
+    assert time.monotonic() - start < 1
+
+
 def test_a_name_that_cannot_be_listened_on_raises(qtbot, monkeypatch):
     from qtpy.QtNetwork import QLocalServer
 
