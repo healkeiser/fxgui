@@ -375,8 +375,9 @@ def test_apply_theme_switches_and_signals(qtbot):
 
 
 def test_apply_theme_takes_a_known_theme_name_only(qtbot):
-    assert list(inspect.signature(fxstyle.apply_theme).parameters) == [
-        "theme"]
+    # Keyword-only options (save) are fine; no widget or second positional.
+    params = inspect.signature(fxstyle.apply_theme).parameters.values()
+    assert [p.name for p in params if p.kind != p.KEYWORD_ONLY] == ["theme"]
     with pytest.raises(ValueError):
         fxstyle.apply_theme("no_such_theme")
 

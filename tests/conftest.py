@@ -55,8 +55,7 @@ def _isolate_fxgui_state(tmp_path, monkeypatch):
     QSettings.setPath(
         QSettings.IniFormat, QSettings.UserScope, str(tmp_path / "settings")
     )
-    monkeypatch.setattr(fxconfig, "_APP_NAME", "fxgui")
-    monkeypatch.setattr(fxconfig, "_settings_instance", None)
+    fxconfig.set_application_name("fxgui")
     # Widget modules register their fragments at import; keep those.
     fragments = dict(fxstyle._widget_fragments)
     # Every test starts on the dark theme, with the pointer off every window.

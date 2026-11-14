@@ -1,6 +1,7 @@
 """Tests for `fxgui.fxconfig`: one INI file per application, where Qt puts it."""
 
 # Built-in
+import os
 from pathlib import Path
 
 # Third-party
@@ -8,7 +9,7 @@ import pytest
 from qtpy.QtCore import QSettings
 
 # Internal
-from fxgui import fxconfig
+from fxgui import fxconfig, fxstyle
 
 
 def _expected(name: str) -> str:
@@ -104,3 +105,75 @@ def test_a_new_application_restyles_live_roots(qtbot):
 def test_set_application_name_rejects_unsafe_names(bad_name):
     with pytest.raises(ValueError):
         fxconfig.set_application_name(bad_name)
+
+
+def test_a_theme_applied_headless_is_not_saved(qapp):
+    fxstyle.apply_theme("light")
+    fxstyle.apply_row_size("small")
+
+    assert fxconfig.get_value("theme/current") is None
+    assert fxconfig.get_value("rows/size") is None
+    fxstyle.apply_row_size("normal")
+
+
+def test_save_true_saves_even_headless(qapp):
+    fxstyle.apply_theme("light", save=True)
+    fxstyle.apply_row_size("small", save=True)
+
+    assert fxconfig.get_value("theme/current") == "light"
+    assert fxconfig.get_value("rows/size") == "small"
+    fxstyle.apply_row_size("normal")
+
+
+def test_a_real_screen_saves_by_default(qapp, monkeypatch):
+    monkeypatch.setattr(fxstyle, "_interactive", lambda: True)
+    fxstyle.apply_theme("light")
+
+    assert fxconfig.get_value("theme/current") == "light"
+
+
+def test_save_false_never_saves(qapp, monkeypatch):
+    monkeypatch.setattr(fxstyle, "_interactive", lambda: True)
+    fxstyle.apply_theme("light", save=False)
+
+    assert fxconfig.get_value("theme/current") is None
+
+
+def test_the_offscreen_platform_counts_as_headless(qapp):
+    assert fxstyle._interactive() is False
+
+
+def test_an_unchanged_value_is_not_written_again(qapp):
+    fxconfig.set_value("probe/key", "value")
+    path = fxconfig._settings().fileName()
+    os.utime(path, (1_000_000_000, 1_000_000_000))
+
+    fxconfig.set_value("probe/key", "value")
+    assert os.path.getmtime(path) == 1_000_000_000
+
+    fxconfig.set_value("probe/key", "other")
+    assert os.path.getmtime(path) != 1_000_000_000
+
+
+def test_a_value_another_process_changed_is_written_back(qapp):
+    fxconfig.set_value("probe/key", "mine")
+    path = Path(fxconfig._settings().fileName())
+    # Another process: a different length and a later time, so Qt sees it.
+    path.write_text("[probe]\nkey=theirs\n")
+    later = path.stat().st_mtime + 10
+    os.utime(path, (later, later))
+
+    fxconfig.set_value("probe/key", "mine")
+
+    assert "key=mine" in path.read_text()
+
+
+def test_set_application_name_picks_up_a_new_settings_folder(qapp, tmp_path):
+    fxconfig.set_value("probe/key", "value")
+    folder = tmp_path / "moved"
+    QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, str(folder))
+
+    fxconfig.set_application_name("fxgui")
+
+    assert Path(fxconfig._settings().fileName()).is_relative_to(folder)
+    assert fxconfig.get_value("probe/key") is None

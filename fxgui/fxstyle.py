@@ -1598,6 +1598,21 @@ def is_light_theme() -> bool:
 ###### Theme Functions
 
 
+# Qt platforms that draw on no screen: nobody there chose a theme.
+_HEADLESS_PLATFORMS = frozenset({"offscreen", "minimal"})
+
+
+def _interactive() -> bool:
+    """Return whether Qt draws on a real screen, so a person is choosing."""
+    if QGuiApplication.instance() is not None:
+        name = QGuiApplication.platformName()
+    else:
+        # Without an application, platformName() names the default platform.
+        name = os.environ.get("QT_QPA_PLATFORM", "")
+    # QT_QPA_PLATFORM may carry fallbacks ("a;b") and options ("a:x=1").
+    return name.split(";")[0].split(":")[0] not in _HEADLESS_PLATFORMS
+
+
 def save_theme(theme: str) -> None:
     """Save the current theme to persistent storage.
 
@@ -1628,7 +1643,7 @@ def set_default_theme(theme: str) -> None:
     Examples:
         >>> fxstyle.set_color_file("studio_colors.yaml")
         >>> fxstyle.set_default_theme("studio")
-        >>> fxstyle.apply_theme(fxstyle.load_saved_theme())
+        >>> fxstyle.apply_theme(fxstyle.load_saved_theme(), save=False)
     """
     global _default_theme
     _default_theme = theme
@@ -1715,8 +1730,14 @@ def row_height() -> int:
     return ROW_SIZES[row_size()]
 
 
-def apply_row_size(size: str) -> str:
-    """Make every list and tree row `size` tall, save it, and re-style.
+def apply_row_size(size: str, *, save: Optional[bool] = None) -> str:
+    """Make every list and tree row `size` tall, save it when chosen, re-style.
+
+    Args:
+        size: A `ROW_SIZES` name.
+        save: Whether to save the row size as the person's choice. None (the
+            default) saves unless Qt runs headless (the "offscreen" or
+            "minimal" platform), so a script or a test never overwrites it.
 
     Raises:
         ValueError: If `size` is not a `ROW_SIZES` name.
@@ -1728,7 +1749,10 @@ def apply_row_size(size: str) -> str:
     if size not in ROW_SIZES:
         raise ValueError(f"Row size '{size}' not found: {sorted(ROW_SIZES)}")
     _row_size = size
-    fxconfig.set_value(_SETTINGS_ROW_SIZE_KEY, size)
+    if save is None:
+        save = _interactive()
+    if save:
+        fxconfig.set_value(_SETTINGS_ROW_SIZE_KEY, size)
     _colors_changed()
     return size
 
@@ -1771,11 +1795,14 @@ def qcolor(value) -> QColor:
     return QColor(getattr(colors(), value, value))
 
 
-def apply_theme(theme: str) -> str:
+def apply_theme(theme: str, *, save: Optional[bool] = None) -> str:
     """Apply a theme to every themed root and emit ``theme_changed``.
 
     Args:
         theme: The theme name to apply (e.g., "dark", "light").
+        save: Whether to save the theme as the person's choice. None (the
+            default) saves unless Qt runs headless (the "offscreen" or
+            "minimal" platform), so a script or a test never overwrites it.
 
     Returns:
         The theme that was applied.
@@ -1798,7 +1825,10 @@ def apply_theme(theme: str) -> str:
         )
 
     _theme = theme
-    save_theme(theme)
+    if save is None:
+        save = _interactive()
+    if save:
+        save_theme(theme)
     _colors_changed()
     return theme
 

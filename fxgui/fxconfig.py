@@ -33,6 +33,10 @@ def set_application_name(name: str) -> None:
 
     By default every tool built on fxgui shares one settings file, so a theme
     changed in one tool changes it for all. Call this early at startup.
+    It also drops the settings file read so far, so a
+    `QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, folder)`
+    made before it takes effect (tests use this to keep the person's real
+    settings untouched).
 
     Args:
         name: The application name, the settings file's folder.
@@ -94,7 +98,8 @@ def get_value(key: str, default: Any = None) -> Any:
 def set_value(key: str, value: Any) -> None:
     """Set a setting value.
 
-    The value is immediately synced to disk.
+    The value is immediately synced to disk. A value already stored is not
+    written again.
 
     Args:
         key: The setting key (e.g., "theme/current").
@@ -104,5 +109,9 @@ def set_value(key: str, value: Any) -> None:
         >>> fxconfig.set_value("theme/current", "dracula")
     """
     settings = _settings()
+    # Reload first: another process may have written the file since.
+    settings.sync()
+    if settings.contains(key) and settings.value(key) == value:
+        return
     settings.setValue(key, value)
     settings.sync()

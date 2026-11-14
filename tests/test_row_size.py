@@ -25,7 +25,7 @@ def test_apply_row_size_sets_the_height(set_row_size, name):
 
 
 def test_the_row_size_is_saved_and_read_back(set_row_size):
-    set_row_size("small")
+    set_row_size("small", save=True)
     assert fxconfig.get_value("rows/size") == "small"
     # A fresh process reads it from the settings, not the cache.
     fxstyle._row_size = None
