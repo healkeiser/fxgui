@@ -635,3 +635,21 @@ def test_turning_loop_off_after_a_wrap_plays_on_to_the_end(
     timeline._on_playback_tick()
     assert timeline.current_frame() == 10
     assert not timeline._is_playing
+
+
+def test_space_plays_after_a_transport_button_was_clicked(qtbot, qapp):
+    timeline = _timeline(qtbot, start_frame=1, end_frame=100)
+    for button in (
+        timeline._goto_start_btn, timeline._prev_btn, timeline._play_btn,
+        timeline._next_btn, timeline._goto_end_btn, timeline._loop_btn,
+        timeline._prev_key_btn, timeline._next_key_btn,
+        timeline._mark_in_btn, timeline._mark_out_btn,
+    ):
+        assert button.focusPolicy() == Qt.NoFocus
+
+    timeline.setFocus()
+    QTest.mouseClick(timeline._next_btn, Qt.LeftButton)
+    assert timeline.focusWidget() is timeline
+    QTest.keyClick(timeline.focusWidget(), Qt.Key_Space)
+    assert timeline._is_playing
+    timeline.stop()

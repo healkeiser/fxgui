@@ -445,6 +445,9 @@ class FXTimelineSlider(QWidget):
         side = fxstyle.control_height(self)
         button.setFixedSize(side, side)
         button.setFlat(True)
+        # The timeline keeps the focus, so Space plays rather than pressing
+        # whichever button was clicked last.
+        button.setFocusPolicy(Qt.NoFocus)
         if slot is not None:
             button.clicked.connect(slot)
         apply_tip(button, title, body, keys)
