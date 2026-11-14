@@ -3,10 +3,16 @@
 import pytest
 from qtpy.QtCore import QPoint, QRect, Qt
 from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
+from qtpy.QtWidgets import (
+    QApplication,
+    QDialogButtonBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
-from fxgui import fxstyle
-from fxgui.fxwidgets import FXPrimaryButton
+from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets import FXIconButton, FXPrimaryButton
 
 from _helpers import hover, near, unhover
 
@@ -242,3 +248,96 @@ def test_the_icon_takes_the_ink_of_each_state_fill(qtbot, qapp, monkeypatch):
     assert _icon_inks(button) == {"#000000"}
     unhover(qtbot, button)
     qtbot.waitUntil(lambda: _icon_inks(button) == {"#ffffff"})
+
+
+def _image(icon):
+    return icon.pixmap(16, 16).toImage()
+
+
+def _themed_window(qtbot, theme):
+    fxstyle.apply_theme(theme)
+    window = QWidget()
+    qtbot.addWidget(window)
+    fxstyle.register_themed_root(window)
+    QVBoxLayout(window)
+    return window
+
+
+def _show(qtbot, window):
+    window.show()
+    qtbot.waitExposed(window)
+
+
+def test_an_icon_set_after_construction_takes_the_on_accent_ink(qtbot, qapp):
+    tokens = fxstyle._token_map("dark")
+    window, button = _window_with_button(qtbot, "dark")
+    fxicons.set_icon(button, "send")
+    assert _icon_inks(button) == {tokens["@icon_on_accent_primary"]}
+    hover(qtbot, button)
+    assert _icon_inks(button) == {tokens["@icon_on_accent_primary"]}
+    unhover(qtbot, button)
+    assert _icon_inks(button) == {tokens["@icon_on_accent_primary"]}
+
+
+def test_set_icon_replaces_the_construction_icon_for_good(qtbot, qapp):
+    window, button = _window_with_button(qtbot, "dark", icon="send")
+    fxicons.set_icon(button, "save")
+    hover(qtbot, button)
+    assert _image(button.icon()) == _image(
+        fxicons.get_icon("save", color="icon_on_accent_secondary"))
+    unhover(qtbot, button)
+    assert _image(button.icon()) == _image(
+        fxicons.get_icon("save", color="icon_on_accent_primary"))
+
+
+def test_a_raw_qicon_survives_hover(qtbot, qapp):
+    window, button = _window_with_button(qtbot, "dark", icon="send")
+    icon = fxicons.get_icon("save", color="#ff0000")
+    button.setIcon(icon)
+    hover(qtbot, button)
+    unhover(qtbot, button)
+    assert button.icon().cacheKey() == icon.cacheKey()
+
+
+def test_a_plain_push_button_with_the_primary_role_takes_the_on_accent_ink(
+    qtbot, qapp
+):
+    tokens = fxstyle._token_map("dark")
+    window = _themed_window(qtbot, "dark")
+    button = QPushButton("Post", window)
+    button.setProperty("fxRole", "primary")
+    window.layout().addWidget(button)
+    _show(qtbot, window)
+    fxicons.set_icon(button, "send")
+    assert _icon_inks(button) == {tokens["@icon_on_accent_primary"]}
+    fxicons.set_icon(button, "send", color="#ff0000")
+    assert _icon_inks(button) == {"#ff0000"}
+
+
+def test_a_dialog_ranked_button_takes_the_on_accent_ink(qtbot, qapp):
+    tokens = fxstyle._token_map("dark")
+    window = _themed_window(qtbot, "dark")
+    box = QDialogButtonBox(
+        QDialogButtonBox.Ok | QDialogButtonBox.Cancel, window)
+    window.layout().addWidget(box)
+    _show(qtbot, window)
+    ok = box.button(QDialogButtonBox.Ok)
+    cancel = box.button(QDialogButtonBox.Cancel)
+    assert ok.property("fxRole") == "primary"
+    fxicons.set_icon(ok, "check")
+    assert _icon_inks(ok) == {tokens["@icon_on_accent_primary"]}
+    fxicons.set_icon(cancel, "x")
+    assert _icon_inks(cancel) == {tokens["@icon"]}
+
+
+def test_set_icon_on_a_checkable_icon_button_survives_a_toggle(qtbot, qapp):
+    window = _themed_window(qtbot, "dark")
+    button = FXIconButton("eye-off", window, checkable=True)
+    window.layout().addWidget(button)
+    _show(qtbot, window)
+    fxicons.set_icon(button, "eye")
+    button.setChecked(True)
+    assert _image(button.icon()) == _image(
+        fxicons.get_icon("eye", color="icon_on_accent_primary"))
+    button.setChecked(False)
+    assert _image(button.icon()) == _image(fxicons.get_icon("eye"))

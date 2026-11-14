@@ -123,7 +123,12 @@ fxicons.set_icon(button, "save")
 ```
 
 `set_icon(widget, name)` works on anything with `setIcon()`: buttons,
-actions, `FXIconLabel`. It is `widget.setIcon(get_icon(name))`.
+actions, `FXIconLabel`. It is `widget.setIcon(get_icon(name))`, except on a
+primary button: there, with no `color`, it draws the on-accent ink
+(`icon_on_accent_primary`), and an `FXPrimaryButton` or `FXIconButton`
+keeps its hover and checked inks. A dialog's main button becomes primary
+when the dialog is first shown, so set its icon after `show()`, or pass
+`color="icon_on_accent_primary"`.
 
 ### Name the colour by token
 

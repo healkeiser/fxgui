@@ -5,6 +5,7 @@ from typing import Optional, Union
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, QSize
+from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QApplication,
     QFrame,
@@ -77,9 +78,18 @@ class FXPrimaryButton(QPushButton):
         super().leaveEvent(event)
         self._show_icon()
 
+    def setIcon(self, icon: QIcon) -> None:
+        """Set `icon` and keep it in every state, hovered or not.
+
+        `set_icon_name` gives the on-accent hover swap back.
+        """
+        self._icons = {}
+        super().setIcon(icon)
+
     def _show_icon(self) -> None:
         if self._icons:
-            self.setIcon(self._icons[self.underMouse() and not self.isDown()])
+            super().setIcon(
+                self._icons[self.underMouse() and not self.isDown()])
 
 
 fxstyle.register_widget_style("""
@@ -162,6 +172,18 @@ class FXIconButton(QToolButton):
         self._fit()
         if tip:
             apply_tip(self, tip)
+        self.set_icon_name(icon, checked_icon)
+        self.toggled.connect(self._show_icon)
+
+    def set_icon_name(
+        self, icon: str, checked_icon: Optional[str] = None
+    ) -> None:
+        """Draw the icon `icon`, and `checked_icon` on the accent when checked.
+
+        Args:
+            icon: An icon name.
+            checked_icon: The icon shown while checked. Defaults to `icon`.
+        """
         # Active is a hovered tool button: checked, on primary_button_hover,
         # it takes the secondary ink.
         self._icons = {
@@ -170,8 +192,15 @@ class FXIconButton(QToolButton):
                 checked_icon or icon, color="icon_on_accent_primary",
                 inks={"active": "icon_on_accent_secondary"}),
         }
-        self.toggled.connect(self._show_icon)
         self._show_icon(self.isChecked())
+
+    def setIcon(self, icon: QIcon) -> None:
+        """Set `icon` and keep it checked or not.
+
+        `set_icon_name` gives the checked on-accent icon back.
+        """
+        self._icons = {}
+        super().setIcon(icon)
 
     def _fit(self) -> None:
         """Size the circle: its own size, or a push button's in its font."""
@@ -188,7 +217,8 @@ class FXIconButton(QToolButton):
             self._fit()
 
     def _show_icon(self, checked: bool) -> None:
-        self.setIcon(self._icons[checked])
+        if self._icons:
+            super().setIcon(self._icons[checked])
 
 
 _STATES = ("", ":hover", ":focus", ":pressed", ":on", ":disabled")

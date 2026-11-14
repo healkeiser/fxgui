@@ -852,6 +852,11 @@ def rounded_pixmap(
 def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
     """Set an icon on a widget; it takes its theme inks when drawn.
 
+    On a primary button (an `FXPrimaryButton`, or any button with
+    `fxRole="primary"`) given no `color` or `inks`, the icon takes the
+    on-accent ink, and an `FXPrimaryButton` or `FXIconButton` keeps its own
+    hover or checked inks.
+
     Args:
         widget: Anything with `setIcon` (QAction, QPushButton, etc.).
         icon_name: The name of the icon.
@@ -867,7 +872,20 @@ def set_icon(widget: Any, icon_name: str, **kwargs: Any) -> QIcon:
     Examples:
         >>> fxicons.set_icon(my_button, "save")
         >>> fxicons.set_icon(indicator, "check", color="#00ff00")
+        >>> fxicons.set_icon(post_button, "send")  # on-accent ink
     """
+    # Only bare: set_icon_name takes no size or library to pass on.
+    if not kwargs and callable(getattr(widget, "set_icon_name", None)):
+        widget.set_icon_name(icon_name)
+        return widget.icon()
+    get_property = getattr(widget, "property", None)
+    if (
+        "color" not in kwargs
+        and "inks" not in kwargs
+        and callable(get_property)
+        and get_property("fxRole") == "primary"
+    ):
+        kwargs["color"] = "icon_on_accent_primary"
     icon = get_icon(icon_name, **kwargs)
     widget.setIcon(icon)
     return icon
