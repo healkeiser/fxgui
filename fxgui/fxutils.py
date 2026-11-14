@@ -20,7 +20,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterator, Optional, Tuple
+from typing import Callable, Dict, Iterator, Optional, Sequence, Tuple
 
 # Third-party
 from qtpy.QtWidgets import (
@@ -60,6 +60,7 @@ __all__ = [
     "later",
     "rehome",
     "focus_step",
+    "set_tab_order",
     "NO_CAP",
 ]
 
@@ -570,3 +571,29 @@ def focus_step(widget, forward: bool = True):
         widget.nextInFocusChain() if forward
         else widget.previousInFocusChain()
     )
+
+
+def set_tab_order(widgets: Sequence[QWidget]) -> None:
+    """Chain `widgets` into exactly this tab order; Shift+Tab reverses it.
+
+    A widget with a focus proxy (a compound widget's inner edit) chains
+    through what actually takes its focus.
+
+    Args:
+        widgets: The widgets, in the order Tab visits them.
+
+    Examples:
+        >>> fxutils.set_tab_order([name_edit, path_widget, ok_button])
+    """
+    # Each one's proxy: `setTabOrder` moves nothing given a NoFocus bar.
+    stops = [_proxied(widget) for widget in widgets]
+    for earlier, later in zip(stops, stops[1:]):
+        QWidget.setTabOrder(earlier, later)
+
+
+def _proxied(widget: QWidget) -> QWidget:
+    """Return what takes focus for `widget`, following its focus proxies."""
+    proxy = rehome(widget.focusProxy())
+    while proxy is not None:
+        widget, proxy = proxy, rehome(proxy.focusProxy())
+    return widget
