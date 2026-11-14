@@ -1745,7 +1745,12 @@ with no code of yours.</p>
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">fxicons</span><span class="o">.</span><span class="n">set_icon</span><span class="p">(</span><span class="n">button</span><span class="p">,</span> <span class="s2">"save"</span><span class="p">)</span>
 </span></code></pre></div>
 <p><code>set_icon(widget, name)</code> works on anything with <code>setIcon()</code>: buttons,
-actions, <code>FXIconLabel</code>. It is <code>widget.setIcon(get_icon(name))</code>.</p>
+actions, <code>FXIconLabel</code>. It is <code>widget.setIcon(get_icon(name))</code>, except on a
+primary button: there, with no <code>color</code>, it draws the on-accent ink
+(<code>icon_on_accent_primary</code>), and an <code>FXPrimaryButton</code> or <code>FXIconButton</code>
+keeps its hover and checked inks. A dialog's main button becomes primary
+when the dialog is first shown, so set its icon after <code>show()</code>, or pass
+<code>color="icon_on_accent_primary"</code>.</p>
 <h3 id="name-the-colour-by-token">Name the colour by token<a class="headerlink" href="#name-the-colour-by-token" title="Permanent link">&para;</a></h3>
 <p><code>color</code> is the icon's colour in its resting state. Give it a theme token
 name (any key of <code>fxstyle.colors()</code>, such as <code>"text_muted"</code> or

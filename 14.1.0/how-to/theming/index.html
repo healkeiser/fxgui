@@ -2149,7 +2149,7 @@
 </tr>
 <tr>
 <td><code>selection</code></td>
-<td><em>(Optional)</em> A selected row's fill. Omitted, <code>accent_primary</code> at 15% over <code>surface</code> (<code>fxstyle.SELECTION_TINT</code>, mixed in OKLab), so the row keeps the theme's own text</td>
+<td><em>(Optional)</em> A selected row's fill. Omitted, <code>accent_primary</code> at 15% over <code>surface</code> (<code>fxstyle.SELECTION_TINT</code>, mixed in OKLab), stepped toward <code>accent_primary</code> until it visibly differs from <code>surface</code>, <code>surface_sunken</code> and <code>well</code>, so the row keeps the theme's own text</td>
 </tr>
 <tr>
 <td><code>selection_border</code></td>
@@ -2266,7 +2266,7 @@
 </tr>
 </tbody>
 </table>
-<p><code>text</code> and <code>text_muted</code> are held to 4.5:1 (<code>fxstyle.TEXT_CONTRAST</code>, WCAG AA) on every surface they sit on: <code>surface</code>, <code>surface_sunken</code>, <code>surface_alt</code>, <code>well</code>, <code>frame</code>, <code>tooltip</code> and <code>state_hover</code>, and <code>text</code> on <code>state_pressed</code> too. A theme's value that misses it is darkened or lightened until it reads, so <code>fxstyle.colors().text</code> can differ from the file. <code>text</code> then moves on until it stands 1.5:1 off <code>text_muted</code> (<code>fxstyle.MUTED_STEP</code>), so the two always read as two ranks; where <code>text</code> is already black or white, <code>text_muted</code> steps back toward the surface instead, as far as it still reads at 4.5:1.</p>
+<p><code>text</code> and <code>text_muted</code> are held to 4.5:1 (<code>fxstyle.TEXT_CONTRAST</code>, WCAG AA) on every surface they sit on: <code>surface</code>, <code>surface_sunken</code>, <code>surface_alt</code>, <code>well</code>, <code>frame</code>, <code>tooltip</code> and <code>state_hover</code>, and <code>text</code> on <code>state_pressed</code> and <code>state_checked_hover</code> too. A theme's value that misses it is darkened or lightened until it reads, so <code>fxstyle.colors().text</code> can differ from the file. <code>text</code> then moves on until it stands 1.5:1 off <code>text_muted</code> (<code>fxstyle.MUTED_STEP</code>), so the two always read as two ranks; where <code>text</code> is already black or white, <code>text_muted</code> steps back toward the surface instead, as far as it still reads at 4.5:1.</p>
 <p>An omitted <code>text_on_accent_*</code> is black or white, whichever reads better on the accent.</p>
 <h3 id="interactive-state-colors">Interactive State Colors<a class="headerlink" href="#interactive-state-colors" title="Permanent link">&para;</a></h3>
 <table>
@@ -2279,11 +2279,11 @@
 <tbody>
 <tr>
 <td><code>state_hover</code></td>
-<td><em>(Optional)</em> Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Omitted, <code>text</code> at 5% over <code>surface</code>. Pushed to 1.2:1 off <code>surface</code>, <code>surface_sunken</code> and <code>well</code> when closer</td>
+<td><em>(Optional)</em> Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Omitted, <code>text</code> at 5% over <code>surface</code>. Pushed to 1.2:1 off <code>surface</code>, <code>surface_sunken</code>, <code>surface_alt</code>, <code>well</code> and <code>frame</code> when closer</td>
 </tr>
 <tr>
 <td><code>state_pressed</code></td>
-<td><em>(Optional)</em> Pressed and checked fills, an open menu bar item, the current tab's pill. Omitted, <code>text</code> at 10% over <code>surface</code>. Pushed to 1.2:1 off <code>state_hover</code> (<code>fxstyle.STATE_MIN_CONTRAST</code>) when closer</td>
+<td><em>(Optional)</em> Pressed and checked fills, an open menu bar item, the current tab's pill. Omitted, <code>text</code> at 10% over <code>surface</code>. Pushed to 1.2:1 off <code>state_hover</code> and the grounds above (<code>fxstyle.STATE_MIN_CONTRAST</code>) when closer; omitted, also pushed past <code>state_hover</code>, toward black or white</td>
 </tr>
 <tr>
 <td><code>state_contrast</code></td>
@@ -2291,6 +2291,16 @@
 </tr>
 </tbody>
 </table>
+<p>Four more colours are derived, never set in a theme. <code>state_checked_hover</code>
+fills a checked button under the pointer, so the click that unchecks it
+shows: it is a step past <code>state_pressed</code> by the same floor, and <code>text</code>
+reads at 4.5:1 on it. <code>state_hover_overlay</code>, <code>state_pressed_overlay</code> and
+<code>state_checked_hover_overlay</code> are <code>text</code> as <code>#AARRGGBB</code>, at the least alpha
+whose blend over <code>surface</code> stands off it as the opaque fill does. Flat push
+buttons and plain tool buttons wear them, so their states show on a band, a
+card or a tooltip, where an opaque fill can equal the ground.
+<code>fxstyle.colors()</code> has all four; <code>QColor(fxstyle.colors().state_hover_overlay)</code>
+reads the alpha.</p>
 <h3 id="scrollbar-colors">Scrollbar Colors<a class="headerlink" href="#scrollbar-colors" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -2566,14 +2576,19 @@ path), and one that is no YAML raises <code>yaml.YAMLError</code>, both from
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">apply_theme</span><span class="p">(</span><span class="s2">"dracula"</span><span class="p">)</span>
 </span></code></pre></div>
-<p><code>apply_theme(name)</code> takes one theme name. It saves the choice, rebuilds
+<p><code>apply_theme(name)</code> takes one theme name. It saves the choice (see below), rebuilds
 the stylesheet, puts the theme's stylesheet, palette and font on every
 themed root, and emits <code>theme_changed</code>. A name that is not a theme raises
 <code>ValueError</code>; anything that is not a string raises <code>TypeError</code>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>The choice is saved through <code>fxconfig</code>. The next time the application
-starts, <code>FXApplication</code> loads it again.</p>
+<p>The choice is saved through <code>fxconfig</code>, and the next time the
+application starts, <code>FXApplication</code> loads it again. It is saved only
+when a person can have chosen it: on Qt's headless platforms
+(<code>offscreen</code>, <code>minimal</code>, as in tests and scripts) <code>apply_theme</code> does not
+save. Pass <code>save=True</code> to save anyway, or <code>save=False</code> to never save,
+for example when applying <code>load_saved_theme()</code> at startup.
+<code>apply_row_size</code> takes the same <code>save</code> keyword.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -2816,7 +2831,7 @@ looks like the focused one.</p>
 <tr>
 <td>Hover</td>
 <td>fill <code>@state_hover</code>, edge kept</td>
-<td>fill <code>@state_hover</code>, no edge</td>
+<td>fill <code>@state_hover_overlay</code>, no edge</td>
 <td>edge <code>@border_light</code></td>
 <td>fill <code>@state_hover</code>, text kept</td>
 <td>fill <code>@accent_primary</code>, text <code>@text_on_accent_primary</code></td>
@@ -2825,7 +2840,7 @@ looks like the focused one.</p>
 <tr>
 <td>Pressed</td>
 <td>fill <code>@state_pressed</code></td>
-<td>fill <code>@state_pressed</code></td>
+<td>fill <code>@state_pressed_overlay</code></td>
 <td></td>
 <td>fill <code>@accent_primary</code></td>
 <td>fill <code>@accent_secondary</code></td>
@@ -2834,11 +2849,20 @@ looks like the focused one.</p>
 <tr>
 <td>Checked or current</td>
 <td>fill <code>@state_pressed</code>, edge <code>@grid</code></td>
-<td>fill <code>@state_pressed</code>, edge <code>@accent_primary</code></td>
+<td>fill <code>@state_pressed_overlay</code>, no edge</td>
 <td></td>
 <td>selected: fill <code>@accent_primary</code>, focused view or not</td>
 <td>check mark</td>
 <td>pill <code>@state_pressed</code>, no edge</td>
+</tr>
+<tr>
+<td>Checked and hovered</td>
+<td>fill <code>@state_checked_hover</code></td>
+<td>fill <code>@state_checked_hover_overlay</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
 </tr>
 <tr>
 <td>Keyboard focus</td>

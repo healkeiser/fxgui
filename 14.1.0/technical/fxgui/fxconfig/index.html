@@ -1853,7 +1853,11 @@ float default also names the type the value is read as.</p>
 
         <p>Scope fxgui settings (including the persisted theme) to an application.</p>
 <p>By default every tool built on fxgui shares one settings file, so a theme
-changed in one tool changes it for all. Call this early at startup.</p>
+changed in one tool changes it for all. Call this early at startup.
+It also drops the settings file read so far, so a
+<code>QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, folder)</code>
+made before it takes effect (tests use this to keep the person's real
+settings untouched).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1933,7 +1937,8 @@ changed in one tool changes it for all. Call this early at startup.</p>
     <div class="doc doc-contents ">
 
         <p>Set a setting value.</p>
-<p>The value is immediately synced to disk.</p>
+<p>The value is immediately synced to disk. A value already stored is not
+written again.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>

@@ -793,6 +793,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#keyboard-trees" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Keyboard Trees
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tooltips" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1372,6 +1383,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#keyboard-trees" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Keyboard Trees
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#tooltips" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1875,15 +1897,28 @@ tokens:</p>
 <p>Do not point <code>STRIP_RESTING_TOKEN</code> at <code>surface</code>: in every bundled theme
 that is the window's own colour, so on a plain window the strip
 disappears.</p>
+<p>A breadcrumb can show words of its own over the raw path parts. Pass
+<code>segment_labels=</code>, a function from the parts to one word per part, or
+override <code>segment_labels(self, path)</code> in a subclass:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">FXBreadcrumb</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">crumb</span> <span class="o">=</span> <span class="n">FXBreadcrumb</span><span class="p">(</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">home_icon</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">segment_labels</span><span class="o">=</span><span class="k">lambda</span> <span class="n">parts</span><span class="p">:</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"sq"</span><span class="p">,</span> <span class="s2">"Sequence "</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">],</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">)</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">crumb</span><span class="o">.</span><span class="n">set_path</span><span class="p">([</span><span class="s2">"pilot"</span><span class="p">,</span> <span class="s2">"sq010"</span><span class="p">])</span>  <span class="c1"># shows "pilot / Sequence 010"</span>
+</span></code></pre></div>
+<p><code>path()</code>, the editor and every signal keep the parts. A list of the
+wrong length shows the parts.</p>
 <h2 id="your-own-item-data-roles">Your Own Item-Data Roles<a class="headerlink" href="#your-own-item-data-roles" title="Permanent link">&para;</a></h2>
 <p><code>FXThumbnailDelegate</code> reads item-data roles of its own off the items it
 paints, from <code>Qt.UserRole + 1</code> up to <code>FIRST_FREE_ROLE</code>, and
 <code>FXSortedTreeWidgetItem.SORT_ROLE</code> sits in the same range. A view that puts
 roles of its own on the same items derives them from <code>FIRST_FREE_ROLE</code>:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">FXThumbnailDelegate</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">ROW_KIND_ROLE</span> <span class="o">=</span> <span class="n">FXThumbnailDelegate</span><span class="o">.</span><span class="n">FIRST_FREE_ROLE</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">ROW_COLOR_ROLE</span> <span class="o">=</span> <span class="n">FXThumbnailDelegate</span><span class="o">.</span><span class="n">FIRST_FREE_ROLE</span> <span class="o">+</span> <span class="mi">1</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">FXThumbnailDelegate</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">ROW_KIND_ROLE</span> <span class="o">=</span> <span class="n">FXThumbnailDelegate</span><span class="o">.</span><span class="n">FIRST_FREE_ROLE</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">ROW_COLOR_ROLE</span> <span class="o">=</span> <span class="n">FXThumbnailDelegate</span><span class="o">.</span><span class="n">FIRST_FREE_ROLE</span> <span class="o">+</span> <span class="mi">1</span>
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -1894,18 +1929,37 @@ with no children.</p>
 </div>
 <p>A role added to the delegate moves <code>FIRST_FREE_ROLE</code> up, and every role
 derived from it moves too.</p>
+<h2 id="keyboard-trees">Keyboard Trees<a class="headerlink" href="#keyboard-trees" title="Permanent link">&para;</a></h2>
+<p><code>FXKeyboardTree.type_into(field)</code> sends what is typed on the tree to a
+filter field, and <code>FXFilteredTree</code> does it for you. So a tree needs no
+"focus the filter" shortcut: start typing.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">FXFilteredTree</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">tree</span> <span class="o">=</span> <span class="n">FXFilteredTree</span><span class="p">(</span><span class="n">placeholder</span><span class="o">=</span><span class="s2">"Filter shots..."</span><span class="p">)</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Typing on tree.tree goes to tree.filter_bar.</span>
+</span></code></pre></div>
+<p>Ctrl, Alt and Meta chords stay commands. A character typed with AltGr is
+typing, even though Windows reports AltGr as Ctrl+Alt.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A shortcut made of one symbol (<code>/</code>, <code>?</code>) depends on the keyboard
+layout. Qt matches the character typed, not the key's position, so
+on AZERTY <code>/</code> is Shift+<code>:</code>. A window shortcut of one character also
+wins over typing on the tree. So keep single-character shortcuts off
+windows that hold a filtered tree, or use a chord such as <code>Ctrl+F</code>.</p>
+</div>
 <h2 id="tooltips">Tooltips<a class="headerlink" href="#tooltips" title="Permanent link">&para;</a></h2>
 <p><code>apply_tip</code> is fxgui's tooltip. It hands Qt's own <code>setToolTip</code> a small HTML string, and sets a markup-free status tip for the window's status bar:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPushButton</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_tip</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">save_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">"Save"</span><span class="p">)</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">apply_tip</span><span class="p">(</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">save_button</span><span class="p">,</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="s2">"Save"</span><span class="p">,</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="s2">"Write the current scene to disk, overwriting the last version"</span><span class="p">,</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="s2">"Ctrl+S"</span><span class="p">,</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPushButton</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_tip</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">save_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">"Save"</span><span class="p">)</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">apply_tip</span><span class="p">(</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">save_button</span><span class="p">,</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="s2">"Save"</span><span class="p">,</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="s2">"Write the current scene to disk, overwriting the last version"</span><span class="p">,</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    <span class="s2">"Ctrl+S"</span><span class="p">,</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="p">)</span>
 </span></code></pre></div>
 <p>The title is in the theme's primary text, the body dimmed, and the shortcut sits on the right as keycaps, one per key: <code>Ctrl</code> <code>S</code>. The keys of one chord sit close; a second chord (<code>Ctrl+K, Ctrl+S</code>) sits further away. Key names come from <code>QKeySequence</code>, so a Mac shows its own glyphs rather than the word "Ctrl".</p>
 <table>
@@ -1931,13 +1985,13 @@ derived from it moves too.</p>
 </tbody>
 </table>
 <p>A tip about a thing, such as a file or a version, takes three more parts, all by name:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">apply_tip</span><span class="p">(</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">item</span><span class="p">,</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="s2">"livetest v001"</span><span class="p">,</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">facts</span><span class="o">=</span><span class="p">[(</span><span class="s2">"Product"</span><span class="p">,</span> <span class="s2">"render/livetest"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Files"</span><span class="p">,</span> <span class="s2">"8 x .exr"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Status"</span><span class="p">,</span> <span class="n">status</span><span class="p">)],</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">code</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">hint</span><span class="o">=</span><span class="s2">"Double-click to play the preview"</span><span class="p">,</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">apply_tip</span><span class="p">(</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">item</span><span class="p">,</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="s2">"livetest v001"</span><span class="p">,</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">facts</span><span class="o">=</span><span class="p">[(</span><span class="s2">"Product"</span><span class="p">,</span> <span class="s2">"render/livetest"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Files"</span><span class="p">,</span> <span class="s2">"8 x .exr"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Status"</span><span class="p">,</span> <span class="n">status</span><span class="p">)],</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="n">code</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="n">hint</span><span class="o">=</span><span class="s2">"Double-click to play the preview"</span><span class="p">,</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="p">)</span>
 </span></code></pre></div>
 <table>
 <thead>
