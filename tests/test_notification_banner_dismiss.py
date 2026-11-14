@@ -160,3 +160,20 @@ def test_the_survivor_moves_up_when_the_top_banner_leaves(qtbot):
     _assert_gone(qtbot, top, parent)
 
     assert below._target_pos.y() == below._margin
+
+
+def test_a_banner_made_on_a_hidden_parent_waits_for_show(qtbot):
+    parent = QWidget()
+    parent.resize(800, 600)
+    qtbot.addWidget(parent)
+    banner = FXNotificationBanner(
+        parent=parent, message="later", severity_type=INFO)
+    parent.show()
+    qtbot.waitExposed(parent)
+
+    assert not banner.isVisible()
+
+    banner.show()
+
+    assert banner.isVisible()
+    assert banner._dismiss_timer.isActive()

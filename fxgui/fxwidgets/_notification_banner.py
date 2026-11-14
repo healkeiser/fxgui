@@ -288,6 +288,9 @@ class FXNotificationBanner(QFrame):
         self._refit()
         if parent:
             parent.installEventFilter(self)
+        # Hidden until show(): a child never hidden would appear with its
+        # parent, unplaced and with no timer.
+        self.hide()
 
     def eventFilter(self, obj, event) -> bool:
         """Keep the banner at the parent's right edge as it resizes."""
