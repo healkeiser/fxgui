@@ -110,6 +110,11 @@ class FXToggleSwitch(QAbstractButton):
         self._animation.setEndValue(end)
         self._animation.start()
 
+    def checkStateSet(self) -> None:
+        """Follow a `setChecked` too, which says nothing with signals blocked."""
+        super().checkStateSet()
+        self._on_toggled(self.isChecked())
+
     def enterEvent(self, event) -> None:
         """Repaint to show the hover state."""
         super().enterEvent(event)

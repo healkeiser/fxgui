@@ -28,6 +28,15 @@ def test_a_shown_switch_still_slides(qtbot):
     qtbot.waitUntil(lambda: switch.position == 1.0)
 
 
+def test_a_switch_checked_with_signals_blocked_is_drawn_on(qtbot):
+    switch = FXToggleSwitch()
+    qtbot.addWidget(switch)
+    switch.blockSignals(True)
+    switch.setChecked(True)
+    switch.blockSignals(False)
+    assert switch.position == 1.0
+
+
 _THEMES = fxstyle.get_available_themes()
 
 
