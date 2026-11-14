@@ -34,6 +34,8 @@ from qtpy.QtGui import (
     QFontMetrics,
     QIcon,
     QImage,
+    QImageIOHandler,
+    QImageReader,
     QPainter,
     QPainterPath,
     QPalette,
@@ -119,6 +121,8 @@ def _read_thumbnail(
     """Return a file's mtime and, unless it is `known`, its scaled picture.
 
     A QImage, which a reader thread may make: a QPixmap is the UI thread's.
+    The file is decoded near the box's size when its format can, and turned
+    upright by its EXIF orientation.
     """
     try:
         stamp = os.path.getmtime(path)
@@ -126,7 +130,23 @@ def _read_thumbnail(
         return None, None
     if stamp == known:
         return stamp, None
-    image = QImage(path)
+    reader = QImageReader(path)
+    # A camera's portrait shot is stored sideways with an EXIF tag.
+    reader.setAutoTransform(True)
+    stored = reader.size()
+    # Decode near the box, not the file: a 4K JPEG decodes 10x faster.
+    # The box's longer side both ways, since the size applies before the
+    # EXIF turn. Never larger than the file: the reader would upscale.
+    # Only a format that decodes small: others (PNG) the reader would
+    # shrink in software, off the premultiplied path, for no gain.
+    box = max(size)
+    if (
+        stored.isValid()
+        and (stored.width() > box or stored.height() > box)
+        and reader.supportsOption(QImageIOHandler.ImageOption.ScaledSize)
+    ):
+        reader.setScaledSize(stored.scaled(box, box, Qt.KeepAspectRatio))
+    image = reader.read()
     if image.isNull():
         image = QImage(str(_FALLBACK_THUMBNAIL))
     # The format a QPixmap holds it in, so it scales as one would.

@@ -71,15 +71,15 @@ def _raw_option(tree, index):
 
 def test_a_thumbnail_is_loaded_once_across_paints(qtbot, monkeypatch):
     loads = []
-    real = _delegates.QImage
+    real = _delegates.QImageReader
 
-    class CountingImage(real):
+    class CountingReader(real):
         def __init__(self, *args):
             if args and isinstance(args[0], str):
                 loads.append(args[0])
             super().__init__(*args)
 
-    monkeypatch.setattr(_delegates, "QImage", CountingImage)
+    monkeypatch.setattr(_delegates, "QImageReader", CountingReader)
     QPixmapCache.clear()
     reads = _delegates._thumbnail_reads()
     reads._stamps.clear()
