@@ -155,6 +155,8 @@ __all__ = [
     "ROOT_PROPERTY",
     "THIN_SCROLL_PROPERTY",
     "NAV_PROPERTY",
+    "INK_PROPERTY",
+    "INKS",
     "THIN_SCROLL_WIDTH",
     "PANE_GAP",
     # Color configuration
@@ -169,6 +171,7 @@ __all__ = [
     "mark_as_frame",
     "mark_as_thin_scroll",
     "mark_as_nav",
+    "ink",
     # Theme functions
     "get_available_themes",
     "get_theme",
@@ -234,6 +237,29 @@ THIN_SCROLL_PROPERTY = "fxThinScroll"
 # through mark_as_nav() rather than by hand.
 NAV_PROPERTY = "fxNav"
 _NAV_END_GAP = 3
+
+# Dynamic property writing a widget's text in one theme colour. Set it
+# through ink() rather than by hand.
+INK_PROPERTY = "fxInk"
+# Closed on purpose: each token is one rule; a new ink is one line here.
+INKS = (
+    "text",
+    "text_muted",
+    "text_strong",
+    "text_disabled",
+    "accent_primary",
+    *(
+        f"feedback_{level}_foreground"
+        for level in ("debug", "info", "success", "warning", "error")
+    ),
+)
+# An inked label shows what it sits on, even under a sheet rule that fills
+# labels.
+_INK_RULES = "".join(
+    f'QWidget[{INK_PROPERTY}="{token}"] {{ color: @{token}; }}\n'
+    f'QLabel[{INK_PROPERTY}="{token}"] {{ background-color: transparent; }}\n'
+    for token in INKS
+)
 
 # The width, in pixels, of every scroll bar: `@thin_scroll` in QSS.
 THIN_SCROLL_WIDTH = 8
@@ -877,6 +903,30 @@ def mark_as_nav(view: QAbstractItemView, is_nav: bool = True) -> None:
     end = _NAV_END_GAP if is_nav else 0
     view.setViewportMargins(0, end, 0, end)
     fxutils.repolish(view)
+
+
+def ink(widget: QWidget, token: Optional[str]) -> None:
+    """Write a widget's text in one theme colour, through the stylesheet.
+
+    The rule is the theme's, so the colour follows every theme switch. An
+    inked label also loses its own fill, so it shows what it sits on.
+
+    Args:
+        widget: The widget whose text to ink.
+        token: One of `INKS`, e.g. ``"text_muted"``; None returns the
+            widget to its default ink.
+
+    Raises:
+        ValueError: If `token` is not one of `INKS`.
+
+    Examples:
+        >>> fxstyle.ink(hint_label, "text_muted")
+        >>> fxstyle.ink(hint_label, None)
+    """
+    if token is not None and token not in INKS:
+        raise ValueError(f"No ink {token!r}. Inks: {list(INKS)}")
+    widget.setProperty(INK_PROPERTY, token or "")
+    fxutils.repolish(widget)
 
 
 ###### Color Utility Functions
@@ -2297,6 +2347,7 @@ def _build_stylesheet(theme: Optional[str] = None) -> str:
             _font_stylesheet(theme),
             STYLE_FILE.read_text(encoding="utf-8"),
             _BRANCH_RULES,
+            _INK_RULES,
         ]
         parts.extend(_widget_fragments.values())
         return resolve("\n".join(parts), theme)
