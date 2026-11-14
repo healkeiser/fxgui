@@ -1,6 +1,7 @@
 """FXFlowLayout wraps its widgets onto new lines instead of widening."""
 
 # Third-party
+from qtpy.QtCore import QPoint, QSize
 from qtpy.QtWidgets import QPushButton, QWidget
 
 # Internal
@@ -70,3 +71,20 @@ def test_items_can_be_taken_back_out(qtbot):
     assert layout.count() == 1
     assert layout.itemAt(1) is None
     assert layout.takeAt(5) is None
+
+
+def test_the_margins_frame_the_items(qtbot):
+    host = QWidget()
+    qtbot.addWidget(host)
+    layout = FXFlowLayout(host, spacing=4)
+    layout.setContentsMargins(10, 20, 30, 40)
+    button = QPushButton("tag")
+    button.setFixedSize(60, 20)
+    layout.addWidget(button)
+    host.resize(300, 200)
+    host.show()
+    qtbot.waitExposed(host)
+
+    assert button.pos() == QPoint(10, 20)
+    assert layout.heightForWidth(300) == 20 + 20 + 40
+    assert layout.minimumSize() == QSize(60 + 40, 20 + 60)

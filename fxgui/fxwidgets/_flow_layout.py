@@ -65,13 +65,18 @@ class FXFlowLayout(QLayout):
         return True
 
     def heightForWidth(self, width: int) -> int:
-        """Return the height wrapping into `width` takes."""
-        return self._place(QRect(0, 0, width, 0), move=False)
+        """Return the height wrapping into `width` takes, margins included."""
+        margins = self.contentsMargins()
+        inner = width - margins.left() - margins.right()
+        return (
+            self._place(QRect(0, 0, inner, 0), move=False)
+            + margins.top() + margins.bottom()
+        )
 
     def setGeometry(self, rect: QRect) -> None:
-        """Place every item inside `rect`, wrapping."""
+        """Place every item inside `rect` less the margins, wrapping."""
         super().setGeometry(rect)
-        self._place(rect, move=True)
+        self._place(rect.marginsRemoved(self.contentsMargins()), move=True)
 
     def sizeHint(self) -> QSize:
         """Return the minimum size: asking for more would widen the parent."""
@@ -82,6 +87,10 @@ class FXFlowLayout(QLayout):
         size = QSize()
         for item in self._shown():
             size = size.expandedTo(item.minimumSize())
+        margins = self.contentsMargins()
+        size += QSize(
+            margins.left() + margins.right(), margins.top() + margins.bottom()
+        )
         return size
 
     def _shown(self) -> List[QLayoutItem]:
