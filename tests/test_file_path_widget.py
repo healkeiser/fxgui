@@ -5,7 +5,7 @@ from qtpy.QtCore import QMimeData, QPointF, Qt, QThread, QUrl
 from qtpy.QtGui import QDropEvent
 
 # Internal
-from fxgui.fxwidgets import FXFilePathWidget
+from fxgui.fxwidgets import FXFilePathWidget, _path_check
 
 
 def test_checks_run_on_the_pool_not_on_owned_threads(qtbot, qapp, tmp_path):
@@ -145,14 +145,14 @@ def test_stuck_share_checks_never_hold_up_a_local_one(
     stuck = FXFilePathWidget(mode="folder")
     qtbot.addWidget(stuck)
     try:
-        for share in (r"\\dead\a", r"\\dead\b", r"\\dead\c"):
-            stuck.set_path(share)
+        for index in range(_path_check.THREAD_CAP):
+            stuck.set_path(rf"\\dead\{index}")
             stuck._do_validation()
         widget = FXFilePathWidget(mode="folder")
         qtbot.addWidget(widget)
         widget.set_path(str(tmp_path))
         widget._do_validation()
-        qtbot.waitUntil(widget.is_valid)
+        qtbot.waitUntil(widget.is_valid, timeout=1000)
         _drop(widget, str(tmp_path / "missing"))
         _drop(widget, str(tmp_path))
         assert widget.path() == QUrl.fromLocalFile(str(tmp_path)).toLocalFile()
@@ -267,7 +267,7 @@ def test_at_the_thread_cap_only_the_newest_check_waits(
     from fxgui.fxwidgets import _file_path_widget
 
     gate = _dead_share(monkeypatch)
-    monkeypatch.setattr(_file_path_widget, "_THREAD_CAP", 1)
+    monkeypatch.setattr(_path_check, "THREAD_CAP", 1)
     checked = []
     hang = _file_path_widget._path_is_valid
 
@@ -282,11 +282,11 @@ def test_at_the_thread_cap_only_the_newest_check_waits(
         widget.set_path(r"\\dead\share")
         widget._do_validation()
         qtbot.waitUntil(lambda: bool(checked))
-        for name in ("a", "b", str(tmp_path)):
+        for name in (r"\\dead\a", r"\\dead\b", r"\\dead\c"):
             widget.set_path(name)
             widget._do_validation()
     finally:
         gate.set()
 
     qtbot.waitUntil(widget.is_valid)
-    assert checked == [r"\\dead\share", str(tmp_path)]
+    assert checked == [r"\\dead\share", r"\\dead\c"]

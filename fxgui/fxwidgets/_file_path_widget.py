@@ -2,13 +2,10 @@
 
 # Built-in
 import os
-import threading
-import weakref
-from collections import OrderedDict
-from typing import Callable, List, Optional, Tuple
+from typing import List, Optional
 
 # Third-party
-from qtpy.QtCore import QObject, Qt, QTimer, Signal
+from qtpy.QtCore import Qt, QTimer, Signal
 from qtpy.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -19,8 +16,8 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import _compat, fxicons, fxstyle
-from fxgui._compat import is_valid as is_valid_object
+from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets import _path_check
 from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._tips import apply_tip
 
@@ -47,75 +44,6 @@ def _droppable(paths: List[str], mode: str) -> List[str]:
     if mode == "files":
         return [p for p in paths if os.path.isfile(p)]
     return paths[:1] if paths and _path_is_valid(paths[0], mode) else []
-
-
-class _Relay(QObject):
-    """Carries a worker's result back to the UI thread."""
-
-    finished = Signal(object, str, object)
-
-
-_relay: Optional[_Relay] = None
-_lock = threading.Lock()
-_live = 0
-# (widget, slot) -> its newest check waiting for a thread; older ones drop.
-_pending: "OrderedDict[tuple, tuple]" = OrderedDict()
-# A share that does not answer holds its thread; the cap keeps dead shares
-# from flooding the process with stuck threads.
-_THREAD_CAP = 4
-
-
-def _deliver(widget_ref, slot: str, args: tuple) -> None:
-    """Hand a result to its widget if the widget is still alive."""
-    widget = widget_ref()
-    if widget is not None and is_valid_object(widget):
-        getattr(widget, slot)(*args)
-
-
-def _work(job: tuple) -> None:
-    """Run a check, then any waiting one, posting results to the UI thread."""
-    global _live
-    while job is not None:
-        widget_ref, slot, check = job
-        try:
-            _relay.finished.emit(widget_ref, slot, check())
-        except Exception:  # noqa: BLE001 - a failed check must not kill the thread
-            pass
-        with _lock:
-            job = _pending.popitem(last=False)[1] if _pending else None
-            if job is None:
-                _live -= 1
-
-
-def _check(
-    widget: QWidget,
-    slot: str,
-    check: Callable[[], Tuple],
-    paths: Optional[List[str]] = None,
-) -> None:
-    """Call `widget.slot(*check())` on a daemon thread of its own.
-
-    Not the host's `QThreadPool`: a stuck check would starve it and hold
-    its quit; a daemon thread never delays the process exit. Given
-    `paths` none of which may stall, the check runs at once instead.
-    """
-    if paths is not None and not any(_compat.can_stall(p) for p in paths):
-        getattr(widget, slot)(*check())
-        return
-    global _relay, _live
-    if _relay is None:
-        _relay = _Relay()
-        _relay.finished.connect(_deliver)
-    job = (weakref.ref(widget), slot, check)
-    with _lock:
-        if _live >= _THREAD_CAP:
-            _pending.pop((id(widget), slot), None)
-            _pending[(id(widget), slot)] = job
-            return
-        _live += 1
-    threading.Thread(
-        target=_work, args=(job,), name="fxgui-path-check", daemon=True
-    ).start()
 
 
 class FXFilePathWidget(QWidget):
@@ -289,14 +217,16 @@ class FXFilePathWidget(QWidget):
             self.path_valid.emit(self._is_valid)
             return
 
-        # Always off the UI thread: a typed path may sit on any mount.
+        # Off the UI thread even when local: a local folder may link to a share.
         mode = self._mode
         self._check_ticket += 1
         ticket = self._check_ticket
-        _check(
+        _path_check.run(
             self,
             "_on_validation_finished",
             lambda: (ticket, path, _path_is_valid(path, mode)),
+            [p.strip() for p in path.split(";")] if mode == "files" else [path],
+            inline=False,
         )
 
     def _on_validation_finished(
@@ -335,7 +265,7 @@ class FXFilePathWidget(QWidget):
         mode = self._mode
         self._drop_ticket += 1
         ticket = self._drop_ticket
-        _check(
+        _path_check.run(
             self,
             "_on_drop_checked",
             lambda: (ticket, _droppable(paths, mode)),
