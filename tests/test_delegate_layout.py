@@ -826,7 +826,7 @@ def _title_band(tree, delegate, index, has_thumbnail: bool):
     option = _option_for(tree, index)
     text_x = delegate._text_left(option, index, has_thumbnail)
     right_margin = (
-        delegate._TEXT_RIGHT_MARGIN if has_thumbnail else delegate._ICON_MARGIN
+        delegate._TEXT_RIGHT_MARGIN if has_thumbnail else delegate.ICON_MARGIN
     )
     right = delegate._content_right_limit(option, index, right_margin)
     return text_x, right, option.rect.top(), option.rect.bottom()
@@ -925,7 +925,7 @@ def _available_text_width(tree, delegate, index, has_thumbnail: bool) -> int:
     option = _option_for(tree, index)
     text_x = delegate._text_left(option, index, has_thumbnail)
     right_margin = (
-        delegate._TEXT_RIGHT_MARGIN if has_thumbnail else delegate._ICON_MARGIN
+        delegate._TEXT_RIGHT_MARGIN if has_thumbnail else delegate.ICON_MARGIN
     )
     return delegate._content_right_limit(option, index, right_margin) - text_x
 
@@ -1046,9 +1046,9 @@ def test_thumbnail_less_rows_start_from_the_left_edge(qtbot, decoration):
     )
     option = delegate._init(_option_for(tree, index), index)
 
-    expected = option.rect.left() + delegate._ICON_MARGIN
+    expected = option.rect.left() + delegate.ICON_MARGIN
     if decoration:
-        expected += delegate._ICON_SIZE + delegate._ICON_MARGIN
+        expected += delegate.ICON_SIZE + delegate.ICON_MARGIN
     assert delegate._text_left(option, index, False) == expected
     assert delegate._content_left(option, index, False) == expected
 
@@ -1062,7 +1062,7 @@ def test_global_thumbnail_flag_off_keeps_the_left_edge_layout(qtbot):
 
     assert delegate._has_thumbnail(index) is False
     assert delegate._text_left(option, index, False) == (
-        option.rect.left() + delegate._ICON_MARGIN
+        option.rect.left() + delegate.ICON_MARGIN
     )
 
 
@@ -1147,3 +1147,11 @@ def test_a_selected_row_is_not_outlined_by_the_focus_ring(qtbot):
     assert dark not in painted
     # Nothing at all was drawn, which is the whole of the fix.
     assert painted == {"#ff00ff"}
+
+
+def test_the_icon_metrics_are_public():
+    from fxgui.fxwidgets import FXThumbnailDelegate
+
+    assert FXThumbnailDelegate.ICON_SIZE == 16
+    assert FXThumbnailDelegate.ICON_MARGIN == 6
+    assert FXThumbnailDelegate._ICON_MARGIN == FXThumbnailDelegate.ICON_MARGIN

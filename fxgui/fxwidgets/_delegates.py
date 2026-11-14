@@ -556,8 +556,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _OVERLAY_SIZE = 15
     _OVERLAY_MARGIN = 6
     _CONTENT_SPACING = 5
-    _ICON_SIZE = 16
-    _ICON_MARGIN = 6
+    #: Side of a row's icon, and its gap from the cell's left edge, in px:
+    #: what a widget laid over the icon's place (a spinner) lines up with.
+    ICON_SIZE = 16
+    ICON_MARGIN = 6
+    # The private names the drawing code reads, also kept for code that read them.
+    _ICON_SIZE = ICON_SIZE
+    _ICON_MARGIN = ICON_MARGIN
     _TEXT_RIGHT_MARGIN = 10
     # The least room above and below a row's one line of text.
     _ROW_PADDING = 2
