@@ -3,10 +3,10 @@
 # Built-in
 import os
 from pathlib import Path
-from typing import Iterable, Iterator, List, Optional, Set
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 # Third-party
-from qtpy.QtCore import QLocale, Qt, QTimer, Signal
+from qtpy.QtCore import QLocale, Qt, QTimer, QUrl, Signal
 from qtpy.QtGui import QDragEnterEvent, QDragLeaveEvent, QDropEvent
 from qtpy.QtWidgets import (
     QAbstractItemView,
@@ -25,29 +25,52 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
+from fxgui.fxwidgets import _path_check
 from fxgui.fxwidgets._labels import FXIconLabel
 
 
 ACCEPT_MODES = ("files", "folders", "both")
 
-
-def _local_paths(event) -> Iterator[Path]:
-    """Yield the existing local paths a drag or drop event carries.
-
-    Lazy, so a drag over a slow share stops at the first path it takes.
-    """
-    for url in event.mimeData().urls():
-        if url.isLocalFile():
-            path = Path(url.toLocalFile())
-            if path.exists():
-                yield path
+# A listed path, whether it is a folder, and its size if a readable file.
+_Row = Tuple[Path, bool, Optional[int]]
 
 
-def _size_text(path: Path) -> str:
-    """Return a file's size in Qt's own format, or "-" if it is unreadable."""
+def _probe(path: Path) -> _Row:
+    """Return `path`'s row: the disk reads a listed path needs."""
+    if path.is_dir():
+        return path, True, None
     try:
-        size = path.stat().st_size
+        return path, False, path.stat().st_size
     except OSError:
+        return path, False, None
+
+
+def _vet(
+    paths: List[Path], accept_mode: str, extensions: Optional[Set[str]]
+) -> List[_Row]:
+    """Return the rows of the paths a zone in `accept_mode` takes.
+
+    Reads the disk, so it may run on a worker thread: it takes no widget.
+    """
+    rows = []
+    for path in paths:
+        row = _probe(path)
+        if row[1]:
+            taken = accept_mode != "files"
+        else:
+            taken = (
+                accept_mode != "folders"
+                and path.is_file()
+                and (extensions is None or path.suffix.lower() in extensions)
+            )
+        if taken:
+            rows.append(row)
+    return rows
+
+
+def _size_text(size: Optional[int]) -> str:
+    """Return a file size in Qt's own format, or "-" when unknown."""
+    if size is None:
         return "-"
     return QLocale().formattedDataSize(
         size, 1, QLocale.DataSizeTraditionalFormat)
@@ -131,7 +154,10 @@ class FXDropZone(QWidget):
         self._show_formats = show_formats
         self._show_buttons = show_buttons
         self._show_tree = show_tree
-        self._selected_files: List[Path] = []
+        # Ordered like the list; a dict, so a duplicate is found at once.
+        self._selected_files: Dict[Path, None] = {}
+        # In single mode, only the newest drop's check lands.
+        self._take_ticket = 0
 
         # One owned timer: a second flash restarts it, and it dies with us.
         self._flash_timer = QTimer(self)
@@ -259,29 +285,36 @@ class FXDropZone(QWidget):
         """Draw the drop icon in `color`, a theme token, or the icon ink."""
         self._icon_label.setIcon(fxicons.get_icon(self._icon_name, color=color))
 
-    def _update_file_tree(self) -> None:
-        """Show the files: the list and its count, or the placeholder."""
+    def _rows(self, paths: Iterable[Path]) -> List[_Row]:
+        """Return rows for `paths`, reading the disk only for a shown list."""
+        if self._show_tree:
+            return [_probe(path) for path in paths]
+        return [(path, False, None) for path in paths]
+
+    def _add_rows(self, rows: List[_Row]) -> None:
+        """Append a list row per row."""
+        if not self._show_tree:
+            return
+        for path, is_dir, size in rows:
+            item = QTreeWidgetItem()
+            item.setText(0, path.name)
+            item.setData(0, Qt.UserRole, path)
+            if is_dir:
+                item.setText(1, "Folder")
+                item.setIcon(0, fxicons.get_icon("folder"))
+            else:
+                item.setText(1, path.suffix.upper().lstrip(".") or "File")
+                item.setIcon(0, fxicons.get_icon("file-text"))
+            item.setText(2, _size_text(size))
+            self._file_tree.addTopLevelItem(item)
+
+    def _show_count(self) -> None:
+        """Show the list and its count, or the placeholder."""
         has_files = bool(self._selected_files)
         if self._show_buttons:
             self._clear_btn.setEnabled(has_files)
         if not self._show_tree:
             return
-
-        self._file_tree.clear()
-        for path in self._selected_files:
-            item = QTreeWidgetItem()
-            item.setText(0, path.name)
-            item.setData(0, Qt.UserRole, path)
-            if path.is_dir():
-                item.setText(1, "Folder")
-                item.setIcon(0, fxicons.get_icon("folder"))
-                item.setText(2, "-")
-            else:
-                item.setText(1, path.suffix.upper().lstrip(".") or "File")
-                item.setIcon(0, fxicons.get_icon("file-text"))
-                item.setText(2, _size_text(path))
-            self._file_tree.addTopLevelItem(item)
-
         count = len(self._selected_files)
         self._count_label.setText(
             "1 file selected" if count == 1 else f"{count} files selected"
@@ -311,8 +344,11 @@ class FXDropZone(QWidget):
     def _remove_file(self, path: Path) -> None:
         """Drop `path` from the selection and say `file_removed`."""
         if path in self._selected_files:
-            self._selected_files.remove(path)
-            self._update_file_tree()
+            index = list(self._selected_files).index(path)
+            del self._selected_files[path]
+            if self._show_tree:
+                self._file_tree.takeTopLevelItem(index)
+            self._show_count()
             self.file_removed.emit(path)
 
             if not self._selected_files:
@@ -341,50 +377,70 @@ class FXDropZone(QWidget):
             paths = [path] if path else []
         self._take([Path(p) for p in paths])
 
-    def _on_files_added(self, paths: Iterable[Path]) -> bool:
-        """Add the paths not held yet, say which; return whether any were."""
-        new_files = [p for p in paths if p not in self._selected_files]
-        if not new_files:
+    def _on_files_added(self, rows: List[_Row]) -> bool:
+        """Add the rows not held yet, say which; return whether any were."""
+        fresh: Dict[Path, _Row] = {}
+        for row in rows:
+            if row[0] not in self._selected_files:
+                fresh.setdefault(row[0], row)
+        if not fresh:
             return False
-        if self._multiple:
-            self._selected_files.extend(new_files)
-        else:
+        new_rows = list(fresh.values())
+        if not self._multiple:
             # One file replaces the last; the signal names what was kept.
-            new_files = new_files[:1]
-            self._selected_files = list(new_files)
-        self._update_file_tree()
-        self.files_dropped.emit(list(new_files))
+            new_rows = new_rows[:1]
+            self._selected_files.clear()
+            if self._show_tree:
+                self._file_tree.clear()
+        for row in new_rows:
+            self._selected_files[row[0]] = None
+        self._add_rows(new_rows)
+        self._show_count()
+        self.files_dropped.emit([row[0] for row in new_rows])
         return True
 
-    def _take(self, paths: List[Path]) -> bool:
-        """Add the paths the zone takes; flash in error if it takes none.
+    def _take(self, paths: List[Path]) -> None:
+        """Add the paths the zone takes, reading a share off the UI thread.
 
-        Returns:
-            Whether any of `paths` is one the zone takes.
+        Flashes in error when it takes none of `paths`.
         """
-        accepted = [path for path in paths if self._accepts(path)]
-        if not accepted:
-            if paths:
-                self._flash_feedback("error")
-            return False
-        if self._on_files_added(accepted) and not self._show_tree:
-            self._flash_feedback("success")
-        return True
+        if not paths:
+            return
+        self._take_ticket += 1
+        ticket = self._take_ticket
+        mode, extensions = self._accept_mode, self._extensions
+        _path_check.run(
+            self,
+            "_on_vetted",
+            lambda: (ticket, _vet(paths, mode, extensions)),
+            [str(path) for path in paths],
+        )
 
-    def _accepts(self, path: Path) -> bool:
-        """Return whether this zone takes `path`, by mode and extension."""
-        if self._accept_mode != "files" and path.is_dir():
+    def _on_vetted(self, ticket: int, rows: List[_Row]) -> None:
+        """Add the rows a check passed; a stale single-mode drop drops out."""
+        if not self._multiple and ticket != self._take_ticket:
+            return
+        if not rows:
+            self._flash_feedback("error")
+            return
+        if self._on_files_added(rows) and not self._show_tree:
+            self._flash_feedback("success")
+
+    def _may_take(self, url: QUrl) -> bool:
+        """Return whether a drag's `url` may name a path this zone takes.
+
+        By name only, so a drag over a dead share never waits: the drop
+        reads the disk.
+        """
+        if not url.isLocalFile():
+            return False
+        if self._accept_mode != "files" or self._extensions is None:
             return True
-        if self._accept_mode != "folders" and path.is_file():
-            return (
-                self._extensions is None
-                or path.suffix.lower() in self._extensions
-            )
-        return False
+        return Path(url.toLocalFile()).suffix.lower() in self._extensions
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """Accept a drag that carries a path the zone takes."""
-        if any(self._accepts(path) for path in _local_paths(event)):
+        """Accept a drag that names a path the zone may take."""
+        if any(self._may_take(url) for url in event.mimeData().urls()):
             event.acceptProposedAction()
             self._set_drop_state("drag")
             self.drag_entered.emit()
@@ -400,10 +456,12 @@ class FXDropZone(QWidget):
     def dropEvent(self, event: QDropEvent) -> None:
         """Add the accepted paths; edge the area in error if none were."""
         self._set_drop_state("idle")
-        if self._take(list(_local_paths(event))):
+        urls = event.mimeData().urls()
+        if any(self._may_take(url) for url in urls):
             event.acceptProposedAction()
         else:
             event.ignore()
+        self._take([Path(url.toLocalFile()) for url in urls if url.isLocalFile()])
 
     # Public API
 
@@ -475,7 +533,7 @@ class FXDropZone(QWidget):
 
     def selected_files(self) -> List[Path]:
         """Return the list of selected files."""
-        return self._selected_files.copy()
+        return list(self._selected_files)
 
     def file_tree(self) -> Optional[QTreeWidget]:
         """Return the file tree widget, or None without `show_tree`."""
@@ -488,12 +546,16 @@ class FXDropZone(QWidget):
 
     def set_files(self, paths: List[Path]) -> None:
         """Replace the selected files, saying nothing."""
-        self._selected_files = list(paths)
-        self._update_file_tree()
+        self._selected_files = dict.fromkeys(paths)
+        if self._show_tree:
+            self._file_tree.clear()
+            self._add_rows(self._rows(self._selected_files))
+        self._show_count()
 
     def add_files(self, paths: List[Path]) -> None:
         """Add the paths not held yet, saying `files_dropped`."""
-        self._on_files_added(paths)
+        self._on_files_added(
+            self._rows(p for p in paths if p not in self._selected_files))
 
     def clear(self) -> None:
         """Remove every file and say `files_cleared`."""

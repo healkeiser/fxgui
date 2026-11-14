@@ -290,3 +290,42 @@ def test_at_the_thread_cap_only_the_newest_check_waits(
 
     qtbot.waitUntil(widget.is_valid)
     assert checked == [r"\\dead\share", r"\\dead\c"]
+
+
+def test_files_mode_keeps_a_semicolon_in_a_file_name(qtbot, qapp, tmp_path):
+    first, second = tmp_path / "a;b.txt", tmp_path / "c.txt"
+    first.write_text("a")
+    second.write_text("c")
+    widget = FXFilePathWidget(mode="files")
+    qtbot.addWidget(widget)
+
+    widget.set_paths([str(first), str(second)])
+
+    assert widget.paths() == [str(first), str(second)]
+    widget._do_validation()
+    qtbot.waitUntil(widget.is_valid)
+
+
+def test_paths_splits_text_typed_in_files_mode(qtbot, qapp):
+    widget = FXFilePathWidget(mode="files")
+    qtbot.addWidget(widget)
+    widget.set_path("x; y")
+    assert widget.paths() == ["x", "y"]
+
+    widget.set_mode("folder")
+    widget.set_path("x;y")
+    assert widget.paths() == ["x;y"]
+    widget.set_path("")
+    assert widget.paths() == []
+
+
+def test_set_paths_takes_one_path_outside_files_mode(qtbot, qapp):
+    import pytest
+
+    widget = FXFilePathWidget(mode="folder")
+    qtbot.addWidget(widget)
+
+    with pytest.raises(ValueError):
+        widget.set_paths(["a", "b"])
+    widget.set_paths(["a"])
+    assert widget.path() == "a"

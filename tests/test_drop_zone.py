@@ -7,7 +7,7 @@ from qtpy.QtGui import QDragEnterEvent
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXDropZone
+from fxgui.fxwidgets import FXDropZone, _drop_zone
 
 
 def test_clear_is_enabled_once_files_are_set_without_a_tree(qtbot, qapp, tmp_path):
@@ -37,11 +37,14 @@ def test_zone_and_tree_accept_the_same_paths(qtbot, qapp, tmp_path):
     zone = FXDropZone(extensions={".png"})
     qtbot.addWidget(zone)
     for path, taken in ((upper, True), (other, False), (tmp_path, False)):
-        assert zone._accepts(path) is taken
+        vetted = _drop_zone._vet([path], zone.accept_mode(), zone.extensions())
+        assert bool(vetted) is taken
         event, _mime = _drag(path)
         zone.dragEnterEvent(event)
         assert event.isAccepted() is taken
-    assert zone._accepts(tmp_path / "missing.png") is False
+    assert not _drop_zone._vet(
+        [tmp_path / "missing.png"], zone.accept_mode(), zone.extensions()
+    )
 
 
 def test_drag_state_is_a_property_the_theme_sheet_styles(qtbot, qapp, tmp_path):
@@ -145,7 +148,9 @@ def test_extensions_take_any_case_and_dot(qtbot, qapp, tmp_path):
     qtbot.addWidget(zone)
 
     assert zone.extensions() == {".png", ".exr"}
-    assert zone._accepts(_file(tmp_path, "shot.png"))
+    assert _drop_zone._vet(
+        [_file(tmp_path, "shot.png")], zone.accept_mode(), zone.extensions()
+    )
 
 
 def test_files_dropped_hands_out_a_copy(qtbot, qapp, tmp_path):
@@ -241,9 +246,7 @@ def test_browse_keeps_the_filter_and_flashes_when_nothing_is_left(
     assert zone._drop_area.property("dropState") == "error"
 
 
-def test_a_drag_stops_checking_the_disk_at_the_first_path_taken(
-    qtbot, qapp, tmp_path, monkeypatch
-):
+def test_a_drag_never_reads_the_disk(qtbot, qapp, tmp_path, monkeypatch):
     from pathlib import Path
 
     paths = []
@@ -251,14 +254,17 @@ def test_a_drag_stops_checking_the_disk_at_the_first_path_taken(
         (tmp_path / name).write_text("x")
         paths.append(tmp_path / name)
     checked = []
-    real_exists = Path.exists
 
-    def counting_exists(self, *args, **kwargs):
-        if self in paths:
-            checked.append(self)
-        return real_exists(self, *args, **kwargs)
+    def recording(real):
+        def wrapper(self, *args, **kwargs):
+            if self in paths:
+                checked.append(self)
+            return real(self, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "exists", counting_exists)
+        return wrapper
+
+    for name in ("exists", "is_dir", "is_file", "stat"):
+        monkeypatch.setattr(Path, name, recording(getattr(Path, name)))
     zone = FXDropZone()
     qtbot.addWidget(zone)
     mime = QMimeData()
@@ -270,4 +276,135 @@ def test_a_drag_stops_checking_the_disk_at_the_first_path_taken(
     zone.dragEnterEvent(event)
 
     assert event.isAccepted()
-    assert len(checked) == 1
+    assert checked == []
+
+
+def _drop_event(paths):
+    """A drop event and its mime data, which the event does not own."""
+    from qtpy.QtCore import QPointF
+    from qtpy.QtGui import QDropEvent
+
+    mime = QMimeData()
+    mime.setUrls([QUrl.fromLocalFile(str(p)) for p in paths])
+    event = QDropEvent(
+        QPointF(5, 5), Qt.CopyAction, mime, Qt.LeftButton, Qt.NoModifier
+    )
+    return event, mime
+
+
+def test_a_drop_from_a_share_never_waits_on_the_disk(
+    qtbot, qapp, tmp_path, monkeypatch
+):
+    import threading
+    import time
+
+    from fxgui import _compat
+
+    gate = threading.Event()
+    real = _drop_zone._probe
+
+    def slow(path):
+        gate.wait(5)
+        return real(path)
+
+    monkeypatch.setattr(_compat, "can_stall", lambda _path: True)
+    monkeypatch.setattr(_drop_zone, "_probe", slow)
+    zone = FXDropZone()
+    qtbot.addWidget(zone)
+    first = _file(tmp_path)
+    event, _mime = _drop_event([first])
+
+    start = time.monotonic()
+    zone.dropEvent(event)
+    took = time.monotonic() - start
+    gate.set()
+    assert took < 1, "the drop waited on the disk"
+    qtbot.waitUntil(zone.has_files)
+    assert zone.selected_files() == [first]
+
+
+def test_a_path_given_twice_is_listed_once(qtbot, qapp, tmp_path):
+    zone = FXDropZone()
+    qtbot.addWidget(zone)
+    a, b, c = (_file(tmp_path, name) for name in ("a.png", "b.png", "c.png"))
+    received = []
+    zone.files_dropped.connect(received.append)
+
+    zone.add_files([a, a, b])
+    zone.add_files([b, c])
+
+    assert zone.selected_files() == [a, b, c]
+    assert received == [[a, b], [c]]
+    assert zone.file_tree().topLevelItemCount() == 3
+
+
+def test_adding_files_keeps_the_rows_already_listed(
+    qtbot, qapp, tmp_path, monkeypatch
+):
+    probed = []
+    real = _drop_zone._probe
+
+    def recording(path):
+        probed.append(path)
+        return real(path)
+
+    monkeypatch.setattr(_drop_zone, "_probe", recording)
+    zone = FXDropZone()
+    qtbot.addWidget(zone)
+    a, b = _file(tmp_path, "a.png"), _file(tmp_path, "b.png")
+
+    zone.add_files([a])
+    tree = zone.file_tree()
+    tree.topLevelItem(0).setData(0, Qt.UserRole + 1, "kept")
+    zone.add_files([b])
+
+    assert probed == [a, b]
+    assert tree.topLevelItem(0).data(0, Qt.UserRole + 1) == "kept"
+
+
+def test_removing_a_file_takes_only_its_row(qtbot, qapp, tmp_path):
+    zone = FXDropZone()
+    qtbot.addWidget(zone)
+    a, b, c = (_file(tmp_path, name) for name in ("a.png", "b.png", "c.png"))
+    zone.set_files([a, b, c])
+
+    zone._remove_file(b)
+
+    tree = zone.file_tree()
+    names = [tree.topLevelItem(i).text(0) for i in range(tree.topLevelItemCount())]
+    assert names == ["a.png", "c.png"]
+    assert zone._count_label.text() == "2 files selected"
+
+
+def test_in_single_mode_only_the_newest_drop_lands(
+    qtbot, qapp, tmp_path, monkeypatch
+):
+    import threading
+    from pathlib import Path
+
+    from fxgui import _compat
+
+    gate = threading.Event()
+    real = _drop_zone._probe
+
+    def slow(path):
+        if "slow" in path.name:
+            gate.wait(5)
+        return real(path)
+
+    monkeypatch.setattr(_compat, "can_stall", lambda p: "slow" in Path(p).name)
+    monkeypatch.setattr(_drop_zone, "_probe", slow)
+    zone = FXDropZone(multiple=False)
+    qtbot.addWidget(zone)
+    slow_file, fast = _file(tmp_path, "slow.png"), _file(tmp_path, "fast.png")
+
+    try:
+        slow_event, _slow_mime = _drop_event([slow_file])
+        zone.dropEvent(slow_event)
+        fast_event, _fast_mime = _drop_event([fast])
+        zone.dropEvent(fast_event)
+        assert zone.selected_files() == [fast]
+    finally:
+        gate.set()
+    qtbot.wait(300)
+    assert zone.selected_files() == [fast]
