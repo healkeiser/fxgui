@@ -33,9 +33,6 @@ def _path_is_valid(path: str, mode: str) -> bool:
         return os.path.isdir(path)
     if mode == "save":
         return os.path.isdir(os.path.dirname(path))
-    if mode == "files":
-        paths = [p.strip() for p in path.split(";") if p.strip()]
-        return bool(paths) and all(os.path.isfile(p) for p in paths)
     return os.path.isfile(path)
 
 
@@ -97,6 +94,8 @@ class FXFilePathWidget(QWidget):
         # Only the latest check's result lands; an earlier one may answer late.
         self._check_ticket = 0
         self._drop_ticket = 0
+        # The list "files" mode showed last, so a ";" in a name survives.
+        self._paths: List[str] = []
 
         self._validation_timer = QTimer(self)
         self._validation_timer.setSingleShot(True)
@@ -147,6 +146,32 @@ class FXFilePathWidget(QWidget):
         """Set the path shown."""
         self._input.setText(path)
 
+    def paths(self) -> List[str]:
+        """Return the paths in the field: several in "files" mode, else one.
+
+        In "files" mode the field shows them joined by ";". A list given to
+        `set_paths`, or picked or dropped, comes back whole even when a
+        name holds a ";"; text typed by hand is split on ";".
+        """
+        text = self._input.text()
+        if self._mode != "files":
+            return [text] if text else []
+        if self._paths and text == ";".join(self._paths):
+            return list(self._paths)
+        return [p.strip() for p in text.split(";") if p.strip()]
+
+    def set_paths(self, paths: List[str]) -> None:
+        """Show `paths`, joined by ";" in "files" mode.
+
+        Raises:
+            ValueError: More than one path outside "files" mode.
+        """
+        if self._mode != "files" and len(paths) > 1:
+            raise ValueError(
+                f"mode {self._mode!r} holds one path, got {len(paths)}")
+        self._paths = list(paths)
+        self._input.setText(";".join(paths))
+
     def is_valid(self) -> bool:
         """Return whether the current path is valid."""
         return self._is_valid
@@ -186,7 +211,9 @@ class FXFilePathWidget(QWidget):
             paths, _ = QFileDialog.getOpenFileNames(
                 self, "Select Files", start_path, self._file_filter
             )
-            path = ";".join(paths) if paths else ""
+            if paths:
+                self.set_paths(paths)
+            return
         elif self._mode == "save":
             path, _ = QFileDialog.getSaveFileName(
                 self, "Save File", start_path, self._file_filter
@@ -217,17 +244,22 @@ class FXFilePathWidget(QWidget):
             self.path_valid.emit(self._is_valid)
             return
 
-        # Off the UI thread even when local: a local folder may link to a share.
         mode = self._mode
+        paths = self.paths()
         self._check_ticket += 1
         ticket = self._check_ticket
+
+        def check() -> tuple:
+            if mode == "files":
+                found = bool(paths) and all(
+                    _path_is_valid(p, "file") for p in paths)
+            else:
+                found = _path_is_valid(path, mode)
+            return ticket, path, found
+
+        # Off the UI thread even when local: a local folder may link to a share.
         _path_check.run(
-            self,
-            "_on_validation_finished",
-            lambda: (ticket, path, _path_is_valid(path, mode)),
-            [p.strip() for p in path.split(";")] if mode == "files" else [path],
-            inline=False,
-        )
+            self, "_on_validation_finished", check, paths, inline=False)
 
     def _on_validation_finished(
         self, ticket: int, path: str, is_valid: bool
@@ -275,4 +307,4 @@ class FXFilePathWidget(QWidget):
     def _on_drop_checked(self, ticket: int, paths: List[str]) -> None:
         """Show the dropped paths that passed the check, if still the latest."""
         if ticket == self._drop_ticket and paths:
-            self._input.setText(";".join(paths))
+            self.set_paths(paths)
