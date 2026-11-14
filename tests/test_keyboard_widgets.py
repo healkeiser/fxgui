@@ -3,6 +3,7 @@
 # Third-party
 import pytest
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QKeySequence, QShortcut
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
     QApplication,
@@ -252,3 +253,38 @@ def test_an_altgr_character_is_typing(qtbot):
         Qt.ControlModifier | Qt.AltModifier | Qt.ShiftModifier,
     )
     assert field.text() == "{", "Shift with AltGr still types"
+
+
+@pytest.mark.parametrize(
+    "key, modifiers",
+    [
+        (Qt.Key_F, Qt.AltModifier),
+        (Qt.Key_At, Qt.MetaModifier),
+        (Qt.Key_At, Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier),
+    ],
+)
+def test_alt_and_meta_chords_are_not_typing(qtbot, key, modifiers):
+    _window, tree, field, _top = _tree_and_field(qtbot)
+    tree.type_into(field)
+    _press(key, modifiers)
+    assert field.text() == "" and tree.hasFocus()
+
+
+def test_a_window_shortcut_of_one_character_wins_over_typing(qtbot):
+    """Records today's priority, not a wish: Qt's shortcut map runs first."""
+    window, tree, field, _top = _tree_and_field(qtbot)
+    tree.type_into(field)
+    fired = []
+    shortcut = QShortcut(QKeySequence("/"), window)
+    shortcut.activated.connect(lambda: fired.append(True))
+    _press(Qt.Key_Slash)
+    assert fired == [True]
+    assert field.text() == ""
+
+
+def test_a_character_with_no_shortcut_is_typing(qtbot):
+    """`!` is the AZERTY key where a US keyboard has `/`."""
+    _window, tree, field, _top = _tree_and_field(qtbot)
+    tree.type_into(field)
+    _press(Qt.Key_Exclam)
+    assert field.text() == "!"
