@@ -4,7 +4,9 @@
 at once: what the control is, what it does to the user's data, and how to
 reach it without the mouse. Every string goes through `tip`, so the layout
 is the same everywhere: title in the primary text, body dimmed, shortcut on
-the right as keycaps, one per key.
+the right as keycaps, one per key. A tip about a thing rather than a
+control adds labelled facts, a code line (a path, a key, a command) and a
+closing hint.
 
 `tip` writes the current theme's colours into the HTML, so `apply_tip`
 rebuilds it each time Qt is about to show it: a tip set in one theme shows
@@ -14,11 +16,11 @@ tooltip is square; `FXKeycap`, the widget, is round.
 
 # Built-in
 from html import escape
-from typing import List, Optional
+from typing import Iterable, List, Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QEvent, QKeyCombination, QObject, Qt, Slot
-from qtpy.QtGui import QAction, QKeySequence
+from qtpy.QtGui import QAction, QFontDatabase, QGuiApplication, QKeySequence
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
@@ -37,8 +39,8 @@ from fxgui import fxstyle
 from fxgui._compat import is_valid
 
 
-# Where apply_tip keeps a tip's (title, body, shortcut): a property on a
-# widget or action, an item role on a view's item.
+# Where apply_tip keeps a tip's parts, `tip`'s arguments by name: a property
+# on a widget or action, an item role on a view's item.
 _PARTS = "fxTipParts"
 _PARTS_ROLE = Qt.ItemDataRole.UserRole + 0x7F1
 # The accessible (name, description) apply_tip last set, so a later tip
@@ -50,6 +52,18 @@ _KEY_GAP = 2
 _CHORD_GAP = 8
 _KEY_GAP_HTML = "&nbsp;"
 _CHORD_GAP_HTML = "&nbsp;&nbsp;&nbsp;"
+
+# Pixels above the body, which belongs to the title, and above each later
+# block: the facts, the code, the hint.
+_LINE_GAP = 3
+_BLOCK_GAP = 8
+# Between a fact's label and its value.
+_FACT_GAP = 14
+# Around the code, inside its fill.
+_CODE_PADDING = 4
+# Characters a row of code holds: about the 440 px a tooltip takes at most,
+# in a mono face at the code's size.
+_CODE_COLUMNS = 64
 
 _MODIFIERS = (
     Qt.KeyboardModifier.ControlModifier,
@@ -125,9 +139,10 @@ def keycap(keys: str) -> str:
     """
 
     colors = fxstyle.colors()
+    # A tooltip is a `surface` card; `tooltip` fills what sits on it.
     return _CHORD_GAP_HTML.join(
         _KEY_GAP_HTML.join(
-            f'<span style="background:{colors.surface};'
+            f'<span style="background:{colors.tooltip};'
             f' color:{colors.text_muted};">&nbsp;{escape(name)}&nbsp;</span>'
             for name in chord
         )
@@ -135,7 +150,86 @@ def keycap(keys: str) -> str:
     )
 
 
-def tip(title: str, body: str = "", shortcut: str = "") -> str:
+def _kept(facts: Iterable[Tuple[str, Optional[str]]]) -> List[List[str]]:
+    """Return the facts that have a value, as pairs of strings."""
+    return [
+        [str(label), str(value)]
+        for label, value in facts or ()
+        if value is not None and str(value) != ""
+    ]
+
+
+def _lines(text: str) -> str:
+    """Return caller text as HTML: escaped, a newline breaking the line."""
+    return escape(text).replace("\n", "<br>")
+
+
+def _facts(facts: List[List[str]]) -> str:
+    """Return the facts as a table: the label dimmed, the value beside it."""
+    muted = fxstyle.colors().text_muted
+    rows = "".join(
+        f'<tr><td style="color:{muted}; padding-right:{_FACT_GAP}px;">'
+        f"{escape(label)}</td><td>{_lines(value)}</td></tr>"
+        for label, value in facts
+    )
+    return f'<table cellspacing="0" cellpadding="1">{rows}</table>'
+
+
+def _code(text: str) -> str:
+    """Return `text` as code: the theme's mono face in a block of its own.
+
+    Qt breaks a line at a space only, so a path would make the tooltip as
+    wide as itself: the rows are cut here, and Qt wraps nothing.
+    """
+    colors = fxstyle.colors()
+    # Qt's rich text ignores the generic `monospace`: name a family, the
+    # system's fixed one when the theme's mono role found none.
+    families = fxstyle.font(role="mono").families()
+    if not families and QGuiApplication.instance() is not None:
+        fixed = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+        families = [fixed.family()]
+    face = f"font-family:'{escape(families[0])}'; " if families else ""
+    rows = "\n".join(
+        row for line in text.split("\n") for row in _code_rows(line)
+    )
+    # A cell is filled edge to edge, a span only behind each row's glyphs;
+    # `pre` keeps the rows as cut, their spaces included.
+    return (
+        f'<table cellspacing="0" cellpadding="{_CODE_PADDING}"'
+        f' bgcolor="{colors.tooltip}"><tr>'
+        '<td style="white-space:pre;">'
+        f'<span style="{face}font-size:{fxstyle.FONT_SIZE - 2}px;'
+        f' color:{colors.text};">{escape(rows)}</span></td></tr></table>'
+    )
+
+
+def _code_rows(line: str) -> List[str]:
+    """Cut a line of code into rows of `_CODE_COLUMNS` characters at most.
+
+    After a folder separator while the row holds one, else after an
+    underscore or a space, else at the last column.
+    """
+    rows = []
+    while len(line) > _CODE_COLUMNS:
+        head = line[:_CODE_COLUMNS]
+        cut = max(head.rfind("\\"), head.rfind("/")) + 1
+        if not cut:
+            cut = max(head.rfind("_"), head.rfind(" ")) + 1 or _CODE_COLUMNS
+        rows.append(line[:cut])
+        line = line[cut:]
+    rows.append(line)
+    return rows
+
+
+def tip(
+    title: str,
+    body: str = "",
+    shortcut: str = "",
+    *,
+    facts: Iterable[Tuple[str, Optional[str]]] = (),
+    code: str = "",
+    hint: str = "",
+) -> str:
     """Build the HTML for a rich tooltip.
 
     Args:
@@ -144,10 +238,19 @@ def tip(title: str, body: str = "", shortcut: str = "") -> str:
         body: What the control does, or why it is unavailable; a newline
             breaks the line. Defaults to `""`.
         shortcut: A Qt key sequence, such as `"Ctrl+S"`. Defaults to `""`.
+        facts: What is known about the thing, as (label, value) pairs,
+            drawn as a table in the order given. A pair whose value is
+            empty or None is left out. Defaults to `()`.
+        code: A path, a key or a command, drawn in the theme's mono face
+            on a faint fill. A long line is cut into rows after a folder
+            separator, so a path never widens the tooltip; a newline
+            starts a row too. Defaults to `""`.
+        hint: A closing line, dimmed: what a double-click does. Defaults
+            to `""`.
 
     Returns:
-        str: HTML to hand to `setToolTip`. An empty string when all three
-            arguments are empty, so a caller can pass a missing value
+        str: HTML to hand to `setToolTip`. An empty string when every
+            argument is empty, so a caller can pass a missing value
             through without producing an empty floating box.
 
     Examples:
@@ -155,6 +258,14 @@ def tip(title: str, body: str = "", shortcut: str = "") -> str:
         ''
         >>> button.setToolTip(
         ...     tip("Save", "Write the scene to disk", "Ctrl+S")
+        ... )
+        >>> item.setToolTip(
+        ...     tip(
+        ...         "livetest v001",
+        ...         facts=[("Product", "render/livetest"), ("Files", "8")],
+        ...         code=path,
+        ...         hint="Double-click to play the preview",
+        ...     )
         ... )
 
     Note:
@@ -166,32 +277,45 @@ def tip(title: str, body: str = "", shortcut: str = "") -> str:
         so there is no width cap: the tooltip wraps itself, up to 440 px.
     """
 
-    if not (title or body or shortcut):
+    kept = _kept(facts)
+    if not (title or body or shortcut or kept or code or hint):
         return ""
 
     head = f"<b>{escape(title)}</b>" if title else ""
+    muted = fxstyle.colors().text_muted
 
+    # Each block with the gap above it; the first block's is not drawn.
     rows = []
     if shortcut:
         # A spacer cell pushes the keycaps to the right edge; Qt rich text
         # offers no other way to right-align part of a line.
         rows.append(
-            '<table width="100%" cellspacing="0" cellpadding="0"><tr>'
-            f"<td>{head}</td>"
-            f'<td align="right">{keycap(shortcut)}</td>'
-            "</tr></table>"
+            (
+                0,
+                '<table width="100%" cellspacing="0" cellpadding="0"><tr>'
+                f"<td>{head}</td>"
+                f'<td align="right">{keycap(shortcut)}</td>'
+                "</tr></table>",
+            )
         )
     elif head:
-        rows.append(head)
-
+        rows.append((0, head))
     if body:
-        muted = fxstyle.colors().text_muted
-        lines = escape(body).replace("\n", "<br>")
-        rows.append(f'<span style="color:{muted};">{lines}</span>')
+        rows.append(
+            (_LINE_GAP, f'<span style="color:{muted};">{_lines(body)}</span>')
+        )
+    if kept:
+        rows.append((_BLOCK_GAP, _facts(kept)))
+    if code:
+        rows.append((_BLOCK_GAP, _code(code)))
+    if hint:
+        rows.append(
+            (_BLOCK_GAP, f'<span style="color:{muted};">{_lines(hint)}</span>')
+        )
 
-    blocks = f"<div>{rows[0]}</div>"
-    for row in rows[1:]:
-        blocks += f'<div style="margin-top:3px;">{row}</div>'
+    blocks = f"<div>{rows[0][1]}</div>"
+    for gap, row in rows[1:]:
+        blocks += f'<div style="margin-top:{gap}px;">{row}</div>'
     return blocks
 
 
@@ -249,19 +373,22 @@ class _TipRefresh(QObject):
             if not parts:
                 return False
             QToolTip.showText(
-                event.globalPos(), tip(*parts), watched, view.visualRect(index)
+                event.globalPos(),
+                tip(**parts),
+                watched,
+                view.visualRect(index),
             )
             return True
         parts = watched.property(_PARTS)
         if parts:
-            watched.setToolTip(tip(*parts))
+            watched.setToolTip(tip(**parts))
         return False
 
     @Slot()
     def refresh_action(self) -> None:
         """Rebuild the hovered action's tooltip."""
         action = self.sender()
-        action.setToolTip(tip(*action.property(_PARTS)))
+        action.setToolTip(tip(**action.property(_PARTS)))
 
 
 _refresher: Optional[_TipRefresh] = None
@@ -301,6 +428,10 @@ def apply_tip(
     title: str,
     body: str = "",
     shortcut: str = "",
+    *,
+    facts: Iterable[Tuple[str, Optional[str]]] = (),
+    code: str = "",
+    hint: str = "",
 ) -> None:
     """Set a rich tooltip on `target`, plus a markup-free status tip.
 
@@ -312,6 +443,11 @@ def apply_tip(
         title: What the control is, in a couple of words.
         body: What the control does. Defaults to `""`.
         shortcut: A Qt key sequence, such as `"Ctrl+S"`. Defaults to `""`.
+        facts: (label, value) pairs, drawn as a table; a pair with no
+            value is left out. Defaults to `()`.
+        code: A path, a key or a command, in the mono face. Defaults to
+            `""`.
+        hint: A closing line, dimmed. Defaults to `""`.
 
     Raises:
         ValueError: `target` is an item not yet added to a view.
@@ -323,18 +459,47 @@ def apply_tip(
         ...     "Write the scene to disk",
         ...     "Ctrl+S",
         ... )
+        >>> apply_tip(
+        ...     item,
+        ...     "livetest v001",
+        ...     facts=[("Product", "render/livetest"), ("Files", "8")],
+        ...     code=path,
+        ...     hint="Double-click to play the preview",
+        ... )
 
     Note:
-        The status tip carries the same words without markup. Qt shows it in
-        the window's status bar on hover, which is where a person looks for
-        "what is this" before a tooltip has had time to appear. The title
-        and body also become the accessible name and description; a later
-        call replaces them, but never a name set by hand.
+        The status tip carries the title and body without markup. Qt shows
+        it in the window's status bar on hover, which is where a person
+        looks for "what is this" before a tooltip has had time to appear.
+        The title becomes the accessible name, and the body, facts, code
+        and hint the accessible description, one per line in plain words; a
+        later call replaces them, but never a name set by hand.
     """
 
-    parts = [title, body, shortcut]
-    html = tip(*parts)
+    # Lists and strings only: the parts cross a QVariant and come back.
+    parts = {
+        "title": title,
+        "body": body,
+        "shortcut": shortcut,
+        "facts": _kept(facts),
+        "code": code,
+        "hint": hint,
+    }
+    html = tip(**parts)
     plain = f"{title} - {body}" if body else title
+    described = "\n".join(
+        line
+        for line in (
+            body,
+            *(
+                f"{label}: {value}" if label else value
+                for label, value in parts["facts"]
+            ),
+            code,
+            hint,
+        )
+        if line
+    )
 
     if isinstance(target, (QTreeWidgetItem, QListWidgetItem, QTableWidgetItem)):
         _view_of(target).viewport().installEventFilter(_refresh())
@@ -371,6 +536,6 @@ def apply_tip(
         target.setAccessibleName(title)
         spoken[0] = title
     if target.accessibleDescription() in ("", spoken[1]):
-        target.setAccessibleDescription(body)
-        spoken[1] = body
+        target.setAccessibleDescription(described)
+        spoken[1] = described
     target.setProperty(_SPOKEN, spoken)

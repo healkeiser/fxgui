@@ -128,8 +128,8 @@ def test_keycap_is_right_aligned(themed_app, qtbot):
 
     fxstyle.apply_theme("dark")
     # The keycap's fill on the tooltip box, as the QToolTip rule paints it.
-    hover = QColor(fxstyle.colors().surface).rgb()
-    box = f"background: {fxstyle.colors().surface_sunken};"
+    hover = QColor(fxstyle.colors().tooltip).rgb()
+    box = f"background: {fxstyle.colors().surface};"
 
     for args in (
         ("Save", "", "Ctrl+S"),
@@ -207,6 +207,252 @@ def test_body_only_still_renders(qtbot):
     assert "<b>" not in html
 
 
+# ' Facts, code and a hint
+
+_PATH = (
+    "X:\\pipeline_episodic\\production\\episodes\\ep010\\seq010\\sh0020"
+    "\\lighting\\publish\\render\\livetest\\v001\\.pipeline"
+    "\\pipeline_episodic_ep010_seq010_sh0020_lighting_livetest_v001"
+    ".preview.mov"
+)
+_FACTS = [("Product", "render/livetest"), ("Files", "8 x .exr")]
+
+
+def _code_rows_of(html: str) -> list:
+    """Return the rows of the code block in `html`, as the user reads them."""
+    from html import unescape
+
+    cell = re.search(r'<td style="white-space:pre;">(.*?)</td>', html, re.S)
+    return unescape(_strip_markup(cell[1])).split("\n")
+
+
+def test_a_tip_without_the_new_parts_is_the_html_it_always_was(qtbot):
+    muted = fxstyle.colors().text_muted
+
+    assert _tips.tip("Back", "Navigate\nback") == (
+        "<div><b>Back</b></div>"
+        f'<div style="margin-top:3px;"><span style="color:{muted};">'
+        "Navigate<br>back</span></div>"
+    )
+    assert _tips.tip("Save", "Write", "Ctrl+S") == _tips.tip(
+        "Save", "Write", "Ctrl+S", facts=[("Status", "")], code="", hint=""
+    )
+
+
+def test_facts_are_a_table_in_the_order_given(qtbot):
+    html = _tips.tip("livetest v001", facts=_FACTS)
+
+    rows = re.findall(r"<tr><td[^>]*>(.*?)</td><td>(.*?)</td></tr>", html)
+    assert rows == [("Product", "render/livetest"), ("Files", "8 x .exr")]
+    # The label is dimmed and stands off its value; the value is not dimmed.
+    muted = fxstyle.colors().text_muted
+    assert html.count(f'<td style="color:{muted}; padding-right:14px;">') == 2
+    assert "<td>render/livetest</td>" in html
+
+
+def test_a_fact_without_a_value_is_left_out(qtbot):
+    html = _tips.tip(
+        "livetest v001",
+        facts=[("Product", ""), ("Files", "8"), ("Status", None)],
+    )
+
+    assert "Files" in html
+    assert "Product" not in html and "Status" not in html
+    # With no fact left there is no table, and with nothing left no tip.
+    assert "<table" not in _tips.tip("livetest v001", facts=[("Product", "")])
+    assert _tips.tip("", facts=[("Product", ""), ("Status", None)]) == ""
+
+
+def test_a_fact_takes_any_iterable_and_a_number(qtbot):
+    html = _tips.tip("Render", facts=(pair for pair in [("Errors", 0)]))
+
+    assert "<td>0</td>" in html
+
+
+def test_code_is_small_text_on_a_fill(themed_app, qtbot):
+    for theme in ("dark", "light"):
+        fxstyle.apply_theme(theme)
+        colors = fxstyle.colors()
+        html = _tips.tip("Shot", code="publish.render")
+
+        assert f'bgcolor="{colors.tooltip}"' in html
+        assert f"color:{colors.text};" in html
+        assert f"font-size:{fxstyle.FONT_SIZE - 2}px" in html
+        assert _code_rows_of(html) == ["publish.render"]
+
+
+def test_code_names_the_family_of_the_mono_role(qtbot, monkeypatch):
+    from qtpy.QtGui import QFont, QFontDatabase
+
+    monkeypatch.setattr(fxstyle, "font", lambda role: QFont(["Brand's Mono"]))
+    assert "font-family:'Brand&#x27;s Mono';" in _tips.tip("", code="a.key")
+
+    # A role that found no family is a QFont without one, as `fxstyle.font`
+    # makes it. Qt's rich text ignores the generic `monospace`, so the
+    # system's fixed font is named.
+    def without_a_family(role):
+        font = QFont()
+        font.setFamilies([])
+        return font
+
+    monkeypatch.setattr(fxstyle, "font", without_a_family)
+    fixed = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+    assert f"font-family:'{fixed.family()}';" in _tips.tip("", code="a.key")
+
+
+def test_a_short_path_stays_on_one_row(qtbot):
+    path = "X:\\show\\ep010\\sh0020\\render_v001.exr"
+
+    assert _code_rows_of(_tips.tip("", code=path)) == [path]
+
+
+def test_a_long_path_is_cut_after_folder_separators(qtbot):
+    rows = _code_rows_of(_tips.tip("livetest v001", code=_PATH))
+
+    # Nothing is lost or added: the rows put end to end are the path.
+    assert "".join(rows) == _PATH
+    assert len(rows) > 1
+    assert all(len(row) <= _tips._CODE_COLUMNS for row in rows)
+    # A row ends at a folder; the file name, longer than a row and with
+    # no folder in it, is cut after an underscore.
+    assert all(row.endswith(("\\", "_")) for row in rows[:-1])
+    assert rows[0].endswith("\\") and rows[1].endswith("\\")
+    assert rows[2].startswith("pipeline_episodic_")
+
+
+def test_code_has_no_zero_width_character(qtbot):
+    html = _tips.tip("livetest v001", code=_PATH)
+
+    assert not re.search("[\u200b\u200c\u200d\u2060\ufeff]", html)
+
+
+def test_code_without_a_separator_is_cut_at_the_last_column(qtbot):
+    columns = _tips._CODE_COLUMNS
+
+    assert _tips._code_rows("x" * (columns * 2 + 3)) == [
+        "x" * columns,
+        "x" * columns,
+        "xxx",
+    ]
+    # A command is cut after a space, a posix path after a slash.
+    command = "lsd publish " + "--flag value " * 6
+    assert all(row.endswith(" ") for row in _tips._code_rows(command)[:-1])
+    posix = "/mnt/show" + "/folder" * 12
+    assert all(row.endswith("/") for row in _tips._code_rows(posix)[:-1])
+
+
+def test_a_newline_in_code_starts_a_row(qtbot):
+    html = _tips.tip("", code="first\\path\nsecond  indented")
+
+    assert _code_rows_of(html) == ["first\\path", "second  indented"]
+
+
+def test_a_long_path_does_not_widen_the_tooltip(qtbot):
+    """Qt cannot break a path, so before the rows were cut a tooltip was
+    as wide as its path."""
+
+    def width(code):
+        label = QLabel(_tips.tip("livetest v001", code=code))
+        label.setWordWrap(True)
+        return label.sizeHint().width()
+
+    one_row = width("x" * _tips._CODE_COLUMNS)
+
+    assert width(_PATH) <= one_row
+    assert width(_PATH * 4) <= one_row
+
+
+def test_code_is_drawn_as_its_rows(qtbot):
+    """Qt wraps none of the rows again, however narrow the tooltip, and a
+    command is not broken at its spaces or hyphens."""
+    for code in (_PATH, "lsd publish --shot sh0020 --task lighting-final"):
+        html = _tips.tip("", code=code)
+        document = QTextDocument()
+        document.setHtml(html)
+        document.setTextWidth(60)
+        document.size()
+
+        drawn = []
+        block = document.begin()
+        while block.isValid():
+            if block.text():
+                drawn.append((block.text(), block.layout().lineCount()))
+            block = block.next()
+
+        assert drawn == [(row, 1) for row in _code_rows_of(html)]
+
+
+def test_a_hint_closes_the_tip_dimmed(qtbot):
+    muted = fxstyle.colors().text_muted
+    html = _tips.tip(
+        "livetest v001", facts=_FACTS, code=_PATH, hint="Double-click to play"
+    )
+
+    assert html.endswith(
+        f'<div style="margin-top:8px;"><span style="color:{muted};">'
+        "Double-click to play</span></div>"
+    )
+
+
+def test_the_blocks_come_in_order_with_air_between_them(qtbot):
+    html = _tips.tip(
+        "Publish",
+        "Send the scene to the farm",
+        "Ctrl+P",
+        facts=_FACTS,
+        code="publish.render",
+        hint="Right-click for more",
+    )
+
+    order = [
+        html.index(part)
+        for part in (
+            "<b>Publish</b>",
+            "Send the scene",
+            "Product",
+            "publish.render",
+            "Right-click",
+        )
+    ]
+    assert order == sorted(order)
+    # The body stays close under its title; each later block stands off.
+    assert re.findall(r"margin-top:(\d+)px", html) == ["3", "8", "8", "8"]
+
+
+def test_facts_code_or_a_hint_alone_make_a_tip(qtbot):
+    for parts in ({"facts": _FACTS}, {"code": "a.key"}, {"hint": "Click"}):
+        html = _tips.tip("", **parts)
+
+        assert html.startswith("<div>")
+        assert "<b>" not in html and "margin-top" not in html
+
+
+def test_the_new_parts_are_escaped(qtbot):
+    html = _tips.tip(
+        "Shot",
+        facts=[("A&B <label>", "C&D <value>")],
+        code="X:\\a&b\\<shot>",
+        hint="Click & <drag>",
+    )
+
+    for raw in ("<label>", "<value>", "<shot>", "<drag>"):
+        assert raw not in html
+    assert "A&amp;B &lt;label&gt;" in html
+    assert "C&amp;D &lt;value&gt;" in html
+    assert "X:\\a&amp;b\\&lt;shot&gt;" in html
+    assert "Click &amp; &lt;drag&gt;" in html
+
+
+def test_the_new_parts_are_written_in_the_theme_in_force(qtbot):
+    for theme in ("dark", "light"):
+        fxstyle.apply_theme(theme)
+        colors = fxstyle.colors()
+        html = _tips.tip("Shot", facts=_FACTS, code="a.key", hint="Click")
+
+        assert html.count(f"color:{colors.text_muted};") == 3
+        assert f'bgcolor="{colors.tooltip}"' in html
+
+
 # ' Shortcut rendering
 
 
@@ -260,8 +506,31 @@ def test_a_tip_is_written_in_the_theme_in_force(qtbot):
         html = _tips.tip("Save", "Write the scene to disk", "Ctrl+S")
 
         assert f"color:{fxstyle.colors().text_muted};" in html
-        assert f"background:{fxstyle.colors().surface};" in html
+        assert f"background:{fxstyle.colors().tooltip};" in html
         assert "palette(" not in html
+
+
+def test_a_fill_on_a_tooltip_shows_in_every_theme(themed_app, qtbot):
+    """A tooltip is a `surface` card: a keycap or a code block filled with
+    `surface` would have no fill at all."""
+    button = QPushButton("Save")
+    qtbot.addWidget(button)
+    button.show()
+    _tips.apply_tip(button, "Save", shortcut="Ctrl+S")
+    point = QPoint(2, 2)
+    QApplication.sendEvent(
+        button, QHelpEvent(QEvent.ToolTip, point, button.mapToGlobal(point))
+    )
+    image = _visible_tip().grab().toImage()
+    card = image.pixelColor(3, image.height() // 2).name()
+    QToolTip.hideText()
+
+    assert card == fxstyle.colors().surface.lower()
+    for theme in fxstyle.get_available_themes():
+        fxstyle.apply_theme(theme)
+        colors = fxstyle.colors()
+        assert colors.tooltip.lower() != colors.surface.lower(), theme
+        assert f"background:{colors.tooltip};" in _tips.keycap("S"), theme
 
 
 def _visible_tip():
@@ -510,6 +779,121 @@ def test_a_second_apply_tip_replaces_the_first(qtbot):
 
     assert QToolTip.text() == _tips.tip("Save as", "Write a copy")
     QToolTip.hideText()
+
+
+_RICH = {
+    "facts": [("Product", "render/livetest"), ("Files", "8"), ("Status", "")],
+    "code": _PATH,
+    "hint": "Double-click to play the preview",
+}
+
+
+def test_apply_tip_carries_the_new_parts_on_a_widget(qtbot):
+    button = QPushButton()
+    qtbot.addWidget(button)
+    button.show()
+    fxstyle.apply_theme("dark")
+    _tips.apply_tip(button, "livetest v001", **_RICH)
+    assert button.toolTip() == _tips.tip("livetest v001", **_RICH)
+    fxstyle.apply_theme("light")
+
+    point = QPoint(2, 2)
+    QApplication.sendEvent(
+        button, QHelpEvent(QEvent.ToolTip, point, button.mapToGlobal(point))
+    )
+
+    # Rebuilt as it shows: the parts came back whole, in the new theme.
+    assert QToolTip.text() == _tips.tip("livetest v001", **_RICH)
+    assert f'bgcolor="{fxstyle.colors().tooltip}"' in QToolTip.text()
+    QToolTip.hideText()
+
+
+def test_apply_tip_carries_the_new_parts_on_an_action(qtbot):
+    host = QWidget()
+    qtbot.addWidget(host)
+    action = QAction("Play", host)
+    fxstyle.apply_theme("dark")
+    _tips.apply_tip(action, "livetest v001", **_RICH)
+    fxstyle.apply_theme("light")
+
+    action.hover()
+
+    assert action.toolTip() == _tips.tip("livetest v001", **_RICH)
+
+
+def test_apply_tip_carries_the_new_parts_on_items(qtbot):
+    from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
+
+    tree = QTreeWidget()
+    tree.setColumnCount(2)
+    listing = QListWidget()
+    table = QTableWidget(1, 1)
+    cell = QTableWidgetItem("livetest")
+    table.setItem(0, 0, cell)
+    views = {
+        tree: QTreeWidgetItem(tree, ["livetest", "v001"]),
+        listing: QListWidgetItem("livetest", listing),
+        table: cell,
+    }
+    fxstyle.apply_theme("dark")
+    for view, item in views.items():
+        qtbot.addWidget(view)
+        view.show()
+        _tips.apply_tip(item, "livetest v001", **_RICH)
+    fxstyle.apply_theme("light")
+
+    for view, item in views.items():
+        if view is tree:
+            point = view.visualItemRect(item).center()
+        else:
+            point = view.visualRect(view.indexFromItem(item)).center()
+        viewport = view.viewport()
+        QApplication.sendEvent(
+            viewport,
+            QHelpEvent(QEvent.ToolTip, point, viewport.mapToGlobal(point)),
+        )
+
+        assert QToolTip.text() == _tips.tip("livetest v001", **_RICH), view
+        QToolTip.hideText()
+    assert all(
+        tree.topLevelItem(0).toolTip(column)
+        for column in range(tree.columnCount())
+    )
+
+
+def test_the_new_parts_are_spoken_as_plain_words(qtbot):
+    button = QPushButton()
+    qtbot.addWidget(button)
+
+    _tips.apply_tip(
+        button, "livetest v001", "A <render>", "Ctrl+P", **_RICH
+    )
+
+    assert button.accessibleName() == "livetest v001"
+    # One part per line, the fact without a value left out, the path whole.
+    assert button.accessibleDescription() == "\n".join(
+        (
+            "A <render>",
+            "Product: render/livetest",
+            "Files: 8",
+            _PATH,
+            "Double-click to play the preview",
+        )
+    )
+    # The status bar line stays the title and the body.
+    assert button.statusTip() == "livetest v001 - A <render>"
+
+
+def test_spoken_words_follow_a_later_tip(qtbot):
+    label = QLabel()
+    qtbot.addWidget(label)
+
+    _tips.apply_tip(label, "Version", code="a\\path", hint="Click")
+    assert label.accessibleDescription() == "a\\path\nClick"
+    _tips.apply_tip(label, "Version", facts=[("Files", "8")])
+
+    assert label.accessibleDescription() == "Files: 8"
+    assert "a\\path" not in label.toolTip()
 
 
 # ' Library widgets

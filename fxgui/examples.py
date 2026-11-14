@@ -338,6 +338,21 @@ def _display_page() -> QWidget:
 
     plain = QPushButton("Native rich tooltip")
     fxwidgets.apply_tip(plain, "Save", "Write the scene to disk", "Ctrl+S")
+    facts = QPushButton("Facts, code and a hint")
+    fxwidgets.apply_tip(
+        facts,
+        "livetest v001",
+        facts=[
+            ("Product", "render/livetest"),
+            ("Files", "8 x .exr"),
+            ("Status", "To review"),
+        ],
+        code=(
+            "X:\\pipeline\\production\\episodes\\ep010\\seq010\\sh0020"
+            "\\lighting\\publish\\render\\livetest\\v001\\livetest_v001.mov"
+        ),
+        hint="Double-click to play the preview",
+    )
     key = fxwidgets.FXKeycap("Ctrl+S")
     bar = QProgressBar()
     bar.setValue(64)
@@ -372,7 +387,7 @@ def _display_page() -> QWidget:
         _section("FXFlowLayout", flow_box),
         _section("FXThreadLine", _thread()),
         _section(
-            "apply_tip / tip / keycap / FXKeycap", _row(plain, key)
+            "apply_tip / tip / keycap / FXKeycap", _row(plain, facts, key)
         ),
     )
     # start() shows the spinner: on one not yet in a layout, a window.

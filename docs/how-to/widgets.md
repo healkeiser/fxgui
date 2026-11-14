@@ -244,6 +244,26 @@ The title is in the theme's primary text, the body dimmed, and the shortcut sits
 | A `QAction` | The tip is rebuilt when the action is hovered, before its tool button or menu shows it |
 | An item of a `QListWidget`, `QTreeWidget` or `QTableWidget` | The view builds the tip when it shows; a tree item gets it on every column. Add the item to its view first, or `apply_tip` raises `ValueError` |
 
+A tip about a thing, such as a file or a version, takes three more parts, all by name:
+
+``` python
+apply_tip(
+    item,
+    "livetest v001",
+    facts=[("Product", "render/livetest"), ("Files", "8 x .exr"), ("Status", status)],
+    code=path,
+    hint="Double-click to play the preview",
+)
+```
+
+| Part | What it shows |
+|------|---------------|
+| `facts` | `(label, value)` pairs as a table, in the order given: the label dimmed, the value in the primary text. A pair whose value is empty or `None` is left out |
+| `code` | A path, a key or a command, in the theme's mono face on a faint fill. A line longer than 64 characters is cut into rows after a folder separator, so a long path never widens the tooltip |
+| `hint` | A closing line, dimmed: what a double-click does |
+
+The blocks come in that order under the title and body, with a little air between them. The accessible description carries the same words, one part per line, without markup.
+
 The HTML holds the colours of the theme in force, so rebuilding at show time is what makes a tip set in one theme show in the next. Every string is HTML-escaped, so a path holding `&` or `<` reaches the user as text, and a newline in the body breaks the line. Qt's rich text draws no rounded background, so a keycap in a tooltip is square.
 
 Two lower-level helpers:
