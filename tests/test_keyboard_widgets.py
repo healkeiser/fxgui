@@ -244,15 +244,14 @@ def test_an_altgr_character_is_typing(qtbot):
     _press(Qt.Key_At, Qt.ControlModifier | Qt.AltModifier)
     assert field.text() == "@"
     assert field.hasFocus()
-    # Shortcut focus selects the field's text, so start from an empty one.
-    field.clear()
     tree.setFocus()
     QApplication.processEvents()
     _press(
         Qt.Key_BraceLeft,
         Qt.ControlModifier | Qt.AltModifier | Qt.ShiftModifier,
     )
-    assert field.text() == "{", "Shift with AltGr still types"
+    # Typing again from the tree refines the filter rather than replacing it.
+    assert field.text() == "@{", "Shift with AltGr still types"
 
 
 @pytest.mark.parametrize(

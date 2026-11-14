@@ -115,6 +115,10 @@ class FXKeyboardTree(QTreeWidget):
         if text in self._qt_keys or not _is_typing(event):
             return False
         field.setFocus(Qt.ShortcutFocusReason)
+        # Focus by shortcut selects the field's text; typing again from the
+        # tree refines the filter, so the key goes after it, not over it.
+        field.deselect()
+        field.end(False)
         field.insert(text)
         return True
 
