@@ -48,3 +48,7 @@ def test_an_item_outside_a_tree_compares_column_zero():
     assert low < high
     assert not high < low
 
+
+def test_a_superscript_digit_sorts_as_text(qtbot):
+    rows = [(["v2", ""], None), (["v1²", ""], None), (["v1", ""], None)]
+    assert _sorted(qtbot, rows) == ["v1", "v1²", "v2"]

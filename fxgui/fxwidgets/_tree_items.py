@@ -49,6 +49,6 @@ class FXSortedTreeWidgetItem(QTreeWidgetItem):
     @staticmethod
     def _natural_key(text: str) -> list:
         return [
-            int(part) if part.isdigit() else part.lower()
+            int(part) if part.isdecimal() else part.lower()
             for part in _NATURAL_SORT_PATTERN.split(text)
         ]
