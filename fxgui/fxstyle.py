@@ -2341,17 +2341,20 @@ def register_themed_root(root: QObject) -> None:
     A widget is not registered while the QApplication is a root: the
     application's sheet already reaches it, and the next switch of that
     sheet would hand the widget back the palette of the theme before.
+    It is still marked as a themed window, so it fades in as it shows,
+    as in a host.
 
     Roots are held weakly; destroyed widgets drop out automatically.
 
     Args:
         root: Any object with ``setStyleSheet`` (QWidget or QApplication).
     """
-    if isinstance(root, QWidget) and not _in_host(root):
-        return
-    _themed_roots.add(root)
     if isinstance(root, QWidget):
+        # Marked in both modes: a themed window fades in as it shows.
         root.setProperty(ROOT_PROPERTY, True)
+        if not _in_host(root):
+            return
+    _themed_roots.add(root)
     _watch_focus()
     _apply_to_root(root, _build_stylesheet(), palette(), font())
 

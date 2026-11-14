@@ -105,6 +105,23 @@ def test_a_themed_window_fades_in_when_shown(qtbot):
     assert fades[0].duration() == fxstyle.WINDOW_FADE_MS
 
 
+def test_a_window_in_a_themed_application_fades_in_when_shown(
+        qtbot, app_root):
+    fxstyle.register_themed_root(app_root)
+    app_root.show()
+    qtbot.waitExposed(app_root)
+    fades = _fades(app_root)
+    assert fades, "the window shows with no fade"
+    assert fades[0].duration() == fxstyle.WINDOW_FADE_MS
+
+
+def test_an_unregistered_window_in_a_themed_application_does_not_fade(
+        qtbot, app_root):
+    app_root.show()
+    qtbot.waitExposed(app_root)
+    assert not _fades(app_root)
+
+
 def test_a_panel_brought_forward_fades_in(qtbot):
     from qtpy.QtWidgets import QLabel, QStackedWidget
 
