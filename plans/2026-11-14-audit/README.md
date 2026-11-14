@@ -31,6 +31,7 @@ read the plan fully before starting, honour its STOP conditions, update your row
 | 020 | A window can scope any shortcut; a restart waits for the lock without waking the old copy (`try_claim`) | P3 | S | none | TODO |
 | 021 | Single-instance hand-over is acknowledged | P3 | M | 020 | TODO |
 | 022 | Linux network mounts may stall | P3 | S | 012 | TODO |
+| 023 | FXEmptyState, FXScrollShadow, `fxstyle.ink`, `fxutils.set_tab_order` moved from Pascal | P2 | M | none | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED (one-line rationale).
 
