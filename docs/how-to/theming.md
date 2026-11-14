@@ -256,14 +256,19 @@ from fxgui import fxstyle
 fxstyle.apply_theme("dracula")
 ```
 
-`apply_theme(name)` takes one theme name. It saves the choice, rebuilds
+`apply_theme(name)` takes one theme name. It saves the choice (see below), rebuilds
 the stylesheet, puts the theme's stylesheet, palette and font on every
 themed root, and emits `theme_changed`. A name that is not a theme raises
 `ValueError`; anything that is not a string raises `TypeError`.
 
 !!! tip
-    The choice is saved through `fxconfig`. The next time the application
-    starts, `FXApplication` loads it again.
+    The choice is saved through `fxconfig`, and the next time the
+    application starts, `FXApplication` loads it again. It is saved only
+    when a person can have chosen it: on Qt's headless platforms
+    (`offscreen`, `minimal`, as in tests and scripts) `apply_theme` does not
+    save. Pass `save=True` to save anyway, or `save=False` to never save,
+    for example when applying `load_saved_theme()` at startup.
+    `apply_row_size` takes the same `save` keyword.
 
 !!! note
     Built-in themes: `dark`, `light`, `dracula`, `one_dark_pro`, `github_dark`, `github_light`, `catppuccin_mocha`, `catppuccin_latte`, `nord`, `material_dark`, and `solarized_light`.
