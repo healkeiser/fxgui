@@ -26,6 +26,16 @@ from fxgui.fxwidgets._tips import apply_tip
 # Shift is absent: shifted characters are still typing.
 _COMMAND_MODIFIERS = Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier
 
+# Windows reports AltGr as Ctrl+Alt, so exactly those two (Shift allowed)
+# with a printable character is typing: @ # { [ on AZERTY and QWERTZ.
+_ALTGR = Qt.ControlModifier | Qt.AltModifier
+
+
+def _is_typing(event: QKeyEvent) -> bool:
+    """Return whether `event`'s modifiers leave it plain typing."""
+    held = event.modifiers() & _COMMAND_MODIFIERS
+    return held == Qt.NoModifier or held == _ALTGR
+
 #: Qt's own tree commands: `+` opens, `-` closes, `*` opens all, Space
 #: activates. Matched by character, so the keypad's count too.
 TREE_KEYS = "+-* "
@@ -102,7 +112,7 @@ class FXKeyboardTree(QTreeWidget):
         field, text = self._filter_field, event.text()
         if field is None or not text or not text.isprintable():
             return False
-        if text in self._qt_keys or event.modifiers() & _COMMAND_MODIFIERS:
+        if text in self._qt_keys or not _is_typing(event):
             return False
         field.setFocus(Qt.ShortcutFocusReason)
         field.insert(text)

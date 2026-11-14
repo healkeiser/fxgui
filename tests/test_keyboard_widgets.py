@@ -235,3 +235,20 @@ def test_a_filtered_tree_holds_a_row_of_actions_under_its_tree(qtbot):
     tree = panel.tree.geometry()
     assert run.isVisible()
     assert run.mapTo(panel, run.rect().topLeft()).y() > tree.bottom()
+
+
+def test_an_altgr_character_is_typing(qtbot):
+    _window, tree, field, _top = _tree_and_field(qtbot)
+    tree.type_into(field)
+    _press(Qt.Key_At, Qt.ControlModifier | Qt.AltModifier)
+    assert field.text() == "@"
+    assert field.hasFocus()
+    # Shortcut focus selects the field's text, so start from an empty one.
+    field.clear()
+    tree.setFocus()
+    QApplication.processEvents()
+    _press(
+        Qt.Key_BraceLeft,
+        Qt.ControlModifier | Qt.AltModifier | Qt.ShiftModifier,
+    )
+    assert field.text() == "{", "Shift with AltGr still types"
