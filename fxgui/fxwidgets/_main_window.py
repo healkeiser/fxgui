@@ -2,13 +2,13 @@
 
 # Built-in
 import os
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 from webbrowser import open_new_tab
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, QSize, Qt
-from qtpy.QtGui import QAction, QIcon, QStatusTipEvent
+from qtpy.QtGui import QAction, QIcon, QShortcut, QStatusTipEvent
 from qtpy.QtWidgets import (
     QActionGroup,
     QApplication,
@@ -24,7 +24,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from fxgui import fxconstants, fxicons, fxstyle, fxutils
+from fxgui import _compat, fxconstants, fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._status_bar import FXStatusBar
 from fxgui.fxwidgets._labels import FXIconLabel
 
@@ -165,6 +165,7 @@ class FXMainWindow(QMainWindow):
         self.ui: Optional[QWidget] = None
         self.theme_actions: Dict[str, QAction] = {}
         self.row_size_actions: Dict[str, QAction] = {}
+        self._scoped: List[Union[QAction, QShortcut]] = []
 
         self._create_actions()
         self._create_title_corner(title)
@@ -194,7 +195,7 @@ class FXMainWindow(QMainWindow):
 
     # Private methods
     def _scope_shortcuts(self) -> None:
-        """Hold the window's shortcuts to this widget while it is embedded.
+        """Hold the window's shortcuts, and the scoped ones, to it while embedded.
 
         Window-wide, an embedded copy's Ctrl+Alt+Q would close it from
         anywhere in the host's window.
@@ -210,13 +211,19 @@ class FXMainWindow(QMainWindow):
             )
         ]
         embedded = not self.isWindow()
-        for action in filter(None, actions):
-            action.setShortcutContext(
-                Qt.WidgetWithChildrenShortcut if embedded else Qt.WindowShortcut
-            )
+        context = Qt.WidgetWithChildrenShortcut if embedded else Qt.WindowShortcut
+        # Read defensively: Qt may send ParentChange before __init__ set it.
+        scoped = [
+            held for held in getattr(self, "_scoped", ()) if _compat.is_valid(held)
+        ]
+        for held in [*filter(None, actions), *scoped]:
+            if isinstance(held, QShortcut):
+                held.setContext(context)
+                continue
+            held.setShortcutContext(context)
             # A menu's action matches a widget scope only through a widget.
-            if embedded and action not in self.actions():
-                self.addAction(action)
+            if embedded and held not in self.actions():
+                self.addAction(held)
 
     def _set_window_icon(self, icon: Optional[Union[str, QIcon]]) -> None:
         """Set the window icon: a `QIcon`, a path, the app's, or fxgui's logo."""
@@ -562,6 +569,21 @@ class FXMainWindow(QMainWindow):
             QApplication.primaryScreen().availableGeometry().center()
         )
         self.move(frame_geo.topLeft())
+
+    def scope_shortcut(self, shortcut: Union[QAction, QShortcut]) -> None:
+        """Hold `shortcut` to this window while a host embeds it.
+
+        As for the window's own actions: window-wide while it is a window,
+        and only from inside it while embedded, so its key never fires
+        elsewhere in the host's window. Applies now and on every reparent.
+
+        Args:
+            shortcut: An action, or a `QShortcut` whose parent is in this
+                window.
+        """
+        if shortcut not in self._scoped:
+            self._scoped.append(shortcut)
+        self._scope_shortcuts()
 
     # Overrides
     def setStatusBar(self, status_bar: Optional[QStatusBar]) -> None:

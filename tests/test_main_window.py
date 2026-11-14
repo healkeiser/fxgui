@@ -80,3 +80,69 @@ def test_a_window_moved_into_a_host_scopes_its_shortcuts(qtbot):
     window.setParent(host)
 
     assert window.close_action.shortcutContext() == Qt.WidgetWithChildrenShortcut
+
+
+def test_a_scoped_action_stays_out_of_the_host(qtbot):
+    from qtpy.QtCore import Qt
+    from qtpy.QtGui import QAction
+    from qtpy.QtTest import QTest
+
+    _host, elsewhere, embedded = _host_with_embedded(qtbot)
+    action = QAction("Run", embedded)
+    action.setShortcut("Ctrl+Alt+K")
+    ran = []
+    action.triggered.connect(lambda: ran.append(True))
+    embedded.scope_shortcut(action)
+
+    QTest.keyClick(elsewhere, Qt.Key_K, Qt.ControlModifier | Qt.AltModifier)
+    assert ran == []
+
+    inside = embedded.centralWidget()
+    inside.setFocus()
+    QTest.keyClick(inside, Qt.Key_K, Qt.ControlModifier | Qt.AltModifier)
+    assert ran == [True]
+
+
+def test_a_scoped_shortcut_follows_the_window_into_a_host(qtbot):
+    from qtpy.QtCore import Qt
+    from qtpy.QtGui import QAction, QKeySequence, QShortcut
+    from qtpy.QtWidgets import QWidget
+
+    from fxgui.fxwidgets import FXMainWindow
+
+    window = FXMainWindow()
+    qtbot.addWidget(window)
+    action = QAction("Run", window)
+    shortcut = QShortcut(QKeySequence("Ctrl+J"), window)
+    window.scope_shortcut(action)
+    window.scope_shortcut(shortcut)
+    assert action.shortcutContext() == Qt.WindowShortcut
+    host = QWidget()
+    qtbot.addWidget(host)
+
+    window.setParent(host)
+
+    assert action.shortcutContext() == Qt.WidgetWithChildrenShortcut
+    assert shortcut.context() == Qt.WidgetWithChildrenShortcut
+
+
+def test_a_deleted_scoped_action_is_skipped(qtbot):
+    from qtpy.QtCore import QEvent, Qt
+    from qtpy.QtGui import QAction
+    from qtpy.QtWidgets import QApplication, QWidget
+
+    from fxgui.fxwidgets import FXMainWindow
+
+    window = FXMainWindow()
+    qtbot.addWidget(window)
+    action = QAction("Run", window)
+    window.scope_shortcut(action)
+    action.deleteLater()
+    QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+    host = QWidget()
+    qtbot.addWidget(host)
+
+    window.setParent(host)
+
+    # The reparent went through the scoped list, dead action and all.
+    assert window.close_action.shortcutContext() == Qt.WidgetWithChildrenShortcut
