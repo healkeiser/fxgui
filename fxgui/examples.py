@@ -456,6 +456,9 @@ def _thumbnail_tree() -> QTreeWidget:
         top.setData(0, delegate.DESCRIPTION_ROLE, "Episode")
         # A token name, so each card follows every theme switch.
         top.setData(0, Qt.BackgroundRole, "surface")
+        # No colour: a neutral tag, in its own case.
+        top.setData(0, delegate.STATUS_LABEL_TEXT_ROLE, "Library")
+        top.setData(0, delegate.STATUS_LABEL_UPPERCASE_ROLE, False)
         for shot, status, key in (
             ("sh0010", "WIP", "warning"),
             ("sh0020", "Approved", "success"),

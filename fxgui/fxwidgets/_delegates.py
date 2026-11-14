@@ -449,6 +449,7 @@ class _Indicators(NamedTuple):
     dot_color: QColor
     label_text: str
     label_icon: str = ""
+    label_upper: bool = True
 
 
 class FXThumbnailDelegate(QStyledItemDelegate):
@@ -470,9 +471,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         - `THUMBNAIL_VISIBLE_ROLE` (`bool`), `THUMBNAIL_PATH_ROLE` (`str`).
         - `DESCRIPTION_ROLE` (`str`, Markdown).
         - `STATUS_DOT_COLOR_ROLE`, `STATUS_LABEL_COLOR_ROLE` (`QColor` or
-          token name), `STATUS_LABEL_TEXT_ROLE` (`str`).
+          token name), `STATUS_LABEL_TEXT_ROLE` (`str`),
+          `STATUS_LABEL_ICON_ROLE` (`str`, an icon name). A label with
+          text and no colour role draws as a neutral outlined tag.
         - `STATUS_DOT_VISIBLE_ROLE`, `STATUS_LABEL_VISIBLE_ROLE`,
-          `CHILD_COUNT_VISIBLE_ROLE` (`bool`).
+          `CHILD_COUNT_VISIBLE_ROLE`, `STATUS_LABEL_UPPERCASE_ROLE`
+          (`bool`; the last defaults to True).
         - `PICKER_TEXT_ROLE` (`str`), `PICKER_CHOICES_ROLE`
           (`Sequence[str]`), `PICKER_UNAVAILABLE_ROLE` (`Mapping[str, str]`,
           a listed choice that cannot be picked, to its reason).
@@ -508,6 +512,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     STATUS_LABEL_TEXT_ROLE = _roles.STATUS_LABEL_TEXT
     # An icon name drawn in the label's colour in place of its dot.
     STATUS_LABEL_ICON_ROLE = _roles.STATUS_LABEL_ICON
+    # False keeps the label's words as given ("Library", "v012").
+    STATUS_LABEL_UPPERCASE_ROLE = _roles.STATUS_LABEL_UPPERCASE
     STATUS_DOT_VISIBLE_ROLE = _roles.STATUS_DOT_VISIBLE
     STATUS_LABEL_VISIBLE_ROLE = _roles.STATUS_LABEL_VISIBLE
     CHILD_COUNT_VISIBLE_ROLE = _roles.CHILD_COUNT_VISIBLE
@@ -903,16 +909,34 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         return self._LABEL_ICON if icon else self._LABEL_MARK
 
     def _status_label_width(
-        self, label_text: str, option: QStyleOptionViewItem, icon: str = ""
+        self,
+        label_text: str,
+        option: QStyleOptionViewItem,
+        icon: str = "",
+        upper: bool = True,
+        neutral: bool = False,
     ) -> int:
-        """Return the width of the status mark and its words."""
-        return (
-            self._mark_size(icon)
-            + self._LABEL_GAP
-            + QFontMetrics(self._label_font(option)).horizontalAdvance(
-                label_text.upper()
-            )
+        """Return the width of the status mark and its words.
+
+        Args:
+            label_text: The label's words.
+            option: The style option of the row.
+            icon: The icon name drawn in place of the dot, if any.
+            upper: Whether the words are drawn uppercased.
+            neutral: Whether the label is a neutral tag: padded inside an
+                outline, with no coloured mark.
+
+        Returns:
+            The label's width in pixels.
+        """
+        words = label_text.upper() if upper else label_text
+        advance = QFontMetrics(self._label_font(option)).horizontalAdvance(
+            words
         )
+        if neutral:
+            icon_width = self._LABEL_ICON + self._LABEL_GAP if icon else 0
+            return 2 * self._LABEL_PADDING + icon_width + advance
+        return self._mark_size(icon) + self._LABEL_GAP + advance
 
     def _indicator_metrics(
         self,
@@ -924,22 +948,30 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
         A mark is measured only if it is painted: its flag is True, its
         visible role is not False, and it has a usable colour (and text,
-        for the pill). `footprint` is how far in from the row's right edge
+        for the pill). A label with text and no colour role at all is a
+        neutral tag. `footprint` is how far in from the row's right edge
         the leftmost mark reaches, 0 when neither shows.
         """
-        label_color = fxstyle.qcolor(index.data(self.STATUS_LABEL_COLOR_ROLE))
+        colour_data = index.data(self.STATUS_LABEL_COLOR_ROLE)
+        label_color = fxstyle.qcolor(colour_data)
+        # Only an unset role: a set but unusable colour still hides the label.
+        neutral = colour_data is None
         label_text = index.data(self.STATUS_LABEL_TEXT_ROLE)
         label_icon = str(index.data(self.STATUS_LABEL_ICON_ROLE) or "")
+        upper = index.data(self.STATUS_LABEL_UPPERCASE_ROLE) is not False
         dot_color = fxstyle.qcolor(index.data(self.STATUS_DOT_COLOR_ROLE))
 
         show_label = bool(
             self.show_status_label
             and index.data(self.STATUS_LABEL_VISIBLE_ROLE) is not False
             and label_text
-            and label_color.isValid()
+            and (label_color.isValid() or neutral)
         )
         label_width = (
-            self._status_label_width(str(label_text), option, label_icon)
+            self._status_label_width(
+                str(label_text), option, label_icon, upper=upper,
+                neutral=neutral,
+            )
             if show_label
             else 0
         )
@@ -953,8 +985,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         if fit and label_width and self._title_squeezed(
             index, option, label_width, dot_width
         ):
-            # The title wins: the label keeps its coloured mark alone.
-            label_width, label_text = self._mark_size(label_icon), ""
+            # The title wins: the label keeps its coloured mark alone; a
+            # neutral tag has no mark to keep, so it hides.
+            label_width = 0 if neutral else self._mark_size(label_icon)
+            label_text = ""
 
         # `+ 1` turns an inset from the inclusive right edge into a width
         label_inset, dot_inset = self._indicator_insets(label_width, dot_width)
@@ -971,6 +1005,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             dot_color,
             str(label_text or ""),
             label_icon,
+            upper,
         )
 
     def _title_squeezed(
@@ -1152,15 +1187,61 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         font: QFont,
         tall: bool = False,
         icon: str = "",
+        upper: bool = True,
     ) -> None:
         """Draw the status mark and its words, unless past `left_limit`.
 
         The colour is on the mark only, so a bright status never sets a loud
-        block of colour in the row.
+        block of colour in the row. With no valid `color`, the label is a
+        neutral tag: a thin outline round its muted icon and words.
         """
         if label_x < left_limit:
             return
         top = self._band_top(item_rect, tall)
+        words_text = text.upper() if upper else text
+        if not color.isValid():
+            theme = fxstyle.colors()
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setPen(QPen(QColor(theme.border_light), 1))
+            painter.setBrush(Qt.NoBrush)
+            # The half-pixel inset keeps the 1 px line inside the width.
+            painter.drawRoundedRect(
+                QRectF(
+                    label_x + 0.5,
+                    top + 0.5,
+                    label_width - 1,
+                    self._INDICATOR_BAND_HEIGHT - 1,
+                ),
+                fxstyle.SMALL_RADIUS,
+                fxstyle.SMALL_RADIUS,
+            )
+            x = label_x + self._LABEL_PADDING
+            if icon:
+                side = self._LABEL_ICON
+                _mark(icon, "text_muted").paint(
+                    painter,
+                    QRect(
+                        x,
+                        top + (self._INDICATOR_BAND_HEIGHT - side) // 2,
+                        side,
+                        side,
+                    ),
+                )
+                x += side + self._LABEL_GAP
+            if words_text:
+                painter.setPen(QColor(theme.text_muted))
+                painter.setFont(font)
+                painter.drawText(
+                    QRect(
+                        x,
+                        top,
+                        label_x + label_width - self._LABEL_PADDING - x,
+                        self._INDICATOR_BAND_HEIGHT,
+                    ),
+                    Qt.AlignVCenter | Qt.AlignLeft,
+                    words_text,
+                )
+            return
         side = self._mark_size(icon)
         mark = QRectF(
             label_x,
@@ -1187,7 +1268,35 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         )
         painter.setPen(QColor(fxstyle.colors().text_muted))
         painter.setFont(font)
-        painter.drawText(words, Qt.AlignVCenter | Qt.AlignLeft, text.upper())
+        painter.drawText(words, Qt.AlignVCenter | Qt.AlignLeft, words_text)
+
+    def _mark_ink(
+        self, option: QStyleOptionViewItem, index: QModelIndex, color: QColor
+    ) -> QColor:
+        """Return `color` stepped until it reads on the row's ground.
+
+        A tracker's near-white "todo" vanishes on a light row otherwise.
+        The ground is the one `_draw_row_fill` paints, hover aside: a
+        hovered row is a mix close to it.
+
+        Args:
+            option: The style option of the row.
+            index: The row's index.
+            color: The mark's colour.
+
+        Returns:
+            `color` when it reads at `fxstyle.CONTROL_CONTRAST`, else the
+            first colour stepped from it toward black or white that does.
+        """
+        band = self._custom_background(index)
+        if option.state & QStyle.State_Selected:
+            ground = QColor(fxstyle.colors().selection)
+        elif band is not None:
+            ground = band
+        else:
+            ground = option.palette.color(QPalette.Base)
+        return QColor(
+            fxstyle.readable_ink(ground, color, fxstyle.CONTROL_CONTRAST))
 
     @staticmethod
     def _row_ends(
@@ -1454,11 +1563,16 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                 label_x,
                 marks.label_width,
                 left_limit,
-                marks.label_color,
+                (
+                    self._mark_ink(option, index, marks.label_color)
+                    if marks.label_color.isValid()
+                    else marks.label_color
+                ),
                 marks.label_text,
                 self._label_font(option),
                 tall,
                 marks.label_icon,
+                upper=marks.label_upper,
             )
         if marks.dot_width:
             self._draw_status_dot(

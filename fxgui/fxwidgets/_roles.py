@@ -19,6 +19,7 @@ from qtpy.QtCore import Qt
     PICKER_CHOICES,
     PICKER_UNAVAILABLE,
     STATUS_LABEL_ICON,
+    STATUS_LABEL_UPPERCASE,
     SORT,
     FIRST_FREE,
-) = range(int(Qt.UserRole) + 1, int(Qt.UserRole) + 16)
+) = range(int(Qt.UserRole) + 1, int(Qt.UserRole) + 17)
