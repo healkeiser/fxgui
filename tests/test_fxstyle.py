@@ -229,6 +229,40 @@ def test_a_pressed_fill_stands_off_the_hover_fill(qapp, theme):
     ) >= fxstyle.STATE_MIN_CONTRAST
 
 
+_STATE_GROUNDS = ("surface", "surface_sunken", "surface_alt", "well", "frame")
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+def test_every_state_fill_stands_off_every_ground_it_sits_on(qapp, theme):
+    colors = fxstyle._colour_tokens(theme)
+    ratio = fxstyle.get_contrast_ratio
+    floor = fxstyle.state_contrast(theme)
+    for fill in ("state_hover", "state_pressed"):
+        for ground in _STATE_GROUNDS:
+            assert ratio(colors[fill], colors[ground]) >= floor, (fill, ground)
+    for ground in ("surface", "surface_sunken", "well"):
+        assert fxstyle._visibly_differ(colors["selection"], colors[ground]), (
+            ground)
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+def test_a_pressed_fill_sits_past_the_hover_fill(qapp, theme):
+    colors = fxstyle._colour_tokens(theme)
+    pole = fxstyle._pole_from(colors["surface"])
+    ratio = fxstyle.get_contrast_ratio
+    assert ratio(colors["state_pressed"], pole) < ratio(
+        colors["state_hover"], pole)
+
+
+def test_a_stated_selection_is_kept_even_where_it_hides(qapp, monkeypatch):
+    colors = fxstyle.get_colors()
+    themes = dict(colors["themes"])
+    # Latte's own surface_sunken: a theme's stated fill is its choice.
+    themes["_stated"] = {**themes["catppuccin_latte"], "selection": "#dce0e8"}
+    monkeypatch.setattr(fxstyle, "_colors", {**colors, "themes": themes})
+    assert fxstyle._token_map("_stated")["@selection"] == "#dce0e8"
+
+
 @pytest.mark.parametrize("theme", fxstyle.get_available_themes())
 def test_muted_text_stays_a_visible_step_from_text(qapp, theme):
     colors = fxstyle._colour_tokens(theme)

@@ -1238,10 +1238,12 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
     """Return a theme's pressed fill and text inks, each held to its floor.
 
     - ``state_hover``: stepped away from ``surface`` until it differs by
-      `STATE_MIN_CONTRAST` from it and from the ``surface_sunken`` and
-      ``well`` a view fills, so a hovered row reads as a hovered tab does.
-    - ``state_pressed``: stepped on until it differs from ``state_hover``
-      by the same.
+      `STATE_MIN_CONTRAST` from ``surface``, ``surface_sunken``,
+      ``surface_alt``, ``well`` and ``frame``, every ground it is drawn on,
+      so a hovered row reads as a hovered tab does.
+    - ``state_pressed``: stepped on until it differs by the same from
+      ``state_hover`` and from those grounds and, when derived rather than
+      stated, until it sits past ``state_hover`` toward black or white.
     - ``text``: stepped toward black or white until it reads at
       `TEXT_CONTRAST` on every ground it sits on, the hover and pressed
       fills included.
@@ -1253,19 +1255,39 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
     """
     surface = theme_data["surface"]
     pole = _pole_from(surface)
-    rows_on = [theme_data.get(key, surface)
-               for key in ("surface", "surface_sunken", "well")]
+    # Every ground a state fill is drawn on: a pane, a view, a list set in a
+    # pane, an alternate row, and the frame's bands, where icon buttons are
+    # flat.
+    state_grounds = [
+        theme_data.get(key, surface)
+        for key in ("surface", "surface_sunken", "surface_alt", "well",
+                    "frame")
+    ]
     # A theme may hold its states closer, as a brand's own fills do.
     floor = float(theme_data.get("state_contrast", STATE_MIN_CONTRAST))
+
+    def stands_off(*others: str) -> Callable[[str], bool]:
+        return lambda color: all(
+            _reads(ground, floor)(color)
+            for ground in (*state_grounds, *others))
+
     hover = step_toward(
         theme_data.get("state_hover")
         or mix_oklab(surface, theme_data["text"], HOVER_TINT), pole,
-        lambda color: all(
-            _reads(ground, floor)(color) for ground in rows_on))
+        stands_off())
+    stated = theme_data.get("state_pressed")
+    off_hover = stands_off(hover)
+
+    def past_hover(color: str) -> bool:
+        # The derived start can sit on the surface's side of a hover pushed
+        # far, as catppuccin_latte's did: a pressed fill lighter than hover.
+        return get_contrast_ratio(color, pole) < get_contrast_ratio(
+            hover, pole)
+
     pressed = step_toward(
-        theme_data.get("state_pressed")
-        or mix_oklab(surface, theme_data["text"], PRESSED_TINT),
-        pole, _reads(hover, floor))
+        stated or mix_oklab(surface, theme_data["text"], PRESSED_TINT),
+        pole,
+        lambda color: off_hover(color) and (bool(stated) or past_hover(color)))
     grounds = [
         theme_data.get(key, surface)
         for key in ("surface", "surface_sunken", "surface_alt", "well",
@@ -1392,8 +1414,18 @@ def _token_map(theme_name: str) -> Dict[str, str]:
 
     # A selected item's fill is the accent unless the theme names a softer
     # one, whose inks are the theme's own text and icon made to read on it.
-    selection = theme_data.get("selection") or mix_oklab(
-        theme_data["surface"], accent_primary, SELECTION_TINT)
+    # A derived one steps toward the accent until a selected row shows on
+    # every view it fills: catppuccin_latte's 15% vanished on its lists.
+    selection = theme_data.get("selection")
+    if not selection:
+        views = [
+            theme_data.get(key, theme_data["surface"])
+            for key in ("surface", "surface_sunken", "well")
+        ]
+        selection = step_toward(
+            mix_oklab(theme_data["surface"], accent_primary, SELECTION_TINT),
+            accent_primary,
+            lambda color: all(_visibly_differ(color, view) for view in views))
     tokens["@selection"] = selection
     tokens["@selection_border"] = (
         theme_data.get("selection_border") or accent_primary)
