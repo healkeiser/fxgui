@@ -232,6 +232,14 @@ def _inputs_page() -> QWidget:
 
     breadcrumb = fxwidgets.FXBreadcrumb(show_navigation=True)
     breadcrumb.set_path(["Projects", "pipeline", "seq010", "sh0010"])
+    labelled = fxwidgets.FXBreadcrumb(
+        home_icon="",
+        segment_labels=lambda parts: [
+            {"seq010": "Sequence 010", "sh0010": "Shot 0010"}.get(p, p)
+            for p in parts
+        ],
+    )
+    labelled.set_path(["Projects", "pipeline", "seq010", "sh0010"])
 
     return _page(
         _section(
@@ -258,7 +266,7 @@ def _inputs_page() -> QWidget:
             _row(fxwidgets.FXRatingWidget(initial_rating=3.5, allow_half=True)),
         ),
         _section("FXMentionEdit", mention),
-        _section("FXBreadcrumb", breadcrumb),
+        _section("FXBreadcrumb", breadcrumb, labelled),
     )
 
 

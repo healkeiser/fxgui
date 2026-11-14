@@ -3,7 +3,7 @@
 # Built-in
 import weakref
 from functools import lru_cache
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 # Third-party
 from qtpy.QtCore import QEvent, QRect, QRectF, Qt, Signal
@@ -209,6 +209,9 @@ class FXBreadcrumb(QWidget):
         tab_stops: Whether the segments and the back and forward buttons
             take Tab stops. False leaves them to the mouse; the path editor
             keeps its own.
+        segment_labels: Turns the path's parts into the words shown on the
+            segments, one per part. The path, its editor and the signals
+            keep the parts. Defaults to showing the parts.
 
     Signals:
         segment_clicked: Emitted when a segment is clicked (index, path list).
@@ -224,6 +227,7 @@ class FXBreadcrumb(QWidget):
         ...     lambda idx, path: print(f"Navigate to: {'/'.join(path[:idx+1])}")
         ... )
         >>> breadcrumb.path_edited.connect(lambda text: print(f"User typed: {text}"))
+        >>> FXBreadcrumb(segment_labels=lambda parts: [p.upper() for p in parts])
     """
 
     segment_clicked = Signal(int, list)
@@ -252,9 +256,12 @@ class FXBreadcrumb(QWidget):
         path_separator: str = "/",
         home_path: Optional[List[str]] = None,
         tab_stops: bool = True,
+        *,
+        segment_labels: Optional[Callable[[List[str]], List[str]]] = None,
     ):
         super().__init__(parent)
         self._tab_stops = tab_stops
+        self._segment_labels = segment_labels
         self._lit = False
 
         self._path: List[str] = []
@@ -462,6 +469,23 @@ class FXBreadcrumb(QWidget):
         """Return the current path segments."""
         return self._path.copy()
 
+    def segment_labels(self, path: List[str]) -> List[str]:
+        """Return the words shown on the segments of `path`, one per part.
+
+        Override it, or pass `segment_labels` to the constructor, to show
+        words of your own; the path, its editor and the signals keep the
+        parts.
+
+        Args:
+            path: The path's parts.
+
+        Returns:
+            One label per part. The default is the parts themselves.
+        """
+        if self._segment_labels is not None:
+            return list(self._segment_labels(list(path)))
+        return list(path)
+
     def set_path(self, path: List[str], record_history: bool = True) -> None:
         """Show `path`, recording it in the history unless told not to."""
         self._path = path.copy()
@@ -554,13 +578,18 @@ class FXBreadcrumb(QWidget):
         if not self._path:
             return
 
-        for i, segment in enumerate(self._path):
+        labels = self.segment_labels(self._path)
+        # A wrong count would shift words onto the wrong segments.
+        if len(labels) != len(self._path):
+            labels = list(self._path)
+
+        for i in range(len(self._path)):
             if i > 0:
                 self._add_separator()
 
             is_last = i == len(self._path) - 1
             is_home = i == 0
-            self._add_segment(segment, i, is_home, is_last)
+            self._add_segment(labels[i], i, is_home, is_last)
 
     def _add_segment(
         self, text: str, index: int, is_home: bool, is_last: bool

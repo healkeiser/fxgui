@@ -196,6 +196,23 @@ Do not point `STRIP_RESTING_TOKEN` at `surface`: in every bundled theme
 that is the window's own colour, so on a plain window the strip
 disappears.
 
+A breadcrumb can show words of its own over the raw path parts. Pass
+`segment_labels=`, a function from the parts to one word per part, or
+override `segment_labels(self, path)` in a subclass:
+
+``` python
+from fxgui.fxwidgets import FXBreadcrumb
+
+crumb = FXBreadcrumb(
+    home_icon="",
+    segment_labels=lambda parts: [p.replace("sq", "Sequence ") for p in parts],
+)
+crumb.set_path(["pilot", "sq010"])  # shows "pilot / Sequence 010"
+```
+
+`path()`, the editor and every signal keep the parts. A list of the
+wrong length shows the parts.
+
 ## Your Own Item-Data Roles
 
 `FXThumbnailDelegate` reads item-data roles of its own off the items it
