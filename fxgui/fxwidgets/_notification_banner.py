@@ -119,7 +119,7 @@ class FXNotificationBanner(QFrame):
 
     Args:
         parent: The widget the card sits on; it positions the card.
-        message: The notification message, rich text.
+        message: The notification message, read in `text_format`.
         severity_type: CRITICAL, ERROR, WARNING, SUCCESS, INFO or DEBUG;
             None for a plain card with `title` and `icon`.
         timeout: Milliseconds before it dismisses itself; 0 never.
@@ -137,6 +137,9 @@ class FXNotificationBanner(QFrame):
         top: From the parent's top to the first banner. Defaults to
             `margin`.
         spacing: Between stacked notifications; the pane gap.
+        text_format: How the message is read: `Qt.RichText` (the default)
+            or `Qt.PlainText`, which shows `<` and newlines as typed.
+            Text from people or a tracker wants plain.
 
     Signals:
         closed: Emitted when the banner is closed.
@@ -186,6 +189,8 @@ class FXNotificationBanner(QFrame):
         margin: int = 16,
         top: Optional[int] = None,
         spacing: int = fxstyle.PANE_GAP,
+        *,
+        text_format: Qt.TextFormat = Qt.RichText,
     ):
         super().__init__(parent)
 
@@ -245,7 +250,7 @@ class FXNotificationBanner(QFrame):
 
         self._message_label = QLabel(message)
         self._message_label.setObjectName("fxBannerMessage")
-        self._message_label.setTextFormat(Qt.RichText)
+        self._message_label.setTextFormat(text_format)
         self._message_label.setWordWrap(True)
         self._message_label.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Minimum
@@ -280,7 +285,7 @@ class FXNotificationBanner(QFrame):
         for label, callback in (actions or {}).items():
             self.add_action(label, callback)
 
-        self.adjustSize()
+        self._refit()
         if parent:
             parent.installEventFilter(self)
 
@@ -354,7 +359,7 @@ class FXNotificationBanner(QFrame):
             self.deleteLater()
             return False
 
-        self.adjustSize()
+        self._refit()
 
         super().show()
 
@@ -460,6 +465,11 @@ class FXNotificationBanner(QFrame):
 
     def _refit(self) -> None:
         """Fit the banner to its content and move the ones stacked under it."""
+        # A wrapped label's size hint is for some other width; ask for this one.
+        margins = self.layout().contentsMargins()
+        room = self.contentsRect().width() - margins.left() - margins.right()
+        label = self._message_label
+        label.setFixedHeight(label.heightForWidth(room))
         self.adjustSize()
         if not self.isHidden() and self.parent():
             self._reposition_notifications(self.parent())

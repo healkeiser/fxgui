@@ -116,3 +116,36 @@ def test_a_longer_message_grows_the_banner_and_moves_the_next_down(qtbot):
     first.set_message("A much longer message that wraps. " * 10)
     assert first.height() > short
     assert second._target_pos.y() >= first._target_pos.y() + first.height()
+
+
+def test_a_plain_banner_shows_markup_and_newlines_as_typed(qtbot):
+    parent = _host(qtbot)
+    banner = FXNotificationBanner(
+        parent=parent, message="a < b\nc", text_format=Qt.PlainText
+    )
+    assert banner._message_label.textFormat() == Qt.PlainText
+    assert banner.message() == "a < b\nc"
+
+
+def test_a_wrapped_message_gets_the_height_it_needs(qtbot):
+    line = (
+        "shot_{:03d}: publish failed because the cache folder is missing"
+        " on the server"
+    )
+    message = "\n".join(line.format(index) for index in range(6))
+    for fmt in (Qt.RichText, Qt.PlainText):
+        parent = _host(qtbot)
+        banner = FXNotificationBanner(
+            parent=parent,
+            message=message,
+            timeout=0,
+            width=480,
+            text_format=fmt,
+        )
+        banner.show()
+        qtbot.waitUntil(banner.isVisible)
+        label = banner._message_label
+        room = banner.contentsRect().width() - 32
+        assert label.height() == label.heightForWidth(room)
+        banner.set_message(message + "\none more line")
+        assert label.height() == label.heightForWidth(room)
