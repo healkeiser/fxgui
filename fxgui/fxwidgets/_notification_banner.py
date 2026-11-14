@@ -428,11 +428,17 @@ class FXNotificationBanner(QFrame):
         self,
         text: str,
         callback: Optional[Callable[[], None]] = None,
+        icon: Optional[str] = None,
     ) -> QPushButton:
         """Add an action button to the banner.
 
         A banner with an action never times out. Clicking one runs its
         `callback`, then dismisses the banner.
+
+        Args:
+            text: The button's label.
+            callback: Run on a click, before the banner closes.
+            icon: An icon name, drawn before the label.
 
         Returns:
             QPushButton: The button.
@@ -449,7 +455,12 @@ class FXNotificationBanner(QFrame):
         button = QPushButton(text, self)
         button.setObjectName("fxBannerAction")
         # The first one leads; the rest step back.
-        button.setProperty("primary", not self._action_buttons)
+        primary = not self._action_buttons
+        button.setProperty("primary", primary)
+        if icon:
+            # The lead button sits on the accent fill.
+            ink = "icon_on_accent_primary" if primary else None
+            fxicons.set_icon(button, icon, color=ink)
         button.setCursor(Qt.PointingHandCursor)
         # On the button, not in a lambda: a lambda holding self leaks it.
         button.callback = callback

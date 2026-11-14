@@ -149,3 +149,11 @@ def test_a_wrapped_message_gets_the_height_it_needs(qtbot):
         assert label.height() == label.heightForWidth(room)
         banner.set_message(message + "\none more line")
         assert label.height() == label.heightForWidth(room)
+
+
+def test_an_action_can_carry_an_icon(qtbot):
+    parent = _host(qtbot)
+    banner = FXNotificationBanner(parent=parent, message="Publish failed")
+    button = banner.add_action("Retry", None, icon="refresh-cw")
+    assert not button.icon().isNull()
+    assert banner.add_action("Later").icon().isNull()
