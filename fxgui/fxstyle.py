@@ -948,6 +948,33 @@ def _visibly_differ(one_hex: str, two_hex: str) -> bool:
     return get_contrast_ratio(one_hex, two_hex) >= 1.1 or delta >= 48
 
 
+def _overlay(ink: str, ground: str, fill: str) -> str:
+    """Return `ink`, see-through, standing off `ground` as `fill` does.
+
+    The least alpha, in hundredths up to a half, whose blend over `ground`
+    reaches the contrast `fill` has with it. For a control with no ground
+    of its own: it shows on a band, a card or a tooltip alike, where an
+    opaque fill may equal the ground.
+
+    Args:
+        ink: The colour to see through, as hex.
+        ground: The colour the contrast is measured over, as hex.
+        fill: The opaque fill whose contrast with `ground` to reach.
+
+    Returns:
+        The colour as ``#AARRGGBB``, which QSS and QColor both read.
+    """
+    target = get_contrast_ratio(fill, ground)
+    color = QColor(ink)
+    for step in range(1, 51):
+        # Test the 8-bit alpha Qt paints, so rounding never leaves it short.
+        color.setAlpha(round(255 * step / 100))
+        if get_contrast_ratio(
+                mix(ground, ink, color.alphaF()), ground) >= target:
+            break
+    return color.name(QColor.NameFormat.HexArgb)
+
+
 def _primary_button_fills(
     accent_primary: str,
     accent_secondary: str,
@@ -1244,6 +1271,9 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
     - ``state_pressed``: stepped on until it differs by the same from
       ``state_hover`` and from those grounds and, when derived rather than
       stated, until it sits past ``state_hover`` toward black or white.
+    - ``state_checked_hover``: stepped on from ``state_pressed`` until it
+      differs from it (and every state ground) by the floor; ``text`` reads
+      at 4.5:1 on it.
     - ``text``: stepped toward black or white until it reads at
       `TEXT_CONTRAST` on every ground it sits on, the hover and pressed
       fills included.
@@ -1288,6 +1318,11 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
         stated or mix_oklab(surface, theme_data["text"], PRESSED_TINT),
         pole,
         lambda color: off_hover(color) and (bool(stated) or past_hover(color)))
+    # A checked button under the pointer: a step past pressed, so the click
+    # that unchecks it shows. One step at least, for a brand's floor of 1.
+    checked_hover = step_toward(
+        pressed, pole,
+        lambda color: color != pressed and stands_off(pressed)(color))
     grounds = [
         theme_data.get(key, surface)
         for key in ("surface", "surface_sunken", "surface_alt", "well",
@@ -1300,7 +1335,7 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
             for ground in on))
 
     muted = reading(theme_data["text_muted"], grounds)
-    text = reading(theme_data["text"], grounds + [pressed])
+    text = reading(theme_data["text"], grounds + [pressed, checked_hover])
     # Then on, until muted text reads as a step below it; where text meets
     # the pole first, muted steps back toward the surface while it reads.
     text = step_toward(text, pole, _reads(muted, MUTED_STEP))
@@ -1312,6 +1347,7 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
     return {
         "state_hover": hover,
         "state_pressed": pressed,
+        "state_checked_hover": checked_hover,
         "text": text,
         "text_muted": muted,
         # What a row's name is drawn in: past text, toward black or white.
@@ -1437,6 +1473,13 @@ def _token_map(theme_name: str) -> Dict[str, str]:
             selection, theme_data["text"])
         tokens["@icon_on_selection"] = readable_ink(
             selection, theme_data.get("icon", theme_data["text"]))
+
+    # A flat button has no ground of its own (a band, a card, a tooltip),
+    # where an opaque fill can equal the ground: its fills are the text,
+    # see-through, standing off `surface` as the opaque ones do.
+    for state in ("state_hover", "state_pressed", "state_checked_hover"):
+        tokens[f"@{state}_overlay"] = _overlay(
+            theme_data["text"], theme_data["surface"], theme_data[state])
 
     (
         tokens["@primary_button"],

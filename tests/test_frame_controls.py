@@ -21,7 +21,7 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle
 
-from _helpers import hover, isolated
+from _helpers import hover, isolated, near
 
 THEMES = fxstyle.get_available_themes()
 ORIENTATIONS = [Qt.Horizontal, Qt.Vertical]
@@ -294,8 +294,10 @@ def test_a_hovered_flat_button_fills(qtbot, theme):
     window, button = _flat(qtbot, theme, on_frame=True)
     hover(qtbot, button)
 
-    assert _at(window, button, fxstyle.BUTTON_RADIUS, 2) == _color(
-        "state_hover")
+    # See-through: the overlay over the frame.
+    overlay = QColor(fxstyle.colors().state_hover_overlay)
+    expected = fxstyle.mix(_color("frame"), overlay.name(), overlay.alphaF())
+    assert near(_at(window, button, fxstyle.BUTTON_RADIUS, 2), expected, 2)
 
 
 @pytest.mark.parametrize("theme", THEMES)
@@ -304,8 +306,10 @@ def test_a_pressed_flat_button_fills(qtbot, qapp, theme):
     button.setDown(True)
     qapp.processEvents()
 
-    assert _at(window, button, fxstyle.BUTTON_RADIUS, 2) == _color(
-        "state_pressed")
+    # See-through: the overlay over the frame.
+    overlay = QColor(fxstyle.colors().state_pressed_overlay)
+    expected = fxstyle.mix(_color("frame"), overlay.name(), overlay.alphaF())
+    assert near(_at(window, button, fxstyle.BUTTON_RADIUS, 2), expected, 2)
 
 
 @pytest.mark.parametrize("theme", THEMES)

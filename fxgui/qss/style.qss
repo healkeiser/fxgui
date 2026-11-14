@@ -374,7 +374,12 @@ QLineEdit[fxGhost="true"]
     border-color: transparent;
 }
 
-QLineEdit[fxGhost="true"]:hover,
+QLineEdit[fxGhost="true"]:hover
+{
+    background-color: @state_hover;
+}
+
+/* Typed in, it holds the pressed fill, hovered or not. */
 QLineEdit[fxGhost="true"]:focus
 {
     background-color: @state_pressed;
@@ -601,8 +606,9 @@ QPushButton:disabled
     color: @text_disabled;
 }
 
-/* A flat push button (setFlat) is a bare icon: no edge, a fill on hover,
-   the pressed fill held while checked. */
+/* A flat push button (setFlat) is a bare icon: no edge, no fill at rest.
+   Its fills are see-through, so they show on whatever it sits on: a band,
+   a card, a tooltip. */
 QPushButton:flat,
 QPushButton:flat:disabled,
 QPushButton:flat:focus
@@ -613,13 +619,23 @@ QPushButton:flat:focus
 
 QPushButton:flat:hover
 {
-    background-color: @state_pressed;
+    background-color: @state_hover_overlay;
 }
 
 QPushButton:flat:pressed,
 QPushButton:flat:checked
 {
-    background-color: @state_pressed;
+    background-color: @state_pressed_overlay;
+}
+
+QPushButton:flat:checked:hover
+{
+    background-color: @state_checked_hover_overlay;
+}
+
+QPushButton:flat:checked:pressed
+{
+    background-color: @state_pressed_overlay;
 }
 
 QPushButton:focus {
@@ -641,16 +657,36 @@ QComboBox
     combobox-popup: 0;
 }
 
-QPushButton:checked{
+/* One convention for every button: hover @state_hover, pressed and checked
+   @state_pressed, and a checked button under the pointer
+   @state_checked_hover, so the click that unchecks it shows. A button
+   hovers by its fill alone, so it never looks focused. Kept before the
+   primary rules, which win the ties. */
+QPushButton:hover
+{
+    background-color: @state_hover;
+    color: @text;
+}
+
+QPushButton:pressed
+{
+    background-color: @state_pressed;
+}
+
+QPushButton:checked
+{
     background-color: @state_pressed;
     border-color: @grid;
 }
 
-/* A button hovers by its fill alone, so it never looks focused. */
-QPushButton:hover
+QPushButton:checked:hover
+{
+    background-color: @state_checked_hover;
+}
+
+QPushButton:checked:pressed
 {
     background-color: @state_pressed;
-    color: @text;
 }
 
 
@@ -729,11 +765,6 @@ QCalendarWidget QToolButton#qt_calendar_nextmonth
 {
     qproperty-icon: ~icon(chevron-right, icon);
     qproperty-iconSize: 16px;
-}
-
-QPushButton:pressed
-{
-    background-color: @state_pressed;
 }
 
 /* FXPrimaryButton, or any QPushButton with fxRole="primary". The fills are
@@ -922,9 +953,12 @@ QTabBar::scroller {
     width: 48px;
 }
 
-QTabBar QToolButton:hover,
-QTabBar QToolButton:pressed {
+QTabBar QToolButton:hover {
     background-color: @state_hover;
+}
+
+QTabBar QToolButton:pressed {
+    background-color: @state_pressed;
 }
 
 QTabBar QToolButton::right-arrow,
@@ -1011,7 +1045,7 @@ QDockWidget::float-button {
 }
 
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {
-    background: @state_pressed;
+    background: @state_hover;
 }
 
 QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
@@ -1283,9 +1317,13 @@ QToolButton[popupMode="2"] { /* only for InstantPopup */
     padding-right: 12px; /* make way for the indicator */
 }
 
-/* Hover is the neutral fill and keeps the edge and the ink; a split button
-   hovers as a QPushButton, its arrow part included. */
-QToolButton:hover,
+/* The one button convention. A plain tool button has no ground of its own
+   (a toolbar, a band, a card), so its fills are see-through; a split button
+   reads as a QPushButton, opaque, its arrow part included. */
+QToolButton:hover {
+    background-color: @state_hover_overlay;
+}
+
 QToolButton[popupMode="1"]:hover {
     background-color: @state_hover;
 }
@@ -1295,7 +1333,11 @@ QToolButton::menu-button:hover {
     background-color: transparent;
 }
 
-QToolButton:pressed,
+QToolButton:pressed {
+    background-color: @state_pressed_overlay;
+}
+
+QToolButton[popupMode="1"]:pressed,
 QToolButton::menu-button:pressed {
     background-color: @state_pressed;
 }
@@ -1303,8 +1345,28 @@ QToolButton::menu-button:pressed {
 /* A toggle that is on fills, with no edge: a sheet's 1px round edge
    comes out jagged. */
 QToolButton:checked {
-    background-color: @state_pressed;
+    background-color: @state_pressed_overlay;
     border-color: transparent;
+}
+
+QToolButton:checked:hover {
+    background-color: @state_checked_hover_overlay;
+}
+
+QToolButton:checked:pressed {
+    background-color: @state_pressed_overlay;
+}
+
+QToolButton[popupMode="1"]:checked {
+    background-color: @state_pressed;
+}
+
+QToolButton[popupMode="1"]:checked:hover {
+    background-color: @state_checked_hover;
+}
+
+QToolButton[popupMode="1"]:checked:pressed {
+    background-color: @state_pressed;
 }
 
 /* the subcontrol below is used only in the InstantPopup or DelayedPopup mode */
@@ -1603,8 +1665,9 @@ QSplitter[fxFrame="true"]::handle:vertical:hover
     padding: 0px;
 }
 
-/* A flat icon button: no box until hovered or pressed, and none when
-   disabled. Its focus ring is in KEYBOARD FOCUS below. */
+/* A flat icon button: no box at rest and none when disabled. It sits on the
+   frame's bands, so its fills are see-through, as a setFlat button's.
+   Its focus ring is in KEYBOARD FOCUS below. */
 QPushButton[fxRole="flat"],
 QPushButton[fxRole="flat"]:disabled
 {
@@ -1615,12 +1678,23 @@ QPushButton[fxRole="flat"]:disabled
 
 QPushButton[fxRole="flat"]:hover
 {
-    background-color: @state_hover;
+    background-color: @state_hover_overlay;
 }
 
-QPushButton[fxRole="flat"]:pressed
+QPushButton[fxRole="flat"]:pressed,
+QPushButton[fxRole="flat"]:checked
 {
-    background-color: @state_pressed;
+    background-color: @state_pressed_overlay;
+}
+
+QPushButton[fxRole="flat"]:checked:hover
+{
+    background-color: @state_checked_hover_overlay;
+}
+
+QPushButton[fxRole="flat"]:checked:pressed
+{
+    background-color: @state_pressed_overlay;
 }
 
 

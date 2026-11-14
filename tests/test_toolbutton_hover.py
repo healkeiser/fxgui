@@ -2,6 +2,7 @@
 
 import pytest
 from qtpy.QtCore import QPoint, QRect, QSize
+from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QToolButton, QVBoxLayout, QWidget
 
 from fxgui import fxicons, fxstyle
@@ -40,7 +41,9 @@ def test_a_hovered_tool_button_shows_its_icon_on_the_hover_fill(
     seen = _most(window.grab(area).toImage())
 
     colours = dict(vars(fxstyle.colors()))
-    assert near(seen[0], colours["state_hover"], 2), seen[:3]
+    # A plain tool button's hover is see-through: the overlay over the pane.
+    overlay = QColor(colours["state_hover_overlay"])
+    fill = fxstyle.mix(colours["surface"], overlay.name(), overlay.alphaF())
+    assert near(seen[0], fill, 2), seen[:3]
     # The icon stands out from the fill it sits on, however it blends.
-    assert any(not near(c, colours["state_hover"], 80)
-               for c in seen[1:6]), seen[:6]
+    assert any(not near(c, fill, 80) for c in seen[1:6]), seen[:6]
