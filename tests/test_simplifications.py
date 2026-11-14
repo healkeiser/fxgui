@@ -84,7 +84,8 @@ def test_drop_zone_tree_follows_rules_set_after_construction(
     zone.set_extensions({".txt"})
     assert taken(text)
     zone.set_accept_mode("folders")
-    assert not taken(text)
+    # Taken by its name; a file is refused at the drop, off the UI thread.
+    assert taken(text)
     assert taken(tmp_path)
 
 
