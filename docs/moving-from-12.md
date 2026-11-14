@@ -230,5 +230,5 @@ accent = getattr(fxstyle.colors(), name)    # a token name held in a variable
 | `TRANSPARENT_SELECTION_STYLE` | `FXThumbnailDelegate.apply_transparent_selection(view)` |
 | `markdown_to_plain_text(text)` | `fxutils.markdown_to_plain_text(text)` |
 | `show_child_count` | Gone. Set `CHILD_COUNT_VISIBLE_ROLE` to `False` on a row to hide its count |
-| `show_starred`, `STARRED_ROLE`, `STARRED_COLOR_ROLE`, `STATUS_LABEL_ICON_ROLE` | Gone |
+| `show_starred`, `STARRED_ROLE`, `STARRED_COLOR_ROLE` | Gone |
 | `Qt.UserRole + n` for a role of your own | `FXThumbnailDelegate.FIRST_FREE_ROLE + n`: every role number moved |
