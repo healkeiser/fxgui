@@ -245,6 +245,41 @@ def test_a_deleted_extracted_icon_is_extracted_again(qapp):
     assert Path(fxicons.get_icon_path("add", library="material")).exists()
 
 
+def test_icons_unzip_into_the_folder_the_variable_names(qapp, monkeypatch, tmp_path):
+    cache = tmp_path / "cache"
+    monkeypatch.setenv(fxicons.CACHE_DIR_VAR, str(cache))
+
+    path = Path(fxicons.get_icon_path("add", library="material"))
+
+    assert cache / "icons" in path.parents
+
+
+def test_stale_unzipped_versions_are_pruned_and_others_kept(
+    qapp, monkeypatch, tmp_path
+):
+    import os
+    import time
+
+    cache = tmp_path / "cache"
+    monkeypatch.setenv(fxicons.CACHE_DIR_VAR, str(cache))
+    monkeypatch.setattr(fxicons, "_visited", set())
+    icons = cache / "icons"
+    stale = icons / "material-1-2"
+    fresh = icons / "material-3-4"
+    other = icons / "material-symbols-1-2"
+    for folder in (stale, fresh, other):
+        (folder / "x").mkdir(parents=True)
+    old = time.time() - 40 * 24 * 3600
+    for folder in (stale, other):
+        os.utime(folder, (old, old))
+
+    fxicons.get_icon_path("add", library="material")
+
+    assert not stale.exists()
+    assert fresh.exists()
+    assert other.exists()
+
+
 def test_a_library_stating_some_defaults_takes_the_rest(
     qapp, monkeypatch, tmp_path
 ):

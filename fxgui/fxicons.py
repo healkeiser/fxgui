@@ -23,10 +23,12 @@ import functools
 import os
 from pathlib import Path
 import re
+import shutil
 import tempfile
+import time
 import traceback
 import zipfile
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 # Third-party
 from qtpy.QtGui import (
@@ -50,6 +52,7 @@ from fxgui import _compat, fxconstants
 # Public API
 __all__ = [
     "add_library",
+    "CACHE_DIR_VAR",
     "badged",
     "get_icon_path",
     "get_icon",
@@ -298,8 +301,8 @@ def get_icon_path(
         root=root,
     ).replace("\\", "/")
 
-    # A found path is checked again: a temp folder cleaner may delete it.
-    key = (path, tempfile.gettempdir())
+    # A found path is checked again: a cache folder cleaner may delete it.
+    key = (path, str(_cache_dir()))
     found = _found_paths.pop(key, None)
     if found is not None and os.path.exists(found):
         _found_paths[key] = found
@@ -319,8 +322,48 @@ def get_icon_path(
     return found
 
 
-# (icon path, temp folder) -> the file to read; a miss is never kept.
+# (icon path, cache folder) -> the file to read; a miss is never kept.
 _found_paths: Dict[tuple, str] = {}
+
+#: The environment variable naming the folder fxgui writes icon files to
+#: (unzipped icons, stylesheet images); unset, `<temp folder>/fxgui`.
+CACHE_DIR_VAR = "FXGUI_CACHE_DIR"
+
+# A zip's unzipped folders no process has opened for this long are deleted.
+_STALE_SECONDS = 30 * 24 * 3600
+# The unzipped folders this process has marked in use.
+_visited: Set[str] = set()
+
+
+def _cache_dir() -> Path:
+    """Return the folder fxgui writes icon files under."""
+    named = os.environ.get(CACHE_DIR_VAR)
+    return Path(named) if named else Path(tempfile.gettempdir()) / "fxgui"
+
+
+def _visit(folder: Path, stem: str) -> None:
+    """Mark `folder` in use once a process; delete stale versions beside it.
+
+    Another fxgui install may share the folder with another zip version;
+    its unzipped folder stays while any process opens it within
+    `_STALE_SECONDS`.
+    """
+    if str(folder) in _visited:
+        return
+    _visited.add(str(folder))
+    with contextlib.suppress(OSError):
+        os.utime(folder)
+    if not folder.parent.is_dir():
+        return
+    # Exactly `<stem>-<size>-<mtime>`: "material-*" must miss "material-symbols-*".
+    version = re.compile(rf"{re.escape(stem)}-\d+-\d+")
+    cutoff = time.time() - _STALE_SECONDS
+    for sibling in folder.parent.iterdir():
+        if sibling == folder or not version.fullmatch(sibling.name):
+            continue
+        with contextlib.suppress(OSError):
+            if sibling.stat().st_mtime < cutoff:
+                shutil.rmtree(sibling, ignore_errors=True)
 
 
 @functools.lru_cache(maxsize=None)
@@ -332,13 +375,13 @@ def _open_archive(archive: str) -> zipfile.ZipFile:
 def _extracted(archive: str, member: str) -> Optional[str]:
     """Return the path of `member` written out of `archive`, or None.
 
-    Qt and stylesheets take a file, so the icon is written once to the temp
-    folder, under a name that changes when the zip does.
+    Qt and stylesheets take a file, so the icon is written once to the cache
+    folder (`CACHE_DIR_VAR`), under a name that changes when the zip does.
     """
     stat = os.stat(archive)
-    folder = Path(tempfile.gettempdir()) / "fxgui" / "icons" / (
-        f"{Path(archive).stem}-{stat.st_size}-{stat.st_mtime_ns}"
-    )
+    stem = Path(archive).stem
+    folder = _cache_dir() / "icons" / f"{stem}-{stat.st_size}-{stat.st_mtime_ns}"
+    _visit(folder, stem)
     target = folder / member
     if target.exists():
         return target.as_posix()

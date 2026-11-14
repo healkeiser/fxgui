@@ -226,6 +226,15 @@ save_action = fxutils.create_action(
 )
 ```
 
+## Where fxgui writes icon files
+
+Icons shipped as a zip are unzipped once, into
+`<temp folder>/fxgui/icons/<zip>-<size>-<date>/`, and stylesheet images go
+to `<temp folder>/fxgui/sheet_icons/`. Set the `FXGUI_CACHE_DIR`
+environment variable (`fxicons.CACHE_DIR_VAR`) to use another folder, such
+as a test's own. An unzipped folder of a zip version no fxgui process has
+opened for 30 days is deleted the next time fxgui unzips an icon.
+
 ## QtAwesome (Optional)
 
 [QtAwesome](https://qtawesome.readthedocs.io/en/latest/index.html) is not bundled with fxgui; install it separately for features such as animated icons. First, install it:

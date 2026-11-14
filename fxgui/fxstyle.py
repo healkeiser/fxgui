@@ -28,7 +28,7 @@ import hashlib
 import os
 import re
 import sys
-import tempfile
+import tempfile  # noqa: F401 - patched by callers' tests; FXGUI_CACHE_DIR replaces that
 import weakref
 from collections import OrderedDict
 from functools import lru_cache
@@ -1569,7 +1569,7 @@ def _sheet_icon(
     load, so its images go blank; a PNG needs no plugin. `size` is the size
     the rule draws it at: Qt blurs a PNG it scales down.
     """
-    folder = Path(tempfile.gettempdir()) / "fxgui" / "sheet_icons"
+    folder = fxicons._cache_dir() / "sheet_icons"
     # The temp folder is shared by every fxgui install: the name carries
     # which file, at which size and version, it was drawn from.
     source = f"{os.path.abspath(svg)}|{size}|{os.stat(svg).st_mtime_ns}"
@@ -2301,8 +2301,8 @@ def _build_stylesheet(theme: Optional[str] = None) -> str:
         parts.extend(_widget_fragments.values())
         return resolve("\n".join(parts), theme)
 
-    # The sheet's images live in the temp folder, so it is part of the key.
-    key = ("sheet", theme, row_size(), tempfile.gettempdir())
+    # The sheet's images live in the cache folder, so it is part of the key.
+    key = ("sheet", theme, row_size(), str(fxicons._cache_dir()))
     return _cached_sheet(key, build)
 
 
