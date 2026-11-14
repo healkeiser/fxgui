@@ -22,6 +22,9 @@ Examples:
     >>> app.exec()
 """
 
+# Built-in
+from typing import TYPE_CHECKING
+
 # Third-party
 import qtpy
 
@@ -59,19 +62,25 @@ __all__ = [
 ]
 
 
-def __getattr__(name: str) -> str:
-    """Read `__version__` on first ask: importlib.metadata costs 30 ms."""
-    if name != "__version__":
-        raise AttributeError(f"module 'fxgui' has no attribute {name!r}")
-    from importlib.metadata import PackageNotFoundError, version
+if TYPE_CHECKING:
+    # A module __getattr__ would type every misspelled fxgui.<name> as str.
+    __version__: str
+else:
 
-    try:
-        found = version("fxgui")
-    except PackageNotFoundError:
-        # A source tree that was never installed.
-        found = "0.0.0.dev"
-    globals()["__version__"] = found
-    return found
+    def __getattr__(name: str) -> str:
+        """Read `__version__` on first ask: importlib.metadata costs 30 ms."""
+        if name != "__version__":
+            raise AttributeError(f"module 'fxgui' has no attribute {name!r}")
+        from importlib.metadata import PackageNotFoundError, version
+
+        try:
+            found = version("fxgui")
+        except PackageNotFoundError:
+            # A source tree that was never installed.
+            found = "0.0.0.dev"
+        globals()["__version__"] = found
+        return found
+
 
 __author__ = "Valentin Beaumont"
 __email__ = "valentin.onze@gmail.com"
