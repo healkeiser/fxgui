@@ -5,7 +5,7 @@ from typing import Optional
 
 # Third-party
 from qtpy.QtCore import QRectF, Qt, Signal
-from qtpy.QtGui import QColor, QPainter, QPalette
+from qtpy.QtGui import QColor, QPainter, QPalette, QPen
 from qtpy.QtWidgets import QWidget
 
 # Internal
@@ -23,7 +23,7 @@ class FXStatusDot(QWidget):
         diameter: The circle's size in pixels.
 
     Signals:
-        clicked: A left-button release landed on the dot.
+        clicked: A left-button release, or Space or Enter while focused.
 
     Examples:
         >>> dot = FXStatusDot()
@@ -37,6 +37,8 @@ class FXStatusDot(QWidget):
         self._feedback: Optional[str] = None
         self.setFixedSize(diameter, diameter)
         self.setCursor(Qt.PointingHandCursor)
+        # Tab reaches it; a click does not pull focus from where one typed.
+        self.setFocusPolicy(Qt.TabFocus)
 
     def set_feedback(self, key: Optional[str], tooltip: str = "") -> None:
         """Show feedback `key` ("success", "warning", ...); None for off.
@@ -47,6 +49,7 @@ class FXStatusDot(QWidget):
         known = key if hasattr(
             fxstyle.colors(), f"feedback_{key}_foreground") else None
         self.setToolTip(tooltip)
+        self.setAccessibleName(tooltip)
         if known != self._feedback:
             self._feedback = known
             self.update()
@@ -62,7 +65,11 @@ class FXStatusDot(QWidget):
         """Fill one antialiased circle, inset half a pixel so no edge is cut."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.setPen(Qt.NoPen)
+        # A focused dot wears a ring, so the keyboard shows where it is.
+        painter.setPen(
+            QPen(QColor(fxstyle.colors().accent_primary), 1.0)
+            if self.hasFocus() else Qt.NoPen
+        )
         painter.setBrush(self.color())
         painter.drawEllipse(
             QRectF(0.5, 0.5, self.width() - 1.0, self.height() - 1.0)
@@ -73,3 +80,11 @@ class FXStatusDot(QWidget):
         if event.button() == Qt.LeftButton:
             self.clicked.emit()
         super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event) -> None:
+        """Emit `clicked` on Space or Enter, as a button does."""
+        if event.key() in (Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter):
+            self.clicked.emit()
+            event.accept()
+            return
+        super().keyPressEvent(event)

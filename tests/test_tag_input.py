@@ -164,3 +164,10 @@ def test_a_chip_shows_markup_as_typed(qtbot):
     qtbot.addWidget(chip)
     assert chip.label.textFormat() == Qt.PlainText
     assert chip.label.text() == "<b>x</b>"
+
+
+def test_the_remove_button_says_what_it_removes(qtbot):
+    chip = FXTagChip("comp")
+    qtbot.addWidget(chip)
+    assert chip.remove_button.accessibleName() == "Remove"
+    assert "comp" in chip.remove_button.toolTip()

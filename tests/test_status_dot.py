@@ -4,6 +4,7 @@
 import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPalette
+from qtpy.QtTest import QTest
 
 # Internal
 from fxgui import fxstyle
@@ -86,3 +87,17 @@ def test_the_diameter_is_the_widget_s_size(qtbot):
     qtbot.addWidget(dot)
 
     assert (dot.width(), dot.height()) == (12, 12)
+
+
+def test_the_dot_is_reached_by_tab_and_answers_space_and_enter(qtbot):
+    dot = FXStatusDot()
+    qtbot.addWidget(dot)
+    dot.set_feedback("success", "Timesheet complete")
+
+    assert dot.focusPolicy() == Qt.TabFocus
+    assert dot.accessibleName() == "Timesheet complete"
+    clicks = []
+    dot.clicked.connect(lambda: clicks.append(True))
+    QTest.keyClick(dot, Qt.Key_Space)
+    QTest.keyClick(dot, Qt.Key_Return)
+    assert len(clicks) == 2

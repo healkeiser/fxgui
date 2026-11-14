@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxicons, fxstyle
 from fxgui.fxwidgets._flow_layout import FXFlowLayout
+from fxgui.fxwidgets._tips import apply_tip
 
 
 class FXTagChip(QFrame):
@@ -63,6 +64,7 @@ class FXTagChip(QFrame):
             self.remove_button.setCursor(Qt.PointingHandCursor)
             self.remove_button.clicked.connect(self._on_remove)
             layout.addWidget(self.remove_button)
+            apply_tip(self.remove_button, "Remove", text)
             fxicons.set_icon(
                 self.remove_button, "x", color="icon_on_accent_primary")
 
