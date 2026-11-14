@@ -37,3 +37,10 @@ def test_expand_all_refuses_an_exclusive_accordion(qtbot, qapp):
     accordion.expand_all()
     assert accordion.get_section(0).is_expanded()
     assert accordion.exclusive() is False
+
+
+def test_an_empty_accordion_is_truthy(qtbot):
+    accordion = FXAccordion(animation_duration=0)
+    qtbot.addWidget(accordion)
+    assert bool(accordion)
+    assert len(accordion) == 0

@@ -174,6 +174,10 @@ class FXAccordion(QWidget):
         """Return the number of sections."""
         return len(self._sections)
 
+    def __bool__(self) -> bool:
+        """Return True: an empty accordion is still a widget."""
+        return True
+
     def __iter__(self):
         """Iterate over sections."""
         return iter(self._sections)
