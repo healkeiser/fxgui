@@ -26,7 +26,7 @@
       
       
       <link rel="icon" href="../../images/fxgui_logo_background_light.svg">
-      <meta name="generator" content="zensical-0.1.0">
+      <meta name="generator" content="zensical-0.1.1">
     
     
       
@@ -37,7 +37,7 @@
       
         
       
-      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.ebb7f775.min.css">
       
         
           
@@ -1930,6 +1930,38 @@ derived from it moves too.</p>
 </tr>
 </tbody>
 </table>
+<p>A tip about a thing, such as a file or a version, takes three more parts, all by name:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">apply_tip</span><span class="p">(</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">item</span><span class="p">,</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="s2">"livetest v001"</span><span class="p">,</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">facts</span><span class="o">=</span><span class="p">[(</span><span class="s2">"Product"</span><span class="p">,</span> <span class="s2">"render/livetest"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Files"</span><span class="p">,</span> <span class="s2">"8 x .exr"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Status"</span><span class="p">,</span> <span class="n">status</span><span class="p">)],</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">code</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">hint</span><span class="o">=</span><span class="s2">"Double-click to play the preview"</span><span class="p">,</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">)</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>facts</code></td>
+<td><code>(label, value)</code> pairs as a table, in the order given: the label dimmed, the value in the primary text. A pair whose value is empty or <code>None</code> is left out</td>
+</tr>
+<tr>
+<td><code>code</code></td>
+<td>A path, a key or a command, in the theme's mono face on a faint fill. A line longer than 64 characters is cut into rows after a folder separator, so a long path never widens the tooltip</td>
+</tr>
+<tr>
+<td><code>hint</code></td>
+<td>A closing line, dimmed: what a double-click does</td>
+</tr>
+</tbody>
+</table>
+<p>The blocks come in that order under the title and body, with a little air between them. The accessible description carries the same words, one part per line, without markup.</p>
 <p>The HTML holds the colours of the theme in force, so rebuilding at show time is what makes a tip set in one theme show in the next. Every string is HTML-escaped, so a path holding <code>&amp;</code> or <code>&lt;</code> reaches the user as text, and a newline in the body breaks the line. Qt's rich text draws no rounded background, so a keycap in a tooltip is square.</p>
 <p>Two lower-level helpers:</p>
 <ul>
@@ -2046,7 +2078,7 @@ derived from it moves too.</p>
       <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.action.edit","content.code.annotate","content.code.copy","content.tabs.link","content.tooltips","navigation.expand","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.tabs","navigation.top","search.highlight","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":{"alias":true,"default":"latest","provider":"mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      <script src="../../assets/javascripts/bundle.3cb411a8.min.js"></script>
       
     
   </body>
