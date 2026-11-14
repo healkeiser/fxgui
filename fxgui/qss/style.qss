@@ -514,7 +514,7 @@ QFrame
 QFrame[frameShape="0"]
 {
     border-radius: @button_radius;
-    border: 1px transparent @border_strong;
+    border: none;
 }
 
 /* HLine and VLine: one flat pixel, not Qt's two-tone bevel, which reads as
@@ -552,12 +552,12 @@ QTextBrowser {
 
 QTextEdit#fxOutputLogArea {
     font-family: @font_mono;
-    font-size: 9pt;
+    font-size: @font_size_small;
 }
 
 QToolBar {
-    border: 1px transparent @border_strong;
-    background: 1px solid @surface;
+    border: none;
+    background: @surface;
     font-weight: bold;
     border-bottom: 1px solid @border;
 }
@@ -1530,18 +1530,13 @@ QStatusBar {
 
 QStatusBar::item {
     background: transparent;
-    border: 1px transparent @border;
+    border: none;
 }
 
 QStatusBar QLabel {
     background: transparent;
     margin-top: 2px;
     margin-bottom: 2px;
-}
-
-
-QFrame[height="3"], QFrame[width="3"] {
-    background-color: @border_strong;
 }
 
 

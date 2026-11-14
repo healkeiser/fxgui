@@ -1,5 +1,7 @@
 """The base sheet carries shape and state; the palette and font the defaults."""
 
+import re
+
 import pytest
 from qtpy.QtCore import QPoint
 from qtpy.QtGui import QColor, QFont, QPalette
@@ -62,6 +64,23 @@ def test_the_base_sheet_sets_no_background_or_font():
     for prop in ("\n    background-color:", "font-size:", "font-family:"):
         assert prop not in rule, prop
     assert "* {\n    font-family" not in sheet
+
+
+def test_the_base_sheet_has_no_half_read_declarations():
+    text = fxstyle.STYLE_FILE.read_text(encoding="utf-8")
+    # Qt silently drops or half-reads these; a guessed "fix" moves layouts.
+    assert not re.search(r"border:\s*\d+px\s+transparent\s+@", text)
+    assert not re.search(r"background:\s*\d+px", text)
+    assert 'QFrame[height="3"]' not in text
+
+
+def test_a_three_pixel_frame_wears_no_fill_of_its_own(qtbot, app_root):
+    frame = QFrame(app_root)
+    frame.setFixedHeight(3)
+    app_root.layout().addWidget(frame)
+    _show(qtbot, app_root)
+    pixel = frame.grab().toImage().pixelColor(5, 1).name()
+    assert pixel != QColor(fxstyle.colors().border_strong).name()
 
 
 def test_set_font_is_honoured_in_a_themed_app(qtbot, app_root):
