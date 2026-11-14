@@ -1,8 +1,16 @@
 """FXStatusBar paints its accent line from one state and clears its tint."""
 
 # Third-party
-from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
+from qtpy.QtGui import QColor, QStatusTipEvent
+from qtpy.QtWidgets import (
+    QApplication,
+    QFrame,
+    QLabel,
+    QMainWindow,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 # Internal
 from fxgui import fxstyle
@@ -134,3 +142,28 @@ def test_markup_in_a_message_or_tip_reads_as_typed(qtbot):
 
     bar.show_tip("<b>tip</b>")
     assert bar.message_label.text() == "&lt;b&gt;tip&lt;/b&gt;"
+
+
+def test_a_hover_tip_in_a_plain_window_gives_the_message_back(qtbot):
+    window = QMainWindow()
+    qtbot.addWidget(window)
+    bar = FXStatusBar()
+    window.setStatusBar(bar)
+    button = QPushButton("Go")
+    window.setCentralWidget(button)
+    window.show()
+    qtbot.waitExposed(window)
+    bar.showMessage("boom", ERROR, duration=60)
+    said = bar.message_label.text()
+
+    QApplication.sendEvent(button, QStatusTipEvent("Where this leads"))
+
+    assert bar.message_label.text() == "Where this leads"
+    # Qt paints no tip of its own under the label.
+    assert bar.currentMessage() != "Where this leads"
+
+    QApplication.sendEvent(button, QStatusTipEvent(""))
+
+    assert bar.message_label.text() == said
+    assert bar.message_label.isVisible()
+    assert bar.tint() is not None

@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple
 from qtpy.QtCore import (
     QAbstractAnimation,
     QEvent,
+    QObject,
     QRectF,
     QSize,
     Qt,
@@ -465,7 +466,7 @@ class FXStatusBar(QStatusBar):
 
     @Slot(str)
     def _on_status_message_changed(self, message: str) -> None:
-        """Clear the labels and tint when Qt's timeout empties the message."""
+        """Clear the labels and tint when the bar's own timeout ends its message."""
         if not message:
             self._clear()
 
@@ -514,8 +515,18 @@ class FXStatusBar(QStatusBar):
     def showEvent(self, event) -> None:
         """Run the busy line again, if it ran when the bar hid."""
         super().showEvent(event)
+        # Status tips reach the window first; Qt would write them into the
+        # bar's own message, ending ours.
+        self.window().installEventFilter(self)
         self._hold_message_room()
         self._run_busy_line()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Show the window's status tips with `show_tip`, as messages are."""
+        if event.type() == QEvent.StatusTip and watched is self.window():
+            self.show_tip(event.tip())
+            return True
+        return super().eventFilter(watched, event)
 
     def changeEvent(self, event) -> None:
         """Measure the message's room again under a new font or sheet."""
