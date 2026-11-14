@@ -133,7 +133,8 @@ def test_a_message_over_the_limit_wakes_instead(qtbot):
     assert messaged == []
 
 
-# Claims the moment a go file appears.
+# Claims the moment a go file appears. Its first knock finds nobody: it
+# says so in a probed file, then knocks again once a listening file appears.
 _RACE = "\n".join(
     (
         "import os, sys, time",
@@ -141,10 +142,23 @@ _RACE = "\n".join(
         "from qtpy import QtNetwork",
         "from fxgui.fxwidgets import FXSingleInstance",
         "app = QCoreApplication([])",
+        "name, go, probed, listening = sys.argv[1:5]",
+        "def wait_for(path):",
+        "    deadline = time.monotonic() + 15",
+        "    while not os.path.exists(path) and time.monotonic() < deadline:",
+        "        time.sleep(0.002)",
+        "instance = FXSingleInstance(name)",
+        "knock = instance._hand_over",
+        "def first_knock(payload):",
+        "    instance._hand_over = knock",
+        "    reached = knock(payload)",
+        "    open(probed, 'w').close()",
+        "    wait_for(listening)",
+        "    return reached",
+        "instance._hand_over = first_knock",
         "print('ready', flush=True)",
-        "while not os.path.exists(sys.argv[2]):",
-        "    time.sleep(0.002)",
-        "sys.exit(FXSingleInstance(sys.argv[1]).claim('late'))",
+        "wait_for(go)",
+        "sys.exit(instance.claim('late'))",
     )
 )
 
@@ -154,11 +168,13 @@ def test_a_start_racing_one_not_yet_listening_hands_over(
 ):
     import time
 
+    from qtpy.QtCore import QTimer
     from qtpy.QtNetwork import QLocalServer
 
-    go = tmp_path / "go"
+    go, probed, listening = (tmp_path / n for n in ("go", "probed", "listening"))
     racer = subprocess.Popen(
-        [sys.executable, "-c", _RACE, _name("race"), str(go)],
+        [sys.executable, "-c", _RACE, _name("race"), str(go), str(probed),
+         str(listening)],
         stdout=subprocess.PIPE,
         text=True,
     )
@@ -168,7 +184,9 @@ def test_a_start_racing_one_not_yet_listening_hands_over(
     def slow_listen(server, name):
         # The other start probes while this one has yet to listen.
         go.write_text("")
-        time.sleep(1.5)
+        deadline = time.monotonic() + 15
+        while not probed.exists() and time.monotonic() < deadline:
+            time.sleep(0.002)
         return real_listen(server, name)
 
     monkeypatch.setattr(QLocalServer, "listen", slow_listen)
@@ -177,6 +195,10 @@ def test_a_start_racing_one_not_yet_listening_hands_over(
     first.messaged.connect(said.append)
     first.woken.connect(lambda: said.append("woken"))
     assert first.claim()
+    assert probed.exists(), "the racing start never found nobody listening"
+    # Knock again once this loop runs: a sender gone before it is accepted
+    # loses its message.
+    QTimer.singleShot(0, lambda: listening.write_text(""))
 
     qtbot.waitUntil(lambda: bool(said), timeout=10000)
     assert said == ["late"]
