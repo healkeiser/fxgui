@@ -187,8 +187,12 @@ class FXOutputLogWidget(QWidget):
         self._max_blocks = max_blocks
         self._hang = re.compile(hang_indent) if hang_indent else None
 
-        # The throttle limits repaints, never records: all are queued.
-        self._pending_logs: Deque[Tuple[str, int]] = deque()
+        # A record is at least one block, so with a bound only the newest
+        # `max_blocks` queued records could ever be shown; older ones go
+        # before they cost a write.
+        self._pending_logs: Deque[Tuple[str, int]] = deque(
+            maxlen=max_blocks if max_blocks > 0 else None
+        )
         # `(minimum, below)` while filtered by level, `None` showing all.
         self._levels: Optional[Tuple[int, Optional[int]]] = None
         self._throttle_timer = QTimer(self)

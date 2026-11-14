@@ -1,10 +1,14 @@
 """The log throttle delays repaints; it never drops or reorders a record."""
 
+# Built-in
+import logging
+import threading
+
 # Third-party
 from qtpy.QtCore import QTimer
 
 # Internal
-from fxgui.fxwidgets import FXOutputLogWidget
+from fxgui.fxwidgets import FXOutputLogHandler, FXOutputLogWidget
 
 
 
@@ -183,3 +187,41 @@ def test_the_queue_survives_a_record_logged_from_a_timer_callback(
 
     qtbot.waitUntil(lambda: len(_lines(pane)) == 2)
     assert _lines(pane) == ["before", "from the callback"]
+
+
+def test_records_logged_from_a_worker_thread_all_arrive_in_order(qtbot, qapp):
+    """The handler hands each record to the UI thread by signal."""
+    pane = _pane(qtbot)
+    log = logging.getLogger("fxgui.test.worker")
+    log.propagate = False
+    log.setLevel(logging.INFO)
+    handler = FXOutputLogHandler(pane)
+    log.addHandler(handler)
+    try:
+        worker = threading.Thread(
+            target=lambda: [log.info("%05d", i) for i in range(3000)]
+        )
+        worker.start()
+        worker.join()
+
+        qtbot.waitUntil(lambda: len(_lines(pane)) == 3000, timeout=10000)
+
+        assert _lines(pane) == [f"{i:05d}" for i in range(3000)]
+    finally:
+        log.removeHandler(handler)
+
+
+def test_a_bounded_pane_queues_only_what_it_can_keep(qtbot, qapp):
+    """Records the document would prune are dropped before they are written."""
+    pane = FXOutputLogWidget(max_blocks=20)
+    qtbot.addWidget(pane)
+
+    for index in range(60):
+        pane.append_log(f"record {index}")
+
+    assert len(pane._pending_logs) <= 20
+    assert pane._pending_logs[-1][0] == "record 59"
+
+    qtbot.waitUntil(lambda: not pane._pending_logs)
+
+    assert _lines(pane)[-1] == "record 59"
