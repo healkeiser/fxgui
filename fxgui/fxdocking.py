@@ -565,6 +565,20 @@ class FXDockArea(QWidget):
             floating.raise_()
             floating.activateWindow()
 
+    def hide_dock(self, name: str) -> None:
+        """Close the pane `name`, as its toggle does; nothing if unknown.
+
+        Before the first show, the layout Reset goes back to keeps it closed.
+        """
+        held = self._docks.findDockWidget(name)
+        if held is not None:
+            held.toggleView(False)
+
+    def is_dock_open(self, name: str) -> bool:
+        """Return whether the pane `name` is open; False if unknown."""
+        held = self._docks.findDockWidget(name)
+        return held is not None and not held.isClosed()
+
     def set_dock_title(self, name: str, title: str) -> None:
         """Rename the pane `name`'s tab."""
         held = self._docks.findDockWidget(name)

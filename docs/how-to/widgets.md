@@ -137,6 +137,8 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 
 `fxdocking.FXDockArea` docks named panes around a body; it needs
 `PySide6-QtAds` (see [Installation](../installation.md#docking)).
+`show_dock(name)`, `hide_dock(name)` and `is_dock_open(name)` open, close
+and ask about a pane by its name, without reaching for QtAds.
 
 And these functions and constants:
 

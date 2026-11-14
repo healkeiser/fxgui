@@ -340,6 +340,24 @@ def test_show_dock_opens_a_closed_pane_in_front(qtbot):
     assert held.dockAreaWidget().currentDockWidget() is held
 
 
+def test_hide_dock_closes_a_pane_and_is_dock_open_says_so(qtbot):
+    window = _window(qtbot, ("side", "more"))
+    assert window.docks.is_dock_open("side")
+
+    window.docks.hide_dock("side")
+
+    assert not window.docks.is_dock_open("side")
+    assert not window.panes["side"].isVisible()
+    window.docks.show_dock("side")
+    assert window.docks.is_dock_open("side")
+
+
+def test_an_unknown_pane_is_neither_hidden_nor_open(qtbot):
+    window = _window(qtbot)
+    window.docks.hide_dock("nope")
+    assert not window.docks.is_dock_open("nope")
+
+
 def test_showing_a_floating_pane_raises_its_window(qtbot, monkeypatch):
     window = _window(qtbot)
     held = window.docks.manager().findDockWidget("side")
