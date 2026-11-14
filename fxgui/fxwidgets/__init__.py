@@ -22,6 +22,7 @@ from fxgui.fxwidgets._confirm_delete import FXConfirmDeleteDialog
 from fxgui.fxwidgets._delegates import FXThumbnailDelegate
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
 from fxgui.fxwidgets._drop_zone import FXDropZone
+from fxgui.fxwidgets._empty_state import FXEmptyState, FXScrollShadow
 from fxgui.fxwidgets._emoji_picker import (
     DEFAULT_EMOJIS,
     FXEmojiButton,
@@ -112,6 +113,7 @@ __all__ = [
     "FXElidedLabel",
     "FXEmojiButton",
     "FXEmojiPicker",
+    "FXEmptyState",
     "FXFilePathWidget",
     "FXFilteredTree",
     "FXFloatingDialog",
@@ -138,6 +140,7 @@ __all__ = [
     "FXRangeSlider",
     "FXRatingWidget",
     "FXResizedScrollArea",
+    "FXScrollShadow",
     "FXSearchBar",
     "FXSeating",
     "FXSingleInstance",

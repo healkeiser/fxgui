@@ -310,6 +310,20 @@ def _display_page() -> QWidget:
         set_icon(label, icon_name, color=f"feedback_{key}_foreground")
         icons.append(label)
 
+    empty = fxwidgets.FXEmptyState(
+        "inbox", "Pick a task", "Its files and versions show here"
+    )
+
+    shots = QWidget()
+    shot_list = QVBoxLayout(shots)
+    for number in range(10, 210, 10):
+        shot_list.addWidget(QLabel(f"sh{number:04d}"))
+    cut = QScrollArea()
+    cut.setWidgetResizable(True)
+    cut.setWidget(shots)
+    cut.setFixedHeight(120)
+    fxwidgets.FXScrollShadow(cut)
+
     elided = fxwidgets.FXElidedLabel(
         "X:/projects/pipeline/sequences/seq010/sh0010/comp/v005/sh0010.exr",
         mode=Qt.ElideMiddle,
@@ -370,6 +384,8 @@ def _display_page() -> QWidget:
         _section("FXAvatar", _row(*avatars)),
         _section("FXStatusDot", _row(*dots)),
         _section("FXIconLabel", _row(*icons)),
+        _section("FXEmptyState", empty),
+        _section("FXScrollShadow", cut),
         _section("FXElidedLabel", elided),
         _section(
             "FXCodeBlock / FXPygmentsHighlighter",
