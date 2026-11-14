@@ -52,11 +52,17 @@ jobs:
             git fetch origin gh-pages:gh-pages
           fi
 
-      - name: Deploy docs (versioned)
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+      # main is unreleased: it never touches a released version or latest.
+      - name: Deploy docs (dev)
+        if: github.ref == 'refs/heads/main'
         run: |
-          # One version per tag, the newest also as "latest".
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+          mike deploy --push dev
+          mike list
+
+      - name: Deploy docs (release)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
           mike deploy --push --update-aliases "$VERSION" latest
           git fetch origin gh-pages:gh-pages --force
           mike set-default --push latest
