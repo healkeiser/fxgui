@@ -5,6 +5,7 @@ recursive-include fxgui *.svg
 recursive-include fxgui *.png
 recursive-include fxgui *.qss
 recursive-include fxgui *.zip
+include fxgui/py.typed
 
 # Exclude root-level directories not needed in sdist
 prune .github
