@@ -98,10 +98,19 @@ def test_name_and_tooltip_follow_set_name(qtbot):
     qtbot.addWidget(parent)
     avatar = FXAvatar("Anne Martin", parent)
     assert avatar.name() == "Anne Martin"
-    assert avatar.toolTip() == "Anne Martin"
+    assert "Anne Martin" in avatar.toolTip()
     avatar.set_name("Bob Stone")
     assert avatar.initials() == "BS"
-    assert avatar.toolTip() == "Bob Stone"
+    assert "Bob Stone" in avatar.toolTip()
+
+
+def test_a_name_with_markup_is_a_tooltip_as_typed(qtbot):
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    avatar = FXAvatar('Tom & <img src="x">', parent)
+    assert "<img" not in avatar.toolTip()
+    assert "&lt;img" in avatar.toolTip()
+    assert avatar.accessibleName() == 'Tom & <img src="x">'
 
 
 def test_building_one_opens_no_window(qtbot):

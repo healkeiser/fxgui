@@ -12,6 +12,7 @@ from qtpy.QtWidgets import QWidget
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxwidgets._tips import apply_tip
 
 
 # Deep enough that white initials read at 4.5:1 on every one.
@@ -85,7 +86,7 @@ class FXAvatar(QWidget):
     def set_name(self, name: str) -> None:
         """Show `name`'s initials and colour, and use it as the tooltip."""
         self._name = name or ""
-        self.setToolTip(self._name)
+        apply_tip(self, self._name)
         self.update()
 
     def set_pixmap(self, pixmap: Optional[QPixmap]) -> None:
