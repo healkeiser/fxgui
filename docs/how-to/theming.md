@@ -81,7 +81,7 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 | `text_on_accent_primary` | *(Optional)* Text on `accent_primary` backgrounds (e.g., selected items). Auto-computed if omitted |
 | `text_on_accent_secondary` | *(Optional)* Text on `accent_secondary` backgrounds (a hovered primary button). Auto-computed if omitted |
 
-`text` and `text_muted` are held to 4.5:1 (`fxstyle.TEXT_CONTRAST`, WCAG AA) on every surface they sit on: `surface`, `surface_sunken`, `surface_alt`, `well`, `frame`, `tooltip` and `state_hover`, and `text` on `state_pressed` too. A theme's value that misses it is darkened or lightened until it reads, so `fxstyle.colors().text` can differ from the file. `text` then moves on until it stands 1.5:1 off `text_muted` (`fxstyle.MUTED_STEP`), so the two always read as two ranks; where `text` is already black or white, `text_muted` steps back toward the surface instead, as far as it still reads at 4.5:1.
+`text` and `text_muted` are held to 4.5:1 (`fxstyle.TEXT_CONTRAST`, WCAG AA) on every surface they sit on: `surface`, `surface_sunken`, `surface_alt`, `well`, `frame`, `tooltip` and `state_hover`, and `text` on `state_pressed` and `state_checked_hover` too. A theme's value that misses it is darkened or lightened until it reads, so `fxstyle.colors().text` can differ from the file. `text` then moves on until it stands 1.5:1 off `text_muted` (`fxstyle.MUTED_STEP`), so the two always read as two ranks; where `text` is already black or white, `text_muted` steps back toward the surface instead, as far as it still reads at 4.5:1.
 
 An omitted `text_on_accent_*` is black or white, whichever reads better on the accent.
 
@@ -92,6 +92,17 @@ An omitted `text_on_accent_*` is black or white, whichever reads better on the a
 | `state_hover` | *(Optional)* Every hover fill: rows, buttons, tool buttons, menu bar items, a hovered tab. Omitted, `text` at 5% over `surface`. Pushed to 1.2:1 off `surface`, `surface_sunken`, `surface_alt`, `well` and `frame` when closer |
 | `state_pressed` | *(Optional)* Pressed and checked fills, an open menu bar item, the current tab's pill. Omitted, `text` at 10% over `surface`. Pushed to 1.2:1 off `state_hover` and the grounds above (`fxstyle.STATE_MIN_CONTRAST`) when closer; omitted, also pushed past `state_hover`, toward black or white |
 | `state_contrast` | *(Optional)* That 1.2:1 floor, for a brand that holds its fills closer, as Lumen's do |
+
+Four more colours are derived, never set in a theme. `state_checked_hover`
+fills a checked button under the pointer, so the click that unchecks it
+shows: it is a step past `state_pressed` by the same floor, and `text`
+reads at 4.5:1 on it. `state_hover_overlay`, `state_pressed_overlay` and
+`state_checked_hover_overlay` are `text` as `#AARRGGBB`, at the least alpha
+whose blend over `surface` stands off it as the opaque fill does. Flat push
+buttons and plain tool buttons wear them, so their states show on a band, a
+card or a tooltip, where an opaque fill can equal the ground.
+`fxstyle.colors()` has all four; `QColor(fxstyle.colors().state_hover_overlay)`
+reads the alpha.
 
 ### Scrollbar Colors
 
@@ -431,9 +442,10 @@ looks like the focused one.
 | State | Push button, `FXSplitButton` | Tool button (flat) | Input (line edit, combo box, spin box) | Row in a list, tree or table | Menu item, combo or completer row | Tab |
 |-------|------|------|------|------|------|------|
 | Rest | fill `@surface`, edge `@border_light` | no fill | fill `@surface_sunken`, edge `@border` | no fill | no fill | text `@text_muted` |
-| Hover | fill `@state_hover`, edge kept | fill `@state_hover`, no edge | edge `@border_light` | fill `@state_hover`, text kept | fill `@accent_primary`, text `@text_on_accent_primary` | fill `@state_hover` in the pill's shape, no edge, text kept |
-| Pressed | fill `@state_pressed` | fill `@state_pressed` | | fill `@accent_primary` | fill `@accent_secondary` | |
-| Checked or current | fill `@state_pressed`, edge `@grid` | fill `@state_pressed`, edge `@accent_primary` | | selected: fill `@accent_primary`, focused view or not | check mark | pill `@state_pressed`, no edge |
+| Hover | fill `@state_hover`, edge kept | fill `@state_hover_overlay`, no edge | edge `@border_light` | fill `@state_hover`, text kept | fill `@accent_primary`, text `@text_on_accent_primary` | fill `@state_hover` in the pill's shape, no edge, text kept |
+| Pressed | fill `@state_pressed` | fill `@state_pressed_overlay` | | fill `@accent_primary` | fill `@accent_secondary` | |
+| Checked or current | fill `@state_pressed`, edge `@grid` | fill `@state_pressed_overlay`, no edge | | selected: fill `@accent_primary`, focused view or not | check mark | pill `@state_pressed`, no edge |
+| Checked and hovered | fill `@state_checked_hover` | fill `@state_checked_hover_overlay` | | | | |
 | Keyboard focus | edge `@accent_primary` | edge `@accent_primary` | edge `@accent_primary` | the delegate's ring | | edge `@accent_primary` |
 | Disabled | fill `@surface`, edge `@border`, text `@text_disabled` | no fill | text `@text_disabled` | | text `@text_disabled` | |
 
