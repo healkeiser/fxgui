@@ -282,22 +282,19 @@ def test_code_is_small_text_on_a_fill(themed_app, qtbot):
 
 
 def test_code_names_the_family_of_the_mono_role(qtbot, monkeypatch):
-    from qtpy.QtGui import QFont, QFontDatabase
+    from qtpy.QtGui import QFont
 
     monkeypatch.setattr(fxstyle, "font", lambda role: QFont(["Brand's Mono"]))
     assert "font-family:'Brand&#x27;s Mono';" in _tips.tip("", code="a.key")
 
-    # A role that found no family is a QFont without one, as `fxstyle.font`
-    # makes it. Qt's rich text ignores the generic `monospace`, so the
-    # system's fixed font is named.
+    # A role with no family leaves the face to the tip's own font.
     def without_a_family(role):
         font = QFont()
         font.setFamilies([])
         return font
 
     monkeypatch.setattr(fxstyle, "font", without_a_family)
-    fixed = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
-    assert f"font-family:'{fixed.family()}';" in _tips.tip("", code="a.key")
+    assert "font-family" not in _tips.tip("", code="a.key")
 
 
 def test_a_short_path_stays_on_one_row(qtbot):

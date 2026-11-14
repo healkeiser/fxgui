@@ -20,7 +20,7 @@ from typing import Iterable, List, Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QEvent, QKeyCombination, QObject, Qt, Slot
-from qtpy.QtGui import QAction, QFontDatabase, QGuiApplication, QKeySequence
+from qtpy.QtGui import QAction, QKeySequence
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
@@ -182,12 +182,7 @@ def _code(text: str) -> str:
     wide as itself: the rows are cut here, and Qt wraps nothing.
     """
     colors = fxstyle.colors()
-    # Qt's rich text ignores the generic `monospace`: name a family, the
-    # system's fixed one when the theme's mono role found none.
     families = fxstyle.font(role="mono").families()
-    if not families and QGuiApplication.instance() is not None:
-        fixed = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
-        families = [fixed.family()]
     face = f"font-family:'{escape(families[0])}'; " if families else ""
     rows = "\n".join(
         row for line in text.split("\n") for row in _code_rows(line)

@@ -285,7 +285,10 @@ def test_marking_a_title_keeps_its_size_and_weight(qtbot, monkeypatch):
 
 def test_font_takes_a_role(qapp, monkeypatch):
     _patch_color_file(monkeypatch, fonts={"mono": ["No Such QQQ", "monospace"]})
-    assert fxstyle.font("dark", role="mono").families() == []
+    mono = fxstyle.font("dark", role="mono")
+    fixed = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+    assert mono.families() == [fixed.family()]
+    assert mono.styleHint() == QFont.StyleHint.Monospace
     assert fxstyle.font("dark", role="title").family() == (
         fxstyle._platform_default_font())
 

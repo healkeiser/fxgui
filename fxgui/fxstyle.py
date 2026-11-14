@@ -3135,7 +3135,8 @@ def font(theme: Optional[str] = None, role: str = "body") -> QFont:
     The body role is the root font, set on every themed root with the
     palette; a child's own ``setFont`` wins over it, which a sheet
     ``font`` rule would not allow. Another role is for code that takes a
-    QFont, such as a QGraphicsTextItem.
+    QFont, such as a QGraphicsTextItem. A role that falls to the generic
+    ``monospace`` names the platform's fixed-pitch family.
 
     Args:
         theme: Theme name. Defaults to the current theme.
@@ -3151,7 +3152,16 @@ def font(theme: Optional[str] = None, role: str = "body") -> QFont:
     roles = _font_config(theme)
     family = _font_family(roles.get(role, roles["body"]))
     result = QFont()
-    result.setFamilies([] if family in _GENERIC_FONT_FAMILIES else [family])
+    if family == "monospace" and QGuiApplication.instance() is not None:
+        # Qt draws no CSS generic, rich text included: name the platform's
+        # fixed face, whatever it is called.
+        fixed = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+        result.setFamilies([fixed.family()])
+    else:
+        result.setFamilies(
+            [] if family in _GENERIC_FONT_FAMILIES else [family])
+    if family == "monospace":
+        result.setStyleHint(QFont.StyleHint.Monospace)
     result.setPixelSize(FONT_SIZE)
     weight, hinting = _shape(theme, role)
     if weight is not None:
