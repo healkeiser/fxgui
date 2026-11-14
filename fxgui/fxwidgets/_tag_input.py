@@ -52,6 +52,7 @@ class FXTagChip(QFrame):
         layout.setSpacing(fxstyle.PANE_GAP)
 
         self.label = QLabel(text)
+        self.label.setTextFormat(Qt.PlainText)
         layout.addWidget(self.label)
 
         self.remove_button = None

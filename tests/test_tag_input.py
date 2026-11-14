@@ -2,6 +2,7 @@
 
 # Third-party
 import pytest
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 # Internal
@@ -156,3 +157,10 @@ def test_a_set_keeps_the_chips_of_tags_that_stay(qtbot, qapp):
 def test_the_chip_label_takes_the_root_font_size(qtbot, qapp):
     assert "font-size" not in fxstyle._build_stylesheet().split(
         "FXTagChip QLabel")[1].split("}")[0]
+
+
+def test_a_chip_shows_markup_as_typed(qtbot):
+    chip = FXTagChip("<b>x</b>")
+    qtbot.addWidget(chip)
+    assert chip.label.textFormat() == Qt.PlainText
+    assert chip.label.text() == "<b>x</b>"
