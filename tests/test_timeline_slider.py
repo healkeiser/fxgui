@@ -653,3 +653,16 @@ def test_space_plays_after_a_transport_button_was_clicked(qtbot, qapp):
     QTest.keyClick(timeline.focusWidget(), Qt.Key_Space)
     assert timeline._is_playing
     timeline.stop()
+
+
+def test_a_hidden_track_lets_a_player_shrink_to_its_controls(qtbot, qapp):
+    timeline = _timeline(
+        qtbot, controls_position="below", show_range=False, show_track=False
+    )
+    assert not timeline._track_widget.isVisible()
+    assert timeline.minimumHeight() < 60
+    assert timeline.sizeHint().height() < 60
+
+    default = _timeline(qtbot, controls_position="below")
+    assert default.minimumHeight() == 60
+    assert default._track_widget.isVisible()

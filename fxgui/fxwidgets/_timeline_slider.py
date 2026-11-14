@@ -99,6 +99,8 @@ class FXTimelineSlider(QWidget):
         show_range: Whether to show the start and end frame fields, and the
             view fields of the "below" layout; a player's range is fixed.
         show_fps: Whether to show the frame rate field.
+        show_track: Whether to show the track. Hidden, the "below" layout
+            is only as tall as its rows.
         own_clock: Whether playback advances the frame. False for a
             consumer that keeps time itself, such as a movie: play and stop
             only switch the button and emit, the consumer moves the
@@ -164,6 +166,7 @@ class FXTimelineSlider(QWidget):
         controls_position: str = "left",
         show_range: bool = True,
         show_fps: bool = True,
+        show_track: bool = True,
         own_clock: bool = True,
     ):
         super().__init__(parent)
@@ -359,7 +362,8 @@ class FXTimelineSlider(QWidget):
                 Qt.AlignRight | Qt.AlignVCenter,
             )
             root.addLayout(controls_row)
-            self.setMinimumHeight(60)
+            if show_track:
+                self.setMinimumHeight(60)
         else:
             main_layout = QHBoxLayout(self)
             main_layout.setContentsMargins(0, 0, 0, 0)
@@ -385,6 +389,7 @@ class FXTimelineSlider(QWidget):
             if widget is not None:
                 widget.setVisible(show_range)
         self._fps_spinbox.setVisible(show_fps)
+        self._track_widget.setVisible(show_track)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         # Dropped in this order when the row runs out of width.
