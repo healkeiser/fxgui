@@ -149,10 +149,19 @@ def test_the_flush_chain_stops_when_the_queue_empties(qtbot, qapp):
     assert _lines(pane) == ["one"]
 
 
-def test_the_document_is_unbounded_by_default(qtbot, qapp):
+def test_the_document_is_bounded_by_default(qtbot, qapp):
     pane = _pane(qtbot)
 
+    assert pane.output_area.document().maximumBlockCount() == 20000
+
+
+def test_zero_keeps_every_line(qtbot, qapp):
+    """The explicit way to ask for no bound, on the document and the queue."""
+    pane = FXOutputLogWidget(max_blocks=0)
+    qtbot.addWidget(pane)
+
     assert pane.output_area.document().maximumBlockCount() == 0
+    assert pane._pending_logs.maxlen is None
 
 
 def test_a_consumer_can_bound_the_document(qtbot, qapp):
@@ -225,3 +234,9 @@ def test_a_bounded_pane_queues_only_what_it_can_keep(qtbot, qapp):
     qtbot.waitUntil(lambda: not pane._pending_logs)
 
     assert _lines(pane)[-1] == "record 59"
+
+
+def test_the_default_bound_applies_to_the_queue_too(qtbot, qapp):
+    pane = _pane(qtbot)
+
+    assert pane._pending_logs.maxlen == 20000

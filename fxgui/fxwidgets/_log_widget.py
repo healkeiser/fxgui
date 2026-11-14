@@ -147,9 +147,9 @@ class FXOutputLogWidget(QWidget):
     Args:
         parent: Parent widget.
         max_blocks: How many lines the pane keeps before Qt prunes the
-            oldest, as a terminal's scrollback does. Defaults to `0`, no
-            limit: only the consumer knows whether dropping old records
-            is safe.
+            oldest, as a terminal's scrollback does. Defaults to `20000`,
+            which bounds memory and the repaint on a theme switch. `0`
+            keeps every line, for a consumer that must never drop one.
         hang_indent: A regular expression matching a record's header, such
             as its time, level and logger name. A wrapped record's later
             lines then start under the end of the match, not at column 0.
@@ -179,7 +179,7 @@ class FXOutputLogWidget(QWidget):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        max_blocks: int = 0,
+        max_blocks: int = 20000,
         hang_indent: Optional[Union[str, Pattern]] = None,
     ):
         super().__init__(parent)
