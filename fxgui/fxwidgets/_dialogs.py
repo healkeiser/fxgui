@@ -125,7 +125,8 @@ class FXFloatingDialog(QDialog):
         container_layout.addWidget(self.main_widget, 1)
         container_layout.addWidget(self.button_box)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)  # Room for the shadow
+        # Room for the shadow, which falls 6 px down.
+        layout.setContentsMargins(8, 8, 8, 16)
         layout.addWidget(self._container)
 
         self.set_dialog_icon(icon)
