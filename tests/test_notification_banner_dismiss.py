@@ -29,7 +29,7 @@ pytestmark = pytest.mark.usefixtures("motion")
 
 
 def _host(qtbot):
-    """A parent wide enough for a 320px banner to have somewhere to go."""
+    """A parent wide enough for a 384px banner to have somewhere to go."""
     parent = QWidget()
     parent.resize(800, 600)
     qtbot.addWidget(parent)

@@ -89,7 +89,7 @@ class FXProgressCard(QFrame):
         self.setFrameShape(QFrame.StyledPanel)
 
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(16, 12, 16, 12)
+        main_layout.setContentsMargins(12, 12, 12, 12)
         main_layout.setSpacing(fxstyle.PANE_GAP)
 
         header_layout = QHBoxLayout()
@@ -97,8 +97,8 @@ class FXProgressCard(QFrame):
 
         if icon:
             # Beside the title, so in the title's own icon ink.
-            task_icon = FXIconLabel(size=18)
-            task_icon.setFixedSize(20, 20)
+            task_icon = FXIconLabel(size=16)
+            task_icon.setFixedSize(16, 16)
             task_icon.setIcon(fxicons.get_icon(icon, color="icon"))
             header_layout.addWidget(task_icon)
 
@@ -109,8 +109,8 @@ class FXProgressCard(QFrame):
 
         header_layout.addStretch()
 
-        self._status_icon = FXIconLabel(size=18)
-        self._status_icon.setFixedSize(20, 20)
+        self._status_icon = FXIconLabel(size=16)
+        self._status_icon.setFixedSize(16, 16)
         header_layout.addWidget(self._status_icon)
 
         main_layout.addLayout(header_layout)

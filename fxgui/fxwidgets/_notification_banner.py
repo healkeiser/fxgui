@@ -49,6 +49,7 @@ fxstyle.register_widget_style(
     }
     FXNotificationBanner QLabel#fxBannerTitle {
         color: @text;
+        font-weight: 500;
     }
     FXNotificationBanner QLabel#fxBannerMessage {
         color: @text_muted;
@@ -67,7 +68,7 @@ fxstyle.register_widget_style(
         color: @text_muted;
         border: 1px solid @border;
         border-radius: @button_radius;
-        padding: 6px 16px;
+        padding: 6px 10px;
         font-weight: 500;
     }
     FXNotificationBanner QPushButton#fxBannerAction[fxFocusVisible="true"]:focus {
@@ -99,6 +100,12 @@ fxstyle.register_widget_style(
         for key in sorted({kind.feedback for kind in SEVERITIES.values()})
     )
 )
+
+
+# A card's padding, the gap between its parts, and its icons' side.
+_PADDING = 12
+_SPACING = 8
+_ICON = 16
 
 
 def _staying(parent: QWidget) -> list:
@@ -182,7 +189,7 @@ class FXNotificationBanner(QFrame):
         timeout: Optional[int] = None,
         actions: Optional[Mapping[str, Callable[[], None]]] = None,
         closable: bool = True,
-        width: int = 320,
+        width: int = 384,
         logger: Optional[logging.Logger] = None,
         title: Optional[str] = None,
         icon: Optional[str] = None,
@@ -216,13 +223,13 @@ class FXNotificationBanner(QFrame):
         self.setFrameShape(QFrame.StyledPanel)
 
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(16, 12, 16, 12)
-        main_layout.setSpacing(fxstyle.PANE_GAP)
+        main_layout.setContentsMargins(*(_PADDING,) * 4)
+        main_layout.setSpacing(_SPACING)
 
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(fxstyle.PANE_GAP)
-        self._icon_label = FXIconLabel(size=18)
-        self._icon_label.setFixedSize(20, 20)
+        header_layout.setSpacing(_SPACING)
+        self._icon_label = FXIconLabel(size=_ICON)
+        self._icon_label.setFixedSize(_ICON, _ICON)
         header_layout.addWidget(self._icon_label)
 
         if title is None:
@@ -231,8 +238,8 @@ class FXNotificationBanner(QFrame):
                 if severity_type in SEVERITIES else "Notification"
             )
         self._title_label = QLabel(title)
+        # The body font in medium: the sheet's rule sets the weight.
         self._title_label.setObjectName("fxBannerTitle")
-        fxstyle.mark_as_title(self._title_label, rank="section")
         header_layout.addWidget(self._title_label)
 
         header_layout.addStretch()
@@ -467,7 +474,7 @@ class FXNotificationBanner(QFrame):
         """
         if self._actions_layout is None:
             self._actions_layout = QHBoxLayout()
-            self._actions_layout.setSpacing(fxstyle.PANE_GAP)
+            self._actions_layout.setSpacing(_SPACING)
             self._actions_layout.addStretch()
             self.layout().addLayout(self._actions_layout)
 

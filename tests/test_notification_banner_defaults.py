@@ -140,12 +140,18 @@ def test_the_top_and_the_side_are_set_apart(qtbot):
     assert banner.pos().x() == parent.width() - 300 - 10
 
 
-def test_the_title_is_a_section_title_in_the_theme_font(qtbot):
+def test_the_title_is_the_body_font_in_medium(host_root):
+    from qtpy.QtGui import QFont
+
     from fxgui import fxstyle
 
-    parent = _host(qtbot)
-    banner = FXNotificationBanner(parent, "sent", severity_type=INFO)
+    host_root.resize(800, 600)
+    banner = FXNotificationBanner(host_root, "sent", severity_type=INFO)
+    title = banner._title_label
+    title.ensurePolished()
 
-    assert banner._title_label.property(fxstyle.TITLE_PROPERTY) == "section"
+    assert not title.property(fxstyle.TITLE_PROPERTY)
+    assert title.font().weight() == QFont.Medium
+    assert title.font().pixelSize() == fxstyle.FONT_SIZE
     assert "font-size" not in fxstyle._build_stylesheet().split(
         "FXNotificationBanner QLabel#fxBannerTitle {")[1].split("}")[0]
