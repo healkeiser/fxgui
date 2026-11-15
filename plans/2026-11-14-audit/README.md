@@ -9,30 +9,7 @@ read the plan fully before starting, honour its STOP conditions, update your row
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
-| 001 | State fills hold on every ground (pressed beyond hover, frame, surface_alt, selection) | P1 | S-M | none | DONE (released 14.2.0) |
-| 002 | One state convention for buttons; overlay fills for flat buttons on any surface | P1 | M | 001 | DONE (released 14.2.0) |
-| 003 | A primary button owns its icon ink, whoever sets the icon | P1 | S | none | DONE (released 14.2.0) |
-| 004 | Timeline: loop-off after a wrap, Space on a focused button, a public track toggle | P1 | S | none | DONE (released 14.2.0) |
-| 005 | The theme choice is saved only when a person chooses it | P1 | S | none | DONE (released 14.2.0) |
-| 006 | FXBreadcrumb: public segment labels | P1 | S | none | DONE (released 14.2.0) |
-| 007 | Ship type information (py.typed) | P2 | M | none | TODO |
-| 008 | Type-to-filter takes AltGr characters (AZERTY, QWERTZ) | P1 | S | none | DONE (released 14.2.0) |
-| 009 | A neutral label pill in FXThumbnailDelegate | P2 | S | none | DONE (released 14.2.0) |
-| 010 | Theme loading: on-accent inks, the mono face, window fade in app mode | P2 | S | none | DONE (on main, next release) |
-| 011 | User text stays text (tag chip, avatar, banner) | P1 | S | none | DONE (released 14.2.0) |
-| 012 | No disk check blocks the UI (path widget, drop zone) | P2 | M | none | DONE (on main, next release) |
-| 013 | The log pane trims its queue to its bound (a finite default bound waits for the owner's yes) | P2 | S | none | DONE (released 14.2.0) |
-| 014 | Thumbnails decoded at their target size | P2 | S | none | TODO |
-| 015 | Small widget defects (toggle, checkable combo, accordion, read-only edit, status dot, sort, flow layout) | P2 | S | none | DONE (released 14.2.0) |
-| 016 | Chrome and sheet defects (banner on a hidden parent, status bar outside FXMainWindow, malformed QSS, proxy sort documented) | P2 | S | none | TODO |
-| 017 | Release and docs pipeline (permissions, pinned tools, trusted publishing, docs versions) | P2 | S | none | TODO |
-| 018 | CI covers what fxgui claims (Windows, PyQt6, dependency floors) | P2 | M | none | TODO |
-| 019 | Public names for what Pascal reaches into (dock hide/open, unregister root, delegate icon geometry, refilter, icon cache folder) | P2 | M | none | TODO |
-| 020 | A window can scope any shortcut; a restart waits for the lock without waking the old copy (`try_claim`) | P3 | S | none | TODO |
-| 021 | Single-instance hand-over is acknowledged | P3 | M | 020 | TODO |
-| 022 | Linux network mounts may stall | P3 | S | 012 | TODO |
-| 023 | FXEmptyState, FXScrollShadow, `fxstyle.ink`, `fxutils.set_tab_order` moved from Pascal | P2 | M | none | TODO |
-
+| 001 | State fills hold on every ground (pressed beyond hover, frame, surface_alt, selection) | P1 | S-M | none | DONE (released 14.2.0) || 002 | One state convention for buttons; overlay fills for flat buttons on any surface | P1 | M | 001 | DONE (released 14.2.0) || 003 | A primary button owns its icon ink, whoever sets the icon | P1 | S | none | DONE (released 14.2.0) || 004 | Timeline: loop-off after a wrap, Space on a focused button, a public track toggle | P1 | S | none | DONE (released 14.2.0) || 005 | The theme choice is saved only when a person chooses it | P1 | S | none | DONE (released 14.2.0) || 006 | FXBreadcrumb: public segment labels | P1 | S | none | DONE (released 14.2.0) || 007 | Ship type information (py.typed) | P2 | M | none | DONE (released 14.3.0) || 008 | Type-to-filter takes AltGr characters (AZERTY, QWERTZ) | P1 | S | none | DONE (released 14.2.0) || 009 | A neutral label pill in FXThumbnailDelegate | P2 | S | none | DONE (released 14.2.0) || 010 | Theme loading: on-accent inks, the mono face, window fade in app mode | P2 | S | none | DONE (released 14.3.0) || 011 | User text stays text (tag chip, avatar, banner) | P1 | S | none | DONE (released 14.2.0) || 012 | No disk check blocks the UI (path widget, drop zone) | P2 | M | none | DONE (released 14.3.0) || 013 | The log pane trims its queue to its bound (a finite default bound waits for the owner's yes) | P2 | S | none | DONE (released 14.2.0) || 014 | Thumbnails decoded at their target size | P2 | S | none | DONE (released 14.3.0) || 015 | Small widget defects (toggle, checkable combo, accordion, read-only edit, status dot, sort, flow layout) | P2 | S | none | DONE (released 14.2.0) || 016 | Chrome and sheet defects (banner on a hidden parent, status bar outside FXMainWindow, malformed QSS, proxy sort documented) | P2 | S | none | DONE (released 14.3.0) || 017 | Release and docs pipeline (permissions, pinned tools, trusted publishing, docs versions) | P2 | S | none | DONE (released 14.3.0) || 018 | CI covers what fxgui claims (Windows, PyQt6, dependency floors) | P2 | M | none | DONE (released 14.4.0) || 019 | Public names for what Pascal reaches into (dock hide/open, unregister root, delegate icon geometry, refilter, icon cache folder) | P2 | M | none | DONE (released 14.3.0) || 020 | A window can scope any shortcut; a restart waits for the lock without waking the old copy (`try_claim`) | P3 | S | none | DONE (released 14.3.0) || 021 | Single-instance hand-over is acknowledged | P3 | M | 020 | DONE (released 14.4.0) || 022 | Linux network mounts may stall | P3 | S | 012 | DONE (released 14.3.0) || 023 | FXEmptyState, FXScrollShadow, `fxstyle.ink`, `fxutils.set_tab_order` moved from Pascal | P2 | M | none | DONE (released 14.3.0) |
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED (one-line rationale).
 
 ## Dependency notes
@@ -52,7 +29,15 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED 
   tag `vX.Y.Z`, check the release run and `pip index versions fxgui`, then
   `lsd pip fxgui==X.Y.Z --target development --no-deps`.
 
-## Decisions waiting for the owner, inside plans
+## Decisions taken while executing
+
+- 013: default bound 20000 blocks (`max_blocks=0` keeps every line).
+- 010: app-mode windows registered as themed roots fade in.
+- 017: PyPI trusted publishing NOT switched; the steps are a comment above the publish step in `release.yml`.
+- 018: PyQt6 support withdrawn from the docs (a PyQt6 run fails in many places); a PyQt6 row needs a follow-up plan. Floors row waits; `Pygments>=2.2`. Windows row on Python 3.11.
+- 016: proxy sort documented, not changed.
+
+## Decisions waiting for the owner, inside plans (as planned)
 
 - 002 adds a derived `state_checked_hover` and translucent fills as `#AARRGGBB` in
   `fxstyle.colors()`; code that assumes every colour there is `#RRGGBB` must be checked
