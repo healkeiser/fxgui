@@ -50,6 +50,31 @@ def test_the_prompt_shows_icon_medium_action_and_muted_detail(qtbot, host_root):
     assert empty.prompt() == ("Pick a task", "Its files show here")
 
 
+def test_the_text_is_16_and_14_px_at_most_384_wide_and_centred(
+        qtbot, host_root):
+    long = "Every file the task published shows here, newest first " * 3
+    empty = FXEmptyState("inbox", "Pick a task", long)
+    host_root.layout().addWidget(empty)
+    _show(qtbot, host_root)
+    host_root.resize(900, 400)
+    QApplication.processEvents()
+
+    assert empty.layout().spacing() == 16
+    assert empty.action.font().pixelSize() == 16
+    assert empty.action.font().weight() == QFont.Medium
+    assert empty.detail.font().pixelSize() == 14
+    for label in (empty.action, empty.detail):
+        box = label.geometry()
+        assert box.width() == 384
+        assert abs(box.center().x() - empty.rect().center().x()) <= 1
+    # Wrapped to its width, not clipped to a one-line height.
+    assert empty.detail.height() >= empty.detail.heightForWidth(384)
+
+    host_root.resize(200, 400)
+    QApplication.processEvents()
+    assert empty.detail.geometry().left() == fxstyle.PANE_GAP
+
+
 def test_an_empty_detail_hides_its_line(qtbot, host_root):
     empty = FXEmptyState("inbox", "Pick a task")
     host_root.layout().addWidget(empty)

@@ -10,8 +10,8 @@ from typing import Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, Qt
-from qtpy.QtGui import QColor, QFont, QLinearGradient, QPainter, QPaintEvent
-from qtpy.QtWidgets import QLabel, QScrollArea, QVBoxLayout, QWidget
+from qtpy.QtGui import QColor, QLinearGradient, QPainter, QPaintEvent
+from qtpy.QtWidgets import QHBoxLayout, QLabel, QScrollArea, QVBoxLayout, QWidget
 
 # Internal
 from fxgui import fxicons, fxstyle
@@ -22,6 +22,19 @@ _ICON_PIXELS = 40
 
 # The cut shadow's height, in pixels.
 _SHADOW_PIXELS = 10
+
+# The gap between the icon, the action and the detail; the text's widest.
+_SPACING = 16
+_TEXT_WIDTH = 384
+
+# From the sheet, so the sizes hold inside a host, whose rules beat a font
+# set in code.
+fxstyle.register_widget_style(
+    """
+    FXEmptyState QLabel#fxEmptyAction { font-size: 16px; font-weight: 500; }
+    FXEmptyState QLabel#fxEmptyDetail { font-size: 14px; }
+    """
+)
 
 
 class FXEmptyState(QWidget):
@@ -52,21 +65,27 @@ class FXEmptyState(QWidget):
         super().__init__(parent)
         self.icon = FXIconLabel(size=_ICON_PIXELS)
         self.action = QLabel()
-        font = self.action.font()
-        font.setWeight(QFont.Medium)
-        self.action.setFont(font)
+        self.action.setObjectName("fxEmptyAction")
         fxstyle.ink(self.action, "text")
         self.detail = QLabel()
+        self.detail.setObjectName("fxEmptyDetail")
         fxstyle.ink(self.detail, "text_muted")
         stack = QVBoxLayout(self)
-        stack.setSpacing(fxstyle.PANE_GAP)
+        stack.setSpacing(_SPACING)
         stack.setContentsMargins(*(fxstyle.PANE_GAP,) * 4)
         stack.addStretch(1)
         stack.addWidget(self.icon)
         for label in (self.action, self.detail):
             label.setWordWrap(True)
             label.setAlignment(Qt.AlignCenter)
-            stack.addWidget(label)
+            label.setMaximumWidth(_TEXT_WIDTH)
+            # Centred by stretches: the label's far larger stretch gives it
+            # the room up to its maximum, and only then the sides.
+            row = QHBoxLayout()
+            row.addStretch(1)
+            row.addWidget(label, _TEXT_WIDTH)
+            row.addStretch(1)
+            stack.addLayout(row)
         stack.addStretch(1)
         self.set_prompt(icon, action, detail)
 
