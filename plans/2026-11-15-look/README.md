@@ -20,7 +20,7 @@ Rules for every plan:
 
 | Plan | Title | Depends on | Status |
 |------|-------|------------|--------|
-| 001 | Core metrics and type scale: control height 32, gap 6, indicators 16, weights 500, title ranks | none | TODO |
+| 001 | Core metrics and type scale: control height 32, gap 6, indicators 16, weights 500, title ranks; Inter and JetBrains Mono shipped as the default faces | none | DONE (on main, next release) |
 | 002 | Rows, trees, tables and headers | 001 | TODO |
 | 003 | Buttons, fields, tabs, menus and tooltips | 001 | TODO |
 | 004 | Panels, dialogs, notices, chips, switches, progress and elevation | 001 | TODO |
@@ -34,3 +34,8 @@ per item), row FLIP animation and chevron rotation in item views, a painted 3 px
 controls (QSS cannot draw outside a widget; fxgui's keyboard focus stays a recoloured edge, which is
 also what ls-ui does to an outlined control's ring), keycap chips inside QMenu shortcuts, skeleton
 loaders and the top progress line (new widgets, not a look change).
+
+## Decisions taken while executing
+
+- Fonts (owner, 2026-11-15): fxgui ships Inter and JetBrains Mono, taken byte for byte from the brand's grid-fitted files (ttfautohint, strong stem width), as the default body/title and mono faces with `hinting: vertical`. Measured: `none` ignores the grid-fitting; `vertical` is the crispest and makes Inter 400 as dark as unhinted 500, so body stays 400 and 500 is the step above. Recipe and numbers: `fxgui/fonts/README.md`.
+- No font or weight rule on every instance of a common class (it overrides `setFont`): the push-button weight rule plan 001 first added was removed.
