@@ -59,18 +59,24 @@ def test_a_popup_is_a_surface_card_at_the_card_radius(popup):
     assert "border: 1px solid @border;" in body
 
 
+_OWN_SIZES = ("FXEmojiPicker", "FXTagChip QLabel", "FXEmptyState QLabel#")
+
+
 def test_no_fragment_sets_a_third_weight_or_a_point_size():
     """Two weights, the body's and 600; sizes follow the root font."""
     for names, body in _rules():
         assert "font-weight: bold" not in body, names
         assert not re.search(r"font-size:\s*[0-9.]+pt", body), names
-        # An emoji is a picture, sized as one; text takes the root font.
-        if not all(n.startswith("FXEmojiPicker") for n in names):
+        # An emoji is a picture, sized as one; a chip's small text and an
+        # empty state's scale are the look's own; other text takes the
+        # root font.
+        if not all(n.startswith(_OWN_SIZES) for n in names):
             assert "font-size" not in body, names
 
 
-# The spacing ramp; 32 and 40 are for a window-sized panel, a splash.
-_RAMP = {0, 2, 4, 6, 8, 12, 16, 24, 32, 40}
+# The spacing ramp; 20 is a dialog's sides; 32 and 40 are for a
+# window-sized panel, a splash.
+_RAMP = {0, 2, 4, 6, 8, 12, 16, 20, 24, 32, 40}
 _LITERAL = re.compile(
     r"\.(?:setSpacing|setContentsMargins|addSpacing)\(([0-9, ]+)\)")
 
