@@ -115,9 +115,9 @@ def test_a_header_is_a_section_header_hover_fills_open_weighs(qtbot, qapp):
 
     section.expand(animate=False)
     assert _header_fill(section) == resting
-    assert section._title_label.font().weight() == QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
+    assert section._title_label.font().weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
     section.collapse(animate=False)
-    assert section._title_label.font().weight() == QFont.Weight(fxstyle.BODY_WEIGHT)
+    assert section._title_label.font().weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.BODY_WEIGHT))
 
     hover(qtbot, section._header)
     assert _header_fill(section) == lit

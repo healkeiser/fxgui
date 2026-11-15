@@ -295,7 +295,8 @@ def test_a_face_names_its_weight_and_hinting(qapp, monkeypatch):
         "body": {"family": ["Inter"], "weight": 500, "hinting": "none"},
     })
     body = fxstyle.font("dark")
-    assert body.weight() == QFont.Medium
+    # A weight is the CSS one; a dark theme draws it a step heavier.
+    assert body.weight() == QFont.Weight(fxstyle.drawn_weight(500, "dark"))
     assert body.hintingPreference() == QFont.PreferNoHinting
     # fxgui ships Inter, so the named family resolves.
     assert _fonts()["body"] == '"Inter"'
@@ -303,14 +304,15 @@ def test_a_face_names_its_weight_and_hinting(qapp, monkeypatch):
 
 def test_the_default_body_is_the_body_weight_unhinted(qapp):
     body = fxstyle.font("dark")
-    assert body.weight() == QFont.Weight(fxstyle.BODY_WEIGHT)
+    assert body.weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.BODY_WEIGHT))
     # Unhinted, as a browser draws the same faces (fonts/README.md).
     assert body.hintingPreference() == QFont.PreferNoHinting
 
 
-def test_a_face_without_weight_keeps_the_default(qapp, monkeypatch):
+def test_a_face_without_weight_takes_the_body_weight(qapp, monkeypatch):
     _patch_color_file(monkeypatch, fonts={"body": {"family": ["Inter"]}})
-    assert fxstyle.font("dark").weight() == QFont().weight()
+    assert fxstyle.font("dark").weight() == QFont.Weight(
+        fxstyle.drawn_weight(fxstyle.BODY_WEIGHT, "dark"))
 
 
 def test_an_unknown_weight_is_refused(qapp, monkeypatch):
@@ -326,7 +328,7 @@ def test_the_body_weight_reaches_a_themed_app(qtbot, qapp, monkeypatch):
     try:
         label = QLabel("text")
         qtbot.addWidget(label)
-        assert label.font().weight() == QFont.Medium
+        assert label.font().weight() == QFont.Weight(fxstyle.drawn_weight(500))
     finally:
         fxstyle.unregister_themed_root(qapp)
         qapp.setStyleSheet("")
@@ -348,7 +350,7 @@ def test_the_body_weight_reaches_a_host_window(qtbot, monkeypatch):
     page.setWidget(late)
     root.layout().addWidget(page)
     QApplication.processEvents()
-    assert late.font().weight() == QFont.Medium
+    assert late.font().weight() == QFont.Weight(fxstyle.drawn_weight(500))
 
 
 def test_the_bundled_faces_are_grid_fitted_and_licensed():

@@ -34,9 +34,9 @@ def test_each_rank_takes_its_size_and_weight(qtbot, request, where):
     assert card.font().pixelSize() == 18
     assert body.font().pixelSize() == fxstyle.FONT_SIZE
     # Emphasis, never past it: the ranks are told by their size.
-    assert section.font().weight() == QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
-    assert card.font().weight() == QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
-    assert body.font().weight() == QFont.Weight(fxstyle.BODY_WEIGHT)
+    assert section.font().weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
+    assert card.font().weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
+    assert body.font().weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.BODY_WEIGHT))
 
 
 def test_a_rank_wears_the_title_family(qapp):
@@ -56,7 +56,7 @@ def test_a_color_file_sets_its_own_rank_sizes(qtbot, host_root, monkeypatch):
     fxstyle._reapply_to_roots()
     _shown(qtbot, host_root, section)
     assert section.font().pixelSize() == 20
-    assert section.font().weight() == QFont.Weight(fxstyle.BODY_WEIGHT)
+    assert section.font().weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.BODY_WEIGHT))
 
 
 def test_an_unknown_rank_is_refused(qtbot):

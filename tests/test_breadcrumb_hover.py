@@ -219,9 +219,9 @@ def test_a_new_path_bolds_only_its_last_segment(qtbot, request, where):
     for segment in drawn:
         segment.ensurePolished()
     # Unthemed, a segment keeps Qt's normal weight; under the sheet, the body's.
-    body = QFont.Normal if where is None else QFont.Weight(fxstyle.BODY_WEIGHT)
+    body = QFont.Normal if where is None else QFont.Weight(fxstyle.drawn_weight(fxstyle.BODY_WEIGHT))
     assert [segment.font().weight() for segment in drawn] == [
-        body, body, QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
+        body, body, QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
     ]
 
 

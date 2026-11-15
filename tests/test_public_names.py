@@ -22,9 +22,23 @@ from fxgui.fxwidgets import (
 
 
 def test_font_rank_gives_the_body_and_each_title_rank():
-    assert fxstyle.font_rank("body") == (fxstyle.FONT_SIZE, fxstyle.BODY_WEIGHT)
-    assert fxstyle.font_rank("section") == (15, fxstyle.EMPHASIS_WEIGHT)
-    assert fxstyle.font_rank("card") == (18, fxstyle.EMPHASIS_WEIGHT)
+    assert fxstyle.font_rank("body") == (fxstyle.FONT_SIZE, fxstyle.drawn_weight(fxstyle.BODY_WEIGHT))
+    assert fxstyle.font_rank("section") == (15, fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
+    assert fxstyle.font_rank("card") == (18, fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
+
+
+def test_a_dark_theme_draws_a_step_heavier_and_a_light_one_as_named():
+    for weight in (fxstyle.BODY_WEIGHT, fxstyle.EMPHASIS_WEIGHT, fxstyle.STRONG_WEIGHT):
+        assert fxstyle.drawn_weight(weight, "dark") == weight + 100
+        assert fxstyle.drawn_weight(weight, "light") == weight
+    assert fxstyle.drawn_weight(900, "dark") == 900
+    assert fxstyle.font_rank("section", "light") == (15, 500)
+    assert fxstyle.font_rank("section", "dark") == (15, 600)
+
+
+def test_drawn_weight_refuses_a_weight_off_the_css_scale():
+    with pytest.raises(ValueError):
+        fxstyle.drawn_weight(450)
 
 
 def test_font_rank_names_the_ranks_it_knows():
@@ -33,7 +47,7 @@ def test_font_rank_names_the_ranks_it_knows():
 
 
 def test_the_metric_names_hold_the_look_s_values():
-    assert (fxstyle.BODY_WEIGHT, fxstyle.EMPHASIS_WEIGHT) == (500, 600)
+    assert (fxstyle.BODY_WEIGHT, fxstyle.EMPHASIS_WEIGHT, fxstyle.STRONG_WEIGHT) == (400, 500, 600)
     assert (fxstyle.DIALOG_GUTTER, fxstyle.DIALOG_EDGE) == (20, 16)
     assert fxstyle.DIALOG_GAP == 12
     assert (FXThumbnailDelegate.PILL_HEIGHT,

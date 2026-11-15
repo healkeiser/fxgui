@@ -122,10 +122,10 @@ def test_the_delegate_s_type_is_the_body_weight_and_emphasis_only(qtbot):
     font.setPixelSize(12)
     option.font = font
     FXThumbnailDelegate._badge_fonts.clear()
-    assert FXThumbnailDelegate._title_font(option).weight() == QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
+    assert FXThumbnailDelegate._title_font(option).weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
     assert FXThumbnailDelegate._description_font(option).pixelSize() == 11
     badge = FXThumbnailDelegate._badge_font(option)
-    assert (badge.pixelSize(), badge.weight()) == (10, QFont.Weight(fxstyle.EMPHASIS_WEIGHT))
+    assert (badge.pixelSize(), badge.weight()) == (10, QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
 def test_every_role_is_claimed_once_from_one_table():
     from fxgui.fxwidgets import _roles
 

@@ -820,7 +820,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     def _title_font(option: QStyleOptionViewItem) -> QFont:
         """Return the item's font at the emphasis weight."""
         font = QFont(option.font)
-        font.setWeight(QFont.Weight(fxstyle.EMPHASIS_WEIGHT))
+        font.setWeight(QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
         return font
 
     @staticmethod
@@ -940,7 +940,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         font = cls._badge_fonts.get(key)
         if font is None:
             font = _smaller(base, 2)
-            font.setWeight(QFont.Weight(fxstyle.EMPHASIS_WEIGHT))
+            font.setWeight(QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
             cls._badge_fonts[key] = font
         return font
 
@@ -952,7 +952,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         font = cls._label_fonts.get(key)
         if font is None:
             font = _smaller(base, 1)
-            font.setWeight(QFont.Weight(fxstyle.EMPHASIS_WEIGHT))
+            font.setWeight(QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
             cls._label_fonts[key] = font
         return font
 

@@ -43,7 +43,7 @@ def test_the_prompt_shows_icon_medium_action_and_muted_detail(qtbot, host_root):
 
     assert not empty.icon.icon().isNull()
     assert empty.action.text() == "Pick a task"
-    assert empty.action.font().weight() == QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
+    assert empty.action.font().weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
     assert _ink_of(empty.action) == _token("text")
     assert empty.detail.isVisible()
     assert _ink_of(empty.detail) == _token("text_muted")
@@ -61,7 +61,7 @@ def test_the_text_is_16_and_14_px_at_most_384_wide_and_centred(
 
     assert empty.layout().spacing() == 16
     assert empty.action.font().pixelSize() == 16
-    assert empty.action.font().weight() == QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
+    assert empty.action.font().weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
     assert empty.detail.font().pixelSize() == 14
     for label in (empty.action, empty.detail):
         box = label.geometry()

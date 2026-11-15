@@ -155,7 +155,7 @@ class _Segment(QPushButton):
         self.setProperty("fxCurrent", current)
         if current:
             font = self.font()
-            font.setWeight(QFont.Weight(fxstyle.EMPHASIS_WEIGHT))
+            font.setWeight(QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
             self.setFont(font)
 
     def navigate(self, _=False) -> None:

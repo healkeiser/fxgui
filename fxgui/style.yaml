@@ -45,20 +45,23 @@ dcc:
 #   mono  - Code, logs, anything whose columns must line up.
 #
 # A role is a list of families, or a mapping that also names a weight
-# (100 to 900, as in CSS) and a hinting ("default", "none", "vertical",
-# "full"). The body role's weight and hinting go on the root font;
-# `fxstyle.font(role=...)` builds any role's QFont.
+# (100 to 900, as in CSS; 400 when left out) and a hinting ("default",
+# "none", "vertical", "full"). The body role's weight and hinting go on the
+# root font; `fxstyle.font(role=...)` builds any role's QFont. Every weight
+# here is the CSS one: in a theme with light text on a dark surface, Qt
+# draws it a step heavier (`fxstyle.drawn_weight`), as a browser's text
+# reads there.
 #
-#   body: {family: ["Inter"], weight: 500, hinting: "none"}
+#   body: {family: ["Inter"], weight: 400, hinting: "none"}
 #
-# fxgui ships Inter and JetBrains Mono and draws them unhinted at 500, as a
-# browser draws them at 400: grid-fitting ("vertical") rounds the lowercase
-# a pixel taller at 13 px. See fxgui/fonts/README.md.
+# fxgui ships Inter and JetBrains Mono, one file per weight, drawn
+# unhinted: grid-fitting ("vertical") rounds the lowercase a pixel taller
+# at 13 px. See fxgui/fonts/README.md.
 #
 # `ranks` is not a role: it sizes headings marked with
 # `fxstyle.mark_as_title(widget, rank="section")`. Each rank names a pixel
-# size and a weight; left out, "section" is 15 px at 600 and "card" 18 px
-# at 600. A rank named here replaces the built-in one of that name.
+# size and a weight; left out, "section" is 15 px at 500 and "card" 18 px
+# at 500. A rank named here replaces the built-in one of that name.
 #
 #   ranks:
 #     section: {size: 15, weight: 600}
@@ -81,8 +84,8 @@ dcc:
 
 fonts:
   title: {family: ["Inter"], hinting: none}
-  body: {family: ["Inter"], weight: 500, hinting: none}
-  mono: {family: ["JetBrains Mono", "Consolas", "Courier New", "monospace"], weight: 500, hinting: none}
+  body: {family: ["Inter"], hinting: none}
+  mono: {family: ["JetBrains Mono", "Consolas", "Courier New", "monospace"], hinting: none}
 
 
 # =============================================================================

@@ -277,7 +277,7 @@ def tip(
         return ""
 
     head = (
-        f'<span style="font-weight:{fxstyle.EMPHASIS_WEIGHT};">{escape(title)}</span>'
+        f'<span style="font-weight:{fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)};">{escape(title)}</span>'
         if title else ""
     )
     muted = fxstyle.colors().text_muted

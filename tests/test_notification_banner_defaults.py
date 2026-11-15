@@ -151,7 +151,7 @@ def test_the_title_is_the_body_font_emphasised(host_root):
     title.ensurePolished()
 
     assert not title.property(fxstyle.TITLE_PROPERTY)
-    assert title.font().weight() == QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
+    assert title.font().weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
     assert title.font().pixelSize() == fxstyle.FONT_SIZE
     assert "font-size" not in fxstyle._build_stylesheet().split(
         "FXNotificationBanner QLabel#fxBannerTitle {")[1].split("}")[0]

@@ -663,7 +663,7 @@ def _text_width(widget, text):
     """Return `text`'s width in a tab title's font: a step under, emphasised."""
     shape = QFont(widget.font())
     shape.setPixelSize(fxstyle.FONT_SIZE - 1)
-    shape.setWeight(QFont.Weight(fxstyle.EMPHASIS_WEIGHT))
+    shape.setWeight(QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
     return QFontMetrics(shape).size(Qt.TextShowMnemonic, text).width()
 
 

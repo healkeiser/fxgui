@@ -298,7 +298,7 @@ A themed root (see below) gets three things, and each has one job:
 |------|---------------------|-----------------|
 | Stylesheet | `style.qss` plus every registered fragment, `@tokens` resolved | Shapes, borders, radii, states (hover, pressed, focus) and each widget's own look. The text colour. |
 | Palette | `fxstyle.palette()` | Default fills: a window's `Window`, an item view's `Base`, `Highlight`, and the rest |
-| Font | `fxstyle.font()` | The body family of the theme at `fxstyle.FONT_SIZE` (13 px), weight `fxstyle.BODY_WEIGHT` (500), no hinting |
+| Font | `fxstyle.font()` | The body family of the theme at `fxstyle.FONT_SIZE` (13 px), weight `fxstyle.drawn_weight(fxstyle.BODY_WEIGHT)` (500 in a dark theme, 400 in a light one), no hinting |
 
 The base rule for every widget carries no fill and no font. So:
 
@@ -449,9 +449,11 @@ the numbers, so it follows fxgui when the look moves.
 
 | Name | Value | What it is |
 |------|-------|------------|
-| `fxstyle.font_rank(name)` | `(13, 500)` for `"body"`, `(15, 600)` for `"section"`, `(18, 600)` for `"card"` | A text rank's pixel size and weight in the current theme (or `theme=`); an unknown rank raises `ValueError` |
-| `fxstyle.BODY_WEIGHT` | 500 | Body text's weight. Qt draws a weight as light as a browser draws the one below, so 500 here reads as the web look's 400 |
-| `fxstyle.EMPHASIS_WEIGHT` | 600 | The one step above (the web look's 500): titles, a tooltip's title, a selected or emphasised word |
+| `fxstyle.font_rank(name)` | In a dark theme `(13, 500)` for `"body"`, `(15, 600)` for `"section"`, `(18, 600)` for `"card"`; a step lighter in a light theme | A text rank's pixel size and the weight Qt draws it at in the current theme (or `theme=`); an unknown rank raises `ValueError` |
+| `fxstyle.BODY_WEIGHT` | 400 | Body text's weight, on the CSS scale |
+| `fxstyle.EMPHASIS_WEIGHT` | 500 | The step above: names, titles, headers, a tooltip's title, a selected or emphasised word |
+| `fxstyle.STRONG_WEIGHT` | 600 | The step above emphasis: a group's title |
+| `fxstyle.drawn_weight(weight)` | `weight` + 100 in a dark theme, `weight` in a light one | The weight to give a QFont: Qt draws light text on a dark ground lighter than a browser does (see `fxgui/fonts/README.md`). Sheets read `@body_weight`, `@emphasis_weight` and `@strong_weight`, already drawn |
 | `fxstyle.DIALOG_GUTTER` | 20 px | A dialog's left and right margin |
 | `fxstyle.DIALOG_EDGE` | 16 px | A dialog's top and bottom margin |
 | `fxstyle.DIALOG_GAP` | 12 px | The space between a dialog's parts (text, fields, buttons) |

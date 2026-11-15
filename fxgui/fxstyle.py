@@ -156,6 +156,8 @@ __all__ = [
     "FONT_SIZE",
     "BODY_WEIGHT",
     "EMPHASIS_WEIGHT",
+    "STRONG_WEIGHT",
+    "drawn_weight",
     "DIALOG_GUTTER",
     "DIALOG_EDGE",
     "DIALOG_GAP",
@@ -396,13 +398,15 @@ _HEADER_HEIGHT = 35
 
 # The body text size, in pixels, of every themed root.
 FONT_SIZE = 13
-# The weights text takes, on the CSS scale: body text, unless a theme's
-# `fonts: body` names another, and emphasis (titles, headers, a current
-# segment, a tab's label). Qt draws a weight as light as a browser draws
-# the weight below it (measured against Edge, Inter at 13 px), so these sit
-# one step above the web look's 400 and 500 to read as dark.
-BODY_WEIGHT = 500
-EMPHASIS_WEIGHT = 600
+# The weights text takes, on the CSS scale, as the web look names them:
+# body text (unless a theme's `fonts: body` names another), emphasis
+# (names, titles, headers, a current segment, a tab's label) and strong
+# (a group's title). Qt draws them through `drawn_weight`, which reads the
+# theme: light text on a dark ground needs a step more to read as dark as a
+# browser draws it.
+BODY_WEIGHT = 400
+EMPHASIS_WEIGHT = 500
+STRONG_WEIGHT = 600
 
 # A dialog's layout: title, body and buttons start `DIALOG_GUTTER` in from
 # the sides, the card's top and bottom stand `DIALOG_EDGE` off, and
@@ -537,10 +541,9 @@ _GENERIC_FONT_FAMILIES = frozenset(
 # so text reads larger and narrower than the same face in a browser.
 _DEFAULT_FONTS = {
     "title": {"family": ["Inter"], "hinting": "none"},
-    "body": {"family": ["Inter"], "weight": BODY_WEIGHT, "hinting": "none"},
+    "body": {"family": ["Inter"], "hinting": "none"},
     "mono": {
         "family": ["JetBrains Mono", "Consolas", "Courier New", "monospace"],
-        "weight": BODY_WEIGHT,
         "hinting": "none",
     },
 }
@@ -890,7 +893,10 @@ def _ranks(theme_name: str) -> Dict[str, dict]:
 
 
 def font_rank(name: str, theme: Optional[str] = None) -> Tuple[int, int]:
-    """Return a text rank's pixel size and weight (CSS scale) in a theme.
+    """Return a text rank's pixel size and the weight Qt draws it at.
+
+    The weight is `drawn_weight` of the rank's CSS weight, so a QFont built
+    from it matches the sheet's own text in that theme.
 
     "body" is the root font's; a title rank ("section", "card", or one the
     color file's ``fonts: ranks:`` adds) is what
@@ -901,7 +907,8 @@ def font_rank(name: str, theme: Optional[str] = None) -> Tuple[int, int]:
         theme: Theme name. Defaults to the current theme.
 
     Returns:
-        The size in pixels and the weight, e.g. ``(15, 600)``.
+        The size in pixels and the weight, e.g. ``(15, 600)`` for
+        "section" in a dark theme, ``(15, 500)`` in a light one.
 
     Raises:
         ValueError: If `name` is not "body" nor a rank of the theme.
@@ -912,7 +919,8 @@ def font_rank(name: str, theme: Optional[str] = None) -> Tuple[int, int]:
     theme = theme or get_theme()
     if name == "body":
         weight, _hinting = _shape(theme, "body")
-        return FONT_SIZE, BODY_WEIGHT if weight is None else weight
+        return FONT_SIZE, drawn_weight(
+            BODY_WEIGHT if weight is None else weight, theme)
     ranks = _ranks(theme)
     if name not in ranks:
         raise ValueError(
@@ -922,8 +930,50 @@ def font_rank(name: str, theme: Optional[str] = None) -> Tuple[int, int]:
     weight = shape.get("weight")
     return (
         FONT_SIZE if size is None else int(size),
-        BODY_WEIGHT if weight is None else int(weight),
+        drawn_weight(BODY_WEIGHT if weight is None else int(weight), theme),
     )
+
+
+def drawn_weight(weight: int, theme: Optional[str] = None) -> int:
+    """Return the weight Qt draws for a CSS `weight` in `theme`.
+
+    Chromium draws light text on a dark ground darker than Qt does (Qt
+    blends DirectWrite's coverage with the system's ClearType gamma and no
+    contrast boost): measured on Windows, Inter at 13 px in a dark theme
+    needs one step more in Qt to lay down the ink a browser does. Dark text
+    on a light ground draws alike in both, so it keeps its weight.
+
+    Args:
+        weight: A weight on the CSS scale, such as `EMPHASIS_WEIGHT`.
+        theme: Theme name. Defaults to the current theme.
+
+    Returns:
+        The weight to give a QFont or a sheet, at most 900.
+
+    Raises:
+        ValueError: If `weight` is not a multiple of 100 from 100 to 900.
+
+    Examples:
+        >>> font.setWeight(QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
+    """
+    _check_weight(weight, "drawn_weight")
+    return min(weight + 100, 900) if _light_on_dark(theme or get_theme()) else weight
+
+
+# (theme, colour file) -> whether its text is lighter than its surface; a
+# delegate asks on every paint.
+_LIGHT_ON_DARK: Dict[Tuple[str, int], bool] = {}
+
+
+def _light_on_dark(theme: str) -> bool:
+    """Return whether `theme` sets light text on a dark surface."""
+    key = (theme, id(get_colors()))
+    if key not in _LIGHT_ON_DARK:
+        data = _theme_data(theme)
+        text, ground = data.get("text"), data.get("surface")
+        _LIGHT_ON_DARK[key] = bool(
+            text and ground and get_luminance(text) > get_luminance(ground))
+    return _LIGHT_ON_DARK[key]
 
 
 def _check_weight(weight, what: str) -> None:
@@ -1738,8 +1788,9 @@ def _token_map(theme_name: str) -> Dict[str, str]:
             lambda color: all(_visibly_differ(color, view) for view in views))
     tokens["@selection"] = selection
     tokens["@popup_item_pad"] = f"{_POPUP_ITEM_PAD}px"
-    tokens["@body_weight"] = str(BODY_WEIGHT)
-    tokens["@emphasis_weight"] = str(EMPHASIS_WEIGHT)
+    tokens["@body_weight"] = str(drawn_weight(BODY_WEIGHT, theme_name))
+    tokens["@emphasis_weight"] = str(drawn_weight(EMPHASIS_WEIGHT, theme_name))
+    tokens["@strong_weight"] = str(drawn_weight(STRONG_WEIGHT, theme_name))
     # A tree's row rule under its branches: the cells' rule, see-through as
     # theirs is. Qt paints a cell's panel twice, so the cells' 60 % lands
     # twice; the branches' one stroke carries the same total.
@@ -2460,7 +2511,7 @@ class FXProxyStyle(QProxyStyle):
         # The sheet's ::section size and weight, which the option's font
         # does not carry.
         font.setPixelSize(FONT_SIZE - 1)
-        font.setWeight(_WEIGHTS[EMPHASIS_WEIGHT])
+        font.setWeight(_WEIGHTS[drawn_weight(EMPHASIS_WEIGHT)])
         label = QFontMetrics(font).horizontalAdvance(option.text)
         if not option.icon.isNull():
             label += _HEADER_ICON + _SORT_GAP
@@ -2541,7 +2592,7 @@ def _badge_font() -> QFont:
     """Return a badge's font: a step under the body size, emphasised."""
     shape = font()
     shape.setPixelSize(FONT_SIZE - 1)
-    shape.setWeight(_WEIGHTS[EMPHASIS_WEIGHT])
+    shape.setWeight(_WEIGHTS[drawn_weight(EMPHASIS_WEIGHT)])
     return shape
 
 
@@ -2634,7 +2685,8 @@ def _font_stylesheet(theme: Optional[str] = None) -> str:
     The body family and size are the root font (:func:`font`), which a
     widget's own ``setFont`` overrides; the title rules outrank it.
     """
-    ranks = _ranks(theme or get_theme())
+    theme = theme or get_theme()
+    ranks = _ranks(theme)
     selectors = [f'[{TITLE_PROPERTY}="true"]'] + [
         f'[{TITLE_PROPERTY}="{rank}"]' for rank in ranks
     ]
@@ -2646,7 +2698,8 @@ def _font_stylesheet(theme: Optional[str] = None) -> str:
         weight = shape.get("weight")
         _check_weight(weight, f"rank '{rank}'")
         if weight is not None:
-            declarations.append(f"font-weight: {weight};")
+            declarations.append(
+                f"font-weight: {drawn_weight(weight, theme)};")
         if declarations:
             rules.append(
                 f'[{TITLE_PROPERTY}="{rank}"] {{ {" ".join(declarations)} }}')
@@ -2809,7 +2862,7 @@ def _host_rules(theme: Optional[str] = None) -> str:
 
     def build() -> str:
         weight, _hinting = _shape(theme, "body")
-        extra = f" font-weight: {weight};" if weight is not None else ""
+        extra = f" font-weight: {drawn_weight(BODY_WEIGHT if weight is None else weight, theme)};"
         return resolve(_HOST_RULES.replace("@weight", extra), theme)
 
     return _cached_sheet(("host", theme), build)
@@ -3557,8 +3610,8 @@ def font(theme: Optional[str] = None, role: str = "body") -> QFont:
     result.setPixelSize(FONT_SIZE)
     # An unknown role is the body's, its weight and hinting included.
     weight, hinting = _shape(theme, role if role in roles else "body")
-    if weight is not None:
-        result.setWeight(_WEIGHTS[weight])
+    result.setWeight(_WEIGHTS[drawn_weight(
+        BODY_WEIGHT if weight is None else weight, theme)])
     if hinting is not None:
         result.setHintingPreference(_HINTING[hinting])
     return result
