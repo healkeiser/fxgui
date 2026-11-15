@@ -2452,6 +2452,11 @@ QWidget {{
 QWidget {{ margin: 0px; }}
 QToolButton {{ width: -1px; height: -1px; }}
 QLineEdit {{ height: -1px; }}
+/* A host's sort arrow (Houdini's margin-right) reserves room in every
+   section under Qt 6.5; FXProxyStyle draws the arrow itself. */
+QHeaderView::up-arrow, QHeaderView::down-arrow {{
+    width: -1px; height: -1px; margin: 0px; border: none;
+}}
 QMenu::separator {{ margin: 0px; }}
 QMenu::indicator {{ margin-left: 0px; border: none; }}
 QMenu::icon {{ position: relative; top: 0px; left: 0px; bottom: 0px; right: 0px; }}
