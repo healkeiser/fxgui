@@ -2619,6 +2619,9 @@ def register_themed_root(root: QObject) -> None:
     Args:
         root: Any object with ``setStyleSheet`` (QWidget or QApplication).
     """
+    # fxgui's faces in the database before anything is laid out, so the
+    # first layout measures with the face the first paint draws.
+    _register_bundled_fonts()
     if isinstance(root, QWidget):
         # Marked in both modes: a themed window fades in as it shows.
         root.setProperty(ROOT_PROPERTY, True)
