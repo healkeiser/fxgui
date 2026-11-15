@@ -377,8 +377,6 @@ _FIELD_BOX = 10
 # 13 px body font: a 20 px line box, a 32 px control.
 _LINE_BOX = 1.5
 _CONTROL_BOX = 12
-# A menu or popup row's icon, which its line never falls below.
-_ROW_ICON = 16
 
 # A cell's text lead from its edges: a header's padding, and an item's
 # padding with Qt's own 3 px text margin inside it.
@@ -1595,9 +1593,8 @@ def _line_tokens(theme_name: str) -> Dict[str, str]:
         "@button_padding": f"{(room + 1) // 2}px 10px {room // 2}px 10px",
         # An on/off mark's label line, the mark centred in it.
         "@line_box": f"{line_box}px",
-        # A popup row's line as a list measures it; with an icon, its size.
+        # A tab's line as a dock tab's title label measures it.
         "@text_line": f"{text_line}px",
-        "@row_line": f"{max(text_line, _ROW_ICON)}px",
     }
 
 
@@ -2435,7 +2432,7 @@ BADGE_PROPERTY = "fxBadge"
 # The pill's height and side padding; the QMenu::item rule's right padding.
 _BADGE_HEIGHT = 18
 _BADGE_PADDING = 7
-_MENU_ITEM_PADDING = 24
+_MENU_ITEM_PADDING = 8
 
 # Reserves the pill's width in the key-hint column without drawing a glyph.
 _BADGE_ROOM = " "
@@ -2494,7 +2491,8 @@ class _MenuBadges(QObject):
             item = watched.actionGeometry(action)
             width = _badge_width(str(text))
             pill = QRectF(
-                item.right() + 1 - _MENU_ITEM_PADDING + _BADGE_PADDING - width,
+                # Its right edge on the item's padding, as the key hint's.
+                item.right() + 1 - _MENU_ITEM_PADDING - width,
                 item.center().y() + 1 - _BADGE_HEIGHT / 2,
                 width, _BADGE_HEIGHT)
             painter.setOpacity(1.0 if action.isEnabled() else 0.6)

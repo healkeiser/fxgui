@@ -243,9 +243,9 @@ QMenu
 QMenu::icon
 {
     /* Qt centres the icon on the whole box but draws the :checked frame
-       inside the margins; near-even margins put both in one place. */
-    margin-left: 12px;
-    margin-right: 13px;
+       inside the margins; even margins put both 8 px in from the item. */
+    margin-left: 8px;
+    margin-right: 8px;
 }
 
 /* Qt draws a checkable action's icon instead of its check box, so the
@@ -258,16 +258,19 @@ QMenu::icon:checked
     border-radius: @small_radius;
 }
 
-/* Its line as a list popup's row measures it, so the two stand alike. The
-   pointer's item is a neutral fill, as a hovered row's: the accent is kept
-   for what is chosen. */
+/* A control's line box and 6 px above and below, as a list popup's row: 32
+   px at the 13 px body. The pointer's item is a neutral fill, as a hovered
+   row's, set 1 px in at top and bottom: the accent is kept for what is
+   chosen. Qt reserves a 20 px icon column after the left padding, so 12 px
+   there sets the text 8 px after an icon. */
 QMenu::item
 {
     background-color: transparent;
     border: none;
     border-radius: @button_radius;
-    padding: 8px 24px;
-    min-height: @text_line;
+    margin: 1px 0px;
+    padding: 5px 8px 5px 12px;
+    min-height: @line_box;
 }
 
 QMenu::item:selected
@@ -282,7 +285,8 @@ QMenu::item:pressed
     background-color: @state_pressed;
 }
 
-/* Full width inside the menu's padding. */
+/* Full width inside the menu's padding: Qt clips a separator to its item,
+   so a negative side margin cannot carry it out to the popup's edge. */
 QMenu::separator {
     height: 1px;
     background-color: @border;
@@ -294,7 +298,7 @@ QMenu::indicator {
     height: 18px;
     /* Centres an 18 px box on the 16 px icon QMenu::icon places. */
     position: relative;
-    left: 12px;
+    left: 7px;
 }
 
 /* A checkable menu row is Lumen's: a check when on, nothing when off,
@@ -1154,15 +1158,16 @@ QTreeView::item:selected:hover {
     color: @text_on_selection;
 }
 
-/* A popup list's rows are a menu's: its line and 8 px above and below,
-   at most 32 px whatever the base style asks (Windows 11 asks 34 px), and the
+/* A popup list's rows are a menu's: its line box, 6 px above and below and
+   8 px at the sides, 32 px whatever the base style asks (Windows 11 asks
+   34 px), and the
    pointer's row the neutral fill. After the view rules above, which match
    as specifically. */
 QComboBox QAbstractItemView::item,
 QAbstractItemView[fxPopup="true"]::item {
-    padding: 8px 0px;
-    min-height: 0px;
-    max-height: @row_line;
+    padding: 6px 8px;
+    min-height: @line_box;
+    max-height: @line_box;
 }
 
 /* A combo box's rows draw no native border for a host's margin to undo. */
@@ -1180,7 +1185,7 @@ QAbstractItemView[fxPopup="true"]::item:selected:active {
     color: @text;
     background: @state_hover;
     /* A popup row is a menu's: no list text step. */
-    padding-left: 0px;
+    padding-left: 8px;
 }
 
 /* A navigation list (mark_as_nav): 28 px chips at the small radius, set

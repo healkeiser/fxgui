@@ -408,8 +408,10 @@ def _text_start(image, rect):
     """Return the first column of `rect` whose ink is not the row's fill."""
     middle = rect.center().y()
     fill = image.pixelColor(rect.left() + 2, middle).name()
+    # The middle half of the rows: an inset highlight's round ends stay out.
+    quarter = rect.height() // 4
     for x in range(rect.left() + 2, rect.right()):
-        for y in range(rect.top() + 2, rect.bottom() - 1):
+        for y in range(rect.top() + quarter, rect.bottom() - quarter):
             if _distance(image.pixelColor(x, y).name(), fill) > 30:
                 return x
     raise AssertionError(f"no text in {rect}")
@@ -1174,7 +1176,7 @@ def test_a_hovered_completer_row_is_the_neutral_fill_as_a_menu_row(
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
 def test_combo_and_completer_rows_are_menu_rows_tall(qtbot, theme):
-    """A menu row is 28 px at the 12 px body font, its text plus 16 px."""
+    """A menu row is 32 px at the 13 px body: a line box and 6 px each side."""
     _window, completer, popup = _completer(qtbot, theme)
     model = completer.completionModel()
     completer_rows = {
@@ -1192,12 +1194,15 @@ def test_combo_and_completer_rows_are_menu_rows_tall(qtbot, theme):
     combo.hidePopup()
     menu = QMenu(window)
     actions = [menu.addAction(name) for name in ("Alpha", "Beta")]
+    separator = menu.insertSeparator(actions[1])
     menu.popup(window.mapToGlobal(QPoint(10, 10)))
     qtbot.waitExposed(menu)
     menu_rows = {menu.actionGeometry(action).height() for action in actions}
+    # A 1 px rule with 4 px above and below.
+    rule = menu.actionGeometry(separator).height()
     menu.close()
-    assert completer_rows == combo_rows == menu_rows
-    assert len(menu_rows) == 1
+    assert completer_rows == combo_rows == menu_rows == {32}
+    assert rule == 4 + 1 + 4
 
 
 @pytest.mark.parametrize("base", QStyleFactory.keys())
@@ -1218,7 +1223,7 @@ def test_a_combo_row_stands_no_taller_than_a_menu_row_may(qtbot, qapp, base):
     finally:
         fxstyle.set_style(qapp, name or "Fusion")
 
-    # The sheet's cap: 16 px of line and 8 px above and below.
+    # The sheet's cap: a 20 px line box and 6 px above and below.
     assert row <= 32
 
 
