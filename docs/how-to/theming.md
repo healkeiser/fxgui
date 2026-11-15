@@ -650,10 +650,16 @@ slide.setDuration(fxstyle.MOTION_SPRING)
 slide.setEasingCurve(fxstyle.ease_spring())
 ```
 
-Set the `FXGUI_REDUCED_MOTION` environment variable to `1` and the
-window, popup, page and pane fades, the pane growing open and the row
-hover fade are skipped; check `fxstyle.motion()` before your own.
-Spinners and busy lines keep turning.
+Set the `FXGUI_REDUCED_MOTION` environment variable to `1` and every
+animation fxgui runs is skipped: each one lands on its end state at
+once, with no timer left running. That covers the window, popup, page
+and pane fades, a pane growing open, a row's hover fade, a switch's
+thumb, a collapsible or accordion section, a banner sliding in, out and
+closing up its stack, a tray panel's entrance and a splash screen's
+fade. A rejected key in `FXValidatedLineEdit` still flashes the border
+red, but the field does not shake. Spinners and busy lines keep turning:
+they say work is under way. Check `fxstyle.motion()` before you start an
+animation of your own.
 
 ## Registering Your Own Widget Styles
 

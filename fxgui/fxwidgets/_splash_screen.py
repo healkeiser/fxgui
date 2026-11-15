@@ -296,7 +296,7 @@ class FXSplashScreen(QSplashScreen):
     def showEvent(self, event) -> None:
         """Fade in over a second, if asked to."""
         super().showEvent(event)
-        if self._fade_in:
+        if self._fade_in and fxstyle.motion():
             self._fade = QPropertyAnimation(self, b"windowOpacity", self)
             self._fade.setDuration(1000)
             self._fade.setStartValue(0.0)

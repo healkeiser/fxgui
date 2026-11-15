@@ -19,7 +19,7 @@ def test_a_switch_checked_before_it_shows_is_drawn_on(qtbot):
     assert switch.position == 1.0
 
 
-def test_a_shown_switch_still_slides(qtbot):
+def test_a_shown_switch_still_slides(qtbot, motion):
     switch = FXToggleSwitch()
     qtbot.addWidget(switch)
     switch.show()

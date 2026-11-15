@@ -250,7 +250,7 @@ class FXCollapsibleWidget(QWidget):
         )
         self._animation.stop()
 
-        if not animate:
+        if not animate or not fxstyle.motion():
             self._content_area.setMinimumHeight(target_height)
             self._content_area.setMaximumHeight(target_height)
             self._on_animation_finished()

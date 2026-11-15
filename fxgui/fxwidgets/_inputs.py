@@ -235,7 +235,9 @@ class FXValidatedLineEdit(QLineEdit):
         flash_out.setStartValue(error_color)
         flash_out.setEndValue(transparent)
 
-        self._shake_group.start()
+        # The flash still says no; only the shake is motion.
+        if fxstyle.motion():
+            self._shake_group.start()
         self._flash_group.start()
 
     def _on_shake_finished(self) -> None:

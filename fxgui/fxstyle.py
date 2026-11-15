@@ -473,13 +473,13 @@ PANEL_FADE_MS = MOTION_SLOW
 PANEL_RISE = 4
 PANEL_OPEN_MS = MOTION_SPRING
 
-# Set to "1", every fade and trail is skipped, as a reduced-motion setting
+# Set to "1", every animation lands at once, as a reduced-motion setting
 # asks; tests that read pixels set it.
 REDUCED_MOTION_VAR = "FXGUI_REDUCED_MOTION"
 
 
 def motion() -> bool:
-    """Whether fades and trails play: not under `REDUCED_MOTION_VAR`."""
+    """Whether animations play: not under `REDUCED_MOTION_VAR`."""
     return os.environ.get(REDUCED_MOTION_VAR) != "1"
 
 

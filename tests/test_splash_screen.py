@@ -68,7 +68,7 @@ def test_the_border_reads_the_theme_by_default(qtbot):
         fxstyle.colors().border_light).name()
 
 
-def test_a_fade_in_ends_fully_opaque(qtbot):
+def test_a_fade_in_ends_fully_opaque(qtbot, motion):
     splash = FXSplashScreen(fade_in=True)
     qtbot.addWidget(splash)
 

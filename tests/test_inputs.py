@@ -44,7 +44,7 @@ def test_rejections_reuse_one_set_of_animations(qtbot, qapp):
     assert len(edit.findChildren(QAbstractAnimation)) == first
 
 
-def test_rejection_keeps_the_callers_margins_and_sheet(qtbot, qapp):
+def test_rejection_keeps_the_callers_margins_and_sheet(qtbot, qapp, motion):
     edit = _validated(qtbot)
     edit.setTextMargins(10, 0, 3, 0)
     sheet = "FXValidatedLineEdit { color: red; }"

@@ -16,6 +16,12 @@ os.environ["FXGUI_REDUCED_MOTION"] = "1"
 import pytest  # noqa: E402
 
 
+@pytest.fixture
+def motion(monkeypatch):
+    """Play the animations the rest of the suite turns off."""
+    monkeypatch.delenv("FXGUI_REDUCED_MOTION", raising=False)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def _crisp_text(qapp):
     """Draw text unantialiased, so a glyph pixel is its exact ink everywhere.

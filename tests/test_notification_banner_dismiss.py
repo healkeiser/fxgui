@@ -16,12 +16,16 @@ blink out.
 """
 
 # Third-party
+import pytest
 from qtpy.QtWidgets import QWidget
 
 # Internal
 from fxgui import _compat
 from fxgui.fxwidgets import FXNotificationBanner
 from fxgui.fxwidgets._severity import INFO
+
+# These races live in the slides.
+pytestmark = pytest.mark.usefixtures("motion")
 
 
 def _host(qtbot):

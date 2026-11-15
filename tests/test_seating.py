@@ -80,7 +80,9 @@ def test_every_anchor_names_a_screen_and_a_dead_one_still_does(qtbot):
     assert seating.screen_for(far, None) is panel.screen()
 
 
-def test_a_show_slides_the_panel_up_into_its_seat_and_fades_it_in(qtbot):
+def test_a_show_slides_the_panel_up_into_its_seat_and_fades_it_in(
+    qtbot, motion
+):
     panel, seating = _panel(qtbot)
     tray = QRect(1600, 1000, 24, 24)
     area = panel.screen().availableGeometry()

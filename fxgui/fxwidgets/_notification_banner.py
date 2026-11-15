@@ -308,6 +308,11 @@ class FXNotificationBanner(QFrame):
         """Slide to `target`, in parent coordinates, from where it is now."""
         animation = self._slide_animation
         animation.stop()
+        if not fxstyle.motion():
+            self._target_pos = target
+            self.move(target)
+            self._on_slide_finished()
+            return
         animation.setDuration(duration)
         animation.setEasingCurve(curve)
         self._target_pos = target

@@ -1,12 +1,16 @@
 """A collapsible section's height opens, shuts and settles where it should."""
 
 # Third-party
+import pytest
 from qtpy.QtCore import QAbstractAnimation
 from qtpy.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 # Internal
 from fxgui import fxutils
 from fxgui.fxwidgets import FXCollapsibleWidget
+
+# These tests watch the section move.
+pytestmark = pytest.mark.usefixtures("motion")
 
 
 ROWS = 8

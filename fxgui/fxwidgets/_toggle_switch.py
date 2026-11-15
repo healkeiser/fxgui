@@ -102,7 +102,7 @@ class FXToggleSwitch(QAbstractButton):
         """Slide to the new state, or jump there while nobody sees it."""
         self._animation.stop()
         end = 1.0 if checked else 0.0
-        if not self.isVisible():
+        if not self.isVisible() or not fxstyle.motion():
             self.position = end
             return
         self._animation.setStartValue(self._position)

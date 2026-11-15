@@ -113,9 +113,10 @@ class FXSeating:
     def show_at(self, tray: QRect, cursor: Optional[QPoint]) -> None:
         """Seat the panel against this anchor and bring it to the front.
 
-        A panel not on screen slides in; one already up is only raised.
+        A panel not on screen slides in, unless `fxstyle.motion()` is
+        off; one already up is only raised.
         """
-        entering = not self._panel.isVisible()
+        entering = not self._panel.isVisible() and fxstyle.motion()
         self._anchor = (tray, cursor)
         self.seat()
         if entering:
