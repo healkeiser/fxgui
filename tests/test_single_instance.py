@@ -21,8 +21,11 @@ def test_a_second_claim_is_refused_and_wakes_the_first(qtbot):
     first = FXSingleInstance(_name("second"))
     assert first.claim()
 
-    with qtbot.waitSignal(first.woken):
-        assert not FXSingleInstance(_name("second")).claim()
+    # The sender waits for this loop's answer, so it is another process.
+    with qtbot.waitSignal(first.woken, timeout=15000):
+        sender = _send(_name("second"), "")
+
+    assert sender.wait(15) == 0
 
 
 def test_a_released_name_can_be_claimed_again(qtbot):
@@ -149,9 +152,9 @@ _RACE = "\n".join(
         "        time.sleep(0.002)",
         "instance = FXSingleInstance(name)",
         "knock = instance._hand_over",
-        "def first_knock(payload):",
+        "def first_knock(payload, deadline):",
         "    instance._hand_over = knock",
-        "    reached = knock(payload)",
+        "    reached = knock(payload, deadline)",
         "    open(probed, 'w').close()",
         "    wait_for(listening)",
         "    return reached",
