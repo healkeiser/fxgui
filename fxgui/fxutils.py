@@ -182,9 +182,11 @@ class _ThemedShadow(QGraphicsDropShadowEffect):
 
 
 def add_shadow(
-    widget: QWidget, offset: Tuple[float, float] = (0, 0)
+    widget: QWidget, offset: Tuple[float, float] = (0, 6)
 ) -> QGraphicsDropShadowEffect:
     """Cast the theme's drop shadow under `widget`; it follows every switch.
+
+    By default it falls 6 px below the widget, as light from above casts.
 
     Examples:
         >>> fxutils.add_shadow(card, offset=(0, 4))

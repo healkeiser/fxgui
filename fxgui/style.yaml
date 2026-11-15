@@ -193,7 +193,7 @@ themes:
 
     # Shadow
     shadow: "#50000000"
-    shadow_blur: 20
+    shadow_blur: 16
     scrim: "#80000000"
 
     # Icon colors
@@ -251,7 +251,7 @@ themes:
 
     # Shadow
     shadow: "#28000000"
-    shadow_blur: 20
+    shadow_blur: 16
 
     # Icon colors
     icon: "#424242"

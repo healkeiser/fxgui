@@ -37,8 +37,8 @@ def test_a_floating_card_wears_the_card_shadow(qtbot, name):
     _owner, target = _CARDS[name](_parent(qtbot))
     effect = target.graphicsEffect()
     assert isinstance(effect, QGraphicsDropShadowEffect)
-    assert effect.blurRadius() == 20
-    assert (effect.xOffset(), effect.yOffset()) == (0, 0)
+    assert effect.blurRadius() == 16
+    assert (effect.xOffset(), effect.yOffset()) == (0, 6)
     assert effect.color().alpha() == 80
     assert effect.color().rgb() & 0xFFFFFF == 0
 

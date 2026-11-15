@@ -129,7 +129,7 @@ reads the alpha.
 | Role | Purpose |
 |------|---------|
 | `shadow` | Colour of a floating card's drop shadow, `#AARRGGBB` (dark `#50000000`, light `#28000000`) |
-| `shadow_blur` | Its blur radius in pixels (20) |
+| `shadow_blur` | Its blur radius in pixels (16) |
 | `scrim` | Fill dimming a pane behind `FXLoadingOverlay`, `#AARRGGBB` (`#80000000`) |
 
 ### Icon Color
@@ -574,7 +574,7 @@ two apart.
 | Kind | Examples | Frame | Shadow |
 |------|----------|-------|--------|
 | Popup: a window that closes when you click away, or a tooltip | `QMenu`, a combo box list, `FXCommandPalette`, a completer or calendar popup, a tooltip | `@border`, `@card_radius` | The platform's own. Windows draws one under every popup window. Every popup and tooltip under a themed root asks Windows 11 for flyout corners (`fxutils.round_window_corners`) when it shows, which is the 8 px flyout radius. fxgui paints none. |
-| Floating card: a panel over the window that stays until it is done | `FXNotificationBanner`, `FXProgressCard`, `FXFloatingDialog` | `@border`, `@card_radius` | One painted shadow: `fxutils.add_shadow(card)`, in the theme's `@shadow` and `@shadow_blur`, no offset unless you pass one |
+| Floating card: a panel over the window that stays until it is done | `FXNotificationBanner`, `FXProgressCard`, `FXFloatingDialog` | `@border`, `@card_radius` | One painted shadow: `fxutils.add_shadow(card)`, in the theme's `@shadow` and `@shadow_blur`, 6 px down unless you pass another offset |
 
 A shadow reads its colour and blur from the theme each time it draws, so
 it follows a switch with no call.
