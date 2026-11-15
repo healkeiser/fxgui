@@ -1552,7 +1552,7 @@ QSplitter::handle {
 }
 
 /* A splitter inside a pane leaves its two sides a gutter of breathing
-   room; under the pointer, a thin accent line down its middle says it
+   room; under the pointer, a 1 px accent line down its middle says it
    drags, as a column's resize edge does. */
 QSplitter::handle:horizontal {
     width: 8px;
@@ -1564,16 +1564,16 @@ QSplitter::handle:vertical {
 
 QSplitter::handle:horizontal:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-        stop: 0 transparent, stop: 0.374 transparent,
-        stop: 0.375 @accent_primary, stop: 0.625 @accent_primary,
-        stop: 0.626 transparent, stop: 1 transparent);
+        stop: 0 transparent, stop: 0.499 transparent,
+        stop: 0.5 @accent_primary, stop: 0.624 @accent_primary,
+        stop: 0.625 transparent, stop: 1 transparent);
 }
 
 QSplitter::handle:vertical:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 transparent, stop: 0.374 transparent,
-        stop: 0.375 @accent_primary, stop: 0.625 @accent_primary,
-        stop: 0.626 transparent, stop: 1 transparent);
+        stop: 0 transparent, stop: 0.499 transparent,
+        stop: 0.5 @accent_primary, stop: 0.624 @accent_primary,
+        stop: 0.625 transparent, stop: 1 transparent);
 }
 
 QSplitter {

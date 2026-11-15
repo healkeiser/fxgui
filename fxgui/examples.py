@@ -632,7 +632,8 @@ def _framed_body() -> QWidget:
     splitter.addWidget(right)
     body = QWidget()
     layout = QVBoxLayout(body)
-    layout.setContentsMargins(6, 0, 6, 6)
+    gap = fxstyle.FRAME_GAP
+    layout.setContentsMargins(gap, 0, gap, gap)
     layout.addWidget(splitter)
     for widget in (body, right, splitter):
         fxstyle.mark_as_frame(widget)
@@ -648,7 +649,8 @@ def _open_framed(gallery: QWidget) -> None:
         framed=True,
     )
     window.setWindowFlag(Qt.Window)
-    row = fxwidgets.FXCommandRow(margins=(6, 6, 6, 0))
+    gap = fxstyle.FRAME_GAP
+    row = fxwidgets.FXCommandRow(margins=(gap, gap, gap, 0))
     row.addAction(get_icon("arrow-left"), "Back")
     row.addAction(get_icon("refresh-cw"), "Refresh")
     window.addToolBar(Qt.TopToolBarArea, row)

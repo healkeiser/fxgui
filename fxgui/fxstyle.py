@@ -161,6 +161,7 @@ __all__ = [
     "INKS",
     "THIN_SCROLL_WIDTH",
     "PANE_GAP",
+    "FRAME_GAP",
     # Color configuration
     "colors",
     "qcolor",
@@ -276,6 +277,10 @@ THIN_SCROLL_WIDTH = 8
 # The one gap between widgets: a layout's default spacing, a tab pill's gap
 # to its strip's edges, a pane's content's to its edges: `@pane_gap` in QSS.
 PANE_GAP = 6
+
+# The frame's gap: between docked panes, and from them to the window's
+# edges, as a raised page stands off its backdrop.
+FRAME_GAP = 8
 
 # A tab pill's side padding, its text's lead off the pill: `@tab_padding`.
 TAB_PADDING = 10

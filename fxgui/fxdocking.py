@@ -397,7 +397,7 @@ class FXDockArea(QWidget):
         >>> log_toggle = docks.add_dock("log", "Log", log, "bottom")
     """
 
-    def __init__(self, parent: Optional[QWidget] = None, gap: int = fxstyle.PANE_GAP):
+    def __init__(self, parent: Optional[QWidget] = None, gap: int = fxstyle.FRAME_GAP):
         super().__init__(parent)
         _configure()
         self._gap = gap

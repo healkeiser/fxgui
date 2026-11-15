@@ -35,8 +35,8 @@ def test_a_filtered_trees_bar_stands_one_pane_gap_above_its_tree(
     assert panel.tree.geometry().top() - bar.bottom() - 1 == fxstyle.PANE_GAP
 
 
-def test_a_dock_area_defaults_to_the_pane_gap():
+def test_a_dock_area_defaults_to_the_frame_gap():
     pytest.importorskip("PySide6QtAds")
     from fxgui import fxdocking
 
-    assert fxdocking.FXDockArea()._gap == fxstyle.PANE_GAP
+    assert fxdocking.FXDockArea()._gap == fxstyle.FRAME_GAP
