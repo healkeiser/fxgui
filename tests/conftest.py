@@ -27,9 +27,16 @@ def _crisp_text(qapp):
     """Draw text unantialiased, so a glyph pixel is its exact ink everywhere.
 
     Linux antialiases text by subpixel, so no glyph pixel there is the ink.
+    fxgui's own faces go in the font database first: registered by the
+    session's first paint instead, they changed what the default family
+    resolves to under whichever test ran first, between its measure and
+    its paint.
     """
     from qtpy.QtGui import QFont
 
+    from fxgui import fxstyle
+
+    fxstyle._register_bundled_fonts()
     font = qapp.font()
     font.setStyleStrategy(QFont.NoAntialias)
     qapp.setFont(font)
