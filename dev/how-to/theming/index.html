@@ -2296,9 +2296,15 @@ fills a checked button under the pointer, so the click that unchecks it
 shows: it is a step past <code>state_pressed</code> by the same floor, and <code>text</code>
 reads at 4.5:1 on it. <code>state_hover_overlay</code>, <code>state_pressed_overlay</code> and
 <code>state_checked_hover_overlay</code> are <code>text</code> as <code>#AARRGGBB</code>, at the least alpha
-whose blend over <code>surface</code> stands off it as the opaque fill does. Flat push
-buttons and plain tool buttons wear them, so their states show on a band, a
-card or a tooltip, where an opaque fill can equal the ground.
+whose blend over <code>surface</code> stands off it as the opaque fill does, and that
+holds fxgui's own floor on every ground (<code>surface</code>, <code>tooltip</code>, <code>frame</code>,
+<code>surface_sunken</code>, <code>surface_alt</code>, <code>well</code>): 1.2:1 for hover, 1.2² for pressed,
+1.2³ for checked and hovered, whatever the theme's <code>state_contrast</code>. A wide
+row can carry a brand's faint fill; a 24 px icon button cannot, so a theme
+that holds its states close keeps its opaque fills exactly as stated while
+its flat buttons still show. Flat push buttons and plain tool buttons wear
+them, so their states show on a band, a card or a tooltip, where an opaque
+fill can equal the ground.
 <code>fxstyle.colors()</code> has all four; <code>QColor(fxstyle.colors().state_hover_overlay)</code>
 reads the alpha.</p>
 <h3 id="scrollbar-colors">Scrollbar Colors<a class="headerlink" href="#scrollbar-colors" title="Permanent link">&para;</a></h3>
