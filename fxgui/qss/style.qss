@@ -70,6 +70,8 @@ QCheckBox
     spacing: 8px;
     color: @text;
     margin-bottom: 2px;
+    /* The mark centres in its label's line box, as a control's text does. */
+    min-height: @line_box;
     /* Reserved for the focus ring, which only recolours it, so the label
        never shifts on focus. */
     border: 1px solid transparent;
@@ -129,7 +131,7 @@ QAbstractItemView::indicator:checked
 {
     background: @accent_primary;
     border-color: @accent_primary;
-    image: ~icon(check, text_on_accent_primary, 16);
+    image: ~icon(check, text_on_accent_primary, 14);
 }
 
 QCheckBox::indicator:indeterminate,
@@ -138,7 +140,7 @@ QAbstractItemView::indicator:indeterminate
 {
     background: @accent_primary;
     border-color: @accent_primary;
-    image: ~icon(minus, text_on_accent_primary, 16);
+    image: ~icon(minus, text_on_accent_primary, 14);
 }
 
 /* A radio's dot is the dark ink at the middle of the orange disc. */
@@ -166,7 +168,7 @@ QAbstractItemView::indicator:checked:disabled
 {
     background: @border_light;
     border-color: @border_light;
-    image: ~icon(check, text_disabled, 16);
+    image: ~icon(check, text_disabled, 14);
 }
 
 QRadioButton::indicator:checked:disabled
@@ -183,6 +185,7 @@ QRadioButton
     spacing: 8px;
     color: @text;
     margin-bottom: 2px;
+    min-height: @line_box;
     /* Reserved for the focus ring, which only recolours it. Declaring the
        border in both states is what stops the label shifting on focus. */
     border: 1px solid transparent;
@@ -348,7 +351,7 @@ QMenuBar:focus
 QLineEdit
 {
     background-color: transparent;
-    padding: 4px 8px;
+    padding: 4px 10px;
     border-style: solid;
     border: 1px solid @border_light;
     border-radius: @button_radius;
@@ -558,7 +561,7 @@ QTextEdit#fxOutputLogArea {
 QToolBar {
     border: none;
     background: @surface;
-    font-weight: bold;
+    font-weight: 500;
     border-bottom: 1px solid @border;
 }
 
@@ -592,11 +595,11 @@ QPushButton
     border-width: 1px;
     border-color: @border_light;
     border-style: solid;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    padding-left: 10px;
-    padding-right: 10px;
+    /* 10 px sides; top and bottom fill the control height, worked out by
+       fxstyle from the theme's font. */
+    padding: @button_padding;
     border-radius: @button_radius;
+    font-weight: 500;
 }
 
 QPushButton:disabled
@@ -649,7 +652,9 @@ QComboBox
     border-style: solid;
     border: 1px solid @border_light;
     border-radius: @button_radius;
-    padding: 4px 6px;
+    /* The chevron sits in the content box, its edge 10 px in from the
+       combo's, as the text's is on the left. */
+    padding: 4px 9px 4px 10px;
     min-width: 75px;
     min-height: @field_inner;
     max-height: @field_inner;
@@ -716,15 +721,16 @@ QComboBox QAbstractItemView
    and a push button with a menu. */
 QComboBox::drop-down
 {
-    subcontrol-origin: padding;
+    subcontrol-origin: content;
     subcontrol-position: center right;
-    width: 16px;
+    width: 22px;
     border: none;
 }
 
 QComboBox::down-arrow
 {
     image: ~icon(chevron-down, icon);
+    subcontrol-position: center right;
     width: 16px;
     height: 16px;
 }
@@ -1303,7 +1309,7 @@ QToolButton[popupMode="1"] { /* MenuButtonPopup: QPushButton look */
     border: 1px solid @border;
     border-radius: @button_radius;
     margin: 0px;
-    padding: 6px 10px;
+    padding: @button_padding;
     padding-right: 22px; /* room for the menu-button section */
 }
 
@@ -1518,7 +1524,7 @@ QToolBox::tab:hover {
 }
 
 QToolBox::tab:selected {
-    font-weight: 600;
+    font-weight: 500;
     image: ~icon(chevron-down, icon);
 }
 

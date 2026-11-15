@@ -55,6 +55,7 @@ from qtpy.QtGui import (
     QColor,
     QFont,
     QFontDatabase,
+    QFontInfo,
     QFontMetrics,
     QGuiApplication,
     QIcon,
@@ -266,7 +267,7 @@ THIN_SCROLL_WIDTH = 8
 
 # The one gap between widgets: a layout's default spacing, a tab pill's gap
 # to its strip's edges, a pane's content's to its edges: `@pane_gap` in QSS.
-PANE_GAP = 4
+PANE_GAP = 6
 
 # A tab pill's side padding, its text's lead off the pill: `@tab_padding`.
 TAB_PADDING = 10
@@ -304,7 +305,7 @@ SMALL_RADIUS = 6
 
 # The side of an on/off mark: a check box or radio indicator, and the
 # height of a switch's track. It centres in a row of control_height.
-INDICATOR_SIZE = 18
+INDICATOR_SIZE = 16
 
 # WCAG's least contrast for the parts of a control: an edge on its
 # surface, a thumb on its track. `@control_edge` is held to it.
@@ -352,10 +353,13 @@ STRONG_STEP = 0.6
 # version between them measures otherwise.
 _SPIN_BASE = 4 if _compat.QT_VERSION < (6, 6) else 7
 _SPIN_LINE_FLOOR = 14
-# A field's padding and border, top and bottom together, in style.qss; a
-# push button's: 6 px of padding and a 1 px border each side.
+# A field's padding and border, top and bottom together, in style.qss.
 _FIELD_BOX = 10
-_BUTTON_BOX = 14
+# A control's line box over its font's pixel size, as CSS's 1.5 line
+# height; and the 6 px around it each side, its 1 px edge included. At the
+# 13 px body font: a 20 px line box, a 32 px control.
+_LINE_BOX = 1.5
+_CONTROL_BOX = 12
 # A menu or popup row's icon, which its line never falls below.
 _ROW_ICON = 16
 
@@ -418,11 +422,10 @@ _DEFAULT_FONTS = {
 
 # Title ranks when the color file's `fonts: ranks:` names none: pixel size
 # and weight of a heading marked with `mark_as_title(widget, rank=...)`.
-# "card" is bold: the splash title is one, and Qt 6.5 on Windows takes 0.4 s
-# to load a first 600 face, which a bold one does not cost.
+# Medium, never past it: a rank is told by its size.
 _DEFAULT_RANKS = {
-    "section": {"size": 15, "weight": 600},
-    "card": {"size": 16, "weight": 700},
+    "section": {"size": 15, "weight": 500},
+    "card": {"size": 18, "weight": 500},
 }
 
 # A face's `weight:` in the color file, on the CSS scale QSS also reads.
@@ -1075,12 +1078,22 @@ def _primary_button_fills(
     return rest, hover, pressed
 
 
+def _control_line(text_line: int, shape: QFont) -> int:
+    """Return a control's line box: 1.5 x `shape`'s pixel size, or the
+    measured `text_line` where its face draws taller."""
+    # Asked in pixels, as the theme's font is; else as matched, in points.
+    pixel_size = shape.pixelSize()
+    if pixel_size <= 0:
+        pixel_size = QFontInfo(shape).pixelSize()
+    return max(text_line, int(pixel_size * _LINE_BOX + 0.5))
+
+
 def control_height(widget: QWidget) -> int:
     """Return the height a push button comes to in `widget`'s font."""
     # A line measured as a push button measures its text: rounded up from
     # the font's real line, where `height()` rounds it to nearest.
     line = widget.fontMetrics().size(Qt.TextShowMnemonic, "Ag").height()
-    return line + _BUTTON_BOX
+    return _control_line(line, widget.font()) + _CONTROL_BOX
 
 
 def _to_oklab(color: QColor) -> Tuple[float, float, float]:
@@ -1443,16 +1456,25 @@ def _line_tokens(theme_name: str) -> Dict[str, str]:
     if QGuiApplication.instance() is None:
         # No font to measure yet: a root registers later, and rebuilds.
         line = text_line = FONT_SIZE + 3
+        theme_font = QFont()
+        theme_font.setPixelSize(FONT_SIZE)
     else:
-        metrics = QFontMetrics(font(theme_name))
+        theme_font = font(theme_name)
+        metrics = QFontMetrics(theme_font)
         line = metrics.height()
         text_line = metrics.size(Qt.TextShowMnemonic, "Ag").height()
-    height = text_line + _BUTTON_BOX
+    line_box = _control_line(text_line, theme_font)
+    height = line_box + _CONTROL_BOX
     spare = height - max(line, _SPIN_LINE_FLOOR) - _SPIN_BASE
     top, bottom = (spare + 1) // 2, spare // 2
+    # A push button's padding is what its 1 px edges and text line leave.
+    room = height - 2 - text_line
     return {
         "@field_inner": f"{height - _FIELD_BOX}px",
-        "@spin_padding": f"{top}px 8px {bottom}px 8px",
+        "@spin_padding": f"{top}px 10px {bottom}px 10px",
+        "@button_padding": f"{(room + 1) // 2}px 10px {room // 2}px 10px",
+        # An on/off mark's label line, the mark centred in it.
+        "@line_box": f"{line_box}px",
         # A popup row's line as a list measures it; with an icon, its size.
         "@text_line": f"{text_line}px",
         "@row_line": f"{max(text_line, _ROW_ICON)}px",
@@ -1623,7 +1645,8 @@ def _token_map(theme_name: str) -> Dict[str, str]:
 # 16 px unless sized.
 _SHEET_ICON = re.compile(r"~icon\(([\w-]+),\s*(\w+)(?:,\s*(\d+))?\)")
 # `url(~icons/name.svg[, px])`: an image of the theme's light or dark sheet
-# set, INDICATOR_SIZE unless sized.
+# set, `_SHEET_ICON_SIZE` unless sized.
+_SHEET_ICON_SIZE = 18
 _SHEET_SVG = re.compile(r"url\(~icons/(\w+)\.svg(?:,\s*(\d+))?\)")
 
 
@@ -1691,7 +1714,7 @@ def _substitute(qss: str, tokens: Dict[str, str]) -> str:
         folder = Path(tokens["~icons"])
         svg = str(folder / f"{match.group(1)}.svg")
         stem = f"{folder.name}_{match.group(1)}"
-        return _sheet_icon(svg, stem, int(match.group(2) or INDICATOR_SIZE))
+        return _sheet_icon(svg, stem, int(match.group(2) or _SHEET_ICON_SIZE))
 
     qss = _SHEET_ICON.sub(icon, qss)
     qss = _SHEET_SVG.sub(sheet_svg, qss)
@@ -2245,10 +2268,10 @@ _BADGE_ROOM = " "
 
 
 def _badge_font() -> QFont:
-    """Return a badge's font: a step under the body size, bold."""
+    """Return a badge's font: a step under the body size, medium."""
     shape = font()
     shape.setPixelSize(FONT_SIZE - 1)
-    shape.setBold(True)
+    shape.setWeight(QFont.Medium)
     return shape
 
 

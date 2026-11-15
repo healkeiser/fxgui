@@ -1,6 +1,6 @@
 """What a pane shows in place of content it does not have yet.
 
-`FXEmptyState` says what to do next: an icon, the action in bold, then what
+`FXEmptyState` says what to do next: an icon, the action in medium, then what
 it brings, muted, centred as one block. `FXScrollShadow` marks where a
 scroll area cuts its content off, so the content reads as going on below.
 """
@@ -10,7 +10,7 @@ from typing import Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, Qt
-from qtpy.QtGui import QColor, QLinearGradient, QPainter, QPaintEvent
+from qtpy.QtGui import QColor, QFont, QLinearGradient, QPainter, QPaintEvent
 from qtpy.QtWidgets import QLabel, QScrollArea, QVBoxLayout, QWidget
 
 # Internal
@@ -53,7 +53,7 @@ class FXEmptyState(QWidget):
         self.icon = FXIconLabel(size=_ICON_PIXELS)
         self.action = QLabel()
         font = self.action.font()
-        font.setBold(True)
+        font.setWeight(QFont.Medium)
         self.action.setFont(font)
         fxstyle.ink(self.action, "text")
         self.detail = QLabel()

@@ -67,7 +67,7 @@ fxstyle.register_widget_style(
 #fxDocks ads--CDockWidget > QWidget { background: transparent; }
 #fxDocks ads--CTitleBarButton::menu-indicator { image: none; width: 0px; }
 /* A tab pill's height: the tab sets the bar's, buttons or not. */
-#fxDocks ads--CTitleBarButton { margin: 4px 0px; padding: 0px; }
+#fxDocks ads--CTitleBarButton { margin: @pane_gap 0px; padding: 0px; }
 #fxDocks ads--CDockAreaWidget QAbstractItemView,
 #fxDocks ads--CDockAreaWidget QPlainTextEdit,
 #fxDocks ads--CDockAreaWidget QTextEdit { background-color: @well; }

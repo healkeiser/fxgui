@@ -666,7 +666,7 @@ def test_a_hidden_track_lets_a_player_shrink_to_its_controls(qtbot, qapp):
     default = _timeline(qtbot, controls_position="below")
     assert default._track_widget.isVisible()
     # No fixed floor: the shown track's own height and the row decide.
-    assert default.minimumHeight() < 60
+    assert default.minimumHeight() == default.layout().minimumSize().height()
     track = default._track_widget.minimumHeight()
     assert default.minimumSizeHint().height() >= track
     assert (

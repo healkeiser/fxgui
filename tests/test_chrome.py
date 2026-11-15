@@ -645,9 +645,11 @@ def test_a_dock_tab_matches_a_tab_bar_tab(qtbot, theme):
     )
 
 
-# A tab is its text plus the padding (10px, a 1px edge and a 2px margin on
-# each side), in every state, and never elided.
-_TAB_FRAME = 2 * (10 + 1 + 2)
+# A tab is its text plus the padding (10px, a 1px edge and a half-gap margin
+# on each side), in every state, and never elided.
+_TAB_FRAME = 2 * (fxstyle.TAB_PADDING + 1 + fxstyle.PANE_GAP // 2)
+# The first QTabBar tab's :first margin is a whole gap.
+_FIRST_LEAD = fxstyle.PANE_GAP - fxstyle.PANE_GAP // 2
 
 
 def _text_width(widget, text):
@@ -716,8 +718,8 @@ def test_a_tab_is_its_text_plus_the_padding_in_every_state(qtbot):
 
     assert bar.elideMode() == Qt.ElideNone
     rest = widths()
-    # The first QTabBar tab adds the 2 px lead its :first margin carries.
-    assert rest == [_TAB_FRAME + 2] + [_TAB_FRAME] * 5, rest
+    # The first QTabBar tab adds the lead its :first margin carries.
+    assert rest == [_TAB_FRAME + _FIRST_LEAD] + [_TAB_FRAME] * 5, rest
     hover(qtbot, bar, bar.tabRect(1).center())
     assert widths() == rest
     hover(qtbot, dock_tabs[0], dock_tabs[0].rect().center())
@@ -798,8 +800,9 @@ def test_a_dock_tab_starts_as_far_in_as_a_tab_bar_tab(qtbot):
 
 def _hovered_tab(image, rect):
     """Return the pill's inside, its corner and the inks of a tab's `rect`."""
-    pill = rect.adjusted(2, 3, -2, -3)
-    inside = image.pixelColor(pill.left() + 3, pill.center().y()).name()
+    side, top = fxstyle.PANE_GAP // 2, fxstyle.PANE_GAP - 1
+    pill = rect.adjusted(side, top, -side, -top)
+    inside = image.pixelColor(pill.left() + side + 1, pill.center().y()).name()
     corner = image.pixelColor(pill.topLeft()).name()
     return inside, corner, _pixels(image, pill.adjusted(1, 1, -1, -1))
 
@@ -869,7 +872,8 @@ def test_a_close_button_stands_as_far_in_as_the_text(qtbot, theme):
     tabs.setTabsClosable(True)
     for name in ("Untitled", "Other"):
         tabs.addTab(QLabel(name), name)
-    window = themed_window(qtbot, theme, tabs)
+    # Wide enough that no scroll button covers the second tab.
+    window = themed_window(qtbot, theme, tabs, size=(400, 240))
     bar = tabs.tabBar()
     colors = fxstyle.colors()
     rest = [bar.tabButton(1, QTabBar.RightSide).geometry()]

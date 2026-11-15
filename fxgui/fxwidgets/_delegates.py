@@ -793,9 +793,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     @staticmethod
     def _title_font(option: QStyleOptionViewItem) -> QFont:
-        """Return the item's font at weight 600."""
+        """Return the item's font at weight 500."""
         font = QFont(option.font)
-        font.setWeight(QFont.DemiBold)
+        font.setWeight(QFont.Medium)
         return font
 
     @staticmethod
@@ -909,13 +909,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     @classmethod
     def _badge_font(cls, option: QStyleOptionViewItem) -> QFont:
-        """Return the item's font 2 px smaller at 600, cached per font."""
+        """Return the item's font 2 px smaller at 500, cached per font."""
         base = option.font
         key = base.key()
         font = cls._badge_fonts.get(key)
         if font is None:
             font = _smaller(base, 2)
-            font.setWeight(QFont.DemiBold)
+            font.setWeight(QFont.Medium)
             cls._badge_fonts[key] = font
         return font
 

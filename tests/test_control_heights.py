@@ -2,6 +2,7 @@
 
 # Third-party
 import pytest
+from qtpy.QtGui import QFont
 from qtpy.QtWidgets import (
     QDoubleSpinBox,
     QLineEdit,
@@ -48,6 +49,16 @@ def _heights(qtbot, make, reference):
     window.show()
     qtbot.waitExposed(window)
     return widget.height(), model.height()
+
+
+@pytest.mark.parametrize("pixels, height", [(13, 32), (15, 35), (16, 36)])
+def test_a_control_is_a_line_and_a_half_plus_its_box(qapp, pixels, height):
+    """1.5 x the font's pixel size, rounded half up, and 6 px each side."""
+    button = QPushButton("x")
+    shape = QFont()
+    shape.setPixelSize(pixels)
+    button.setFont(shape)
+    assert fxstyle.control_height(button) == height
 
 
 @pytest.mark.parametrize("name", sorted(_INPUTS))

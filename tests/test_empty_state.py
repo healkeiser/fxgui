@@ -1,7 +1,7 @@
 """`FXEmptyState` prompts for what to do next; `FXScrollShadow` marks a cut."""
 
 from qtpy.QtCore import QPoint, QRect, QSize
-from qtpy.QtGui import QColor, QIcon, QPalette
+from qtpy.QtGui import QColor, QFont, QIcon, QPalette
 from qtpy.QtWidgets import QApplication, QScrollArea, QWidget
 
 from fxgui import fxstyle
@@ -36,14 +36,14 @@ def _inks(icon: QIcon, mode) -> set:
 # ' FXEmptyState
 
 
-def test_the_prompt_shows_icon_bold_action_and_muted_detail(qtbot, host_root):
+def test_the_prompt_shows_icon_medium_action_and_muted_detail(qtbot, host_root):
     empty = FXEmptyState("inbox", "Pick a task", "Its files show here")
     host_root.layout().addWidget(empty)
     _show(qtbot, host_root)
 
     assert not empty.icon.icon().isNull()
     assert empty.action.text() == "Pick a task"
-    assert empty.action.font().bold()
+    assert empty.action.font().weight() == QFont.Medium
     assert _ink_of(empty.action) == _token("text")
     assert empty.detail.isVisible()
     assert _ink_of(empty.detail) == _token("text_muted")

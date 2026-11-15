@@ -3,8 +3,9 @@ opens has to close when you click away from it.
 """
 
 # Third-party
+import pytest
 from qtpy.QtCore import QEvent, QPointF, Qt
-from qtpy.QtGui import QColor, QEnterEvent, QMouseEvent
+from qtpy.QtGui import QColor, QEnterEvent, QFont, QMouseEvent
 from qtpy.QtWidgets import (
     QApplication,
     QLabel,
@@ -194,9 +195,17 @@ def test_a_theme_change_keeps_the_segments_and_their_tint(qtbot, qapp):
     assert _corner(qtbot, first, True) != _corner(qtbot, first, False)
 
 
-def test_a_new_path_bolds_only_its_last_segment(qtbot, qapp):
+@pytest.mark.parametrize("where", [None, "host_root"])
+def test_a_new_path_bolds_only_its_last_segment(qtbot, request, where):
     crumb = FXBreadcrumb()
-    qtbot.addWidget(crumb)
+    if where is None:
+        qtbot.addWidget(crumb)
+    else:
+        # Under the sheet, which sets every push button's weight.
+        root = request.getfixturevalue(where)
+        root.layout().addWidget(crumb)
+        root.show()
+        qtbot.waitExposed(root)
     crumb.set_path(PATH)
 
     crumb.set_path(["Somewhere", "Else", "Entirely"])
@@ -206,8 +215,11 @@ def test_a_new_path_bolds_only_its_last_segment(qtbot, qapp):
     # drawn as that icon with its text as a tooltip.
     assert [segment.text() for segment in drawn[1:]] == ["Else", "Entirely"]
     assert drawn[0].toolTip() == "Somewhere"
-    assert [segment.font().bold() for segment in drawn] == [
-        False, False, True
+    QApplication.processEvents()
+    for segment in drawn:
+        segment.ensurePolished()
+    assert [segment.font().weight() for segment in drawn] == [
+        QFont.Normal, QFont.Normal, QFont.Medium
     ]
 
 

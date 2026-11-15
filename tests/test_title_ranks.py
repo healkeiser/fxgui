@@ -31,12 +31,11 @@ def test_each_rank_takes_its_size_and_weight(qtbot, request, where):
     fxstyle.mark_as_title(card, rank="card")
     _shown(qtbot, root, section, card, body)
     assert section.font().pixelSize() == 15
-    assert card.font().pixelSize() == 16
+    assert card.font().pixelSize() == 18
     assert body.font().pixelSize() == fxstyle.FONT_SIZE
-    assert section.font().weight() == QFont.DemiBold
-    # Bold: Qt 6.5 on Windows loads a 600 face 0.4 s slowly, and the splash
-    # title, the first text an application shows, is a card title.
-    assert card.font().weight() == QFont.Bold
+    # Medium, never past it: the ranks are told by their size.
+    assert section.font().weight() == QFont.Medium
+    assert card.font().weight() == QFont.Medium
     assert body.font().weight() == QFont().weight()
 
 

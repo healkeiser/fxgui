@@ -43,6 +43,9 @@ fxstyle.register_widget_style(
         border-radius: @button_radius;
         padding: 3px 5px;
     }
+    /* A push button's medium is the current segment's alone. */
+    QPushButton#fxBreadcrumbSegment { font-weight: 400; }
+    QPushButton#fxBreadcrumbSegment[fxCurrent="true"] { font-weight: 500; }
     QPushButton#fxBreadcrumbSegment[fxFocusVisible="true"]:focus
     {
         border-color: @accent_primary;
@@ -149,9 +152,10 @@ class _Segment(QPushButton):
         # A proxy: a strong reference to the parent is a cycle.
         self._crumb = weakref.proxy(crumb)
         self._current = current
+        self.setProperty("fxCurrent", current)
         if current:
             font = self.font()
-            font.setWeight(QFont.DemiBold)
+            font.setWeight(QFont.Medium)
             self.setFont(font)
 
     def navigate(self, _=False) -> None:

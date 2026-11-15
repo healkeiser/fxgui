@@ -27,7 +27,7 @@ def test_chips_wrap_onto_new_lines_and_all_stay_shown(qtbot, qapp):
     tags = FXTagInput()
     column.addWidget(tags)
     column.addStretch()
-    host.resize(200, 400)
+    host.resize(240, 400)
     host.show()
     qtbot.waitExposed(host)
     for index in range(10):
@@ -36,7 +36,7 @@ def test_chips_wrap_onto_new_lines_and_all_stay_shown(qtbot, qapp):
     chips = [tags._tags_layout.itemAt(i).widget() for i in range(10)]
     assert isinstance(tags._tags_layout, FXFlowLayout)
     assert len({chip.y() for chip in chips}) > 1, "chips wrapped"
-    assert host.width() == 200, "the field did not widen its window"
+    assert host.width() == 240, "the field did not widen its window"
     for chip in chips:
         assert chip.visibleRegion().boundingRect().size() == chip.size()
 
