@@ -623,13 +623,14 @@ def _ring_rows(bar) -> set:
     accent = QColor(fxstyle.colors().accent_primary)
     tab = bar.tabRect(bar.currentIndex())
     rows = _accent_rows(bar.grab().toImage(), accent)
-    # Half the tab's rect: it holds the gaps round the pill, and a short
-    # label's pill, as real text gives, leaves its round ends a larger share.
+    # Two fifths of the tab's rect: it holds the gaps round the pill, and a
+    # short label's pill, as real text gives, leaves its round ends a larger
+    # share. A pill's side, its edge's 2 px, is far under it.
     return {
         y
         for y, hits in rows.items()
         if len([x for x in hits if tab.left() <= x <= tab.right()])
-        >= tab.width() * 0.5
+        >= tab.width() * 0.4
     }
 
 

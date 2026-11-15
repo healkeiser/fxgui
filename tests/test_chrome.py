@@ -6,7 +6,7 @@ import re
 # Third-party
 import pytest
 from qtpy.QtCore import QPoint, QRect, Qt
-from qtpy.QtGui import QColor
+from qtpy.QtGui import QColor, QFont, QFontMetrics
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
     QApplication,
@@ -645,7 +645,7 @@ def test_a_dock_tab_matches_a_tab_bar_tab(qtbot, theme):
     )
 
 
-# A tab is its text plus the padding (10px, a 1px edge and a half-gap margin
+# A tab is its text plus the padding (8px, a 1px edge and a half-gap margin
 # on each side), in every state, and never elided.
 _TAB_FRAME = 2 * (fxstyle.TAB_PADDING + 1 + fxstyle.PANE_GAP // 2)
 # The first QTabBar tab's :first margin is a whole gap.
@@ -653,7 +653,11 @@ _FIRST_LEAD = fxstyle.PANE_GAP - fxstyle.PANE_GAP // 2
 
 
 def _text_width(widget, text):
-    return widget.fontMetrics().size(Qt.TextShowMnemonic, text).width()
+    """Return `text`'s width in a tab title's font: a step under, medium."""
+    shape = QFont(widget.font())
+    shape.setPixelSize(fxstyle.FONT_SIZE - 1)
+    shape.setWeight(QFont.Medium)
+    return QFontMetrics(shape).size(Qt.TextShowMnemonic, text).width()
 
 
 def _room_for_tabs(docks, name, width=400):

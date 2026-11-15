@@ -284,7 +284,7 @@ PANE_GAP = 6
 FRAME_GAP = 8
 
 # A tab pill's side padding, its text's lead off the pill: `@tab_padding`.
-TAB_PADDING = 10
+TAB_PADDING = 8
 
 # A tab's close glyph inks 2 px inside its button; the pill edge is 1 px.
 _CLOSE_INSET = PANE_GAP // 2 + 1 + TAB_PADDING - 2

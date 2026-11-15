@@ -904,10 +904,19 @@ ads--CDockWidgetTab[activeTab="true"]
     border-radius: @button_radius;
     /* One gap above, below and between pills: twice the side margin. */
     margin: @pane_gap @pane_gap_half;
-    padding: 3px @tab_padding;
+    padding: 4px @tab_padding;
     /* A dock tab's title is a label, which rounds its line up: so does a
        tab bar's, or the two stand a pixel apart on some fonts. */
     min-height: @text_line;
+}
+
+/* A tab's title is a step under the body, medium. On the tab and a dock
+   tab's title only: the bar's own font stays the root's. */
+QTabBar::tab,
+ads--CDockWidgetTab QLabel
+{
+    font-size: @font_size_small;
+    font-weight: 500;
 }
 
 /* The first pill stands as far off the strip's start as off its top. */
@@ -935,6 +944,8 @@ ads--CDockWidgetTab QLabel
 {
     background: transparent;
     color: @text_muted;
+    /* The tab bar's line, so its smaller title centres on the same rows. */
+    min-height: @text_line;
 }
 
 ads--CDockWidgetTab[activeTab="true"] QLabel
