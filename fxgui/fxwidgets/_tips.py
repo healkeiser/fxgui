@@ -61,9 +61,11 @@ _BLOCK_GAP = 8
 _FACT_GAP = 14
 # Around the code, inside its fill.
 _CODE_PADDING = 4
-# Characters a row of code holds: about the 440 px a tooltip takes at most,
-# in a mono face at the code's size.
-_CODE_COLUMNS = 64
+# Characters a row of code holds: about 320 px, a tooltip's widest in the
+# reference look, in a mono face at the code's size.
+_CODE_COLUMNS = 48
+# The title's weight: medium, as no text in the look is heavier.
+_TITLE_WEIGHT = 500
 
 _MODIFIERS = (
     Qt.KeyboardModifier.ControlModifier,
@@ -276,7 +278,10 @@ def tip(
     if not (title or body or shortcut or kept or code or hint):
         return ""
 
-    head = f"<b>{escape(title)}</b>" if title else ""
+    head = (
+        f'<span style="font-weight:{_TITLE_WEIGHT};">{escape(title)}</span>'
+        if title else ""
+    )
     muted = fxstyle.colors().text_muted
 
     # Each block with the gap above it; the first block's is not drawn.

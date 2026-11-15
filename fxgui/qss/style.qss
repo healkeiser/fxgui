@@ -34,6 +34,7 @@ QToolTip
     color: @text;
     padding: 4px 10px;
     border-radius: @small_radius;
+    font-size: @font_size_small;
 }
 
 QWidget

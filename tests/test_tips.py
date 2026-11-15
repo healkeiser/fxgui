@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
+    QStyle,
     QToolButton,
     QToolTip,
     QTreeWidget,
@@ -23,6 +24,11 @@ from qtpy.QtWidgets import (
 # Internal
 from fxgui import fxstyle
 from fxgui.fxwidgets import _tips
+
+
+def _title(text: str) -> str:
+    """Return the markup `tip` gives `text` as its title: medium weight."""
+    return f'<span style="font-weight:500;">{text}</span>'
 
 
 def _strip_markup(html: str) -> str:
@@ -48,16 +54,20 @@ def themed_app(qapp):
 def test_title_only(qtbot):
     html = _tips.tip("Back")
 
-    assert "<b>Back</b>" in html
+    assert _title("Back") in html
     # No body row and no keycap when only a title was given.
     assert "margin-top" not in html
     assert "background:" not in html
+    # Qt reads the weight as the face's medium, not as bold.
+    document = QTextDocument()
+    document.setHtml(html)
+    assert document.begin().begin().fragment().charFormat().fontWeight() == 500
 
 
 def test_title_and_body(qtbot):
     html = _tips.tip("Back", "Navigate to previous location")
 
-    assert "<b>Back</b>" in html
+    assert _title("Back") in html
     assert "Navigate to previous location" in html
     # The body sits in its own block below the title.
     assert "margin-top" in html
@@ -67,7 +77,7 @@ def test_title_and_body(qtbot):
 def test_title_and_shortcut(qtbot):
     html = _tips.tip("Save", shortcut="Ctrl+S")
 
-    assert "<b>Save</b>" in html
+    assert _title("Save") in html
     assert "background:" in html
     # Title and keycap share one line, the cap pushed right by a cell.
     assert 'align="right"' in html
@@ -77,7 +87,7 @@ def test_title_and_shortcut(qtbot):
 def test_title_body_and_shortcut(qtbot):
     html = _tips.tip("Save", "Write the scene to disk", "Ctrl+S")
 
-    assert "<b>Save</b>" in html
+    assert _title("Save") in html
     assert "Write the scene to disk" in html
     assert 'align="right"' in html
     assert "margin-top" in html
@@ -204,7 +214,7 @@ def test_body_only_still_renders(qtbot):
     html = _tips.tip("", "Nothing is selected")
 
     assert "Nothing is selected" in html
-    assert "<b>" not in html
+    assert "font-weight" not in html
 
 
 # ' Facts, code and a hint
@@ -230,7 +240,7 @@ def test_a_tip_without_the_new_parts_is_the_html_it_always_was(qtbot):
     muted = fxstyle.colors().text_muted
 
     assert _tips.tip("Back", "Navigate\nback") == (
-        "<div><b>Back</b></div>"
+        f"<div>{_title('Back')}</div>"
         f'<div style="margin-top:3px;"><span style="color:{muted};">'
         "Navigate<br>back</span></div>"
     )
@@ -313,8 +323,8 @@ def test_a_long_path_is_cut_after_folder_separators(qtbot):
     # A row ends at a folder; the file name, longer than a row and with
     # no folder in it, is cut after an underscore.
     assert all(row.endswith(("\\", "_")) for row in rows[:-1])
-    assert rows[0].endswith("\\") and rows[1].endswith("\\")
-    assert rows[2].startswith("pipeline_episodic_")
+    assert all(row.endswith("\\") for row in rows[:3])
+    assert rows[3].startswith("pipeline_episodic_")
 
 
 def test_code_has_no_zero_width_character(qtbot):
@@ -404,7 +414,7 @@ def test_the_blocks_come_in_order_with_air_between_them(qtbot):
     order = [
         html.index(part)
         for part in (
-            "<b>Publish</b>",
+            _title("Publish"),
             "Send the scene",
             "Product",
             "publish.render",
@@ -421,7 +431,7 @@ def test_facts_code_or_a_hint_alone_make_a_tip(qtbot):
         html = _tips.tip("", **parts)
 
         assert html.startswith("<div>")
-        assert "<b>" not in html and "margin-top" not in html
+        assert "font-weight" not in html and "margin-top" not in html
 
 
 def test_the_new_parts_are_escaped(qtbot):
@@ -523,6 +533,26 @@ def test_a_fill_on_a_tooltip_shows_in_every_theme(themed_app, qtbot):
     QToolTip.hideText()
 
     assert card == fxstyle.colors().surface.lower()
+
+
+def test_a_tooltip_is_small_text_and_keeps_the_next_one_quick(app_root, qtbot):
+    """12 px text; within 300 ms of a tip, the next shows at once (Qt: 2 s)."""
+    button = QPushButton("Save")
+    app_root.layout().addWidget(button)
+    app_root.show()
+    _tips.apply_tip(button, "Save")
+    point = QPoint(2, 2)
+    QApplication.sendEvent(
+        button, QHelpEvent(QEvent.ToolTip, point, button.mapToGlobal(point))
+    )
+    size = _visible_tip().font().pixelSize()
+    QToolTip.hideText()
+    awake = QStyle.SH_ToolTip_FallAsleepDelay
+
+    assert size == fxstyle.FONT_SIZE - 1
+    assert QApplication.style().styleHint(awake) == 300
+    # Qt asks the widget's own style, the sheet's, which passes it on.
+    assert button.style().styleHint(awake, None, button) == 300
     for theme in fxstyle.get_available_themes():
         fxstyle.apply_theme(theme)
         colors = fxstyle.colors()
@@ -662,7 +692,7 @@ def test_apply_tip_sets_markup_and_plain_status(qtbot):
 
     _tips.apply_tip(button, "Save", "Write the scene to disk", "Ctrl+S")
 
-    assert "<b>Save</b>" in button.toolTip()
+    assert _title("Save") in button.toolTip()
     status = button.statusTip()
     assert "<" not in status and ">" not in status
     assert "Save" in status and "Write the scene to disk" in status
@@ -701,7 +731,7 @@ def test_apply_tip_tolerates_missing_status_tip(qtbot):
 
     _tips.apply_tip(target, "Shot 0010", "Ready to render")
 
-    assert "<b>Shot 0010</b>" in target.tooltip
+    assert _title("Shot 0010") in target.tooltip
 
 
 def test_apply_tip_covers_every_column_of_a_tree_item(qtbot):
@@ -712,7 +742,7 @@ def test_apply_tip_covers_every_column_of_a_tree_item(qtbot):
 
     _tips.apply_tip(item, "Shot 0010", "Ready to render")
 
-    assert all("<b>Shot 0010</b>" in item.toolTip(c) for c in (0, 1))
+    assert all(_title("Shot 0010") in item.toolTip(c) for c in (0, 1))
     assert item.statusTip(1) == "Shot 0010 - Ready to render"
 
 
@@ -724,7 +754,7 @@ def test_apply_tip_works_on_view_items(qtbot):
 
     _tips.apply_tip(item, "Shot 0010", "Ready to render")
 
-    assert "<b>Shot 0010</b>" in item.toolTip()
+    assert _title("Shot 0010") in item.toolTip()
     assert item.statusTip() == "Shot 0010 - Ready to render"
 
 
@@ -930,18 +960,18 @@ def test_library_widgets_use_native_tooltips(qtbot):
 
     breadcrumb = FXBreadcrumb(show_navigation=True)
     qtbot.addWidget(breadcrumb)
-    assert "<b>Back</b>" in breadcrumb._back_button.toolTip()
-    assert "<b>Forward</b>" in breadcrumb._forward_button.toolTip()
+    assert _title("Back") in breadcrumb._back_button.toolTip()
+    assert _title("Forward") in breadcrumb._forward_button.toolTip()
     assert breadcrumb._back_button.statusTip().startswith("Back - ")
 
     path_widget = FXFilePathWidget()
     qtbot.addWidget(path_widget)
-    assert "<b>Browse</b>" in path_widget._browse_btn.toolTip()
+    assert _title("Browse") in path_widget._browse_btn.toolTip()
 
     filtered = FXFilteredTree()
     qtbot.addWidget(filtered)
-    assert "<b>Expand all</b>" in filtered.expand_button.toolTip()
-    assert "<b>Collapse all</b>" in filtered.collapse_button.toolTip()
+    assert _title("Expand all") in filtered.expand_button.toolTip()
+    assert _title("Collapse all") in filtered.collapse_button.toolTip()
 
 
 def test_timeline_playback_keeps_a_rich_tooltip(qtbot):
@@ -951,14 +981,14 @@ def test_timeline_playback_keeps_a_rich_tooltip(qtbot):
     timeline = FXTimelineSlider(show_controls=True)
     qtbot.addWidget(timeline)
 
-    assert "<b>Play</b>" in timeline._play_btn.toolTip()
+    assert _title("Play") in timeline._play_btn.toolTip()
 
     timeline.play()
-    assert "<b>Pause</b>" in timeline._play_btn.toolTip()
+    assert _title("Pause") in timeline._play_btn.toolTip()
     assert "Space" in timeline._play_btn.toolTip()
 
     timeline.stop()
-    assert "<b>Play</b>" in timeline._play_btn.toolTip()
+    assert _title("Play") in timeline._play_btn.toolTip()
     assert "Space" in timeline._play_btn.toolTip()
 
 

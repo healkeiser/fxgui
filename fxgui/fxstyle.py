@@ -2247,6 +2247,9 @@ _ITEM_PARTS = (
 _HEADER_ICON = 16
 _SMALL_ICON = QStyle.PM_SmallIconSize
 _CLOSE_WIDTH = QStyle.PM_TabCloseIndicatorWidth
+# How long after a tooltip shows the next target's shows at once, in ms.
+_TIP_AWAKE = QStyle.SH_ToolTip_FallAsleepDelay
+_TIP_AWAKE_MS = 300
 
 
 def _ruled(view: Optional[QWidget]) -> bool:
@@ -2405,6 +2408,16 @@ class FXProxyStyle(QProxyStyle):
         if isinstance(bar, QTabBar) and _is_themed(bar):
             size += _close_room(bar)
         return size
+
+    def styleHint(self, hint, option=None, widget=None, returnData=None):
+        """Return `hint`; a tooltip keeps the next one quick for 300 ms.
+
+        Qt's window is 2 s from the moment a tip shows: within it, the
+        next target's tip shows at once instead of after the 700 ms wait.
+        """
+        if hint == _TIP_AWAKE:
+            return _TIP_AWAKE_MS
+        return super().styleHint(hint, option, widget, returnData)
 
     def polish(self, widget):
         """Lay an item view's rows out again once the sheet has styled them."""
