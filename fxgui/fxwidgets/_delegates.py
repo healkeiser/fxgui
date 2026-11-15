@@ -595,7 +595,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _RULE_ALPHA = 0.6
     _NESTED_RULE_ALPHA = 0.25
     # How long a row's hover fades once the pointer leaves it, in seconds.
-    _HOVER_FADE = 0.15
+    _HOVER_FADE = fxstyle.MOTION_FAST / 1000
+    _HOVER_EASE = fxstyle.ease_out()
 
     _CHILD_COUNT_HEIGHT = 14
     _CHILD_COUNT_MARGIN = 4
@@ -1419,7 +1420,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         """Return how much of the hover fill `index`'s row wears, 0 to 1.
 
         1 under the pointer; after it leaves, less and less for
-        `_HOVER_FADE` seconds, eased out.
+        `_HOVER_FADE` seconds, on `fxstyle.ease_out`.
         """
         row = QPersistentModelIndex(index.siblingAtColumn(0))
         now = time.monotonic()
@@ -1439,7 +1440,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         if left is None or not fxstyle.motion():
             return 0.0
         done = (now - left) / self._HOVER_FADE
-        return 0.0 if done >= 1.0 else (1.0 - done) ** 2
+        if done >= 1.0:
+            return 0.0
+        return 1.0 - self._HOVER_EASE.valueForProgress(done)
 
     @staticmethod
     def _pointer_on_row(view: Optional[QWidget], index: QModelIndex) -> bool:

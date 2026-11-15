@@ -433,3 +433,51 @@ def test_a_row_hovered_in_another_cell_stays_hovered(qtbot):
     assert delegate._hover_amount(option, first) == 1.0
     assert not delegate._fade_timer.isActive()
     assert window.isVisible()
+
+
+def _bezier_at(x: float) -> float:
+    """The (0.2, 0) (0, 1) cubic bezier's y where its x is `x`, by halving."""
+    def point(s: float, p1: float, p2: float) -> float:
+        return 3 * (1 - s) ** 2 * s * p1 + 3 * (1 - s) * s * s * p2 + s ** 3
+
+    low, high = 0.0, 1.0
+    for _ in range(60):
+        middle = (low + high) / 2
+        if point(middle, 0.2, 0.0) < x:
+            low = middle
+        else:
+            high = middle
+    return point(low, 0.0, 1.0)
+
+
+def test_ease_out_is_its_cubic_bezier():
+    curve = fxstyle.ease_out()
+    for x in (0.1, 0.25, 0.5, 0.75, 0.9):
+        assert curve.valueForProgress(x) == pytest.approx(_bezier_at(x), abs=1e-3)
+
+
+def _spring_at(progress: float) -> float:
+    import math
+
+    omega = math.sqrt(520)
+    zeta = 40 / (2 * omega)
+    damped = omega * math.sqrt(1 - zeta * zeta)
+    t = progress * fxstyle.MOTION_SPRING / 1000
+    return 1 - math.exp(-zeta * omega * t) * (
+        math.cos(damped * t) + zeta * omega / damped * math.sin(damped * t))
+
+
+def test_ease_spring_settles_with_under_one_percent_overshoot():
+    from qtpy.QtCore import QVariantAnimation
+
+    # Through an animation, whose copy outlives the curve made here.
+    animation = QVariantAnimation()
+    animation.setEasingCurve(fxstyle.ease_spring())
+    curve = animation.easingCurve()
+    values = [curve.valueForProgress(step / 400) for step in range(401)]
+    assert values[0] == 0.0
+    assert values[-1] >= 0.99
+    assert max(values) < 1.01
+    assert all(b - a > -0.005 for a, b in zip(values, values[1:]))
+    for step in range(0, 400, 10):
+        assert values[step] == pytest.approx(_spring_at(step / 400), abs=1e-2)

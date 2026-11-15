@@ -6,7 +6,6 @@ from typing import Optional, Union
 # Third-party
 from qtpy.QtCore import (
     QAbstractAnimation,
-    QEasingCurve,
     QEvent,
     QObject,
     QParallelAnimationGroup,
@@ -80,7 +79,7 @@ class FXCollapsibleWidget(QWidget):
         parent: Optional[QWidget] = None,
         title: str = "",
         icon: Optional[Union[QIcon, str]] = None,
-        animation_duration: int = 150,
+        animation_duration: int = fxstyle.MOTION_BASE,
         max_content_height: int = 300,
     ):
         """Initialize the collapsible section."""
@@ -153,13 +152,13 @@ class FXCollapsibleWidget(QWidget):
         max_height_anim = QPropertyAnimation(
             self._content_area, b"maximumHeight"
         )
-        max_height_anim.setEasingCurve(QEasingCurve.OutCubic)
+        max_height_anim.setEasingCurve(fxstyle.ease_out())
         self._animation.addAnimation(max_height_anim)
 
         min_height_anim = QPropertyAnimation(
             self._content_area, b"minimumHeight"
         )
-        min_height_anim.setEasingCurve(QEasingCurve.OutCubic)
+        min_height_anim.setEasingCurve(fxstyle.ease_out())
         self._animation.addAnimation(min_height_anim)
 
         self._toggle_btn.clicked.connect(self.toggle)

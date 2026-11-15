@@ -25,6 +25,7 @@ __email__ = "valentin.onze@gmail.com"
 # Built-in
 import contextlib
 import hashlib
+import math
 import os
 import re
 import sys
@@ -180,6 +181,13 @@ __all__ = [
     "apply_theme",
     "motion",
     "REDUCED_MOTION_VAR",
+    "MOTION_INSTANT",
+    "MOTION_FAST",
+    "MOTION_BASE",
+    "MOTION_SLOW",
+    "MOTION_SPRING",
+    "ease_out",
+    "ease_spring",
     "apply_row_size",
     "row_size",
     "row_height",
@@ -371,20 +379,99 @@ _LIST_TEXT_STEP = "0px" if _compat.QT_VERSION < (6, 6) else "1px"
 # The body text size, in pixels, of every themed root.
 FONT_SIZE = 13
 
+# The five durations every animation picks from, in ms: a state flick, a
+# hover or a leave, a control or a fold, a page arriving, a spring settling.
+MOTION_INSTANT = 100
+MOTION_FAST = 150
+MOTION_BASE = 200
+MOTION_SLOW = 300
+MOTION_SPRING = 400
+
+# A critically damped spring per unit mass, from rest to its place: settled
+# within `MOTION_SPRING`, under 1 % overshoot.
+_SPRING_STIFFNESS = 520.0
+_SPRING_DAMPING = 40.0
+# Qt corrupts its heap copying a bezier spline of more than 10 segments.
+_SPRING_SEGMENTS = 8
+
+
+def ease_out() -> QEasingCurve:
+    """Return the curve every fade and slide eases out on.
+
+    Fast off the mark, long and gentle into place: the cubic bezier
+    (0.2, 0) (0, 1).
+
+    Returns:
+        A new `QEasingCurve`.
+
+    Examples:
+        >>> animation.setEasingCurve(fxstyle.ease_out())
+    """
+    curve = QEasingCurve(QEasingCurve.BezierSpline)
+    curve.addCubicBezierSegment(
+        QPointF(0.2, 0.0), QPointF(0.0, 1.0), QPointF(1.0, 1.0))
+    return curve
+
+
+def ease_spring() -> QEasingCurve:
+    """Return the curve anything that travels rides: a spring settling.
+
+    Run it over `MOTION_SPRING`. The spring's closed form, sampled with its
+    slope at `_SPRING_SEGMENTS` points, as a bezier spline: Qt keeps no
+    Python easing function safely once it copies the curve.
+
+    Returns:
+        A new `QEasingCurve`.
+
+    Examples:
+        >>> animation.setDuration(fxstyle.MOTION_SPRING)
+        >>> animation.setEasingCurve(fxstyle.ease_spring())
+    """
+    omega = math.sqrt(_SPRING_STIFFNESS)
+    zeta = _SPRING_DAMPING / (2.0 * omega)
+    damped = omega * math.sqrt(1.0 - zeta * zeta)
+    span = MOTION_SPRING / 1000.0
+
+    def place(progress: float) -> float:
+        t = progress * span
+        return 1.0 - math.exp(-zeta * omega * t) * (
+            math.cos(damped * t)
+            + zeta * omega / damped * math.sin(damped * t))
+
+    def slope(progress: float) -> float:
+        t = progress * span
+        return span * math.exp(-zeta * omega * t) * (
+            omega * omega / damped * math.sin(damped * t))
+
+    curve = QEasingCurve(QEasingCurve.BezierSpline)
+    step = 1.0 / _SPRING_SEGMENTS
+    for index in range(_SPRING_SEGMENTS):
+        start, end = index * step, (index + 1) * step
+        # Settled: the last point sits exactly in place.
+        arrival = 1.0 if index == _SPRING_SEGMENTS - 1 else place(end)
+        curve.addCubicBezierSegment(
+            QPointF(start + step / 3, place(start) + step / 3 * slope(start)),
+            QPointF(end - step / 3, arrival - step / 3 * slope(end)),
+            QPointF(end, arrival),
+        )
+    return curve
+
+
 # How long a popup, a menu or a tooltip takes to fade in, in ms: short
 # enough never to hold the pointer up; a window, a little longer.
-POPUP_FADE_MS = 150
-WINDOW_FADE_MS = 250
-# How far a popup drops into place as it fades in, in px.
-POPUP_DROP = 6
+POPUP_FADE_MS = MOTION_INSTANT
+WINDOW_FADE_MS = MOTION_BASE
+# How far a popup drops into place as it fades in, in px: a top-level
+# window cannot scale in, so it only fades.
+POPUP_DROP = 0
 
 # How long a panel takes to fade in as it comes to the front, in ms: a dock
 # pane opened or picked by its tab, a page of a stacked widget.
-PANEL_FADE_MS = 220
+PANEL_FADE_MS = MOTION_SLOW
 # How far a page rises into place as it fades in, in px; a pane opening
-# grows open over `PANEL_OPEN_MS` instead.
-PANEL_RISE = 8
-PANEL_OPEN_MS = 260
+# grows open on the spring over `PANEL_OPEN_MS` instead.
+PANEL_RISE = 4
+PANEL_OPEN_MS = MOTION_SPRING
 
 # Set to "1", every fade and trail is skipped, as a reduced-motion setting
 # asks; tests that read pixels set it.
@@ -2664,7 +2751,7 @@ class _Reveal(QWidget):
         rise.setDuration(PANEL_FADE_MS)
         rise.setStartValue(0.0)
         rise.setEndValue(1.0)
-        rise.setEasingCurve(QEasingCurve.OutCubic)
+        rise.setEasingCurve(ease_out())
         rise.valueChanged.connect(self._step)
         rise.finished.connect(self.deleteLater)
         rise.start(QVariantAnimation.DeleteWhenStopped)
@@ -3093,14 +3180,14 @@ _focus_visibility: Optional[_FocusVisibility] = None
 
 def _drop_in(popup: QWidget) -> None:
     """Drop a popup `POPUP_DROP` px into the place Qt gave it."""
-    if not motion():
+    if not motion() or not POPUP_DROP:
         return
     end = popup.pos()
     drop = QPropertyAnimation(popup, b"pos", popup)
     drop.setDuration(POPUP_FADE_MS)
     drop.setStartValue(end - QPoint(0, POPUP_DROP))
     drop.setEndValue(end)
-    drop.setEasingCurve(QEasingCurve.OutCubic)
+    drop.setEasingCurve(ease_out())
     drop.start(QPropertyAnimation.DeleteWhenStopped)
 
 
@@ -3112,7 +3199,7 @@ def _fade_in(window: QWidget, duration: int = POPUP_FADE_MS) -> None:
     fade.setDuration(duration)
     fade.setStartValue(0.0)
     fade.setEndValue(1.0)
-    fade.setEasingCurve(QEasingCurve.OutCubic)
+    fade.setEasingCurve(ease_out())
     fade.start(QPropertyAnimation.DeleteWhenStopped)
 
 

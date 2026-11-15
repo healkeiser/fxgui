@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
+from fxgui import fxstyle
 from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 
 
@@ -45,7 +46,7 @@ class FXAccordion(QWidget):
         self,
         parent: Optional[QWidget] = None,
         exclusive: bool = True,
-        animation_duration: int = 150,
+        animation_duration: int = fxstyle.MOTION_BASE,
     ):
         super().__init__(parent)
 

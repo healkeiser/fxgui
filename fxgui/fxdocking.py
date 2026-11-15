@@ -19,7 +19,6 @@ from typing import Dict, List, Optional, Set, Tuple
 import PySide6QtAds as ads
 from qtpy.QtCore import (
     QByteArray,
-    QEasingCurve,
     QEvent,
     QObject,
     QPoint,
@@ -263,7 +262,7 @@ def _grow(held: "ads.CDockWidget") -> None:
     grow.setDuration(fxstyle.PANEL_OPEN_MS)
     grow.setStartValue(0.0)
     grow.setEndValue(1.0)
-    grow.setEasingCurve(QEasingCurve.OutCubic)
+    grow.setEasingCurve(fxstyle.ease_spring())
     grow.valueChanged.connect(size)
     grow.finished.connect(done)
     size(0.0)

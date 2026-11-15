@@ -264,8 +264,6 @@ class FXNotificationBanner(QFrame):
         # One animation slides in, out and restacks; ending the slide out
         # is the only end that does anything.
         self._slide_animation = QPropertyAnimation(self, b"pos", self)
-        self._slide_animation.setEasingCurve(QEasingCurve.OutCubic)
-        self._slide_animation.setDuration(250)
         self._slide_animation.finished.connect(self._on_slide_finished)
 
         # Where the last slide was told to land, and whether we're leaving
@@ -304,10 +302,14 @@ class FXNotificationBanner(QFrame):
         parent_width = parent.width() if parent else 0
         return parent_width - self.width() - self._margin
 
-    def _animate_to(self, target: QPoint) -> None:
+    def _animate_to(
+        self, target: QPoint, duration: int, curve: QEasingCurve
+    ) -> None:
         """Slide to `target`, in parent coordinates, from where it is now."""
         animation = self._slide_animation
         animation.stop()
+        animation.setDuration(duration)
+        animation.setEasingCurve(curve)
         self._target_pos = target
         animation.setStartValue(self.pos())
         animation.setEndValue(target)
@@ -380,7 +382,11 @@ class FXNotificationBanner(QFrame):
             )
             self._dismissing = False
             self.move(parent.width(), y_offset)  # Off-screen, to the right
-            self._animate_to(QPoint(self._resting_x(), y_offset))
+            self._animate_to(
+                QPoint(self._resting_x(), y_offset),
+                fxstyle.MOTION_BASE,
+                fxstyle.ease_out(),
+            )
 
         if self._timeout > 0:
             self._dismiss_timer.start(self._timeout)
@@ -396,7 +402,11 @@ class FXNotificationBanner(QFrame):
 
         parent = self.parent()
         if parent:
-            self._animate_to(QPoint(parent.width(), self._target_pos.y()))
+            self._animate_to(
+                QPoint(parent.width(), self._target_pos.y()),
+                fxstyle.MOTION_FAST,
+                fxstyle.ease_out(),
+            )
         else:
             self._leave()
 
@@ -424,7 +434,8 @@ class FXNotificationBanner(QFrame):
         for notification in staying:
             target = QPoint(notification._resting_x(), y_offset)
             if notification._target_pos != target:
-                notification._animate_to(target)
+                notification._animate_to(
+                    target, fxstyle.MOTION_SPRING, fxstyle.ease_spring())
             y_offset += notification.height() + notification._spacing
 
     def add_action(

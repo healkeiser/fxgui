@@ -5,7 +5,6 @@ from typing import Optional, Tuple
 
 # Third-party
 from qtpy.QtCore import (
-    QEasingCurve,
     QParallelAnimationGroup,
     QPoint,
     QPropertyAnimation,
@@ -14,6 +13,9 @@ from qtpy.QtCore import (
 )
 from qtpy.QtGui import QGuiApplication, QScreen
 from qtpy.QtWidgets import QWidget
+
+# Internal
+from fxgui import fxstyle
 
 
 class FXSeating:
@@ -36,20 +38,20 @@ class FXSeating:
 
     # Clear of the anchor and screen edges, with room for a shadow.
     EDGE_GAP = 12
-    ENTRANCE_MS = 160
-    ENTRANCE_SLIDE = 12
+    ENTRANCE_MS = fxstyle.MOTION_BASE
+    ENTRANCE_SLIDE = 4
 
     def __init__(self, panel: QWidget):
         self._panel = panel
         # So a resize re-seats against the same icon or pointer.
         self._anchor: Optional[Tuple[QRect, Optional[QPoint]]] = None
-        # One group so rise and fade cannot drift; OutCubic arrives slowing.
+        # One group so rise and fade cannot drift; both arrive slowing.
         self.entrance = QParallelAnimationGroup(panel)
         self._slide = QPropertyAnimation(panel, b"pos")
         self._fade = QPropertyAnimation(panel, b"windowOpacity")
         for step in (self._slide, self._fade):
             step.setDuration(self.ENTRANCE_MS)
-            step.setEasingCurve(QEasingCurve.OutCubic)
+            step.setEasingCurve(fxstyle.ease_out())
             self.entrance.addAnimation(step)
 
     @staticmethod

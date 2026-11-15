@@ -622,6 +622,39 @@ colour, as in a plain list. On a card whose shade comes within 1.2:1 of
 `FXThumbnailDelegate.apply_transparent_selection(view)` on the view so
 Qt's own highlight does not show under the delegate's.
 
+### Motion
+
+Every animation takes one of five durations and one of two curves, so
+things that move together feel alike.
+
+| Duration | Value | Used for |
+|----------|-------|----------|
+| `fxstyle.MOTION_INSTANT` | 100 ms | A popup, a menu or a tooltip fading in (`POPUP_FADE_MS`) |
+| `fxstyle.MOTION_FAST` | 150 ms | A row's hover fading once the pointer leaves; a banner sliding out |
+| `fxstyle.MOTION_BASE` | 200 ms | A window fading in (`WINDOW_FADE_MS`), a switch's thumb, a collapsible section, a banner sliding in, a tray panel arriving |
+| `fxstyle.MOTION_SLOW` | 300 ms | A page or a dock pane fading in as it rises 4 px (`PANEL_FADE_MS`, `PANEL_RISE`) |
+| `fxstyle.MOTION_SPRING` | 400 ms | Anything that travels: a dock pane growing open (`PANEL_OPEN_MS`), banners closing up their stack |
+
+`fxstyle.ease_out()` is the curve for fades and short slides: it leaves
+fast and settles slowly, the cubic bezier (0.2, 0) (0, 1).
+`fxstyle.ease_spring()` follows a damped spring (stiffness 520, damping
+40) that settles in `MOTION_SPRING` with under 1 % overshoot. Each call
+returns a new `QEasingCurve`:
+
+```python
+from qtpy.QtCore import QPropertyAnimation
+from fxgui import fxstyle
+
+slide = QPropertyAnimation(card, b"pos", card)
+slide.setDuration(fxstyle.MOTION_SPRING)
+slide.setEasingCurve(fxstyle.ease_spring())
+```
+
+Set the `FXGUI_REDUCED_MOTION` environment variable to `1` and the
+window, popup, page and pane fades, the pane growing open and the row
+hover fade are skipped; check `fxstyle.motion()` before your own.
+Spinners and busy lines keep turning.
+
 ## Registering Your Own Widget Styles
 
 `fxstyle.register_widget_style(qss)` adds a QSS fragment to the theme

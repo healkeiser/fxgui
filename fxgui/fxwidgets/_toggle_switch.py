@@ -6,7 +6,6 @@ from typing import Optional
 # Third-party
 from qtpy.QtCore import (
     Property,
-    QEasingCurve,
     QPropertyAnimation,
     QRect,
     QRectF,
@@ -61,8 +60,8 @@ class FXToggleSwitch(QAbstractButton):
         self._position = 0.0
 
         self._animation = QPropertyAnimation(self, b"position", self)
-        self._animation.setEasingCurve(QEasingCurve.InOutCubic)
-        self._animation.setDuration(150)
+        self._animation.setEasingCurve(fxstyle.ease_out())
+        self._animation.setDuration(fxstyle.MOTION_BASE)
 
         self.setCheckable(True)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
