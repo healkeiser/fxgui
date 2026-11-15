@@ -20,11 +20,11 @@ Rules for every plan:
 
 | Plan | Title | Depends on | Status |
 |------|-------|------------|--------|
-| 001 | Core metrics and type scale: control height 32, gap 6, indicators 16, weights 500, title ranks; Inter and JetBrains Mono shipped as the default faces | none | DONE (on main, next release) |
-| 002 | Rows, trees, tables and headers | 001 | TODO |
-| 003 | Buttons, fields, tabs, menus and tooltips | 001 | TODO |
-| 004 | Panels, dialogs, notices, chips, switches, progress and elevation | 001 | TODO |
-| 005 | Motion: ls-ui's durations and curves | 001 | TODO |
+| 001 | Core metrics and type scale: control height 32, gap 6, indicators 16, weights 500, title ranks; Inter and JetBrains Mono shipped as the default faces | none | DONE (released 15.0.0) |
+| 002 | Rows, trees, tables and headers | 001 | DONE (released 15.0.0) |
+| 003 | Buttons, fields, tabs, menus and tooltips | 001 | DONE (released 15.0.0) |
+| 004 | Panels, dialogs, notices, chips, switches, progress and elevation | 001 | DONE (released 15.0.0) |
+| 005 | Motion: ls-ui's durations and curves | 001 | DONE (released 15.0.0) |
 
 Skipped on purpose (no honest Qt equivalent, or a feature rather than a look): frosted-glass popups
 (no access to pixels behind a window), scale-in of popups and dialogs, the app shrinking behind a
@@ -39,3 +39,6 @@ loaders and the top progress line (new widgets, not a look change).
 
 - Fonts (owner, 2026-11-15): fxgui ships Inter and JetBrains Mono, taken byte for byte from the brand's grid-fitted files (ttfautohint, strong stem width), as the default body/title and mono faces with `hinting: vertical`. Measured: `none` ignores the grid-fitting; `vertical` is the crispest and makes Inter 400 as dark as unhinted 500, so body stays 400 and 500 is the step above. Recipe and numbers: `fxgui/fonts/README.md`.
 - No font or weight rule on every instance of a common class (it overrides `setFont`): the push-button weight rule plan 001 first added was removed.
+- Tabs keep the shared 6 px gap (ls-ui: 4 px): eight tests pin the relation that tab gaps, the first tab's inset and a pane's content inset are one gap; kept on purpose.
+- A tree's row rule runs on under its indentation (the sheet rules `::branch`); the neutral status tag is a 20 px badge with 6 px sides.
+- Reduced motion (`FXGUI_REDUCED_MOTION=1`) now skips every fxgui animation, not only the fades; the validated field's red flash stays (it is information, not motion).
