@@ -15,7 +15,7 @@ authors = [
 maintainers = [
     { name = "Valentin Beaumont", email = "valentin.onze@gmail.com" }
 ]
-keywords = ["Qt", "Qt6", "PySide6", "PyQt6", "VFX", "DCC", "UI"]
+keywords = ["Qt", "Qt6", "PySide6", "VFX", "DCC", "UI"]
 classifiers = [
     # How mature is this project? Common values are
     # 3 - Alpha
@@ -42,7 +42,8 @@ requires-python = ">=3.9"
 dependencies = [
     "QtPy>=2.4.2",
     "PyYAML>=6.0",
-    "Pygments>=2.0",
+    # 2.0 and 2.1 fail at import on Python 3.11 and newer.
+    "Pygments>=2.2",
 ]
 
 # No docking extra: every PySide6-QtAds wheel pins one exact PySide6, so

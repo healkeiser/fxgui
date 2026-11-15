@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-fxgui is a Python library providing custom Qt-based widgets and utilities for VFX Digital Content Creation (DCC) applications. It runs on Qt 6 only, through QtPy: PySide6 6.5 or newer (Houdini 21 ships 6.5.3) or PyQt6.
+fxgui is a Python library providing custom Qt-based widgets and utilities for VFX Digital Content Creation (DCC) applications. It runs on Qt 6 only, through QtPy: PySide6 6.5 or newer (Houdini 21 ships 6.5.3). PyQt6 is not supported (untested; a run fails in many places).
 
 ## Development Commands
 

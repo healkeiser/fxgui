@@ -30,7 +30,7 @@ import qtpy
 
 if not qtpy.QT6:
     raise ImportError(
-        f"fxgui needs Qt 6 (PySide6 6.5 or newer, or PyQt6); qtpy found "
+        f"fxgui needs Qt 6 (PySide6 6.5 or newer); qtpy found "
         f"{qtpy.API_NAME}."
     )
 if qtpy.PYSIDE6 and tuple(

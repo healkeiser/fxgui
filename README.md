@@ -70,12 +70,15 @@ pip install fxgui
 ### Qt Binding
 
 A Qt 6 binding is required and not installed with fxgui: PySide6 6.5 or
-newer, or PyQt6. A DCC such as Houdini ships its own PySide6; outside one,
+newer. A DCC such as Houdini ships its own PySide6; outside one,
 install it yourself:
 
 ``` shell
 pip install fxgui "PySide6>=6.5"
 ```
+
+PyQt6 is not supported: fxgui goes through QtPy, but its tests run on
+PySide6 only, and a PyQt6 run fails in many places.
 
 Qt 5 (PySide2, PyQt5) is not supported: `import fxgui` raises an
 `ImportError` that names the binding it found.
