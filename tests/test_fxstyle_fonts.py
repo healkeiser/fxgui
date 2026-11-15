@@ -301,11 +301,16 @@ def test_a_face_names_its_weight_and_hinting(qapp, monkeypatch):
     assert _fonts()["body"] == '"Inter"'
 
 
-def test_a_face_without_weight_keeps_the_default(qapp):
+def test_the_default_body_is_the_body_weight_unhinted(qapp):
     body = fxstyle.font("dark")
-    assert body.weight() == QFont().weight()
-    # The default roles hint vertically: what uses the faces' grid-fitting.
-    assert body.hintingPreference() == QFont.PreferVerticalHinting
+    assert body.weight() == QFont.Weight(fxstyle.BODY_WEIGHT)
+    # Unhinted, as a browser draws the same faces (fonts/README.md).
+    assert body.hintingPreference() == QFont.PreferNoHinting
+
+
+def test_a_face_without_weight_keeps_the_default(qapp, monkeypatch):
+    _patch_color_file(monkeypatch, fonts={"body": {"family": ["Inter"]}})
+    assert fxstyle.font("dark").weight() == QFont().weight()
 
 
 def test_an_unknown_weight_is_refused(qapp, monkeypatch):
