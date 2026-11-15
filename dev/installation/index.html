@@ -1453,10 +1453,12 @@
 </span></code></pre></div>
 <h2 id="qt-binding">Qt Binding<a class="headerlink" href="#qt-binding" title="Permanent link">&para;</a></h2>
 <p>A Qt 6 binding is required and not installed with fxgui: PySide6 6.5 or
-newer, or PyQt6. A DCC such as Houdini ships its own PySide6; outside one,
+newer. A DCC such as Houdini ships its own PySide6; outside one,
 install it yourself:</p>
 <div class="language-shell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>fxgui<span class="w"> </span><span class="s2">"PySide6&gt;=6.5"</span>
 </span></code></pre></div>
+<p>PyQt6 is not supported: fxgui goes through QtPy, but its tests run on
+PySide6 only, and a PyQt6 run fails in many places.</p>
 <p>Qt 5 (PySide2, PyQt5) and PySide6 older than 6.5 are not supported:
 <code>import fxgui</code> raises an <code>ImportError</code> that names the binding or the
 version it found.</p>

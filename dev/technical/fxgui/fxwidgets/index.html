@@ -29752,7 +29752,7 @@ pane gap by default.</p>
 
 
 <a href="#fxgui.fxwidgets.FXFlowLayout.expandingDirections" class="headerlink" title="Permanent link">&para;</a></h5>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">expandingDirections</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtCore.Qt.Orientations">Orientations</span></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">expandingDirections</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtCore.Qt.Orientation">Orientation</span></span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -38072,7 +38072,11 @@ first <code>show_at</code>.</p>
 <p>Put the user in <code>name</code> so two accounts on one machine each get their
 own copy. QtNetwork is imported on <code>claim</code>, so a host without it can
 still import fxgui. Only the same user's processes can connect, but
-any of them can: treat a message as untrusted input.</p>
+any of them can: treat a message as untrusted input. Qt cannot tell
+who listens on a name: on a machine several people use at once,
+another account could listen on the name first (Windows pipe names
+are machine-wide) and be handed a start's message. This is meant for
+single-user workstations; put the user in the name.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -38146,7 +38150,8 @@ messaged: Another start handed this copy a text, such as the
             <td>
               <div class="doc-md-description">
                 <p>From <code>claim</code>, when no copy runs but the name cannot
-be listened on, or the copy holding it never answers.</p>
+be listened on, or the copy holding it does not acknowledge
+the message in time.</p>
               </div>
             </td>
           </tr>
@@ -38292,7 +38297,17 @@ it through <code>woken</code> instead. UTF-8, at most
             </td>
             <td>
               <div class="doc-md-description">
-                <p>copy holds it and was handed <code>message</code>.</p>
+                <p>copy holds it and acknowledged <code>message</code>, or is an older fxgui</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#bool">bool</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>that was handed it unconfirmed.</p>
               </div>
             </td>
           </tr>
@@ -38326,7 +38341,8 @@ it through <code>woken</code> instead. UTF-8, at most
             <td>
               <div class="doc-md-description">
                 <p>The name cannot be listened on, or the copy
-holding it never answers.</p>
+holding it does not acknowledge <code>message</code> within 5 s (it
+may still read it later).</p>
               </div>
             </td>
           </tr>
