@@ -960,6 +960,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#names-for-the-looks-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Names for the look's values
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fills-and-edges-by-state" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1892,6 +1903,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#names-for-the-looks-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Names for the look's values
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fills-and-edges-by-state" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2646,7 +2668,7 @@ for example when applying <code>load_saved_theme()</code> at startup.
 <tr>
 <td>Font</td>
 <td><code>fxstyle.font()</code></td>
-<td>The body family of the theme at <code>fxstyle.FONT_SIZE</code> (12 px)</td>
+<td>The body family of the theme at <code>fxstyle.FONT_SIZE</code> (13 px), weight <code>fxstyle.BODY_WEIGHT</code> (400)</td>
 </tr>
 </tbody>
 </table>
@@ -2761,17 +2783,17 @@ reuses them, so it looks like it belongs.</p>
 <tbody>
 <tr>
 <td>Height</td>
-<td>28 px at the 12 px body font</td>
+<td>32 px at the 13 px body font</td>
 <td><code>fxstyle.control_height(widget)</code>: the font's line plus 5 px of padding and a 1 px border on each side</td>
 </tr>
 <tr>
 <td>Corner radius of a control, a row, a tab or a pane</td>
-<td>4 px</td>
+<td>9 px</td>
 <td><code>fxstyle.BUTTON_RADIUS</code>, <code>@button_radius</code> in QSS</td>
 </tr>
 <tr>
 <td>Corner radius of a popup or a floating card (menu, combo list, completer list, tooltip, banner, progress card, drop zone, <code>FXFloatingDialog</code>)</td>
-<td>8 px</td>
+<td>12 px</td>
 <td><code>fxstyle.CARD_RADIUS</code>, <code>@card_radius</code></td>
 </tr>
 <tr>
@@ -2813,18 +2835,18 @@ line:</p>
 <tbody>
 <tr>
 <td><code>fxstyle.control_height(widget)</code></td>
-<td>28 px at the 12 px body font</td>
+<td>32 px at the 13 px body font</td>
 <td>Every control with text or a button's box: push buttons, <code>FXIconButton</code>, <code>FXSplitButton</code>, <code>FXJoinedGroup</code>, line edits, combo boxes, spin boxes, <code>FXSearchBar</code>, <code>FXFilePathWidget</code>, <code>FXBreadcrumb</code>, the <code>FXTagInput</code> field, the <code>FXTimelineSlider</code> row</td>
 </tr>
 <tr>
 <td><code>fxstyle.INDICATOR_SIZE</code>, <code>@indicator_size</code></td>
-<td>18 px</td>
+<td>16 px</td>
 <td>An on/off mark: a check box or radio indicator, and the track of <code>FXToggleSwitch</code> (twice as wide as tall)</td>
 </tr>
 </tbody>
 </table>
 <p>A mark is smaller than the row and centres in it: an <code>FXToggleSwitch</code> is
-<code>control_height</code> tall, its 18 px track in the middle, so it lines up
+<code>control_height</code> tall, its 16 px track in the middle, so it lines up
 with the button beside it. A slider handle (14 px) and a status dot do
 the same. A control that sizes itself returns these from <code>sizeHint()</code>.
 A plain icon <code>QToolButton</code> in a toolbar sizes to its icon. The Buttons
@@ -2832,6 +2854,71 @@ page of the gallery shows one row of every control.</p>
 <p>A spin box reaches a line edit's height by its padding, which differs by
 Qt version: PySide6 6.5 sizes a spin box 3 px shorter than later Qt for
 the same padding, so fxstyle picks the padding when it builds the sheet.</p>
+<h3 id="names-for-the-looks-values">Names for the look's values<a class="headerlink" href="#names-for-the-looks-values" title="Permanent link">&para;</a></h3>
+<p>Code that sizes or weighs something of its own reads these names, never
+the numbers, so it follows fxgui when the look moves.</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Value</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fxstyle.font_rank(name)</code></td>
+<td><code>(13, 400)</code> for <code>"body"</code>, <code>(15, 500)</code> for <code>"section"</code>, <code>(18, 500)</code> for <code>"card"</code></td>
+<td>A text rank's pixel size and weight in the current theme (or <code>theme=</code>); an unknown rank raises <code>ValueError</code></td>
+</tr>
+<tr>
+<td><code>fxstyle.BODY_WEIGHT</code></td>
+<td>400</td>
+<td>Body text's weight</td>
+</tr>
+<tr>
+<td><code>fxstyle.EMPHASIS_WEIGHT</code></td>
+<td>500</td>
+<td>The one step above: titles, a tooltip's title, a selected or emphasised word</td>
+</tr>
+<tr>
+<td><code>fxstyle.DIALOG_GUTTER</code></td>
+<td>20 px</td>
+<td>A dialog's left and right margin</td>
+</tr>
+<tr>
+<td><code>fxstyle.DIALOG_EDGE</code></td>
+<td>16 px</td>
+<td>A dialog's top and bottom margin</td>
+</tr>
+<tr>
+<td><code>fxstyle.DIALOG_GAP</code></td>
+<td>12 px</td>
+<td>The space between a dialog's parts (text, fields, buttons)</td>
+</tr>
+<tr>
+<td><code>FXThumbnailDelegate.PILL_HEIGHT</code>, <code>.PILL_PADDING</code></td>
+<td>20 px, 6 px</td>
+<td>A neutral status tag's height and its text's side padding</td>
+</tr>
+<tr>
+<td><code>FXStatusBar.ICON_SIZE</code>, <code>FXStatusItem.ICON_SIZE</code></td>
+<td>14 px</td>
+<td>The side of a status item's or message's icon</td>
+</tr>
+</tbody>
+</table>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QFont</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">size</span><span class="p">,</span> <span class="n">weight</span> <span class="o">=</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">font_rank</span><span class="p">(</span><span class="s2">"section"</span><span class="p">)</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">font</span> <span class="o">=</span> <span class="n">QFont</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">font</span><span class="p">())</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">font</span><span class="o">.</span><span class="n">setPixelSize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">font</span><span class="o">.</span><span class="n">setWeight</span><span class="p">(</span><span class="n">QFont</span><span class="o">.</span><span class="n">Weight</span><span class="p">(</span><span class="n">weight</span><span class="p">))</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">DIALOG_GUTTER</span><span class="p">,</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">DIALOG_EDGE</span><span class="p">,</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>                          <span class="n">fxstyle</span><span class="o">.</span><span class="n">DIALOG_GUTTER</span><span class="p">,</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">DIALOG_EDGE</span><span class="p">)</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">DIALOG_GAP</span><span class="p">)</span>
+</span></code></pre></div>
 <h3 id="fills-and-edges-by-state">Fills and edges by state<a class="headerlink" href="#fills-and-edges-by-state" title="Permanent link">&para;</a></h3>
 <p>One rule under every row of the table: <strong>the accent marks keyboard
 focus, a selection, the current item and the primary action. Hover is
@@ -2958,7 +3045,7 @@ on the focused widget, true only for keyboard focus, and clears it when
 focus leaves. A themed root turns this on for every widget under it,
 including widgets made later and widgets inside a host. For your own
 rules, select on the property, not on <code>:focus</code> alone:</p>
-<div class="language-css highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">MyWidget</span><span class="o">[</span><span class="nt">fxFocusVisible</span><span class="o">=</span><span class="s2">"true"</span><span class="o">]</span><span class="p">:</span><span class="nd">focus</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">border-color</span><span class="p">:</span><span class="w"> </span><span class="o">@</span><span class="n">accent_primary</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<div class="language-css highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">MyWidget</span><span class="o">[</span><span class="nt">fxFocusVisible</span><span class="o">=</span><span class="s2">"true"</span><span class="o">]</span><span class="p">:</span><span class="nd">focus</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">border-color</span><span class="p">:</span><span class="w"> </span><span class="o">@</span><span class="n">accent_primary</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
 <p>A widget that paints its own focus look asks
 <code>fxstyle.focus_visible(widget)</code> instead of <code>hasFocus()</code>. The first call
@@ -3139,11 +3226,11 @@ accent misses it.</p>
 <p><code>FXThumbnailDelegate</code> draws a row as a card when the row has a
 <code>Qt.BackgroundRole</code>. The fill is that colour. Give it a token name, and
 the card follows every theme switch:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QTreeWidgetItem</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">item</span> <span class="o">=</span> <span class="n">QTreeWidgetItem</span><span class="p">([</span><span class="s2">"sh010"</span><span class="p">])</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">item</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">BackgroundRole</span><span class="p">,</span> <span class="s2">"surface"</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QTreeWidgetItem</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">item</span> <span class="o">=</span> <span class="n">QTreeWidgetItem</span><span class="p">([</span><span class="s2">"sh010"</span><span class="p">])</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">item</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">BackgroundRole</span><span class="p">,</span> <span class="s2">"surface"</span><span class="p">)</span>
 </span></code></pre></div>
 <p>The card's edge is <code>@border_light</code>. A selected card is filled and edged
 with <code>@accent_primary</code>. A row with no background has no card.</p>
@@ -3197,12 +3284,12 @@ fast and settles slowly, the cubic bezier (0.2, 0) (0, 1).
 <code>fxstyle.ease_spring()</code> follows a damped spring (stiffness 520, damping
 40) that settles in <code>MOTION_SPRING</code> with under 1 % overshoot. Each call
 returns a new <code>QEasingCurve</code>:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPropertyAnimation</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">slide</span> <span class="o">=</span> <span class="n">QPropertyAnimation</span><span class="p">(</span><span class="n">card</span><span class="p">,</span> <span class="sa">b</span><span class="s2">"pos"</span><span class="p">,</span> <span class="n">card</span><span class="p">)</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">slide</span><span class="o">.</span><span class="n">setDuration</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">MOTION_SPRING</span><span class="p">)</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">slide</span><span class="o">.</span><span class="n">setEasingCurve</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">ease_spring</span><span class="p">())</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPropertyAnimation</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="n">slide</span> <span class="o">=</span> <span class="n">QPropertyAnimation</span><span class="p">(</span><span class="n">card</span><span class="p">,</span> <span class="sa">b</span><span class="s2">"pos"</span><span class="p">,</span> <span class="n">card</span><span class="p">)</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">slide</span><span class="o">.</span><span class="n">setDuration</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">MOTION_SPRING</span><span class="p">)</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="n">slide</span><span class="o">.</span><span class="n">setEasingCurve</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">ease_spring</span><span class="p">())</span>
 </span></code></pre></div>
 <p>Set the <code>FXGUI_REDUCED_MOTION</code> environment variable to <code>1</code> and every
 animation fxgui runs is skipped: each one lands on its end state at
@@ -3218,15 +3305,15 @@ animation of your own.</p>
 <p><code>fxstyle.register_widget_style(qss)</code> adds a QSS fragment to the theme
 stylesheet. Call it once, when your module is imported, with your class
 name as the selector. The fragment may use any <code>@token</code>.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">register_widget_style</span><span class="p">(</span><span class="s2">"""</span>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="s2">    MyWidget {</span>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="s2">        background: @surface;</span>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="s2">        border: 1px solid @border;</span>
-</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="s2">        border-radius: 4px;</span>
-</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="s2">    }</span>
-</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="s2">"""</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">register_widget_style</span><span class="p">(</span><span class="s2">"""</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="s2">    MyWidget {</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="s2">        background: @surface;</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="s2">        border: 1px solid @border;</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="s2">        border-radius: 4px;</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="s2">    }</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="s2">"""</span><span class="p">)</span>
 </span></code></pre></div>
 <p>An image in a rule names an icon and a token: <code>image: ~icon(chevron-down,
 icon);</code> draws the icon library's <code>chevron-down</code> in the theme's <code>@icon</code>
@@ -3246,12 +3333,12 @@ switch. <code>fxstyle.resolve(qss)</code> resolves the tokens of a sheet of your
 <p>If your QSS uses a dynamic property in a selector, for example
 <code>MyBanner[level="error"] { ... }</code>, Qt does not look at the rule again when
 you call <code>setProperty()</code>. Call <code>fxutils.repolish()</code> after it:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QLabel</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxutils</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">banner</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">"Disk full"</span><span class="p">)</span>
-</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">banner</span><span class="o">.</span><span class="n">setProperty</span><span class="p">(</span><span class="s2">"level"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">)</span>
-</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="n">fxutils</span><span class="o">.</span><span class="n">repolish</span><span class="p">(</span><span class="n">banner</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QLabel</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxutils</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">banner</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">"Disk full"</span><span class="p">)</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">banner</span><span class="o">.</span><span class="n">setProperty</span><span class="p">(</span><span class="s2">"level"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">)</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="n">fxutils</span><span class="o">.</span><span class="n">repolish</span><span class="p">(</span><span class="n">banner</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="the-custom-widget-contract">The Custom Widget Contract<a class="headerlink" href="#the-custom-widget-contract" title="Permanent link">&para;</a></h2>
 <p>A custom widget follows the theme with no base class and no signal when
@@ -3284,27 +3371,27 @@ it does one of these:</p>
 </table>
 <p>Connect to <code>fxstyle.theme_changed</code> only for a side effect a switch has
 beyond looks.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QColor</span><span class="p">,</span> <span class="n">QPainter</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span>
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>
-</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">register_widget_style</span><span class="p">(</span><span class="s2">"""</span>
-</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="s2">    MyStatusChip {</span>
-</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="s2">        border: 1px solid @border;</span>
-</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="s2">        border-radius: 10px;</span>
-</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="s2">    }</span>
-</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="s2">"""</span><span class="p">)</span>
-</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>
-</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>
-</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyStatusChip</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
-</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">    </span><span class="sd">"""A chip that takes the theme's colours when painted."""</span>
-</span><span id="__span-13-16"><a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>
-</span><span id="__span-13-17"><a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-</span><span id="__span-13-18"><a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a>        <span class="n">painter</span> <span class="o">=</span> <span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-</span><span id="__span-13-19"><a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">fillRect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">QColor</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span><span class="o">.</span><span class="n">surface</span><span class="p">))</span>
-</span><span id="__span-13-20"><a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
-</span><span id="__span-13-21"><a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">drawText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">,</span> <span class="s2">"Ready"</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QColor</span><span class="p">,</span> <span class="n">QPainter</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">register_widget_style</span><span class="p">(</span><span class="s2">"""</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="s2">    MyStatusChip {</span>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="s2">        border: 1px solid @border;</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="s2">        border-radius: 10px;</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="s2">    }</span>
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="s2">"""</span><span class="p">)</span>
+</span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>
+</span><span id="__span-14-13"><a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>
+</span><span id="__span-14-14"><a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyStatusChip</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+</span><span id="__span-14-15"><a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="w">    </span><span class="sd">"""A chip that takes the theme's colours when painted."""</span>
+</span><span id="__span-14-16"><a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>
+</span><span id="__span-14-17"><a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+</span><span id="__span-14-18"><a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>        <span class="n">painter</span> <span class="o">=</span> <span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</span><span id="__span-14-19"><a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">fillRect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">QColor</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span><span class="o">.</span><span class="n">surface</span><span class="p">))</span>
+</span><span id="__span-14-20"><a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">colors</span><span class="p">()</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+</span><span id="__span-14-21"><a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a>        <span class="n">painter</span><span class="o">.</span><span class="n">drawText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="p">(),</span> <span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">,</span> <span class="s2">"Ready"</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="available-color-tokens">Available Color Tokens<a class="headerlink" href="#available-color-tokens" title="Permanent link">&para;</a></h3>
 <p>Every role in the tables at the top of this page is a token: <code>@surface</code>

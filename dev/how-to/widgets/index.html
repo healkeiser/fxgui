@@ -1624,7 +1624,7 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 </tr>
 <tr>
 <td><code>FXBreadcrumb</code></td>
-<td>Clickable breadcrumb trail; double-click it to type a path</td>
+<td>Clickable breadcrumb trail; double-click it to type a path. <code>back_button</code> and <code>forward_button</code> name its navigation buttons (None without <code>show_navigation</code>)</td>
 </tr>
 <tr>
 <td><code>FXCamelCaseValidator</code></td>
@@ -1748,7 +1748,7 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 </tr>
 <tr>
 <td><code>FXNotificationBanner</code></td>
-<td>Card with a message that slides in from a window's right edge</td>
+<td>Card with a message that slides in from a window's right edge. <code>severity()</code>, <code>timeout()</code>, <code>action_buttons()</code> and <code>is_placed()</code> (it stands at its slot, no slide running) read it back</td>
 </tr>
 <tr>
 <td><code>FXOutputLogHandler</code></td>
@@ -1756,7 +1756,7 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 </tr>
 <tr>
 <td><code>FXOutputLogWidget</code></td>
-<td>Read-only log display with search</td>
+<td>Read-only log display with search. It writes queued records on a throttle; <code>flush()</code> writes them all now</td>
 </tr>
 <tr>
 <td><code>FXPasswordLineEdit</code></td>
@@ -1867,7 +1867,9 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 <p><code>fxdocking.FXDockArea</code> docks named panes around a body; it needs
 <code>PySide6-QtAds</code> (see <a href="../../installation/#docking">Installation</a>).
 <code>show_dock(name)</code>, <code>hide_dock(name)</code> and <code>is_dock_open(name)</code> open, close
-and ask about a pane by its name, without reaching for QtAds.</p>
+and ask about a pane by its name, without reaching for QtAds.
+<code>show_dock(name, activate=False)</code> makes a pane its tabs' current one
+without raising or focusing the floating window it sits in.</p>
 <p>And these functions and constants:</p>
 <table>
 <thead>
