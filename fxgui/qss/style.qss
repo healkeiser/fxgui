@@ -563,6 +563,7 @@ QToolBar {
     background: @surface;
     font-weight: 500;
     border-bottom: 1px solid @border;
+    spacing: @pane_gap;
 }
 
 QToolBar::handle:horizontal {
@@ -1283,15 +1284,18 @@ QSlider::add-page:vertical:disabled {
 }
 
 /* Plain QToolButtons (toolbars, icon buttons) stay flat: transparent
-   until hovered, a 22 px box around a 16 px icon. Split buttons
-   (MenuButtonPopup) read like QPushButtons: see popupMode="1" below. */
+   until hovered, a 28 px square around a 16 px icon; the layout spaces
+   them. Split buttons (MenuButtonPopup) read like QPushButtons: see
+   popupMode="1" below. */
 QToolButton {
     background-color: transparent;
     /* Reserved for the checked and focus edges, so neither moves the icon. */
     border: 1px solid transparent;
     border-radius: @button_radius;
-    margin: 2px;
-    padding: 2px;
+    margin: 0px;
+    /* Qt adds 3 px to a styled tool button's contents and centres the icon
+       rounding down: 4 + 3 puts it 6 px in on every side. */
+    padding: 4px 3px 3px 4px;
 }
 
 QToolButton[popupMode="1"] { /* MenuButtonPopup: QPushButton look */
