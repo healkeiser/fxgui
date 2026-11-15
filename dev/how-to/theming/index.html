@@ -2668,7 +2668,7 @@ for example when applying <code>load_saved_theme()</code> at startup.
 <tr>
 <td>Font</td>
 <td><code>fxstyle.font()</code></td>
-<td>The body family of the theme at <code>fxstyle.FONT_SIZE</code> (13 px), weight <code>fxstyle.BODY_WEIGHT</code> (500), no hinting</td>
+<td>The body family of the theme at <code>fxstyle.FONT_SIZE</code> (13 px), weight <code>fxstyle.drawn_weight(fxstyle.BODY_WEIGHT)</code> (500 in a dark theme, 400 in a light one), no hinting</td>
 </tr>
 </tbody>
 </table>
@@ -2868,18 +2868,28 @@ the numbers, so it follows fxgui when the look moves.</p>
 <tbody>
 <tr>
 <td><code>fxstyle.font_rank(name)</code></td>
-<td><code>(13, 500)</code> for <code>"body"</code>, <code>(15, 600)</code> for <code>"section"</code>, <code>(18, 600)</code> for <code>"card"</code></td>
-<td>A text rank's pixel size and weight in the current theme (or <code>theme=</code>); an unknown rank raises <code>ValueError</code></td>
+<td>In a dark theme <code>(13, 500)</code> for <code>"body"</code>, <code>(15, 600)</code> for <code>"section"</code>, <code>(18, 600)</code> for <code>"card"</code>; a step lighter in a light theme</td>
+<td>A text rank's pixel size and the weight Qt draws it at in the current theme (or <code>theme=</code>); an unknown rank raises <code>ValueError</code></td>
 </tr>
 <tr>
 <td><code>fxstyle.BODY_WEIGHT</code></td>
-<td>500</td>
-<td>Body text's weight. Qt draws a weight as light as a browser draws the one below, so 500 here reads as the web look's 400</td>
+<td>400</td>
+<td>Body text's weight, on the CSS scale</td>
 </tr>
 <tr>
 <td><code>fxstyle.EMPHASIS_WEIGHT</code></td>
+<td>500</td>
+<td>The step above: names, titles, headers, a tooltip's title, a selected or emphasised word</td>
+</tr>
+<tr>
+<td><code>fxstyle.STRONG_WEIGHT</code></td>
 <td>600</td>
-<td>The one step above (the web look's 500): titles, a tooltip's title, a selected or emphasised word</td>
+<td>The step above emphasis: a group's title</td>
+</tr>
+<tr>
+<td><code>fxstyle.drawn_weight(weight)</code></td>
+<td><code>weight</code> + 100 in a dark theme, <code>weight</code> in a light one</td>
+<td>The weight to give a QFont: Qt draws light text on a dark ground lighter than a browser does (see <code>fxgui/fonts/README.md</code>). Sheets read <code>@body_weight</code>, <code>@emphasis_weight</code> and <code>@strong_weight</code>, already drawn</td>
 </tr>
 <tr>
 <td><code>fxstyle.DIALOG_GUTTER</code></td>
