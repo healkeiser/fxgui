@@ -148,10 +148,9 @@ def test_a_slider_fits_in_the_row(row):
     assert slider.rect().contains(_mark_box(slider))
 
 
-def test_the_switch_track_is_the_indicator_size(row):
+def test_the_switch_track_is_36_by_20(row):
     track = row.widgets["FXToggleSwitch"].track_rect()
-    assert track.height() == fxstyle.INDICATOR_SIZE
-    assert track.width() == 2 * fxstyle.INDICATOR_SIZE
+    assert (track.width(), track.height()) == (36, 20)
 
 
 @pytest.mark.parametrize("name", ["QCheckBox", "QRadioButton"])

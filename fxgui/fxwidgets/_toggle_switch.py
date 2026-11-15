@@ -18,6 +18,11 @@ from qtpy.QtWidgets import QAbstractButton, QSizePolicy, QWidget
 # Internal
 from fxgui import fxstyle
 
+# The track's size, and the thumb's inset in it: a 16 px thumb.
+_TRACK_WIDTH = 36
+_TRACK_HEIGHT = 20
+_INSET = 2
+
 
 class FXToggleSwitch(QAbstractButton):
     """An on/off switch that slides, as tall as a push button.
@@ -78,10 +83,8 @@ class FXToggleSwitch(QAbstractButton):
     def minimumSizeHint(self):
         """Return the minimum size of the switch."""
         # A row's height, so it centres beside a button; the track inside
-        # is the indicator size, twice as wide as it is tall.
-        return QSize(
-            fxstyle.INDICATOR_SIZE * 2, fxstyle.control_height(self)
-        )
+        # is its own size.
+        return QSize(_TRACK_WIDTH, fxstyle.control_height(self))
 
     def hitButton(self, pos):
         """Return True if pos is inside the clickable area."""
@@ -159,14 +162,14 @@ class FXToggleSwitch(QAbstractButton):
         return fill, edge, thumb
 
     def track_rect(self) -> QRect:
-        """Return the track: the indicator size tall, centred in the widget."""
-        side = fxstyle.INDICATOR_SIZE
-        width = min(self.width(), side * 2)
+        """Return the track: `_TRACK_WIDTH` by `_TRACK_HEIGHT`, centred."""
+        width = min(self.width(), _TRACK_WIDTH)
+        height = min(self.height(), _TRACK_HEIGHT)
         return QRect(
             (self.width() - width) // 2,
-            (self.height() - side) // 2,
+            (self.height() - height) // 2,
             width,
-            side,
+            height,
         )
 
     def paintEvent(self, event) -> None:
@@ -175,23 +178,19 @@ class FXToggleSwitch(QAbstractButton):
         painter.setRenderHint(QPainter.Antialiasing)
         fill, edge, thumb = (QColor(ink) for ink in self._inks())
 
-        radius = fxstyle.BUTTON_RADIUS
         box = self.track_rect()
-        # Half a pixel in, so the whole 1 px edge is drawn.
+        # Half a pixel in, so the whole 1 px edge is drawn; a pill.
+        track = QRectF(box).adjusted(0.5, 0.5, -0.5, -0.5)
+        radius = track.height() / 2
         painter.setPen(edge)
         painter.setBrush(fill)
-        painter.drawRoundedRect(
-            QRectF(box).adjusted(0.5, 0.5, -0.5, -0.5), radius, radius
-        )
+        painter.drawRoundedRect(track, radius, radius)
 
-        margin = 2
-        size = box.height() - margin * 2
-        x = box.left() + margin + self._position * (
-            box.width() - size - margin * 2
+        size = box.height() - _INSET * 2
+        x = box.left() + _INSET + self._position * (
+            box.width() - size - _INSET * 2
         )
         painter.setPen(Qt.NoPen)
         painter.setBrush(thumb)
-        painter.drawRoundedRect(
-            QRectF(x, box.top() + margin, size, size), radius - 1, radius - 1
-        )
+        painter.drawEllipse(QRectF(x, box.top() + _INSET, size, size))
         painter.end()

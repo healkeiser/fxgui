@@ -96,11 +96,10 @@ def test_the_switch_is_as_tall_as_a_button(qtbot):
     qtbot.addWidget(window)
     window.show()
     qtbot.waitExposed(window)
-    # The row is a button's height; the track inside is the indicator size.
+    # The row is a button's height; the track inside is 36 x 20.
     assert switch.height() == button.height() == fxstyle.control_height(button)
     track = switch.track_rect()
-    assert track.height() == fxstyle.INDICATOR_SIZE
-    assert track.width() == 2 * fxstyle.INDICATOR_SIZE
+    assert (track.width(), track.height()) == (36, 20)
     assert abs(track.center().y() - switch.rect().center().y()) <= 1
 
 
