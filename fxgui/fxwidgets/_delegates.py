@@ -560,12 +560,15 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _CONTENT_SPACING = 5
     #: Side of a row's icon, and its gap from the cell's left edge, in px:
     #: what a widget laid over the icon's place (a spinner) lines up with.
+    #: The gap is a cell's text lead, also kept at its right edge.
     ICON_SIZE = 16
-    ICON_MARGIN = 6
+    ICON_MARGIN = 12
     # The private names the drawing code reads, also kept for code that read them.
     _ICON_SIZE = ICON_SIZE
     _ICON_MARGIN = ICON_MARGIN
-    _TEXT_RIGHT_MARGIN = 10
+    # Between an icon, or a check box, and what follows it.
+    _ICON_GAP = 6
+    _TEXT_RIGHT_MARGIN = 12
     # The least room above and below a row's one line of text.
     _ROW_PADDING = 2
     _LINE_GAP = 2
@@ -614,6 +617,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _label_fonts: Dict[str, QFont] = {}
 
     _FOCUS_RINGS = ("row", "cell")
+    # The keyboard's outline, inside the row.
+    _FOCUS_WIDTH = 2
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
@@ -1102,7 +1107,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             return option.rect.left() + self._THUMBNAIL_SPAN
         left = option.rect.left() + self.ICON_MARGIN
         if self._has_icon(option):
-            left += self.ICON_SIZE + self.ICON_MARGIN
+            left += self.ICON_SIZE + self._ICON_GAP
         return left
 
     @staticmethod
@@ -1563,10 +1568,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             ends = (True, True)
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing)
-        # A 1 px pen straddles its coordinate; half a pixel in lands it inside
-        inset = QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5)
+        # A pen straddles its coordinate; half its width in lands it inside
+        half = self._FOCUS_WIDTH / 2
+        inset = QRectF(rect).adjusted(half, half, -half, -half)
         painter.setClipRect(rect, Qt.IntersectClip)
-        painter.setPen(QPen(QColor(fxstyle.colors().accent_primary), 1))
+        painter.setPen(
+            QPen(QColor(fxstyle.colors().accent_primary), self._FOCUS_WIDTH)
+        )
         painter.setBrush(Qt.NoBrush)
         # Square, as the row it rings.
         painter.drawPath(self._row_outline(inset, 0, ends))
@@ -1989,7 +1997,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         if self._has_icon(option):
             icon_rect = self._icon_rect(option.rect)
             _paint_icon(painter, option.icon, icon_rect, option.state)
-            text_x = icon_rect.right() + 1 + self.ICON_MARGIN
+            text_x = icon_rect.right() + 1 + self._ICON_GAP
 
         text = index.data(Qt.DisplayRole)
         if not text:

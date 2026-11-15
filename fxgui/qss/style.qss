@@ -1074,24 +1074,25 @@ QTreeView::branch:!selected:hover {
     background: @surface_sunken;
 }
 
-/* No branch lines; a parent shows the accordion's chevron, in the 16 px
-   box of an item's icon. This padding fits a 20 px indentation; fxstyle
-   adds one rule per indentation for any other width. */
+/* No branch lines; a parent shows a 14 px chevron, centred in its level's
+   box. This padding fits a 22 px indentation; fxstyle adds one rule per
+   indentation for any other width. */
 QTreeView::branch:has-children {
-    padding: 2px;
+    padding: 2px 4px;
 }
 
 QTreeView::branch:has-children:closed {
-    image: ~icon(chevron-right, icon);
+    image: ~icon(chevron-right, icon, 14);
 }
 
 QTreeView::branch:has-children:open {
-    image: ~icon(chevron-down, icon);
+    image: ~icon(chevron-down, icon, 14);
 }
 
-/* A row has no padding in any state: Qt 6.5 skips an item's padding on
-   a row it paints natively and honours it on a highlighted one. Nor has
-   the view: its rows run from its very top, edge to edge. */
+/* The view has no padding: its rows run from its very top, edge to edge.
+   A cell's text sits 12 px in from its edges, Qt's own 3 px margin inside
+   this padding; FXProxyStyle hands a row Qt paints natively the same
+   rects, where Qt 6.8 and older skip an item's padding. */
 QListView,
 QTreeView,
 QTableView {
@@ -1104,8 +1105,13 @@ QTreeView {
     qproperty-animated: true;
 }
 
+QListView::item,
+QTreeView::item,
+QTableView::item {
+    padding: 0px @cell_padding;
+}
+
 QListView::item {
-    padding: 0px;
     min-height: 28px;
     max-height: 28px;
 }
@@ -1120,23 +1126,8 @@ QGraphicsView
 
 /* A tree row is a table's: flat, and as tall as the row size in force. */
 QTreeView::item {
-    padding: 0px;
     min-height: @row_height;
     max-height: @row_height;
-}
-
-/* A radius makes the sheet draw the whole cell, which hides an item's own
-   BackgroundRole; only a list's highlighted rows carry one. */
-QListView::item:hover,
-QListView::item:selected {
-    border-radius: @button_radius;
-}
-
-/* Qt 6.6 sets a resting list row's text 1 px further right than a
-   highlighted one, which the sheet draws: the token makes up the step. */
-QListView::item:hover,
-QListView::item:selected {
-    padding-left: @list_text_step;
 }
 
 QListView::item:!selected:hover,
@@ -1180,9 +1171,10 @@ QAbstractItemView[fxPopup="true"]::item:selected:active {
     padding-left: 0px;
 }
 
-/* A navigation list (mark_as_nav): 28 px rounded chips set in from the
-   edges, no rule between them; the current row a neutral chip with its
-   text in the accent, a hovered one the same chip in the text's ink.
+/* A navigation list (mark_as_nav): 28 px chips at the small radius, set
+   in from the edges and 1 px in from the row's top and bottom, no rule
+   between them; the current row a neutral chip with its text in the accent, a hovered one
+   the same chip in the text's ink.
    mark_as_nav sets the gap at the ends. */
 
 QTreeView[fxNav="true"]::item,
@@ -1190,7 +1182,7 @@ QListView[fxNav="true"]::item {
     min-height: 28px;
     max-height: 28px;
     border: none;
-    border-radius: @button_radius;
+    border-radius: @small_radius;
     margin: 1px 4px;
 }
 
@@ -1451,7 +1443,7 @@ QLabel#fxKeycap
 }
 
 /* A header is Lumen's: flat muted text over one rule, no line between
-   columns, labels on the left a step below the body. */
+   columns, labels on the left a step below the body, medium, 36 px tall. */
 QHeaderView
 {
     background: transparent;
@@ -1465,8 +1457,10 @@ QHeaderView::section  {
     background-color: transparent;
     color: @text_muted;
     font-size: @font_size_small;
-    /* Left in line with a cell's text, which sits 4 px in. */
-    padding: 8px 4px;
+    font-weight: 500;
+    /* Left in line with a cell's text, which sits 12 px in. */
+    padding: 0px @cell_lead;
+    min-height: @header_height;
     border: none;
     border-bottom: 1px solid @border;
     border-radius: 0px;
@@ -1714,7 +1708,7 @@ QPushButton[fxRole="flat"]:checked:pressed
 
    One class is out of reach from here: an item view's current row. A
    `::item:focus` rule matches no pixels, so FXThumbnailDelegate draws that
-   one, following the same rounded row shape it already paints its
+   one: a 2 px outline inside the square row it already paints its
    backgrounds with.
    ========================================================================== */
 

@@ -77,6 +77,7 @@ from qtpy.QtWidgets import (
     QFrame,
     QGraphicsView,
     QHeaderView,
+    QListView,
     QMenu,
     QProxyStyle,
     QPushButton,
@@ -295,12 +296,15 @@ DEPTH_STEP = 0.12
 # tree that nests deeper and needs telling apart.
 DEPTH_CAP = 4
 
-# Names a tree's indentation, so the sheet pads its chevron to 16 px.
+# A tree's indentation per level, and the chevron centred in it.
+_TREE_INDENT = 22
+_CHEVRON = 14
+# Names a tree's indentation, so the sheet pads its chevron to 14 px.
 INDENT_PROPERTY = "fxIndent"
 # ponytail: indentations 0-64 px have a rule; a wider tree's chevron grows.
 _BRANCH_RULES = "".join(
     f'QTreeView[{INDENT_PROPERTY}="{indent}"]::branch:has-children '
-    f"{{ padding: 2px {max(0, (indent - 16) // 2)}px; }}\n"
+    f"{{ padding: 2px {max(0, (indent - _CHEVRON) // 2)}px; }}\n"
     for indent in range(65)
 )
 
@@ -376,10 +380,12 @@ _CONTROL_BOX = 12
 # A menu or popup row's icon, which its line never falls below.
 _ROW_ICON = 16
 
-# A highlighted list row's text step to its resting place: from Qt 6.6 the
-# native resting row sits 1 px further right; trees do not move.
-# ponytail: measured on 6.5.3 and 6.11.1 only, as `_SPIN_BASE`.
-_LIST_TEXT_STEP = "0px" if _compat.QT_VERSION < (6, 6) else "1px"
+# A cell's text lead from its edges: a header's padding, and an item's
+# padding with Qt's own 3 px text margin inside it.
+_CELL_LEAD = 12
+_CELL_PADDING = _CELL_LEAD - 3
+# A header section's height under its 1 px rule: 36 px in all.
+_HEADER_HEIGHT = 35
 
 # The body text size, in pixels, of every themed root.
 FONT_SIZE = 13
@@ -1002,8 +1008,9 @@ def mark_as_thin_scroll(area: QAbstractScrollArea, is_thin: bool = True) -> None
 def mark_as_nav(view: QAbstractItemView, is_nav: bool = True) -> None:
     """Draw an item view as a navigation list, as a sidebar's.
 
-    Rows are 28 px rounded chips; the current one is a neutral chip with
-    its text in the accent, so it reads as a place, not a selection.
+    Rows are 28 px chips at the small radius; the current one is a neutral
+    chip with its text in the accent, so it reads as a place, not a
+    selection.
 
     Args:
         view: The list or tree of places to go to.
@@ -1742,7 +1749,9 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     tokens["@pane_gap"] = f"{PANE_GAP}px"
     tokens["@tab_padding"] = f"{TAB_PADDING}px"
     tokens.update(_line_tokens(theme_name))
-    tokens["@list_text_step"] = _LIST_TEXT_STEP
+    tokens["@cell_lead"] = f"{_CELL_LEAD}px"
+    tokens["@cell_padding"] = f"{_CELL_PADDING}px"
+    tokens["@header_height"] = f"{_HEADER_HEIGHT}px"
 
     # url(~icons/...) in QSS: the folder of the theme being resolved, which
     # need not be the current one.
@@ -2222,17 +2231,45 @@ _LAYOUT_GAPS = (
     QStyle.PM_LayoutVerticalSpacing,
 )
 _LIST_ICON = QStyle.PM_ListViewIconSize
-# A table row's hairline, Lumen's border at 60%.
+_TREE_INDENTATION = QStyle.PM_TreeViewIndentation
+# A row's hairline, Lumen's border at 60%.
 _TABLE_RULE_ALPHA = 0.6
 # A header's sort arrow: its side, its gap after the label, and the label's
 # lead in the section (the sheet's ::section padding).
 _SORT_ARROW = 12
 _SORT_GAP = 4
-_HEADER_LEAD = 4
+_HEADER_LEAD = _CELL_LEAD
+# A cell's parts, which a row Qt paints natively asks this style for.
+_ITEM_PARTS = (
+    QStyle.SE_ItemViewItemText,
+    QStyle.SE_ItemViewItemDecoration,
+    QStyle.SE_ItemViewItemCheckIndicator,
+    QStyle.SE_ItemViewItemFocusRect,
+)
 # A header label's icon, which sits before its words.
 _HEADER_ICON = 16
 _SMALL_ICON = QStyle.PM_SmallIconSize
 _CLOSE_WIDTH = QStyle.PM_TabCloseIndicatorWidth
+
+
+def _ruled(view: Optional[QWidget]) -> bool:
+    """Whether `view` draws a hairline under each row.
+
+    A table, and a tree or list that is no navigation list, icon grid or
+    popup's list (a combo box's, a completer's, a menu-like list's).
+    """
+    if isinstance(view, QTableView):
+        return True
+    if isinstance(view, QListView):
+        if view.viewMode() == QListView.IconMode:
+            return False
+    elif not isinstance(view, QTreeView):
+        return False
+    return not (
+        view.property(NAV_PROPERTY)
+        or view.property(POPUP_PROPERTY)
+        or view.window().windowType() == Qt.Popup
+    )
 
 
 class FXProxyStyle(QProxyStyle):
@@ -2270,13 +2307,14 @@ class FXProxyStyle(QProxyStyle):
         return super().standardIcon(standardIcon, option, widget)
 
     def drawPrimitive(self, element, option, painter, widget=None):
-        """Draw `element`, except Qt's focus rectangle; rule a table's rows.
+        """Draw `element`, except Qt's focus rectangle; rule a view's rows.
 
         PySide6 6.5's Fusion and Windows 11 draw it on an item view's current
         cell whatever the sheet's ``outline`` says, tinting its
         BackgroundRole; every fxgui control shows focus in its own edge.
-        A table cell gets Lumen's hairline under it here, over its own
-        BackgroundRole: a sheet ``::item`` border would hide that colour.
+        A table, tree or list cell gets Lumen's hairline under it here, over
+        its own BackgroundRole: a sheet ``::item`` border would hide that
+        colour.
         """
         if element == QStyle.PE_FrameFocusRect:
             return
@@ -2290,9 +2328,7 @@ class FXProxyStyle(QProxyStyle):
             )
             return
         super().drawPrimitive(element, option, painter, widget)
-        if element == QStyle.PE_PanelItemViewItem and isinstance(
-            widget, QTableView
-        ):
+        if element == QStyle.PE_PanelItemViewItem and _ruled(widget):
             rule = QColor(colors().border)
             rule.setAlphaF(_TABLE_RULE_ALPHA)
             painter.save()
@@ -2303,8 +2339,28 @@ class FXProxyStyle(QProxyStyle):
             )
             painter.restore()
 
+    # Set while the sheet is asked for a cell's rects, which it may ask back.
+    _asking_sheet = False
+
     def subElementRect(self, element, option, widget=None):
-        """Return `element`'s rect; a header's sort arrow follows its label."""
+        """Return `element`'s rect; a header's sort arrow follows its label.
+
+        A cell's text, icon and check box take the sheet's rects: Qt 6.8
+        and older paint a resting row natively, here, without the item's
+        padding, and a highlighted one through the sheet, with it.
+        """
+        if (
+            element in _ITEM_PARTS
+            and widget is not None
+            and not self._asking_sheet
+        ):
+            sheet = widget.style()
+            if sheet is not self and sheet.inherits("QStyleSheetStyle"):
+                self._asking_sheet = True
+                try:
+                    return sheet.subElementRect(element, option, widget)
+                finally:
+                    self._asking_sheet = False
         rect = super().subElementRect(element, option, widget)
         if (
             element != QStyle.SE_HeaderArrow
@@ -2316,8 +2372,10 @@ class FXProxyStyle(QProxyStyle):
         font = QFont(
             widget.font() if widget is not None else QApplication.font()
         )
-        # The sheet's ::section size, which the option's font does not carry.
+        # The sheet's ::section size and weight, which the option's font
+        # does not carry.
         font.setPixelSize(FONT_SIZE - 1)
+        font.setWeight(QFont.Medium)
         label = QFontMetrics(font).horizontalAdvance(option.text)
         if not option.icon.isNull():
             label += _HEADER_ICON + _SORT_GAP
@@ -2331,13 +2389,16 @@ class FXProxyStyle(QProxyStyle):
         )
 
     def pixelMetric(self, metric, option=None, widget=None):
-        """Return `metric`; layouts space one pane gap, list icons 16 px.
+        """Return `metric`; layouts space one pane gap, list icons 16 px,
+        a tree's levels 22 px.
 
         A themed tab's close button widens to the left by the room its glyph
         needs to stand as far in from the pill's edge as the text does.
         """
         if metric in _LAYOUT_GAPS:
             return PANE_GAP
+        if metric == _TREE_INDENTATION:
+            return _TREE_INDENT
         if metric == _LIST_ICON:
             metric = _SMALL_ICON
         size = super().pixelMetric(metric, option, widget)
@@ -2356,7 +2417,7 @@ class FXProxyStyle(QProxyStyle):
         if isinstance(widget, QAbstractItemView):
             widget.scheduleDelayedItemsLayout()
         # The sheet's chevron fills its branch box: a rule per indentation
-        # pads that box in to the 16 px icon size.
+        # pads that box in to the 14 px chevron.
         # ponytail: read at polish; a later setIndentation needs a repolish.
         if isinstance(widget, QTreeView):
             widget.setProperty(INDENT_PROPERTY, widget.indentation())
@@ -2618,10 +2679,11 @@ QMenu::separator {{ margin: 0px; }}
 QMenu::indicator {{ margin-left: 0px; border: none; }}
 QMenu::icon {{ position: relative; top: 0px; left: 0px; bottom: 0px; right: 0px; }}
 /* Native, not none: any other ::item border makes the sheet paint the cell
-   and hide its BackgroundRole. */
-QTableView::item {{ border: native; }}
+   and hide its BackgroundRole. A native border sets a cell's text 1px
+   further in; the margin takes it back. */
+QTableView::item {{ border: native; margin: 0px -1px; }}
 /* A native border grows a list row 1px each side; the margin takes it back. */
-QListView::item {{ border: native; margin: -1px 0px; }}
+QListView::item {{ border: native; margin: -1px; }}
 QMenuBar {{ border: none; padding: 0px; }}
 QSpinBox {{ padding-left: 0px; padding-right: 0px; }}
 QAbstractSpinBox::up-arrow, QAbstractSpinBox::down-arrow {{ background: none; border: none; }}

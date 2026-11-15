@@ -136,7 +136,7 @@ def _icon_rect(row_rect: QRect) -> QRect:
 
     size = 16
     return QRect(
-        row_rect.left() + 6,
+        row_rect.left() + FXThumbnailDelegate.ICON_MARGIN,
         row_rect.top() + (row_rect.height() - size) // 2,
         size,
         size,
@@ -1048,7 +1048,7 @@ def test_thumbnail_less_rows_start_from_the_left_edge(qtbot, decoration):
 
     expected = option.rect.left() + delegate.ICON_MARGIN
     if decoration:
-        expected += delegate.ICON_SIZE + delegate.ICON_MARGIN
+        expected += delegate.ICON_SIZE + delegate._ICON_GAP
     assert delegate._text_left(option, index, False) == expected
     assert delegate._content_left(option, index, False) == expected
 
@@ -1153,5 +1153,5 @@ def test_the_icon_metrics_are_public():
     from fxgui.fxwidgets import FXThumbnailDelegate
 
     assert FXThumbnailDelegate.ICON_SIZE == 16
-    assert FXThumbnailDelegate.ICON_MARGIN == 6
+    assert FXThumbnailDelegate.ICON_MARGIN == 12
     assert FXThumbnailDelegate._ICON_MARGIN == FXThumbnailDelegate.ICON_MARGIN

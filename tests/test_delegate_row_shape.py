@@ -56,6 +56,16 @@ def test_the_focus_ring_closes_only_at_the_row_ends(
     assert image.pixelColor(0, 0) != _BLANK
 
 
+def test_the_focus_outline_is_2_px_inside_the_row(qtbot):
+    image = _paint(qtbot, (True, True))
+    accent = QColor(fxstyle.colors().accent_primary)
+    for y in (0, 1, 28, 29):
+        assert near(image.pixelColor(30, y), accent, 40), y
+    assert near(image.pixelColor(1, 15), accent, 40)
+    assert image.pixelColor(30, 2) == _BLANK
+    assert image.pixelColor(2, 15) == _BLANK
+
+
 def _tree_row(qtbot, text="Row"):
     return delegate_tree(qtbot, [text])
 
