@@ -195,7 +195,13 @@ class FXSingleInstance(QObject):
         if probe.waitForConnected(_PROBE_MS):
             probe.write(len(payload).to_bytes(_HEADER, "big") + payload)
             wait_ms = max(int((deadline - time.monotonic()) * 1000), _PROBE_MS)
-            acked = probe.waitForReadyRead(wait_ms) and bytes(probe.read(1)) == _ACK
+            # A Unix socket sends only once flushed; waiting to read does not.
+            probe.waitForBytesWritten(wait_ms)
+            # The holder answers and hangs up: on Unix the wait can end on the
+            # hang-up with the answer already in, so read what came either way.
+            if not probe.bytesAvailable():
+                probe.waitForReadyRead(wait_ms)
+            acked = bytes(probe.read(1)) == _ACK
             probe.abort()
             return acked
         missing = (
@@ -284,6 +290,7 @@ class FXSingleInstance(QObject):
             # Answered before the slots run: a slot may open a dialog and
             # hold the sender past its deadline.
             connection.write(_ACK)
+            connection.flush()
             connection.disconnectFromServer()
             self._deliver(bytes(received[_HEADER:]))
 
