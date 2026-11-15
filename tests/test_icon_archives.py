@@ -45,10 +45,10 @@ def test_a_found_icon_is_not_looked_for_again(qapp, monkeypatch):
         fxicons.get_icon_path("add", library="material"),
     }
     stats = []
-    stat = os.stat
+    exists = os.path.exists
+    # What fxicons calls; os.stat under it is skipped by Python 3.12 on Windows.
     monkeypatch.setattr(
-        os, "stat", lambda *args, **kwargs: stats.append(args) or stat(
-            *args, **kwargs)
+        os.path, "exists", lambda *args: stats.append(args) or exists(*args)
     )
 
     fxicons.get_icon("star")
