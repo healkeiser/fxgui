@@ -98,9 +98,15 @@ fills a checked button under the pointer, so the click that unchecks it
 shows: it is a step past `state_pressed` by the same floor, and `text`
 reads at 4.5:1 on it. `state_hover_overlay`, `state_pressed_overlay` and
 `state_checked_hover_overlay` are `text` as `#AARRGGBB`, at the least alpha
-whose blend over `surface` stands off it as the opaque fill does. Flat push
-buttons and plain tool buttons wear them, so their states show on a band, a
-card or a tooltip, where an opaque fill can equal the ground.
+whose blend over `surface` stands off it as the opaque fill does, and that
+holds fxgui's own floor on every ground (`surface`, `tooltip`, `frame`,
+`surface_sunken`, `surface_alt`, `well`): 1.2:1 for hover, 1.2² for pressed,
+1.2³ for checked and hovered, whatever the theme's `state_contrast`. A wide
+row can carry a brand's faint fill; a 24 px icon button cannot, so a theme
+that holds its states close keeps its opaque fills exactly as stated while
+its flat buttons still show. Flat push buttons and plain tool buttons wear
+them, so their states show on a band, a card or a tooltip, where an opaque
+fill can equal the ground.
 `fxstyle.colors()` has all four; `QColor(fxstyle.colors().state_hover_overlay)`
 reads the alpha.
 

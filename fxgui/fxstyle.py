@@ -33,7 +33,7 @@ import weakref
 from collections import OrderedDict
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, Dict, Iterable, Optional, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 # Third-party
 from qtpy.QtCore import (
@@ -1010,29 +1010,39 @@ def _visibly_differ(one_hex: str, two_hex: str) -> bool:
     return get_contrast_ratio(one_hex, two_hex) >= 1.1 or delta >= 48
 
 
-def _overlay(ink: str, ground: str, fill: str) -> str:
-    """Return `ink`, see-through, standing off `ground` as `fill` does.
+def _overlay(
+    ink: str, grounds: List[str], fill: str, floor: float = 1.0
+) -> str:
+    """Return `ink`, see-through, standing off its grounds as `fill` does.
 
-    The least alpha, in hundredths up to a half, whose blend over `ground`
-    reaches the contrast `fill` has with it. For a control with no ground
-    of its own: it shows on a band, a card or a tooltip alike, where an
-    opaque fill may equal the ground.
+    The least alpha, in hundredths up to a half, whose blend over the first
+    ground reaches the contrast `fill` has with it, and over every ground
+    at least `floor`. For a control with no ground of its own: it shows on
+    a band, a card or a tooltip alike, where an opaque fill may equal the
+    ground.
 
     Args:
         ink: The colour to see through, as hex.
-        ground: The colour the contrast is measured over, as hex.
-        fill: The opaque fill whose contrast with `ground` to reach.
+        grounds: The colours it is drawn over, as hex; the first is the
+            one `fill` is measured against.
+        fill: The opaque fill whose contrast with the first ground to reach.
+        floor: The least contrast over every ground. Defaults to 1.0.
 
     Returns:
         The colour as ``#AARRGGBB``, which QSS and QColor both read.
     """
-    target = get_contrast_ratio(fill, ground)
+    target = get_contrast_ratio(fill, grounds[0])
     color = QColor(ink)
     for step in range(1, 51):
         # Test the 8-bit alpha Qt paints, so rounding never leaves it short.
         color.setAlpha(round(255 * step / 100))
+        alpha = color.alphaF()
         if get_contrast_ratio(
-                mix(ground, ink, color.alphaF()), ground) >= target:
+            mix(grounds[0], ink, alpha), grounds[0]
+        ) >= target and all(
+            get_contrast_ratio(mix(ground, ink, alpha), ground) >= floor
+            for ground in grounds
+        ):
             break
     return color.name(QColor.NameFormat.HexArgb)
 
@@ -1538,10 +1548,21 @@ def _token_map(theme_name: str) -> Dict[str, str]:
 
     # A flat button has no ground of its own (a band, a card, a tooltip),
     # where an opaque fill can equal the ground: its fills are the text,
-    # see-through, standing off `surface` as the opaque ones do.
-    for state in ("state_hover", "state_pressed", "state_checked_hover"):
+    # see-through, standing off `surface` as the opaque ones do. A 24 px
+    # icon cannot carry the faint fill a wide row can, so each also holds
+    # fxgui's floor on every ground, a floor further per state, whatever
+    # the theme's `state_contrast`; the opaque fills stay as stated.
+    surface = theme_data["surface"]
+    flat_grounds = [surface] + [
+        theme_data.get(key, surface)
+        for key in ("tooltip", "frame", "surface_sunken", "surface_alt", "well")
+    ]
+    for steps, state in enumerate(
+        ("state_hover", "state_pressed", "state_checked_hover"), start=1
+    ):
         tokens[f"@{state}_overlay"] = _overlay(
-            theme_data["text"], theme_data["surface"], theme_data[state])
+            theme_data["text"], flat_grounds, theme_data[state],
+            STATE_MIN_CONTRAST ** steps)
 
     (
         tokens["@primary_button"],

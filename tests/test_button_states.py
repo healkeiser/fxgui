@@ -146,3 +146,60 @@ def test_a_checked_hover_fill_stands_past_the_pressed_fill(theme):
         checked_hover, colors["state_pressed"]) >= fxstyle.state_contrast(
             theme)
     assert fxstyle.get_contrast_ratio(colors["text"], checked_hover) >= 4.5
+
+
+# A brand theme as a studio writes one: its own faint opaque fills, held
+# at no floor of fxgui's, and a raised card one step off the window.
+_BRAND = """
+themes:
+  brand_dark:
+    surface: "#101113"
+    surface_alt: "#0B0C0D"
+    surface_sunken: "#0B0C0D"
+    tooltip: "#191A1D"
+    frame: "#0B0C0D"
+    well: "#101113"
+    text: "#D6D9DD"
+    text_muted: "#A2A7B0"
+    state_hover: "#151618"
+    state_pressed: "#191A1D"
+    state_contrast: 1.0
+  brand_light:
+    surface: "#FFFFFF"
+    surface_alt: "#F7F7F8"
+    surface_sunken: "#F7F7F8"
+    tooltip: "#F3F3F5"
+    frame: "#F7F7F8"
+    well: "#FFFFFF"
+    text: "#2C2D33"
+    text_muted: "#54555B"
+    state_hover: "#F9F9FA"
+    state_pressed: "#F3F3F5"
+    state_contrast: 1.0
+"""
+
+
+@pytest.mark.parametrize("theme", ["brand_dark", "brand_light"])
+def test_a_flat_button_shows_on_a_brand_s_card_at_fxgui_s_floor(
+    qapp, tmp_path, theme
+):
+    path = tmp_path / "brand.yaml"
+    path.write_text(_BRAND, encoding="utf-8")
+    fxstyle.overlay_color_file(str(path))
+    fxstyle.apply_theme(theme, save=False)
+    colors = fxstyle.colors()
+
+    # The brand's opaque fills stay exactly as stated: they are its rows'.
+    stated = fxstyle.get_colors()["themes"][theme]
+    assert _name(colors.state_hover) == _name(stated["state_hover"])
+    assert _name(colors.state_pressed) == _name(stated["state_pressed"])
+    for ground in (colors.surface, colors.tooltip):
+        reached = []
+        for state in STATES:
+            fill = QColor(getattr(colors, f"{state}_overlay"))
+            painted = fxstyle.mix(ground, fill.name(), fill.alphaF())
+            reached.append(fxstyle.get_contrast_ratio(painted, ground))
+        # A 24 px icon cannot carry a faint fill: hover holds 1.2:1, and
+        # pressed and checked+hover each stand further off.
+        assert reached[0] >= fxstyle.STATE_MIN_CONTRAST, (ground, reached)
+        assert reached[0] < reached[1] < reached[2], (ground, reached)
