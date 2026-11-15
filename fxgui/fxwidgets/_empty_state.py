@@ -31,7 +31,7 @@ _TEXT_WIDTH = 384
 # set in code.
 fxstyle.register_widget_style(
     """
-    FXEmptyState QLabel#fxEmptyAction { font-size: 16px; font-weight: 500; }
+    FXEmptyState QLabel#fxEmptyAction { font-size: 16px; font-weight: @emphasis_weight; }
     FXEmptyState QLabel#fxEmptyDetail { font-size: 14px; }
     """
 )

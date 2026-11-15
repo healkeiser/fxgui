@@ -28,7 +28,7 @@ from fxgui.fxwidgets import _tips
 
 def _title(text: str) -> str:
     """Return the markup `tip` gives `text` as its title: medium weight."""
-    return f'<span style="font-weight:500;">{text}</span>'
+    return f'<span style="font-weight:{fxstyle.EMPHASIS_WEIGHT};">{text}</span>'
 
 
 def _strip_markup(html: str) -> str:
@@ -61,7 +61,7 @@ def test_title_only(qtbot):
     # Qt reads the weight as the face's medium, not as bold.
     document = QTextDocument()
     document.setHtml(html)
-    assert document.begin().begin().fragment().charFormat().fontWeight() == 500
+    assert document.begin().begin().fragment().charFormat().fontWeight() == fxstyle.EMPHASIS_WEIGHT
 
 
 def test_title_and_body(qtbot):

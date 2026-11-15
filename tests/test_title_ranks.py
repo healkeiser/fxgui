@@ -34,8 +34,8 @@ def test_each_rank_takes_its_size_and_weight(qtbot, request, where):
     assert card.font().pixelSize() == 18
     assert body.font().pixelSize() == fxstyle.FONT_SIZE
     # Medium, never past it: the ranks are told by their size.
-    assert section.font().weight() == QFont.Medium
-    assert card.font().weight() == QFont.Medium
+    assert section.font().weight() == QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
+    assert card.font().weight() == QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
     assert body.font().weight() == QFont().weight()
 
 

@@ -115,17 +115,17 @@ def test_the_description_font_is_one_step_smaller_in_pixels(qtbot):
 
 
 
-def test_the_delegate_s_type_is_the_body_weight_and_500_only(qtbot):
-    """Title 500; metadata one step, 11 px at 12; badge 10 px at 12, 500."""
+def test_the_delegate_s_type_is_the_body_weight_and_emphasis_only(qtbot):
+    """Title emphasised; metadata one step, 11 px at 12; badge 10 px, emphasised."""
     option = QStyleOptionViewItem()
     font = QFont()
     font.setPixelSize(12)
     option.font = font
     FXThumbnailDelegate._badge_fonts.clear()
-    assert FXThumbnailDelegate._title_font(option).weight() == QFont.Medium
+    assert FXThumbnailDelegate._title_font(option).weight() == QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
     assert FXThumbnailDelegate._description_font(option).pixelSize() == 11
     badge = FXThumbnailDelegate._badge_font(option)
-    assert (badge.pixelSize(), badge.weight()) == (10, QFont.Medium)
+    assert (badge.pixelSize(), badge.weight()) == (10, QFont.Weight(fxstyle.EMPHASIS_WEIGHT))
 def test_every_role_is_claimed_once_from_one_table():
     from fxgui.fxwidgets import _roles
 

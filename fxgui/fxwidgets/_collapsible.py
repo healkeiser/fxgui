@@ -378,6 +378,6 @@ FXCollapsibleWidget QLabel#fx_collapsible_title {
 }
 FXCollapsibleWidget
 QFrame#fx_collapsible_header[expanded="true"] QLabel#fx_collapsible_title {
-    font-weight: 600;
+    font-weight: @emphasis_weight;
 }
 """)

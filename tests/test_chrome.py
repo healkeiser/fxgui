@@ -660,10 +660,10 @@ _FIRST_LEAD = fxstyle.PANE_GAP - fxstyle.PANE_GAP // 2
 
 
 def _text_width(widget, text):
-    """Return `text`'s width in a tab title's font: a step under, medium."""
+    """Return `text`'s width in a tab title's font: a step under, emphasised."""
     shape = QFont(widget.font())
     shape.setPixelSize(fxstyle.FONT_SIZE - 1)
-    shape.setWeight(QFont.Medium)
+    shape.setWeight(QFont.Weight(fxstyle.EMPHASIS_WEIGHT))
     return QFontMetrics(shape).size(Qt.TextShowMnemonic, text).width()
 
 

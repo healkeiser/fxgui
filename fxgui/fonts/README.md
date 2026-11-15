@@ -33,25 +33,27 @@ for source in sorted(Path("fxgui/fonts").glob("*/*.ttf")):
 A grid-fitted file carries `fpgm`, `prep` and `cvt ` tables; an upstream
 download has none.
 
-## Why the roles say `hinting: vertical`
+## Why the roles say `hinting: none` and weight 500
 
-Hinting "none" ignores the instructions above: the file then rasterizes
-exactly like the upstream download. Measured with Qt's Windows font engine
-at 13 px, the share of fully covered ink pixels and the ink mass:
+The roles draw these files unhinted, which rasterizes them exactly like the
+upstream download, and one weight step above the web look. Measured at
+13 px against Edge drawing the same Inter (`@fontsource-variable/inter`),
+light text on `#101113`, Qt 6.11's Windows font engine:
 
-| Face, weight, hinting | Covered | Ink |
-|---|---|---|
-| Inter 400, none | 0.028 | 1162 |
-| Inter 400, vertical | 0.097 | 1289 |
-| Inter 500, none | 0.076 | 1355 |
-| Inter 500, vertical | 0.126 | 1473 |
-| Segoe UI 400, vertical | 0.108 | 1037 |
-| JetBrains Mono 400 (12 px), none | 0.031 | 1025 |
-| JetBrains Mono 400 (12 px), vertical | 0.126 | 1071 |
+| Renderer, weight, hinting | x-height | Ink of one line | Line width |
+|---|---|---|---|
+| Edge 400 | 7 px | 230510 | 370 px |
+| Edge 500 | | 258821 | 374 px |
+| Qt 400, vertical | 8 px | 215507 | |
+| Qt 400, none | 7 px | 197173 | 370 px |
+| Qt 500, none | 7 px | 225494 | 373 px |
+| Qt 600, none | 7 px | 259214 | 377 px |
 
-Vertical hinting is the crispest, and the snapped stems make Inter 400 as
-dark as Inter 500 without hinting, so body text keeps weight 400 and 500
-stays the step above it.
+Vertical hinting rounds Inter's x-height up a pixel at 13 px, so text read
+larger and narrower than the same face in a browser. Unhinted, Qt draws a
+weight as light as the browser draws the weight below it, so the body is
+500 and emphasis 600 (`fxstyle.BODY_WEIGHT`, `fxstyle.EMPHASIS_WEIGHT`).
+The grid-fitting stays in the files for a role that asks for `vertical`.
 
 ## Replacing or updating a face
 

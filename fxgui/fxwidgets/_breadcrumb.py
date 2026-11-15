@@ -44,8 +44,8 @@ fxstyle.register_widget_style(
         padding: 3px 5px;
     }
     /* A push button's medium is the current segment's alone. */
-    QPushButton#fxBreadcrumbSegment { font-weight: 400; }
-    QPushButton#fxBreadcrumbSegment[fxCurrent="true"] { font-weight: 500; }
+    QPushButton#fxBreadcrumbSegment { font-weight: @body_weight; }
+    QPushButton#fxBreadcrumbSegment[fxCurrent="true"] { font-weight: @emphasis_weight; }
     QPushButton#fxBreadcrumbSegment[fxFocusVisible="true"]:focus
     {
         border-color: @accent_primary;
@@ -155,7 +155,7 @@ class _Segment(QPushButton):
         self.setProperty("fxCurrent", current)
         if current:
             font = self.font()
-            font.setWeight(QFont.Medium)
+            font.setWeight(QFont.Weight(fxstyle.EMPHASIS_WEIGHT))
             self.setFont(font)
 
     def navigate(self, _=False) -> None:

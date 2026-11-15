@@ -49,15 +49,16 @@ dcc:
 # "full"). The body role's weight and hinting go on the root font;
 # `fxstyle.font(role=...)` builds any role's QFont.
 #
-#   body: {family: ["Inter"], weight: 500, hinting: "vertical"}
+#   body: {family: ["Inter"], weight: 500, hinting: "none"}
 #
-# fxgui ships Inter and JetBrains Mono, grid-fitted for screens; "vertical"
-# hinting is the one that uses that grid-fitting ("none" ignores it).
+# fxgui ships Inter and JetBrains Mono and draws them unhinted at 500, as a
+# browser draws them at 400: grid-fitting ("vertical") rounds the lowercase
+# a pixel taller at 13 px. See fxgui/fonts/README.md.
 #
 # `ranks` is not a role: it sizes headings marked with
 # `fxstyle.mark_as_title(widget, rank="section")`. Each rank names a pixel
-# size and a weight; left out, "section" is 15 px at 500 and "card" 18 px
-# at 500. A rank named here replaces the built-in one of that name.
+# size and a weight; left out, "section" is 15 px at 600 and "card" 18 px
+# at 600. A rank named here replaces the built-in one of that name.
 #
 #   ranks:
 #     section: {size: 15, weight: 600}
@@ -79,9 +80,9 @@ dcc:
 # role by role, exactly as it may override `feedback:`.
 
 fonts:
-  title: {family: ["Inter"], hinting: vertical}
-  body: {family: ["Inter"], hinting: vertical}
-  mono: {family: ["JetBrains Mono", "Consolas", "Courier New", "monospace"], hinting: vertical}
+  title: {family: ["Inter"], hinting: none}
+  body: {family: ["Inter"], weight: 500, hinting: none}
+  mono: {family: ["JetBrains Mono", "Consolas", "Courier New", "monospace"], weight: 500, hinting: none}
 
 
 # =============================================================================

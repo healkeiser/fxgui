@@ -59,7 +59,7 @@ def test_a_header_is_36_px_with_its_words_12_px_in(qtbot):
 def test_the_header_s_words_are_medium():
     sheet = (Path(fxstyle.__file__).parent / "qss" / "style.qss").read_text()
     section = sheet.split("QHeaderView::section  {", 1)[1].split("}", 1)[0]
-    assert "font-weight: 500" in section
+    assert "font-weight: @emphasis_weight" in section
 
 
 @pytest.mark.parametrize("selected", [False, True])

@@ -566,7 +566,7 @@ QTextEdit#fxOutputLogArea {
 QToolBar {
     border: none;
     background: @surface;
-    font-weight: 500;
+    font-weight: @emphasis_weight;
     border-bottom: 1px solid @border;
     spacing: @pane_gap;
 }
@@ -921,7 +921,7 @@ QTabBar::tab,
 ads--CDockWidgetTab QLabel
 {
     font-size: @font_size_small;
-    font-weight: 500;
+    font-weight: @emphasis_weight;
 }
 
 /* The first pill stands as far off the strip's start as off its top. */
@@ -1488,7 +1488,7 @@ QHeaderView::section  {
     background-color: transparent;
     color: @text_muted;
     font-size: @font_size_small;
-    font-weight: 500;
+    font-weight: @emphasis_weight;
     /* Left in line with a cell's text, which sits 12 px in. */
     padding: 0px @cell_lead;
     min-height: @header_height;
@@ -1548,7 +1548,7 @@ QToolBox::tab:hover {
 }
 
 QToolBox::tab:selected {
-    font-weight: 500;
+    font-weight: @emphasis_weight;
     image: ~icon(chevron-down, icon);
 }
 

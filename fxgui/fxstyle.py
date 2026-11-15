@@ -398,9 +398,11 @@ _HEADER_HEIGHT = 35
 FONT_SIZE = 13
 # The weights text takes, on the CSS scale: body text, unless a theme's
 # `fonts: body` names another, and emphasis (titles, headers, a current
-# segment, a button's label): medium, as nothing in the look is heavier.
-BODY_WEIGHT = 400
-EMPHASIS_WEIGHT = 500
+# segment, a tab's label). Qt draws a weight as light as a browser draws
+# the weight below it (measured against Edge, Inter at 13 px), so these sit
+# one step above the web look's 400 and 500 to read as dark.
+BODY_WEIGHT = 500
+EMPHASIS_WEIGHT = 600
 
 # A dialog's layout: title, body and buttons start `DIALOG_GUTTER` in from
 # the sides, the card's top and bottom stand `DIALOG_EDGE` off, and
@@ -531,18 +533,21 @@ _GENERIC_FONT_FAMILIES = frozenset(
 # Font roles used when the color file declares no `fonts:` section, no
 # value for a role, or an empty one. An empty list means the platform
 # default UI font.
+# No hinting: grid-fitting rounds Inter's x-height up a pixel at 13 px,
+# so text reads larger and narrower than the same face in a browser.
 _DEFAULT_FONTS = {
-    "title": {"family": ["Inter"], "hinting": "vertical"},
-    "body": {"family": ["Inter"], "hinting": "vertical"},
+    "title": {"family": ["Inter"], "hinting": "none"},
+    "body": {"family": ["Inter"], "weight": BODY_WEIGHT, "hinting": "none"},
     "mono": {
         "family": ["JetBrains Mono", "Consolas", "Courier New", "monospace"],
-        "hinting": "vertical",
+        "weight": BODY_WEIGHT,
+        "hinting": "none",
     },
 }
 
 # Title ranks when the color file's `fonts: ranks:` names none: pixel size
 # and weight of a heading marked with `mark_as_title(widget, rank=...)`.
-# Medium, never past it: a rank is told by its size.
+# Emphasis, never past it: a rank is told by its size.
 _DEFAULT_RANKS = {
     "section": {"size": 15, "weight": EMPHASIS_WEIGHT},
     "card": {"size": 18, "weight": EMPHASIS_WEIGHT},
@@ -896,7 +901,7 @@ def font_rank(name: str, theme: Optional[str] = None) -> Tuple[int, int]:
         theme: Theme name. Defaults to the current theme.
 
     Returns:
-        The size in pixels and the weight, e.g. ``(15, 500)``.
+        The size in pixels and the weight, e.g. ``(15, 600)``.
 
     Raises:
         ValueError: If `name` is not "body" nor a rank of the theme.
@@ -1733,6 +1738,8 @@ def _token_map(theme_name: str) -> Dict[str, str]:
             lambda color: all(_visibly_differ(color, view) for view in views))
     tokens["@selection"] = selection
     tokens["@popup_item_pad"] = f"{_POPUP_ITEM_PAD}px"
+    tokens["@body_weight"] = str(BODY_WEIGHT)
+    tokens["@emphasis_weight"] = str(EMPHASIS_WEIGHT)
     # A tree's row rule under its branches: the cells' rule, see-through as
     # theirs is. Qt paints a cell's panel twice, so the cells' 60 % lands
     # twice; the branches' one stroke carries the same total.
@@ -2453,7 +2460,7 @@ class FXProxyStyle(QProxyStyle):
         # The sheet's ::section size and weight, which the option's font
         # does not carry.
         font.setPixelSize(FONT_SIZE - 1)
-        font.setWeight(QFont.Medium)
+        font.setWeight(_WEIGHTS[EMPHASIS_WEIGHT])
         label = QFontMetrics(font).horizontalAdvance(option.text)
         if not option.icon.isNull():
             label += _HEADER_ICON + _SORT_GAP
@@ -2531,10 +2538,10 @@ _BADGE_ROOM = " "
 
 
 def _badge_font() -> QFont:
-    """Return a badge's font: a step under the body size, medium."""
+    """Return a badge's font: a step under the body size, emphasised."""
     shape = font()
     shape.setPixelSize(FONT_SIZE - 1)
-    shape.setWeight(QFont.Medium)
+    shape.setWeight(_WEIGHTS[EMPHASIS_WEIGHT])
     return shape
 
 

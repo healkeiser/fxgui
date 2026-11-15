@@ -49,7 +49,7 @@ fxstyle.register_widget_style(
     }
     FXNotificationBanner QLabel#fxBannerTitle {
         color: @text;
-        font-weight: 500;
+        font-weight: @emphasis_weight;
     }
     FXNotificationBanner QLabel#fxBannerMessage {
         color: @text_muted;
@@ -69,7 +69,7 @@ fxstyle.register_widget_style(
         border: 1px solid @border;
         border-radius: @button_radius;
         padding: 6px 10px;
-        font-weight: 500;
+        font-weight: @emphasis_weight;
     }
     FXNotificationBanner QPushButton#fxBannerAction[fxFocusVisible="true"]:focus {
         border-color: @accent_primary;

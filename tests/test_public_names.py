@@ -33,7 +33,7 @@ def test_font_rank_names_the_ranks_it_knows():
 
 
 def test_the_metric_names_hold_the_look_s_values():
-    assert (fxstyle.BODY_WEIGHT, fxstyle.EMPHASIS_WEIGHT) == (400, 500)
+    assert (fxstyle.BODY_WEIGHT, fxstyle.EMPHASIS_WEIGHT) == (500, 600)
     assert (fxstyle.DIALOG_GUTTER, fxstyle.DIALOG_EDGE) == (20, 16)
     assert fxstyle.DIALOG_GAP == 12
     assert (FXThumbnailDelegate.PILL_HEIGHT,

@@ -655,7 +655,7 @@ def test_a_lone_pane_s_tab_is_a_title_until_a_second_pane_joins(qtbot):
     # the text ink.
     strip = QColor(fxstyle.colors().surface).name()
     assert pixel(window, tab, 5, tab.height() // 2) == strip
-    assert label.font().weight() < QFont.Weight.DemiBold
+    assert label.font().weight() <= QFont.Weight(fxstyle.EMPHASIS_WEIGHT)
     assert label.palette().color(label.foregroundRole()).name() == (
         QColor(fxstyle.colors().text).name())
 
