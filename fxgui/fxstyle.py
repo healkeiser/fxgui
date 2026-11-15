@@ -415,9 +415,12 @@ _GENERIC_FONT_FAMILIES = frozenset(
 # value for a role, or an empty one. An empty list means the platform
 # default UI font.
 _DEFAULT_FONTS = {
-    "title": [],
-    "body": [],
-    "mono": ["Consolas", "Courier New", "monospace"],
+    "title": {"family": ["Inter"], "hinting": "vertical"},
+    "body": {"family": ["Inter"], "hinting": "vertical"},
+    "mono": {
+        "family": ["JetBrains Mono", "Consolas", "Courier New", "monospace"],
+        "hinting": "vertical",
+    },
 }
 
 # Title ranks when the color file's `fonts: ranks:` names none: pixel size
@@ -657,6 +660,23 @@ def get_available_themes() -> list:
 ###### Font Configuration
 
 
+# Faces fxgui ships, each SIL OFL 1.1 (its notice beside it): Inter for body
+# and titles, JetBrains Mono for code, grid-fitted for screens; vertical
+# hinting is what uses that grid-fitting (see fonts/README.md).
+_BUNDLED_FONTS = fxconstants.PACKAGE_ROOT / "fonts"
+_bundled_registered = False
+
+
+def _register_bundled_fonts() -> None:
+    """Put fxgui's own faces in Qt's font database, once a GUI app exists."""
+    global _bundled_registered
+    if _bundled_registered or QGuiApplication.instance() is None:
+        return
+    _bundled_registered = True
+    for path in sorted(_BUNDLED_FONTS.glob("*/*.ttf")):
+        QFontDatabase.addApplicationFont(str(path))
+
+
 def _platform_default_font() -> str:
     """Return the platform's default UI font family."""
     if sys.platform == "win32":
@@ -789,6 +809,7 @@ def _font_family(entries) -> str:
         entries = [entries]
 
     # QFontDatabase needs a QGuiApplication; before one, only the default.
+    _register_bundled_fonts()
     available = (
         set(QFontDatabase.families()) if QGuiApplication.instance() else set()
     )
@@ -3279,7 +3300,8 @@ def font(theme: Optional[str] = None, role: str = "body") -> QFont:
     if family == "monospace":
         result.setStyleHint(QFont.StyleHint.Monospace)
     result.setPixelSize(FONT_SIZE)
-    weight, hinting = _shape(theme, role)
+    # An unknown role is the body's, its weight and hinting included.
+    weight, hinting = _shape(theme, role if role in roles else "body")
     if weight is not None:
         result.setWeight(_WEIGHTS[weight])
     if hinting is not None:

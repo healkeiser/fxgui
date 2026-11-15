@@ -35,8 +35,9 @@ def test_an_off_toggle_thumb_takes_the_theme_s_muted_ink(qtbot, qapp):
     switch.show()
     qtbot.waitExposed(switch)
     image = switch.grab().toImage()
-    height = switch.height()
-    centre = QPoint(3 + (height - 6) // 2, height // 2)
+    # The off thumb's centre, from the track the switch draws it in.
+    box = switch.track_rect()
+    centre = QPoint(box.left() + box.height() // 2, box.center().y())
     assert image.pixelColor(centre).name() == QColor(
         fxstyle.colors().text_muted
     ).name()

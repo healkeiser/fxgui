@@ -86,7 +86,7 @@ where = ["."]
 include = ["fxgui*"]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml", "*.svg", "*.png", "*.qss", "*.zip", "py.typed"]
+"*" = ["*.yaml", "*.svg", "*.png", "*.qss", "*.zip", "py.typed", "fonts/*/*.ttf", "fonts/*/OFL.txt"]
 
 [tool.setuptools.exclude-package-data]
 "*" = [
@@ -98,11 +98,9 @@ include = ["fxgui*"]
     "*.scss",
     "*.woff",
     "*.woff2",
-    "*.ttf",
     "*.eot",
     "*.otf",
     "*.json",
-    "*.txt",
     "*.md",
     ".gitignore",
     ".gitattributes",

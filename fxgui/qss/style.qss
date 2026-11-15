@@ -599,7 +599,6 @@ QPushButton
        fxstyle from the theme's font. */
     padding: @button_padding;
     border-radius: @button_radius;
-    font-weight: 500;
 }
 
 QPushButton:disabled

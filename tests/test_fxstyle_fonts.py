@@ -1,9 +1,10 @@
 """Tests for the font roles in fxstyle.
 
-fxgui ships no typefaces of its own, so these cover the mechanism: the
-`fonts:` mapping is read from the color file, every way of leaving a role
-unset falls back to the font the module emitted before roles existed, and
-a consumer can register its own files and name them.
+fxgui ships Inter (body and titles) and JetBrains Mono (code), named in its
+default roles with vertical hinting. These cover the mechanism: the
+`fonts:` mapping is read from the color file, a role left out takes the
+default, an empty role takes the platform font, and a consumer can register
+its own files and name them.
 
 The offscreen platform has an empty *system* font database on Windows, so
 tests needing two real families skip rather than assert on nothing.
@@ -36,16 +37,14 @@ def _fonts(theme="dark"):
 ###### Fallback to the pre-roles behaviour
 
 
-def test_shipped_color_file_emits_the_platform_font(qapp):
-    # The block this replaced emitted exactly this for `*`.
-    default = f'"{fxstyle._platform_default_font()}"'
-    assert _fonts()["body"] == default
-    assert _fonts()["title"] == default
+def test_shipped_color_file_emits_the_bundled_faces(qapp):
+    assert _fonts()["body"] == '"Inter"'
+    assert _fonts()["title"] == '"Inter"'
+    assert _fonts()["mono"] == '"JetBrains Mono"'
 
 
 def test_the_body_family_is_the_root_font_not_a_sheet_rule(qapp):
-    default = fxstyle._platform_default_font()
-    assert fxstyle.font("dark").family() == default
+    assert fxstyle.font("dark").family() == "Inter"
     assert fxstyle.font("dark").pixelSize() == fxstyle.FONT_SIZE
     assert "@font_body" not in fxstyle._font_stylesheet()
 
@@ -57,19 +56,17 @@ def test_missing_fonts_section_falls_back(qapp, monkeypatch):
         if key != "fonts"
     }
     monkeypatch.setattr(fxstyle, "_colors", colors)
-    default = f'"{fxstyle._platform_default_font()}"'
     fonts = _fonts()
-    assert fonts["title"] == default
-    assert fonts["body"] == default
-    # Mono has no platform equivalent, so its default lives in the module
-    # and the log area rule keeps the stack it always had.
-    assert fonts["mono"].endswith("monospace")
+    # The module's defaults: the faces fxgui ships.
+    assert fonts["title"] == '"Inter"'
+    assert fonts["body"] == '"Inter"'
+    assert fonts["mono"] == '"JetBrains Mono"'
 
 
 def test_missing_role_falls_back(qapp, monkeypatch):
     _patch_color_file(monkeypatch, fonts={"body": ["Courier New"]})
-    default = f'"{fxstyle._platform_default_font()}"'
-    assert _fonts()["title"] == default
+    # A role left out takes the module's default, not the platform font.
+    assert _fonts()["title"] == '"Inter"'
 
 
 @pytest.mark.parametrize("empty", [[], "", None])
@@ -289,8 +286,8 @@ def test_font_takes_a_role(qapp, monkeypatch):
     fixed = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
     assert mono.families() == [fixed.family()]
     assert mono.styleHint() == QFont.StyleHint.Monospace
-    assert fxstyle.font("dark", role="title").family() == (
-        fxstyle._platform_default_font())
+    # The title role, left out, takes the module's default face.
+    assert fxstyle.font("dark", role="title").family() == "Inter"
 
 
 def test_a_face_names_its_weight_and_hinting(qapp, monkeypatch):
@@ -300,14 +297,15 @@ def test_a_face_names_its_weight_and_hinting(qapp, monkeypatch):
     body = fxstyle.font("dark")
     assert body.weight() == QFont.Medium
     assert body.hintingPreference() == QFont.PreferNoHinting
-    assert _fonts()["body"] == (
-        f'"{fxstyle._platform_default_font()}"')
+    # fxgui ships Inter, so the named family resolves.
+    assert _fonts()["body"] == '"Inter"'
 
 
 def test_a_face_without_weight_keeps_the_default(qapp):
     body = fxstyle.font("dark")
     assert body.weight() == QFont().weight()
-    assert body.hintingPreference() == QFont().hintingPreference()
+    # The default roles hint vertically: what uses the faces' grid-fitting.
+    assert body.hintingPreference() == QFont.PreferVerticalHinting
 
 
 def test_an_unknown_weight_is_refused(qapp, monkeypatch):
@@ -346,3 +344,32 @@ def test_the_body_weight_reaches_a_host_window(qtbot, monkeypatch):
     root.layout().addWidget(page)
     QApplication.processEvents()
     assert late.font().weight() == QFont.Medium
+
+
+def test_the_bundled_faces_are_grid_fitted_and_licensed():
+    import struct
+
+    from fxgui import fxconstants
+
+    def tables(path):
+        data = path.read_bytes()
+        count = struct.unpack(">H", data[4:6])[0]
+        return {
+            data[12 + 16 * index:16 + 16 * index].decode("latin1")
+            for index in range(count)
+        }
+
+    faces = sorted((fxconstants.PACKAGE_ROOT / "fonts").glob("*/*.ttf"))
+    assert {face.parent.name for face in faces} == {"inter", "jetbrains_mono"}
+    for face in faces:
+        # ttfautohint's instructions; an upstream download carries none.
+        assert {"fpgm", "prep", "cvt "} <= tables(face), face
+        assert (face.parent / "OFL.txt").is_file(), face
+
+
+def test_a_bundled_face_resolves_once_an_app_exists(qapp):
+    from qtpy.QtGui import QFontDatabase
+
+    fxstyle.font("dark")
+    families = set(QFontDatabase.families())
+    assert {"Inter", "JetBrains Mono"} <= families
