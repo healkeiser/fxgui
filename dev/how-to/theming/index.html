@@ -2668,7 +2668,7 @@ for example when applying <code>load_saved_theme()</code> at startup.
 <tr>
 <td>Font</td>
 <td><code>fxstyle.font()</code></td>
-<td>The body family of the theme at <code>fxstyle.FONT_SIZE</code> (13 px), weight <code>fxstyle.BODY_WEIGHT</code> (400)</td>
+<td>The body family of the theme at <code>fxstyle.FONT_SIZE</code> (13 px), weight <code>fxstyle.BODY_WEIGHT</code> (500), no hinting</td>
 </tr>
 </tbody>
 </table>
@@ -2868,18 +2868,18 @@ the numbers, so it follows fxgui when the look moves.</p>
 <tbody>
 <tr>
 <td><code>fxstyle.font_rank(name)</code></td>
-<td><code>(13, 400)</code> for <code>"body"</code>, <code>(15, 500)</code> for <code>"section"</code>, <code>(18, 500)</code> for <code>"card"</code></td>
+<td><code>(13, 500)</code> for <code>"body"</code>, <code>(15, 600)</code> for <code>"section"</code>, <code>(18, 600)</code> for <code>"card"</code></td>
 <td>A text rank's pixel size and weight in the current theme (or <code>theme=</code>); an unknown rank raises <code>ValueError</code></td>
 </tr>
 <tr>
 <td><code>fxstyle.BODY_WEIGHT</code></td>
-<td>400</td>
-<td>Body text's weight</td>
+<td>500</td>
+<td>Body text's weight. Qt draws a weight as light as a browser draws the one below, so 500 here reads as the web look's 400</td>
 </tr>
 <tr>
 <td><code>fxstyle.EMPHASIS_WEIGHT</code></td>
-<td>500</td>
-<td>The one step above: titles, a tooltip's title, a selected or emphasised word</td>
+<td>600</td>
+<td>The one step above (the web look's 500): titles, a tooltip's title, a selected or emphasised word</td>
 </tr>
 <tr>
 <td><code>fxstyle.DIALOG_GUTTER</code></td>
