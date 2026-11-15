@@ -3,7 +3,7 @@
 # Built-in
 import time
 from bisect import bisect_left, bisect_right
-from typing import Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 # Third-party
 from qtpy.QtCore import QLineF, QPoint, QPointF, QRect, Qt, QTimer, Signal
@@ -151,6 +151,9 @@ class FXTimelineSlider(QWidget):
     KEYFRAME_TOKEN = "feedback_warning_foreground"
     # Between the transport's groups, three times a button's own gap.
     GROUP_GAP = 6
+    # The track's inset at each end, in px: a mark on the first or last
+    # frame would otherwise be cut in half. `tick_positions` counts it.
+    EDGE_PAD = 6
 
     def __init__(
         self,
@@ -362,8 +365,7 @@ class FXTimelineSlider(QWidget):
                 Qt.AlignRight | Qt.AlignVCenter,
             )
             root.addLayout(controls_row)
-            if show_track:
-                self.setMinimumHeight(60)
+            # No floor of its own: the track's 24 px and the row decide.
         else:
             main_layout = QHBoxLayout(self)
             main_layout.setContentsMargins(0, 0, 0, 0)
@@ -669,6 +671,60 @@ class FXTimelineSlider(QWidget):
         if self._regions.pop(name, None) is not None:
             self._track_widget.update()
 
+    def marker_frames(self, name: str) -> Set[int]:
+        """Return the frames of the marker layer `name`, empty if it has none."""
+        layer = self._marker_layers.get(name)
+        return set(layer["frames"]) if layer else set()
+
+    def region(self, name: str) -> Optional[Tuple[int, int]]:
+        """Return the region `name` as `(start, end)`, or None if it is unset."""
+        region = self._regions.get(name)
+        return (region["start"], region["end"]) if region else None
+
+    def tick_positions(
+        self, width: int, first: int, last: int
+    ) -> Dict[bool, List[int]]:
+        """Return where the track draws its ticks, for a lane that lines up.
+
+        Args:
+            width: The track's width in pixels, `EDGE_PAD` on each side
+                included.
+            first: The first frame in view.
+            last: The last frame in view.
+
+        Returns:
+            The x of each tick, keyed by whether it is a major one.
+        """
+        lines = self._track_widget._ticks(width, 0, 0, first, last)
+        return {major: [int(line.x1()) for line in drawn]
+                for major, drawn in lines.items()}
+
+    # The transport's widgets, for a consumer's tests and its own layout.
+    @property
+    def mark_in_button(self) -> QPushButton:
+        """The button that sets the loop's in point."""
+        return self._mark_in_btn
+
+    @property
+    def mark_out_button(self) -> QPushButton:
+        """The button that sets the loop's out point."""
+        return self._mark_out_btn
+
+    @property
+    def go_to_start_button(self) -> QPushButton:
+        """The button that jumps to the first frame."""
+        return self._goto_start_btn
+
+    @property
+    def go_to_end_button(self) -> QPushButton:
+        """The button that jumps to the last frame."""
+        return self._goto_end_btn
+
+    @property
+    def frame_field(self) -> QSpinBox:
+        """The field showing, and taking, the current frame."""
+        return self._spinbox
+
     def set_loop_region(
         self,
         start: Optional[int],
@@ -853,9 +909,8 @@ class FXTimelineSlider(QWidget):
 class _TimelineTrack(QWidget):
     """Internal widget for drawing the timeline track."""
 
-    # Horizontal inset for the frame<->x mapping: marks at the first/last
-    # frame would otherwise be cut in half at the widget edges.
-    EDGE_PAD = 6
+    # Horizontal inset for the frame<->x mapping, the timeline's own.
+    EDGE_PAD = FXTimelineSlider.EDGE_PAD
 
     def __init__(self, timeline: FXTimelineSlider):
         super().__init__(timeline)

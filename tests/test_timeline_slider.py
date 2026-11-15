@@ -664,5 +664,37 @@ def test_a_hidden_track_lets_a_player_shrink_to_its_controls(qtbot, qapp):
     assert timeline.sizeHint().height() < 60
 
     default = _timeline(qtbot, controls_position="below")
-    assert default.minimumHeight() == 60
     assert default._track_widget.isVisible()
+    # No fixed floor: the shown track's own height and the row decide.
+    assert default.minimumHeight() < 60
+    track = default._track_widget.minimumHeight()
+    assert default.minimumSizeHint().height() >= track
+    assert (
+        default.minimumSizeHint().height()
+        > timeline.minimumSizeHint().height()
+    )
+
+
+def test_a_test_reads_the_timeline_through_public_names(qtbot, qapp):
+    timeline = _timeline(qtbot, controls_position="below")
+    timeline.set_marker_frames("cached", [1001, 1003])
+    timeline.set_region("loop", 12, 4)
+
+    assert timeline.marker_frames("cached") == {1001, 1003}
+    assert timeline.marker_frames("absent") == set()
+    assert timeline.region("loop") == (4, 12)
+    timeline.clear_region("loop")
+    assert timeline.region("loop") is None
+
+    # The ticks a lane must line up with are the ones the track draws.
+    drawn = timeline._track_widget._ticks(900, 0, 6, 1001, 1150)
+    ticks = timeline.tick_positions(900, 1001, 1150)
+    for major in (True, False):
+        assert ticks[major] == [int(line.x1()) for line in drawn[major]]
+    assert ticks[True][0] == timeline.EDGE_PAD
+
+    assert timeline.mark_in_button is timeline._mark_in_btn
+    assert timeline.mark_out_button is timeline._mark_out_btn
+    assert timeline.go_to_start_button is timeline._goto_start_btn
+    assert timeline.go_to_end_button is timeline._goto_end_btn
+    assert timeline.frame_field is timeline._spinbox

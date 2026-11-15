@@ -133,7 +133,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXTagInput` | Field that turns what you type into `FXTagChip`s |
 | `FXThreadLine` | Line over a comment thread, from the comment's face into each reply's |
 | `FXThumbnailDelegate` | Item delegate with thumbnails, status dots, labels and stars |
-| `FXTimelineSlider` | Timeline with playback, keyframes, markers and a loop region |
+| `FXTimelineSlider` | Timeline with playback, keyframes, markers and a loop region. `show_track=False` hides the track; `marker_frames(name)`, `region(name)` and `tick_positions(width, first, last)` read back what it draws, and `mark_in_button`, `mark_out_button`, `go_to_start_button`, `go_to_end_button` and `frame_field` name its widgets |
 | `FXToggleSwitch` | On/off switch that slides |
 | `FXValidatedLineEdit` | Line edit that shakes and flashes when its validator refuses a key |
 
