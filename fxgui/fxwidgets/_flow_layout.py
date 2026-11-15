@@ -56,9 +56,10 @@ class FXFlowLayout(QLayout):
             return self._items.pop(index)
         return None
 
-    def expandingDirections(self) -> Qt.Orientations:
+    def expandingDirections(self) -> Qt.Orientation:
         """Grow in neither direction: the width decides the height."""
-        return Qt.Orientations(0)
+        # Qt.Orientations is PySide6's name only; PyQt6 has no such class.
+        return Qt.Orientation(0)
 
     def hasHeightForWidth(self) -> bool:
         """Say the height follows the width, as a wrap does."""
