@@ -58,6 +58,10 @@ from qtpy.QtWidgets import (
 from fxgui import _compat, fxconstants, fxicons, fxstyle, fxutils
 from fxgui.fxwidgets import _roles
 
+# On a view whose rows this delegate rules itself, under the indentation
+# too: the sheet's branch rule stands down there.
+RULES_ROWS_PROPERTY = "fxRulesRows"
+
 _FALLBACK_THUMBNAIL = fxconstants.IMAGES_ROOT / "missing_image.png"
 
 # A thumbnail's mtime is trusted this long before the share is asked again.
@@ -589,6 +593,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _INDICATOR_SPACING = 8
     _DOT_SIZE = 8
     _LABEL_PADDING = 4
+    # A neutral tag is a small badge: 20 px tall, 6 px clear of its words,
+    # centred on the band it shares with the dot.
+    # It rules its rows itself, under the indentation too: fxstyle marks a
+    # view showing it, so the sheet's branch rule stands down there.
+    _FX_RULES_ITS_ROWS = True
+    _NEUTRAL_HEIGHT = 20
+    _NEUTRAL_PADDING = 6
     # The status label's coloured mark, and its gap to the words.
     _LABEL_MARK = 8
     _LABEL_ICON = 14
@@ -622,6 +633,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        # It rules its rows itself, full width: the sheet's branch rule
+        # stands down on its view.
+        if isinstance(parent, QAbstractItemView):
+            parent.setProperty(RULES_ROWS_PROPERTY, True)
         #: Whether rows show their thumbnail.
         self.show_thumbnail = True
         #: Whether rows show their status dot.
@@ -968,7 +983,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         )
         if neutral:
             icon_width = self._LABEL_ICON + self._LABEL_GAP if icon else 0
-            return 2 * self._LABEL_PADDING + icon_width + advance
+            return 2 * self._NEUTRAL_PADDING + icon_width + advance
         return self._mark_size(icon) + self._LABEL_GAP + advance
 
     def _indicator_metrics(
@@ -1238,17 +1253,19 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             painter.setPen(QPen(QColor(theme.border_light), 1))
             painter.setBrush(Qt.NoBrush)
             # The half-pixel inset keeps the 1 px line inside the width.
+            pill_top = top + (
+                self._INDICATOR_BAND_HEIGHT - self._NEUTRAL_HEIGHT) / 2
             painter.drawRoundedRect(
                 QRectF(
                     label_x + 0.5,
-                    top + 0.5,
+                    pill_top + 0.5,
                     label_width - 1,
-                    self._INDICATOR_BAND_HEIGHT - 1,
+                    self._NEUTRAL_HEIGHT - 1,
                 ),
                 fxstyle.SMALL_RADIUS,
                 fxstyle.SMALL_RADIUS,
             )
-            x = label_x + self._LABEL_PADDING
+            x = label_x + self._NEUTRAL_PADDING
             if icon:
                 side = self._LABEL_ICON
                 _mark(icon, "text_muted").paint(
@@ -1268,7 +1285,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                     QRect(
                         x,
                         top,
-                        label_x + label_width - self._LABEL_PADDING - x,
+                        label_x + label_width - self._NEUTRAL_PADDING - x,
                         self._INDICATOR_BAND_HEIGHT,
                     ),
                     Qt.AlignVCenter | Qt.AlignLeft,
@@ -2115,6 +2132,15 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         index: QModelIndex,
     ) -> None:
         """Paint the cell: its fill, rule, content and focus ring."""
+        view = option.widget
+        if isinstance(view, QAbstractItemView) and not view.property(
+            RULES_ROWS_PROPERTY
+        ):
+            # Set once, not mid-paint: the sheet re-reads it on the repolish.
+            view.setProperty(RULES_ROWS_PROPERTY, True)
+            QTimer.singleShot(
+                0, lambda: _compat.is_valid(view) and fxutils.repolish(view)
+            )
         opt = self._init(option, index)
         if not self.paint_selection:
             opt.state &= ~QStyle.State_Selected

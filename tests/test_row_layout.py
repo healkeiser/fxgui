@@ -206,3 +206,33 @@ def test_an_icon_grid_draws_no_rule(qtbot):
     assert not _ruled(listing)
     listing.setViewMode(QListView.ListMode)
     assert _ruled(listing)
+
+
+def test_a_tree_s_row_rule_runs_under_its_indentation_too(qtbot):
+    from qtpy.QtWidgets import QWidget
+    from qtpy.QtWidgets import QTreeWidget, QTreeWidgetItem
+
+    from fxgui import fxstyle
+
+    host = QWidget()
+    qtbot.addWidget(host)
+    fxstyle.register_themed_root(host)
+    tree = QTreeWidget(host)
+    tree.setHeaderHidden(True)
+    parent = QTreeWidgetItem(tree, ["seq010"])
+    child = QTreeWidgetItem(parent, ["sh0010"])
+    QTreeWidgetItem(parent, ["sh0020"])
+    tree.expandAll()
+    tree.resize(300, 200)
+    host.resize(300, 200)
+    host.show()
+    qtbot.waitExposed(host)
+
+    image = tree.viewport().grab().toImage()
+    cell = tree.visualItemRect(child)
+    bottom = cell.bottom()
+    under_cell = image.pixelColor(cell.left() + 20, bottom).name()
+    under_indent = image.pixelColor(2, bottom).name()
+    # One line, edge to edge: the same ink under the indent as under the cell.
+    assert under_indent == under_cell
+    assert under_indent != image.pixelColor(2, bottom - 4).name()

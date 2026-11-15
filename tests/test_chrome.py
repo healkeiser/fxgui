@@ -97,10 +97,15 @@ def test_a_tree_draws_chevrons_and_no_branch_lines(qtbot, theme):
     for item in (opened, closed):
         inks = _pixels(image, _branch(tree, item))
         assert min(_distance(ink, colors.icon) for ink in inks) <= 24, inks
-    # A leaf, a child and the column under an open parent are bare.
+    # A leaf, a child and the column under an open parent are bare, but for
+    # the row's rule, which runs on under the indentation along the bottom.
     sunken = colors.surface_sunken.lower()
     for item in (leaf, opened.child(0), opened.child(2)):
-        assert _pixels(image, _branch(tree, item)) == {sunken}, item.text(0)
+        branch = _branch(tree, item)
+        body = branch.adjusted(0, 0, 0, -1)
+        assert _pixels(image, body) == {sunken}, item.text(0)
+        rule = _pixels(image, branch.adjusted(0, branch.height() - 1, 0, 0))
+        assert len(rule) == 1 and rule != {sunken}, item.text(0)
     # Open and closed are different marks.
     assert image.copy(_branch(tree, opened)) != image.copy(
         _branch(tree, closed)

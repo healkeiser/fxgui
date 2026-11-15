@@ -1674,6 +1674,12 @@ def _token_map(theme_name: str) -> Dict[str, str]:
             accent_primary,
             lambda color: all(_visibly_differ(color, view) for view in views))
     tokens["@selection"] = selection
+    # A tree's row rule under its branches: the cells' rule, see-through as
+    # theirs is. Qt paints a cell's panel twice, so the cells' 60 % lands
+    # twice; the branches' one stroke carries the same total.
+    branch_rule = QColor(theme_data.get("border", theme_data["surface"]))
+    branch_rule.setAlphaF(1 - (1 - _TABLE_RULE_ALPHA) ** 2)
+    tokens["@branch_rule"] = branch_rule.name(QColor.NameFormat.HexArgb)
     tokens["@selection_border"] = (
         theme_data.get("selection_border") or accent_primary)
     if selection == accent_primary:
@@ -2250,6 +2256,19 @@ _CLOSE_WIDTH = QStyle.PM_TabCloseIndicatorWidth
 # How long after a tooltip shows the next target's shows at once, in ms.
 _TIP_AWAKE = QStyle.SH_ToolTip_FallAsleepDelay
 _TIP_AWAKE_MS = 300
+
+
+def _mark_self_ruled(view: QAbstractItemView) -> None:
+    """Mark a view whose delegate rules its own rows, before it paints.
+
+    The sheet's branch rule then stands down there; a delegate set after
+    the view shows marks the view itself on its first paint.
+    """
+    if getattr(view.itemDelegate(), "_FX_RULES_ITS_ROWS", False) and not (
+        view.property("fxRulesRows")
+    ):
+        view.setProperty("fxRulesRows", True)
+        fxutils.repolish(view)
 
 
 def _ruled(view: Optional[QWidget]) -> bool:
@@ -3190,6 +3209,7 @@ class _FocusVisibility(QObject):
                 _fade_in(watched, WINDOW_FADE_MS)
             elif isinstance(watched, QAbstractItemView):
                 _adopt_proxy_style(watched)
+                _mark_self_ruled(watched)
                 _ViewportCorners.round(watched)
                 if isinstance(watched, QHeaderView):
                     _ResizeMark.watch(watched)

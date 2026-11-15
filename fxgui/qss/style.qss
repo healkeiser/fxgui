@@ -1080,8 +1080,18 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
 /* Use show-decoration-selected: 1 so the entire row gets consistent
    highlighting. Branch uses @surface_sunken to match item background
    (Qt ignores 'transparent' for branch selection/hover painting). */
+/* The row rule runs on under the indentation, so a row reads as one line;
+   a view that rules its own rows (the thumbnail delegate's), a nav list and
+   a popup's list draw none here. */
 QTreeView::branch {
     background: @surface_sunken;
+    border-bottom: 1px solid @branch_rule;
+}
+
+QTreeView[fxRulesRows="true"]::branch,
+QTreeView[fxNav="true"]::branch,
+QTreeView[fxPopup="true"]::branch {
+    border-bottom: none;
 }
 
 /* Override branch background to stay neutral during selection/hover

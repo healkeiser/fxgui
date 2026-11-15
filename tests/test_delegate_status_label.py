@@ -80,7 +80,7 @@ def test_a_label_with_no_colour_role_is_a_neutral_tag(qtbot):
     m = delegate._indicator_metrics(index, option)
 
     assert m.label_width == (
-        2 * delegate._LABEL_PADDING + _advance(delegate, option, "READY")
+        2 * delegate._NEUTRAL_PADDING + _advance(delegate, option, "READY")
     )
     assert not m.label_color.isValid()
     assert m.footprint == delegate._INDICATOR_RIGHT_MARGIN + m.label_width + 1
