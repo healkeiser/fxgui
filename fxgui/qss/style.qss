@@ -1176,7 +1176,7 @@ QTreeView::item:selected:hover {
    as specifically. */
 QComboBox QAbstractItemView::item,
 QAbstractItemView[fxPopup="true"]::item {
-    padding: 6px 8px;
+    padding: 6px @popup_item_pad;
     min-height: @line_box;
     max-height: @line_box;
 }
@@ -1196,7 +1196,7 @@ QAbstractItemView[fxPopup="true"]::item:selected:active {
     color: @text;
     background: @state_hover;
     /* A popup row is a menu's: no list text step. */
-    padding-left: 8px;
+    padding-left: @popup_item_pad;
 }
 
 /* A navigation list (mark_as_nav): 28 px chips at the small radius, set

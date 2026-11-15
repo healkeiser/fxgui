@@ -369,6 +369,9 @@ STRONG_STEP = 0.6
 # ponytail: measured on 6.5.3, 6.11.1 and 6.12.0 only; move the bound if a
 # version between them measures otherwise.
 _SPIN_BASE = 4 if _compat.QT_VERSION < (6, 6) else 7
+# A popup row's side padding: Qt 6.8 and older paint a resting row without
+# it and a highlighted one with it, so there both keep Qt's own position.
+_POPUP_ITEM_PAD = 8 if _compat.QT_VERSION >= (6, 9) else 0
 _SPIN_LINE_FLOOR = 14
 # A field's padding and border, top and bottom together, in style.qss.
 _FIELD_BOX = 10
@@ -1674,6 +1677,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
             accent_primary,
             lambda color: all(_visibly_differ(color, view) for view in views))
     tokens["@selection"] = selection
+    tokens["@popup_item_pad"] = f"{_POPUP_ITEM_PAD}px"
     # A tree's row rule under its branches: the cells' rule, see-through as
     # theirs is. Qt paints a cell's panel twice, so the cells' 60 % lands
     # twice; the branches' one stroke carries the same total.
