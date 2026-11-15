@@ -68,3 +68,24 @@ def test_importing_fxgui_defers_what_only_some_callers_need():
         timeout=120,
     )
     assert result.stdout.strip() == "[]", result.stdout + result.stderr
+
+
+def test_no_manifest_rule_drops_the_bundled_faces():
+    """The release builds the wheel from the sdist, so a MANIFEST.in
+    global-exclude matching a face drops it from both."""
+    import fnmatch
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    patterns = [
+        line.split(None, 1)[1].strip()
+        for line in (root / "MANIFEST.in").read_text().splitlines()
+        if line.startswith("global-exclude ")
+    ]
+    faces = sorted((root / "fxgui" / "fonts").glob("*/*"))
+    assert faces
+    for face in faces:
+        if face.name == "README.md":
+            continue
+        dropped = [p for p in patterns if fnmatch.fnmatch(face.name, p)]
+        assert not dropped, (face.name, dropped)

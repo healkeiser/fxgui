@@ -73,8 +73,6 @@ global-exclude *.less
 global-exclude *.scss
 global-exclude *.woff
 global-exclude *.woff2
-global-exclude *.ttf
 global-exclude *.eot
 global-exclude *.otf
 global-exclude *.json
-global-exclude *.txt
