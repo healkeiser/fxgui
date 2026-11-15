@@ -1,10 +1,10 @@
-/* A progress bar is the slider's groove: a 4 px pill, the done part the
+/* A progress bar is a 6 px pill, the done part the
    accent. Its text is off; a caller that wants it turns it back on. */
 QProgressBar
 {
     qproperty-textVisible: false;
     border: none;
-    border-radius: 2px;
+    border-radius: 3px;
     padding: 0px;
     background: @control_edge;
 }
@@ -12,17 +12,17 @@ QProgressBar
 /* By property: the :horizontal state does not reach the widget's size. */
 QProgressBar[orientation="1"]
 {
-    max-height: 4px;
+    max-height: 6px;
 }
 
 QProgressBar[orientation="2"]
 {
-    max-width: 4px;
+    max-width: 6px;
 }
 
 QProgressBar::chunk
 {
-    border-radius: 2px;
+    border-radius: 3px;
     background-color: @accent_primary;
 }
 
