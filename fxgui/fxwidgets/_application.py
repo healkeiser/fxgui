@@ -1,5 +1,8 @@
 """Custom QApplication."""
 
+# Built-in
+from typing import Any
+
 # Third-party
 from qtpy.QtWidgets import QApplication
 
@@ -29,7 +32,7 @@ class FXApplication(QApplication):
             return existing
         return super().__new__(cls)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         if not getattr(self, "_fx_initialized", False):
             if not args:
                 # PyQt's QApplication requires argv positionally; PySide

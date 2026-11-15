@@ -60,3 +60,15 @@ def test_a_misspelled_fxgui_attribute_is_a_type_error(tmp_path):
     )
     assert re.search(r'Revealed type is "(builtins\.)?str"', report), report
     assert 'has no attribute "no_such_name"' in report, report
+
+
+def test_the_application_is_built_in_strict_code_without_an_ignore(tmp_path):
+    report = _mypy(
+        tmp_path,
+        "# mypy: disallow-untyped-calls\n"
+        "import sys\n"
+        "from fxgui.fxwidgets import FXApplication\n"
+        "FXApplication(sys.argv)\n",
+    )
+    assert "no-untyped-call" not in report, report
+    assert "Success" in report, report
