@@ -154,6 +154,12 @@ __all__ = [
     "CARD_RADIUS",
     "SMALL_RADIUS",
     "FONT_SIZE",
+    "BODY_WEIGHT",
+    "EMPHASIS_WEIGHT",
+    "DIALOG_GUTTER",
+    "DIALOG_EDGE",
+    "DIALOG_GAP",
+    "font_rank",
     "ROW_SIZES",
     "ROOT_PROPERTY",
     "THIN_SCROLL_PROPERTY",
@@ -390,6 +396,18 @@ _HEADER_HEIGHT = 35
 
 # The body text size, in pixels, of every themed root.
 FONT_SIZE = 13
+# The weights text takes, on the CSS scale: body text, unless a theme's
+# `fonts: body` names another, and emphasis (titles, headers, a current
+# segment, a button's label): medium, as nothing in the look is heavier.
+BODY_WEIGHT = 400
+EMPHASIS_WEIGHT = 500
+
+# A dialog's layout: title, body and buttons start `DIALOG_GUTTER` in from
+# the sides, the card's top and bottom stand `DIALOG_EDGE` off, and
+# `DIALOG_GAP` parts title, body and buttons.
+DIALOG_GUTTER = 20
+DIALOG_EDGE = 16
+DIALOG_GAP = 12
 
 # The five durations every animation picks from, in ms: a state flick, a
 # hover or a leave, a control or a fold, a page arriving, a spring settling.
@@ -526,8 +544,8 @@ _DEFAULT_FONTS = {
 # and weight of a heading marked with `mark_as_title(widget, rank=...)`.
 # Medium, never past it: a rank is told by its size.
 _DEFAULT_RANKS = {
-    "section": {"size": 15, "weight": 500},
-    "card": {"size": 18, "weight": 500},
+    "section": {"size": 15, "weight": EMPHASIS_WEIGHT},
+    "card": {"size": 18, "weight": EMPHASIS_WEIGHT},
 }
 
 # A face's `weight:` in the color file, on the CSS scale QSS also reads.
@@ -864,6 +882,43 @@ def _font_config(theme_name: str) -> dict:
 def _ranks(theme_name: str) -> Dict[str, dict]:
     """Return a theme's title ranks, each a size and a weight."""
     return _fonts_block(theme_name)["ranks"]
+
+
+def font_rank(name: str, theme: Optional[str] = None) -> Tuple[int, int]:
+    """Return a text rank's pixel size and weight (CSS scale) in a theme.
+
+    "body" is the root font's; a title rank ("section", "card", or one the
+    color file's ``fonts: ranks:`` adds) is what
+    ``mark_as_title(widget, rank=name)`` sets.
+
+    Args:
+        name: "body" or a title rank.
+        theme: Theme name. Defaults to the current theme.
+
+    Returns:
+        The size in pixels and the weight, e.g. ``(15, 500)``.
+
+    Raises:
+        ValueError: If `name` is not "body" nor a rank of the theme.
+
+    Examples:
+        >>> size, weight = fxstyle.font_rank("section")
+    """
+    theme = theme or get_theme()
+    if name == "body":
+        weight, _hinting = _shape(theme, "body")
+        return FONT_SIZE, BODY_WEIGHT if weight is None else weight
+    ranks = _ranks(theme)
+    if name not in ranks:
+        raise ValueError(
+            f"No text rank {name!r}: 'body' or one of {sorted(ranks)}")
+    shape = ranks[name]
+    size = shape.get("size")
+    weight = shape.get("weight")
+    return (
+        FONT_SIZE if size is None else int(size),
+        BODY_WEIGHT if weight is None else int(weight),
+    )
 
 
 def _check_weight(weight, what: str) -> None:

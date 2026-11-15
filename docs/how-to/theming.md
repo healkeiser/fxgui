@@ -298,7 +298,7 @@ A themed root (see below) gets three things, and each has one job:
 |------|---------------------|-----------------|
 | Stylesheet | `style.qss` plus every registered fragment, `@tokens` resolved | Shapes, borders, radii, states (hover, pressed, focus) and each widget's own look. The text colour. |
 | Palette | `fxstyle.palette()` | Default fills: a window's `Window`, an item view's `Base`, `Highlight`, and the rest |
-| Font | `fxstyle.font()` | The body family of the theme at `fxstyle.FONT_SIZE` (12 px) |
+| Font | `fxstyle.font()` | The body family of the theme at `fxstyle.FONT_SIZE` (13 px), weight `fxstyle.BODY_WEIGHT` (400) |
 
 The base rule for every widget carries no fill and no font. So:
 
@@ -410,9 +410,9 @@ reuses them, so it looks like it belongs.
 
 | Part | Value | Where it comes from |
 |------|-------|---------------------|
-| Height | 28 px at the 12 px body font | `fxstyle.control_height(widget)`: the font's line plus 5 px of padding and a 1 px border on each side |
-| Corner radius of a control, a row, a tab or a pane | 4 px | `fxstyle.BUTTON_RADIUS`, `@button_radius` in QSS |
-| Corner radius of a popup or a floating card (menu, combo list, completer list, tooltip, banner, progress card, drop zone, `FXFloatingDialog`) | 8 px | `fxstyle.CARD_RADIUS`, `@card_radius` |
+| Height | 32 px at the 13 px body font | `fxstyle.control_height(widget)`: the font's line plus 5 px of padding and a 1 px border on each side |
+| Corner radius of a control, a row, a tab or a pane | 9 px | `fxstyle.BUTTON_RADIUS`, `@button_radius` in QSS |
+| Corner radius of a popup or a floating card (menu, combo list, completer list, tooltip, banner, progress card, drop zone, `FXFloatingDialog`) | 12 px | `fxstyle.CARD_RADIUS`, `@card_radius` |
 | Menu row | 24 px at the 12 px body font | `QMenu::item` padding |
 | Tool button | a 22 px box around a 16 px icon | `QToolButton` margin 2 px, padding 2 px, a reserved 1 px edge |
 | Tab | one 4 px gap above, below and between pills | tab margin `4px 2px`, the same for `QTabBar` and QtAds tabs |
@@ -428,11 +428,11 @@ line:
 
 | Size | Value | Who takes it |
 |------|-------|--------------|
-| `fxstyle.control_height(widget)` | 28 px at the 12 px body font | Every control with text or a button's box: push buttons, `FXIconButton`, `FXSplitButton`, `FXJoinedGroup`, line edits, combo boxes, spin boxes, `FXSearchBar`, `FXFilePathWidget`, `FXBreadcrumb`, the `FXTagInput` field, the `FXTimelineSlider` row |
-| `fxstyle.INDICATOR_SIZE`, `@indicator_size` | 18 px | An on/off mark: a check box or radio indicator, and the track of `FXToggleSwitch` (twice as wide as tall) |
+| `fxstyle.control_height(widget)` | 32 px at the 13 px body font | Every control with text or a button's box: push buttons, `FXIconButton`, `FXSplitButton`, `FXJoinedGroup`, line edits, combo boxes, spin boxes, `FXSearchBar`, `FXFilePathWidget`, `FXBreadcrumb`, the `FXTagInput` field, the `FXTimelineSlider` row |
+| `fxstyle.INDICATOR_SIZE`, `@indicator_size` | 16 px | An on/off mark: a check box or radio indicator, and the track of `FXToggleSwitch` (twice as wide as tall) |
 
 A mark is smaller than the row and centres in it: an `FXToggleSwitch` is
-`control_height` tall, its 18 px track in the middle, so it lines up
+`control_height` tall, its 16 px track in the middle, so it lines up
 with the button beside it. A slider handle (14 px) and a status dot do
 the same. A control that sizes itself returns these from `sizeHint()`.
 A plain icon `QToolButton` in a toolbar sizes to its icon. The Buttons
@@ -441,6 +441,35 @@ page of the gallery shows one row of every control.
 A spin box reaches a line edit's height by its padding, which differs by
 Qt version: PySide6 6.5 sizes a spin box 3 px shorter than later Qt for
 the same padding, so fxstyle picks the padding when it builds the sheet.
+
+### Names for the look's values
+
+Code that sizes or weighs something of its own reads these names, never
+the numbers, so it follows fxgui when the look moves.
+
+| Name | Value | What it is |
+|------|-------|------------|
+| `fxstyle.font_rank(name)` | `(13, 400)` for `"body"`, `(15, 500)` for `"section"`, `(18, 500)` for `"card"` | A text rank's pixel size and weight in the current theme (or `theme=`); an unknown rank raises `ValueError` |
+| `fxstyle.BODY_WEIGHT` | 400 | Body text's weight |
+| `fxstyle.EMPHASIS_WEIGHT` | 500 | The one step above: titles, a tooltip's title, a selected or emphasised word |
+| `fxstyle.DIALOG_GUTTER` | 20 px | A dialog's left and right margin |
+| `fxstyle.DIALOG_EDGE` | 16 px | A dialog's top and bottom margin |
+| `fxstyle.DIALOG_GAP` | 12 px | The space between a dialog's parts (text, fields, buttons) |
+| `FXThumbnailDelegate.PILL_HEIGHT`, `.PILL_PADDING` | 20 px, 6 px | A neutral status tag's height and its text's side padding |
+| `FXStatusBar.ICON_SIZE`, `FXStatusItem.ICON_SIZE` | 14 px | The side of a status item's or message's icon |
+
+```python
+from qtpy.QtGui import QFont
+from fxgui import fxstyle
+
+size, weight = fxstyle.font_rank("section")
+font = QFont(fxstyle.font())
+font.setPixelSize(size)
+font.setWeight(QFont.Weight(weight))
+layout.setContentsMargins(fxstyle.DIALOG_GUTTER, fxstyle.DIALOG_EDGE,
+                          fxstyle.DIALOG_GUTTER, fxstyle.DIALOG_EDGE)
+layout.setSpacing(fxstyle.DIALOG_GAP)
+```
 
 ### Fills and edges by state
 

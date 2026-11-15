@@ -378,6 +378,28 @@ def test_showing_a_floating_pane_raises_its_window(qtbot, monkeypatch):
     assert asked == ["raise", "activate"]
 
 
+def test_show_dock_without_activate_leaves_a_floating_window_alone(qtbot):
+    window = _window(qtbot)
+    window.docks.add_dock("peer", "Peer", QLabel("peer"), "left",
+                          tab_with="side")
+    held = window.docks.manager().findDockWidget("side")
+    held.dockAreaWidget().setFloating()
+    QApplication.processEvents()
+    floating = held.floatingDockContainer()
+    window.docks.manager().findDockWidget("peer").setAsCurrentTab()
+    asked = []
+    floating.raise_ = lambda: asked.append("raise")
+    floating.activateWindow = lambda: asked.append("activate")
+    try:
+        window.docks.show_dock("side", activate=False)
+        current = held.dockAreaWidget().currentDockWidget()
+    finally:
+        del floating.raise_, floating.activateWindow
+
+    assert asked == []
+    assert current is held
+
+
 def test_a_floating_panes_tabs_keep_their_docked_height(qtbot):
     window = _window(qtbot, show=False)
     window.docks.add_dock("peer", "Peer", QLabel("peer"), "left",

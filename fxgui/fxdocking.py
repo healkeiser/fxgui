@@ -546,10 +546,16 @@ class FXDockArea(QWidget):
         if body is not None and self._settled():
             fxstyle._Reveal.over(body)
 
-    def show_dock(self, name: str) -> None:
+    def show_dock(self, name: str, activate: bool = True) -> None:
         """Open the pane `name`, in front of its tabs and its window.
 
         A closed pane grows open once its window has settled.
+
+        Args:
+            name: The pane's name.
+            activate: Raise and focus a floating pane's window. False
+                makes the pane its tabs' current one and leaves the
+                windows' order and focus alone.
         """
         held = self._docks.findDockWidget(name)
         if held is None:
@@ -560,7 +566,7 @@ class FXDockArea(QWidget):
             _open(held)
         held.setAsCurrentTab()
         floating = held.floatingDockContainer()
-        if floating is not None:
+        if activate and floating is not None:
             floating.raise_()
             floating.activateWindow()
 

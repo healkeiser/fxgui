@@ -64,8 +64,6 @@ _CODE_PADDING = 4
 # Characters a row of code holds: about 320 px, a tooltip's widest in the
 # reference look, in a mono face at the code's size.
 _CODE_COLUMNS = 48
-# The title's weight: medium, as no text in the look is heavier.
-_TITLE_WEIGHT = 500
 
 _MODIFIERS = (
     Qt.KeyboardModifier.ControlModifier,
@@ -279,7 +277,7 @@ def tip(
         return ""
 
     head = (
-        f'<span style="font-weight:{_TITLE_WEIGHT};">{escape(title)}</span>'
+        f'<span style="font-weight:{fxstyle.EMPHASIS_WEIGHT};">{escape(title)}</span>'
         if title else ""
     )
     muted = fxstyle.colors().text_muted

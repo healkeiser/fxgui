@@ -76,7 +76,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXAccordion` | Collapsible sections stacked; one open at a time unless `exclusive=False` |
 | `FXApplication` | The `QApplication` that themes every window it owns |
 | `FXAvatar` | Round avatar: a photo, or initials on a disc coloured by the name |
-| `FXBreadcrumb` | Clickable breadcrumb trail; double-click it to type a path |
+| `FXBreadcrumb` | Clickable breadcrumb trail; double-click it to type a path. `back_button` and `forward_button` name its navigation buttons (None without `show_navigation`) |
 | `FXCamelCaseValidator` | Accepts camelCase letters only |
 | `FXCapitalizedLetterValidator` | Accepts a name starting with a capital letter |
 | `FXCheckableComboBox` | Combo box whose popup stays open while several rows are ticked |
@@ -107,9 +107,9 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXLowerCaseValidator` | Accepts lowercase letters, numbers and underscores optional |
 | `FXMainWindow` | Main window with menus, toolbar, status bar and a theme menu |
 | `FXMentionEdit` | Text box that offers people by name after an @ and lists who it names |
-| `FXNotificationBanner` | Card with a message that slides in from a window's right edge |
+| `FXNotificationBanner` | Card with a message that slides in from a window's right edge. `severity()`, `timeout()`, `action_buttons()` and `is_placed()` (it stands at its slot, no slide running) read it back |
 | `FXOutputLogHandler` | Logging handler that writes records into an `FXOutputLogWidget` |
-| `FXOutputLogWidget` | Read-only log display with search |
+| `FXOutputLogWidget` | Read-only log display with search. It writes queued records on a throttle; `flush()` writes them all now |
 | `FXPasswordLineEdit` | Password field with a show/hide eye icon |
 | `FXPrimaryButton` | The main action of a form, on the theme's accent |
 | `FXProgressCard` | Card showing a task's progress and status |
@@ -141,6 +141,8 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 `PySide6-QtAds` (see [Installation](../installation.md#docking)).
 `show_dock(name)`, `hide_dock(name)` and `is_dock_open(name)` open, close
 and ask about a pane by its name, without reaching for QtAds.
+`show_dock(name, activate=False)` makes a pane its tabs' current one
+without raising or focusing the floating window it sits in.
 
 And these functions and constants:
 

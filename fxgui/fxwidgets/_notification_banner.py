@@ -2,7 +2,7 @@
 
 # Built-in
 import logging
-from typing import Callable, Mapping, Optional
+from typing import Callable, List, Mapping, Optional
 
 # Third-party
 from qtpy.QtCore import (
@@ -521,6 +521,25 @@ class FXNotificationBanner(QFrame):
     def message(self) -> str:
         """Return the message the banner says."""
         return self._message
+
+    def severity(self) -> Optional[int]:
+        """Return the severity the banner was made with, None for plain."""
+        return self._severity_type
+
+    def timeout(self) -> int:
+        """Return the timeout in ms, 0 when the banner stays until closed."""
+        return self._timeout
+
+    def action_buttons(self) -> List[QPushButton]:
+        """Return the buttons `add_action` made, in the order added."""
+        return list(self._action_buttons)
+
+    def is_placed(self) -> bool:
+        """Return whether the banner stands at its slot in the stack.
+
+        False while it slides in, out or to a new slot.
+        """
+        return self.pos() == self._target_pos
 
     def set_message(self, message: str) -> None:
         """Show `message`, refitting the card and the stack."""

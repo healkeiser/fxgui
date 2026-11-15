@@ -26,11 +26,11 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXIconLabel
 
-# Title, body and buttons start on one left edge, 20 px in; the card's
-# top and bottom edges are 16 px off, and 12 px part the three.
-_GUTTER = 20
-_EDGE = 16
-_PART = 12
+# Title, body and buttons start on one left edge; the card's top and
+# bottom stand off, and one gap parts the three.
+_GUTTER = fxstyle.DIALOG_GUTTER
+_EDGE = fxstyle.DIALOG_EDGE
+_PART = fxstyle.DIALOG_GAP
 
 fxstyle.register_widget_style(
     """

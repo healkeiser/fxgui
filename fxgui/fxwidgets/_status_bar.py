@@ -105,6 +105,8 @@ class FXStatusItem(QToolButton):
         >>> item.clicked.connect(show_log)
     """
 
+    #: Side of an item's icon, in px: a status bar's icons are this size.
+    ICON_SIZE = ICON_SIZE
     radius = fxstyle.BUTTON_RADIUS
 
     def __init__(
@@ -262,6 +264,9 @@ class FXStatusBar(QStatusBar):
         version_label (FXStatusItem): The version, likewise.
         company_label (FXStatusItem): The company, likewise.
     """
+
+    #: Side of a status item's or message's icon, in px.
+    ICON_SIZE = ICON_SIZE
 
     def __init__(
         self,

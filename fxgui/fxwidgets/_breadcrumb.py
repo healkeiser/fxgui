@@ -469,6 +469,16 @@ class FXBreadcrumb(QWidget):
             self._back_button.setEnabled(self.can_go_back())
             self._forward_button.setEnabled(self.can_go_forward())
 
+    @property
+    def back_button(self) -> Optional[QPushButton]:
+        """The back button, None without `show_navigation`."""
+        return self._back_button if self._show_navigation else None
+
+    @property
+    def forward_button(self) -> Optional[QPushButton]:
+        """The forward button, None without `show_navigation`."""
+        return self._forward_button if self._show_navigation else None
+
     def path(self) -> List[str]:
         """Return the current path segments."""
         return self._path.copy()

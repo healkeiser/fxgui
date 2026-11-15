@@ -593,13 +593,17 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _INDICATOR_SPACING = 8
     _DOT_SIZE = 8
     _LABEL_PADDING = 4
-    # A neutral tag is a small badge: 20 px tall, 6 px clear of its words,
-    # centred on the band it shares with the dot.
     # It rules its rows itself, under the indentation too: fxstyle marks a
     # view showing it, so the sheet's branch rule stands down there.
     _FX_RULES_ITS_ROWS = True
-    _NEUTRAL_HEIGHT = 20
-    _NEUTRAL_PADDING = 6
+    #: A neutral tag (a status label with no colour) is a small badge:
+    #: `PILL_HEIGHT` tall, `PILL_PADDING` clear of its words each side,
+    #: centred on the band it shares with the dot. A consumer's own pills
+    #: match it by reading these.
+    PILL_HEIGHT = 20
+    PILL_PADDING = 6
+    _NEUTRAL_HEIGHT = PILL_HEIGHT
+    _NEUTRAL_PADDING = PILL_PADDING
     # The status label's coloured mark, and its gap to the words.
     _LABEL_MARK = 8
     _LABEL_ICON = 14

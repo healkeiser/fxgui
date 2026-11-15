@@ -62,8 +62,9 @@ class FXConfirmDeleteDialog(QDialog):
         self._word = confirm_word
         self.setWindowTitle(title)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 16, 20, 16)
-        layout.setSpacing(12)
+        gutter, edge = fxstyle.DIALOG_GUTTER, fxstyle.DIALOG_EDGE
+        layout.setContentsMargins(gutter, edge, gutter, edge)
+        layout.setSpacing(fxstyle.DIALOG_GAP)
         message = QLabel(body)
         message.setTextFormat(Qt.PlainText)
         message.setWordWrap(True)

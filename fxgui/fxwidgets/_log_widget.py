@@ -457,6 +457,16 @@ class FXOutputLogWidget(QWidget):
         if not self._throttle_timer.isActive():
             self._flush_pending_log()
 
+    def flush(self) -> None:
+        """Write every queued record now, past the throttle.
+
+        For a test, or before reading `output_area`: once it returns, the
+        pane shows all that was appended.
+        """
+        while self._pending_logs:
+            self._flush_pending_log()
+        self._throttle_timer.stop()
+
     def append_many(self, lines: Sequence[str]) -> None:
         """Queue `lines` in order, behind whatever is already queued.
 
