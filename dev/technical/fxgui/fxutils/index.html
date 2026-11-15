@@ -2733,13 +2733,14 @@ scroll goes last, since focusing scrolls.</p>
 
 <a href="#fxgui.fxutils.add_shadow" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">add_shadow</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n"><span title="fxgui.fxutils.add_shadow(widget)">widget</span></span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">,</span> <span class="n"><span title="fxgui.fxutils.add_shadow(offset)">offset</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Tuple&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Tuple">Tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#float">float</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n"><span title="fxgui.fxutils.add_shadow(widget)">widget</span></span><span class="p">:</span> <span class="n"><span title="qtpy.QtWidgets.QWidget">QWidget</span></span><span class="p">,</span> <span class="n"><span title="fxgui.fxutils.add_shadow(offset)">offset</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Tuple&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Tuple">Tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/builtins/functions.html#float">float</a></span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="qtpy.QtWidgets.QGraphicsDropShadowEffect">QGraphicsDropShadowEffect</span></span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
 
         <p>Cast the theme's drop shadow under <code>widget</code>; it follows every switch.</p>
+<p>By default it falls 6 px below the widget, as light from above casts.</p>
 
 
 <p><span class="doc-section-title">Examples:</span></p>
