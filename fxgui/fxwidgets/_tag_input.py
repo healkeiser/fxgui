@@ -22,6 +22,11 @@ from fxgui.fxwidgets._flow_layout import FXFlowLayout
 from fxgui.fxwidgets._tips import apply_tip
 
 
+# A chip's height, and its remove button's side.
+_CHIP_HEIGHT = 28
+_REMOVE_SIZE = 16
+
+
 class FXTagChip(QFrame):
     """A single removable tag chip.
 
@@ -48,9 +53,13 @@ class FXTagChip(QFrame):
 
         self.setFrameShape(QFrame.StyledPanel)
 
+        # 28 px tall; the text starts 10 px in, and the x sits as far from
+        # the end as from the top and bottom. The 1 px border is inside.
+        self.setFixedHeight(_CHIP_HEIGHT)
+        end = (_CHIP_HEIGHT - _REMOVE_SIZE) // 2 - 1 if removable else 9
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 2, 4 if removable else 8, 2)
-        layout.setSpacing(fxstyle.PANE_GAP)
+        layout.setContentsMargins(9, 0, end, 0)
+        layout.setSpacing(6)
 
         self.label = QLabel(text)
         self.label.setTextFormat(Qt.PlainText)
@@ -59,7 +68,7 @@ class FXTagChip(QFrame):
         self.remove_button = None
         if removable:
             self.remove_button = QPushButton()
-            self.remove_button.setFixedSize(16, 16)
+            self.remove_button.setFixedSize(_REMOVE_SIZE, _REMOVE_SIZE)
             self.remove_button.setFlat(True)
             self.remove_button.setCursor(Qt.PointingHandCursor)
             self.remove_button.clicked.connect(self._on_remove)
@@ -242,12 +251,13 @@ fxstyle.register_widget_style("""
 FXTagChip {
     background-color: @primary_button;
     border: 1px solid @border_light;
-    border-radius: @small_radius;
-    padding: 2px 4px;
+    border-radius: @button_radius;
+    padding: 0px;
 }
 FXTagChip QLabel {
     color: @text_on_accent_primary;
     background: transparent;
+    font-size: @font_size_small;
 }
 FXTagChip QPushButton {
     background: transparent;

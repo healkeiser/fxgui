@@ -76,7 +76,19 @@ def test_a_chip_has_a_border_at_the_theme_radius(qtbot, theme, removable):
         assert edge == colors.border_light.lower()
     # Rounded at the theme's radius: the corner pixel is not the border.
     assert at(0, 0) != colors.border_light.lower()
-    assert at(radius + 2, middle) == colors.primary_button.lower()
+    # In the fill, short of the text 10 px in.
+    assert at(4, middle) == colors.primary_button.lower()
+
+
+def test_a_chip_is_28_px_tall_its_x_square_in_its_end(app_root):
+    chip = FXTagChip("comp")
+    app_root.layout().addWidget(chip)
+    app_root.show()
+    button = chip.remove_button.geometry()
+
+    assert chip.height() == 28
+    assert button.top() == chip.height() - 1 - button.bottom()
+    assert chip.width() - 1 - button.right() == button.top()
 
 
 def _chips(tags):
@@ -154,9 +166,9 @@ def test_a_set_keeps_the_chips_of_tags_that_stay(qtbot, qapp):
     assert chips[0] is kept["fx"] and chips[2] is kept["comp"]
 
 
-def test_the_chip_label_takes_the_root_font_size(qtbot, qapp):
-    assert "font-size" not in fxstyle._build_stylesheet().split(
-        "FXTagChip QLabel")[1].split("}")[0]
+def test_the_chip_label_is_the_small_size(qtbot, qapp):
+    rule = fxstyle._build_stylesheet().split("FXTagChip QLabel")[1]
+    assert f"font-size: {fxstyle.FONT_SIZE - 1}px;" in rule.split("}")[0]
 
 
 def test_a_chip_shows_markup_as_typed(qtbot):
