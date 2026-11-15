@@ -26,8 +26,11 @@ from qtpy.QtWidgets import (
 from fxgui import fxicons, fxstyle, fxutils
 from fxgui.fxwidgets._labels import FXIconLabel
 
-# Title, body and buttons start on one left edge.
-_GUTTER = 12
+# Title, body and buttons start on one left edge, 20 px in; the card's
+# top and bottom edges are 16 px off, and 12 px part the three.
+_GUTTER = 20
+_EDGE = 16
+_PART = 12
 
 fxstyle.register_widget_style(
     """
@@ -40,9 +43,7 @@ fxstyle.register_widget_style(
         border-radius: @card_radius;
     }
     #fxFloatingDialogTitle {
-        background-color: @surface_sunken;
-        border-top-left-radius: %(inner)dpx;
-        border-top-right-radius: %(inner)dpx;
+        background: transparent;
     }
     #fxFloatingDialogTitle QLabel {
         background: transparent;
@@ -59,8 +60,6 @@ fxstyle.register_widget_style(
         background: transparent;
     }
     """
-    # The title sits 1 px inside the frame's border.
-    % {"inner": fxstyle.CARD_RADIUS - 1}
 )
 
 
@@ -97,7 +96,7 @@ class FXFloatingDialog(QDialog):
         self.title_widget = QWidget(self)
         self.title_widget.setObjectName("fxFloatingDialogTitle")
         self.title_layout = QHBoxLayout(self.title_widget)
-        self.title_layout.setContentsMargins(_GUTTER, 8, _GUTTER, 8)
+        self.title_layout.setContentsMargins(_GUTTER, _EDGE, _GUTTER, 0)
         self.title_layout.setSpacing(fxstyle.PANE_GAP)
         self.title_layout.addWidget(self._icon_label)
         self.title_layout.addWidget(self.title_label)
@@ -106,12 +105,12 @@ class FXFloatingDialog(QDialog):
         self.main_widget = QWidget(self)
         self.main_widget.setObjectName("fxFloatingDialogBody")
         self.main_layout = QVBoxLayout(self.main_widget)
-        self.main_layout.setContentsMargins(_GUTTER, 12, _GUTTER, 12)
-        self.main_layout.setSpacing(fxstyle.PANE_GAP)
+        self.main_layout.setContentsMargins(_GUTTER, _PART, _GUTTER, _PART)
+        self.main_layout.setSpacing(_PART)
 
         self.button_box = QDialogButtonBox(self)
         self.button_box.setObjectName("fxFloatingDialogButtons")
-        self.button_box.setContentsMargins(_GUTTER, 8, _GUTTER, _GUTTER)
+        self.button_box.setContentsMargins(_GUTTER, 0, _GUTTER, _EDGE)
         self.button_close = self.button_box.addButton(QDialogButtonBox.Close)
         # reject() closes, and WA_DeleteOnClose deletes, the dialog.
         self.button_box.rejected.connect(self.reject)

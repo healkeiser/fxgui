@@ -62,6 +62,8 @@ class FXConfirmDeleteDialog(QDialog):
         self._word = confirm_word
         self.setWindowTitle(title)
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setSpacing(12)
         message = QLabel(body)
         message.setTextFormat(Qt.PlainText)
         message.setWordWrap(True)
@@ -84,6 +86,7 @@ class FXConfirmDeleteDialog(QDialog):
         self.hint.setObjectName("fxConfirmHint")
         layout.addWidget(self.hint)
         buttons = QDialogButtonBox(QDialogButtonBox.Cancel)
+        buttons.layout().setSpacing(8)
         # Destructive, not Accept: a button box makes its first Accept
         # button the default when shown, whatever was set before.
         self.delete_button = buttons.addButton(
