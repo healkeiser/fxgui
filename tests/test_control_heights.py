@@ -98,3 +98,13 @@ def test_a_plain_tool_button_keeps_its_size_with_its_reserved_edge(qtbot):
     fxicons.set_icon(button, "house")
     height, _ = _heights(qtbot, lambda: button, QPushButton)
     assert height == 16 + 7 + 2 * 1 + 3 == 28
+
+
+def test_a_toolbar_s_icons_are_16_px(qapp):
+    from qtpy.QtWidgets import QStyle
+
+    from fxgui import fxstyle
+
+    style = fxstyle.FXProxyStyle()
+    # A toolbar's tool button is then a 28 px square, the small icon's.
+    assert style.pixelMetric(QStyle.PM_ToolBarIconSize) == 16

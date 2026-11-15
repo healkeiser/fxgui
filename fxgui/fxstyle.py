@@ -2408,8 +2408,8 @@ class FXProxyStyle(QProxyStyle):
         )
 
     def pixelMetric(self, metric, option=None, widget=None):
-        """Return `metric`; layouts space one pane gap, list icons 16 px,
-        a tree's levels 22 px.
+        """Return `metric`; layouts space one pane gap, list and toolbar icons
+        16 px, a tree's levels 22 px.
 
         A themed tab's close button widens to the left by the room its glyph
         needs to stand as far in from the pill's edge as the text does.
@@ -2418,7 +2418,8 @@ class FXProxyStyle(QProxyStyle):
             return PANE_GAP
         if metric == _TREE_INDENTATION:
             return _TREE_INDENT
-        if metric == _LIST_ICON:
+        if metric in (_LIST_ICON, QStyle.PM_ToolBarIconSize):
+            # Toolbar icons too: a toolbar's tool button is a 28 px square.
             metric = _SMALL_ICON
         size = super().pixelMetric(metric, option, widget)
         if metric != _CLOSE_WIDTH or widget is None:
