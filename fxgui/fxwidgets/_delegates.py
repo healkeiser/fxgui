@@ -143,6 +143,8 @@ def _read_thumbnail(
     if (
         stored.isValid()
         and (stored.width() > box or stored.height() > box)
+        # JPEG only, by name: Qt 6.5's PNG reader also claims ScaledSize.
+        and bytes(reader.format()) in (b"jpeg", b"jpg")
         and reader.supportsOption(QImageIOHandler.ImageOption.ScaledSize)
     ):
         reader.setScaledSize(stored.scaled(box, box, Qt.KeepAspectRatio))
