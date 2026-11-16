@@ -101,3 +101,12 @@ GitHub Actions automates:
 4. Documentation deployment to GitHub Pages
 
 Versioning uses setuptools_scm (derived from git tags).
+
+### Rez (Lotchi)
+
+`package.py` + `rezbuild.py` build the clone into a Rez tier, laid out as
+`lsd pip` lays the wheel out (`{root}/python/fxgui`). From a clean `main`
+in step with GitHub: `lsd release --target development` (patch bump; tags
+`fxgui-X.Y.Z`). `version` in `package.py` is the last version released,
+to PyPI or a tier: a PyPI release of the same code tags `vX.Y.Z` at that
+version, or later.

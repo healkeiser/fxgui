@@ -22,6 +22,9 @@ exclude CLAUDE.md
 exclude mkdocs.yml
 exclude requirements*.txt
 exclude *.code-workspace
+# The Rez build (lsd release), not part of the Python package
+exclude package.py
+exclude rezbuild.py
 
 # Bytecode and cache - exclude everywhere
 global-exclude __pycache__/*
