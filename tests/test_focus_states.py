@@ -151,6 +151,31 @@ def test_a_ring_follows_its_control_when_the_composite_moves_or_hides(qtbot):
 
 
 
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_flush_view_s_keyboard_focus_rings_its_inside(qtbot, theme):
+    """A flush view has no edge to recolour: its current row is selected
+    and nothing else showed which view had the keyboard."""
+    tree = QTreeWidget()
+    for name in ("sh0010", "sh0020"):
+        QTreeWidgetItem(tree, [name])
+    fxstyle.mark_flush(tree)
+    window = themed_window(qtbot, theme, tree)
+    tree.setCurrentItem(tree.topLevelItem(0))
+    accent = QColor(fxstyle.colors().accent_primary).name()
+    edge = (0, tree.height() // 2)
+
+    tree.setFocus(Qt.TabFocusReason)
+    QApplication.processEvents()
+    assert tree.grab().toImage().pixelColor(*edge).name() == accent
+
+    tree.setFocus(Qt.MouseFocusReason)
+    window.setFocus(Qt.MouseFocusReason)
+    tree.setFocus(Qt.MouseFocusReason)
+    QApplication.processEvents()
+    assert window.grab().toImage().pixelColor(
+        tree.mapTo(window, QPoint(*edge))).name() != accent
+
+
 def test_freeing_a_shown_window_with_a_focused_dialog_button_is_quiet(qtbot):
     """PySide6 6.5 raised from the focus watch: the OK button, made by Qt,
     lost focus inside its window's destructor."""

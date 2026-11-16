@@ -3973,13 +3973,17 @@ class _FocusRing(QWidget):
     It is a child of the nearest parent with room for it, so a flush
     composite (a button box, a path field) does not cut it; a scroll
     area's viewport or the window clips it, as a web page's overflow does.
+    A flush view (`mark_flush`) has no edge and no room round it: its ring
+    is drawn inside it, the accent edge and the ring turned inward.
     """
 
     _shown: "Optional[_FocusRing]" = None
 
     def __init__(self, target: QWidget):
-        super().__init__(_ring_room(target))
+        inset = bool(target.property(FLUSH_PROPERTY))
+        super().__init__(target if inset else _ring_room(target))
         self._target = target
+        self._inset = inset
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.setAttribute(Qt.WA_NoSystemBackground)
         self.setFocusPolicy(Qt.NoFocus)
@@ -3989,6 +3993,8 @@ class _FocusRing(QWidget):
         while widget is not None and widget is not self.parentWidget():
             widget.installEventFilter(self)
             widget = widget.parentWidget()
+        if inset:
+            target.installEventFilter(self)
         # Gone with the control, never left standing over its place.
         target.destroyed.connect(self.deleteLater)
         self._follow()
@@ -4012,6 +4018,10 @@ class _FocusRing(QWidget):
 
     def _follow(self) -> None:
         """Stand over the target, grown by the ring, above it."""
+        if self._inset:
+            self.setGeometry(self._target.rect())
+            self.raise_()
+            return
         grow = FOCUS_RING_WIDTH
         target = self._target
         place = QRect(target.mapTo(self.parentWidget(), QPoint()), target.size())
@@ -4032,6 +4042,21 @@ class _FocusRing(QWidget):
     def paintEvent(self, event) -> None:
         theme = colors()
         target = self._target
+        if self._inset:
+            painter = QPainter(self)
+            ink = QColor(theme.accent_primary)
+            ink.setAlphaF(FOCUS_RING_ALPHA)
+            band = QPainterPath()
+            band.setFillRule(Qt.OddEvenFill)
+            ring = QRectF(self.rect()).adjusted(1, 1, -1, -1)
+            band.addRect(ring)
+            grow = FOCUS_RING_WIDTH
+            band.addRect(ring.adjusted(grow, grow, -grow, -grow))
+            painter.fillPath(band, ink)
+            painter.setPen(QPen(QColor(theme.accent_primary), 1))
+            painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
+            painter.end()
+            return
         accent = isinstance(target, _RING_ACCENT_KINDS) or (
             target.property("fxRole") == "primary"
             or type(target).__name__ in ("FXPrimaryButton", "FXJoinedGroup"))
@@ -4082,6 +4107,10 @@ def _ring_target(widget: QWidget) -> Optional[QWidget]:
         widget, parent = parent, parent.parentWidget()
     if parent is None or widget.isWindow():
         return None
+    if isinstance(widget, QAbstractItemView) and widget.property(
+        FLUSH_PROPERTY
+    ):
+        return widget
     if not isinstance(widget, _RING_KINDS):
         return None
     if widget.property("fxJoined"):
