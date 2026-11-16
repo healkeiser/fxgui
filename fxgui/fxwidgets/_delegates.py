@@ -391,11 +391,13 @@ def _draw_elided(
 def _paint_icon(
     painter: QPainter, icon: QIcon, rect: QRect, state
 ) -> None:
-    """Paint an icon in Selected mode on a selected row, else Normal.
+    """Paint an icon Disabled on a disabled row, Selected on a selected one.
 
     A hovered row keeps its Normal ink: its fill is neutral, not an accent.
     """
-    if state & QStyle.State_Selected:
+    if not state & QStyle.State_Enabled:
+        icon.paint(painter, rect, Qt.AlignCenter, QIcon.Disabled)
+    elif state & QStyle.State_Selected:
         icon.paint(painter, rect, Qt.AlignCenter, QIcon.Selected, QIcon.On)
     else:
         icon.paint(painter, rect)
@@ -412,6 +414,12 @@ def _draw_overlay_disc(
     painter.setBrush(QBrush(fill))
     painter.setPen(QPen(QColor(theme.border_light), 1))
     painter.drawEllipse(center, radius, radius)
+
+
+def _quiet(option: QStyleOptionViewItem) -> bool:
+    """Whether a row wears the quiet inks: enabled and not selected."""
+    state = option.state
+    return bool(state & QStyle.State_Enabled) and not state & QStyle.State_Selected
 
 
 @functools.lru_cache(maxsize=1)
@@ -910,6 +918,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     @staticmethod
     def _text_color(option: QStyleOptionViewItem) -> QColor:
         """Return the text colour for the row's selection; hover keeps it."""
+        if not option.state & QStyle.State_Enabled:
+            return QColor(fxstyle.colors().text_disabled)
         if option.state & QStyle.State_Selected:
             return option.palette.highlightedText().color()
         return option.palette.text().color()
@@ -1919,8 +1929,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         )
         color = self._text_color(option)
         # A row's name stands out in the strong ink, unless it is
-        # selected or wears an ink of its own.
-        plain = not option.state & QStyle.State_Selected and (
+        # selected, disabled or wears an ink of its own.
+        plain = _quiet(option) and (
             index.data(Qt.ForegroundRole) is None)
         theme = fxstyle.colors()
         painter.setPen(
@@ -1948,18 +1958,17 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                 self._child_count_width(index, option),
                 title_rect.height(),
             )
-            selected = option.state & QStyle.State_Selected
             painter.setPen(
-                color if selected else QColor(fxstyle.colors().text_muted))
+                QColor(fxstyle.colors().text_muted) if _quiet(option)
+                else color)
             painter.setFont(self._count_font(option))
             painter.drawText(
                 count_rect, Qt.AlignLeft | Qt.AlignVCenter, str(count))
         if description_rect is not None:
             # On a selected row the muted ink would sit on the accent.
-            selected = option.state & QStyle.State_Selected
             painter.setPen(
-                color if selected else QColor(fxstyle.colors().text_muted)
-            )
+                QColor(fxstyle.colors().text_muted) if _quiet(option)
+                else color)
             painter.setFont(self._description_font(option))
             _draw_elided(
                 painter,
@@ -2133,23 +2142,31 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         OS accent colour. A `QTreeView::indicator` rule does not reach it.
         """
         selected = bool(option.state & QStyle.State_Selected)
+        # A disabled row's box is the sheet's disabled check box.
+        enabled = bool(option.state & QStyle.State_Enabled)
         theme = fxstyle.colors()
         box = QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5)
         radius = 3.0
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing)
         if option.checkState == Qt.Unchecked:
-            edge = theme.text_on_selection if selected else theme.border_light
+            edge = (
+                theme.text_on_selection if selected
+                else theme.border_light if enabled else theme.border)
             painter.setPen(QPen(QColor(edge), 1.2))
             painter.setBrush(Qt.NoBrush)
             painter.drawRoundedRect(box, radius, radius)
         else:
-            fill = theme.text_on_selection if selected else theme.accent_primary
+            fill = (
+                theme.text_on_selection if selected
+                else theme.accent_primary if enabled else theme.border_light)
             painter.setPen(Qt.NoPen)
             painter.setBrush(QBrush(QColor(fill)))
             painter.drawRoundedRect(box, radius, radius)
             name = "minus" if option.checkState == Qt.PartiallyChecked else "check"
-            token = "selection" if selected else "text_on_accent_primary"
+            token = (
+                "selection" if selected
+                else "text_on_accent_primary" if enabled else "text_disabled")
             _mark(name, token).paint(painter, rect)
         painter.restore()
 
@@ -2202,7 +2219,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         if not text:
             return
         # Beside a row's name, its other columns are quieter.
-        plain = not option.state & QStyle.State_Selected and (
+        plain = _quiet(option) and (
             index.data(Qt.ForegroundRole) is None)
         painter.setPen(
             QColor(fxstyle.colors().text_muted) if plain

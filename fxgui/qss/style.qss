@@ -163,13 +163,20 @@ QRadioButton::indicator:disabled
 }
 
 QCheckBox::indicator:checked:disabled,
-QCheckBox::indicator:indeterminate:disabled,
 QGroupBox::indicator:checked:disabled,
 QAbstractItemView::indicator:checked:disabled
 {
     background: @border_light;
     border-color: @border_light;
     image: ~icon(check, text_disabled, 14);
+}
+
+QCheckBox::indicator:indeterminate:disabled,
+QAbstractItemView::indicator:indeterminate:disabled
+{
+    background: @border_light;
+    border-color: @border_light;
+    image: ~icon(minus, text_disabled, 14);
 }
 
 QRadioButton::indicator:checked:disabled
@@ -965,6 +972,11 @@ ads--CDockWidgetTab[activeTab="true"]
 {
     color: @text;
     background: @state_pressed;
+}
+
+QTabBar::tab:disabled
+{
+    color: @text_disabled;
 }
 
 ads--CDockWidgetTab QLabel
