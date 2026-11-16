@@ -3004,9 +3004,14 @@ the numbers, so it follows fxgui when the look moves.</p>
 <td><code>FXSearchBar</code>, <code>fxstyle.FILTER_DROP</code> (4 px under a control)</td>
 </tr>
 <tr>
-<td>A navigation tree's rows</td>
-<td>one row size under the one in force</td>
-<td><code>fxstyle.mark_dense(view)</code>, <code>fxstyle.row_height(view)</code></td>
+<td>Rows of a tree, a table or a list</td>
+<td>the row size in force (28 / 36 / 52 px), live, also when another process of the application saves a new one</td>
+<td><code>fxstyle.apply_row_size(size)</code>, <code>fxstyle.row_height(view)</code>; a word-wrapping list (<code>setWordWrap(True)</code> before it shows) starts its rows at 28 px; a table keeps a row height the application set</td>
+</tr>
+<tr>
+<td>A denser view's rows</td>
+<td>one row size under the one in force (24 / 28 / 36 px)</td>
+<td><code>fxstyle.mark_dense(view)</code></td>
 </tr>
 <tr>
 <td>A view that fills its pane</td>
