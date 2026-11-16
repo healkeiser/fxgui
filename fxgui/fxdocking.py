@@ -364,6 +364,9 @@ def _floor(area: "ads.CDockAreaWidget") -> None:
     QtAds works its floor out once, as a tab joins; a tab whose content
     grows later, or comes to the front, is squeezed under it.
     """
+    # A tab change the window's teardown fires, after PySide let go of it.
+    if not _compat.is_valid(area):
+        return
     held = area.currentDockWidget()
     body = _content(held) if held is not None else None
     if body is None:

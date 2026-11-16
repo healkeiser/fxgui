@@ -27,7 +27,7 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import fxicons, fxstyle
+from fxgui import _compat, fxicons, fxstyle
 from fxgui.fxwidgets._labels import FXIconLabel
 from fxgui.fxwidgets._tips import apply_tip
 
@@ -335,8 +335,10 @@ class FXBreadcrumb(QWidget):
         self._scroll_area.setWidget(self._container)
         # A path too long for the bar keeps its end, where the path is, in
         # view: the head goes under the left edge, never the current one.
-        scroll = self._scroll_area.horizontalScrollBar()
-        scroll.rangeChanged.connect(lambda _low, high: scroll.setValue(high))
+        # A method, not a lambda holding the bar: a window's teardown still
+        # shrinks the range once, after PySide has let go of the bar.
+        self._scroll_area.horizontalScrollBar().rangeChanged.connect(
+            self._keep_end)
 
         self._line_edit = QLineEdit()
         self._line_edit.setPlaceholderText("Enter path...")
@@ -397,6 +399,12 @@ class FXBreadcrumb(QWidget):
         """
         self._lit = lit
         self._container.update()
+
+    def _keep_end(self, _low: int, high: int) -> None:
+        """Scroll to the path's end as its range changes."""
+        area = self._scroll_area
+        if _compat.is_valid(area):
+            area.horizontalScrollBar().setValue(high)
 
     def eventFilter(self, obj, event):
         """Enter the editor on a double-click; leave it on Escape or away.
