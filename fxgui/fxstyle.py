@@ -1922,8 +1922,12 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
     }
 
 
+@lru_cache(maxsize=64)
 def _is_light(surface: str) -> bool:
-    """Return whether a theme whose pane is `surface` is a light one."""
+    """Return whether a theme whose pane is `surface` is a light one.
+
+    Kept per colour: `is_light_theme` is asked for every row coloured.
+    """
     return QColor(surface).lightness() > 128
 
 
