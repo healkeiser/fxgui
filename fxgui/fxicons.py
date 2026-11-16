@@ -301,29 +301,55 @@ def get_icon_path(
         root=root,
     ).replace("\\", "/")
 
-    # A found path is checked again: a cache folder cleaner may delete it.
+    # A found path is served from memory, no disk call: icons are asked
+    # for while painting. A file deleted since is looked for again when
+    # drawing it fails (`_found_again`).
     key = (path, str(_cache_dir()))
-    found = _found_paths.pop(key, None)
-    if found is not None and os.path.exists(found):
-        _found_paths[key] = found
+    found = _found_paths.get(key)
+    if found is not None:
         return found
-    found = None
-    if Path(path).exists():
-        found = path
-    else:
-        # A library shipped as `<root>/<library>.zip` holds the same paths.
-        archive = Path(root) / f"{library}.zip"
-        if archive.exists():
-            member = Path(path).relative_to(Path(root) / library).as_posix()
-            found = _extracted(str(archive), member)
+    found = _locate(path, root, library)
     if not found:
         raise FileNotFoundError(f"Icon path '{path}' does not exist.")
     _found_paths[key] = found
+    _sources[found] = (key, path, root, library)
     return found
+
+
+def _locate(path: str, root: str, library: str) -> Optional[str]:
+    """Return the file an icon `path` is read from now, or None."""
+    if Path(path).exists():
+        return path
+    # A library shipped as `<root>/<library>.zip` holds the same paths.
+    archive = Path(root) / f"{library}.zip"
+    if archive.exists():
+        member = Path(path).relative_to(Path(root) / library).as_posix()
+        return _extracted(str(archive), member)
+    return None
+
+
+def _found_again(found: str) -> Optional[str]:
+    """Return where an icon is now, once reading `found` failed; else None.
+
+    A cache folder cleaner may delete an unzipped icon: it is written out
+    again. The stale path is forgotten either way.
+    """
+    source = _sources.pop(found, None)
+    if source is None:
+        return None
+    key, path, root, library = source
+    _found_paths.pop(key, None)
+    again = _locate(path, root, library)
+    if again:
+        _found_paths[key] = again
+        _sources[again] = source
+    return again
 
 
 # (icon path, cache folder) -> the file to read; a miss is never kept.
 _found_paths: Dict[tuple, str] = {}
+# A found file -> what found it, to look for it again (`_found_again`).
+_sources: Dict[str, tuple] = {}
 
 #: The environment variable naming the folder fxgui writes icon files to
 #: (unzipped icons, stylesheet images); unset, `<temp folder>/fxgui`.
@@ -464,6 +490,9 @@ def _render_svg_to_pixmap(path: str, width: int, height: int) -> QPixmap:
     from qtpy.QtSvg import QSvgRenderer
 
     renderer = QSvgRenderer(path)
+    if not renderer.isValid():
+        # Unread (deleted, broken): a null pixmap, so the caller can tell.
+        return QPixmap()
     image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
     image.fill(Qt.transparent)
 
@@ -497,6 +526,8 @@ def _raster(
         qpixmap = _render_svg_to_pixmap(path, physical_width, physical_height)
     else:
         qpixmap = QIcon(path).pixmap(physical_width, physical_height)
+    if qpixmap.isNull():
+        return qpixmap
     if color:
         qpixmap = _tint(qpixmap, color)
     qpixmap.setDevicePixelRatio(dpr)
@@ -653,6 +684,13 @@ class _ThemedIconEngine(QIconEngine):
         pixmap = _raster(
             self._path, target.width(), target.height(), scale, ink
         )
+        if pixmap.isNull():
+            # The file is gone or unreadable: find it again, once.
+            again = _found_again(self._path)
+            if again is None:
+                return pixmap
+            self._path = again
+            return self._drawn(size, mode, state, scale)
         if not self._recolor and mode == QIcon.Disabled:
             pixmap = _faded(pixmap)
         QPixmapCache.insert(key, pixmap)

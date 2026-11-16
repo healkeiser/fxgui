@@ -225,23 +225,28 @@ def test_an_opaque_png_icon_recolours(qapp, monkeypatch, tmp_path):
     assert pixmap.toImage().pixelColor(4, 4) == QColor("#00ff00")
 
 
-def test_a_deleted_icon_file_is_not_served_from_the_cache(
+def test_a_deleted_icon_file_is_forgotten_once_drawing_it_fails(
     qapp, monkeypatch, tmp_path
 ):
     _png_library(monkeypatch, tmp_path)
     path = fxicons.get_icon_path("square", library="studio")
 
     Path(path).unlink()
+    pixmap = fxicons.get_pixmap("square", library="studio", width=13, dpr=1.0)
 
+    assert pixmap.isNull()
     with pytest.raises(FileNotFoundError):
         fxicons.get_icon_path("square", library="studio")
 
 
-def test_a_deleted_extracted_icon_is_extracted_again(qapp):
+def test_a_deleted_extracted_icon_is_extracted_again_when_drawn(qapp):
     path = Path(fxicons.get_icon_path("add", library="material"))
 
     path.unlink()
+    # A size no other test drew, so no cached pixmap answers.
+    pixmap = fxicons.get_pixmap("add", library="material", width=37, dpr=1.0)
 
+    assert not pixmap.isNull()
     assert Path(fxicons.get_icon_path("add", library="material")).exists()
 
 

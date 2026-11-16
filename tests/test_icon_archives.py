@@ -54,8 +54,9 @@ def test_a_found_icon_is_not_looked_for_again(qapp, monkeypatch):
     fxicons.get_icon("star")
     fxicons.get_icon_path("add", library="material")
 
-    # Only the found file is checked, once, in case it was deleted.
-    assert sorted(str(args[0]) for args in stats) == sorted(found)
+    # Served from memory: icons are asked for while painting. A deleted
+    # file is looked for again only when drawing it fails.
+    assert found and stats == []
 
 
 def test_an_icon_missing_from_the_zip_raises():
