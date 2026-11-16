@@ -3361,7 +3361,8 @@ QWidget {{
 }}
 /* Undo what a host's sheet on the parent (Houdini's base.qss) sets and
    the base sheet leaves open; -1px is Qt's own unset size. */
-QWidget {{ margin: 0px; }}
+QWidget {{ margin: 0px; min-width: -1px; min-height: -1px; }}
+QLabel {{ padding: 0px; }}
 QToolButton {{ width: -1px; height: -1px; }}
 QLineEdit {{ height: -1px; }}
 /* A host's sort arrow (Houdini's margin-right) reserves room in every
