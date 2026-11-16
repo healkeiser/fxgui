@@ -4,7 +4,6 @@
 import pytest
 from qtpy.QtCore import QPoint, QRect
 from qtpy.QtWidgets import (
-    QFrame,
     QHBoxLayout,
     QPushButton,
     QTreeWidgetItem,
@@ -12,7 +11,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXFilteredTree, FXSummaryRow
+from fxgui.fxwidgets import FXFilteredTree, FXSummaryRow, FXViewFooter
 
 from _helpers import near, pixel, themed_window
 
@@ -56,7 +55,7 @@ def test_the_actions_are_the_cards_footer(qtbot, theme, summary):
     filtered, window = _filtered(
         qtbot, theme, summary=summary, button=button)
     tree = filtered.tree
-    footer = tree.findChild(QFrame, "fxTreeActions")
+    footer = tree.findChild(FXViewFooter)
     frame = tree.frameWidth()
     inside = tree.rect().adjusted(frame, frame, -frame, -frame)
     placed = QRect(button.mapTo(tree, QPoint(0, 0)), button.size())
@@ -90,7 +89,7 @@ def test_the_scroll_bars_scroll_the_rows_and_end_above_the_footer(
     tree.header().resizeSection(0, 900)
     for _ in range(3):
         QApplication.processEvents()
-    footer = tree.findChild(QFrame, "fxTreeActions")
+    footer = tree.findChild(FXViewFooter)
     horizontal = tree.horizontalScrollBar()
     vertical = tree.verticalScrollBar()
     assert horizontal.isVisible() and vertical.isVisible()

@@ -3911,6 +3911,67 @@ class _ArrivalCover(QWidget):
         painter.end()
 
 
+class _HeaderRule(QWidget):
+    """The rule along a table's or tree's header top, as the web look's.
+
+    A framed view's card edge is that rule already; a view with no frame
+    (`mark_flush`, a dock pane's body) gets this hairline instead, wherever
+    its header sits: under a filter bar, a line of text or a pane's title.
+    """
+
+    _header: Optional[QHeaderView] = None
+
+    @classmethod
+    def watch(cls, header: QHeaderView) -> None:
+        """Give a themed horizontal `header` its rule, once."""
+        if (
+            not _compat.is_valid(header)
+            or header.orientation() != Qt.Horizontal
+            or not _is_themed(header)
+            or header.findChild(cls, "", Qt.FindDirectChildrenOnly)
+        ):
+            return
+        cls(header)
+
+    def __init__(self, header: QHeaderView):
+        super().__init__(header)
+        _compat.hold(self)
+        self._header = header
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        header.installEventFilter(self)
+        view = header.parentWidget()
+        if view is not None:
+            # A frame set or dropped changes the view's contents rect.
+            view.installEventFilter(self)
+        self._fit()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Follow the header's width and the view's frame."""
+        if event.type() in (
+            QEvent.Resize, QEvent.Show, QEvent.ContentsRectChange,
+            QEvent.StyleChange,
+        ):
+            self._fit()
+        return False
+
+    def _fit(self) -> None:
+        header = self._header
+        if header is None or not _compat.is_valid(header):
+            return
+        view = header.parentWidget()
+        bare = isinstance(view, QAbstractScrollArea) and view.frameWidth() == 0
+        self.setVisible(bare)
+        if bare:
+            self.setGeometry(0, 0, header.width(), 1)
+            self.raise_()
+
+    def paintEvent(self, event) -> None:
+        """The border's ink, read now."""
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), QColor(colors().border))
+        painter.end()
+
+
 class _ResizeMark(QWidget):
     """Light the edge a header column resizes by, under the pointer.
 
@@ -4253,6 +4314,7 @@ class _FocusVisibility(QObject):
                 _ViewportCorners.round(watched)
                 if isinstance(watched, QHeaderView):
                     _ResizeMark.watch(watched)
+                    _HeaderRule.watch(watched)
             elif isinstance(watched, QTabBar):
                 _fit_close_buttons(watched)
             elif isinstance(watched, QSplitter):

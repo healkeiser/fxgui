@@ -133,6 +133,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXStatusDot` | Small clickable circle in a feedback colour, grey for no state |
 | `FXStatusItem` | Icon and word on a status bar, lit when clickable |
 | `FXSummaryRow` | Totals row pinned under a tree or table view, lined up with its columns (see [Summary Rows](#summary-rows)) |
+| `FXViewFooter` | A row of actions at the foot of a tree's or table's card, under its rows and summary (see [Card Footers](#card-footers)) |
 | `FXSystemTray` | System tray icon with a menu |
 | `FXTagChip` | One tag, removable or not: a neutral hairline chip; `color=` adds an 8 px dot (a token name or a colour) |
 | `FXTagInput` | Field that turns what you type into `FXTagChip`s |
@@ -311,6 +312,31 @@ summary.set_text(3, "0.1 d", Qt.AlignRight, strong=True)
 - `text(column)` reads a cell back, `clear()` empties every cell, and
   `setVisible(False)` hides the row and gives its room back to the rows.
 - Screen readers read it as "Summary", and each cell as static text.
+
+## Card Footers
+
+`FXViewFooter` puts a row of actions, such as Add and Remove, at the foot
+of a tree's or table's card: under its rows and any `FXSummaryRow`,
+inside the card's edge, on the card's surface with a rule above.
+
+``` python
+from qtpy.QtWidgets import QHBoxLayout, QPushButton
+from fxgui.fxwidgets import FXViewFooter
+
+actions = QHBoxLayout()
+actions.addWidget(QPushButton("Add"))
+actions.addWidget(QPushButton("Remove"))
+actions.addStretch()
+FXViewFooter(table, actions)
+```
+
+- The scroll bars scroll the rows and the summary, so they end above
+  the footer: the horizontal one runs right under the summary.
+- `setVisible(False)` hides the footer and gives its room back.
+- `FXFilteredTree(actions=...)` makes one, kept as its `footer`.
+- A view with no frame of its own (`fxstyle.mark_flush`, a dock pane's
+  body) draws a rule along its header's top, as the card's edge does on
+  a framed one, whatever sits above it.
 
 ## Empty Panes
 

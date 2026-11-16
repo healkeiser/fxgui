@@ -5,16 +5,14 @@ import contextlib
 from typing import Callable, Iterator, Optional
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject, QRect, QSize, Qt, Slot
+from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QKeyEvent, QKeySequence
 from qtpy.QtWidgets import (
-    QFrame,
     QHBoxLayout,
     QLayout,
     QLineEdit,
     QSizePolicy,
     QToolButton,
-    QTreeView,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -23,22 +21,9 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
-from fxgui._compat import is_valid
 from fxgui.fxwidgets._search_bar import FXSearchBar
-from fxgui.fxwidgets._summary_row import FOOTER_PROPERTY, FXSummaryRow
 from fxgui.fxwidgets._tips import apply_tip
-
-# The actions are the tree card's footer: its surface, a rule on top.
-fxstyle.register_widget_style(
-    """
-    QFrame#fxTreeActions {
-        background-color: @surface_sunken;
-        border: none;
-        border-top: 1px solid @border;
-        border-radius: 0px;
-    }
-    """
-)
+from fxgui.fxwidgets._view_footer import FXViewFooter
 
 # Shift is absent: shifted characters are still typing.
 _COMMAND_MODIFIERS = Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier
@@ -220,8 +205,9 @@ class FXFilteredTree(QWidget):
     Args:
         tree: The tree to wrap; a new `FXKeyboardTree` when omitted.
         placeholder: What the empty filter bar says.
-        actions: A row of buttons, if any: the tree card's footer, under
-            its rows and any `FXSummaryRow`, inside the card's edge.
+        actions: A row of buttons, if any: the tree card's footer
+            (`FXViewFooter`, kept as `footer`), under its rows and any
+            `FXSummaryRow`, inside the card's edge.
         parent: The parent widget.
     """
 
@@ -254,32 +240,9 @@ class FXFilteredTree(QWidget):
         layout.setSpacing(fxstyle.PANE_GAP)
         layout.addLayout(bar)
         layout.addWidget(self.tree, 1)
-        if actions is not None:
-            _TreeFooter(self.tree, actions)
-
-        # A flush tree (mark_flush, as a dock pane makes it) has no card
-        # edge under the bar: a rule runs along its top instead. A child of
-        # the tree, it reaches as far as the tree does.
-        self._top_rule = QFrame(self.tree)
-        self._top_rule.setFrameShape(QFrame.HLine)
-        self.tree.installEventFilter(self)
-        self._fit_top_rule()
-
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Keep the top rule across the tree, shown while it is flush."""
-        if watched is self.tree and event.type() in (
-            QEvent.Resize, QEvent.Show, QEvent.DynamicPropertyChange
-        ):
-            self._fit_top_rule()
-        return False
-
-    def _fit_top_rule(self) -> None:
-        rule = self._top_rule
-        flush = bool(self.tree.property(fxstyle.FLUSH_PROPERTY))
-        rule.setVisible(flush)
-        if flush:
-            rule.setGeometry(0, 0, self.tree.width(), 1)
-            rule.raise_()
+        #: The card's footer holding `actions`, or None.
+        self.footer = (
+            None if actions is None else FXViewFooter(self.tree, actions))
 
     def _filter(self, text: str) -> None:
         fxutils.filter_tree(self.tree, text)
@@ -314,96 +277,3 @@ class FXFilteredTree(QWidget):
         policy.setVerticalPolicy(QSizePolicy.Ignored)
         button.setSizePolicy(policy)
         return button
-
-
-class _TreeFooter(QFrame):
-    """A tree card's footer: a row of actions under the rows and summary.
-
-    It sits in the tree's bottom margin, under any `FXSummaryRow`, so the
-    card's edge and round corners frame it with the rows. The scroll bars
-    scroll the rows and the summary, so they end above it: Qt lays the
-    horizontal one under the whole margin, and the footer moves it up.
-    """
-
-    def __init__(self, view: QTreeView, actions: QLayout):
-        super().__init__(view)
-        self.setObjectName("fxTreeActions")
-        self._view = view
-        # Its buttons' ends line up with the cells' text.
-        lead = int(fxstyle.colors().cell_lead.rstrip("px"))
-        gap = fxstyle.PANE_GAP
-        actions.setContentsMargins(lead, gap, lead, gap)
-        self.setLayout(actions)
-        # The view resets its viewport margins on every geometry update,
-        # and puts its scroll bars back wherever it lays itself out.
-        view.viewport().installEventFilter(self)
-        # Held for the footer's life: PySide 6.5 marks a scroll bar's own
-        # wrapper deleted once a passing wrapper of its container is freed.
-        self._boxes = (
-            _bar_box(view.horizontalScrollBar()),
-            _bar_box(view.verticalScrollBar()),
-        )
-        for box in self._boxes:
-            box.installEventFilter(self)
-        fxstyle.theme_changed.connect(self._fit)
-        # Under the frame's round corners, which the theme draws on top.
-        self.lower()
-        view.viewport().lower()
-        self.show()
-
-    def event(self, event: QEvent) -> bool:
-        """Refit when the actions ask for another height."""
-        handled = super().event(event)
-        if event.type() == QEvent.LayoutRequest:
-            self._fit()
-        return handled
-
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Keep the bottom margin, the scroll bars and the footer in place."""
-        if event.type() in (
-            QEvent.Resize, QEvent.Move, QEvent.Show, QEvent.Hide
-        ):
-            self._fit()
-        return False
-
-    @Slot()
-    def _fit(self) -> None:
-        """Reserve the footer's height under any summary row and sit in it."""
-        view = self._view
-        if not is_valid(view):
-            return
-        height = self.sizeHint().height()
-        view.setProperty(FOOTER_PROPERTY, height)
-        summary = view.findChild(FXSummaryRow, "", Qt.FindDirectChildrenOnly)
-        above = 0 if summary is None or summary.isHidden() else (
-            summary.height())
-        margins = view.viewportMargins()
-        if margins.bottom() != above + height:
-            view.setViewportMargins(
-                margins.left(), margins.top(), margins.right(), above + height)
-        viewport = view.viewport().geometry()
-        under = viewport.bottom() + 1 + above
-        # Rows, summary, then the horizontal bar; the footer last, at the
-        # card's foot across its whole width, the vertical bar beside the
-        # rows and summary only.
-        horizontal, vertical = self._boxes
-        if horizontal is not view and horizontal.isVisible():
-            _place(horizontal, horizontal.x(), under,
-                   horizontal.width(), horizontal.height())
-            under += horizontal.height()
-        if vertical is not view and vertical.isVisible():
-            _place(vertical, vertical.x(), vertical.y(), vertical.width(),
-                   viewport.bottom() + 1 + above - vertical.y())
-        _place(self, viewport.x(), under,
-               view.width() - view.frameWidth() - viewport.x(), height)
-
-
-def _bar_box(bar: QWidget) -> QWidget:
-    """Return what a scroll area lays a scroll bar out in: its container."""
-    return bar.parentWidget()
-
-
-def _place(widget: QWidget, x: int, y: int, width: int, height: int) -> None:
-    """Set `widget`'s geometry when it differs: each set re-enters `_fit`."""
-    if widget.geometry() != QRect(x, y, width, height):
-        widget.setGeometry(x, y, width, height)

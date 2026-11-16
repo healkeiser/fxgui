@@ -79,6 +79,7 @@ from fxgui.fxwidgets._splash_screen import FXSplashScreen
 from fxgui.fxwidgets._status_bar import FXStatusBar, FXStatusItem
 from fxgui.fxwidgets._status_dot import FXStatusDot
 from fxgui.fxwidgets._summary_row import FXSummaryRow
+from fxgui.fxwidgets._view_footer import FXViewFooter
 from fxgui.fxwidgets._system_tray import FXSystemTray
 from fxgui.fxwidgets._meter_bar import FXMeterBar, FXMeterShare
 from fxgui.fxwidgets._tag_input import FXTagChip, FXTagInput
@@ -174,6 +175,7 @@ __all__ = [
     "FXToggleSwitch",
     "FXTopProgress",
     "FXValidatedLineEdit",
+    "FXViewFooter",
     "grab_screen_region",
     "INFO",
     "keycap",

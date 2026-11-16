@@ -36,6 +36,8 @@ from qtpy.QtWidgets import (
     QSpinBox,
     QSplitter,
     QTabBar,
+    QTableWidget,
+    QTableWidgetItem,
     QTabWidget,
     QTextEdit,
     QTreeView,
@@ -621,6 +623,31 @@ def _summary_table() -> QTreeView:
     return table
 
 
+def _record_table() -> QTableWidget:
+    """Return a record table whose Add and Remove sit in its card's footer."""
+    table = QTableWidget(0, 2)
+    table.setHorizontalHeaderLabels(["Task type", "For entity"])
+    table.verticalHeader().hide()
+    table.horizontalHeader().setStretchLastSection(True)
+    for name, entity in (
+        ("Animation", "shot"), ("Compositing", "shot"), ("Modeling", "asset"),
+    ):
+        row = table.rowCount()
+        table.insertRow(row)
+        table.setItem(row, 0, QTableWidgetItem(name))
+        table.setItem(row, 1, QTableWidgetItem(entity))
+    table.setFixedHeight(260)
+    fxwidgets.FXSummaryRow(table).set_texts([f"{table.rowCount()} task types"])
+    actions = QHBoxLayout()
+    for text, icon_name in (("Add", "plus"), ("Remove", "minus")):
+        button = QPushButton(get_icon(icon_name), text)
+        fxstyle.mark_compact(button)
+        actions.addWidget(button)
+    actions.addStretch()
+    fxwidgets.FXViewFooter(table, actions)
+    return table
+
+
 def _lists_page() -> QWidget:
     filtered = fxwidgets.FXFilteredTree(placeholder="Filter, or type on the tree")
     filtered.tree.setHeaderHidden(True)
@@ -657,6 +684,7 @@ def _lists_page() -> QWidget:
         _section("FXSortedTreeWidgetItem", sorted_tree),
         _section("FXThumbnailDelegate", _thumbnail_tree()),
         _section("FXSummaryRow", _summary_table()),
+        _section("FXViewFooter", _record_table()),
         _section("QListWidget", icon_list),
     )
 
