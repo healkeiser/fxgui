@@ -1518,9 +1518,24 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         elif band is not None:
             ground = band
         else:
-            ground = option.palette.color(QPalette.Base)
+            ground = self._view_ground(option)
         return QColor(
             fxstyle.readable_ink(ground, color, fxstyle.CONTROL_CONTRAST))
+
+    @staticmethod
+    def _view_ground(option: QStyleOptionViewItem) -> QColor:
+        """Return the colour under the view's rows.
+
+        Its base, or what shows through a see-through view (a thin scroll
+        on a card), whose base is an empty brush that reads black.
+        """
+        base = option.palette.brush(QPalette.Base)
+        view = option.widget
+        if (
+            base.style() == Qt.NoBrush or base.color().alpha() < 255
+        ) and isinstance(view, QAbstractItemView):
+            return fxstyle._ground(view.viewport())
+        return base.color()
 
     @staticmethod
     def _row_ends(
@@ -1595,8 +1610,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         `fxstyle.state_contrast`.
         """
         hover = self._hover_amount(option, index)
-        ground = band if band is not None else option.palette.color(
-            QPalette.Base)
+        ground = band if band is not None else self._view_ground(option)
         if option.state & QStyle.State_Selected:
             fill = QColor(fxstyle.colors().selection)
         elif hover > 0:

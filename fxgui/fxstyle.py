@@ -65,6 +65,7 @@ from qtpy.QtGui import (
     QPalette,
     QPen,
     QPixmap,
+    QRegion,
     QTransform,
 )
 from qtpy.QtWidgets import (
@@ -81,11 +82,13 @@ from qtpy.QtWidgets import (
     QLineEdit,
     QListView,
     QMenu,
+    QMenuBar,
     QPlainTextEdit,
     QProxyStyle,
     QPushButton,
     QSplitter,
     QStackedLayout,
+    QStatusBar,
     QStyle,
     QStyleFactory,
     QStyleOption,
@@ -95,6 +98,7 @@ from qtpy.QtWidgets import (
     QTableView,
     QTabWidget,
     QTextEdit,
+    QToolBar,
     QToolButton,
     QTreeView,
     QWidget,
@@ -3330,9 +3334,23 @@ def _ground(widget: Optional[QWidget]) -> QColor:
     see-through widget shows its nearest painted parent's.
     """
     while widget is not None:
-        color = widget.palette().color(widget.backgroundRole())
-        if color.alpha() == 255:
-            return color
+        theirs = widget.palette()
+        role = widget.backgroundRole()
+        brush = theirs.brush(role)
+        # Only a palette Qt paints is a ground: under an application sheet
+        # every widget holds the app's opaque one, and a scroll area's is
+        # an empty brush that reads black.
+        paints = (
+            widget.autoFillBackground()
+            or (widget.isWindow()
+                and not widget.testAttribute(Qt.WA_TranslucentBackground))
+            or (theirs.isBrushSet(theirs.currentColorGroup(), role) and (
+                widget.testAttribute(Qt.WA_StyledBackground)
+                # Bars paint their sheet fill as their own panel.
+                or isinstance(widget, (QMenuBar, QStatusBar, QToolBar))))
+        )
+        if paints and brush.style() != Qt.NoBrush and brush.color().alpha() == 255:
+            return brush.color()
         widget = _compat.parent_widget(widget)
     return QColor(colors().surface)
 
@@ -3391,7 +3409,13 @@ class _Reveal(QWidget):
         self.setGeometry(page.rect())
         if self._moving:
             self.hide()
-            self._shot = page.grab()
+            # What the page paints, not its palette: grab() fills that first,
+            # the app's surface under an application sheet, over a card.
+            ratio = page.devicePixelRatioF()
+            self._shot = QPixmap(page.size() * ratio)
+            self._shot.setDevicePixelRatio(ratio)
+            self._shot.fill(Qt.transparent)
+            page.render(self._shot, QPoint(), QRegion(), QWidget.DrawChildren)
             self.show()
         rise = QVariantAnimation(self)
         rise.setDuration(PANEL_FADE_MS)
