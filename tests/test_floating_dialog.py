@@ -164,3 +164,19 @@ def test_title_body_and_buttons_share_one_left_edge(qtbot):
     body = dialog.main_layout.contentsMargins().left()
     buttons = dialog.button_box.contentsMargins().left()
     assert title == body == buttons
+
+
+def test_opened_under_a_cursor_at_the_screen_s_corner_it_stays_whole(
+    qtbot, monkeypatch
+):
+    from qtpy.QtGui import QCursor
+
+    room = QApplication.primaryScreen().availableGeometry()
+    dialog = FXFloatingDialog(title="Near the corner")
+    qtbot.addWidget(dialog)
+    dialog.main_layout.addWidget(QLabel("A line of body text in the card"))
+    # Placed, not run: exec() would wait for a person.
+    monkeypatch.setattr(dialog, "exec", lambda: 0)
+    QCursor.setPos(room.bottomRight() - QPoint(3, 3))
+    dialog.show_under_cursor()
+    assert room.contains(dialog.frameGeometry())

@@ -20,6 +20,7 @@ import PySide6QtAds as ads
 from qtpy.QtCore import (
     QByteArray,
     QEvent,
+    QMargins,
     QObject,
     QPoint,
     QRect,
@@ -325,7 +326,10 @@ class _PaneEdges(QObject):
         self._held = held
         self._body = body
         self._chain: List[QWidget] = []
+        # Each container given the gap, with the margins it had before.
+        self._padded: List[Tuple[QWidget, QMargins]] = []
         self._busy = False
+        self._queued = False
         body._fx_pane_edges = self
         body.installEventFilter(self)
         held.installEventFilter(self)
@@ -341,7 +345,14 @@ class _PaneEdges(QObject):
                 tree, QAbstractItemView
             ) and not tree.property(fxstyle.FLUSH_PROPERTY):
                 fxstyle.mark_flush(tree)
+        # A view added anywhere in the body later, or one taken out, scans
+        # it again: it may be flush, or the chain may lead nowhere now.
+        for holder in [body, *body.findChildren(QWidget)]:
+            if holder.layout() is not None:
+                holder.installEventFilter(self)
         if _flush_view(body):
+            # Marked flush again after a time unmarked: the pane's gap goes.
+            self._held.layout().setContentsMargins(0, 0, 0, 0)
             body.setContentsMargins(0, 0, 0, 0)
             self._chain = []
             return
@@ -353,6 +364,7 @@ class _PaneEdges(QObject):
             return
         body.setContentsMargins(gap, 0, gap, gap)
         chain: List[QWidget] = []
+        padded = []
         for view in body.findChildren(QAbstractItemView):
             if not _flush_view(view):
                 continue
@@ -366,9 +378,21 @@ class _PaneEdges(QObject):
                 if link not in chain:
                     chain.append(link)
                     link.installEventFilter(self)
-                if parent is not body and parent not in chain:
-                    parent.setContentsMargins(gap, 0, gap, gap)
+                if parent is not body and parent not in padded:
+                    padded.append(parent)
                 link = parent
+        # A container that no longer leads to a flush view gets its own
+        # margins back: inside the body's gap, the gap again would double.
+        for holder, margins in list(self._padded):
+            if not _compat.is_valid(holder):
+                self._padded.remove((holder, margins))
+            elif holder not in padded:
+                holder.setContentsMargins(margins)
+                self._padded.remove((holder, margins))
+        for holder in padded:
+            if all(holder is not done for done, _margins in self._padded):
+                self._padded.append((holder, holder.contentsMargins()))
+            holder.setContentsMargins(gap, 0, gap, gap)
         self._chain = chain
         # Outermost first: fitting a link fits the links inside it.
         for link in chain:
@@ -384,17 +408,35 @@ class _PaneEdges(QObject):
                 if area is not None:
                     _PaneCorners.cover(area)
             return False
+        if kind in (QEvent.ChildAdded, QEvent.ChildRemoved):
+            # Once the new child is laid out, and marked as it will be.
+            if not self._queued:
+                self._queued = True
+                later(0, self, self._rescan_queued)
+            return False
         if self._busy:
             return False
         if kind == QEvent.Show and watched is self._body:
             self.rescan()
-        elif kind in (QEvent.Move, QEvent.Resize) and watched in self._chain:
+            return False
+        if kind not in (QEvent.Move, QEvent.Resize, QEvent.LayoutRequest):
+            return False
+        # A link deleted since the last scan, before the queued one.
+        if not all(_compat.is_valid(link) for link in self._chain):
+            self._chain = [
+                link for link in self._chain if _compat.is_valid(link)]
+        if kind in (QEvent.Move, QEvent.Resize) and watched in self._chain:
             self._fit(watched)
         elif kind in (QEvent.Resize, QEvent.LayoutRequest):
             for link in self._chain:
                 if link.parentWidget() is watched:
                     self._fit(link)
         return False
+
+    def _rescan_queued(self) -> None:
+        self._queued = False
+        if _compat.is_valid(self._body):
+            self.rescan()
 
     def _fit(self, link: QWidget) -> None:
         """Stretch `link` over the gap on each side it touches."""

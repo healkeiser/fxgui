@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QLineEdit,
     QPushButton,
     QVBoxLayout,
@@ -267,6 +268,9 @@ class FXConfirmDialog(QDialog):
         layout = QVBoxLayout(self)
         # Room for the shadow, which falls 6 px down.
         layout.setContentsMargins(8, 8, 8, 16)
+        # The card's own size, its wrapped lines all in: a smaller one
+        # squeezed the body under the field.
+        layout.setSizeConstraint(QLayout.SetFixedSize)
         layout.addWidget(self._card)
         fxutils.add_shadow(self._card)
         (self.field if require_typing else chosen).setFocus()

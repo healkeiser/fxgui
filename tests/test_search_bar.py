@@ -119,3 +119,15 @@ def test_a_bar_without_keys_shows_none(qtbot, qapp):
     from fxgui.fxwidgets import FXKeycap
 
     assert _bar(qtbot).findChild(FXKeycap) is None
+
+
+def test_keys_changed_on_a_shown_bar_keep_their_caps_in_view(qtbot, qapp):
+    bar = _bar(qtbot, keys="Ctrl+Shift+K")
+    bar.resize(400, bar.height())
+    bar.set_keys("Ctrl+K")
+    cap = bar._keycap
+    # Placed at once at the caps' size, not a box of nothing.
+    assert cap.isVisible()
+    assert cap.size() == cap.sizeHint()
+    assert cap.width() > 0
+    assert bar.width() - cap.geometry().right() - 1 == 6

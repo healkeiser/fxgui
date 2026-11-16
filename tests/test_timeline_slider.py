@@ -698,3 +698,30 @@ def test_a_test_reads_the_timeline_through_public_names(qtbot, qapp):
     assert timeline.go_to_start_button is timeline._goto_start_btn
     assert timeline.go_to_end_button is timeline._goto_end_btn
     assert timeline.frame_field is timeline._spinbox
+
+
+def test_a_narrowed_row_below_never_squeezes_its_fields_together(qtbot):
+    """The floor is measured in the theme: unthemed, the fields are narrower,
+    and the window let the row shrink until they overlapped."""
+    from qtpy.QtWidgets import QApplication, QVBoxLayout, QWidget
+
+    from fxgui.fxwidgets import FXMainWindow, FXTimelineSlider
+
+    window = FXMainWindow(title="Timeline")
+    host = QWidget()
+    column = QVBoxLayout(host)
+    timeline = FXTimelineSlider(controls_position="below")
+    column.addWidget(timeline)
+    column.addStretch()
+    window.setCentralWidget(host)
+    qtbot.addWidget(window)
+    window.resize(900, 300)
+    window.show()
+    qtbot.waitExposed(window)
+    window.resize(200, 300)
+    for _ in range(3):
+        QApplication.processEvents()
+    fields = [timeline._start_spinbox, timeline._view_start_spinbox,
+              timeline._view_end_spinbox, timeline._end_spinbox]
+    for one, other in zip(fields, fields[1:]):
+        assert not one.geometry().intersects(other.geometry())

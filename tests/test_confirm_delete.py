@@ -305,3 +305,21 @@ def test_every_theme_s_danger_ink_reads(theme):
         tokens["danger_button"], tokens["text_on_danger"]) >= 4.5
     assert fxstyle.get_contrast_ratio(
         tokens["danger_button_pressed"], tokens["text_on_danger"]) >= 4.5
+
+
+def test_a_shrunk_card_keeps_every_wrapped_line_clear_of_the_field(qtbot):
+    from fxgui.fxwidgets import FXConfirmDialog
+
+    dialog = FXConfirmDialog(
+        title="Delete the twelve selected shots and every version they hold?",
+        body=" ".join(["Their renders, caches and versions go too."] * 5),
+        verb="Delete", tone="danger", confirm_word="sh0100")
+    qtbot.addWidget(dialog)
+    dialog.show()
+    qtbot.waitExposed(dialog)
+    dialog.resize(10, 10)
+    QApplication.processEvents()
+    body = dialog.body_label
+    assert body.height() >= body.heightForWidth(body.width())
+    assert body.geometry().bottom() < dialog.word_label.mapTo(
+        body.parentWidget(), dialog.word_label.rect().topLeft()).y()

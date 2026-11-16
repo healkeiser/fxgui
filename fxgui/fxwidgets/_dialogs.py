@@ -7,6 +7,7 @@ from typing import Optional
 from qtpy.QtCore import Qt
 from qtpy.QtGui import (
     QCursor,
+    QGuiApplication,
     QIcon,
     QMouseEvent,
     QPixmap,
@@ -158,14 +159,22 @@ class FXFloatingDialog(QDialog):
         self.title_label.setText(title if title else "Floating Dialog")
 
     def show_under_cursor(self) -> int:
-        """Centre the dialog on the cursor at its final size and run it.
+        """Centre the dialog on the cursor, whole on its screen, and run it.
 
         Returns:
             int: `exec()`'s `DialogCode`, `Accepted` or `Rejected`.
         """
         self.adjustSize()
         geometry = self.frameGeometry()
-        geometry.moveCenter(QCursor.pos())
+        cursor = QCursor.pos()
+        geometry.moveCenter(cursor)
+        # Near a screen's edge it slides in, whole on that screen.
+        screen = QGuiApplication.screenAt(cursor) or self.screen()
+        room = screen.availableGeometry()
+        geometry.moveLeft(max(room.left(), min(
+            geometry.left(), room.right() + 1 - geometry.width())))
+        geometry.moveTop(max(room.top(), min(
+            geometry.top(), room.bottom() + 1 - geometry.height())))
         self.move(geometry.topLeft())
         return self.exec()
 
