@@ -23,6 +23,10 @@ from fxgui import fxstyle, fxutils
 from fxgui._compat import is_valid
 from fxgui.fxwidgets._labels import FXElidedLabel
 
+# Set on a view by a band it carries under its summary row: the band's
+# height, which the summary row leaves under itself in the bottom margin.
+FOOTER_PROPERTY = "fxFooterHeight"
+
 # Text a step below the body, muted unless the consumer marks it strong.
 fxstyle.register_widget_style(
     """
@@ -208,11 +212,13 @@ class FXSummaryRow(QWidget):
             return
         view = self._view
         height = 0 if self.isHidden() else fxstyle.row_height(self.view())
+        # A footer band under the row (FXFilteredTree's actions) keeps its room.
+        bottom = height + int(view.property(FOOTER_PROPERTY) or 0)
         margins = view.viewportMargins()
-        if margins.bottom() != height:
+        if margins.bottom() != bottom:
             # Protected in C++; PySide reaches it on a view made in Python.
             view.setViewportMargins(
-                margins.left(), margins.top(), margins.right(), height)
+                margins.left(), margins.top(), margins.right(), bottom)
         viewport = view.viewport().geometry()
         self.setGeometry(
             viewport.x(), viewport.bottom() + 1, viewport.width(), height)
