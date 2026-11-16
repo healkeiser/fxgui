@@ -1235,7 +1235,8 @@ def test_a_combo_row_stands_no_taller_than_a_menu_row_may(qtbot, qapp, base):
         row = view.visualRect(view.model().index(0, 0)).height()
         combo.hidePopup()
     finally:
-        fxstyle.set_style(qapp, name or "Fusion")
+        # The style as it was, unproxied, as app_root leaves it.
+        qapp.setStyle(name or "Fusion")
 
     # The sheet's cap: a 20 px line box and 6 px above and below.
     assert row <= 32
