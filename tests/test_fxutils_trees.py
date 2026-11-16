@@ -4,7 +4,7 @@
 import gc
 
 # Third-party
-from qtpy.QtCore import QPoint
+from qtpy.QtCore import QModelIndex, QPoint, Qt
 from qtpy.QtWidgets import QMenu, QTreeWidget, QTreeWidgetItem, QWidget
 
 # Internal
@@ -202,3 +202,100 @@ def test_fit_columns_counts_the_views_icon_size(qtbot):
     fitted = header.sectionSize(0)
     tree.resizeColumnToContents(0)
     assert fitted >= header.sectionSize(0)
+
+
+def _counted_tree(qtbot, monkeypatch, groups=20, children=9):
+    """A 6-column tree on FXThumbnailDelegate; count its measures."""
+    from qtpy.QtWidgets import QAbstractItemView
+
+    tree = _tree(qtbot, columns=6)
+    delegate = FXThumbnailDelegate(tree)
+    tree.setItemDelegate(delegate)
+    tree.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+    counts = {"sizeHint": 0, "_row_height": 0}
+    for name in counts:
+        real = getattr(FXThumbnailDelegate, name)
+
+        def spy(self, *args, _real=real, _name=name):
+            counts[_name] += 1
+            return _real(self, *args)
+
+        monkeypatch.setattr(FXThumbnailDelegate, name, spy)
+    for group in range(groups):
+        top = QTreeWidgetItem(tree, [f"group {group}", "a", "b", "c", "d", "e"])
+        for child in range(children):
+            QTreeWidgetItem(top, [
+                f"v{child:03d}", f"2026-11-{group + 1:02d}", f"user{group % 3}",
+                f"{group * child} MB", "ok", f"{child}" * (child + 1)])
+    return tree, delegate, counts
+
+
+def test_fit_columns_measures_widths_only(qtbot, monkeypatch):
+    tree, delegate, counts = _counted_tree(qtbot, monkeypatch)
+
+    fxutils.fit_columns(tree)
+
+    # No row's height measured: a full sizeHint per cell made a pick slow.
+    assert counts == {"sizeHint": 0, "_row_height": 0}
+
+
+def test_a_width_hint_is_the_size_hints_width(qtbot, monkeypatch):
+    from qtpy.QtGui import QFont
+    from qtpy.QtWidgets import QStyleOptionViewItem
+
+    from fxgui import fxicons
+
+    tree, delegate, _counts = _counted_tree(qtbot, monkeypatch, groups=2)
+    delegate.align_column(tree, 3, tabular=True)
+    item = tree.topLevelItem(0)
+    item.setIcon(2, fxicons.get_icon("folder"))
+    bold = QFont()
+    bold.setBold(True)
+    item.setFont(1, bold)
+    item.setCheckState(4, Qt.Checked)
+    option = QStyleOptionViewItem()
+    tree.initViewItemOption(option)
+    model = tree.model()
+    parents = [QModelIndex()]
+    while parents:
+        parent = parents.pop()
+        for row in range(model.rowCount(parent)):
+            for column in range(6):
+                index = model.index(row, column, parent)
+                # Twice: the second answer comes from the measure kept.
+                for _ in range(2):
+                    assert delegate.width_hint(option, index) == (
+                        delegate.sizeHint(option, index).width())
+            parents.append(model.index(row, 0, parent))
+
+
+def test_restoring_lays_the_rows_out_once(qtbot, monkeypatch):
+    tree, _delegate, counts = _counted_tree(qtbot, monkeypatch)
+    tree.resize(400, 200)
+    tree.show()
+    qtbot.waitExposed(tree)
+    tree.topLevelItem(3).setExpanded(True)
+    tree.setCurrentItem(tree.topLevelItem(3).child(2))
+    tree.doItemsLayout()
+    tree.verticalScrollBar().setValue(40)
+    state = fxutils.TreeState.of(tree)
+    # Refilled, as a pane's fill does.
+    tree.clear()
+    for group in range(20):
+        top = QTreeWidgetItem(tree, [f"group {group}", "a", "b", "c", "d", "e"])
+        for child in range(9):
+            QTreeWidgetItem(top, [
+                f"v{child:03d}", f"2026-11-{group + 1:02d}",
+                f"user{group % 3}", f"{group * child} MB", "ok",
+                f"{child}" * (child + 1)])
+    for name in counts:
+        counts[name] = 0
+
+    state.restore(tree)
+
+    shown = 20 + 9  # the rows a layout measures: one group open
+    # One layout, and the odd row Qt measures for its default height; a
+    # forced second layout measured every row again.
+    assert counts["sizeHint"] <= (shown + 3) * 6
+    assert tree.currentItem() is tree.topLevelItem(3).child(2)
+    assert tree.verticalScrollBar().value() == 40

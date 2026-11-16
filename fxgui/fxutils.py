@@ -511,7 +511,9 @@ def filter_tree(
 def fit_columns(view: QTreeView) -> None:
     """Widen each column to its widest row, collapsed rows too; never narrow.
 
-    `resizeColumnToContents` measures only the rows that are expanded.
+    `resizeColumnToContents` measures only the rows that are expanded. A
+    delegate with a `width_hint(option, index)` (`FXThumbnailDelegate`)
+    is asked only for widths, not the row heights a `sizeHint` measures.
     """
     model, header = view.model(), view.header()
     option = QStyleOptionViewItem()
@@ -519,18 +521,47 @@ def fit_columns(view: QTreeView) -> None:
     columns = range(model.columnCount())
     wanted = [header.sectionSizeHint(column) for column in columns]
     decorated = int(view.rootIsDecorated())
+    indentation = view.indentation()
+    # One delegate per column unless a row has its own: looked up once.
+    by_column = [view.itemDelegateForColumn(column) for column in columns]
+    measures = {}
+
+    def measure(delegate):
+        found = measures.get(id(delegate))
+        if found is None:
+            width_hint = getattr(delegate, "width_hint", None)
+            found = measures[id(delegate)] = (
+                width_hint if width_hint is not None
+                else lambda o, i: delegate.sizeHint(o, i).width())
+        return found
+
+    fallback = measure(view.itemDelegate())
+    per_column = [
+        fallback if delegate is None else measure(delegate)
+        for delegate in by_column
+    ]
+    rows_own = any(
+        view.itemDelegateForRow(row) is not None
+        for row in range(model.rowCount())
+    )
     parents = [(QModelIndex(), 0)]
     while parents:
         parent, depth = parents.pop()
+        lead = indentation * (depth + decorated)
         for row in range(model.rowCount(parent)):
             for column in columns:
                 index = model.index(row, column, parent)
-                delegate = view.itemDelegateForIndex(index)
-                width = delegate.sizeHint(option, index).width()
+                if rows_own:
+                    width = measure(view.itemDelegateForIndex(index))(
+                        option, index)
+                else:
+                    width = per_column[column](option, index)
                 if column == 0:
-                    width += view.indentation() * (depth + decorated)
-                wanted[column] = max(wanted[column], width)
-            parents.append((model.index(row, 0, parent), depth + 1))
+                    width += lead
+                if width > wanted[column]:
+                    wanted[column] = width
+            if model.hasChildren(model.index(row, 0, parent)):
+                parents.append((model.index(row, 0, parent), depth + 1))
     for column in columns:
         if wanted[column] > header.sectionSize(column):
             header.resizeSection(column, wanted[column])
@@ -626,7 +657,9 @@ class TreeState:
             if path in by_row:
                 by_row[path].setSelected(True)
         # The view lays out lazily; the scrollbar still has the old range.
-        tree.doItemsLayout()
+        # Only a layout still pending runs: a full one measures every row
+        # again, and focusing the current row may have laid it out already.
+        tree.executeDelayedItemsLayout()
         tree.verticalScrollBar().setValue(self.scroll)
 
 

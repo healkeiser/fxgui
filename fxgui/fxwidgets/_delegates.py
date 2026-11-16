@@ -294,6 +294,27 @@ def _style(widget: Optional[QWidget]) -> QStyle:
 _WEIGHT_RESOLVED = 0x10
 
 
+# Roles read for every cell measured: an attribute of Qt costs a PySide6
+# enum lookup each time, several times the read itself.
+_DISPLAY_ROLE = Qt.DisplayRole
+_FONT_ROLE = Qt.FontRole
+_DECORATION_ROLE = Qt.DecorationRole
+_CHECK_STATE_ROLE = Qt.CheckStateRole
+
+# Item font key and weight -> the title font; font key -> one line's height.
+_TITLE_FONTS: Dict[tuple, QFont] = {}
+_LINE_HEIGHTS: Dict[str, int] = {}
+
+
+def _line_height(font: QFont) -> int:
+    """Return one line's height in `font`, measured once per font."""
+    key = font.key()
+    height = _LINE_HEIGHTS.get(key)
+    if height is None:
+        height = _LINE_HEIGHTS[key] = QFontMetrics(font).height()
+    return height
+
+
 def _smaller(font: QFont, pixels: int) -> QFont:
     """Return `font` `pixels` px smaller, in its own unit, 8 px at least."""
     font = QFont(font)
@@ -729,6 +750,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         # Per column, set by align_column: an alignment, and tabular digits.
         self._column_alignment: Dict[int, int] = {}
         self._tabular_columns: Set[int] = set()
+        # A text cell's width by what it depends on (`width_hint`).
+        self._text_widths: Dict[tuple, int] = {}
         # The view last measured or painted: a dense one has smaller rows.
         self._rows_of: Optional[QWidget] = (
             parent if isinstance(parent, QWidget) else None)
@@ -936,14 +959,20 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         An item whose `Qt.FontRole` font names a weight keeps it, so a row
         can be heavier or lighter than the emphasis (a tree's levels).
         """
-        font = QFont(option.font)
-        own = index.data(Qt.FontRole) if index is not None else None
+        own = index.data(_FONT_ROLE) if index is not None else None
         if isinstance(own, QFont) and own.resolveMask() & _WEIGHT_RESOLVED:
-            font.setWeight(own.weight())
+            weight = own.weight()
         else:
-            font.setWeight(
-                QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
-        return font
+            weight = QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
+        # Measured for every cell of every row a view lays out: built once
+        # per font and weight. A copy, so a caller may change it.
+        key = (option.font.key(), weight)
+        font = _TITLE_FONTS.get(key)
+        if font is None:
+            font = QFont(option.font)
+            font.setWeight(weight)
+            _TITLE_FONTS[key] = font
+        return QFont(font)
 
     @staticmethod
     def _description_font(option: QStyleOptionViewItem) -> QFont:
@@ -972,7 +1001,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         title_font: QFont,
     ) -> int:
         """Return the width the stacked title and description want."""
-        title = index.data(Qt.DisplayRole) or ""
+        title = index.data(_DISPLAY_ROLE) or ""
         width = _advance(title_font, str(title))
         description = self._description(index)
         if description:
@@ -1041,12 +1070,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             if has_thumbnail or has_description
             else option.font
         )
-        text = QFontMetrics(title_font).height()
+        text = _line_height(title_font)
         if has_description:
-            text += (
-                self._LINE_GAP
-                + QFontMetrics(self._description_font(option)).height()
-            )
+            text += self._LINE_GAP + _line_height(
+                self._description_font(option))
         # Padding only past the row size: two lines that fit keep every row
         # of a size one height.
         size = fxstyle.row_height(self._rows_of)
@@ -1194,7 +1221,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             if has_thumbnail or self._description(index)
             else option.font
         )
-        title = str(index.data(Qt.DisplayRole) or "")
+        title = str(index.data(_DISPLAY_ROLE) or "")
         label_inset, dot_inset = self._indicator_insets(label_width, dot_width)
         right_margin = (
             self._TEXT_RIGHT_MARGIN if has_thumbnail else self.ICON_MARGIN
@@ -1297,7 +1324,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         self, option: QStyleOptionViewItem, index: QModelIndex
     ) -> int:
         """Return the width `_draw_text` needs to draw the cell whole."""
-        text = str(index.data(Qt.DisplayRole) or "")
+        text = str(index.data(_DISPLAY_ROLE) or "")
         lead = self.ICON_MARGIN
         if self._has_icon(option):
             lead = self._icon_rect(QRect(0, 0, 1000, option.rect.height() or 28)
@@ -1960,7 +1987,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             QColor(theme.text_toned if group else theme.text_strong)
             if plain else color)
         painter.setFont(title_font)
-        title = str(index.data(Qt.DisplayRole) or "")
+        title = str(index.data(_DISPLAY_ROLE) or "")
         _draw_elided(
             painter,
             title_rect,
@@ -2238,7 +2265,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             _paint_icon(painter, option.icon, icon_rect, option.state)
             text_x = icon_rect.right() + 1 + self._ICON_GAP
 
-        text = index.data(Qt.DisplayRole)
+        text = index.data(_DISPLAY_ROLE)
         if not text:
             return
         # Beside a row's name, its other columns are quieter.
@@ -2325,22 +2352,66 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     ) -> QSize:
         """Return the row's size, measured with the item's own font."""
         self._rows_of = option.widget
-        opt = self._init(option, index)
-        base = super().sizeHint(option, index)
-        height = self._row_height(opt, index)
+        return QSize(
+            self.width_hint(option, index),
+            self._row_height(self._init(option, index), index),
+        )
 
+    def width_hint(
+        self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> int:
+        """Return the width `sizeHint` asks for, without the row's height.
+
+        For a caller measuring columns across many rows
+        (`fxutils.fit_columns`): the height is left unmeasured.
+
+        Examples:
+            >>> width = delegate.width_hint(option, index)
+        """
+        self._rows_of = option.widget
+        column = index.column()
+        if (
+            column not in (0, self.picker_column)
+            and index.data(_CHECK_STATE_ROLE) is None
+        ):
+            # A text cell: Qt's own measure is never wider than what
+            # _draw_text draws, so it is not asked; one text in one font
+            # is measured once.
+            own = index.data(_FONT_ROLE)
+            decoration = index.data(_DECORATION_ROLE)
+            key = (
+                column,
+                str(index.data(_DISPLAY_ROLE) or ""),
+                option.font.key(),
+                own.key() if isinstance(own, QFont) else None,
+                not decoration.isNull() if isinstance(decoration, QIcon)
+                else decoration is not None,
+                self._is_tabular(index),
+                option.rect.height(),
+                option.decorationSize.width(),
+            )
+            width = self._text_widths.get(key)
+            if width is None:
+                if len(self._text_widths) > 4096:
+                    self._text_widths.clear()
+                width = self._text_widths[key] = self._text_cell_width(
+                    self._init(option, index), index)
+            return width
+        opt = self._init(option, index)
+        return self._width(opt, index, super().sizeHint(option, index).width())
+
+    def _width(
+        self, opt: QStyleOptionViewItem, index: QModelIndex, base: int
+    ) -> int:
+        """Return a cell's width: `base`, Qt's own measure, or what we draw."""
         # Only column 0 lays out a thumbnail, marks and a description;
         # another column lays out a picker or plain text
         if index.column() != 0:
             picker = self._picker_rect(opt, index)
             if picker is not None:
-                width = max(
-                    base.width(),
-                    picker.width() + self._PICKER_RIGHT_MARGIN * 2)
-            else:
-                # What _draw_text draws, tabular digits and insets included.
-                width = max(base.width(), self._text_cell_width(opt, index))
-            return QSize(width, height)
+                return max(base, picker.width() + self._PICKER_RIGHT_MARGIN * 2)
+            # What _draw_text draws, tabular digits and insets included.
+            return max(base, self._text_cell_width(opt, index))
 
         has_thumbnail = self._has_thumbnail(index)
         has_description = bool(self._description(index))
@@ -2363,7 +2434,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         )
         # Never a width the row cannot be laid out in
         floor = self._row_minimum_width(opt, index, has_thumbnail)
-        return QSize(max(base.width(), total, floor), height)
+        return max(base, total, floor)
 
     def paint(
         self,
