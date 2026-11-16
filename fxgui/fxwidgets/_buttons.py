@@ -206,7 +206,10 @@ class FXIconButton(QToolButton):
         """Size the circle: its own size, or a push button's in its font."""
         size = self._size or fxstyle.control_height(self)
         self.setFixedSize(size, size)
-        glyph = round(size * 0.57)
+        # 57 % of the side, less a whole margin each side: the circle's
+        # parity, so the glyph centres (an odd glyph in an even circle
+        # stands a pixel off, two at 2x).
+        glyph = size - 2 * round(size * 0.43 / 2)
         self.setIconSize(QSize(glyph, glyph))
         self.setProperty("fxSize", min(max(size, _SIZES[0]), _SIZES[-1]))
 
