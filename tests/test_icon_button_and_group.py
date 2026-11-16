@@ -311,3 +311,20 @@ def test_a_deleted_child_leaves_the_group_at_once(qtbot, window):
     shiboken.delete(c)
     assert _places([a, b]) == ["first", "last"]
     assert not hasattr(group, "_widgets")
+
+
+@pytest.mark.parametrize("size", [20, 26, 30, 32, 36])
+def test_the_glyph_stands_centred_in_any_circle(qtbot, window, size):
+    """An odd glyph in an even circle stood a pixel off; two at 2x."""
+    button = _show(qtbot, window, FXIconButton("plus", window, size=size))
+    image = button.grab().toImage()
+    ground = image.pixelColor(size // 2, 2).name()
+    ink = [
+        (x, y) for x in range(image.width()) for y in range(image.height())
+        if image.pixelColor(x, y).name() != ground
+    ]
+    xs, ys = [x for x, _ in ink], [y for _, y in ink]
+
+    assert (size - button.iconSize().width()) % 2 == 0, "the circle's parity"
+    assert min(xs) == size - 1 - max(xs), "as far from the left as the right"
+    assert min(ys) == size - 1 - max(ys), "as far from the top as the bottom"

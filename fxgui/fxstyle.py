@@ -2807,6 +2807,23 @@ def _ruled(view: Optional[QWidget]) -> bool:
     )
 
 
+def _icon_box_rounding_down(rect: QRect, pixmap: QPixmap) -> QRect:
+    """Return `rect` a pixel short on a side where Qt would round up.
+
+    Qt centres a pixmap at half the box less half the pixmap, each rounded
+    down: an odd pixmap in an even box lands a pixel right or down of the
+    even case, which the sheet's 4 / 3 px tool button padding is tuned for
+    (a 17 px icon stood 7 px in on one side, 5 px on the other). A box a
+    pixel short rounds the odd case down as well.
+    """
+    ratio = pixmap.devicePixelRatio()
+    width = round(pixmap.width() / ratio)
+    height = round(pixmap.height() / ratio)
+    narrow = rect.width() % 2 == 0 and width % 2 == 1
+    short = rect.height() % 2 == 0 and height % 2 == 1
+    return rect.adjusted(0, 0, -int(narrow), -int(short))
+
+
 class FXProxyStyle(QProxyStyle):
     """Give Qt's standard icons (dialogs, message boxes) fxgui's themed icons.
 
@@ -2900,6 +2917,18 @@ class FXProxyStyle(QProxyStyle):
                     QPalette.ColorRole.ButtonText,
                     QColor(getattr(colors(), token)))
         super().drawControl(element, option, painter, widget)
+
+    def drawItemPixmap(self, painter, rect, alignment, pixmap):
+        """Draw `pixmap` in `rect`; a tool button's icon centred at any size.
+
+        The sheet draws a tool button's icon through here, with no widget:
+        the painter's device is the button.
+        """
+        if alignment == Qt.AlignCenter and isinstance(
+            painter.device(), QToolButton
+        ):
+            rect = _icon_box_rounding_down(rect, pixmap)
+        super().drawItemPixmap(painter, rect, alignment, pixmap)
 
     # Set while the sheet is asked for a cell's rects, which it may ask back.
     _asking_sheet = False
