@@ -1729,6 +1729,10 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 <td>The same card for any confirm: <code>verb</code>, <code>tone="plain"</code> (a primary verb) or <code>"danger"</code> (red), an optional <code>alternative</code> (with <code>alternative_tone</code>) at the left, and <code>default</code> (the choice Enter takes: the verb when plain, Cancel when danger). <code>exec()</code> returns <code>VERB</code>, <code>CANCEL</code> or <code>ALTERNATIVE</code>; <code>choice()</code> names it. Escape cancels. The card has no title bar: drag it by its title. Given a parent (a DCC's main window included), it is owned by that window and stays above it</td>
 </tr>
 <tr>
+<td><code>FXInputDialog</code></td>
+<td>The confirm card asking for one value: <code>kind="line"</code>, <code>"text"</code> (Ctrl+Enter takes the verb) or <code>"choice"</code> (from <code>choices</code>), a starting <code>value</code>, a <code>placeholder</code>, and <code>required</code> to keep the verb shut while the field is empty. <code>field</code> is the input; <code>value()</code> reads it</td>
+</tr>
+<tr>
 <td><code>FXConfirmDeleteDialog</code></td>
 <td>Asks before an act with no undo: a card with the question, Cancel then a red Delete, focus on Cancel; Enter never deletes, and the window behind dims. <code>require_typing=True</code> (on when a <code>confirm_word</code> is given) waits for the name typed exactly</td>
 </tr>
@@ -1882,7 +1886,7 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 </tr>
 <tr>
 <td><code>FXSkeleton</code></td>
-<td>Grey blocks in the shape of a list, cards or text while they load, a light sweeping across (see <a href="#loading">Loading</a>)</td>
+<td>Grey blocks in the shape of a list, cards, text or a grid (a name column, then <code>columns</code> narrow ones) while they load, a light sweeping across (see <a href="#loading">Loading</a>)</td>
 </tr>
 <tr>
 <td><code>FXSortedTreeWidgetItem</code></td>
@@ -2154,7 +2158,7 @@ touch off the ground, with one light sweeping across every 1.6 s:</p>
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="o">...</span>                               <span class="c1"># The data arrives.</span>
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">FXSkeleton</span><span class="o">.</span><span class="n">uncover</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
 </span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">cards</span> <span class="o">=</span> <span class="n">FXSkeleton</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"cards"</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>   <span class="c1"># Or "rows", "lines".</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">cards</span> <span class="o">=</span> <span class="n">FXSkeleton</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"cards"</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>   <span class="c1"># Or "rows", "lines", "grid".</span>
 </span></code></pre></div>
 <p><code>cover</code> puts the skeleton inside a list's, tree's or table's frame and
 keeps it the view's size; <code>count=None</code> fills the height.</p>
@@ -2214,7 +2218,7 @@ takes (an inner line edit) chains through that proxy, which a bare
 </span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>    <span class="s2">"Ctrl+S"</span><span class="p">,</span>
 </span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="p">)</span>
 </span></code></pre></div>
-<p>The title is in the theme's primary text, the body dimmed, and the shortcut sits on the right as keycaps, one per key: <code>Ctrl</code> <code>S</code>. The keys of one chord sit close; a second chord (<code>Ctrl+K, Ctrl+S</code>) sits further away. Key names come from <code>QKeySequence</code>, so a Mac shows its own glyphs rather than the word "Ctrl".</p>
+<p>The title is in the theme's primary text, the body dimmed, and the shortcut follows the title after a middle dot, as keycaps, one per key: <code>Ctrl</code> <code>S</code>. The keys of one chord sit close; a second chord (<code>Ctrl+K, Ctrl+S</code>) sits further away. Key names come from <code>QKeySequence</code>, so a Mac shows its own glyphs rather than the word "Ctrl".</p>
 <table>
 <thead>
 <tr>
