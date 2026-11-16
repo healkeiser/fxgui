@@ -259,3 +259,25 @@ def test_a_deep_view_marked_flush_late_reaches_the_border(qtbot):
     QApplication.processEvents()
     inner, box = _edges(docks, view)
     assert (box.left(), box.right()) == (inner.left(), inner.right())
+
+
+@pytest.mark.parametrize("depth", [0, 2])
+def test_unmarking_and_remarking_a_flush_view_leaves_no_stale_gap(
+    qtbot, depth
+):
+    if depth:
+        body, view, _innermost = _nested(depth)
+    else:
+        body = view = _tree()
+    _window, docks = _docked(qtbot, body)
+    for _ in range(2):
+        fxstyle.mark_flush(view, False)
+        QApplication.processEvents()
+        inner, box = _edges(docks, view)
+        # One gap, not the gap of every container that led to it.
+        assert (box.left() - inner.left(), inner.right() - box.right()) == (
+            GAP, GAP)
+        fxstyle.mark_flush(view)
+        QApplication.processEvents()
+        inner, box = _edges(docks, view)
+        assert (box.left(), box.right()) == (inner.left(), inner.right())

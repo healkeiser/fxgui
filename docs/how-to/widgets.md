@@ -428,7 +428,7 @@ apply_tip(
 )
 ```
 
-The title is in the theme's primary text, the body dimmed, and the shortcut sits on the right as keycaps, one per key: `Ctrl` `S`. The keys of one chord sit close; a second chord (`Ctrl+K, Ctrl+S`) sits further away. Key names come from `QKeySequence`, so a Mac shows its own glyphs rather than the word "Ctrl".
+The title is in the theme's primary text, the body dimmed, and the shortcut follows the title after a middle dot, as keycaps, one per key: `Ctrl` `S`. The keys of one chord sit close; a second chord (`Ctrl+K, Ctrl+S`) sits further away. Key names come from `QKeySequence`, so a Mac shows its own glyphs rather than the word "Ctrl".
 
 | Target | What happens |
 |--------|--------------|

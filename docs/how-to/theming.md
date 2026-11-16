@@ -438,10 +438,10 @@ line:
 | Size | Value | Who takes it |
 |------|-------|--------------|
 | `fxstyle.control_height(widget)` | 32 px at the 13 px body font | Every control with text or a button's box: push buttons, `FXIconButton`, `FXSplitButton`, `FXJoinedGroup`, line edits, combo boxes, spin boxes, `FXSearchBar`, `FXFilePathWidget`, `FXBreadcrumb`, the `FXTagInput` field, the `FXTimelineSlider` row |
-| `fxstyle.INDICATOR_SIZE`, `@indicator_size` | 16 px | An on/off mark: a check box or radio indicator, and the track of `FXToggleSwitch` (twice as wide as tall) |
+| `fxstyle.INDICATOR_SIZE`, `@indicator_size` | 16 px | An on/off mark: a check box or radio indicator, and the knob of `FXToggleSwitch` (its track is 36 x 20 px) |
 
 A mark is smaller than the row and centres in it: an `FXToggleSwitch` is
-`control_height` tall, its 16 px track in the middle, so it lines up
+`control_height` tall, its 20 px track in the middle, so it lines up
 with the button beside it. A slider handle (14 px) and a status dot do
 the same. A control that sizes itself returns these from `sizeHint()`.
 A plain icon `QToolButton` in a toolbar sizes to its icon. The Buttons

@@ -2490,6 +2490,11 @@ def mark_flush(view: QWidget, flush: bool = True) -> None:
     """
     view.setProperty(FLUSH_PROPERTY, bool(flush))
     fxutils.repolish(view)
+    # Shown flush, it got no corners at its show: its frame back needs them.
+    if view.isVisible() and isinstance(
+        view, (QAbstractItemView, QGraphicsView)
+    ):
+        _ViewportCorners.round(view)
     # In a dock pane already: the pane lets it run to its border now.
     holder = view
     while holder is not None:
@@ -3592,6 +3597,9 @@ class _ViewportCorners(QWidget):
         if view is None or not _compat.is_valid(view):
             return
         frame = view.frameWidth()
+        # Marked flush since: no frame, so no corner to round.
+        if frame == 0:
+            return
         outer = QRectF(self.rect())
         radius = BUTTON_RADIUS
         clip = QPainterPath()
