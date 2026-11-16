@@ -878,25 +878,28 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     #: the row less its margins and frame.
     THUMBNAIL_SIZES = {28: (32, 18), 36: (44, 24), 52: (72, 40)}
 
+    @classmethod
+    def thumbnail_size(cls, row_height: int) -> Tuple[int, int]:
+        """Return the picture's (width, height) in a row `row_height` tall.
+
+        `THUMBNAIL_SIZES` at its heights; at another, 16:9 of the row less
+        its margins and frame. A loading skeleton draws its slot this size.
+        """
+        size = cls.THUMBNAIL_SIZES.get(row_height)
+        if size is not None:
+            return size
+        tall = row_height - cls._THUMBNAIL_MARGIN * 2 - cls._THUMBNAIL_BORDER
+        return round(tall * 16 / 9), tall
+
     @property
     def _THUMBNAIL_HEIGHT(self) -> int:
         """The picture's height at the row size in force."""
-        size = self.THUMBNAIL_SIZES.get(fxstyle.row_height(self._rows_of))
-        if size is not None:
-            return size[1]
-        return (
-            fxstyle.row_height(self._rows_of)
-            - self._THUMBNAIL_MARGIN * 2
-            - self._THUMBNAIL_BORDER
-        )
+        return self.thumbnail_size(fxstyle.row_height(self._rows_of))[1]
 
     @property
     def _THUMBNAIL_WIDTH(self) -> int:
-        """The picture's width at the row size in force, else 16:9."""
-        size = self.THUMBNAIL_SIZES.get(fxstyle.row_height(self._rows_of))
-        if size is not None:
-            return size[0]
-        return round(self._THUMBNAIL_HEIGHT * 16 / 9)
+        """The picture's width at the row size in force."""
+        return self.thumbnail_size(fxstyle.row_height(self._rows_of))[0]
 
     @property
     def _THUMBNAIL_SPAN(self) -> int:

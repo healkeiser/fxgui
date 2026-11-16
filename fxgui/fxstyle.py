@@ -40,6 +40,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Tuple, Union
 from qtpy.QtCore import (
     QEasingCurve,
     QEvent,
+    QFileSystemWatcher,
     QObject,
     QPoint,
     QPointF,
@@ -576,6 +577,12 @@ def motion() -> bool:
 # choice reads as different; `apply_row_size` picks one.
 ROW_SIZES = {"small": 28, "normal": 36, "big": 52}
 _DEFAULT_ROW_SIZE = "normal"
+
+# A dense row under the small one: a compact control's height.
+_DENSE_UNDER_SMALL = COMPACT_HEIGHT
+
+# The row height fxgui last gave a table's rows, on the table.
+_TABLE_ROWS_PROPERTY = "_fxTableRows"
 
 # The dynamic property a widget registered as a themed root carries.
 ROOT_PROPERTY = "fxThemedRoot"
@@ -2107,9 +2114,7 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     tokens["@card_radius"] = f"{CARD_RADIUS}px"
     tokens["@small_radius"] = f"{SMALL_RADIUS}px"
     tokens["@row_height"] = f"{row_height()}px"
-    names = list(ROW_SIZES)
-    tokens["@dense_row_height"] = (
-        f"{ROW_SIZES[names[max(names.index(row_size()) - 1, 0)]]}px")
+    tokens["@dense_row_height"] = f"{_dense_height(row_size())}px"
     # A navigation list's current row: the accent, stepped until it reads
     # on the pressed chip behind it.
     tokens["@nav_ink"] = readable_ink(
@@ -2376,6 +2381,82 @@ def _forget_saved_settings() -> None:
         _colors_changed()
 
 
+# Watches the settings file, so a row size chosen in another process (the
+# launcher, while a window stands in a DCC) reaches this one's windows.
+_settings_watch: Optional[QFileSystemWatcher] = None
+# The row size the file held when last read, and whether a re-read waits.
+_filed_rows: Optional[str] = None
+_reread_queued = False
+
+
+def _saved_rows() -> Optional[str]:
+    """Return the row size the settings file holds now, or None."""
+    settings = fxconfig._settings()
+    settings.sync()
+    saved = settings.value(_SETTINGS_ROW_SIZE_KEY)
+    return saved if saved in ROW_SIZES else None
+
+
+def _watch_settings(baseline: bool = True) -> None:
+    """Watch this application's settings file, wherever it is now.
+
+    Args:
+        baseline: Take the row size the file holds as the one already seen,
+            when the file comes under watch.
+    """
+    global _settings_watch, _filed_rows
+    app = QApplication.instance()
+    if app is None:
+        return
+    path = fxconfig._settings().fileName()
+    watch = _settings_watch
+    if watch is None or not _compat.is_valid(watch):
+        watch = _settings_watch = QFileSystemWatcher(app)
+        watch.fileChanged.connect(_settings_touched)
+        watch.directoryChanged.connect(_settings_touched)
+    if watch.property("fxPath") != path:
+        old = watch.files() + watch.directories()
+        if old:
+            watch.removePaths(old)
+        watch.setProperty("fxPath", path)
+    # The file is written whole and renamed in place, which drops its
+    # watch: its folder's change puts it back.
+    for each in (os.path.dirname(path), path):
+        if os.path.exists(each) and each not in (
+            watch.files() + watch.directories()
+        ):
+            watch.addPath(each)
+            if each == path and baseline:
+                _filed_rows = _saved_rows()
+
+
+def _settings_touched(_path: str = "") -> None:
+    """Re-read the settings file once its writer is done."""
+    global _reread_queued
+    app = QApplication.instance()
+    if _reread_queued or app is None:
+        return
+    _reread_queued = True
+    fxutils.later(50, app, _settings_reread)
+
+
+def _settings_reread() -> None:
+    """Take a row size another process saved; keep this one's otherwise.
+
+    Only a change in the file counts: a size this process chose without
+    saving it stays until the file itself says something new.
+    """
+    global _reread_queued, _filed_rows
+    _reread_queued = False
+    filed = _saved_rows()
+    _watch_settings(baseline=False)
+    if filed is None or filed == _filed_rows:
+        return
+    _filed_rows = filed
+    if filed != row_size():
+        apply_row_size(filed, save=False)
+
+
 def row_height(view: Optional[QWidget] = None) -> int:
     """Return the height, in pixels, of a list or tree row.
 
@@ -2383,11 +2464,17 @@ def row_height(view: Optional[QWidget] = None) -> int:
         view: The view the row is in. A view marked dense (`mark_dense`)
             takes one row size under the one in force.
     """
-    names = list(ROW_SIZES)
     size = row_size()
     if view is not None and view.property(DENSE_PROPERTY):
-        size = names[max(names.index(size) - 1, 0)]
+        return _dense_height(size)
     return ROW_SIZES[size]
+
+
+def _dense_height(size: str) -> int:
+    """Return a dense row's height under the `ROW_SIZES` name `size`."""
+    names = list(ROW_SIZES)
+    step = names.index(size) - 1
+    return ROW_SIZES[names[step]] if step >= 0 else _DENSE_UNDER_SMALL
 
 
 def column_lines() -> bool:
@@ -2512,9 +2599,9 @@ def mark_flush(view: QWidget, flush: bool = True) -> None:
 def mark_dense(view: QWidget, dense: bool = True) -> None:
     """Make a view's rows one row size under the one in force.
 
-    For a navigation tree, as the web look's Hierarchy: small rows while
-    the person's row height is normal, normal ones when it is big, small
-    still when it is small. Lists keep the row height in force.
+    Small rows while the person's row height is normal, normal ones when it
+    is big, and 24 px, a compact control's height, when it is small: each
+    choice still reads as different.
 
     Args:
         view: A tree or list view.
@@ -2796,6 +2883,27 @@ def _mark_self_ruled(view: QAbstractItemView) -> None:
         fxutils.repolish(view)
 
 
+def _fit_table_rows(table: QTableView) -> None:
+    """Make `table`'s rows the row size in force, as a tree's are.
+
+    A table sizes its rows by its vertical header, which no sheet reaches.
+    A row height the application set itself stays: only Qt's own default,
+    or the one fxgui gave, moves.
+    """
+    header = table.verticalHeader()
+    current = header.defaultSectionSize()
+    given = table.property(_TABLE_ROWS_PROPERTY)
+    if given is None:
+        own = header.style().pixelMetric(
+            QStyle.PM_HeaderDefaultSectionSizeVertical, None, header)
+        if current != own:
+            return
+    elif current != given:
+        return
+    header.setDefaultSectionSize(row_height(table))
+    table.setProperty(_TABLE_ROWS_PROPERTY, header.defaultSectionSize())
+
+
 def _ruled(view: Optional[QWidget]) -> bool:
     """Whether `view` draws a hairline under each row.
 
@@ -3040,6 +3148,8 @@ class FXProxyStyle(QProxyStyle):
         # the sheet's item box; nothing else tells it to measure again.
         if isinstance(widget, QAbstractItemView):
             widget.scheduleDelayedItemsLayout()
+        if isinstance(widget, QTableView):
+            _fit_table_rows(widget)
         # The sheet's chevron fills its branch box: a rule per indentation
         # pads that box in to the 14 px chevron.
         # ponytail: read at polish; a later setIndentation needs a repolish.
@@ -3313,6 +3423,7 @@ def register_themed_root(root: QObject) -> None:
     # fxgui's faces in the database before anything is laid out, so the
     # first layout measures with the face the first paint draws.
     _register_bundled_fonts()
+    _watch_settings()
     if isinstance(root, QWidget):
         # Marked in both modes: a themed window fades in as it shows.
         root.setProperty(ROOT_PROPERTY, True)

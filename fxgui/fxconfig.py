@@ -21,6 +21,9 @@ from typing import Any, Optional
 # Third-party
 from qtpy.QtCore import QSettings
 
+# Internal
+from fxgui import _compat
+
 
 __all__ = ["get_value", "set_application_name", "set_value"]
 
@@ -68,7 +71,9 @@ def set_application_name(name: str) -> None:
 def _settings() -> QSettings:
     """Return the cached QSettings on this application's INI file."""
     global _settings_instance
-    if _settings_instance is None:
+    # PySide deletes a parentless QObject with the QApplication: a second
+    # application in the process needs a new one.
+    if _settings_instance is None or not _compat.is_valid(_settings_instance):
         _settings_instance = QSettings(
             QSettings.IniFormat, QSettings.UserScope, _APP_NAME, "settings"
         )

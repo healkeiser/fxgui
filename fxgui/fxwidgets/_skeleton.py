@@ -7,7 +7,7 @@ from typing import Optional
 # Third-party
 from qtpy.QtCore import QEvent, QObject, QRect, QRectF, QSize, Qt, QVariantAnimation
 from qtpy.QtGui import QColor, QLinearGradient, QPainter
-from qtpy.QtWidgets import QAbstractScrollArea, QWidget
+from qtpy.QtWidgets import QAbstractItemView, QAbstractScrollArea, QWidget
 
 # Internal
 from fxgui import _compat, fxstyle
@@ -24,10 +24,10 @@ _GREY = 0.05
 _LIGHT_ALPHA = 0.05
 # One light sweeping across every 1.6 s.
 _SWEEP_MS = 1600
-# A row's side inset, the gap between its blocks, its thumbnail slot.
+# A row's side inset and the gap between its blocks; its thumbnail slot
+# is the covered view's (FXThumbnailDelegate.thumbnail_size).
 _ROW_INSET = 16
 _GAP = 12
-_THUMBNAIL = (44, 24)
 # A card: its padding, height and the width a column needs.
 _CARD_PAD = 16
 _CARD_HEIGHT = 120
@@ -254,15 +254,26 @@ class FXSkeleton(QWidget):
         height = self._extent.height() if self._extent.isValid() else self.height()
         return max(1, math.ceil(height / pitch))
 
+    def _rows_view(self) -> Optional[QWidget]:
+        """Return the item view whose rows this skeleton stands in for."""
+        owner = self.parentWidget() if self._covering else None
+        if owner is not None and not isinstance(owner, QAbstractItemView):
+            owner = owner.parentWidget()
+        return owner if isinstance(owner, QAbstractItemView) else None
+
     def _paint_rows(self, painter: QPainter) -> None:
-        height = fxstyle.row_height()
+        from fxgui.fxwidgets._delegates import FXThumbnailDelegate
+
+        # The covered view's rows: its row size, dense or not, and the
+        # picture its delegate draws at that size, so nothing jumps.
+        height = fxstyle.row_height(self._rows_view())
         right = self._extent.width() - _ROW_INSET
         for index in range(1, self._how_many(height) + 1):
             painter.setOpacity(_fade(index))
             middle = (index - 1) * height + height / 2
             x = _ROW_INSET
             if self._thumbnail:
-                width, tall = _THUMBNAIL
+                width, tall = FXThumbnailDelegate.thumbnail_size(height)
                 painter.drawRoundedRect(
                     QRectF(x, middle - tall / 2, width, tall), 4, 4)
                 x += width + _GAP
@@ -277,7 +288,7 @@ class FXSkeleton(QWidget):
 
     def _paint_grid(self, painter: QPainter) -> None:
         """A name bar, then one short bar centred in each narrow column."""
-        height = fxstyle.row_height()
+        height = fxstyle.row_height(self._rows_view())
         width = self._extent.width()
         name = min(_GRID_NAME, (width - _ROW_INSET * 2) * 0.3)
         left = _ROW_INSET + name + _GAP

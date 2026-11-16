@@ -1209,8 +1209,14 @@ QTableView::item {
     padding: 0px @cell_padding;
 }
 
-/* 28 px at least; a wrapping list's row grows with its lines. */
+/* A list row is a tree's: the row size in force, at least. A wrapping
+   list (setWordWrap(True) before it shows) is text, not rows: its rows
+   start at the small row and grow with their lines. */
 QListView::item {
+    min-height: @row_height;
+}
+
+QListView[wordWrap="true"]::item {
     min-height: 28px;
 }
 

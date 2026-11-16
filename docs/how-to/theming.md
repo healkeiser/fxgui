@@ -488,7 +488,8 @@ layout.setSpacing(fxstyle.DIALOG_GAP)
 |------|-------|------|
 | A compact button, in a row or a panel | 24 px, small text, 16 px icon | `fxstyle.mark_compact(button)`, `fxstyle.COMPACT_HEIGHT` |
 | A filter field | 28 px, small text, its text 32 px in | `FXSearchBar`, `fxstyle.FILTER_DROP` (4 px under a control) |
-| A navigation tree's rows | one row size under the one in force | `fxstyle.mark_dense(view)`, `fxstyle.row_height(view)` |
+| Rows of a tree, a table or a list | the row size in force (28 / 36 / 52 px), live, also when another process of the application saves a new one | `fxstyle.apply_row_size(size)`, `fxstyle.row_height(view)`; a word-wrapping list (`setWordWrap(True)` before it shows) starts its rows at 28 px; a table keeps a row height the application set |
+| A denser view's rows | one row size under the one in force (24 / 28 / 36 px) | `fxstyle.mark_dense(view)` |
 | A view that fills its pane | no frame of its own | `fxstyle.mark_flush(view)`; `FXDockArea` marks a pane whose body is a view |
 | A reading pane (a task's details) | content 24 px in, blocks 24 px apart | `fxstyle.READING_INSET` |
 | Column rules | after the first column always; every column when chosen (Window > Column lines) | `fxstyle.column_lines()`, `fxstyle.apply_column_lines(on)`, `fxstyle.draw_column_rule(...)` for a delegate of your own |
