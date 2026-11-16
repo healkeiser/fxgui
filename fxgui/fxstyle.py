@@ -3428,9 +3428,13 @@ class _ResizeMark(QWidget):
     @classmethod
     def watch(cls, header: QHeaderView) -> None:
         """Give a themed horizontal `header` its mark, once."""
+        # A header shown while its view is torn down may be half deleted.
+        if not _compat.is_valid(header):
+            return
         viewport = header.viewport()
         if (
-            header.orientation() != Qt.Horizontal
+            not _compat.is_valid(viewport)
+            or header.orientation() != Qt.Horizontal
             or not _is_themed(header)
             or viewport.findChild(cls, "", Qt.FindDirectChildrenOnly)
         ):
