@@ -100,6 +100,7 @@ class FXSummaryRow(QWidget):
         # each one resizes the viewport, where the bottom margin goes back.
         view.viewport().installEventFilter(self)
         fxstyle.theme_changed.connect(self._fit)
+        fxstyle.row_size_changed.connect(self._fit)
         # Just above the viewport: the frame's round corners, which the
         # theme draws over the view's children, stay above the row.
         self.lower()

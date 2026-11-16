@@ -1209,13 +1209,10 @@ QTableView::item {
     padding: 0px @cell_padding;
 }
 
-/* A list row is a tree's: the row size in force, at least. A wrapping
-   list (setWordWrap(True) before it shows) is text, not rows: its rows
-   start at the small row and grow with their lines. */
-QListView::item {
-    min-height: @row_height;
-}
-
+/* A list's and a tree's rows are the row size in force: FXProxyStyle
+   measures them, so a row size change is a relayout, not a restyle. A
+   wrapping list (setWordWrap(True) before it shows) is text, not rows: its
+   rows start at the small row and grow with their lines. */
 QListView[wordWrap="true"]::item {
     min-height: 28px;
 }
@@ -1228,24 +1225,11 @@ QGraphicsView
     border-radius: @button_radius;
 }
 
-/* A tree row is a table's: flat, and as tall as the row size in force. */
-QTreeView::item {
-    min-height: @row_height;
-    max-height: @row_height;
-}
-
 /* A view that fills its pane (mark_flush): the pane's edge frames it. */
 QAbstractScrollArea[fxFlush="true"],
 QAbstractItemView[fxFlush="true"] {
     border: none;
     border-radius: 0px;
-}
-
-/* A dense tree (mark_dense), a navigation tree: one row size under. */
-QTreeView[fxDense="true"]::item,
-QListView[fxDense="true"]::item {
-    min-height: @dense_row_height;
-    max-height: @dense_row_height;
 }
 
 QListView::item:!selected:hover,

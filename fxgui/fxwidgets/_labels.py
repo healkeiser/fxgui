@@ -29,6 +29,9 @@ class FXElidedLabel(QLabel):
         >>> label = FXElidedLabel("a very long identity", mode=Qt.ElideMiddle)
     """
 
+    # What the text was last cut for; read before `__init__` may have run.
+    _elided_for = None
+
     def __init__(
         self,
         text: str = "",
@@ -38,6 +41,7 @@ class FXElidedLabel(QLabel):
         super().__init__(text, parent)
         self._full_text = text
         self._mode = mode
+        self._elided_for = None
 
     def minimumSizeHint(self) -> QSize:
         """Return no width and one line's height, so the label can shrink."""
@@ -56,6 +60,7 @@ class FXElidedLabel(QLabel):
     def setText(self, text: str) -> None:
         """Set the text and store the full text for elision."""
         self._full_text = text
+        self._elided_for = None
         super().setText(text)
         self._elide_text()
 
@@ -104,6 +109,20 @@ class FXElidedLabel(QLabel):
         """Elide the text to fit within the label's width."""
         if not self._full_text:
             return
+        # A restyle sends every label a FontChange: cut again only when
+        # what the cut depends on changed.
+        key = (
+            self._full_text,
+            self._mode,
+            self.font().key(),
+            self.contentsRect().width(),
+            self.margin(),
+            self.wordWrap(),
+            self.maximumHeight(),
+        )
+        if key == self._elided_for:
+            return
+        self._elided_for = key
 
         metrics = QFontMetrics(self.font())
         # The room QLabel draws in: what sizeHint asks for, to the pixel.

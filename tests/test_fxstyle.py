@@ -110,9 +110,11 @@ def test_a_cached_sheet_follows_every_input(qapp, tmp_path, monkeypatch):
     qapp.fontDatabaseChanged.emit()
     assert "FXProbeFamily" in fxstyle._build_stylesheet("dark")
 
+    # The row size is read where rows are measured, never in the sheet: a
+    # change of it is no restyle.
     rows = fxstyle._build_stylesheet("dark")
     monkeypatch.setattr(fxstyle, "_row_size", "small")
-    assert fxstyle._build_stylesheet("dark") != rows
+    assert fxstyle._build_stylesheet("dark") == rows
 
     other = tmp_path / "other_temp"
     other.mkdir()
@@ -130,7 +132,9 @@ def test_a_cached_sheet_follows_every_input(qapp, tmp_path, monkeypatch):
     fxconfig.set_application_name("fxgui")
     normal = fxstyle._build_stylesheet("dark")
     fxconfig.set_application_name("fxgui_cache_probe")
-    assert fxstyle._build_stylesheet("dark") != normal
+    # The other application's row size is read; the sheet holds none.
+    assert fxstyle.row_size() == "big"
+    assert fxstyle._build_stylesheet("dark") == normal
 
 
 def test_every_token_family_resolves(qapp):

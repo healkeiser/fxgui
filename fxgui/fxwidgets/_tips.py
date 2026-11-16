@@ -501,16 +501,25 @@ def apply_tip(
     )
 
     if isinstance(target, (QTreeWidgetItem, QListWidgetItem, QTableWidgetItem)):
-        _view_of(target).viewport().installEventFilter(_refresh())
-        if isinstance(target, QTreeWidgetItem):
-            for column in range(max(target.columnCount(), 1)):
-                target.setData(column, _PARTS_ROLE, parts)
-                target.setToolTip(column, html)
-                target.setStatusTip(column, plain)
-        else:
-            target.setData(_PARTS_ROLE, parts)
-            target.setToolTip(html)
-            target.setStatusTip(plain)
+        view = _view_of(target)
+        view.viewport().installEventFilter(_refresh())
+        # No tip role changes what a row draws or its size, yet each set
+        # emits dataChanged, and a tree measures the row again on each:
+        # set them all with the model quiet.
+        model = view.model()
+        quiet = model.blockSignals(True)
+        try:
+            if isinstance(target, QTreeWidgetItem):
+                for column in range(max(target.columnCount(), 1)):
+                    target.setData(column, _PARTS_ROLE, parts)
+                    target.setToolTip(column, html)
+                    target.setStatusTip(column, plain)
+            else:
+                target.setData(_PARTS_ROLE, parts)
+                target.setToolTip(html)
+                target.setStatusTip(plain)
+        finally:
+            model.blockSignals(quiet)
         return
 
     if isinstance(target, QAction):

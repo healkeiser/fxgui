@@ -137,15 +137,22 @@ class FXThemeColors:
 
 
 class _Signals(QObject):
-    """Hold the `theme_changed(str)` signal `apply_theme` emits."""
+    """Hold the signals fxstyle emits after a change of look."""
 
     theme_changed = Signal(str)
+    row_size_changed = Signal(str)
+    column_lines_changed = Signal(bool)
 
 
 _signals = _Signals()
 
 # Emitted with the theme's name after every switch.
 theme_changed = _signals.theme_changed
+# Emitted with the `ROW_SIZES` name after `apply_row_size`; no restyle, so
+# `theme_changed` stays quiet.
+row_size_changed = _signals.row_size_changed
+# Emitted with the new state after `apply_column_lines`.
+column_lines_changed = _signals.column_lines_changed
 
 
 ###### Public API
@@ -156,6 +163,8 @@ __all__ = [
     "FXThemeColors",
     # Signal
     "theme_changed",
+    "row_size_changed",
+    "column_lines_changed",
     # Constants
     "STYLE_FILE",
     "DEFAULT_COLOR_FILE",
@@ -2113,8 +2122,6 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
     tokens["@card_radius"] = f"{CARD_RADIUS}px"
     tokens["@small_radius"] = f"{SMALL_RADIUS}px"
-    tokens["@row_height"] = f"{row_height()}px"
-    tokens["@dense_row_height"] = f"{_dense_height(row_size())}px"
     # A navigation list's current row: the accent, stepped until it reads
     # on the pressed chip behind it.
     tokens["@nav_ink"] = readable_ink(
@@ -2374,11 +2381,10 @@ def _forget_saved_settings() -> None:
     _row_size = None
     _invalidate_theme_namespace()
     # Live roots wear the old file's theme: re-apply when the new one differs.
-    if _themed_roots and any(
-        old is not None and old != new
-        for old, new in zip(before, (get_theme(), row_size()))
-    ):
+    if _themed_roots and before[0] is not None and before[0] != get_theme():
         _colors_changed()
+    if before[1] is not None and before[1] != row_size():
+        _rows_changed()
 
 
 # Watches the settings file, so a row size chosen in another process (the
@@ -2491,6 +2497,9 @@ def column_lines() -> bool:
 def apply_column_lines(on: bool, *, save: Optional[bool] = None) -> bool:
     """Rule every column of tables and trees, or only the first; re-paint.
 
+    Item views and summary rows repaint and `column_lines_changed` is
+    emitted; nothing is restyled and `theme_changed` stays quiet.
+
     Args:
         on: True rules every column; False only the first.
         save: Whether to save it as the person's choice. None (the default)
@@ -2505,7 +2514,17 @@ def apply_column_lines(on: bool, *, save: Optional[bool] = None) -> bool:
         save = _interactive()
     if save:
         fxconfig.set_value(_SETTINGS_COLUMN_LINES_KEY, bool(on))
-    _colors_changed()
+    # The rules are painted: a repaint of what draws them, no restyle.
+    app = QApplication.instance()
+    if app is not None:
+        from fxgui.fxwidgets._summary_row import FXSummaryRow
+
+        for widget in app.allWidgets():
+            if isinstance(widget, QAbstractItemView):
+                widget.viewport().update()
+            elif isinstance(widget, FXSummaryRow):
+                widget.update()
+    column_lines_changed.emit(bool(on))
     return bool(on)
 
 
@@ -2617,7 +2636,10 @@ def mark_dense(view: QWidget, dense: bool = True) -> None:
 
 
 def apply_row_size(size: str, *, save: Optional[bool] = None) -> str:
-    """Make every list and tree row `size` tall, save it when chosen, re-style.
+    """Make every list and tree row `size` tall, save it when chosen, re-lay.
+
+    Item views lay their rows out again and `row_size_changed` is emitted;
+    nothing is restyled and `theme_changed` stays quiet.
 
     Args:
         size: A `ROW_SIZES` name.
@@ -2639,8 +2661,26 @@ def apply_row_size(size: str, *, save: Optional[bool] = None) -> str:
         save = _interactive()
     if save:
         fxconfig.set_value(_SETTINGS_ROW_SIZE_KEY, size)
-    _colors_changed()
+    _rows_changed()
     return size
+
+
+def _rows_changed() -> None:
+    """Lay every view's rows out again at the row size in force.
+
+    The height is read when a row is measured (`FXProxyStyle`, the
+    delegates), so this is a relayout of item views, never a restyle.
+    """
+    app = QApplication.instance()
+    if app is not None:
+        for widget in app.allWidgets():
+            if isinstance(widget, QAbstractItemView) and not isinstance(
+                widget, QHeaderView
+            ):
+                widget.scheduleDelayedItemsLayout()
+                if isinstance(widget, QTableView):
+                    _fit_table_rows(widget)
+    row_size_changed.emit(row_size())
 
 
 def colors() -> "FXThemeColors":
@@ -2941,6 +2981,9 @@ def _icon_box_rounding_down(rect: QRect, pixmap: QPixmap) -> QRect:
     return rect.adjusted(0, 0, -int(narrow), -int(short))
 
 
+_ITEM_SIZE = QStyle.CT_ItemViewItem
+
+
 class FXProxyStyle(QProxyStyle):
     """Give Qt's standard icons (dialogs, message boxes) fxgui's themed icons.
 
@@ -3130,6 +3173,25 @@ class FXProxyStyle(QProxyStyle):
         if isinstance(bar, QTabBar) and _is_themed(bar):
             size += _close_room(bar)
         return size
+
+    def sizeFromContents(self, kind, option, size, widget=None):
+        """Return a size; a tree's or list's row is the row size in force.
+
+        Read each time a row is measured, so `apply_row_size` is a relayout.
+        A sheet rule that sets a row's own height (a popup's, a navigation
+        list's) still wins; a word-wrapping list's rows grow with their text.
+        """
+        result = super().sizeFromContents(kind, option, size, widget)
+        if kind != _ITEM_SIZE or not isinstance(widget, (QTreeView, QListView)):
+            return result
+        if isinstance(widget, QListView) and widget.wordWrap():
+            return result
+        height = row_height(widget)
+        if isinstance(widget, QTreeView) or widget.property(DENSE_PROPERTY):
+            result.setHeight(height)
+        else:
+            result.setHeight(max(result.height(), height))
+        return result
 
     def styleHint(self, hint, option=None, widget=None, returnData=None):
         """Return `hint`; a tooltip keeps the next one quick for 300 ms.
@@ -3372,7 +3434,7 @@ def _build_stylesheet(theme: Optional[str] = None) -> str:
         return resolve("\n".join(parts), theme)
 
     # The sheet's images live in the cache folder, so it is part of the key.
-    key = ("sheet", theme, row_size(), str(fxicons._cache_dir()))
+    key = ("sheet", theme, str(fxicons._cache_dir()))
     return _cached_sheet(key, build)
 
 
@@ -4370,21 +4432,31 @@ def _in_host(root: QObject) -> bool:
 
 
 def _apply_to_root(root, sheet: str, theme_palette, theme_font) -> None:
-    """Put a theme's sheet, palette and font on `root`."""
+    """Put a theme's sheet, palette and font on `root`.
+
+    Each one set is a pass over every widget under `root`: one already in
+    place is not set again.
+    """
     if isinstance(root, QApplication):
         # The application's sheet restores, on every widget, the palette
         # in force when it is set, so that palette goes first.
-        root.setPalette(theme_palette)
-        root.setFont(theme_font)
-        root.setStyleSheet(sheet)
+        if QApplication.palette() != theme_palette:
+            root.setPalette(theme_palette)
+        if QApplication.font() != theme_font:
+            root.setFont(theme_font)
+        if root.styleSheet() != sheet:
+            root.setStyleSheet(sheet)
         return
     # A widget's sheet change restores the palette its stylesheet style
     # saved at an earlier polish; the palette set after it wins.
     if _in_host(root):
         sheet = _host_rules() + sheet
-    root.setStyleSheet(sheet)
-    root.setPalette(theme_palette)
-    root.setFont(theme_font)
+    if root.styleSheet() != sheet:
+        root.setStyleSheet(sheet)
+    if not root.testAttribute(Qt.WA_SetPalette) or root.palette() != theme_palette:
+        root.setPalette(theme_palette)
+    if not root.testAttribute(Qt.WA_SetFont) or root.font() != theme_font:
+        root.setFont(theme_font)
 
 
 # Palette role -> token, for every colour group; then the Disabled group.
