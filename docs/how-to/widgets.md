@@ -149,6 +149,16 @@ and ask about a pane by its name, without reaching for QtAds.
 `show_dock(name, activate=False)` makes a pane its tabs' current one
 without raising or focusing the floating window it sits in.
 
+A pane's content stands `fxstyle.PANE_GAP` off its sides and bottom, but a
+flush list, tree or table (`fxstyle.mark_flush`) runs to the pane's
+border, as a table sits in a card: its header, rows, selection, column
+rules and `FXSummaryRow` with it, the vertical scroll bar at the border.
+It reaches the bottom when nothing stands under it. A filter bar, a form,
+buttons under the list and a log keep the gap; an `FXFilteredTree`'s tree
+runs to the border while its filter bar keeps the gap. A pane whose body
+is a list, tree or table is flush already, and so is a view marked flush
+after it was docked. The pane's bottom corners stay round over the rows.
+
 And these functions and constants:
 
 | Name | What it does |

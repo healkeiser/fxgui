@@ -1088,8 +1088,9 @@ def test_a_panes_content_sits_one_tab_gap_in_from_its_edges(qtbot, theme):
     pill = tab.rect().translated(tab.mapTo(window, QPoint()))
     gap, _top = _start_and_top_gaps(image, pill, area.x() + 1, area.y() + 1)
     assert gap == fxstyle.PANE_GAP
-    content = body.geometry().translated(body.parentWidget().mapTo(
-        window, QPoint()))
+    # The body spans the pane; its content stands a gap in (its contents
+    # margins), so a flush view inside could run to the border.
+    content = body.contentsRect().translated(body.mapTo(window, QPoint()))
     # Inside the pane's 1 px edge, and below the pill's own gap.
     inner = area_widget.rect().adjusted(1, 1, -1, -1).translated(area)
     assert content.left() - inner.left() == gap

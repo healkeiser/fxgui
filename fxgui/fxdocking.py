@@ -23,13 +23,15 @@ from qtpy.QtCore import (
     QObject,
     QPoint,
     QRect,
+    QRectF,
     QSize,
     Qt,
     QVariantAnimation,
     qUncompress,
 )
-from qtpy.QtGui import QAction, QColor, QIcon, QShortcut
+from qtpy.QtGui import QAction, QColor, QIcon, QPainter, QPainterPath, QPen, QShortcut
 from qtpy.QtWidgets import (
+    QAbstractItemView,
     QAbstractScrollArea,
     QLabel,
     QMainWindow,
@@ -298,6 +300,186 @@ def _floor(area: "ads.CDockAreaWidget") -> None:
         area.setMinimumSize(floor)
 
 
+def _flush_view(widget: QWidget) -> bool:
+    """Whether `widget` is a flush row view, one that runs to the border."""
+    return isinstance(widget, QAbstractItemView) and bool(
+        widget.property(fxstyle.FLUSH_PROPERTY))
+
+
+class _PaneEdges(QObject):
+    """Let a pane's flush row views run to its border; pad the rest.
+
+    The pane's body stands `PANE_GAP` off the pane's sides and bottom
+    through its own contents margins, so a form, a filter bar or buttons
+    keep the gap a pill keeps off its strip. A flush item view
+    (`fxstyle.mark_flush`), and each container between it and the body,
+    takes back the gap on every side it touches: its rows, header, column
+    rules and summary row reach the pane's border. A container so widened
+    gives the gap to its own other children. A text view (a log) keeps the
+    gap: its text is read, not scanned in rows. An `FXFilteredTree` in a
+    pane flushes its tree.
+    """
+
+    def __init__(self, held: QWidget, body: QWidget):
+        super().__init__(body)
+        self._held = held
+        self._body = body
+        self._chain: List[QWidget] = []
+        self._busy = False
+        body._fx_pane_edges = self
+        body.installEventFilter(self)
+        held.installEventFilter(self)
+        self.rescan()
+
+    def rescan(self) -> None:
+        """Find the flush views and the containers that lead to them."""
+        gap = fxstyle.PANE_GAP
+        body = self._body
+        for filtered in [body, *body.findChildren(QWidget)]:
+            tree = getattr(filtered, "tree", None)
+            if hasattr(filtered, "filter_bar") and isinstance(
+                tree, QAbstractItemView
+            ) and not tree.property(fxstyle.FLUSH_PROPERTY):
+                fxstyle.mark_flush(tree)
+        if _flush_view(body):
+            body.setContentsMargins(0, 0, 0, 0)
+            self._chain = []
+            return
+        if isinstance(body, QAbstractScrollArea):
+            # A text view paints its whole box: the pane holds it off the
+            # border, as before, so its text keeps the gap.
+            self._held.layout().setContentsMargins(gap, 0, gap, gap)
+            self._chain = []
+            return
+        body.setContentsMargins(gap, 0, gap, gap)
+        chain: List[QWidget] = []
+        for view in body.findChildren(QAbstractItemView):
+            if not _flush_view(view):
+                continue
+            link = view
+            while link is not None and link is not body:
+                parent = link.parentWidget()
+                # Only through laid-out containers: a splitter or a scroll
+                # area places its children itself.
+                if parent is None or parent.layout() is None:
+                    break
+                if link not in chain:
+                    chain.append(link)
+                    link.installEventFilter(self)
+                if parent is not body and parent not in chain:
+                    parent.setContentsMargins(gap, 0, gap, gap)
+                link = parent
+        self._chain = chain
+        for link in chain:
+            self._fit(link)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        kind = event.type()
+        if watched is self._held:
+            if kind in (QEvent.Show, QEvent.ParentChange):
+                area = self._held.dockAreaWidget() if _compat.is_valid(
+                    self._held) else None
+                if area is not None:
+                    _PaneCorners.cover(area)
+            return False
+        if self._busy:
+            return False
+        if kind == QEvent.Show and watched is self._body:
+            self.rescan()
+        elif kind in (QEvent.Move, QEvent.Resize) and watched in self._chain:
+            self._fit(watched)
+        elif kind in (QEvent.Resize, QEvent.LayoutRequest):
+            for link in self._chain:
+                if link.parentWidget() is watched:
+                    self._fit(link)
+        return False
+
+    def _fit(self, link: QWidget) -> None:
+        """Stretch `link` over the gap on each side it touches."""
+        parent = link.parentWidget()
+        if parent is None or not _compat.is_valid(link):
+            return
+        inner = parent.contentsRect()
+        whole = parent.rect()
+        shape = link.geometry()
+        fitted = QRect(shape)
+        if shape.left() <= inner.left():
+            fitted.setLeft(whole.left())
+        if shape.right() >= inner.right():
+            fitted.setRight(whole.right())
+        if shape.bottom() >= inner.bottom():
+            fitted.setBottom(whole.bottom())
+        if fitted != shape:
+            self._busy = True
+            try:
+                link.setGeometry(fitted)
+            finally:
+                self._busy = False
+
+
+class _PaneCorners(QWidget):
+    """Redraw a pane's bottom arcs over a row that runs to its border.
+
+    The sheet rounds the pane, but a flush view's rows, scroll bar or
+    summary row paint the square corner over it. This transparent child
+    covers the pane; at each bottom corner it paints the ground outside the
+    arc, then the arc.
+    """
+
+    @classmethod
+    def cover(cls, area: QWidget) -> None:
+        """Give `area` its corners once."""
+        if area.findChild(cls, "", Qt.FindDirectChildrenOnly) is None:
+            cls(area)
+
+    def __init__(self, area: QWidget):
+        super().__init__(area)
+        self._area = area
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        area.installEventFilter(self)
+        self._follow()
+        self.show()
+
+    def _follow(self) -> None:
+        # QtAds deletes an emptied area while its events still arrive.
+        if not (_compat.is_valid(self) and _compat.is_valid(self._area)):
+            return
+        self.setGeometry(self._area.rect())
+        self.raise_()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() in (
+            QEvent.Resize, QEvent.Show, QEvent.ChildAdded, QEvent.LayoutRequest
+        ):
+            self._follow()
+        return False
+
+    def paintEvent(self, event) -> None:
+        area = self._area
+        if not _compat.is_valid(area):
+            return
+        outer = QRectF(self.rect())
+        radius = fxstyle.CARD_RADIUS
+        clip = QPainterPath()
+        for x in (outer.left(), outer.right() - radius):
+            clip.addRect(QRectF(x, outer.bottom() - radius, radius + 1, radius + 1))
+        shape = QPainterPath()
+        shape.addRoundedRect(outer, radius, radius)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setClipPath(clip)
+        painter.fillPath(
+            clip.subtracted(shape), fxstyle._ground(area.parentWidget()))
+        edge = QPainterPath()
+        edge.addRoundedRect(outer.adjusted(0.5, 0.5, -0.5, -0.5),
+                            radius - 0.5, radius - 0.5)
+        painter.setPen(QPen(QColor(fxstyle.colors().pane_border), 1))
+        painter.setBrush(Qt.NoBrush)
+        painter.drawPath(edge)
+        painter.end()
+
+
 class _Floor(QObject):
     """Floor a pane's area again whenever the pane's content re-lays out.
 
@@ -496,6 +678,7 @@ class FXDockArea(QWidget):
         # A view that is the whole pane needs no frame inside the pane's.
         if isinstance(widget, QAbstractScrollArea):
             fxstyle.mark_flush(widget)
+        _PaneEdges(held, widget)
         # A pane picked by its tab rises in; one a person opens grows
         # open. `triggered`, not `viewToggled`: a window building or
         # restoring its layout toggles every pane, and none may grow.
@@ -505,10 +688,9 @@ class FXDockArea(QWidget):
         held.toggleViewAction().triggered.connect(
             lambda checked, held=held: checked and _open(held)
         )
-        # The content stands off the pane's edges as a pill does off its
-        # strip's; the strip's own gap under the pills is the top one.
-        gap = fxstyle.PANE_GAP
-        held.layout().setContentsMargins(gap, 0, gap, gap)
+        # The content's gap to the pane's edges is the body's own (see
+        # _PaneEdges), so a flush view can run to the border.
+        held.layout().setContentsMargins(0, 0, 0, 0)
         _bare(held.tabWidget())
         # Its content's floor, not QtAds' 60 px: a narrower pane clips.
         held.setMinimumSizeHintMode(

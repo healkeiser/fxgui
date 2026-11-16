@@ -2470,7 +2470,10 @@ def mark_flush(view: QWidget, flush: bool = True) -> None:
 
     The pane's edge is its frame, as the web look's tables and trees sit
     flush in their card; a small table inside a section keeps its frame.
-    `FXDockArea` marks a pane whose body is a view itself.
+    `FXDockArea` marks a pane whose body is a view itself. In an
+    `FXDockArea` pane, a flush list, tree or table also runs to the pane's
+    border on each side it reaches (its rows, header, column rules and
+    summary row with it), while the pane's other content keeps its gap.
 
     Args:
         view: A list, tree, table or other scroll area.
@@ -2481,6 +2484,14 @@ def mark_flush(view: QWidget, flush: bool = True) -> None:
     """
     view.setProperty(FLUSH_PROPERTY, bool(flush))
     fxutils.repolish(view)
+    # In a dock pane already: the pane lets it run to its border now.
+    holder = view
+    while holder is not None:
+        edges = getattr(holder, "_fx_pane_edges", None)
+        if edges is not None:
+            edges.rescan()
+            break
+        holder = _compat.parent_widget(holder)
 
 
 def mark_dense(view: QWidget, dense: bool = True) -> None:
