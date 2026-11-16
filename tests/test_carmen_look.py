@@ -403,4 +403,5 @@ def test_column_0_sized_to_its_contents_draws_its_title_whole(
         fitted = cell()
         tree.setColumnWidth(0, width + 80)
         assert cell() == fitted, title
-        tree.setParent(None)
+        # Hidden, not unparented: freed mid-show, its header crashes Qt 6.5.
+        tree.hide()
