@@ -1725,6 +1725,10 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 <td>A toolbar fixed in place, whose margins survive style changes</td>
 </tr>
 <tr>
+<td><code>FXConfirmDialog</code></td>
+<td>The same card for any confirm: <code>verb</code>, <code>tone="plain"</code> (a primary verb) or <code>"danger"</code> (red), an optional <code>alternative</code> (with <code>alternative_tone</code>) at the left, and <code>default</code> (the choice Enter takes: the verb when plain, Cancel when danger). <code>exec()</code> returns <code>VERB</code>, <code>CANCEL</code> or <code>ALTERNATIVE</code>; <code>choice()</code> names it. Escape cancels</td>
+</tr>
+<tr>
 <td><code>FXConfirmDeleteDialog</code></td>
 <td>Asks before an act with no undo: a card with the question, Cancel then a red Delete, focus on Cancel; Enter never deletes, and the window behind dims. <code>require_typing=True</code> (on when a <code>confirm_word</code> is given) waits for the name typed exactly</td>
 </tr>
