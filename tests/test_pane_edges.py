@@ -281,3 +281,16 @@ def test_unmarking_and_remarking_a_flush_view_leaves_no_stale_gap(
         QApplication.processEvents()
         inner, box = _edges(docks, view)
         assert (box.left(), box.right()) == (inner.left(), inner.right())
+
+
+def test_a_pane_s_title_buttons_are_square(qtbot):
+    _window, docks = _docked(qtbot, _tree())
+    area = docks.manager().findDockWidget("pane").dockAreaWidget()
+    QApplication.processEvents()
+    buttons = [
+        button for button in area.titleBar().findChildren(ads.CTitleBarButton)
+        if button.isVisible()
+    ]
+    assert buttons
+    for button in buttons:
+        assert button.width() == button.height() > 0, button.objectName()

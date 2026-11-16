@@ -186,6 +186,31 @@ def _inset(area: "ads.CDockAreaWidget") -> None:
         policy = button.sizePolicy()
         policy.setVerticalPolicy(QSizePolicy.Ignored)
         button.setSizePolicy(policy)
+        _Square.keep(button)
+
+
+class _Square(QObject):
+    """Keep a title bar button as wide as the bar makes it tall.
+
+    Its height is the tab strip's, its width QtAds' icon's: square, it
+    lights a square, as a flat tool button beside it does.
+    """
+
+    @classmethod
+    def keep(cls, button: QWidget) -> None:
+        if getattr(button, "_fx_square", None) is None:
+            button._fx_square = cls(button)
+
+    def __init__(self, button: QWidget):
+        super().__init__(button)
+        button.installEventFilter(self)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Resize and _compat.is_valid(watched):
+            side = watched.height()
+            if side > 0 and watched.minimumWidth() != side:
+                watched.setFixedWidth(side)
+        return False
 
 
 def _bare(tab: "ads.CDockWidgetTab") -> None:
