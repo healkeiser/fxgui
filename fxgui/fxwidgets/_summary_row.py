@@ -257,6 +257,8 @@ class FXSummaryRow(QWidget):
             label.setGeometry(
                 left + lead, 1, max(0, width - 2 * lead), self.height() - 1)
             label.show()
+        # The column rules are painted, not children: they move by a repaint.
+        self.update()
 
     def _alive(self) -> bool:
         """Return whether the view and its header are not being torn down."""

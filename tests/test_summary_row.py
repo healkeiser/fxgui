@@ -230,3 +230,26 @@ def test_the_frames_round_corners_stay_above_the_row(qtbot):
     children = view.children()
     assert children.index(view.viewport()) < children.index(summary)
     assert children.index(summary) < children.index(corners)
+
+
+def test_the_column_rule_moves_with_a_horizontal_scroll(qtbot):
+    view, summary, window = _view(qtbot)
+    QApplication.processEvents()
+
+    def summary_ink(x):
+        # The screen, not a fresh grab: a row left unpainted shows here.
+        image = window.screen().grabWindow(window.winId()).toImage()
+        point = summary.mapTo(window, QPoint(x, summary.height() // 2))
+        return image.pixelColor(point)
+
+    band = summary_ink(LEAD - 2)
+    old = view.columnViewportPosition(0) + view.columnWidth(0) - 1
+    assert summary_ink(old) != band
+    # A few pixels: old and new rule both fall between two cells, which
+    # move, so only a repaint of the row itself moves the rule.
+    view.horizontalScrollBar().setValue(5)
+    QApplication.processEvents()
+    new = view.columnViewportPosition(0) + view.columnWidth(0) - 1
+    assert new == old - 5
+    assert summary_ink(new) != band
+    assert summary_ink(old) == band
