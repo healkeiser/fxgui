@@ -94,13 +94,19 @@ class FXViewFooter(QFrame):
     def _fit(self) -> None:
         """Reserve the footer's height under any summary row and sit in it."""
         view = self._view
-        if not is_valid(view):
+        # A view being torn down still sends events: its viewport is gone
+        # by then, or its children's wrappers are, and an error raised
+        # here, in an event filter, kills the process.
+        if not is_valid(view) or view.viewport() is None:
             return
         height = 0 if self.isHidden() else self.sizeHint().height()
         view.setProperty(FOOTER_PROPERTY, height)
         summary = view.findChild(FXSummaryRow, "", Qt.FindDirectChildrenOnly)
+        # The band the summary row asks for, as it measures it: its height
+        # now lags a row size change, and the two would set the margin in
+        # turn, each from the other's event, without end.
         above = 0 if summary is None or summary.isHidden() else (
-            summary.height())
+            fxstyle.row_height(view))
         margins = view.viewportMargins()
         if margins.bottom() != above + height:
             view.setViewportMargins(
@@ -111,12 +117,13 @@ class FXViewFooter(QFrame):
         under = viewport.bottom() + 1 + above
         # Rows, summary, then the horizontal bar; the footer last, at the
         # card's foot across its whole width.
-        horizontal, vertical = self._boxes
-        if horizontal is not view and horizontal.isVisible():
+        horizontal, vertical = (
+            box if is_valid(box) else None for box in self._boxes)
+        if horizontal is not None and horizontal.isVisible():
             _place(horizontal, horizontal.x(), under,
                    horizontal.width(), horizontal.height())
             under += horizontal.height()
-        if vertical is not view and vertical.isVisible():
+        if vertical is not None and vertical.isVisible():
             _place(vertical, vertical.x(), vertical.y(), vertical.width(),
                    viewport.bottom() + 1 + above - vertical.y())
         frame = view.frameWidth()

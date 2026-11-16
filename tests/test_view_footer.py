@@ -132,3 +132,123 @@ def test_a_frameless_views_header_has_a_rule_on_top(qtbot, theme, kind):
     _settle()
     assert view.frameWidth() > 0
     assert not near(pixel(window, header, header.width() // 2, 0), border, 2)
+
+
+
+# What a full window's teardown does to a footer (a dock, a window class of
+# Python's deleted by Qt): the scroll bars' containers lose their wrappers,
+# then the view still resizes and hides. The footer's event filter read a
+# dead wrapper, raised mid-teardown, and the process died.
+_TEARDOWN = """
+import os, sys
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+sys.path.insert(0, {root!r})
+import shiboken6
+from qtpy.QtWidgets import (
+    QApplication, QHBoxLayout, QPushButton, QTableWidget, QVBoxLayout,
+    QWidget)
+from fxgui import fxstyle
+from fxgui.fxwidgets import FXSummaryRow, FXViewFooter
+
+app = QApplication(sys.argv)
+window = QWidget()
+fxstyle.register_themed_root(window)
+table = QTableWidget(40, 3)
+for column in range(3):
+    table.setColumnWidth(column, 300)
+FXSummaryRow(table).set_texts(["40 records"])
+actions = QHBoxLayout()
+actions.addWidget(QPushButton("Add"))
+footer = FXViewFooter(table, actions)
+QVBoxLayout(window).addWidget(table)
+window.resize(360, 320)
+window.show()
+for _ in range(3):
+    app.processEvents()
+for bar in (table.horizontalScrollBar(), table.verticalScrollBar()):
+    # The same wrapper the footer holds: one per C++ object.
+    shiboken6.invalidate(bar.parentWidget())
+table.resize(table.width() - 20, table.height() - 20)
+footer.hide()
+window.close()
+for _ in range(3):
+    app.processEvents()
+print("survived")
+"""
+
+
+def test_a_footer_outlives_the_wrappers_a_teardown_lets_go():
+    import os
+    import subprocess
+    import sys
+
+    from _helpers import isolated
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    result = subprocess.run(
+        [sys.executable, "-c", isolated(_TEARDOWN.format(root=root))],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert "already deleted" not in result.stderr, result.stderr[-2000:]
+    assert result.stdout.strip().splitlines()[-1] == "survived"
+
+
+# A summary row made before the footer, then a new row size: the summary
+# set the margin from the new row height, the footer at once from the
+# summary's height, which lags until the summary has moved; each set raised
+# the other's event, without end, and the process died.
+_ROW_SIZES = """
+import os, sys
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+sys.path.insert(0, {root!r})
+from qtpy.QtWidgets import (
+    QApplication, QHBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem,
+    QVBoxLayout, QWidget)
+from fxgui import fxstyle
+from fxgui.fxwidgets import FXSummaryRow, FXViewFooter
+
+app = QApplication(sys.argv)
+window = QWidget()
+fxstyle.register_themed_root(window)
+view = QTreeWidget()
+view.setColumnCount(2)
+for _ in range(5):
+    QTreeWidgetItem(view, ["a", "b"])
+FXSummaryRow(view).set_texts(["5 rows"])
+actions = QHBoxLayout()
+actions.addWidget(QPushButton("Add"))
+footer = FXViewFooter(view, actions)
+QVBoxLayout(window).addWidget(view)
+window.resize(360, 320)
+window.show()
+for _ in range(3):
+    app.processEvents()
+for size in ("small", "big", "normal"):
+    fxstyle.apply_row_size(size, save=False)
+    for _ in range(3):
+        app.processEvents()
+    assert view.viewportMargins().bottom() == (
+        fxstyle.row_height(view) + footer.height()), size
+print("survived")
+"""
+
+
+def test_a_row_size_change_settles_the_summary_and_the_footer():
+    import os
+    import subprocess
+    import sys
+
+    from _helpers import isolated
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    result = subprocess.run(
+        [sys.executable, "-c", isolated(_ROW_SIZES.format(root=root))],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert result.stdout.strip().splitlines()[-1] == "survived"

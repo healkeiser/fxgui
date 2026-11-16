@@ -269,8 +269,14 @@ class FXSummaryRow(QWidget):
 
     def _alive(self) -> bool:
         """Return whether the view and its header are not being torn down."""
-        # The header and viewport still signal while the view is destroyed.
-        return is_valid(self._view) and is_valid(self._header)
+        # The header and viewport still signal while the view is destroyed,
+        # after its viewport is gone: an error raised from an event filter
+        # then kills the process.
+        return (
+            is_valid(self._view)
+            and is_valid(self._header)
+            and self._view.viewport() is not None
+        )
 
     def _alignment(self, column: int) -> Qt.AlignmentFlag:
         """Return a cell's alignment: its own, else its header's, else left."""
