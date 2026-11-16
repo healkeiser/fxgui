@@ -1,7 +1,8 @@
 """A tree, a split button and a filtered tree a keyboard works fully."""
 
 # Built-in
-from typing import Callable, Optional
+import contextlib
+from typing import Callable, Iterator, Optional
 
 # Third-party
 from qtpy.QtCore import QSize, Qt
@@ -237,6 +238,22 @@ class FXFilteredTree(QWidget):
     def refilter(self) -> None:
         """Filter the tree again by the bar's text, after refilling it."""
         self._filter(self.filter_bar.text())
+
+    @contextlib.contextmanager
+    def refill(self) -> Iterator[None]:
+        """Refill the tree inside the block; its rows arrive, filtered.
+
+        The old rows leave as the new ones fade in and rise into place
+        (`fxstyle.arrive`), and the bar's filter applies to them.
+
+        Examples:
+            >>> with panel.refill():
+            ...     panel.tree.clear()
+            ...     panel.tree.addTopLevelItems(items)
+        """
+        with fxstyle.arrive(self.tree.viewport()):
+            yield
+            self.refilter()
 
     def _fold_button(self, icon: str, tip: str) -> QToolButton:
         button = QToolButton(self)

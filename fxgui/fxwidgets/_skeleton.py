@@ -148,13 +148,18 @@ class FXSkeleton(QWidget):
 
     @staticmethod
     def uncover(view: QWidget) -> None:
-        """Remove the skeleton `cover` put over `view`, if any."""
-        skeleton = _covering(_target(view))
+        """Remove the skeleton `cover` put over `view`, if any.
+
+        What it covered arrives (`fxstyle.arrive`) as the skeleton leaves.
+        """
+        target = _target(view)
+        skeleton = _covering(target)
         if skeleton is not None:
-            # Not found again before Qt deletes it: cover() makes a new one.
-            skeleton._covering = False
-            skeleton.hide()
-            skeleton.deleteLater()
+            with fxstyle.arrive(target):
+                # Not found again before Qt deletes it: cover() makes a new one.
+                skeleton._covering = False
+                skeleton.hide()
+                skeleton.deleteLater()
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Cover the view again when it resizes, or gains a child."""

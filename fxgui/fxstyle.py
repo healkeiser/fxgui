@@ -234,6 +234,7 @@ __all__ = [
     "MOTION_SPRING",
     "ease_out",
     "ease_spring",
+    "arrive",
     "apply_row_size",
     "row_size",
     "row_height",
@@ -3732,6 +3733,174 @@ class _Reveal(QWidget):
         else:
             fill.setAlphaF(1.0 - self._shown)
             painter.fillRect(self.rect(), fill)
+        painter.end()
+
+
+# How far a side panel slides in from the right, in px, on the spring.
+PANEL_SLIDE = 24
+
+
+def arrive(widget: QWidget, *, side: bool = False) -> "_Arrival":
+    """Make what `widget` shows next arrive as the web look's content does.
+
+    The new content fades in from the ground as it rises 4 px into place
+    over `MOTION_BASE` on `ease_out`; with `side`, it slides 24 px in from
+    the right on `ease_spring` over `MOTION_SPRING`, as a side panel. Used as a context manager around the
+    change, what `widget` showed before leaves over `MOTION_INSTANT` as
+    the new arrives; called after the change, the new arrives from the
+    ground. One overlay paints two snapshots with a painter's opacity, so
+    a big live tree costs two renders, never a graphics effect; the widget
+    lays out and takes input underneath as ever. Nothing moves under
+    reduced motion (`REDUCED_MOTION_VAR`), on a hidden widget, or while
+    its window fades in. A second arrival takes over from the first where
+    it stands.
+
+    Args:
+        widget: What shows the content: a block, a pane, or a view's
+            viewport (``view.viewport()``, so the header stays).
+        side: Slide in from the right, as a side panel opening.
+
+    Returns:
+        A context manager; called alone, it is already under way.
+
+    Examples:
+        >>> with fxstyle.arrive(detail_block):
+        ...     detail_block.fill(data)
+        >>> panel.show()
+        >>> fxstyle.arrive(panel, side=True)
+    """
+    if (
+        not motion()
+        or not widget.isVisible()
+        or widget.window().windowOpacity() < 1.0
+        or widget.width() <= 0
+        or widget.height() <= 0
+    ):
+        return _Arrival(None)
+    return _Arrival(widget, side)
+
+
+def _snapshot(widget: QWidget) -> QPixmap:
+    """Return what `widget` and its children paint now, on transparent."""
+    ratio = widget.devicePixelRatioF()
+    shot = QPixmap(widget.size() * ratio)
+    shot.setDevicePixelRatio(ratio)
+    shot.fill(Qt.transparent)
+    # QWidget's own render: a QGraphicsView's takes a painter only.
+    QWidget.render(widget, shot, QPoint(), QRegion(), QWidget.DrawChildren)
+    return shot
+
+
+class _Arrival:
+    """The context `arrive` returns; drives one `_ArrivalCover`."""
+
+    def __init__(self, widget: Optional[QWidget], side: bool = False):
+        self._cover = None
+        if widget is None:
+            return
+        old = None
+        for running in widget.findChildren(
+            _ArrivalCover, "", Qt.FindDirectChildrenOnly
+        ):
+            # Taken over where it stands: what shows now is the old.
+            if old is None:
+                old = _snapshot(widget)
+            running.end()
+        self._cover = _ArrivalCover(widget, side, old)
+
+    def __enter__(self) -> "_Arrival":
+        cover = self._cover
+        if cover is not None and cover._old is None:
+            cover.hide()
+            cover._old = _snapshot(cover.parentWidget())
+            cover.show()
+        return self
+
+    def __exit__(self, *exc) -> bool:
+        return False
+
+
+class _ArrivalCover(QWidget):
+    """Paint the old content leaving and the new arriving over a widget."""
+
+    # Read before `__init__` has run: Qt may paint a child it adopts.
+    _old = None
+    _new = None
+    _shown = 0.0
+
+    def __init__(self, widget: QWidget, side: bool, old: Optional[QPixmap]):
+        super().__init__(widget)
+        _compat.hold(self)
+        self._side = side
+        self._old = old
+        self._new = None
+        self._shown = 0.0
+        self._duration = MOTION_SPRING if side else MOTION_BASE
+        self._curve = ease_spring() if side else ease_out()
+        self._fade = ease_out()
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        self.setFocusPolicy(Qt.NoFocus)
+        self.setGeometry(widget.rect())
+        widget.installEventFilter(self)
+        self.raise_()
+        self.show()
+        # Once the change has laid itself out, a step later.
+        fxutils.later(0, self, self._start)
+
+    def _start(self) -> None:
+        widget = self.parentWidget()
+        if widget is None or not widget.isVisible():
+            self.end()
+            return
+        self.hide()
+        self._new = _snapshot(widget)
+        self.raise_()
+        self.show()
+        run = QVariantAnimation(self)
+        run.setDuration(self._duration)
+        run.setStartValue(0.0)
+        run.setEndValue(1.0)
+        run.valueChanged.connect(self._step)
+        run.finished.connect(self.end)
+        run.start(QVariantAnimation.DeleteWhenStopped)
+
+    def _step(self, shown: float) -> None:
+        self._shown = float(shown)
+        self.update()
+
+    def end(self) -> None:
+        """Stop where it is; the widget shows its live content."""
+        widget = self.parentWidget()
+        if widget is not None:
+            widget.removeEventFilter(self)
+        self.hide()
+        self.setParent(None)
+        self.deleteLater()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """End at once when the widget resizes: the snapshots no longer fit."""
+        if event.type() == QEvent.Resize and watched is self.parentWidget():
+            self.end()
+        return False
+
+    def paintEvent(self, event) -> None:
+        """The ground, the old fading out, the new fading and moving in."""
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), _ground(self.parentWidget()))
+        elapsed = self._shown * self._duration
+        if self._old is not None and elapsed < MOTION_INSTANT:
+            painter.setOpacity(1.0 - elapsed / MOTION_INSTANT)
+            painter.drawPixmap(QPointF(0, 0), self._old)
+        if self._new is not None:
+            moved = 1.0 - self._curve.valueForProgress(self._shown)
+            painter.setOpacity(self._fade.valueForProgress(
+                min(1.0, elapsed / MOTION_BASE)))
+            if self._side:
+                at = QPointF(moved * PANEL_SLIDE, 0)
+            else:
+                at = QPointF(0, moved * PANEL_RISE)
+            painter.drawPixmap(at, self._new)
         painter.end()
 
 

@@ -399,6 +399,12 @@ def _on_theme_changed(theme_name: str):
 fxstyle.theme_changed.connect(_on_theme_changed)
 ```
 
+A row size or column lines change is no theme switch: it restyles
+nothing and emits its own signal, `fxstyle.row_size_changed` (the
+`ROW_SIZES` name) or `fxstyle.column_lines_changed` (on or off). Rows are
+measured again and rules repainted where they are drawn, so most code
+needs neither.
+
 Connect a widget's own method, not a lambda. Qt drops a connection to a
 method of a widget when the widget is deleted; a lambda has no widget for
 Qt to drop it with, so it outlives the widget and runs on a dead one.
@@ -744,6 +750,24 @@ from fxgui import fxstyle
 slide = QPropertyAnimation(card, b"pos", card)
 slide.setDuration(fxstyle.MOTION_SPRING)
 slide.setEasingCurve(fxstyle.ease_spring())
+```
+
+`fxstyle.arrive(widget)` makes new content arrive as the web look's
+does: it fades in from the ground as it rises 4 px over `MOTION_BASE`;
+with `side=True` it slides 24 px in from the right on the spring, as a
+side panel. Around the change, as a context manager, the old content
+leaves over `MOTION_INSTANT` as the new arrives. One overlay paints two
+snapshots, so a big tree costs two renders; the widget keeps laying out
+and taking input underneath. `FXSkeleton.uncover` and
+`FXFilteredTree.refill` use it.
+
+```python
+with fxstyle.arrive(detail_block):
+    detail_block.fill(data)
+
+with panel.refill():  # an FXFilteredTree: refilled, refiltered, arrived
+    panel.tree.clear()
+    panel.tree.addTopLevelItems(items)
 ```
 
 Set the `FXGUI_REDUCED_MOTION` environment variable to `1` and every
