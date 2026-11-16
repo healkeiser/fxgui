@@ -230,10 +230,11 @@ def _bare(tab: "ads.CDockWidgetTab") -> None:
 
 
 class _TabKeys(QObject):
-    """Make a pane's tab strip one Tab stop; Left and Right walk along it.
+    """Let Left and Right walk a pane's tabs, as a QTabBar's.
 
-    As a QTabBar: only the current tab takes the keyboard, and an arrow
-    makes the next open tab current, the focus going with it.
+    An arrow makes the next open tab current, the focus going with it.
+    A tab stays out of Qt's own focus chain: `FXDockArea`'s Tab walk
+    stops on a pane's current tab right before its content.
     """
 
     @classmethod
@@ -245,14 +246,6 @@ class _TabKeys(QObject):
         super().__init__(tab)
         self._tab = tab
         tab.installEventFilter(self)
-        tab.activeTabChanged.connect(self._rove)
-        self._rove()
-
-    def _rove(self) -> None:
-        tab = self._tab
-        if _compat.is_valid(tab):
-            tab.setFocusPolicy(
-                Qt.TabFocus if tab.isActiveTab() else Qt.NoFocus)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() != QEvent.KeyPress or event.key() not in (
@@ -271,6 +264,28 @@ class _TabKeys(QObject):
             area.setCurrentIndex(index)
             bar.tab(index).setFocus(Qt.TabFocusReason)
         return True
+
+
+def _area_of(widget: Optional[QWidget]) -> Optional["ads.CDockAreaWidget"]:
+    """Return the dock area holding `widget` (a tab or a pane's content)."""
+    while widget is not None:
+        if isinstance(widget, (ads.CDockWidget, ads.CDockWidgetTab)):
+            return widget.dockAreaWidget()
+        widget = widget.parentWidget()
+    return None
+
+
+def _strip_tab(
+    area: Optional["ads.CDockAreaWidget"],
+) -> Optional["ads.CDockWidgetTab"]:
+    """Return `area`'s current tab when its strip has tabs to walk."""
+    if area is None:
+        return None
+    bar = area.titleBar().tabBar()
+    if sum(bool(bar.isTabOpen(index)) for index in range(bar.count())) < 2:
+        return None
+    tab = bar.currentTab()
+    return tab if tab is not None and tab.isVisible() else None
 
 
 def _content(held: "ads.CDockWidget") -> Optional[QWidget]:
@@ -707,6 +722,8 @@ class FXDockArea(QWidget):
         self._restoring = False
         self._pending: Optional[bytes] = None
         self._restored = False
+        # The stop a Tab walk turned off to a pane's tab for, and its way.
+        self._detour: Optional[Tuple[QWidget, QWidget, bool]] = None
         self._sweep_queued = False
         self._docks = ads.CDockManager(self)
         self._docks.setObjectName("fxDocks")
@@ -1010,23 +1027,80 @@ class FXDockArea(QWidget):
         start = window.focusWidget()
         if start is None:
             return bool(super().focusNextPrevChild(next))
+        reason = Qt.TabFocusReason if next else Qt.BacktabFocusReason
+        if isinstance(start, ads.CDockWidgetTab):
+            found = self._from_tab(start, next)
+            if found is None:
+                return bool(super().focusNextPrevChild(next))
+            found.setFocus(reason)
+            return True
+        found = self._next_stop(start, next)
+        if found is None:
+            return bool(super().focusNextPrevChild(next))
+        # A pane's tab strip is one stop, right before its content: on
+        # the way in forward, on the way out backward.
+        here = _area_of(start)
+        tab = _strip_tab(_area_of(found) if next else here)
+        if tab is not None and _area_of(found) is not here:
+            self._detour = (tab, found, next)
+            tab.setFocus(reason)
+            return True
+        found.setFocus(reason)
+        return True
+
+    def _stops(self, widget: QWidget) -> bool:
+        """Whether Tab may stop on `widget`."""
+        window = self.window()
+        return bool(
+            widget.focusPolicy() & Qt.TabFocus
+            and rehome(widget.focusProxy()) is None
+            and widget.isVisibleTo(window)
+            and widget.isEnabled()
+            and widget.window() is window
+        )
+
+    def _next_stop(
+        self, start: QWidget, forward: bool, skip=None
+    ) -> Optional[QWidget]:
+        """Return the stop after `start` in the chain, or None.
+
+        Qt's own walk stops at a widget whose focus proxy sits elsewhere
+        in the chain, and jumps there. `skip` passes a dock area's widgets.
+        """
         widget = start
         while True:
-            found = focus_step(widget, next)
-            if found is None or found is start:
-                return bool(super().focusNextPrevChild(next))
-            widget = found
-            if (
-                widget.focusPolicy() & Qt.TabFocus
-                and rehome(widget.focusProxy()) is None
-                and widget.isVisibleTo(window)
-                and widget.isEnabled()
-                and widget.window() is window
+            widget = focus_step(widget, forward)
+            if widget is None or widget is start:
+                return None
+            if self._stops(widget) and (
+                skip is None or _area_of(widget) is not skip
             ):
-                widget.setFocus(
-                    Qt.TabFocusReason if next else Qt.BacktabFocusReason
-                )
-                return True
+                return widget
+
+    def _from_tab(
+        self, tab: "ads.CDockWidgetTab", forward: bool
+    ) -> Optional[QWidget]:
+        """Return the stop after a pane's tab: its content, or before it."""
+        detour, self._detour = self._detour, None
+        area = tab.dockAreaWidget()
+        if detour is not None:
+            was, found, way = detour
+            if (
+                was is tab and way == forward
+                and _compat.is_valid(found) and self._stops(found)
+                and (_area_of(found) is area) == forward
+            ):
+                return found
+        content = tab.dockWidget().widget()
+        if content is None:
+            return None
+        first = content if self._stops(content) else self._next_stop(
+            content, True)
+        if first is None or _area_of(first) is not area:
+            return None
+        if forward:
+            return first
+        return self._next_stop(first, False, skip=area)
 
     def _restore(self, state: bytes) -> None:
         self._restored = True

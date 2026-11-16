@@ -1096,6 +1096,10 @@ def test_tab_follows_the_declared_order_across_panes(qtbot):
     qtbot.waitUntil(fields["two"].hasFocus)
 
     QTest.keyClick(fields["two"], Qt.Key_Tab)
+    # Into a tabbed pane, Tab stops on its tab strip first, then its content.
+    strip = QApplication.focusWidget()
+    assert strip.inherits("ads::CDockWidgetTab")
+    QTest.keyClick(strip, Qt.Key_Tab)
 
     assert QApplication.focusWidget() is fields["three"]
 

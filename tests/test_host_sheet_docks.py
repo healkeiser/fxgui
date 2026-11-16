@@ -18,6 +18,7 @@ from qtpy.QtTest import QTest  # noqa: E402
 from qtpy.QtWidgets import (  # noqa: E402
     QApplication,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QPushButton,
     QTreeWidget,
@@ -118,19 +119,23 @@ def _tabbed(qtbot):
     window = FXMainWindow(title="Tabs", framed=True)
     docks = fxdocking.FXDockArea()
     window.setCentralWidget(docks)
-    docks.set_central(QLabel("centre"))
-    docks.add_dock("apps", "Apps", QLabel("apps"), "left")
-    for name in ("runs", "sandbox"):
-        docks.add_dock(name, name.title(), QLabel(name), "left",
-                       tab_with="apps")
+    centre = QLineEdit("centre")
+    docks.set_central(centre)
+    fields = {}
+    for name in ("apps", "runs", "sandbox"):
+        fields[name] = QLineEdit(name)
+        docks.add_dock(name, name.title(), fields[name], "left",
+                       tab_with="" if name == "apps" else "apps")
     qtbot.addWidget(window)
     window.resize(800, 500)
     window.show()
     qtbot.waitExposed(window)
+    window.activateWindow()
+    qtbot.waitUntil(window.isActiveWindow)
     area = docks.manager().findDockWidget("apps").dockAreaWidget()
     area.setCurrentIndex(0)
     QApplication.processEvents()
-    return window, area
+    return window, centre, fields, area
 
 
 def _tabs(area):
@@ -138,15 +143,27 @@ def _tabs(area):
     return [bar.tab(index) for index in range(bar.count())]
 
 
-def test_a_pane_s_tab_strip_is_one_tab_stop(qtbot):
-    _window, area = _tabbed(qtbot)
-    stops = [tab.focusPolicy() & Qt.TabFocus for tab in _tabs(area)]
+def _key(key, modifier=Qt.NoModifier):
+    QTest.keyClick(QApplication.focusWidget(), key, modifier)
+    QApplication.processEvents()
+    return QApplication.focusWidget()
 
-    assert [bool(stop) for stop in stops] == [True, False, False]
+
+def test_a_pane_s_tab_strip_is_one_stop_right_before_its_content(qtbot):
+    _window, _centre, fields, area = _tabbed(qtbot)
+    tab = _tabs(area)[0]
+    fields["apps"].setFocus(Qt.TabFocusReason)
+    QApplication.processEvents()
+
+    assert _key(Qt.Key_Backtab, Qt.ShiftModifier) is tab
+    outside = _key(Qt.Key_Backtab, Qt.ShiftModifier)
+    assert outside is not tab and outside not in fields.values()
+    assert _key(Qt.Key_Tab) is tab
+    assert _key(Qt.Key_Tab) is fields["apps"]
 
 
 def test_left_and_right_walk_a_pane_s_tabs_with_the_focus(qtbot):
-    _window, area = _tabbed(qtbot)
+    _window, _centre, _fields, area = _tabbed(qtbot)
     tabs = _tabs(area)
     tabs[0].setFocus(Qt.TabFocusReason)
     QApplication.processEvents()
