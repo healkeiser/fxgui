@@ -5,7 +5,7 @@ from typing import Optional
 
 # Third-party
 from qtpy.QtCore import QEvent, QSize, Qt
-from qtpy.QtGui import QFontMetrics, QIcon, QPainter, QPixmap
+from qtpy.QtGui import QFont, QFontMetrics, QIcon, QPainter, QPixmap
 from qtpy.QtWidgets import QFormLayout, QLabel, QStyle, QToolTip, QWidget
 
 # Internal
@@ -114,7 +114,8 @@ class FXElidedLabel(QLabel):
         key = (
             self._full_text,
             self._mode,
-            self.font().key(),
+            # The font itself: key() leaves out its hinting.
+            QFont(self.font()),
             self.contentsRect().width(),
             self.margin(),
             self.wordWrap(),

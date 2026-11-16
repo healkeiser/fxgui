@@ -301,14 +301,16 @@ _FONT_ROLE = Qt.FontRole
 _DECORATION_ROLE = Qt.DecorationRole
 _CHECK_STATE_ROLE = Qt.CheckStateRole
 
-# Item font key and weight -> the title font; font key -> one line's height.
+# Item font and weight -> the title font; font -> one line's height.
+# Keyed by the QFont: its key() leaves out the hinting, which moves widths.
 _TITLE_FONTS: Dict[tuple, QFont] = {}
-_LINE_HEIGHTS: Dict[str, int] = {}
+_LINE_HEIGHTS: Dict[QFont, int] = {}
 
 
 def _line_height(font: QFont) -> int:
     """Return one line's height in `font`, measured once per font."""
-    key = font.key()
+    # The font itself: key() leaves out its hinting, which moves widths.
+    key = QFont(font)
     height = _LINE_HEIGHTS.get(key)
     if height is None:
         height = _LINE_HEIGHTS[key] = QFontMetrics(font).height()
@@ -738,8 +740,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _PICKER_RIGHT_MARGIN = 4
 
     # Badges and labels, one derived font per base font key
-    _badge_fonts: Dict[str, QFont] = {}
-    _label_fonts: Dict[str, QFont] = {}
+    _badge_fonts: Dict[QFont, QFont] = {}
+    _label_fonts: Dict[QFont, QFont] = {}
 
     _FOCUS_RINGS = ("row", "cell")
     # The keyboard's outline, inside the row.
@@ -966,7 +968,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             weight = QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
         # Measured for every cell of every row a view lays out: built once
         # per font and weight. A copy, so a caller may change it.
-        key = (option.font.key(), weight)
+        key = (QFont(option.font), weight)
         font = _TITLE_FONTS.get(key)
         if font is None:
             font = QFont(option.font)
@@ -1083,7 +1085,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     def _badge_font(cls, option: QStyleOptionViewItem) -> QFont:
         """Return the item's font 2 px smaller at the emphasis weight, cached per font."""
         base = option.font
-        key = base.key()
+        key = QFont(base)
         font = cls._badge_fonts.get(key)
         if font is None:
             font = _smaller(base, 2)
@@ -1095,7 +1097,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     def _label_font(cls, option: QStyleOptionViewItem) -> QFont:
         """Return the item's font 1 px smaller at the emphasis weight, cached per font."""
         base = option.font
-        key = base.key()
+        key = QFont(base)
         font = cls._label_fonts.get(key)
         if font is None:
             font = _smaller(base, 1)
@@ -2382,8 +2384,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             key = (
                 column,
                 str(index.data(_DISPLAY_ROLE) or ""),
-                option.font.key(),
-                own.key() if isinstance(own, QFont) else None,
+                QFont(option.font),
+                QFont(own) if isinstance(own, QFont) else None,
                 not decoration.isNull() if isinstance(decoration, QIcon)
                 else decoration is not None,
                 self._is_tabular(index),

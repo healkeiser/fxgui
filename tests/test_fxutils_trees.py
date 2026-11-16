@@ -299,3 +299,24 @@ def test_restoring_lays_the_rows_out_once(qtbot, monkeypatch):
     assert counts["sizeHint"] <= (shown + 3) * 6
     assert tree.currentItem() is tree.topLevelItem(3).child(2)
     assert tree.verticalScrollBar().value() == 40
+
+
+def test_a_font_differing_only_in_hinting_is_measured_in_its_own(qtbot):
+    from qtpy.QtGui import QFont
+    from qtpy.QtWidgets import QStyleOptionViewItem
+
+    tree = _tree(qtbot, columns=2)
+    delegate = FXThumbnailDelegate(tree)
+    hinted = QFont("Inter")
+    hinted.setPixelSize(13)
+    hinted.setHintingPreference(QFont.PreferFullHinting)
+    unhinted = QFont(hinted)
+    unhinted.setHintingPreference(QFont.PreferNoHinting)
+    assert hinted.key() == unhinted.key()
+
+    for font in (hinted, unhinted):
+        option = QStyleOptionViewItem()
+        option.font = font
+        title = delegate._title_font(option)
+        # A font cached by key() alone came back with the other's hinting.
+        assert title.hintingPreference() == font.hintingPreference()
