@@ -1956,6 +1956,15 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 and ask about a pane by its name, without reaching for QtAds.
 <code>show_dock(name, activate=False)</code> makes a pane its tabs' current one
 without raising or focusing the floating window it sits in.</p>
+<p>A pane's content stands <code>fxstyle.PANE_GAP</code> off its sides and bottom, but a
+flush list, tree or table (<code>fxstyle.mark_flush</code>) runs to the pane's
+border, as a table sits in a card: its header, rows, selection, column
+rules and <code>FXSummaryRow</code> with it, the vertical scroll bar at the border.
+It reaches the bottom when nothing stands under it. A filter bar, a form,
+buttons under the list and a log keep the gap; an <code>FXFilteredTree</code>'s tree
+runs to the border while its filter bar keeps the gap. A pane whose body
+is a list, tree or table is flush already, and so is a view marked flush
+after it was docked. The pane's bottom corners stay round over the rows.</p>
 <p>And these functions and constants:</p>
 <table>
 <thead>
