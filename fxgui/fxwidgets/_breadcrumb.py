@@ -334,6 +334,10 @@ class FXBreadcrumb(QWidget):
         self._layout.addStretch()
 
         self._scroll_area.setWidget(self._container)
+        # A path too long for the bar keeps its end, where the path is, in
+        # view: the head goes under the left edge, never the current one.
+        scroll = self._scroll_area.horizontalScrollBar()
+        scroll.rangeChanged.connect(lambda _low, high: scroll.setValue(high))
 
         self._line_edit = QLineEdit()
         self._line_edit.setPlaceholderText("Enter path...")

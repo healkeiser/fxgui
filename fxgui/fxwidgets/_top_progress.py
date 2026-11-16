@@ -19,6 +19,7 @@ from qtpy.QtWidgets import QProgressBar, QWidget
 
 # Internal
 from fxgui import _compat, fxstyle
+from fxgui.fxutils import later
 
 # The line's thickness.
 _HEIGHT = 2
@@ -178,10 +179,18 @@ class FXTopProgress(QProgressBar):
             self.setGeometry(0, 0, parent.width(), _HEIGHT)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Follow the parent's width when it resizes."""
-        if watched is self.parent() and event.type() == QEvent.Resize:
-            self._fit()
+        """Follow the parent's width; stay over a child it gains later."""
+        if watched is self.parent():
+            if event.type() == QEvent.Resize:
+                self._fit()
+            elif event.type() == QEvent.ChildAdded and self.isVisible():
+                # Once the child is up: a skeleton raises itself as it covers.
+                later(0, self, self._rise)
         return super().eventFilter(watched, event)
+
+    def _rise(self) -> None:
+        if self.isVisible():
+            self.raise_()
 
     def paintEvent(self, event) -> None:
         """Paint the line, from the left, as far as `fraction`."""

@@ -1300,8 +1300,14 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             lead = self._icon_rect(QRect(0, 0, 1000, option.rect.height() or 28)
                                    ).right() + 1 + self._ICON_GAP
         width = _text_width(option.font, text, self._is_tabular(index))
+        # Plain text in the picker column ends where a picker's value does.
+        inset = (
+            self._picker_text_inset()
+            if index.column() == self.picker_column
+            else self.ICON_MARGIN
+        )
         # The text rect ends one pixel inside the cell, the inset before it.
-        return lead + width + self.ICON_MARGIN + 1
+        return lead + width + inset + 1
 
     def align_column(
         self,

@@ -6,7 +6,7 @@ from bisect import bisect_left, bisect_right
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 # Third-party
-from qtpy.QtCore import QLineF, QPoint, QPointF, QRect, Qt, QTimer, Signal
+from qtpy.QtCore import QEvent, QLineF, QPoint, QPointF, QRect, Qt, QTimer, Signal
 from qtpy.QtGui import (
     QColor,
     QKeyEvent,
@@ -20,6 +20,7 @@ from qtpy.QtWidgets import (
     QDoubleSpinBox,
     QGridLayout,
     QHBoxLayout,
+    QLayout,
     QPushButton,
     QSizePolicy,
     QSpinBox,
@@ -29,6 +30,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle
+from fxgui.fxutils import later
 from fxgui.fxwidgets._tips import apply_tip
 
 
@@ -403,15 +405,48 @@ class FXTimelineSlider(QWidget):
                 [w for w in marks if w in shown],
                 [self._spinbox] if self._spinbox in shown else [],
             ]
-            # As narrow as the row with everything shed, never narrower.
-            self._show_shed(False)
-            self.setMinimumWidth(self.layout().minimumSize().width())
+            self._refloor()
             self._show_shed(True)
 
     def _show_shed(self, shown: bool) -> None:
         for group in self._shed:
             for widget in group:
                 widget.setVisible(shown)
+
+    def _refloor(self) -> None:
+        """Floor the width at the row with everything shed, never narrower.
+
+        Measured again once the theme sizes the fields: unpolished, they
+        are narrower, and the row would squeeze them over each other.
+        """
+        self._show_shed(False)
+        for layout in [self.layout(), *self.layout().findChildren(QLayout)]:
+            layout.invalidate()
+        self.setMinimumWidth(self.layout().minimumSize().width())
+
+    def showEvent(self, event) -> None:
+        """Measure the floor in the theme the row is shown in."""
+        super().showEvent(event)
+        self._queue_refloor()
+
+    def changeEvent(self, event: QEvent) -> None:
+        """Measure the floor again in a new theme or font."""
+        super().changeEvent(event)
+        if event.type() in (QEvent.StyleChange, QEvent.FontChange):
+            self._queue_refloor()
+
+    def _queue_refloor(self) -> None:
+        # Once the fields have their new sizes too.
+        if getattr(self, "_shed", None) and not getattr(
+            self, "_refloor_queued", False
+        ):
+            self._refloor_queued = True
+            later(0, self, self._queued_refloor)
+
+    def _queued_refloor(self) -> None:
+        self._refloor_queued = False
+        self._refloor()
+        self._fit()
 
     def _fit(self) -> None:
         """Show what the row has room for, dropping in `_shed` order."""

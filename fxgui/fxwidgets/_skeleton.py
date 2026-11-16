@@ -11,6 +11,7 @@ from qtpy.QtWidgets import QAbstractScrollArea, QWidget
 
 # Internal
 from fxgui import _compat, fxstyle
+from fxgui.fxutils import later
 
 # The layouts a skeleton draws.
 _KINDS = ("rows", "cards", "lines", "grid")
@@ -156,10 +157,28 @@ class FXSkeleton(QWidget):
             skeleton.deleteLater()
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Cover the view again when it resizes."""
-        if watched is self.parent() and event.type() == QEvent.Resize:
-            self.setGeometry(watched.rect())
+        """Cover the view again when it resizes, or gains a child."""
+        if watched is self.parent():
+            if event.type() == QEvent.Resize:
+                self.setGeometry(watched.rect())
+            elif event.type() == QEvent.ChildAdded and self._covering:
+                # A child made later (an index widget) stacks over the cover.
+                later(0, self, self._rise)
         return super().eventFilter(watched, event)
+
+    def _rise(self) -> None:
+        """Go over the view's children, under its loading line."""
+        from fxgui.fxwidgets._top_progress import FXTopProgress
+
+        parent = self.parentWidget()
+        if not self._covering or parent is None:
+            return
+        self.raise_()
+        for line in parent.findChildren(
+            FXTopProgress, "", Qt.FindDirectChildrenOnly
+        ):
+            if line.isVisible():
+                line.raise_()
 
     def showEvent(self, event) -> None:
         """Start the sweep, unless motion is reduced."""

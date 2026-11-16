@@ -89,12 +89,14 @@ def test_the_hint_makes_room_for_the_pill(qtbot):
     """A cell sized to its contents must not clip the control it paints."""
 
     picked, delegate, _ = _tree(qtbot, choices=["v001", "v002", "v003"])
-    plain, _, _ = _tree(qtbot, choices=[])
+    # The same words as plain text in an ordinary column.
+    plain, plain_delegate, _ = _tree(qtbot, choices=[])
+    plain_delegate.picker_column = -1
     index = picked.model().index(0, 1)
     plain_index = plain.model().index(0, 1)
     assert delegate.sizeHint(
         _option_for(picked, index), index
-    ).width() > delegate.sizeHint(
+    ).width() > plain_delegate.sizeHint(
         _option_for(plain, plain_index), plain_index
     ).width()
 
@@ -310,3 +312,28 @@ def test_a_row_removed_under_the_menu_picks_nothing(qtbot, monkeypatch):
     qtbot.mouseClick(tree.viewport(), Qt.LeftButton, pos=rect.center())
 
     assert seen == []
+
+
+def test_plain_text_in_the_picker_column_fits_its_fitted_column(
+    qtbot, monkeypatch
+):
+    """A row with no choices ends its text where a pill's value ends: the
+    column fitted to its contents leaves that room, so the text is whole."""
+    from fxgui.fxwidgets import _delegates
+
+    tree, _, _ = _tree(qtbot, choices=[])
+    item = tree.topLevelItem(0)
+    item.setText(1, "v003 published, the long one")
+    cut = []
+    real = _delegates._draw_elided
+
+    def spy(painter, rect, alignment, text):
+        if painter.fontMetrics().elidedText(
+                text, Qt.ElideRight, max(0, rect.width())) != text:
+            cut.append(text)
+        real(painter, rect, alignment, text)
+
+    monkeypatch.setattr(_delegates, "_draw_elided", spy)
+    tree.resizeColumnToContents(1)
+    tree.viewport().grab()
+    assert not cut

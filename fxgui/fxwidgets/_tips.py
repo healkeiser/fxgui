@@ -354,6 +354,9 @@ class FXKeycap(QWidget):
                 cap = QLabel(name, self)
                 cap.setObjectName("fxKeycap")
                 layout.addWidget(cap)
+                # Now, not on the queued show: until then the size hint
+                # leaves it out, and a holder placing the caps by it does.
+                cap.show()
 
 
 class _TipRefresh(QObject):

@@ -294,3 +294,90 @@ def test_a_pane_s_title_buttons_are_square(qtbot):
     assert buttons
     for button in buttons:
         assert button.width() == button.height() > 0, button.objectName()
+
+
+def _column(*widgets):
+    """Return a bare body with `widgets` stacked, and its layout."""
+    body = QWidget()
+    column = QVBoxLayout(body)
+    column.setContentsMargins(0, 0, 0, 0)
+    for widget in widgets:
+        column.addWidget(widget)
+    return body, column
+
+
+def _settle():
+    for _ in range(4):
+        QApplication.processEvents()
+
+
+def _at_the_border(docks, view):
+    inner, box = _edges(docks, view)
+    return (box.left(), box.right(), box.bottom()) == (
+        inner.left(), inner.right(), inner.bottom())
+
+
+def test_a_flush_view_added_after_docking_reaches_the_border(qtbot):
+    body, column = _column(QLabel("top"))
+    _window, docks = _docked(qtbot, body)
+    view = _tree()
+    fxstyle.mark_flush(view)
+    column.addWidget(view)
+    _settle()
+    assert _at_the_border(docks, view)
+
+
+def test_a_flush_view_replaced_after_docking_reaches_the_border(qtbot):
+    old = _tree()
+    fxstyle.mark_flush(old)
+    body, column = _column(QLabel("top"), old)
+    _window, docks = _docked(qtbot, body)
+    column.removeWidget(old)
+    old.deleteLater()
+    new = _tree()
+    fxstyle.mark_flush(new)
+    column.addWidget(new)
+    _settle()
+    assert _at_the_border(docks, new)
+
+
+def test_a_flush_view_deleted_from_a_pane_leaves_no_dead_link(qtbot):
+    from qtpy.QtCore import QEvent
+
+    view = _tree()
+    fxstyle.mark_flush(view)
+    box, _inner = _column(QLabel("box"), view)
+    body, _outer = _column(box)
+    window, _docks = _docked(qtbot, body)
+    view.deleteLater()
+    QApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+    # Every later fit used to ask the dead view for its parent, and raise.
+    window.resize(700, 420)
+    _settle()
+
+
+def test_a_view_flushed_off_then_on_reaches_the_border_again(qtbot):
+    view = _tree()
+    _window, docks = _docked(qtbot, view)
+    fxstyle.mark_flush(view, False)
+    _settle()
+    inner, box = _edges(docks, view)
+    assert box.left() - inner.left() == GAP
+    fxstyle.mark_flush(view)
+    _settle()
+    assert _at_the_border(docks, view)
+
+
+def test_a_container_left_without_a_flush_view_keeps_one_gap(qtbot):
+    label = QLabel("box")
+    view = _tree()
+    fxstyle.mark_flush(view)
+    box, _inner = _column(label, view)
+    body, _outer = _column(box)
+    _window, docks = _docked(qtbot, body)
+    fxstyle.mark_flush(view, False)
+    _settle()
+    # The body's gap, not the body's and the box's both.
+    for widget in (label, view):
+        inner, place = _edges(docks, widget)
+        assert place.left() - inner.left() == GAP
