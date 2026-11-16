@@ -370,8 +370,10 @@ class _PaneEdges(QObject):
                     parent.setContentsMargins(gap, 0, gap, gap)
                 link = parent
         self._chain = chain
+        # Outermost first: fitting a link fits the links inside it.
         for link in chain:
-            self._fit(link)
+            if link.parentWidget() not in chain:
+                self._fit(link)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         kind = event.type()
@@ -415,6 +417,11 @@ class _PaneEdges(QObject):
                 link.setGeometry(fitted)
             finally:
                 self._busy = False
+        # Its layout has just put the links inside it back: fit them in
+        # turn, so a view any number of containers deep reaches the border.
+        for inner in self._chain:
+            if inner.parentWidget() is link:
+                self._fit(inner)
 
 
 class _PaneCorners(QWidget):

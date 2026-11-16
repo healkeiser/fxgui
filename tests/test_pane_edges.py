@@ -209,3 +209,53 @@ def test_a_skeleton_over_a_plain_pane_hides_it_on_the_pane_s_ground(
     assert not leftover, leftover[:5]
     corner = pane.mapTo(window, pane.rect().bottomRight())
     assert QColor(after.pixel(corner.x() - 3, corner.y() - 3)) == ground
+
+
+def _nested(depth):
+    """Return a pane body with a flush view `depth` containers deep."""
+    view = _tree()
+    fxstyle.mark_flush(view)
+    holder, inner = None, view
+    outer = None
+    for level in range(depth):
+        box = QWidget()
+        stack = QVBoxLayout(box)
+        stack.setContentsMargins(0, 0, 0, 0)
+        stack.addWidget(QLabel(f"level {level}"))
+        stack.addWidget(inner)
+        inner = box
+        if outer is None:
+            holder = stack
+        outer = box
+    return outer, view, holder
+
+
+def test_a_view_three_containers_deep_reaches_the_border(qtbot):
+    body, view, innermost = _nested(3)
+    window, docks = _docked(qtbot, body)
+    inner, box = _edges(docks, view)
+    assert (box.left(), box.right(), box.bottom()) == (
+        inner.left(), inner.right(), inner.bottom())
+    # And stays there: a resize, a sibling hidden and shown, a re-layout.
+    window.resize(900, 560)
+    QApplication.processEvents()
+    sibling = innermost.itemAt(0).widget()
+    sibling.hide()
+    QApplication.processEvents()
+    sibling.show()
+    QApplication.processEvents()
+    innermost.invalidate()
+    QApplication.processEvents()
+    inner, box = _edges(docks, view)
+    assert (box.left(), box.right(), box.bottom()) == (
+        inner.left(), inner.right(), inner.bottom())
+
+
+def test_a_deep_view_marked_flush_late_reaches_the_border(qtbot):
+    body, view, _innermost = _nested(3)
+    fxstyle.mark_flush(view, False)
+    _window, docks = _docked(qtbot, body)
+    fxstyle.mark_flush(view)
+    QApplication.processEvents()
+    inner, box = _edges(docks, view)
+    assert (box.left(), box.right()) == (inner.left(), inner.right())
