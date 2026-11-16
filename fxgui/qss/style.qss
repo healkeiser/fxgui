@@ -1874,6 +1874,7 @@ QSlider[fxFocusVisible="true"]::handle:vertical:focus
 
 /* A tab's focus recolours the edge it reserves. */
 QTabBar[fxFocusVisible="true"]::tab:focus { border-color: @accent_primary; }
+ads--CDockWidgetTab[fxFocusVisible="true"]:focus { border-color: @accent_primary; }
 
 /* A checkbox and a radio button have no border of their own to recolour, so
    both states declare one and only the colour differs. The indicator's own

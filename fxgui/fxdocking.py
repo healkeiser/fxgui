@@ -226,6 +226,51 @@ def _bare(tab: "ads.CDockWidgetTab") -> None:
         if spacer is not None:
             spacer.changeSize(0, 0)
     layout.invalidate()
+    _TabKeys.keep(tab)
+
+
+class _TabKeys(QObject):
+    """Make a pane's tab strip one Tab stop; Left and Right walk along it.
+
+    As a QTabBar: only the current tab takes the keyboard, and an arrow
+    makes the next open tab current, the focus going with it.
+    """
+
+    @classmethod
+    def keep(cls, tab: "ads.CDockWidgetTab") -> None:
+        if getattr(tab, "_fx_keys", None) is None:
+            tab._fx_keys = cls(tab)
+
+    def __init__(self, tab: "ads.CDockWidgetTab"):
+        super().__init__(tab)
+        self._tab = tab
+        tab.installEventFilter(self)
+        tab.activeTabChanged.connect(self._rove)
+        self._rove()
+
+    def _rove(self) -> None:
+        tab = self._tab
+        if _compat.is_valid(tab):
+            tab.setFocusPolicy(
+                Qt.TabFocus if tab.isActiveTab() else Qt.NoFocus)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() != QEvent.KeyPress or event.key() not in (
+            Qt.Key_Left, Qt.Key_Right
+        ):
+            return False
+        area = self._tab.dockAreaWidget()
+        if area is None:
+            return False
+        bar = area.titleBar().tabBar()
+        step = 1 if event.key() == Qt.Key_Right else -1
+        index = bar.currentIndex() + step
+        while 0 <= index < bar.count() and not bar.isTabOpen(index):
+            index += step
+        if 0 <= index < bar.count():
+            area.setCurrentIndex(index)
+            bar.tab(index).setFocus(Qt.TabFocusReason)
+        return True
 
 
 def _content(held: "ads.CDockWidget") -> Optional[QWidget]:
