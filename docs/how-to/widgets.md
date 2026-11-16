@@ -86,6 +86,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXCommandPalette` | Popup search over a window's commands, grouped by section, or over rows to go to; the commands run lately come first |
 | `FXCommandRow` | A toolbar fixed in place, whose margins survive style changes |
 | `FXConfirmDialog` | The same card for any confirm: `verb`, `tone="plain"` (a primary verb) or `"danger"` (red), an optional `alternative` (with `alternative_tone`) at the left, and `default` (the choice Enter takes: the verb when plain, Cancel when danger). `exec()` returns `VERB`, `CANCEL` or `ALTERNATIVE`; `choice()` names it. Escape cancels. The card has no title bar: drag it by its title. Given a parent (a DCC's main window included), it is owned by that window and stays above it |
+| `FXInputDialog` | The confirm card asking for one value: `kind="line"`, `"text"` (Ctrl+Enter takes the verb) or `"choice"` (from `choices`), a starting `value`, a `placeholder`, and `required` to keep the verb shut while the field is empty. `field` is the input; `value()` reads it |
 | `FXConfirmDeleteDialog` | Asks before an act with no undo: a card with the question, Cancel then a red Delete, focus on Cancel; Enter never deletes, and the window behind dims. `require_typing=True` (on when a `confirm_word` is given) waits for the name typed exactly |
 | `FXDropZone` | Drop target for files or folders, with a browse button and a file list |
 | `FXElidedLabel` | Label that cuts its text with "..." when it does not fit |
@@ -124,7 +125,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXSeating` | Seats a tray panel in the screen corner nearest its icon and slides it in |
 | `FXSingleInstance` | Lock on a local socket name; a second start wakes the first |
 | `FXSingleton` | Metaclass for Qt classes that have one instance |
-| `FXSkeleton` | Grey blocks in the shape of a list, cards or text while they load, a light sweeping across (see [Loading](#loading)) |
+| `FXSkeleton` | Grey blocks in the shape of a list, cards, text or a grid (a name column, then `columns` narrow ones) while they load, a light sweeping across (see [Loading](#loading)) |
 | `FXSortedTreeWidgetItem` | Tree row that sorts numbers in text naturally (v2 before v10) |
 | `FXSplashScreen` | Splash screen with a title, a text and a progress bar |
 | `FXSplitButton` | Split button whose click and dropdown both have keys |
@@ -347,7 +348,7 @@ FXSkeleton.cover(tree)            # Over the rows; the header stays.
 ...                               # The data arrives.
 FXSkeleton.uncover(tree)
 
-cards = FXSkeleton(kind="cards", count=6)   # Or "rows", "lines".
+cards = FXSkeleton(kind="cards", count=6)   # Or "rows", "lines", "grid".
 ```
 
 `cover` puts the skeleton inside a list's, tree's or table's frame and
