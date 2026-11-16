@@ -804,10 +804,43 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#summary-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary Rows
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#empty-panes" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         Empty Panes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Loading
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segmented-tabs-and-tab-counts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Segmented Tabs and Tab Counts
       </span>
     </span>
   </a>
@@ -1416,10 +1449,43 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#summary-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary Rows
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#empty-panes" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
         Empty Panes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Loading
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#segmented-tabs-and-tab-counts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Segmented Tabs and Tab Counts
       </span>
     </span>
   </a>
@@ -1624,7 +1690,7 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 </tr>
 <tr>
 <td><code>FXBreadcrumb</code></td>
-<td>Clickable breadcrumb trail; double-click it to type a path. <code>back_button</code> and <code>forward_button</code> name its navigation buttons (None without <code>show_navigation</code>)</td>
+<td>Clickable breadcrumb trail; double-click it to type a path. Its parts are parted by a 14 px chevron in <code>text_dimmed</code> (<code>separator="/"</code> for a slash). <code>back_button</code> and <code>forward_button</code> name its navigation buttons (None without <code>show_navigation</code>)</td>
 </tr>
 <tr>
 <td><code>FXCamelCaseValidator</code></td>
@@ -1648,11 +1714,11 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 </tr>
 <tr>
 <td><code>FXCommand</code></td>
-<td>One row of an <code>FXCommandPalette</code>: a label, a callable or a list of choices, keys, a section</td>
+<td>One row of an <code>FXCommandPalette</code>: a label, a callable or a list of choices, keys, the section it is grouped under</td>
 </tr>
 <tr>
 <td><code>FXCommandPalette</code></td>
-<td>Popup search over a window's commands, or over rows to go to; the commands run lately come first</td>
+<td>Popup search over a window's commands, grouped by section, or over rows to go to; the commands run lately come first</td>
 </tr>
 <tr>
 <td><code>FXCommandRow</code></td>
@@ -1660,7 +1726,7 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 </tr>
 <tr>
 <td><code>FXConfirmDeleteDialog</code></td>
-<td>Asks for a name typed exactly before an act with no undo; Enter never deletes</td>
+<td>Asks before an act with no undo: a card with the question, Cancel then a red Delete, focus on Cancel; Enter never deletes, and the window behind dims. <code>require_typing=True</code> (on when a <code>confirm_word</code> is given) waits for the name typed exactly</td>
 </tr>
 <tr>
 <td><code>FXDropZone</code></td>
@@ -1751,6 +1817,10 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 <td>Card with a message that slides in from a window's right edge. <code>severity()</code>, <code>timeout()</code>, <code>action_buttons()</code> and <code>is_placed()</code> (it stands at its slot, no slide running) read it back</td>
 </tr>
 <tr>
+<td><code>FXMeterBar</code></td>
+<td>A quiet meter: one fill or several coloured shares (<code>FXMeterShare(value, color, faint)</code>), 6 px or 4 px compact</td>
+</tr>
+<tr>
 <td><code>FXOutputLogHandler</code></td>
 <td>Logging handler that writes records into an <code>FXOutputLogWidget</code></td>
 </tr>
@@ -1807,6 +1877,10 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 <td>Metaclass for Qt classes that have one instance</td>
 </tr>
 <tr>
+<td><code>FXSkeleton</code></td>
+<td>Grey blocks in the shape of a list, cards or text while they load, a light sweeping across (see <a href="#loading">Loading</a>)</td>
+</tr>
+<tr>
 <td><code>FXSortedTreeWidgetItem</code></td>
 <td>Tree row that sorts numbers in text naturally (v2 before v10)</td>
 </tr>
@@ -1831,12 +1905,16 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 <td>Icon and word on a status bar, lit when clickable</td>
 </tr>
 <tr>
+<td><code>FXSummaryRow</code></td>
+<td>Totals row pinned under a tree or table view, lined up with its columns (see <a href="#summary-rows">Summary Rows</a>)</td>
+</tr>
+<tr>
 <td><code>FXSystemTray</code></td>
 <td>System tray icon with a menu</td>
 </tr>
 <tr>
 <td><code>FXTagChip</code></td>
-<td>One tag, removable or not</td>
+<td>One tag, removable or not: a neutral hairline chip; <code>color=</code> adds an 8 px dot (a token name or a colour)</td>
 </tr>
 <tr>
 <td><code>FXTagInput</code></td>
@@ -1848,7 +1926,7 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 </tr>
 <tr>
 <td><code>FXThumbnailDelegate</code></td>
-<td>Item delegate with thumbnails, status dots, labels and stars</td>
+<td>Item delegate with thumbnails, status dots, labels and stars. The child count follows a row's name; <code>GROUP_ROW_ROLE</code> draws a group header row (12 px, emphasised, toned); an item's own <code>Qt.FontRole</code> weight sets its title's; <code>Qt.TextAlignmentRole</code> aligns a cell; <code>align_column(view, column, alignment, tabular)</code> aligns a column and its header, <code>TABULAR_FIGURES_ROLE</code> or <code>tabular=True</code> lines its digits up; <code>THUMBNAIL_SIZES</code> gives the picture per row height (32 x 18, 44 x 24, 72 x 40)</td>
 </tr>
 <tr>
 <td><code>FXTimelineSlider</code></td>
@@ -1856,7 +1934,11 @@ The Docking page needs <code>PySide6-QtAds</code> (see <a href="../../installati
 </tr>
 <tr>
 <td><code>FXToggleSwitch</code></td>
-<td>On/off switch that slides</td>
+<td>On/off switch that slides: a dimmed grey track off, the accent on, a page-coloured knob</td>
+</tr>
+<tr>
+<td><code>FXTopProgress</code></td>
+<td>A 2 px accent line along a widget's top edge while it works (see <a href="#loading">Loading</a>)</td>
 </tr>
 <tr>
 <td><code>FXValidatedLineEdit</code></td>
@@ -2004,15 +2086,43 @@ on AZERTY <code>/</code> is Shift+<code>:</code>. A window shortcut of one chara
 wins over typing on the tree. So keep single-character shortcuts off
 windows that hold a filtered tree, or use a chord such as <code>Ctrl+F</code>.</p>
 </div>
+<h2 id="summary-rows">Summary Rows<a class="headerlink" href="#summary-rows" title="Permanent link">&para;</a></h2>
+<p><code>FXSummaryRow</code> pins one row of totals under a <code>QTreeView</code> or a
+<code>QTableView</code>, such as "9 shots | 5/63 tasks done | 300 | 0.1 d". You
+count the totals; the row shows the text you hand it.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">FXSummaryRow</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">summary</span> <span class="o">=</span> <span class="n">FXSummaryRow</span><span class="p">(</span><span class="n">view</span><span class="p">)</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">summary</span><span class="o">.</span><span class="n">set_texts</span><span class="p">([</span><span class="s2">"9 shots"</span><span class="p">,</span> <span class="s2">"5/63 tasks done"</span><span class="p">,</span> <span class="s2">"300"</span><span class="p">])</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">summary</span><span class="o">.</span><span class="n">set_text</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="s2">"0.1 d"</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">AlignRight</span><span class="p">,</span> <span class="n">strong</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1"># Recount and call set_text or set_texts again when the rows change.</span>
+</span></code></pre></div>
+<ul>
+<li>It is not a model row. It sits in the view's bottom margin, so it
+  stays in place while the rows scroll. It is never selected and never
+  takes focus.</li>
+<li>Each cell stays over its column when a column is resized, hidden,
+  moved or scrolled sideways.</li>
+<li>A cell takes its own <code>alignment</code>, else the column header's alignment
+  (<code>headerData</code> with <code>Qt.TextAlignmentRole</code>), else the left.</li>
+<li>The text is a step below the body and muted. <code>strong=True</code> draws it
+  in the body colour.</li>
+<li>It is as tall as a row at the current row size (36 px at "normal")
+  and follows <code>fxstyle.apply_row_size</code>.</li>
+<li><code>text(column)</code> reads a cell back, <code>clear()</code> empties every cell, and
+  <code>setVisible(False)</code> hides the row and gives its room back to the rows.</li>
+<li>Screen readers read it as "Summary", and each cell as static text.</li>
+</ul>
 <h2 id="empty-panes">Empty Panes<a class="headerlink" href="#empty-panes" title="Permanent link">&para;</a></h2>
 <p>A pane with nothing to show yet says what to do next. <code>FXEmptyState</code>
 centres an icon, the action in bold and, under it, what that action
 brings, in the muted ink:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">FXEmptyState</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">empty</span> <span class="o">=</span> <span class="n">FXEmptyState</span><span class="p">(</span><span class="s2">"inbox"</span><span class="p">,</span> <span class="s2">"Pick a task"</span><span class="p">,</span> <span class="s2">"Its files and versions show here"</span><span class="p">)</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">empty</span><span class="o">.</span><span class="n">set_prompt</span><span class="p">(</span><span class="s2">"search"</span><span class="p">,</span> <span class="s2">"Search again"</span><span class="p">,</span> <span class="s2">"Nothing matched"</span><span class="p">)</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">action</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">empty</span><span class="o">.</span><span class="n">prompt</span><span class="p">()</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">FXEmptyState</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">empty</span> <span class="o">=</span> <span class="n">FXEmptyState</span><span class="p">(</span><span class="s2">"inbox"</span><span class="p">,</span> <span class="s2">"Pick a task"</span><span class="p">,</span> <span class="s2">"Its files and versions show here"</span><span class="p">)</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">empty</span><span class="o">.</span><span class="n">set_prompt</span><span class="p">(</span><span class="s2">"search"</span><span class="p">,</span> <span class="s2">"Search again"</span><span class="p">,</span> <span class="s2">"Nothing matched"</span><span class="p">)</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">action</span><span class="p">,</span> <span class="n">detail</span> <span class="o">=</span> <span class="n">empty</span><span class="o">.</span><span class="n">prompt</span><span class="p">()</span>
 </span></code></pre></div>
 <p>An empty detail hides the second line. A disabled empty state keeps its
 icon muted, so a pane switched off still reads its ask.</p>
@@ -2020,27 +2130,76 @@ icon muted, so a pane switched off still reads its ask.</p>
 scroll area's viewport, where it cuts its content off, and hides once the
 area is scrolled to the end or has nothing to scroll. It reads the
 theme's <code>shadow</code> and <code>border</code> each time it paints.</p>
+<h2 id="loading">Loading<a class="headerlink" href="#loading" title="Permanent link">&para;</a></h2>
+<p>A list or a pane waiting for its data shows its own shape, greyed, rather
+than an empty page or a spinner. <code>FXSkeleton</code> draws rows (a row's height,
+a thumbnail slot and text bars), cards or lines of text, in a grey a
+touch off the ground, with one light sweeping across every 1.6 s:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">FXSkeleton</span><span class="p">,</span> <span class="n">FXTopProgress</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">FXSkeleton</span><span class="o">.</span><span class="n">cover</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>            <span class="c1"># Over the rows; the header stays.</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="o">...</span>                               <span class="c1"># The data arrives.</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">FXSkeleton</span><span class="o">.</span><span class="n">uncover</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">cards</span> <span class="o">=</span> <span class="n">FXSkeleton</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">"cards"</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>   <span class="c1"># Or "rows", "lines".</span>
+</span></code></pre></div>
+<p><code>cover</code> puts the skeleton inside a list's, tree's or table's frame and
+keeps it the view's size; <code>count=None</code> fills the height.</p>
+<p><code>FXTopProgress(widget)</code> runs a 2 px accent line along the widget's top
+edge, over its content, letting the mouse through. <code>start()</code> shows a wait
+of unknown length: past 150 ms the line creeps toward 90 % until
+<code>finish()</code> runs it to the end and fades it. <code>set_value(0.4)</code> shows a
+known share instead.</p>
+<p>Screen readers hear "Loading" from both; the line is a progress bar with
+its value. Under reduced motion (<code>FXGUI_REDUCED_MOTION=1</code>) the skeleton's
+light stays still, a wait is a still, full line, and <code>finish()</code> hides it
+at once.</p>
+<h2 id="segmented-tabs-and-tab-counts">Segmented Tabs and Tab Counts<a class="headerlink" href="#segmented-tabs-and-tab-counts" title="Permanent link">&para;</a></h2>
+<p>A view switch (Table | Gantt | Board) is a tab bar marked segmented: the
+tabs sit side by side on a track, and the picked one is a raised chip
+that slides to the tab you pick. It stays a <code>QTabBar</code>, so its signals,
+keyboard and <code>currentIndex</code> are Qt's own. Mark a bar or a whole
+<code>QTabWidget</code>:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QTabBar</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxstyle</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">views</span> <span class="o">=</span> <span class="n">QTabBar</span><span class="p">()</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"Table"</span><span class="p">,</span> <span class="s2">"Gantt"</span><span class="p">,</span> <span class="s2">"Board"</span><span class="p">):</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="n">views</span><span class="o">.</span><span class="n">addTab</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">mark_as_segmented</span><span class="p">(</span><span class="n">views</span><span class="p">)</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="n">views</span><span class="o">.</span><span class="n">currentChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">show_view</span><span class="p">)</span>
+</span></code></pre></div>
+<p><code>fxstyle.mark_as_segmented(views, False)</code> gives the plain tab look back.</p>
+<p>A count after a tab's label works on any fxgui tab bar, segmented or
+plain. Pass None to remove it. A screen reader reads the tab as
+"Pipeline, 5".</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">set_tab_count</span><span class="p">(</span><span class="n">views</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">26</span><span class="p">)</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">fxstyle</span><span class="o">.</span><span class="n">set_tab_count</span><span class="p">(</span><span class="n">views</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span></code></pre></div>
+<p>On a closable bar whose close buttons stand on the right, the count
+stands before the label. Set the count again after renaming a tab, so the
+name a reader hears follows. The gallery's Containers page shows both.</p>
 <h2 id="tab-order">Tab Order<a class="headerlink" href="#tab-order" title="Permanent link">&para;</a></h2>
 <p><code>fxutils.set_tab_order(widgets)</code> chains widgets into exactly the order
 given; Shift+Tab walks it back. A compound widget whose focus a proxy
 takes (an inner line edit) chains through that proxy, which a bare
 <code>QWidget.setTabOrder</code> would not move.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxutils</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">fxutils</span><span class="o">.</span><span class="n">set_tab_order</span><span class="p">([</span><span class="n">name_edit</span><span class="p">,</span> <span class="n">path_widget</span><span class="p">,</span> <span class="n">ok_button</span><span class="p">])</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui</span><span class="w"> </span><span class="kn">import</span> <span class="n">fxutils</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">fxutils</span><span class="o">.</span><span class="n">set_tab_order</span><span class="p">([</span><span class="n">name_edit</span><span class="p">,</span> <span class="n">path_widget</span><span class="p">,</span> <span class="n">ok_button</span><span class="p">])</span>
 </span></code></pre></div>
 <h2 id="tooltips">Tooltips<a class="headerlink" href="#tooltips" title="Permanent link">&para;</a></h2>
 <p><code>apply_tip</code> is fxgui's tooltip. It hands Qt's own <code>setToolTip</code> a small HTML string, and sets a markup-free status tip for the window's status bar:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPushButton</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_tip</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">save_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">"Save"</span><span class="p">)</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">apply_tip</span><span class="p">(</span>
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="n">save_button</span><span class="p">,</span>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="s2">"Save"</span><span class="p">,</span>
-</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    <span class="s2">"Write the current scene to disk, overwriting the last version"</span><span class="p">,</span>
-</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    <span class="s2">"Ctrl+S"</span><span class="p">,</span>
-</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">qtpy.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPushButton</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fxgui.fxwidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_tip</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">save_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">"Save"</span><span class="p">)</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">apply_tip</span><span class="p">(</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    <span class="n">save_button</span><span class="p">,</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="s2">"Save"</span><span class="p">,</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>    <span class="s2">"Write the current scene to disk, overwriting the last version"</span><span class="p">,</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>    <span class="s2">"Ctrl+S"</span><span class="p">,</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="p">)</span>
 </span></code></pre></div>
 <p>The title is in the theme's primary text, the body dimmed, and the shortcut sits on the right as keycaps, one per key: <code>Ctrl</code> <code>S</code>. The keys of one chord sit close; a second chord (<code>Ctrl+K, Ctrl+S</code>) sits further away. Key names come from <code>QKeySequence</code>, so a Mac shows its own glyphs rather than the word "Ctrl".</p>
 <table>
@@ -2066,13 +2225,13 @@ takes (an inner line edit) chains through that proxy, which a bare
 </tbody>
 </table>
 <p>A tip about a thing, such as a file or a version, takes three more parts, all by name:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">apply_tip</span><span class="p">(</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="n">item</span><span class="p">,</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="s2">"livetest v001"</span><span class="p">,</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="n">facts</span><span class="o">=</span><span class="p">[(</span><span class="s2">"Product"</span><span class="p">,</span> <span class="s2">"render/livetest"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Files"</span><span class="p">,</span> <span class="s2">"8 x .exr"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Status"</span><span class="p">,</span> <span class="n">status</span><span class="p">)],</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="n">code</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="n">hint</span><span class="o">=</span><span class="s2">"Double-click to play the preview"</span><span class="p">,</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">apply_tip</span><span class="p">(</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>    <span class="n">item</span><span class="p">,</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>    <span class="s2">"livetest v001"</span><span class="p">,</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>    <span class="n">facts</span><span class="o">=</span><span class="p">[(</span><span class="s2">"Product"</span><span class="p">,</span> <span class="s2">"render/livetest"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Files"</span><span class="p">,</span> <span class="s2">"8 x .exr"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Status"</span><span class="p">,</span> <span class="n">status</span><span class="p">)],</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    <span class="n">code</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    <span class="n">hint</span><span class="o">=</span><span class="s2">"Double-click to play the preview"</span><span class="p">,</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="p">)</span>
 </span></code></pre></div>
 <table>
 <thead>

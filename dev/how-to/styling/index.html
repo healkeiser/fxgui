@@ -1630,14 +1630,14 @@ unmarked keeps the surface, which is what a pane should do.</p>
 </tr>
 <tr>
 <td>A <code>QSplitter</code></td>
-<td>Its handles are gaps in the <code>frame</code> color with a short centred mark of five dots in the <code>splitter_mark</code> color; the handle keeps exactly the width <code>setHandleWidth()</code> gives it</td>
+<td>Its handles are blank gaps in the <code>frame</code> color; under the pointer or while dragged, a 1 px <code>accent_primary</code> line lights down the middle. The handle keeps exactly the width <code>setHandleWidth()</code> gives it</td>
 </tr>
 </tbody>
 </table>
 <p>Call <code>fxstyle.mark_as_frame(widget, False)</code> to remove the mark. A plain label has no fill anywhere, so it shows whatever is behind it: the frame in a marked band, the pane's colour in a pane.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The mark is painted, not loaded from an image: it follows theme switches, stays the same size on screen at 100 %, 150 % and 200 % scaling (each dot is two logical pixels, rounded to whole screen pixels), and reaches handles the splitter creates after it was marked. Set the handle width before or after marking; either order works.</p>
+<p>The line is painted, not loaded from an image: it follows theme switches, stays whole on screen at 100 %, 150 % and 200 % scaling (one logical pixel, rounded to whole screen pixels), and reaches handles the splitter creates after it was marked. Set the handle width before or after marking; either order works. A handle narrower than 8 px is a narrower hit area: keep 8 px or more.</p>
 </div>
 <p>For the 1 px edge of a pane sitting on the frame, use the <code>@pane_border</code> token (or <code>fxstyle.colors().pane_border</code>) rather than <code>@border</code>: in some themes <code>border</code> is nearly the frame's own color.</p>
 <h2 id="ink-text-in-a-theme-colour">Ink Text in a Theme Colour<a class="headerlink" href="#ink-text-in-a-theme-colour" title="Permanent link">&para;</a></h2>

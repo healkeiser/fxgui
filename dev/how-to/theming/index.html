@@ -971,6 +971,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-web-looks-parts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The web look's parts
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fills-and-edges-by-state" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1914,6 +1925,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#the-web-looks-parts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The web look's parts
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fills-and-edges-by-state" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2236,11 +2258,15 @@
 </tr>
 <tr>
 <td><code>splitter_mark</code></td>
-<td>The dots on a marked splitter's handles (optional)</td>
+<td>Kept for themes and callers; fxgui no longer draws it, as a splitter handle is blank at rest (optional)</td>
 </tr>
 <tr>
 <td><code>tooltip</code></td>
 <td>Tooltip popup backgrounds</td>
+</tr>
+<tr>
+<td><code>card</code></td>
+<td>A raised card: <code>FXProgressCard</code>, a comment (optional). Omitted, <code>surface</code> stepped <code>fxstyle.CARD_STEP</code> (0.035, OKLab) toward <code>text</code> on a dark theme, <code>surface</code> itself on a light one</td>
 </tr>
 </tbody>
 </table>
@@ -2298,7 +2324,15 @@
 </tr>
 <tr>
 <td><code>text_strong</code></td>
-<td><em>(Optional)</em> A row's name. Omitted, <code>text</code> moved 60% of the way to black or white (<code>fxstyle.STRONG_STEP</code>)</td>
+<td><em>(Optional)</em> A row's name, a select's value, a sorted header, an empty state's title, a tooltip. Omitted, <code>text</code> moved 60% of the way to black or white (<code>fxstyle.STRONG_STEP</code>)</td>
+</tr>
+<tr>
+<td><code>text_toned</code></td>
+<td><em>(Optional)</em> A task's name, a pane's values, a group header row. Omitted, half-way from <code>text</code> to <code>text_muted</code> (OKLab)</td>
+</tr>
+<tr>
+<td><code>text_dimmed</code></td>
+<td><em>(Optional)</em> Chevrons, breadcrumb separators, dates, an empty cell's dash. Omitted, half a step past <code>text_muted</code>; never louder than <code>text_muted</code></td>
 </tr>
 <tr>
 <td><code>text_on_accent_primary</code></td>
@@ -2311,6 +2345,7 @@
 </tbody>
 </table>
 <p><code>text</code> and <code>text_muted</code> are held to 4.5:1 (<code>fxstyle.TEXT_CONTRAST</code>, WCAG AA) on every surface they sit on: <code>surface</code>, <code>surface_sunken</code>, <code>surface_alt</code>, <code>well</code>, <code>frame</code>, <code>tooltip</code> and <code>state_hover</code>, and <code>text</code> on <code>state_pressed</code> and <code>state_checked_hover</code> too. A theme's value that misses it is darkened or lightened until it reads, so <code>fxstyle.colors().text</code> can differ from the file. <code>text</code> then moves on until it stands 1.5:1 off <code>text_muted</code> (<code>fxstyle.MUTED_STEP</code>), so the two always read as two ranks; where <code>text</code> is already black or white, <code>text_muted</code> steps back toward the surface instead, as far as it still reads at 4.5:1.</p>
+<p><code>text_toned</code> and <code>text_dimmed</code> are held to 4.5:1 on the same grounds (and on <code>card</code>): where <code>text_muted</code> already sits at that floor, <code>text_dimmed</code> comes to <code>text_muted</code>.</p>
 <p>An omitted <code>text_on_accent_*</code> is black or white, whichever reads better on the accent.</p>
 <h3 id="interactive-state-colors">Interactive State Colors<a class="headerlink" href="#interactive-state-colors" title="Permanent link">&para;</a></h3>
 <table>
@@ -2409,6 +2444,10 @@ reads the alpha.</p>
 <tr>
 <td><code>scrim</code></td>
 <td>Fill dimming a pane behind <code>FXLoadingOverlay</code>, <code>#AARRGGBB</code> (<code>#80000000</code>)</td>
+</tr>
+<tr>
+<td><code>modal_scrim</code></td>
+<td><em>(Optional)</em> Fill dimming a window behind a modal dialog (<code>fxutils.dim_behind</code>), <code>#AARRGGBB</code>. Black at 60 % on a dark theme, <code>#F3F3F5</code> at 75 % on a light one if omitted</td>
 </tr>
 </tbody>
 </table>
@@ -2812,6 +2851,21 @@ reuses them, so it looks like it belongs.</p>
 <td>tab margin <code>4px 2px</code>, the same for <code>QTabBar</code> and QtAds tabs</td>
 </tr>
 <tr>
+<td>Segmented tab (<code>mark_as_segmented</code>)</td>
+<td>28 px tabs side by side on a 36 px track: 4 px padding, 12 px corners</td>
+<td>tab margin <code>4px 0</code>, the first and last 4 px off the track's ends</td>
+</tr>
+<tr>
+<td>Tab count (<code>set_tab_count</code>)</td>
+<td>a 20 px badge, 4 px after the label, 10 px text at weight 500</td>
+<td><code>QTabBar QLabel#fxTabCount</code>, <code>@small_radius</code></td>
+</tr>
+<tr>
+<td>Splitter handle</td>
+<td>an 8 px hit area, or the width <code>setHandleWidth</code> gives a marked one</td>
+<td><code>QSplitter::handle</code> width</td>
+</tr>
+<tr>
 <td>Border</td>
 <td>1 px, solid</td>
 <td>Every control</td>
@@ -2929,6 +2983,78 @@ the numbers, so it follows fxgui when the look moves.</p>
 </span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>                          <span class="n">fxstyle</span><span class="o">.</span><span class="n">DIALOG_GUTTER</span><span class="p">,</span> <span class="n">fxstyle</span><span class="o">.</span><span class="n">DIALOG_EDGE</span><span class="p">)</span>
 </span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="n">fxstyle</span><span class="o">.</span><span class="n">DIALOG_GAP</span><span class="p">)</span>
 </span></code></pre></div>
+<h3 id="the-web-looks-parts">The web look's parts<a class="headerlink" href="#the-web-looks-parts" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Value</th>
+<th>Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A compact button, in a row or a panel</td>
+<td>24 px, small text, 16 px icon</td>
+<td><code>fxstyle.mark_compact(button)</code>, <code>fxstyle.COMPACT_HEIGHT</code></td>
+</tr>
+<tr>
+<td>A filter field</td>
+<td>28 px, small text, its text 32 px in</td>
+<td><code>FXSearchBar</code>, <code>fxstyle.FILTER_DROP</code> (4 px under a control)</td>
+</tr>
+<tr>
+<td>A navigation tree's rows</td>
+<td>one row size under the one in force</td>
+<td><code>fxstyle.mark_dense(view)</code>, <code>fxstyle.row_height(view)</code></td>
+</tr>
+<tr>
+<td>A view that fills its pane</td>
+<td>no frame of its own</td>
+<td><code>fxstyle.mark_flush(view)</code>; <code>FXDockArea</code> marks a pane whose body is a view</td>
+</tr>
+<tr>
+<td>A reading pane (a task's details)</td>
+<td>content 24 px in, blocks 24 px apart</td>
+<td><code>fxstyle.READING_INSET</code></td>
+</tr>
+<tr>
+<td>Column rules</td>
+<td>after the first column always; every column when chosen (Window &gt; Column lines)</td>
+<td><code>fxstyle.column_lines()</code>, <code>fxstyle.apply_column_lines(on)</code>, <code>fxstyle.draw_column_rule(...)</code> for a delegate of your own</td>
+</tr>
+<tr>
+<td>A meter's track</td>
+<td>the text at 8 % over the pane (9 % light), held so the fill reads at 3:1</td>
+<td><code>@meter_track</code>, <code>FXMeterBar</code></td>
+</tr>
+<tr>
+<td>A sorted header section</td>
+<td>its label and arrow in <code>text_strong</code></td>
+<td>drawn by <code>FXProxyStyle</code></td>
+</tr>
+<tr>
+<td>A select</td>
+<td>its value in <code>text_strong</code>, a 20 px chevron in <code>text_dimmed</code></td>
+<td><code>QComboBox</code></td>
+</tr>
+<tr>
+<td>A tooltip</td>
+<td><code>text_strong</code>; one line at the body's weight, keys after a middle dot</td>
+<td><code>tip()</code>, <code>apply_tip()</code></td>
+</tr>
+<tr>
+<td>Keyboard focus</td>
+<td>the control's 1 px accent edge plus a 3 px ring outside it at 25 %: the accent round inputs and primary buttons, the text round other buttons</td>
+<td><code>fxstyle.FOCUS_RING_WIDTH</code>, <code>fxstyle.FOCUS_RING_ALPHA</code></td>
+</tr>
+</tbody>
+</table>
+<p>The focus ring is a sibling drawn over the control, grown by 3 px: a sheet
+cannot draw outside a widget. It shows only for focus that came by
+keyboard, and the parent's edge clips it, as a web page's overflow does;
+the control's own accent edge still shows focus there. Check boxes, radio
+buttons, switches and rows keep their own focus marks.</p>
 <h3 id="fills-and-edges-by-state">Fills and edges by state<a class="headerlink" href="#fills-and-edges-by-state" title="Permanent link">&para;</a></h3>
 <p>One rule under every row of the table: <strong>the accent marks keyboard
 focus, a selection, the current item and the primary action. Hover is
@@ -3015,6 +3141,10 @@ looks like the focused one.</p>
 <p>A primary button (<code>FXPrimaryButton</code>) is filled <code>@primary_button</code>, hovers
 <code>@primary_button_hover</code> and presses <code>@primary_button_pressed</code>; its focus
 edge is <code>@text</code>, and disabled it is <code>@surface_alt</code> with <code>@text_disabled</code>.
+A button with <code>fxRole="danger"</code> (the verb of <code>FXConfirmDeleteDialog</code>) is
+filled the same way from <code>@feedback_error_foreground</code>: <code>@danger_button</code>,
+<code>@danger_button_hover</code>, <code>@danger_button_pressed</code>, its text
+<code>@text_on_danger</code>, the pole that reads on it at 4.5:1.
 Text edits and views do not change on hover. A menu is the one place the
 pointer moves the current item, so there alone hover is the accent.</p>
 <p>Focus never draws a box around a control. It recolours the edge the
@@ -3080,7 +3210,7 @@ shape is the only thing you see (a switch, a slider handle) needs more.</p>
 </thead>
 <tbody>
 <tr>
-<td>Edge of a switch or a slider handle, and a slider's empty groove</td>
+<td>Edge of a slider handle, and a slider's empty groove</td>
 <td><code>@control_edge</code></td>
 <td><code>border_strong</code>, darkened or lightened until it reads at 3:1 on <code>@surface</code></td>
 </tr>
@@ -3100,8 +3230,13 @@ shape is the only thing you see (a switch, a slider handle) needs more.</p>
 <td>Reads at 3:1 on <code>@surface</code>; told from the groove by its hue and the handle</td>
 </tr>
 <tr>
+<td>Track of a switch, off</td>
+<td><code>@text_dimmed</code></td>
+<td>4.5:1 on <code>@surface</code>, as every text ink is</td>
+</tr>
+<tr>
 <td>Thumb of a switch</td>
-<td><code>@text_muted</code> off, <code>@text_on_accent_primary</code> on</td>
+<td><code>@surface</code>, on and off</td>
 <td>Pushed to 3:1 on the track</td>
 </tr>
 <tr>
@@ -3142,9 +3277,27 @@ two apart.</p>
   tree follows its header hidden or shown at any time. Rows run to the
   frame's sides, and a scroll bar's thumb sits centred between the rows
   and the frame.</li>
-<li>A splitter handle and the gap between dock widgets show nothing until
-  the pointer finds them, then fill with <code>@accent_primary</code>. A splitter
-  marked with <code>mark_as_frame</code> keeps its painted dots.</li>
+<li>A splitter handle and the gap between dock widgets show nothing at
+  rest: a plain one is clear, one marked with <code>mark_as_frame</code> (as the
+  dock gaps are) is the frame. Under the pointer, and for as long as it
+  is dragged, a 1 px <code>@accent_primary</code> line lights down its middle,
+  fading in over <code>MOTION_FAST</code> (150 ms; at once under reduced motion).
+  The handle keeps its whole width as the hit area and its resize
+  cursor. A splitter never takes keyboard focus, so the handle has no
+  focus look: the keyboard never used the old dot grip either.</li>
+<li>A segmented bar (<code>fxstyle.mark_as_segmented(tabs)</code>) is for a view
+  switch, as Table | Gantt. Its tabs sit side by side on a
+  <code>@state_pressed</code> track; the current one is a chip in <code>@surface</code> with a
+  1 px <code>@border</code> ring and a faint drop, its text <code>@text_strong</code>, the
+  others <code>@text_muted</code>, turning <code>@text</code> under the pointer. The chip
+  slides to a newly picked tab on the spring over <code>MOTION_SPRING</code>
+  (400 ms), from wherever it is, or jumps under reduced motion. A plain
+  bar keeps the pill look and its gaps.</li>
+<li>A tab's count (<code>fxstyle.set_tab_count(tabs, index, count)</code>) is a
+  20 px badge 4 px after the label: 10 px <code>@text</code> at weight 500 on
+  <code>@surface</code>, a 1 px <code>@border_light</code> ring. A screen reader reads the tab
+  as "Label, N". On a plain or a segmented bar; on a closable bar whose
+  close buttons stand on the right, the count stands before the label.</li>
 <li>A progress bar is a 4 px pill: a <code>@control_edge</code> track and an
   <code>@accent_primary</code> chunk, no text unless you turn it on with
   <code>setTextVisible(True)</code>. It is the slider's groove.</li>
@@ -3183,6 +3336,14 @@ two apart.</p>
 </table>
 <p>A shadow reads its colour and blur from the theme each time it draws, so
 it follows a switch with no call.</p>
+<p>A modal dialog dims the window behind it. <code>FXConfirmDeleteDialog</code> and
+<code>FXFloatingDialog</code> do it on their own; any other dialog opts in with
+<code>fxutils.dim_behind(dialog)</code>. While the dialog is up through <code>exec()</code>,
+<code>open()</code> or <code>setModal(True)</code>, its parent's window wears <code>@modal_scrim</code>,
+faded in over <code>fxstyle.MOTION_BASE</code> (at once under reduced motion). The
+veil takes no clicks, follows the window's size and lifts when the
+dialog hides. A dialog with no parent, a modeless one and a popup dim
+nothing.</p>
 <p><code>FXCommandPalette</code> opens centred across its window. <code>position</code> puts it
 at <code>"top"</code> (under the menu bar and the command rows), <code>"center"</code> (the
 default) or <code>"bottom"</code> (over the status bar). It stays inside a window
@@ -3215,14 +3376,14 @@ too small for it. Anything else raises <code>ValueError</code>.</p>
 </tr>
 <tr>
 <td><code>FXToggleSwitch</code> off</td>
-<td>fill <code>@surface_sunken</code>, edge <code>@control_edge</code></td>
-<td>fill <code>@state_hover</code>, edge kept</td>
+<td>fill <code>@text_dimmed</code>, no edge</td>
+<td>fill <code>@text_toned</code></td>
 <td>edge <code>@accent_primary</code></td>
 <td>fill <code>@surface</code>, edge <code>@border</code></td>
 </tr>
 <tr>
 <td><code>FXToggleSwitch</code> on</td>
-<td>fill <code>@accent_primary</code></td>
+<td>fill <code>@accent_primary</code>, no edge</td>
 <td>fill <code>@primary_button_hover</code></td>
 <td>edge <code>@text</code></td>
 <td>fill <code>@surface_alt</code>, edge <code>@border</code></td>
@@ -3407,6 +3568,7 @@ beyond looks.</p>
 <p>Every role in the tables at the top of this page is a token: <code>@surface</code>
 in QSS, <code>fxstyle.colors().surface</code> in code. So are the computed ones:
 <code>@text_on_accent_primary</code>, <code>@icon_on_accent_primary</code>, <code>@primary_button</code>,
+<code>@danger_button</code>, <code>@text_on_danger</code>, <code>@modal_scrim</code>,
 <code>@control_edge</code>, <code>@card_radius</code>, <code>@shadow</code>, <code>@shadow_blur</code>,
 the flattened feedback colours (<code>@feedback_error_foreground</code>,
 <code>@feedback_info_background</code>, ...), <code>@button_radius</code> and the
