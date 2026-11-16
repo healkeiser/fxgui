@@ -5,14 +5,16 @@ import contextlib
 from typing import Callable, Iterator, Optional
 
 # Third-party
-from qtpy.QtCore import QSize, Qt
+from qtpy.QtCore import QEvent, QObject, QSize, Qt, Slot
 from qtpy.QtGui import QKeyEvent, QKeySequence
 from qtpy.QtWidgets import (
+    QFrame,
     QHBoxLayout,
     QLayout,
     QLineEdit,
     QSizePolicy,
     QToolButton,
+    QTreeView,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -21,8 +23,22 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxicons, fxstyle, fxutils
+from fxgui._compat import is_valid
 from fxgui.fxwidgets._search_bar import FXSearchBar
+from fxgui.fxwidgets._summary_row import FOOTER_PROPERTY, FXSummaryRow
 from fxgui.fxwidgets._tips import apply_tip
+
+# The actions are the tree card's footer: its surface, a rule on top.
+fxstyle.register_widget_style(
+    """
+    QFrame#fxTreeActions {
+        background-color: @surface_sunken;
+        border: none;
+        border-top: 1px solid @border;
+        border-radius: 0px;
+    }
+    """
+)
 
 # Shift is absent: shifted characters are still typing.
 _COMMAND_MODIFIERS = Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier
@@ -139,9 +155,17 @@ class FXSplitButton(QToolButton):
         self.setPopupMode(QToolButton.MenuButtonPopup)
 
     def sizeHint(self) -> QSize:
-        """Return Qt's width at a push button's height."""
+        """Return Qt's width at a push button's height, or a compact one's."""
+        width = super().sizeHint().width()
+        if (self.toolButtonStyle() == Qt.ToolButtonTextBesideIcon
+                and self.text() and not self.icon().isNull()):
+            # Qt pads the text by two spaces: centred on a text-only button,
+            # all after it beside an icon, against the arrow's divider.
+            width -= 2 * self.fontMetrics().horizontalAdvance(" ")
         # Qt's stylesheet style adds 3 px to every QToolButton's height.
-        return QSize(super().sizeHint().width(), fxstyle.control_height(self))
+        if self.property(fxstyle.COMPACT_PROPERTY):
+            return QSize(width, fxstyle.COMPACT_HEIGHT)
+        return QSize(width, fxstyle.control_height(self))
 
     @classmethod
     def dropdown_hint(cls) -> str:
@@ -196,7 +220,8 @@ class FXFilteredTree(QWidget):
     Args:
         tree: The tree to wrap; a new `FXKeyboardTree` when omitted.
         placeholder: What the empty filter bar says.
-        actions: A row of buttons under the tree, if any.
+        actions: A row of buttons, if any: the tree card's footer, under
+            its rows and any `FXSummaryRow`, inside the card's edge.
         parent: The parent widget.
     """
 
@@ -230,7 +255,31 @@ class FXFilteredTree(QWidget):
         layout.addLayout(bar)
         layout.addWidget(self.tree, 1)
         if actions is not None:
-            layout.addLayout(actions)
+            _TreeFooter(self.tree, actions)
+
+        # A flush tree (mark_flush, as a dock pane makes it) has no card
+        # edge under the bar: a rule runs along its top instead. A child of
+        # the tree, it reaches as far as the tree does.
+        self._top_rule = QFrame(self.tree)
+        self._top_rule.setFrameShape(QFrame.HLine)
+        self.tree.installEventFilter(self)
+        self._fit_top_rule()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Keep the top rule across the tree, shown while it is flush."""
+        if watched is self.tree and event.type() in (
+            QEvent.Resize, QEvent.Show, QEvent.DynamicPropertyChange
+        ):
+            self._fit_top_rule()
+        return False
+
+    def _fit_top_rule(self) -> None:
+        rule = self._top_rule
+        flush = bool(self.tree.property(fxstyle.FLUSH_PROPERTY))
+        rule.setVisible(flush)
+        if flush:
+            rule.setGeometry(0, 0, self.tree.width(), 1)
+            rule.raise_()
 
     def _filter(self, text: str) -> None:
         fxutils.filter_tree(self.tree, text)
@@ -265,3 +314,61 @@ class FXFilteredTree(QWidget):
         policy.setVerticalPolicy(QSizePolicy.Ignored)
         button.setSizePolicy(policy)
         return button
+
+
+class _TreeFooter(QFrame):
+    """A tree card's footer: a row of actions under the rows and summary.
+
+    It sits in the tree's bottom margin, under any `FXSummaryRow`, so the
+    card's edge and round corners frame it with the rows.
+    """
+
+    def __init__(self, view: QTreeView, actions: QLayout):
+        super().__init__(view)
+        self.setObjectName("fxTreeActions")
+        self._view = view
+        # Its buttons' ends line up with the cells' text.
+        lead = int(fxstyle.colors().cell_lead.rstrip("px"))
+        gap = fxstyle.PANE_GAP
+        actions.setContentsMargins(lead, gap, lead, gap)
+        self.setLayout(actions)
+        # The view resets its viewport margins on every geometry update.
+        view.viewport().installEventFilter(self)
+        fxstyle.theme_changed.connect(self._fit)
+        # Under the frame's round corners, which the theme draws on top.
+        self.lower()
+        view.viewport().lower()
+        self.show()
+
+    def event(self, event: QEvent) -> bool:
+        """Refit when the actions ask for another height."""
+        handled = super().event(event)
+        if event.type() == QEvent.LayoutRequest:
+            self._fit()
+        return handled
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Keep the bottom margin and the footer under the summary."""
+        if event.type() in (QEvent.Resize, QEvent.Move, QEvent.Show):
+            self._fit()
+        return False
+
+    @Slot()
+    def _fit(self) -> None:
+        """Reserve the footer's height under any summary row and sit in it."""
+        view = self._view
+        if not is_valid(view):
+            return
+        height = self.sizeHint().height()
+        view.setProperty(FOOTER_PROPERTY, height)
+        summary = view.findChild(FXSummaryRow, "", Qt.FindDirectChildrenOnly)
+        above = 0 if summary is None or summary.isHidden() else (
+            summary.height())
+        margins = view.viewportMargins()
+        if margins.bottom() != above + height:
+            view.setViewportMargins(
+                margins.left(), margins.top(), margins.right(), above + height)
+        viewport = view.viewport().geometry()
+        self.setGeometry(
+            viewport.x(), viewport.bottom() + 1 + above,
+            viewport.width(), height)

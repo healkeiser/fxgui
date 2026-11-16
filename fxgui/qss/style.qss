@@ -774,6 +774,43 @@ QComboBox::down-arrow:disabled
     image: ~icon(chevron-down, text_disabled);
 }
 
+/* A combo sized to its contents (AdjustToContents) hugs them, as the web
+   look's select does: no floor under a short choice. */
+QComboBox[sizeAdjustPolicy="0"]
+{
+    min-width: 0px;
+}
+
+/* A compact select (mark_compact), as the web look's extra-small one: a
+   compact button's height and text, 8 px sides, a 16 px chevron 4 px
+   after the text. It hugs its contents. */
+QComboBox[fxCompact="true"]
+{
+    font-size: @font_size_small;
+    padding: 0px 7px 0px 8px;
+    min-width: 0px;
+    min-height: @compact_inner;
+    max-height: @compact_inner;
+}
+
+/* Qt leaves 2 px after the text: 18 + 2 puts the chevron 4 px after it. */
+QComboBox[fxCompact="true"]::drop-down
+{
+    width: 18px;
+}
+
+QComboBox[fxCompact="true"]::down-arrow
+{
+    image: ~icon(chevron-down, text_dimmed, 16);
+    width: 16px;
+    height: 16px;
+}
+
+QComboBox[fxCompact="true"]::down-arrow:disabled
+{
+    image: ~icon(chevron-down, text_disabled, 16);
+}
+
 /* A date edit with a calendar popup opens it from a combo box's arrow. */
 QDateTimeEdit::drop-down
 {
@@ -1414,7 +1451,19 @@ QToolButton[popupMode="1"] { /* MenuButtonPopup: QPushButton look */
     border-radius: @button_radius;
     margin: 0px;
     padding: @button_padding;
-    padding-right: 22px; /* room for the menu-button section */
+    /* The arrow's square segment (::menu-button, 32 px with its divider),
+       then the 10 px side the text keeps from it. */
+    padding-right: 41px;
+}
+
+/* A compact split button (mark_compact): 24 px, its segment square too. */
+QToolButton[popupMode="1"][fxCompact="true"] {
+    padding: 0px 8px;
+    padding-right: 31px;
+}
+
+QToolButton[fxCompact="true"]::menu-button {
+    width: 23px;
 }
 
 QToolButton[popupMode="1"]:disabled {
@@ -1489,23 +1538,26 @@ QToolButton::menu-indicator {
     right: 2px;
 }
 
-/* the subcontrols below are used only in the MenuButtonPopup mode */
+/* the subcontrols below are used only in the MenuButtonPopup mode: the
+   arrow's segment is a square as tall as the button, its divider counted,
+   the chevron centred, as the web look's square button joined to its
+   label button. */
 QToolButton::menu-button {
     border: none;
     border-left: 1px solid @border_light;
     border-top-right-radius: @button_radius;
     border-bottom-right-radius: @button_radius;
-    width: 12px;
+    width: 31px;
 }
 
 QToolButton::menu-arrow {
-    image: ~icon(chevron-down, icon, 12);
-    width: 12px;
-    height: 12px;
+    image: ~icon(chevron-down, icon, 16);
+    width: 16px;
+    height: 16px;
 }
 
 QToolButton::menu-arrow:disabled {
-    image: ~icon(chevron-down, text_disabled, 12);
+    image: ~icon(chevron-down, text_disabled, 16);
 }
 
 

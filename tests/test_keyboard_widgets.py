@@ -240,16 +240,19 @@ def test_the_fold_buttons_wear_the_house_tip(qtbot):
     assert panel.collapse_button.statusTip() == "Collapse all"
 
 
-def test_a_filtered_tree_holds_a_row_of_actions_under_its_tree(qtbot):
+def test_a_filtered_tree_holds_a_row_of_actions_under_its_rows(qtbot):
     actions = QHBoxLayout()
     run = QPushButton("Run")
     actions.addWidget(run)
     panel = FXFilteredTree(actions=actions)
     _window = _shown(qtbot, panel)
 
-    tree = panel.tree.geometry()
+    # The card's footer: inside the tree, under its rows.
+    rows = panel.tree.viewport().geometry()
+    top = run.mapTo(panel.tree, run.rect().topLeft())
     assert run.isVisible()
-    assert run.mapTo(panel, run.rect().topLeft()).y() > tree.bottom()
+    assert top.y() > rows.bottom()
+    assert panel.tree.rect().contains(top)
 
 
 def test_an_altgr_character_is_typing(qtbot):
