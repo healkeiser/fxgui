@@ -494,6 +494,7 @@ layout.setSpacing(fxstyle.DIALOG_GAP)
 | Column rules | after the first column always; every column when chosen (Window > Column lines) | `fxstyle.column_lines()`, `fxstyle.apply_column_lines(on)`, `fxstyle.draw_column_rule(...)` for a delegate of your own |
 | A meter's track | the text at 8 % over the pane (9 % light), held so the fill reads at 3:1 | `@meter_track`, `FXMeterBar` |
 | A sorted header section | its label and arrow in `text_strong` | drawn by `FXProxyStyle` |
+| One header section's ink | a weekend's day dimmed, today's in the accent: any of `INKS`, over the muted header and a sorted section's strong ink | `fxstyle.ink_section(header, section, token)`; None gives it back |
 | A select | its value in `text_strong`, a 20 px chevron in `text_dimmed` | `QComboBox` |
 | A tooltip | `text_strong`; one line at the body's weight, keys after a middle dot | `tip()`, `apply_tip()` |
 | Keyboard focus | the control's 1 px accent edge plus a 3 px ring outside it at 25 %: the accent round inputs and primary buttons, the text round other buttons | `fxstyle.FOCUS_RING_WIDTH`, `fxstyle.FOCUS_RING_ALPHA` |

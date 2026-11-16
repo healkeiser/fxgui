@@ -199,3 +199,55 @@ def test_a_focus_ring_shows_for_the_keyboard_only(qtbot):
     assert ring.geometry() == button.geometry().adjusted(-grow, -grow, grow, grow)
     QTest.mouseClick(field, Qt.LeftButton)
     assert fxstyle._FocusRing._shown is None
+
+
+@pytest.mark.parametrize("dense_first", [True, False])
+def test_a_summary_row_on_a_dense_view_is_a_dense_row(qtbot, dense_first):
+    from fxgui.fxwidgets import FXSummaryRow
+
+    fxstyle.apply_row_size("normal", save=False)
+    tree = QTreeWidget()
+    QTreeWidgetItem(tree, ["shot"])
+    if dense_first:
+        fxstyle.mark_dense(tree)
+    summary = FXSummaryRow(tree)
+    if not dense_first:
+        fxstyle.mark_dense(tree)
+    _shown(qtbot, tree)
+    qtbot.waitUntil(lambda: summary.height() == 28)
+    assert tree.viewportMargins().bottom() == 28
+
+
+def test_a_section_wears_its_own_ink(qtbot):
+    from qtpy.QtWidgets import QTableWidget
+
+    table = QTableWidget(1, 2)
+    table.setHorizontalHeaderLabels(["HHHH", "HHHH"])
+    header = table.horizontalHeader()
+    fxstyle.ink_section(header, 1, "accent_primary")
+    _shown(qtbot, table)
+    image = header.grab().toImage()
+
+    def inks(section):
+        left = header.sectionViewportPosition(section)
+        return {
+            QColor(image.pixel(x, y)).name()
+            for y in range(image.height())
+            for x in range(left + 4, left + 60)
+        }
+
+    assert fxstyle.colors().accent_primary.lower() in inks(1)
+    assert fxstyle.colors().accent_primary.lower() not in inks(0)
+    with pytest.raises(ValueError):
+        fxstyle.ink_section(header, 0, "nope")
+
+
+def test_an_elided_label_at_its_size_hint_shows_its_whole_text(qtbot):
+    from fxgui.fxwidgets import FXElidedLabel
+
+    label = FXElidedLabel("Valentin Beaumont · May 11")
+    _shown(qtbot, label)
+    label.resize(label.sizeHint())
+    assert label.elided_text() == label.text()
+    label.resize(label.sizeHint().width() - 20, label.height())
+    assert label.elided_text() != label.text()

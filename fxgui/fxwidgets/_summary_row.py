@@ -196,7 +196,7 @@ class FXSummaryRow(QWidget):
         if not self._alive():
             return
         view = self._view
-        height = 0 if self.isHidden() else fxstyle.row_height()
+        height = 0 if self.isHidden() else fxstyle.row_height(self.view())
         margins = view.viewportMargins()
         if margins.bottom() != height:
             # Protected in C++; PySide reaches it on a view made in Python.

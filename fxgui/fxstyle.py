@@ -196,6 +196,8 @@ __all__ = [
     "mark_compact",
     "mark_dense",
     "mark_flush",
+    "ink_section",
+    "SECTION_INK_PROPERTY",
     "column_lines",
     "apply_column_lines",
     "draw_column_rule",
@@ -1282,6 +1284,34 @@ def ink(widget: QWidget, token: Optional[str]) -> None:
         raise ValueError(f"No ink {token!r}. Inks: {list(INKS)}")
     widget.setProperty(INK_PROPERTY, token or "")
     fxutils.repolish(widget)
+
+
+# Prefixes a header's property naming one section's ink (ink_section).
+SECTION_INK_PROPERTY = "fxSectionInk"
+
+
+def ink_section(header: QHeaderView, section: int, token: Optional[str]) -> None:
+    """Write one header section's label in one theme colour.
+
+    Over the sheet's muted header ink and a sorted section's strong one:
+    a weekend's day dimmed, today's in the accent.
+
+    Args:
+        header: The header view.
+        section: The logical section.
+        token: One of `INKS`, e.g. ``"text_dimmed"`` or ``"accent_primary"``;
+            None gives the section the header's own ink back.
+
+    Raises:
+        ValueError: If `token` is not one of `INKS`.
+
+    Examples:
+        >>> fxstyle.ink_section(table.horizontalHeader(), 5, "text_dimmed")
+    """
+    if token is not None and token not in INKS:
+        raise ValueError(f"No ink {token!r}. Inks: {list(INKS)}")
+    header.setProperty(f"{SECTION_INK_PROPERTY}{section}", token or "")
+    header.viewport().update()
 
 
 ###### Color Utility Functions
@@ -2831,20 +2861,27 @@ class FXProxyStyle(QProxyStyle):
             painter.restore()
 
     def drawControl(self, element, option, painter, widget=None):
-        """Draw `element`; a sorted header section's label in the strong ink.
+        """Draw `element`; a header section's label in its own ink.
 
-        No sheet pseudo-state tells a sorted section, so its label is
+        A section given one by `ink_section` wears it, a sorted one the
+        strong ink. No sheet pseudo-state tells either, so the label is
         recoloured here, under the sheet's own colour for the section.
         """
         if (
             element == QStyle.CE_HeaderLabel
             and isinstance(option, QStyleOptionHeader)
-            and option.sortIndicator != QStyleOptionHeader.SortIndicator.None_
             and _is_themed(widget)
         ):
-            option = QStyleOptionHeader(option)
-            option.palette.setColor(
-                QPalette.ColorRole.ButtonText, QColor(colors().text_strong))
+            token = widget.property(f"{SECTION_INK_PROPERTY}{option.section}")
+            if not token and (
+                option.sortIndicator != QStyleOptionHeader.SortIndicator.None_
+            ):
+                token = "text_strong"
+            if token:
+                option = QStyleOptionHeader(option)
+                option.palette.setColor(
+                    QPalette.ColorRole.ButtonText,
+                    QColor(getattr(colors(), token)))
         super().drawControl(element, option, painter, widget)
 
     # Set while the sheet is asked for a cell's rects, which it may ask back.

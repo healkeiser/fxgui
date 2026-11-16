@@ -106,7 +106,8 @@ class FXElidedLabel(QLabel):
             return
 
         metrics = QFontMetrics(self.font())
-        available_width = self.width() - 2  # Small margin
+        # The room QLabel draws in: what sizeHint asks for, to the pixel.
+        available_width = self.contentsRect().width() - 2 * self.margin()
 
         if self.wordWrap():
             # No maximum, so nothing to cut to.
