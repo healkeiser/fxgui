@@ -167,7 +167,7 @@ class FXStatusItem(QToolButton):
         bar = self._bar()
         if bar is not None:
             return bar.ground()
-        return self.palette().color(self.backgroundRole()).name()
+        return fxstyle._ground(self).name()
 
     def ink(self) -> str:
         """Return the word's colour on the ground the item is drawn on now."""
@@ -357,8 +357,9 @@ class FXStatusBar(QStatusBar):
 
     def ground(self) -> str:
         """Return the colour the bar is painted now: a tint, or its own."""
-        # The sheet's fill, tint and frame included, as the palette holds it.
-        return self.palette().color(self.backgroundRole()).name()
+        # The sheet's fill, tint and frame included, as the palette holds
+        # it; a see-through palette shows the ground behind the bar.
+        return fxstyle._ground(self).name()
 
     def show_tip(self, tip: str) -> None:
         """Write a hover tip where messages go, after the items.

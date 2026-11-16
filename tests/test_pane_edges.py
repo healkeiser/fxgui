@@ -165,3 +165,47 @@ def test_the_pane_s_bottom_corners_stay_round_over_a_flush_view(qtbot):
     # The pane's own corner pixels, outside its arc, show what is behind it.
     for x in (0, area.width() - 1):
         assert QColor(image.pixel(x, bottom)).name() == ground
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_a_skeleton_over_a_plain_pane_hides_it_on_the_pane_s_ground(
+    qtbot, theme
+):
+    from fxgui.fxwidgets import FXSkeleton
+
+    fxstyle.apply_theme(theme, save=False)
+    pane = QWidget()
+    lines = QVBoxLayout(pane)
+    words = [QLabel("OLD CONTENT " * 3) for _ in range(6)]
+    for label in words:
+        lines.addWidget(label)
+    lines.addStretch()
+    window, _docks = _docked(qtbot, pane)
+    ground = fxstyle._ground(pane)
+    before = window.grab().toImage()
+
+    def inked(image):
+        """Pixels of the old words: where the text differs from the ground."""
+        spots = []
+        for label in words:
+            corner = label.mapTo(window, QPoint(0, 0))
+            for x in range(corner.x(), corner.x() + label.width(), 3):
+                for y in range(corner.y(), corner.y() + label.height(), 2):
+                    if QColor(image.pixel(x, y)) != ground:
+                        spots.append((x, y))
+        return spots
+
+    text = inked(before)
+    assert text, "no old content drawn"
+    skeleton = FXSkeleton.cover(pane, "lines")
+    skeleton._animation.stop()
+    QApplication.processEvents()
+    after = window.grab().toImage()
+    # Every old ink pixel is now the ground or a bar, never the old text.
+    leftover = [
+        (x, y) for x, y in text
+        if QColor(after.pixel(x, y)) == QColor(before.pixel(x, y))
+    ]
+    assert not leftover, leftover[:5]
+    corner = pane.mapTo(window, pane.rect().bottomRight())
+    assert QColor(after.pixel(corner.x() - 3, corner.y() - 3)) == ground

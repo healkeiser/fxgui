@@ -5,7 +5,7 @@ import math
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject, QRectF, Qt, QVariantAnimation
+from qtpy.QtCore import QEvent, QObject, QRect, QRectF, QSize, Qt, QVariantAnimation
 from qtpy.QtGui import QColor, QLinearGradient, QPainter
 from qtpy.QtWidgets import QAbstractScrollArea, QWidget
 
@@ -172,8 +172,9 @@ class FXSkeleton(QWidget):
         """Return the colour the skeleton is drawn on: what it covers, or
         the page."""
         if self._covering:
-            owner = self.parentWidget()
-            return owner.palette().color(owner.backgroundRole())
+            # The colour the person sees there: a plain widget's palette is
+            # see-through where the sheet paints its pane, card or dialog.
+            return fxstyle._ground(self.parentWidget())
         return QColor(fxstyle.colors().surface)
 
     def paintEvent(self, event) -> None:
@@ -184,6 +185,12 @@ class FXSkeleton(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         if self._covering:
             painter.fillRect(self.rect(), ground)
+        # The blocks stand where the covered content stood: inside its
+        # contents margins (a pane's gap), the whole rect over a viewport.
+        box = self._box()
+        self._extent = box.size()
+        painter.save()
+        painter.translate(box.topLeft())
         grey = QColor(fxstyle.mix_oklab(ground, colors.text_strong, _GREY))
         painter.setPen(Qt.NoPen)
         painter.setBrush(grey)
@@ -193,19 +200,33 @@ class FXSkeleton(QWidget):
             self._paint_cards(painter, QColor(colors.border))
         else:
             self._paint_lines(painter)
+        painter.restore()
         painter.setOpacity(1.0)
         if self._animation.state() == QVariantAnimation.Running:
             self._paint_light(painter, QColor(colors.text_strong))
         painter.end()
 
+    # The blocks' layout size, set by each paint; the widget's own before.
+    _extent = QSize()
+
+    def _box(self) -> QRect:
+        """Return the rect the blocks are laid out in."""
+        owner = self.parentWidget() if self._covering else None
+        if owner is None:
+            return self.rect()
+        margins = owner.contentsMargins()
+        return self.rect().adjusted(
+            margins.left(), margins.top(), -margins.right(), -margins.bottom())
+
     def _how_many(self, pitch: float) -> int:
         if self._count is not None:
             return self._count
-        return max(1, math.ceil(self.height() / pitch))
+        height = self._extent.height() if self._extent.isValid() else self.height()
+        return max(1, math.ceil(height / pitch))
 
     def _paint_rows(self, painter: QPainter) -> None:
         height = fxstyle.row_height()
-        right = self.width() - _ROW_INSET
+        right = self._extent.width() - _ROW_INSET
         for index in range(1, self._how_many(height) + 1):
             painter.setOpacity(_fade(index))
             middle = (index - 1) * height + height / 2
@@ -225,10 +246,10 @@ class FXSkeleton(QWidget):
                 x += width + _GAP
 
     def _paint_cards(self, painter: QPainter, edge: QColor) -> None:
-        columns = max(1, min(3, self.width() // _CARD_COLUMN + 1))
-        width = (self.width() - _CARD_PAD * 2 - _GAP * (columns - 1)) / columns
+        columns = max(1, min(3, self._extent.width() // _CARD_COLUMN + 1))
+        width = (self._extent.width() - _CARD_PAD * 2 - _GAP * (columns - 1)) / columns
         rows = max(1, math.ceil(
-            (self.height() - _CARD_PAD) / (_CARD_HEIGHT + _GAP)))
+            (self._extent.height() - _CARD_PAD) / (_CARD_HEIGHT + _GAP)))
         count = self._count if self._count is not None else rows * columns
         grey = painter.brush()
         for index in range(1, count + 1):
@@ -261,7 +282,7 @@ class FXSkeleton(QWidget):
     def _paint_lines(self, painter: QPainter) -> None:
         for index in range(1, self._how_many(_LINE_PITCH) + 1):
             painter.setOpacity(_fade(index))
-            width = self.width() * _width(index, 60, 100) / 100
+            width = self._extent.width() * _width(index, 60, 100) / 100
             top = (index - 1) * _LINE_PITCH + (_LINE_PITCH - _LINE_BAR) / 2
             painter.drawRoundedRect(QRectF(0, top, width, _LINE_BAR), 6, 6)
 

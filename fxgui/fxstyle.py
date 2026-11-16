@@ -1768,9 +1768,15 @@ class _SplitterMark(QObject):
             ratio = painter.device().devicePixelRatioF()
             painter.setWorldTransform(
                 QTransform.fromScale(1 / ratio, 1 / ratio))
-            width = round(handle.width() * ratio)
-            height = round(handle.height() * ratio)
+            # Up: a fractional scale leaves the device a part pixel more.
+            width = math.ceil(handle.width() * ratio)
+            height = math.ceil(handle.height() * ratio)
             line = max(1, round(_HANDLE_LINE * ratio))
+            # As many device pixels on either side: an even gap takes an
+            # even line (2 px in the 8 px gap), an odd gap an odd one.
+            span = height if splitter.orientation() == Qt.Vertical else width
+            if (span - line) % 2:
+                line += 1
             ink = QColor(theme.accent_primary)
             ink.setAlphaF(ink.alphaF() * min(1.0, level))
             if splitter.orientation() == Qt.Vertical:

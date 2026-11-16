@@ -121,13 +121,15 @@ def test_a_lit_handle_draws_a_centred_accent_line(qtbot, orientation, theme):
     across = orientation == Qt.Vertical
     length, thick = (box.width(), box.height()) if across else (
         box.height(), box.width())
-    assert thick == 1
-    assert length == (image.width() if across else image.height())
-    assert count == length, "one line, drawn once"
-    # Centred across the gap, an even gap's extra pixel after it.
-    near = box.top() if across else box.left()
     side = image.height() if across else image.width()
-    assert near == (side - 1) // 2
+    # The gap's parity: 1 px in an odd gap, 2 px in an even one.
+    assert thick == (1 if side % 2 else 2)
+    assert length == (image.width() if across else image.height())
+    assert count == length * thick, "one line, drawn once"
+    # Centred across the gap: as many pixels on either side.
+    near = box.top() if across else box.left()
+    far = side - 1 - (box.bottom() if across else box.right())
+    assert near == far
 
 
 _SCREEN_PROBE = r"""
@@ -142,7 +144,7 @@ fxstyle.register_themed_root(host)
 splitter = QSplitter(Qt.Horizontal if sys.argv[1] == "h" else Qt.Vertical)
 splitter.addWidget(QWidget())
 splitter.addWidget(QWidget())
-splitter.setHandleWidth(6)
+splitter.setHandleWidth(int(sys.argv[2]))
 fxstyle.mark_as_frame(splitter)
 QVBoxLayout(host).addWidget(splitter)
 host.resize(300, 200)
@@ -161,35 +163,38 @@ print(json.dumps({"size": [image.width(), image.height()],
 """
 
 
-@pytest.mark.parametrize("scale", ["1", "1.5", "2"])
+@pytest.mark.parametrize("gap", [6, 8])
+@pytest.mark.parametrize("scale", ["1", "1.25", "1.5", "2"])
 @pytest.mark.parametrize("orientation", ["h", "v"])
 def test_the_line_is_exact_in_device_pixels_on_a_scaled_screen(
-    tmp_path, orientation, scale
+    tmp_path, orientation, scale, gap
 ):
     """On a real scaled screen, not a pixmap: QT_SCALE_FACTOR in its own
     process, since a process has one scale."""
     env = dict(os.environ, QT_SCALE_FACTOR=scale, QT_QPA_PLATFORM="offscreen",
                APPDATA=str(tmp_path), LOCALAPPDATA=str(tmp_path))
     result = subprocess.run(
-        [sys.executable, "-c", isolated(_SCREEN_PROBE), orientation],
+        [sys.executable, "-c", isolated(_SCREEN_PROBE), orientation, str(gap)],
         env=env, capture_output=True, text=True, timeout=60, check=True)
     probe = json.loads(result.stdout.strip().splitlines()[-1])
     ratio = float(scale)
-    line = max(1, round(ratio))
     width, height = probe["size"]
     left, top, right, bottom = probe["box"]
     across = orientation == "v"
     run, thick = (right - left + 1, bottom - top + 1) if across else (
         bottom - top + 1, right - left + 1)
     side, length = (height, width) if across else (width, height)
+    # Whole device pixels, with the gap's parity so it can centre.
+    line = max(1, round(ratio))
+    line += (side - line) % 2
 
-    assert side == round(6 * ratio), "the handle keeps its width"
+    assert abs(side - gap * ratio) <= 1, "the handle keeps its width"
     assert thick == line, "whole device pixels"
     assert run == length, "the handle's whole length"
     assert probe["count"] == line * length, "drawn once"
     near, far = (top, height - 1 - bottom) if across else (
         left, width - 1 - right)
-    assert abs(near - far) <= 1, "centred across the gap"
+    assert near == far, "centred across the gap"
 
 
 def test_a_handle_added_after_marking_lights(qtbot):
@@ -201,8 +206,9 @@ def test_a_handle_added_after_marking_lights(qtbot):
     pixmap = QPixmap(handle.size())
     handle.render(pixmap)
     box, count = _mark(pixmap.toImage(), _color("frame"))
+    thick = 1 if handle.width() % 2 else 2
 
-    assert count == handle.height()
+    assert count == handle.height() * thick
 
 
 def test_the_pointer_lights_a_handle_and_a_drag_holds_it(qtbot):
@@ -303,7 +309,8 @@ def test_an_unmarked_splitter_lights_an_8px_handle_under_the_pointer(qtbot):
     assert handle.width() == 8, "the hit area"
     lit = [x for x in range(image.width())
            if image.pixelColor(x, 0).name() == _color("accent_primary")]
-    assert lit == [3], "one 1 px line, centred"
+    # 2 px in the 8 px gap: 3 pixels on either side.
+    assert lit == [3, 4], "a line centred in the gap"
 
 
 def _flat(qtbot, theme="dark", on_frame=False, enabled=True):
