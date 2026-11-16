@@ -3527,7 +3527,9 @@ class _Reveal(QWidget):
             self._shot = QPixmap(page.size() * ratio)
             self._shot.setDevicePixelRatio(ratio)
             self._shot.fill(Qt.transparent)
-            page.render(self._shot, QPoint(), QRegion(), QWidget.DrawChildren)
+            # QWidget's own render: a QGraphicsView's takes a painter only.
+            QWidget.render(
+                page, self._shot, QPoint(), QRegion(), QWidget.DrawChildren)
             self.show()
         rise = QVariantAnimation(self)
         rise.setDuration(PANEL_FADE_MS)
