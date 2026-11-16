@@ -111,5 +111,7 @@ def test_the_scroll_bars_scroll_the_rows_and_end_above_the_footer(
     tree.header().resizeSection(0, 60)
     for _ in range(3):
         QApplication.processEvents()
+    # The bar held from before is still alive: PySide 6.5 marked it
+    # deleted once the footer let a passing wrapper of its container go.
     assert not horizontal.isVisible()
     assert footer.geometry().top() == above.geometry().bottom() + 1

@@ -337,8 +337,14 @@ class _TreeFooter(QFrame):
         # The view resets its viewport margins on every geometry update,
         # and puts its scroll bars back wherever it lays itself out.
         view.viewport().installEventFilter(self)
-        for bar in (view.horizontalScrollBar(), view.verticalScrollBar()):
-            _bar_box(bar).installEventFilter(self)
+        # Held for the footer's life: PySide 6.5 marks a scroll bar's own
+        # wrapper deleted once a passing wrapper of its container is freed.
+        self._boxes = (
+            _bar_box(view.horizontalScrollBar()),
+            _bar_box(view.verticalScrollBar()),
+        )
+        for box in self._boxes:
+            box.installEventFilter(self)
         fxstyle.theme_changed.connect(self._fit)
         # Under the frame's round corners, which the theme draws on top.
         self.lower()
@@ -380,12 +386,11 @@ class _TreeFooter(QFrame):
         # Rows, summary, then the horizontal bar; the footer last, at the
         # card's foot across its whole width, the vertical bar beside the
         # rows and summary only.
-        horizontal = _bar_box(view.horizontalScrollBar())
+        horizontal, vertical = self._boxes
         if horizontal is not view and horizontal.isVisible():
             _place(horizontal, horizontal.x(), under,
                    horizontal.width(), horizontal.height())
             under += horizontal.height()
-        vertical = _bar_box(view.verticalScrollBar())
         if vertical is not view and vertical.isVisible():
             _place(vertical, vertical.x(), vertical.y(), vertical.width(),
                    viewport.bottom() + 1 + above - vertical.y())
