@@ -32,14 +32,15 @@ def _extent(image, ink: str):
     return (max(xs) - min(xs) + 1, max(ys) - min(ys) + 1) if xs else None
 
 
-def _glyph(name: str, ground) -> tuple:
+def _glyph(name: str, ground, ink: str = "icon") -> tuple:
     """Return the ink extent of `name` drawn at the 16 px box on `ground`."""
     image = QImage(_BOX, _BOX, QImage.Format_ARGB32)
     image.fill(ground)
     painter = QPainter(image)
-    painter.drawPixmap(0, 0, fxicons.get_icon(name).pixmap(QSize(_BOX, _BOX)))
+    painter.drawPixmap(
+        0, 0, fxicons.get_icon(name, color=ink).pixmap(QSize(_BOX, _BOX)))
     painter.end()
-    return _extent(image, fxstyle.colors().icon)
+    return _extent(image, getattr(fxstyle.colors(), ink))
 
 
 def _same_box(drawn, glyph) -> bool:
@@ -85,8 +86,9 @@ def test_a_branch_chevron_is_drawn_in_the_16_px_box(qtbot, theme, delegate):
     branch = QRect(0, row.top(), row.left(), row.height())
 
     image = tree.viewport().grab(branch).toImage()
-    drawn = _extent(image, fxstyle.colors().icon)
-    glyph = _glyph("chevron-down", image.pixelColor(1, 1))
+    # A tree's chevrons wear the dimmed ink.
+    drawn = _extent(image, fxstyle.colors().text_dimmed)
+    glyph = _glyph("chevron-down", image.pixelColor(1, 1), "text_dimmed")
 
     assert _same_box(drawn, glyph), (drawn, glyph)
     window.close()
@@ -156,7 +158,7 @@ def _chevron(qtbot, theme, ratio, height=None, wide=False):
     image.fill(0)
     tree.viewport().render(image, QPoint(), QRegion(branch))
     window.close()
-    ink = fxstyle.colors().icon
+    ink = fxstyle.colors().text_dimmed
     ys = [y for x in range(image.width()) for y in range(image.height())
           if near(image.pixelColor(x, y), ink, 24)]
     offset = (min(ys) + max(ys)) / 2 - (image.height() - 1) / 2

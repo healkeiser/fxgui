@@ -42,3 +42,7 @@ loaders and the top progress line (new widgets, not a look change).
 - Tabs keep the shared 6 px gap (ls-ui: 4 px): eight tests pin the relation that tab gaps, the first tab's inset and a pane's content inset are one gap; kept on purpose.
 - A tree's row rule runs on under its indentation (the sheet rules `::branch`); the neutral status tag is a 20 px badge with 6 px sides.
 - Reduced motion (`FXGUI_REDUCED_MOTION=1`) now skips every fxgui animation, not only the fades; the validated field's red flash stays (it is information, not motion).
+- The Carmen pass (15.1.0), from Pascal's two audits against the live tracker and the ls-ui gallery: where the source and the published gallery disagree, fxgui follows what a person sees (the gallery and the live site): solid menu and tooltip fills (not the source's glass), the light dialog veil #F3F3F5 at 75 % (source: black 40 %), the palette's 14 px rows and 20 px icons (source: 13 px, 16 px).
+- Kept on purpose: generic line edits and combo boxes stay at the 13 px body (a sheet font on every instance would override a caller's setFont); only the composer field (FXMentionEdit) and the palette's field and rows take the web look's larger text.
+- Keyboard focus is now the 1 px accent edge plus a 3 px ring outside the control at 25 % (a sibling overlay; a sheet cannot draw outside a widget). It replaces the earlier "no halo" choice.
+- The splitter grip is gone: a handle is invisible until hovered or dragged, then a 1 px accent line.

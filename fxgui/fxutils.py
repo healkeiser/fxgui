@@ -34,8 +34,16 @@ from qtpy.QtWidgets import (
     QWidget,
     QGraphicsDropShadowEffect,
 )
-from qtpy.QtGui import QColor, QKeySequence
-from qtpy.QtCore import QEvent, QModelIndex, QPoint, QTimer
+from qtpy.QtGui import QColor, QKeySequence, QPainter
+from qtpy.QtCore import (
+    QEvent,
+    QModelIndex,
+    QObject,
+    QPoint,
+    QTimer,
+    QVariantAnimation,
+    Qt,
+)
 
 # Internal
 from fxgui._compat import created_by_python, parent_widget
@@ -47,6 +55,7 @@ __all__ = [
     "load_ui",
     "create_action",
     "add_shadow",
+    "dim_behind",
     "markdown_to_plain_text",
     "repolish",
     "round_window_corners",
@@ -197,6 +206,101 @@ def add_shadow(
     shadow.refresh()
     widget.setGraphicsEffect(shadow)
     return shadow
+
+
+class _Scrim(QWidget):
+    """The veil over a window while a modal dialog is up; it takes no input."""
+
+    def __init__(self, window: QWidget, dialog: QWidget):
+        super().__init__(window)
+        from fxgui import fxstyle
+
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setFocusPolicy(Qt.NoFocus)
+        self.setGeometry(window.rect())
+        window.installEventFilter(self)
+        # A dialog deleted while shown sends no hide.
+        dialog.destroyed.connect(self.deleteLater)
+        self._level = 1.0
+        if fxstyle.motion():
+            self._level = 0.0
+            self._fade = QVariantAnimation(self)
+            self._fade.setStartValue(0.0)
+            self._fade.setEndValue(1.0)
+            self._fade.setDuration(fxstyle.MOTION_BASE)
+            self._fade.setEasingCurve(fxstyle.ease_out())
+            self._fade.valueChanged.connect(self._set_level)
+            self._fade.start()
+        self.show()
+        self.raise_()
+
+    def _set_level(self, level: float) -> None:
+        self._level = level
+        self.update()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Cover the window again when it resizes."""
+        if watched is self.parent() and event.type() == QEvent.Resize:
+            self.setGeometry(watched.rect())
+        return False
+
+    def paintEvent(self, event) -> None:
+        """Fill with the theme's `modal_scrim`, read now."""
+        from fxgui import fxstyle
+
+        painter = QPainter(self)
+        painter.setOpacity(self._level)
+        painter.fillRect(self.rect(), QColor(fxstyle.colors().modal_scrim))
+        painter.end()
+
+
+class _Dimmer(QObject):
+    """Lay a `_Scrim` over the dialog's window while it shows modal."""
+
+    def __init__(self, dialog: QWidget):
+        super().__init__(dialog)
+        self._scrim = None
+        dialog.installEventFilter(self)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Dim on a modal show, lift on hide."""
+        if event.type() == QEvent.Show and self._scrim is None:
+            parent = watched.parentWidget()
+            if (
+                parent is not None
+                and watched.isModal()
+                and watched.windowType() != Qt.Popup
+            ):
+                self._scrim = _Scrim(parent.window(), watched)
+        elif event.type() == QEvent.Hide and self._scrim is not None:
+            # Off the window now, not at the next turn of the loop.
+            self._scrim.hide()
+            self._scrim.setParent(None)
+            self._scrim.deleteLater()
+            self._scrim = None
+        return False
+
+
+def dim_behind(dialog: QWidget) -> None:
+    """Dim the window behind `dialog` whenever it shows modal.
+
+    While the dialog is up through `exec()`, `open()` or `setModal(True)`,
+    its parent's window wears the theme's `modal_scrim`, faded in over
+    `fxstyle.MOTION_BASE` (at once under reduced motion), covering the
+    window as it resizes and letting every click through to the dialog's
+    modality. It lifts when the dialog hides. A dialog with no parent, a
+    modeless one and a popup dim nothing. Calling it again changes nothing.
+
+    Args:
+        dialog: The dialog, a `QDialog` or any window with a parent.
+
+    Examples:
+        >>> dialog = QDialog(window)
+        >>> fxutils.dim_behind(dialog)
+        >>> dialog.exec()
+    """
+    if not any(isinstance(child, _Dimmer) for child in dialog.children()):
+        _Dimmer(dialog)
 
 
 def markdown_to_plain_text(text: str) -> str:

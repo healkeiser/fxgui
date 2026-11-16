@@ -8,7 +8,7 @@ import threading
 import time
 import weakref
 from collections import OrderedDict
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple
 
 # Third-party
 from qtpy.QtCore import (
@@ -32,6 +32,7 @@ from qtpy.QtGui import (
     QCursor,
     QFont,
     QFontMetrics,
+    QFontMetricsF,
     QIcon,
     QImage,
     QImageIOHandler,
@@ -287,6 +288,10 @@ def _style(widget: Optional[QWidget]) -> QStyle:
     return widget.style() if widget is not None else QApplication.style()
 
 
+# QFont.WeightResolved: PySide6 6.5 names no ResolveProperties, so the bit.
+_WEIGHT_RESOLVED = 0x10
+
+
 def _smaller(font: QFont, pixels: int) -> QFont:
     """Return `font` `pixels` px smaller, in its own unit, 8 px at least."""
     font = QFont(font)
@@ -296,6 +301,43 @@ def _smaller(font: QFont, pixels: int) -> QFont:
     else:
         font.setPixelSize(max(8, font.pixelSize() - pixels))
     return font
+
+
+def _draw_tabular(
+    painter: QPainter, rect: QRect, alignment, text: str
+) -> None:
+    """Draw `text` with its digits at one width each, else elided as usual.
+
+    Qt 6.7 and later turn on the face's `tnum`; on older Qt (Houdini's
+    6.5) each digit is centred in a slot as wide as the widest digit.
+    """
+    font = QFont(painter.font())
+    if hasattr(font, "setFeature") and hasattr(QFont, "Tag"):
+        font.setFeature(QFont.Tag("tnum"), 1)
+        painter.setFont(font)
+        _draw_elided(painter, rect, alignment, text)
+        return
+    metrics = QFontMetricsF(font)
+    slot = max(metrics.horizontalAdvance(digit) for digit in "0123456789")
+    widths = [
+        slot if char.isdigit() else metrics.horizontalAdvance(char)
+        for char in text
+    ]
+    total = sum(widths)
+    if total > rect.width():
+        _draw_elided(painter, rect, alignment, text)
+        return
+    if alignment & Qt.AlignRight:
+        x = rect.left() + rect.width() - total
+    elif alignment & Qt.AlignHCenter:
+        x = rect.left() + (rect.width() - total) / 2
+    else:
+        x = rect.left()
+    y = rect.top() + (rect.height() - metrics.height()) / 2 + metrics.ascent()
+    for char, width in zip(text, widths):
+        drawn = metrics.horizontalAdvance(char)
+        painter.drawText(QPointF(x + (width - drawn) / 2, y), char)
+        x += width
 
 
 def _draw_elided(
@@ -335,11 +377,6 @@ def _draw_overlay_disc(
 
 
 @functools.lru_cache(maxsize=1)
-def _fallback_source() -> QPixmap:
-    """Return the image shown for a missing thumbnail, loaded once."""
-    return QPixmap(str(_FALLBACK_THUMBNAIL))
-
-
 @functools.lru_cache(maxsize=256)
 def _mark(name: str, token: str) -> QIcon:
     """Return a mark in a token or colour, the token read at each draw."""
@@ -483,9 +520,9 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     Column 0 is laid out from both edges: the thumbnail (or the decoration
     icon) at the left, then the title and the description (Markdown,
-    shown as plain text), and the status label and dot anchored to the
-    right edge with the child count under them. The text stops short of
-    all three. A row is flat, edge to edge, its indentation included, with
+    shown as plain text) with the child count right after the name, and
+    the status label and dot anchored to the right edge. The text stops
+    short of the label and the dot. A row is flat, edge to edge, its indentation included, with
     a hairline under it; a `Qt.BackgroundRole` fills it as a band.
 
     Note:
@@ -503,6 +540,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         - `STATUS_DOT_VISIBLE_ROLE`, `STATUS_LABEL_VISIBLE_ROLE`,
           `CHILD_COUNT_VISIBLE_ROLE`, `STATUS_LABEL_UPPERCASE_ROLE`
           (`bool`; the last defaults to True).
+        - `GROUP_ROW_ROLE` (`bool`): a group header row, its name 12 px,
+          emphasised, toned; its child count right after the name.
         - `PICKER_TEXT_ROLE` (`str`), `PICKER_CHOICES_ROLE`
           (`Sequence[str]`), `PICKER_UNAVAILABLE_ROLE` (`Mapping[str, str]`,
           a listed choice that cannot be picked, to its reason).
@@ -540,6 +579,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     STATUS_LABEL_ICON_ROLE = _roles.STATUS_LABEL_ICON
     # False keeps the label's words as given ("Library", "v012").
     STATUS_LABEL_UPPERCASE_ROLE = _roles.STATUS_LABEL_UPPERCASE
+    #: True marks a group header row (a grouped table's "ep010 · seq010"):
+    #: its name a step under the body, emphasised, in the toned ink, its
+    #: count after it.
+    GROUP_ROW_ROLE = _roles.GROUP_ROW
+    #: True draws a cell's digits at one width each, so numbers line up
+    #: down a column (Inter's tabular figures).
+    TABULAR_FIGURES_ROLE = _roles.TABULAR_FIGURES
     STATUS_DOT_VISIBLE_ROLE = _roles.STATUS_DOT_VISIBLE
     STATUS_LABEL_VISIBLE_ROLE = _roles.STATUS_LABEL_VISIBLE
     CHILD_COUNT_VISIBLE_ROLE = _roles.CHILD_COUNT_VISIBLE
@@ -559,6 +605,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     # the row the row size in force makes, at 16:9.
     _THUMBNAIL_MARGIN = 4
     _THUMBNAIL_BORDER = 2  # 1 px of frame on each side
+    # A placeholder checker's square, in px.
+    _CHECKER_CELL = 6
     _OVERLAY_SIZE = 15
     _OVERLAY_MARGIN = 6
     _CONTENT_SPACING = 5
@@ -578,15 +626,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _LINE_GAP = 2
     # A description shows only in a row at least this tall: two lines.
     _DESCRIPTION_FLOOR = 34
-    # From this height up, the status band sits at the row's top and the
-    # child count at its bottom; below it, both centre.
+    # From this height up, a thumbnail row is tall.
     _TALL_ROW = 48
 
     # The label and the dot share one band, anchored to the row's right
     # edge: the dot _INDICATOR_RIGHT_MARGIN in, the label
     # _INDICATOR_SPACING left of it, or at the margin when there is no dot.
-    # The band centres in a one-line row and sits at the top of a taller
-    # one, clear of the child count at its bottom.
+    # The band centres in the row.
     _INDICATOR_BAND_TOP = 4
     _INDICATOR_BAND_HEIGHT = 14
     _INDICATOR_RIGHT_MARGIN = 6
@@ -616,9 +662,8 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     _HOVER_FADE = fxstyle.MOTION_FAST / 1000
     _HOVER_EASE = fxstyle.ease_out()
 
-    _CHILD_COUNT_HEIGHT = 14
-    _CHILD_COUNT_MARGIN = 4
-    _CHILD_COUNT_MIN_WIDTH = 18
+    #: The gap between a row's name and its child count, in px.
+    CHILD_COUNT_GAP = 6
 
     # A value and a chevron in one cell, anchored to its right edge.
     _PICKER_HEIGHT = 16
@@ -637,6 +682,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        # Per column, set by align_column: an alignment, and tabular digits.
+        self._column_alignment: Dict[int, int] = {}
+        self._tabular_columns: Set[int] = set()
+        # The view last measured or painted: a dense one has smaller rows.
+        self._rows_of: Optional[QWidget] = (
+            parent if isinstance(parent, QWidget) else None)
         # It rules its rows itself, full width: the sheet's branch rule
         # stands down on its view.
         if isinstance(parent, QAbstractItemView):
@@ -778,18 +829,29 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                     parents.append(index)
         return floor
 
+    #: The picture's size (width, height) per row height, as the web look's
+    #: small, normal and big rows show it; another height takes 16:9 of
+    #: the row less its margins and frame.
+    THUMBNAIL_SIZES = {28: (32, 18), 36: (44, 24), 52: (72, 40)}
+
     @property
     def _THUMBNAIL_HEIGHT(self) -> int:
-        """The picture's height: the row's, less its margins and frame."""
+        """The picture's height at the row size in force."""
+        size = self.THUMBNAIL_SIZES.get(fxstyle.row_height(self._rows_of))
+        if size is not None:
+            return size[1]
         return (
-            fxstyle.row_height()
+            fxstyle.row_height(self._rows_of)
             - self._THUMBNAIL_MARGIN * 2
             - self._THUMBNAIL_BORDER
         )
 
     @property
     def _THUMBNAIL_WIDTH(self) -> int:
-        """The picture's width, 16:9 against its height."""
+        """The picture's width at the row size in force, else 16:9."""
+        size = self.THUMBNAIL_SIZES.get(fxstyle.row_height(self._rows_of))
+        if size is not None:
+            return size[0]
         return round(self._THUMBNAIL_HEIGHT * 16 / 9)
 
     @property
@@ -817,10 +879,21 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         return option.palette.text().color()
 
     @staticmethod
-    def _title_font(option: QStyleOptionViewItem) -> QFont:
-        """Return the item's font at the emphasis weight."""
+    def _title_font(
+        option: QStyleOptionViewItem, index: Optional[QModelIndex] = None
+    ) -> QFont:
+        """Return the item's font at the emphasis weight, or its own weight.
+
+        An item whose `Qt.FontRole` font names a weight keeps it, so a row
+        can be heavier or lighter than the emphasis (a tree's levels).
+        """
         font = QFont(option.font)
-        font.setWeight(QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
+        own = index.data(Qt.FontRole) if index is not None else None
+        if isinstance(own, QFont) and own.resolveMask() & _WEIGHT_RESOLVED:
+            font.setWeight(own.weight())
+        else:
+            font.setWeight(
+                QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
         return font
 
     @staticmethod
@@ -839,7 +912,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         text = index.data(self.DESCRIPTION_ROLE)
         if not text or text == "-":
             return ""
-        if fxstyle.row_height() < self._DESCRIPTION_FLOOR:
+        if fxstyle.row_height(self._rows_of) < self._DESCRIPTION_FLOOR:
             return ""
         return fxutils.markdown_to_plain_text(str(text))
 
@@ -917,7 +990,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         has_thumbnail = self._has_thumbnail(index)
         has_description = bool(self._description(index.siblingAtColumn(0)))
         title_font = (
-            self._title_font(option)
+            self._title_font(option, index)
             if has_thumbnail or has_description
             else option.font
         )
@@ -929,7 +1002,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             )
         # Padding only past the row size: two lines that fit keep every row
         # of a size one height.
-        size = fxstyle.row_height()
+        size = fxstyle.row_height(self._rows_of)
         return size if text <= size else text + self._ROW_PADDING * 2
 
     @classmethod
@@ -1070,7 +1143,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         """Whether the title would be cut beside the label's words."""
         has_thumbnail = self._has_thumbnail(index)
         title_font = (
-            self._title_font(option)
+            self._title_font(option, index)
             if has_thumbnail or self._description(index)
             else option.font
         )
@@ -1166,31 +1239,75 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             return content_left
         return content_left + self._CONTENT_SPACING + footprint
 
-    def _child_count_badge_width(
-        self, count: int, option: QStyleOptionViewItem
-    ) -> int:
-        """Return the width of the child count badge."""
-        text_width = QFontMetrics(self._badge_font(option)).horizontalAdvance(
-            str(count)
-        )
-        return max(
-            text_width + self._LABEL_PADDING * 2, self._CHILD_COUNT_MIN_WIDTH
-        )
+    def align_column(
+        self,
+        view: QAbstractItemView,
+        column: int,
+        alignment: Qt.AlignmentFlag = Qt.AlignRight,
+        tabular: bool = False,
+    ) -> None:
+        """Align a column's cells and its header label alike.
+
+        For a number column, as the web look's: right-aligned, its digits
+        tabular. An item's own `Qt.TextAlignmentRole` still wins in its
+        cell; column 0 keeps its layout.
+
+        Args:
+            view: The view this delegate paints, whose header follows.
+            column: The logical column.
+            alignment: Its horizontal alignment. Defaults to the right.
+            tabular: Draw its digits at one width each.
+
+        Examples:
+            >>> delegate.align_column(view, 2, Qt.AlignRight, tabular=True)
+        """
+        horizontal = int(alignment) & int(Qt.AlignHorizontal_Mask)
+        self._column_alignment[column] = horizontal
+        if tabular:
+            self._tabular_columns.add(column)
+        else:
+            self._tabular_columns.discard(column)
+        model = view.model()
+        if model is not None:
+            model.setHeaderData(
+                column, Qt.Horizontal,
+                Qt.AlignmentFlag(horizontal) | Qt.AlignVCenter,
+                Qt.TextAlignmentRole)
+        view.viewport().update()
+
+    @staticmethod
+    def _group_font(option: QStyleOptionViewItem) -> QFont:
+        """Return a group header's font: a step under the body, emphasised."""
+        font = QFont(option.font)
+        font.setPixelSize(fxstyle.FONT_SIZE - 1)
+        font.setWeight(
+            QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)))
+        return font
+
+    @staticmethod
+    def _count_font(option: QStyleOptionViewItem) -> QFont:
+        """Return the child count's font: a step under the body, body weight."""
+        font = QFont(option.font)
+        font.setPixelSize(fxstyle.FONT_SIZE - 1)
+        font.setWeight(QFont.Weight(fxstyle.drawn_weight(fxstyle.BODY_WEIGHT)))
+        return font
+
+    def _child_count(self, index: QModelIndex) -> int:
+        """Return the count drawn after the row's name, 0 for none."""
+        if index.data(self.CHILD_COUNT_VISIBLE_ROLE) is False:
+            return 0
+        model = index.model()
+        return max(model.rowCount(index), 0) if model is not None else 0
 
     def _child_count_width(
         self, index: QModelIndex, option: QStyleOptionViewItem
     ) -> int:
-        """Return the room the child count badge takes, or 0 without one."""
-        if index.data(self.CHILD_COUNT_VISIBLE_ROLE) is False:
+        """Return the room the child count takes after the name, gap included."""
+        count = self._child_count(index)
+        if not count:
             return 0
-        model = index.model()
-        count = model.rowCount(index) if model is not None else 0
-        if count <= 0:
-            return 0
-        return (
-            self._child_count_badge_width(count, option)
-            + self._CHILD_COUNT_MARGIN * 2
-        )
+        return self.CHILD_COUNT_GAP + QFontMetrics(
+            self._count_font(option)).horizontalAdvance(str(count))
 
     def _draw_status_dot(
         self,
@@ -1214,14 +1331,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.drawEllipse(QRect(dot_x, dot_y, self._DOT_SIZE, self._DOT_SIZE))
 
     def _band_top(self, item_rect: QRect, tall: bool = False) -> int:
-        """Return the top of the status band: centred, or a tall row's top.
+        """Return the top of the status band, centred in the row.
 
-        A `tall` row's band sits at its top, clear of the child count.
+        `tall` is kept for callers; the count no longer sits under the band.
         """
-        if not tall:
-            return item_rect.top() + (
-                item_rect.height() - self._INDICATOR_BAND_HEIGHT) // 2
-        return item_rect.top() + self._INDICATOR_BAND_TOP
+        return item_rect.top() + (
+            item_rect.height() - self._INDICATOR_BAND_HEIGHT) // 2
 
     def _is_tall(self, item_rect: QRect, has_thumbnail: bool) -> bool:
         """Whether a row stacks its marks: a thumbnail row of `_TALL_ROW`."""
@@ -1638,37 +1753,6 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                 painter, option.rect, dot_x, left_limit, marks.dot_color, tall
             )
 
-    def _draw_child_count(
-        self,
-        painter: QPainter,
-        item_rect: QRect,
-        count: int,
-        option: QStyleOptionViewItem,
-        tall: bool = False,
-        inset: int = 0,
-    ) -> None:
-        """Draw the child count at the row's right edge, as muted text.
-
-        At a `tall` row's bottom, under the status band; else centred,
-        `inset` further in, left of the status marks it shares the line with.
-        """
-        width = self._child_count_badge_width(count, option)
-        margin = self._CHILD_COUNT_MARGIN
-        if not tall:
-            top = item_rect.top() + (
-                item_rect.height() - self._CHILD_COUNT_HEIGHT) // 2
-        else:
-            top = item_rect.bottom() - self._CHILD_COUNT_HEIGHT - margin
-        rect = QRectF(
-            item_rect.right() - width - margin - (0 if tall else inset),
-            top,
-            width,
-            self._CHILD_COUNT_HEIGHT,
-        )
-        painter.setPen(QColor(fxstyle.colors().text_muted))
-        painter.setFont(self._badge_font(option))
-        painter.drawText(rect, Qt.AlignRight | Qt.AlignVCenter, str(count))
-
     def _bordered_thumbnail(
         self,
         path: Optional[str],
@@ -1689,7 +1773,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             return (
                 f"fxgui.thumbnail|{path}|{stamp}|{ratio}"
                 f"|{width}x{height}"
-                f"|{theme.surface_sunken}|{theme.border_light}"
+                f"|{theme.surface_sunken}|{theme.state_pressed}|{theme.text}"
             )
 
         stamp, source = None, None
@@ -1706,13 +1790,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         if cached is not None:
             return cached
 
-        if source is None:
-            source = _fallback_source().scaled(
-                size[0], size[1], Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
-        else:
+        placeholder = source is None
+        if not placeholder:
             source = QPixmap(source)
-        source.setDevicePixelRatio(ratio)
+            source.setDevicePixelRatio(ratio)
         outer_width = width + self._THUMBNAIL_BORDER
         outer_height = height + self._THUMBNAIL_BORDER
 
@@ -1731,15 +1812,30 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         corners = QPainterPath()
         corners.addRoundedRect(frame, radius, radius)
         painter.setClipPath(corners)
-        painter.drawPixmap(
-            QPointF(
-                1 + (width - source.width() / ratio) / 2,
-                1 + (height - source.height() / ratio) / 2,
-            ),
-            source,
-        )
+        if placeholder:
+            # No picture: a soft checker, as the web look's placeholder.
+            dark = QColor(theme.state_pressed)
+            light = QColor(fxstyle.mix(theme.state_pressed, theme.text, 0.17))
+            cell = self._CHECKER_CELL
+            for row in range(int(outer_height // cell) + 1):
+                for column in range(int(outer_width // cell) + 1):
+                    painter.fillRect(
+                        QRectF(column * cell, row * cell, cell, cell),
+                        light if (row + column) % 2 else dark,
+                    )
+        else:
+            painter.drawPixmap(
+                QPointF(
+                    1 + (width - source.width() / ratio) / 2,
+                    1 + (height - source.height() / ratio) / 2,
+                ),
+                source,
+            )
         painter.setClipping(False)
-        painter.setPen(QPen(QColor(theme.border_light), 1))
+        # A faint outline: the text at 10 %, as the web look's ring.
+        outline = QColor(theme.text)
+        outline.setAlphaF(0.1)
+        painter.setPen(QPen(outline, 1))
         painter.setBrush(Qt.NoBrush)
         painter.drawRoundedRect(frame, radius, radius)
         painter.end()
@@ -1758,7 +1854,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     ) -> None:
         """Draw the title and, under it, the description, between two x's."""
         description = self._description(index)
-        title_font = self._title_font(option) if bold else QFont(option.font)
+        group = index.data(self.GROUP_ROW_ROLE) is True
+        if group:
+            title_font = self._group_font(option)
+        else:
+            title_font = (
+                self._title_font(option, index) if bold else QFont(option.font))
         title_rect, description_rect = self._text_rects(
             option, left, right, title_font, bool(description)
         )
@@ -1767,15 +1868,38 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         # selected or wears an ink of its own.
         plain = not option.state & QStyle.State_Selected and (
             index.data(Qt.ForegroundRole) is None)
+        theme = fxstyle.colors()
         painter.setPen(
-            QColor(fxstyle.colors().text_strong) if plain else color)
+            QColor(theme.text_toned if group else theme.text_strong)
+            if plain else color)
         painter.setFont(title_font)
+        title = str(index.data(Qt.DisplayRole) or "")
         _draw_elided(
             painter,
             title_rect,
             Qt.AlignLeft | Qt.AlignVCenter,
-            str(index.data(Qt.DisplayRole) or ""),
+            title,
         )
+        count = self._child_count(index)
+        if count:
+            # Right after the name, as the web look's tree: the right limit
+            # already keeps its room, so an elided name stops short of it.
+            drawn = min(
+                QFontMetrics(title_font).horizontalAdvance(title),
+                title_rect.width(),
+            )
+            count_rect = QRect(
+                title_rect.left() + drawn + self.CHILD_COUNT_GAP,
+                title_rect.top(),
+                self._child_count_width(index, option),
+                title_rect.height(),
+            )
+            selected = option.state & QStyle.State_Selected
+            painter.setPen(
+                color if selected else QColor(fxstyle.colors().text_muted))
+            painter.setFont(self._count_font(option))
+            painter.drawText(
+                count_rect, Qt.AlignLeft | Qt.AlignVCenter, str(count))
         if description_rect is not None:
             # On a selected row the muted ink would sit on the accent.
             selected = option.state & QStyle.State_Selected
@@ -2032,16 +2156,32 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         painter.setFont(option.font)
         alignment = Qt.AlignLeft | Qt.AlignVCenter
         right_inset = self.ICON_MARGIN
-        if index.column() == self.picker_column:
+        column = index.column()
+        if column == self.picker_column:
             alignment = Qt.AlignRight | Qt.AlignVCenter
             right_inset = self._picker_text_inset()
+        else:
+            # The item's own alignment, else the column's (align_column).
+            own = index.data(Qt.TextAlignmentRole)
+            if own is None:
+                own = self._column_alignment.get(column)
+            if own is not None:
+                horizontal = int(own) & int(Qt.AlignHorizontal_Mask)
+                if horizontal:
+                    alignment = Qt.AlignmentFlag(horizontal) | Qt.AlignVCenter
         text_rect = QRect(
             text_x,
             option.rect.top(),
             option.rect.right() - text_x - right_inset,
             option.rect.height(),
         )
-        _draw_elided(painter, text_rect, alignment, str(text))
+        if (
+            index.data(self.TABULAR_FIGURES_ROLE) is True
+            or column in self._tabular_columns
+        ):
+            _draw_tabular(painter, text_rect, alignment, str(text))
+        else:
+            _draw_elided(painter, text_rect, alignment, str(text))
 
     def _draw_picker(
         self,
@@ -2093,6 +2233,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         index: QModelIndex,
     ) -> QSize:
         """Return the row's size, measured with the item's own font."""
+        self._rows_of = option.widget
         opt = self._init(option, index)
         base = super().sizeHint(option, index)
         height = self._row_height(opt, index)
@@ -2109,7 +2250,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         has_thumbnail = self._has_thumbnail(index)
         has_description = bool(self._description(index))
         title_font = (
-            self._title_font(opt)
+            self._title_font(opt, index)
             if has_thumbnail or has_description
             else QFont(opt.font)
         )
@@ -2137,6 +2278,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     ) -> None:
         """Paint the cell: its fill, rule, content and focus ring."""
         view = option.widget
+        self._rows_of = view
         if isinstance(view, QAbstractItemView) and not view.property(
             RULES_ROWS_PROPERTY
         ):
@@ -2163,6 +2305,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             self._custom_background(index),
             index.parent().isValid(),
         )
+        fxstyle.draw_column_rule(painter, row_rect, view, index.column())
         painter.restore()
         ends = self._row_ends(opt, index)
         rect = row_rect
@@ -2184,15 +2327,6 @@ class FXThumbnailDelegate(QStyledItemDelegate):
                 else:
                     self._draw_icon_and_text(painter, opt, index)
                 self._draw_status_indicators(painter, opt, index, has_thumbnail)
-                if self._child_count_width(index, opt):
-                    self._draw_child_count(
-                        painter,
-                        opt.rect,
-                        index.model().rowCount(index),
-                        opt,
-                        self._is_tall(opt.rect, has_thumbnail),
-                        self._indicator_metrics(index, opt, fit=True).footprint,
-                    )
             finally:
                 self._painting = None
         else:

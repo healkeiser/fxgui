@@ -146,16 +146,13 @@ def _icon_rect(row_rect: QRect) -> QRect:
 def _documented_indicator_rects(row_rect: QRect, label_width: int, dot: bool):
     """The label and dot rects in a thumbnail row, spelled out in literals.
 
-    The band sits 4px down a row at least 48px tall, and centres in a shorter
-    one.
+    The band centres in the row, tall or not: the child count follows the
+    name, so nothing sits under the band.
     """
 
     dot_size, dot_margin, label_spacing, label_height = 8, 6, 8, 14
     dot_x = row_rect.right() - dot_size - dot_margin
-    if row_rect.height() >= 48:
-        top = row_rect.top() + 4
-    else:
-        top = row_rect.top() + (row_rect.height() - label_height) // 2
+    top = row_rect.top() + (row_rect.height() - label_height) // 2
 
     pill_rect = None
     if label_width:
@@ -260,7 +257,7 @@ def test_indicator_placement_matches_the_documented_geometry(
 def test_the_pill_sits_left_of_the_dot_at_the_rows_right_edge(
     qtbot, set_row_size
 ):
-    """Reading order is thumbnail, text, pill, dot; a tall row tops the band."""
+    """Reading order is thumbnail, text, pill, dot; the band centres."""
 
     set_row_size("big")
 
@@ -272,7 +269,7 @@ def test_the_pill_sits_left_of_the_dot_at_the_rows_right_edge(
     assert pill_rect.right() < dot_rect.left()
     # An 8px dot, 6px in from the row's right edge
     assert dot_rect.left() == option.rect.right() - 8 - 6
-    assert pill_rect.top() == option.rect.top() + 4
+    assert pill_rect.top() == option.rect.top() + (option.rect.height() - 14) // 2
     # The text stops short of the pill, so nothing runs under it
     assert (
         delegate._content_right_limit(

@@ -52,7 +52,7 @@ fxstyle.register_widget_style(
     }
     QLabel#fxBreadcrumbSeparator
     {
-        color: @text_muted;
+        color: @text_dimmed;
         background: transparent;
     }
     """
@@ -203,8 +203,9 @@ class FXBreadcrumb(QWidget):
 
     Args:
         parent: Parent widget.
-        separator: The separator between segments: one character, as the
-            default "/", drawn as muted text; longer, an icon's name.
+        separator: The separator between segments: an icon's name, as the
+            default "chevron-right", drawn 14 px in the dimmed ink; one
+            character, such as "/", drawn as dimmed text.
         home_icon: Icon name for the home/root segment.
         show_navigation: Show back/forward navigation buttons.
         path_separator: Character used to join path segments in edit mode.
@@ -254,7 +255,7 @@ class FXBreadcrumb(QWidget):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        separator: str = "/",
+        separator: str = "chevron-right",
         home_icon: str = "house",
         show_navigation: bool = False,
         path_separator: str = "/",
@@ -635,10 +636,10 @@ class FXBreadcrumb(QWidget):
         self._layout.insertWidget(self._layout.count() - 1, button)
 
     def _add_separator(self) -> None:
-        """Add the separator: a muted text, or an icon by its name."""
+        """Add the separator: a dimmed text, or an icon by its name."""
         if len(self._separator) > 1:
             label = FXIconLabel(
-                fxicons.get_icon(self._separator, color="text_muted"), size=12)
+                fxicons.get_icon(self._separator, color="text_dimmed"), size=14)
             label.setFixedSize(16, 16)
         else:
             label = QLabel(self._separator)

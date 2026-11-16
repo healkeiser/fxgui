@@ -82,6 +82,9 @@ fxstyle.register_widget_style(
         border: 1px solid @border_light;
         border-radius: @small_radius;
         padding: 0px 4px;
+        min-width: 10px;
+        min-height: 18px;
+        qproperty-alignment: AlignCenter;
     }
     """
 )
@@ -276,26 +279,21 @@ def tip(
     if not (title or body or shortcut or kept or code or hint):
         return ""
 
-    head = (
-        f'<span style="font-weight:{fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)};">{escape(title)}</span>'
-        if title else ""
-    )
+    # A plain tip is one line at the body's weight, as the web look's; a
+    # tip with facts, code or a hint keeps its title emphasised over them.
+    rich = bool(kept or code or hint)
+    head = escape(title)
+    if title and rich:
+        weight = fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)
+        head = f'<span style="font-weight:{weight};">{head}</span>'
     muted = fxstyle.colors().text_muted
 
     # Each block with the gap above it; the first block's is not drawn.
     rows = []
     if shortcut:
-        # A spacer cell pushes the keycaps to the right edge; Qt rich text
-        # offers no other way to right-align part of a line.
-        rows.append(
-            (
-                0,
-                '<table width="100%" cellspacing="0" cellpadding="0"><tr>'
-                f"<td>{head}</td>"
-                f'<td align="right">{keycap(shortcut)}</td>'
-                "</tr></table>",
-            )
-        )
+        # The keys follow the words after a middle dot, on the same line.
+        dot = f'<span style="color:{muted};">&nbsp;·&nbsp;</span>' if head else ""
+        rows.append((0, f"{head}{dot}{keycap(shortcut)}"))
     elif head:
         rows.append((0, head))
     if body:

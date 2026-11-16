@@ -129,7 +129,12 @@ def test_every_text_control_is_control_height(row):
         )
     heights = {name: w.height() for name, w in row.widgets.items()
                if name in TEXT}
-    assert set(heights.values()) == {fxstyle.control_height(probe)}, heights
+    expected = {
+        name: fxstyle.control_height(probe)
+        - (fxstyle.FILTER_DROP if name == "FXSearchBar" else 0)
+        for name in heights
+    }
+    assert heights == expected
 
 
 @pytest.mark.parametrize("name", sorted({**TEXT, **MARKS}))

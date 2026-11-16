@@ -16,7 +16,7 @@ from qtpy.QtWidgets import (
 
 # Internal
 from fxgui import fxstyle
-from fxgui.fxwidgets import FXBreadcrumb
+from fxgui.fxwidgets import FXBreadcrumb, FXIconLabel
 
 from _helpers import hover, unhover
 
@@ -225,7 +225,7 @@ def test_a_new_path_bolds_only_its_last_segment(qtbot, request, where):
     ]
 
 
-def test_parents_read_muted_and_slashes_part_them_as_lumen_s(qtbot, qapp):
+def test_parents_read_muted_and_chevrons_part_them(qtbot, qapp):
     """Where the path leads from is muted, where it is reads whole."""
     crumb = _crumb(qtbot)
     unhover(qtbot, crumb)
@@ -243,11 +243,16 @@ def test_parents_read_muted_and_slashes_part_them_as_lumen_s(qtbot, qapp):
     drawn = _segments(crumb)
     assert muted in inks(drawn[0]) and ink not in inks(drawn[0])
     assert ink in inks(drawn[-1])
-    slashes = [
-        label.text() for label in crumb._container.findChildren(QLabel)
+    # The default separator is a 14 px chevron icon, not a "/" label.
+    texts = [
+        label for label in crumb._container.findChildren(QLabel)
         if label.objectName() == "fxBreadcrumbSeparator"
     ]
-    assert slashes == ["/"] * (len(PATH) - 1)
+    assert texts == []
+    marks = [
+        label for label in crumb._container.findChildren(FXIconLabel)
+    ]
+    assert len(marks) >= len(PATH) - 1
 
 
 def _press_on(widget):

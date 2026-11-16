@@ -6,7 +6,7 @@ QProgressBar
     border: none;
     border-radius: 3px;
     padding: 0px;
-    background: @control_edge;
+    background: @meter_track;
 }
 
 /* By property: the :horizontal state does not reach the widget's size. */
@@ -31,7 +31,7 @@ QToolTip
 {
     border: 1px solid @border;
     background-color: @surface;
-    color: @text;
+    color: @text_strong;
     padding: 4px 10px;
     border-radius: @small_radius;
     font-size: @font_size_small;
@@ -607,6 +607,16 @@ QPushButton
     border-radius: @button_radius;
 }
 
+/* A compact button (mark_compact): 24 px, small text, 16 px icon. */
+QPushButton[fxCompact="true"],
+QToolButton[fxCompact="true"]
+{
+    font-size: @font_size_small;
+    padding: 0px 8px;
+    min-height: @compact_inner;
+    max-height: @compact_inner;
+}
+
 QPushButton:disabled
 {
     background-color: transparent;
@@ -650,10 +660,12 @@ QPushButton:focus {
     border: 1px solid @border_light;
 }
 
+/* The chosen value reads in the strong ink, as the web look's select. */
 QComboBox
 {
     selection-background-color: @selection;
     background-color: transparent;
+    color: @text_strong;
     border-style: solid;
     border: 1px solid @border_light;
     border-radius: @button_radius;
@@ -714,6 +726,7 @@ QAbstractItemView[fxPopup="true"]
 /* A combo box's list sits in a frame fxstyle paints as the same card. */
 QComboBox QAbstractItemView
 {
+    color: @text;
     background-color: transparent;
     border: none;
     border-radius: 0px;
@@ -734,10 +747,10 @@ QComboBox::drop-down
 
 QComboBox::down-arrow
 {
-    image: ~icon(chevron-down, icon);
+    image: ~icon(chevron-down, text_dimmed, 20);
     subcontrol-position: center right;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
 }
 
 QComboBox::down-arrow:disabled
@@ -1024,6 +1037,43 @@ QTabBar::close-button:pressed {
     background: transparent;
 }
 
+/* A segmented bar (fxstyle.mark_as_segmented), for a view switch: tabs
+   side by side on a @state_pressed track, the picked one a raised chip
+   that fxstyle paints under the tabs and slides on a spring. The tabs here
+   have no fill; their 4 px margins are the track's padding, so a tab with
+   its 1 px edge is 28 px tall and the track 36. */
+QTabBar[fxSegmented="true"]::tab,
+QTabBar[fxSegmented="true"]::tab:hover,
+QTabBar[fxSegmented="true"]::tab:selected
+{
+    background: transparent;
+    margin: 4px 0px;
+    padding: 0px 7px;
+    min-height: 26px;
+    max-height: 26px;
+}
+
+QTabBar[fxSegmented="true"]::tab:first { margin-left: 4px; }
+QTabBar[fxSegmented="true"]::tab:last { margin-right: 4px; }
+QTabBar[fxSegmented="true"]::tab:only-one { margin-left: 4px; margin-right: 4px; }
+
+QTabBar[fxSegmented="true"]::tab:hover { color: @text; }
+QTabBar[fxSegmented="true"]::tab:selected { color: @text_strong; }
+
+/* A tab's count (fxstyle.set_tab_count): 20 px tall, a 1 px inset ring. */
+QTabBar QLabel#fxTabCount
+{
+    color: @text;
+    background-color: @surface;
+    border: 1px solid @border_light;
+    border-radius: @small_radius;
+    padding: 0px 5px;
+    font-size: 10px;
+    font-weight: @emphasis_weight;
+    min-height: 18px;
+    max-height: 18px;
+}
+
 
 /* A plain dock widget reads as a dock pane: a flat title in the tab text. */
 QDockWidget {
@@ -1109,11 +1159,11 @@ QTreeView::branch:has-children {
 }
 
 QTreeView::branch:has-children:closed {
-    image: ~icon(chevron-right, icon, 14);
+    image: ~icon(chevron-right, text_dimmed, 14);
 }
 
 QTreeView::branch:has-children:open {
-    image: ~icon(chevron-down, icon, 14);
+    image: ~icon(chevron-down, text_dimmed, 14);
 }
 
 /* The view has no padding: its rows run from its very top, edge to edge.
@@ -1155,6 +1205,20 @@ QGraphicsView
 QTreeView::item {
     min-height: @row_height;
     max-height: @row_height;
+}
+
+/* A view that fills its pane (mark_flush): the pane's edge frames it. */
+QAbstractScrollArea[fxFlush="true"],
+QAbstractItemView[fxFlush="true"] {
+    border: none;
+    border-radius: 0px;
+}
+
+/* A dense tree (mark_dense), a navigation tree: one row size under. */
+QTreeView[fxDense="true"]::item,
+QListView[fxDense="true"]::item {
+    min-height: @dense_row_height;
+    max-height: @dense_row_height;
 }
 
 QListView::item:!selected:hover,
@@ -1201,8 +1265,9 @@ QAbstractItemView[fxPopup="true"]::item:selected:active {
 
 /* A navigation list (mark_as_nav): 28 px chips at the small radius, set
    in from the edges and 1 px in from the row's top and bottom, no rule
-   between them; the current row a neutral chip with its text in the accent, a hovered one
-   the same chip in the text's ink.
+   between them; an idle row in the muted ink, a hovered one the hover chip
+   in the text's ink, the current one the pressed chip with its text in the
+   accent.
    mark_as_nav sets the gap at the ends. */
 
 QTreeView[fxNav="true"]::item,
@@ -1212,6 +1277,7 @@ QListView[fxNav="true"]::item {
     border: none;
     border-radius: @small_radius;
     margin: 1px 4px;
+    color: @text_muted;
 }
 
 QTreeView[fxNav="true"]::item:!selected:hover,
@@ -1226,7 +1292,7 @@ QTreeView[fxNav="true"]::item:selected:hover,
 QListView[fxNav="true"]::item:selected,
 QListView[fxNav="true"]::item:selected:active,
 QListView[fxNav="true"]::item:selected:hover {
-    background: @state_hover;
+    background: @state_pressed;
     color: @nav_ink;
 }
 
@@ -1484,11 +1550,17 @@ QHeaderView
     qproperty-defaultAlignment: "AlignLeft|AlignVCenter";
 }
 
+/* The header's own font, not the section's: a section rule with a font
+   makes the sheet draw the label itself, past FXProxyStyle, which inks a
+   sorted section's label. */
+QHeaderView {
+    font-size: @font_size_small;
+    font-weight: @emphasis_weight;
+}
+
 QHeaderView::section  {
     background-color: transparent;
     color: @text_muted;
-    font-size: @font_size_small;
-    font-weight: @emphasis_weight;
     /* Left in line with a cell's text, which sits 12 px in. */
     padding: 0px @cell_lead;
     min-height: @header_height;
@@ -1576,29 +1648,15 @@ QSplitter::handle {
     border: none;
 }
 
-/* A splitter inside a pane leaves its two sides a gutter of breathing
-   room; under the pointer, a 1 px accent line down its middle says it
-   drags, as a column's resize edge does. */
+/* An 8 px hit area that shows nothing at rest. Under the pointer, or
+   while dragged, fxstyle paints a 1 px accent line down its middle,
+   fading in, as a pane's edge does on the web. */
 QSplitter::handle:horizontal {
     width: 8px;
 }
 
 QSplitter::handle:vertical {
     height: 8px;
-}
-
-QSplitter::handle:horizontal:hover {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-        stop: 0 transparent, stop: 0.499 transparent,
-        stop: 0.5 @accent_primary, stop: 0.624 @accent_primary,
-        stop: 0.625 transparent, stop: 1 transparent);
-}
-
-QSplitter::handle:vertical:hover {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 transparent, stop: 0.499 transparent,
-        stop: 0.5 @accent_primary, stop: 0.624 @accent_primary,
-        stop: 0.625 transparent, stop: 1 transparent);
 }
 
 QSplitter {
@@ -1676,7 +1734,7 @@ QMainWindow[fxFrame="true"] > QToolBar > QToolButton:disabled
 }
 
 /* The handle is the gap: no border, margin or padding, so it is exactly as
-   wide as setHandleWidth() says. fxstyle paints its mark. */
+   wide as setHandleWidth() says. fxstyle paints its lit line. */
 QSplitter[fxFrame="true"]::handle,
 QSplitter[fxFrame="true"]::handle:hover,
 QSplitter[fxFrame="true"]::handle:horizontal,

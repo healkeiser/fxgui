@@ -132,12 +132,12 @@ unmarked keeps the surface, which is what a pane should do.
 |---------------|--------|
 | Any widget | Paints the `frame` color |
 | A disabled `QToolButton` placed directly in it | No fill and no border, so it sits on the frame |
-| A `QSplitter` | Its handles are gaps in the `frame` color with a short centred mark of five dots in the `splitter_mark` color; the handle keeps exactly the width `setHandleWidth()` gives it |
+| A `QSplitter` | Its handles are blank gaps in the `frame` color; under the pointer or while dragged, a 1 px `accent_primary` line lights down the middle. The handle keeps exactly the width `setHandleWidth()` gives it |
 
 Call `fxstyle.mark_as_frame(widget, False)` to remove the mark. A plain label has no fill anywhere, so it shows whatever is behind it: the frame in a marked band, the pane's colour in a pane.
 
 !!! note
-    The mark is painted, not loaded from an image: it follows theme switches, stays the same size on screen at 100 %, 150 % and 200 % scaling (each dot is two logical pixels, rounded to whole screen pixels), and reaches handles the splitter creates after it was marked. Set the handle width before or after marking; either order works.
+    The line is painted, not loaded from an image: it follows theme switches, stays whole on screen at 100 %, 150 % and 200 % scaling (one logical pixel, rounded to whole screen pixels), and reaches handles the splitter creates after it was marked. Set the handle width before or after marking; either order works. A handle narrower than 8 px is a narrower hit area: keep 8 px or more.
 
 For the 1 px edge of a pane sitting on the frame, use the `@pane_border` token (or `fxstyle.colors().pane_border`) rather than `@border`: in some themes `border` is nearly the frame's own color.
 

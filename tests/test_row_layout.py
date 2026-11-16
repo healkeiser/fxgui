@@ -56,10 +56,15 @@ def test_a_header_is_36_px_with_its_words_12_px_in(qtbot):
     assert _ink_left(image, rect) in (12, 13)
 
 
-def test_the_header_s_words_are_medium():
+def test_the_header_s_words_are_small_and_emphasised():
+    # On the header, not the section: a section font sends the label past
+    # FXProxyStyle, which inks a sorted one.
     sheet = (Path(fxstyle.__file__).parent / "qss" / "style.qss").read_text()
+    header = sheet.split("QHeaderView {", 1)[1].split("}", 1)[0]
+    assert "font-weight: @emphasis_weight" in header
+    assert "font-size: @font_size_small" in header
     section = sheet.split("QHeaderView::section  {", 1)[1].split("}", 1)[0]
-    assert "font-weight: @emphasis_weight" in section
+    assert "font-" not in section
 
 
 @pytest.mark.parametrize("selected", [False, True])

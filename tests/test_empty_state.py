@@ -44,7 +44,8 @@ def test_the_prompt_shows_icon_medium_action_and_muted_detail(qtbot, host_root):
     assert not empty.icon.icon().isNull()
     assert empty.action.text() == "Pick a task"
     assert empty.action.font().weight() == QFont.Weight(fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT))
-    assert _ink_of(empty.action) == _token("text")
+    # The title in the strong ink, as the web look's empty state.
+    assert _ink_of(empty.action) == _token("text_strong")
     assert empty.detail.isVisible()
     assert _ink_of(empty.detail) == _token("text_muted")
     assert empty.prompt() == ("Pick a task", "Its files show here")

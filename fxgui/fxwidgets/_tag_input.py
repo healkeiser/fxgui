@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 
 # Third-party
 from qtpy.QtCore import Qt, Signal
+from qtpy.QtGui import QColor, QPainter
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -27,6 +28,23 @@ _CHIP_HEIGHT = 28
 _REMOVE_SIZE = 16
 
 
+class _Dot(QWidget):
+    """An 8 px dot in a token's colour, read when it paints."""
+
+    def __init__(self, color: str, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self._color = color
+        self.setFixedSize(8, 8)
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(Qt.NoPen)
+        value = getattr(fxstyle.colors(), self._color, None) or self._color
+        painter.setBrush(QColor(value))
+        painter.drawEllipse(self.rect())
+
+
 class FXTagChip(QFrame):
     """A single removable tag chip.
 
@@ -34,6 +52,9 @@ class FXTagChip(QFrame):
         text: The tag text.
         parent: Parent widget.
         removable: Whether the chip can be removed.
+        color: An 8 px dot before the text: a theme token name (such as
+            "feedback_success_foreground") or any colour QColor reads.
+            None (the default) draws no dot.
 
     Signals:
         removed: Emitted when the remove button is clicked.
@@ -46,6 +67,7 @@ class FXTagChip(QFrame):
         text: str,
         parent: Optional[QWidget] = None,
         removable: bool = True,
+        color: Optional[str] = None,
     ):
         super().__init__(parent)
         self._text = text
@@ -61,6 +83,10 @@ class FXTagChip(QFrame):
         layout.setContentsMargins(9, 0, end, 0)
         layout.setSpacing(6)
 
+        self.dot = None
+        if color:
+            self.dot = _Dot(color, self)
+            layout.addWidget(self.dot)
         self.label = QLabel(text)
         self.label.setTextFormat(Qt.PlainText)
         layout.addWidget(self.label)
@@ -74,8 +100,7 @@ class FXTagChip(QFrame):
             self.remove_button.clicked.connect(self._on_remove)
             layout.addWidget(self.remove_button)
             apply_tip(self.remove_button, "Remove", text)
-            fxicons.set_icon(
-                self.remove_button, "x", color="icon_on_accent_primary")
+            fxicons.set_icon(self.remove_button, "x", color="text_muted")
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
@@ -246,16 +271,16 @@ class FXTagInput(QWidget):
 
 
 fxstyle.register_widget_style("""
-/* A primary button's fill, so its text reads at 4.5:1, and a button's
-   edge, so it still reads on an accent row. */
+/* A neutral hairline chip on the page's fill, as the web look's: colour
+   shows only as its dot. */
 FXTagChip {
-    background-color: @primary_button;
-    border: 1px solid @border_light;
+    background-color: @surface;
+    border: 1px solid @border;
     border-radius: @button_radius;
     padding: 0px;
 }
 FXTagChip QLabel {
-    color: @text_on_accent_primary;
+    color: @text;
     background: transparent;
     font-size: @font_size_small;
 }
@@ -265,6 +290,6 @@ FXTagChip QPushButton {
     border-radius: @small_radius;
 }
 FXTagChip QPushButton:hover {
-    background: @primary_button_hover;
+    background: @state_hover;
 }
 """)

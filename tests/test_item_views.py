@@ -197,7 +197,9 @@ def _framed_the_old_way(delegate, path, ratio):
         source,
     )
     painter.setClipping(False)
-    painter.setPen(QPen(QColor(theme.border_light), 1))
+    outline = QColor(theme.text)
+    outline.setAlphaF(0.1)
+    painter.setPen(QPen(outline, 1))
     painter.setBrush(Qt.NoBrush)
     painter.drawRoundedRect(frame, radius, radius)
     painter.end()
@@ -397,7 +399,7 @@ def test_the_remembered_stamps_are_bounded(qtbot, monkeypatch, tmp_path):
     assert len(_delegates._thumbnail_reads()._stamps) <= 3
 
 
-def test_the_thumbnail_frame_is_the_border_light_token(qtbot, tmp_path):
+def test_the_thumbnail_outline_is_the_text_at_ten_percent(qtbot, tmp_path):
     fxstyle.apply_theme("light")
     image = tmp_path / "b.png"
     source = QImage(68, 38, QImage.Format_RGB32)
@@ -406,7 +408,13 @@ def test_the_thumbnail_frame_is_the_border_light_token(qtbot, tmp_path):
     framed = FXThumbnailDelegate()._bordered_thumbnail(str(image), 2.0)
     assert framed.devicePixelRatio() == 2.0
     middle = framed.toImage().pixelColor(framed.width() // 2, 0)
-    assert middle.name() == QColor(fxstyle.colors().border_light).name()
+    # The web look's faint ring: the text at 10 %.
+    assert abs(middle.alphaF() - 0.1) < 0.02
+    text = QColor(fxstyle.colors().text)
+    # Premultiplied at 10 %, each channel rounds by a few steps.
+    assert all(
+        abs(a - b) <= 8
+        for a, b in zip(middle.getRgb()[:3], text.getRgb()[:3])), middle.name()
 
 
 def test_the_floor_follows_a_new_model(qtbot):

@@ -28,7 +28,7 @@ def test_rating_click_sets_the_star_under_the_pointer(qtbot, qapp):
     assert rating.rating() == 3
 
 
-def test_an_off_toggle_thumb_takes_the_theme_s_muted_ink(qtbot, qapp):
+def test_an_off_toggle_thumb_takes_the_page_colour(qtbot, qapp):
     fxstyle.apply_theme("dark")
     switch = FXToggleSwitch()
     qtbot.addWidget(switch)
@@ -39,7 +39,7 @@ def test_an_off_toggle_thumb_takes_the_theme_s_muted_ink(qtbot, qapp):
     box = switch.track_rect()
     centre = QPoint(box.left() + box.height() // 2, box.center().y())
     assert image.pixelColor(centre).name() == QColor(
-        fxstyle.colors().text_muted
+        fxstyle.colors().surface
     ).name()
 
 

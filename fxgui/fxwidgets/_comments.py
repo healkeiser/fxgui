@@ -43,6 +43,12 @@ def _fold(text: str) -> str:
     )
 
 
+# A composer reads a step larger than the body, as the web look's text box.
+fxstyle.register_widget_style(
+    "FXMentionEdit { font-size: %dpx; }" % (fxstyle.FONT_SIZE + 1)
+)
+
+
 class FXMentionEdit(QPlainTextEdit):
     """A text box that offers people by name after an `@`.
 

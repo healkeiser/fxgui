@@ -22,21 +22,27 @@ from fxgui import fxstyle
 _TRACK_WIDTH = 36
 _TRACK_HEIGHT = 20
 _INSET = 2
+# The knob's shadow: black at a fifth.
+_SHADOW = QColor(0, 0, 0, 51)
 
 
 class FXToggleSwitch(QAbstractButton):
     """An on/off switch that slides, as tall as a push button.
 
-    Its edge and thumb read at `fxstyle.CONTROL_CONTRAST` on every theme;
-    hover, focus and disabled wear the push button's tokens.
+    The web look's switch: a 36 x 20 pill filled with the dimmed text grey
+    when off, the accent when on, and a 16 px knob in the page colour with
+    a soft shadow, sliding over `fxstyle.MOTION_BASE` on `fxstyle.ease_out`.
+    The off track and the knob read at `fxstyle.CONTROL_CONTRAST` on every
+    theme; keyboard focus rings the track, and disabled wears the push
+    button's tokens.
 
     Args:
         parent: Parent widget.
         on_color: A theme token or a colour, when on. Defaults to the accent.
-        off_color: A token or a colour, when off. Defaults to the sunken
-            surface.
-        thumb_color: A token or a colour for the thumb. Defaults to the muted
-            text off and the on-accent text on.
+        off_color: A token or a colour, when off. Defaults to
+            `text_dimmed`.
+        thumb_color: A token or a colour for the thumb. Defaults to the
+            page colour (`surface`), stepped until it reads on the track.
 
     Signals:
         toggled: Emitted when the switch state changes.
@@ -128,7 +134,11 @@ class FXToggleSwitch(QAbstractButton):
         self.update()
 
     def _inks(self):
-        """Return the track fill, edge and thumb inks for the current state."""
+        """Return the track fill, edge and thumb inks for the current state.
+
+        The edge is None but on a disabled or keyboard-focused switch: at
+        rest the track has no line of its own.
+        """
         theme = fxstyle.colors()
 
         def reads(ink, on=theme.surface):
@@ -145,20 +155,16 @@ class FXToggleSwitch(QAbstractButton):
         on = custom(self._custom_on_color) or reads(
             theme.primary_button_hover if hovered else theme.accent_primary
         )
+        # Hover steps the grey up to the toned text: the muted one is the
+        # dimmed one in half the themes. Both hold 4.5:1 on the surface.
         off = custom(self._custom_off_color) or (
-            theme.state_hover if hovered else theme.surface_sunken
+            theme.text_toned if hovered else theme.text_dimmed
         )
-        position = self._position
-        fill = fxstyle.mix(off, on, position)
+        fill = fxstyle.mix(off, on, self._position)
+        edge = None
         if fxstyle.focus_visible(self):
             edge = theme.text if self.isChecked() else reads(theme.accent_primary)
-        else:
-            edge = fxstyle.mix(theme.control_edge, on, position)
-        thumb = custom(self._custom_thumb_color) or fxstyle.mix(
-            reads(theme.text_muted, off),
-            reads(theme.text_on_accent_primary, on),
-            position,
-        )
+        thumb = custom(self._custom_thumb_color) or reads(theme.surface, fill)
         return fill, edge, thumb
 
     def track_rect(self) -> QRect:
@@ -173,24 +179,35 @@ class FXToggleSwitch(QAbstractButton):
         )
 
     def paintEvent(self, event) -> None:
-        """Paint the track, its edge and the thumb."""
+        """Paint the track, its focus or disabled edge, and the thumb."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        fill, edge, thumb = (QColor(ink) for ink in self._inks())
+        fill, edge, thumb = self._inks()
 
         box = self.track_rect()
-        # Half a pixel in, so the whole 1 px edge is drawn; a pill.
-        track = QRectF(box).adjusted(0.5, 0.5, -0.5, -0.5)
+        if edge is None:
+            # The web switch's 2 px border is transparent: the fill runs
+            # to the pill's edge.
+            track = QRectF(box)
+            painter.setPen(Qt.NoPen)
+        else:
+            # Half a pixel in, so the whole 1 px edge is drawn.
+            track = QRectF(box).adjusted(0.5, 0.5, -0.5, -0.5)
+            painter.setPen(QColor(edge))
         radius = track.height() / 2
-        painter.setPen(edge)
-        painter.setBrush(fill)
+        painter.setBrush(QColor(fill))
         painter.drawRoundedRect(track, radius, radius)
 
         size = box.height() - _INSET * 2
         x = box.left() + _INSET + self._position * (
             box.width() - size - _INSET * 2
         )
+        knob = QRectF(x, box.top() + _INSET, size, size)
         painter.setPen(Qt.NoPen)
-        painter.setBrush(thumb)
-        painter.drawEllipse(QRectF(x, box.top() + _INSET, size, size))
+        if self.isEnabled():
+            # A small shadow under the knob, a pixel down.
+            painter.setBrush(_SHADOW)
+            painter.drawEllipse(knob.translated(0, 1).adjusted(-0.5, 0, 0.5, 0.5))
+        painter.setBrush(QColor(thumb))
+        painter.drawEllipse(knob)
         painter.end()

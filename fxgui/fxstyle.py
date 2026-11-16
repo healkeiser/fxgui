@@ -71,14 +71,17 @@ from qtpy.QtWidgets import (
     QAbstractButton,
     QAbstractItemView,
     QAbstractScrollArea,
+    QAbstractSpinBox,
     QApplication,
     QComboBox,
     QDialogButtonBox,
     QFrame,
     QGraphicsView,
     QHeaderView,
+    QLineEdit,
     QListView,
     QMenu,
+    QPlainTextEdit,
     QProxyStyle,
     QPushButton,
     QSplitter,
@@ -91,6 +94,8 @@ from qtpy.QtWidgets import (
     QTabBar,
     QTableView,
     QTabWidget,
+    QTextEdit,
+    QToolButton,
     QTreeView,
     QWidget,
 )
@@ -155,6 +160,13 @@ __all__ = [
     "SMALL_RADIUS",
     "FONT_SIZE",
     "BODY_WEIGHT",
+    "CARD_STEP",
+    "COMPACT_HEIGHT",
+    "COMPACT_PROPERTY",
+    "DENSE_PROPERTY",
+    "READING_INSET",
+    "FLUSH_PROPERTY",
+    "FILTER_DROP",
     "EMPHASIS_WEIGHT",
     "STRONG_WEIGHT",
     "drawn_weight",
@@ -181,8 +193,16 @@ __all__ = [
     "register_fonts",
     "mark_as_title",
     "mark_as_frame",
+    "mark_compact",
+    "mark_dense",
+    "mark_flush",
+    "column_lines",
+    "apply_column_lines",
+    "draw_column_rule",
     "mark_as_thin_scroll",
     "mark_as_nav",
+    "mark_as_segmented",
+    "set_tab_count",
     "ink",
     # Theme functions
     "get_available_themes",
@@ -238,6 +258,7 @@ DEFAULT_COLOR_FILE = fxconstants.PACKAGE_ROOT / "style.yaml"
 # Theme persistence keys
 _SETTINGS_THEME_KEY = "theme/current"
 _SETTINGS_ROW_SIZE_KEY = "rows/size"
+_SETTINGS_COLUMN_LINES_KEY = "rows/column_lines"
 _DEFAULT_THEME = "dark"
 
 # Dynamic property routing a widget to the title font role. Set it
@@ -265,6 +286,8 @@ INKS = (
     "text",
     "text_muted",
     "text_strong",
+    "text_toned",
+    "text_dimmed",
     "text_disabled",
     "accent_primary",
     *(
@@ -348,7 +371,8 @@ WELL_MIN_CONTRAST = 1.04
 # around it; `light`'s own border, #e0e0e0 on #e4e4e4, is 1.04 and vanishes.
 PANE_BORDER_MIN_CONTRAST = 1.3
 
-# Least contrast between the splitter mark's dots and the frame.
+# Least contrast between `splitter_mark` and the frame. fxgui no longer
+# draws that token (a handle is blank until lit); themes and callers keep it.
 SPLITTER_MARK_MIN_CONTRAST = 1.3
 
 # Least contrast between a hovered fill and what it sits on (a pane, a view,
@@ -411,6 +435,29 @@ STRONG_WEIGHT = 600
 # A dialog's layout: title, body and buttons start `DIALOG_GUTTER` in from
 # the sides, the card's top and bottom stand `DIALOG_EDGE` off, and
 # `DIALOG_GAP` parts title, body and buttons.
+# How far a dark theme's card steps from its pane toward its text, in
+# OKLab: the web look's #16171A on #101113.
+CARD_STEP = 0.035
+
+# A reading pane's inset (a task's details, a comment thread): its content
+# stands this far from the pane's edges, and its blocks this far apart, as
+# the web look's. Tool panes keep `PANE_GAP`.
+READING_INSET = 24
+
+# Set on a view that fills its pane and draws no frame (mark_flush).
+FLUSH_PROPERTY = "fxFlush"
+
+# Set on a view whose rows are a size denser (mark_dense).
+DENSE_PROPERTY = "fxDense"
+
+# A compact button's height (mark_compact), and the property it sets.
+COMPACT_HEIGHT = 24
+COMPACT_PROPERTY = "fxCompact"
+
+# How much shorter a filter field (FXSearchBar) is than a control: 28 px
+# beside a 32 px button.
+FILTER_DROP = 4
+
 DIALOG_GUTTER = 20
 DIALOG_EDGE = 16
 DIALOG_GAP = 12
@@ -1070,13 +1117,33 @@ def mark_as_title(
     fxutils.repolish(widget)
 
 
+def mark_compact(widget: QWidget, compact: bool = True) -> None:
+    """Make a push or tool button the compact size: `COMPACT_HEIGHT` tall.
+
+    For a button in a row or a panel, as the web look's extra-small one:
+    24 px, small text, a 16 px icon. A round `FXIconButton` takes its own
+    ``size`` argument instead.
+
+    Args:
+        widget: The button.
+        compact: False gives it the control height back. Defaults to True.
+
+    Examples:
+        >>> fxstyle.mark_compact(reply_button)
+    """
+    widget.setProperty(COMPACT_PROPERTY, bool(compact))
+    fxutils.repolish(widget)
+    widget.updateGeometry()
+
+
 def mark_as_frame(widget: QWidget, is_frame: bool = True) -> None:
     """Paint a widget in the theme's ``frame`` color, as window chrome.
 
     Labels, check boxes, radio buttons and disabled tool buttons placed
     directly in it lose their own fill, so they sit on the frame. A
-    `QSplitter` so marked draws its handles as frame-colored gaps with a
-    short centred mark; its width stays whatever `setHandleWidth` says.
+    `QSplitter` so marked draws its handles as frame-colored gaps, blank
+    until the pointer finds one: then a 1 px accent line lights down its
+    middle. Its width stays whatever `setHandleWidth` says.
 
     Args:
         widget: The band, bar or splitter that is part of the frame.
@@ -1137,6 +1204,60 @@ def mark_as_nav(view: QAbstractItemView, is_nav: bool = True) -> None:
     end = _NAV_END_GAP if is_nav else 0
     view.setViewportMargins(0, end, 0, end)
     fxutils.repolish(view)
+
+
+def mark_as_segmented(
+    tabs: Union[QTabBar, QTabWidget], is_segmented: bool = True
+) -> None:
+    """Draw a tab bar as a segmented switch, as for Table | Gantt views.
+
+    The tabs sit side by side on a ``state_pressed`` track; the picked one
+    is a raised chip in the page colour with a 1 px ``border`` ring, its
+    text in ``text_strong``. The chip slides to a newly picked tab on the
+    spring over `MOTION_SPRING`, or jumps under reduced motion. Keyboard
+    and signals are the tab bar's own.
+
+    Args:
+        tabs: The `QTabBar`, or the `QTabWidget` whose bar to mark.
+        is_segmented: False gives the bar the plain tab look back.
+            Defaults to True.
+
+    Examples:
+        >>> views = QTabBar()
+        >>> views.addTab("Table")
+        >>> views.addTab("Gantt")
+        >>> fxstyle.mark_as_segmented(views)
+    """
+    from fxgui import _tabs
+
+    _tabs.mark_as_segmented(tabs, is_segmented)
+
+
+def set_tab_count(
+    tabs: Union[QTabBar, QTabWidget], index: int, count: Optional[int]
+) -> None:
+    """Show a count after a tab's label, as a small ringed badge.
+
+    Works on a plain or a segmented bar. A screen reader reads the tab as
+    "Label, N". On a closable bar whose close buttons stand on the right,
+    the count stands before the label. Call it again after renaming the
+    tab, so the name read follows.
+
+    Args:
+        tabs: The `QTabBar`, or the `QTabWidget` whose bar to count on.
+        index: The tab's index.
+        count: The number to show; None removes the badge.
+
+    Raises:
+        IndexError: If the bar has no tab `index`.
+
+    Examples:
+        >>> fxstyle.set_tab_count(views, 0, 26)
+        >>> fxstyle.set_tab_count(views, 0, None)
+    """
+    from fxgui import _tabs
+
+    _tabs.set_tab_count(tabs, index, count)
 
 
 def ink(widget: QWidget, token: Optional[str]) -> None:
@@ -1512,18 +1633,30 @@ def _depth_colors(theme_data: dict) -> Dict[str, str]:
     }
 
 
-# The splitter mark: this many square dots, each this many pixels a side,
-# one dot apart. Short on purpose: a full-length line reads as a border.
-_MARK_DOTS = 5
-_MARK_DOT = 2
+# A lit splitter handle's line, in px, and the dynamic properties a handle
+# keeps its light in: how lit (0 to 1) and whether a drag holds it.
+_HANDLE_LINE = 1
+_GLOW_PROPERTY = "fxSplitterGlow"
+_DRAG_PROPERTY = "fxSplitterDrag"
 
 
 class _SplitterMark(QObject):
-    """Paint a marked splitter's handles: the frame, and a short dot mark.
+    """Paint a themed splitter's handles: nothing at rest, a line when lit.
 
-    Painted rather than drawn from a stylesheet image, so it needs no file
-    and lands on whole device pixels at every screen scale.
+    The handle is the hit area, as wide as `setHandleWidth` or the sheet
+    says (8 px). A marked one fills the frame. Under the pointer, or while
+    dragged, a 1 px `accent_primary` line down its middle fades in over
+    `MOTION_FAST`, as a pane's edge does on the web. Painted in device
+    pixels, so the line is whole at every screen scale.
     """
+
+    @classmethod
+    def watch(cls, splitter: QSplitter) -> None:
+        """Give a themed `splitter` its painter, once."""
+        if _is_themed(splitter) and splitter.findChild(
+            cls, "", Qt.FindDirectChildrenOnly
+        ) is None:
+            cls(splitter)
 
     def __init__(self, splitter: QSplitter):
         super().__init__(splitter)
@@ -1540,41 +1673,82 @@ class _SplitterMark(QObject):
             handle.installEventFilter(self)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Watch handles as they appear; paint the ones of a marked splitter."""
+        """Watch handles as they appear; light and paint them."""
         if isinstance(watched, QSplitter):
             # A handle is polished before its first paint, never after.
             if event.type() == QEvent.ChildPolished:
                 self._watch()
             return False
-        splitter = self.parent()
-        if event.type() != QEvent.Paint or not splitter.property(
-            FRAME_PROPERTY
-        ):
-            return False
-        self._paint(watched, splitter.orientation() == Qt.Vertical)
-        return True
+        kind = event.type()
+        if kind == QEvent.Paint:
+            return self._paint(watched)
+        if kind == QEvent.MouseButtonPress:
+            watched.setProperty(_DRAG_PROPERTY, True)
+            self._light(watched, True)
+        elif kind == QEvent.MouseButtonRelease:
+            watched.setProperty(_DRAG_PROPERTY, False)
+            self._light(
+                watched, watched.rect().contains(event.position().toPoint()))
+        elif kind == QEvent.Enter:
+            self._light(watched, True)
+        elif kind == QEvent.Leave and not watched.property(_DRAG_PROPERTY):
+            self._light(watched, False)
+        return False
 
-    def _paint(self, handle: QWidget, across: bool) -> None:
+    @staticmethod
+    def _light(handle: QWidget, lit: bool) -> None:
+        """Fade `handle`'s line in or out; at once under reduced motion."""
+        fade = handle.findChild(
+            QVariantAnimation, _GLOW_PROPERTY, Qt.FindDirectChildrenOnly)
+        if fade is not None:
+            fade.stop()
+        level = float(handle.property(_GLOW_PROPERTY) or 0.0)
+        target = 1.0 if lit else 0.0
+        if not motion() or level == target:
+            handle.setProperty(_GLOW_PROPERTY, target)
+            handle.update()
+            return
+        if fade is None:
+            fade = QVariantAnimation(handle)
+            fade.setObjectName(_GLOW_PROPERTY)
+            fade.setDuration(MOTION_FAST)
+            fade.setEasingCurve(ease_out())
+
+            def step(value, handle=handle):
+                handle.setProperty(_GLOW_PROPERTY, value)
+                handle.update()
+
+            fade.valueChanged.connect(step)
+        fade.setStartValue(level)
+        fade.setEndValue(target)
+        fade.start()
+
+    def _paint(self, handle: QWidget) -> bool:
+        splitter = self.parent()
+        framed = bool(splitter.property(FRAME_PROPERTY))
+        level = float(handle.property(_GLOW_PROPERTY) or 0.0)
+        if not framed and not level:
+            return False
         theme = colors()
         painter = QPainter(handle)
-        painter.fillRect(handle.rect(), QColor(theme.frame))
-        # Device pixels from here on, so every dot is whole at any scale.
-        ratio = painter.device().devicePixelRatioF()
-        painter.setWorldTransform(QTransform.fromScale(1 / ratio, 1 / ratio))
-        width = round(handle.width() * ratio)
-        height = round(handle.height() * ratio)
-        length, thickness = (width, height) if across else (height, width)
-        dot = max(1, round(_MARK_DOT * ratio))
-        start = (length - (_MARK_DOTS * 2 - 1) * dot) // 2
-        cross = (thickness - dot) // 2
-        ink = QColor(theme.splitter_mark)
-        for index in range(_MARK_DOTS):
-            along = start + index * dot * 2
-            if across:
-                painter.fillRect(along, cross, dot, dot, ink)
+        if framed:
+            painter.fillRect(handle.rect(), QColor(theme.frame))
+        if level:
+            # Device pixels from here on, so the line is whole at any scale.
+            ratio = painter.device().devicePixelRatioF()
+            painter.setWorldTransform(
+                QTransform.fromScale(1 / ratio, 1 / ratio))
+            width = round(handle.width() * ratio)
+            height = round(handle.height() * ratio)
+            line = max(1, round(_HANDLE_LINE * ratio))
+            ink = QColor(theme.accent_primary)
+            ink.setAlphaF(ink.alphaF() * min(1.0, level))
+            if splitter.orientation() == Qt.Vertical:
+                painter.fillRect(0, (height - line) // 2, width, line, ink)
             else:
-                painter.fillRect(cross, along, dot, dot, ink)
+                painter.fillRect((width - line) // 2, 0, line, height, ink)
         painter.end()
+        return True
 
 
 def _readable_states(theme_data: dict) -> Dict[str, str]:
@@ -1639,11 +1813,16 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
     checked_hover = step_toward(
         pressed, pole,
         lambda color: color != pressed and stands_off(pressed)(color))
+    # A raised card: a step off a dark pane toward its text; on a light
+    # pane, the pane itself (white is as raised as it gets).
+    card = theme_data.get("card") or (
+        surface if _is_light(surface)
+        else mix_oklab(surface, theme_data["text"], CARD_STEP))
     grounds = [
         theme_data.get(key, surface)
         for key in ("surface", "surface_sunken", "surface_alt", "well",
                     "frame", "tooltip")
-    ] + [hover]
+    ] + [hover, card]
 
     def reading(ink: str, on: list) -> str:
         return step_toward(QColor(ink).name(), pole, lambda color: all(
@@ -1660,7 +1839,14 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
         if all(get_contrast_ratio(quieter, ground) >= TEXT_CONTRAST
                for ground in grounds):
             muted = quieter
+    # Dimmed reads at 4.5:1 too, so where muted already sits at that floor it
+    # comes to muted, never past it.
+    dimmed = reading(
+        theme_data.get("text_dimmed") or mix_oklab(text, muted, 1.5), grounds)
+    if get_contrast_ratio(dimmed, surface) > get_contrast_ratio(muted, surface):
+        dimmed = muted
     return {
+        "card": card,
         "state_hover": hover,
         "state_pressed": pressed,
         "state_checked_hover": checked_hover,
@@ -1669,6 +1855,13 @@ def _readable_states(theme_data: dict) -> Dict[str, str]:
         # What a row's name is drawn in: past text, toward black or white.
         "text_strong": theme_data.get("text_strong")
         or mix_oklab(text, pole, STRONG_STEP),
+        # Halfway from text to muted: a task's name, a pane's values.
+        "text_toned": reading(
+            theme_data.get("text_toned") or mix_oklab(text, muted, 0.5),
+            grounds),
+        # Half that step again past muted, still read at 4.5:1: chevrons,
+        # separators, dates, an empty cell's dash.
+        "text_dimmed": dimmed,
     }
 
 
@@ -1702,6 +1895,8 @@ def _line_tokens(theme_name: str) -> Dict[str, str]:
     room = height - 2 - text_line
     return {
         "@field_inner": f"{height - _FIELD_BOX}px",
+        # A filter field: 4 px under a control, as the web look's.
+        "@filter_inner": f"{height - FILTER_DROP - _FIELD_BOX}px",
         "@spin_padding": f"{top}px 10px {bottom}px 10px",
         "@button_padding": f"{(room + 1) // 2}px 10px {room // 2}px 10px",
         # An on/off mark's label line, the mark centred in it.
@@ -1833,6 +2028,19 @@ def _token_map(theme_name: str) -> Dict[str, str]:
     ) = _primary_button_fills(
         accent_primary, accent_secondary, text_on_primary, text_on_secondary
     )
+    # A destructive verb's button: the error colour, filled as a primary
+    # button is, with the pole that reads on it.
+    danger = tokens.get("@feedback_error_foreground", "#e5484d")
+    tokens["@text_on_danger"] = _pole_from(danger)
+    (
+        tokens["@danger_button"],
+        tokens["@danger_button_hover"],
+        tokens["@danger_button_pressed"],
+    ) = _primary_button_fills(
+        danger, danger, tokens["@text_on_danger"], tokens["@text_on_danger"])
+    # The veil a modal dialog drops over its window (ls-ui's gallery).
+    tokens["@modal_scrim"] = theme_data.get("modal_scrim") or (
+        "#bff3f3f5" if _is_light(theme_data["surface"]) else "#99000000")
 
     # Font roles flatten to @font_<role>, resolved against the families
     # Qt actually has so the sheet never names one it cannot honour.
@@ -1846,14 +2054,26 @@ def _token_map(theme_name: str) -> Dict[str, str]:
         theme_data.get("border_strong", "#808080"),
         CONTROL_CONTRAST,
     )
+    # A meter's empty track: the text at 8 % over the pane (9 % on a light
+    # one), as the web look's; the filled span carries the value.
+    # Held back toward the pane where the fill would read under 3:1 on it.
+    tokens["@meter_track"] = step_toward(
+        mix(theme_data["surface"], theme_data["text"],
+            0.09 if _is_light(theme_data["surface"]) else 0.08),
+        theme_data["surface"],
+        _reads(accent_primary, CONTROL_CONTRAST))
+    tokens["@compact_inner"] = f"{COMPACT_HEIGHT - 2}px"
     tokens["@button_radius"] = f"{BUTTON_RADIUS}px"
     tokens["@card_radius"] = f"{CARD_RADIUS}px"
     tokens["@small_radius"] = f"{SMALL_RADIUS}px"
     tokens["@row_height"] = f"{row_height()}px"
+    names = list(ROW_SIZES)
+    tokens["@dense_row_height"] = (
+        f"{ROW_SIZES[names[max(names.index(row_size()) - 1, 0)]]}px")
     # A navigation list's current row: the accent, stepped until it reads
-    # on the neutral chip behind it.
+    # on the pressed chip behind it.
     tokens["@nav_ink"] = readable_ink(
-        theme_data.get("state_hover", theme_data["surface"]),
+        theme_data.get("state_pressed", theme_data["surface"]),
         theme_data["accent_primary"],
     )
     tokens["@indicator_size"] = f"{INDICATOR_SIZE}px"
@@ -2116,9 +2336,141 @@ def _forget_saved_settings() -> None:
         _colors_changed()
 
 
-def row_height() -> int:
-    """Return the height, in pixels, of a list or tree row."""
-    return ROW_SIZES[row_size()]
+def row_height(view: Optional[QWidget] = None) -> int:
+    """Return the height, in pixels, of a list or tree row.
+
+    Args:
+        view: The view the row is in. A view marked dense (`mark_dense`)
+            takes one row size under the one in force.
+    """
+    names = list(ROW_SIZES)
+    size = row_size()
+    if view is not None and view.property(DENSE_PROPERTY):
+        size = names[max(names.index(size) - 1, 0)]
+    return ROW_SIZES[size]
+
+
+def column_lines() -> bool:
+    """Return whether tables and trees rule every column, the saved choice.
+
+    Off unless chosen (`apply_column_lines`): the first column is ruled
+    either way, as the web look's pinned name column.
+    """
+    if _column_lines_now is not None:
+        return _column_lines_now
+    return _truthy(fxconfig.get_value(_SETTINGS_COLUMN_LINES_KEY, False))
+
+
+def apply_column_lines(on: bool, *, save: Optional[bool] = None) -> bool:
+    """Rule every column of tables and trees, or only the first; re-paint.
+
+    Args:
+        on: True rules every column; False only the first.
+        save: Whether to save it as the person's choice. None (the default)
+            saves unless Qt runs headless, as `apply_row_size`.
+
+    Examples:
+        >>> fxstyle.apply_column_lines(True)
+    """
+    global _column_lines_now
+    _column_lines_now = bool(on)
+    if save is None:
+        save = _interactive()
+    if save:
+        fxconfig.set_value(_SETTINGS_COLUMN_LINES_KEY, bool(on))
+    _colors_changed()
+    return bool(on)
+
+
+def _truthy(value) -> bool:
+    """Return a saved setting read back as a bool (an INI keeps strings)."""
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    return bool(value)
+
+
+# The column lines chosen in this session, before or without a save.
+_column_lines_now: Optional[bool] = None
+
+
+def _column_ruled(view: Optional[QWidget], column: int) -> bool:
+    """Whether a cell of `column` in `view` draws a rule at its right edge.
+
+    The first visible column always does, past one column; every other
+    but the last only with `column_lines` on.
+    """
+    if isinstance(view, QTreeView):
+        header = view.header()
+    elif isinstance(view, QTableView):
+        header = view.horizontalHeader()
+    else:
+        return False
+    shown = [
+        header.logicalIndex(visual) for visual in range(header.count())
+        if not header.isSectionHidden(header.logicalIndex(visual))
+    ]
+    if len(shown) < 2 or column not in shown[:-1]:
+        return False
+    return column == shown[0] or column_lines()
+
+
+def draw_column_rule(
+    painter: QPainter, rect: QRect, view: Optional[QWidget], column: int
+) -> None:
+    """Draw a cell's column rule at its right edge, if it has one.
+
+    For an item delegate that paints its own cells; fxgui's own views and
+    `FXThumbnailDelegate` draw it already.
+
+    Args:
+        painter: The painter on the view's viewport.
+        rect: The cell's rect.
+        view: The view the cell is in.
+        column: The cell's logical column.
+    """
+    if not _column_ruled(view, column):
+        return
+    ink = QColor(colors().border)
+    ink.setAlphaF(_TABLE_RULE_ALPHA)
+    painter.fillRect(QRect(rect.right(), rect.top(), 1, rect.height()), ink)
+
+
+def mark_flush(view: QWidget, flush: bool = True) -> None:
+    """Draw a view that fills its pane with no frame of its own.
+
+    The pane's edge is its frame, as the web look's tables and trees sit
+    flush in their card; a small table inside a section keeps its frame.
+    `FXDockArea` marks a pane whose body is a view itself.
+
+    Args:
+        view: A list, tree, table or other scroll area.
+        flush: False gives it its frame back.
+
+    Examples:
+        >>> fxstyle.mark_flush(browse_tree)
+    """
+    view.setProperty(FLUSH_PROPERTY, bool(flush))
+    fxutils.repolish(view)
+
+
+def mark_dense(view: QWidget, dense: bool = True) -> None:
+    """Make a view's rows one row size under the one in force.
+
+    For a navigation tree, as the web look's Hierarchy: small rows while
+    the person's row height is normal, normal ones when it is big, small
+    still when it is small. Lists keep the row height in force.
+
+    Args:
+        view: A tree or list view.
+        dense: False gives it the row height in force back.
+
+    Examples:
+        >>> fxstyle.mark_dense(browse_tree)
+    """
+    view.setProperty(DENSE_PROPERTY, bool(dense))
+    fxutils.repolish(view)
+    if isinstance(view, QAbstractItemView):
+        view.scheduleDelayedItemsLayout()
 
 
 def apply_row_size(size: str, *, save: Optional[bool] = None) -> str:
@@ -2252,8 +2604,8 @@ def set_style(widget: QWidget, style: str = None) -> "FXProxyStyle":
 
 @lru_cache(maxsize=2)
 def _sort_arrow(name: str) -> QIcon:
-    """Return a header's sort arrow; its token is read at each draw."""
-    return fxicons.get_icon(name, color="icon")
+    """Return a header's sort arrow, in the sorted label's strong ink."""
+    return fxicons.get_icon(name, color="text_strong")
 
 
 @lru_cache(maxsize=1)
@@ -2465,6 +2817,9 @@ class FXProxyStyle(QProxyStyle):
             return
         super().drawPrimitive(element, option, painter, widget)
         if element == QStyle.PE_PanelItemViewItem and _ruled(widget):
+            index = getattr(option, "index", None)
+            if index is not None and index.isValid():
+                draw_column_rule(painter, option.rect, widget, index.column())
             rule = QColor(colors().border)
             rule.setAlphaF(_TABLE_RULE_ALPHA)
             painter.save()
@@ -2474,6 +2829,23 @@ class FXProxyStyle(QProxyStyle):
                 option.rect.left(), bottom, option.rect.right(), bottom
             )
             painter.restore()
+
+    def drawControl(self, element, option, painter, widget=None):
+        """Draw `element`; a sorted header section's label in the strong ink.
+
+        No sheet pseudo-state tells a sorted section, so its label is
+        recoloured here, under the sheet's own colour for the section.
+        """
+        if (
+            element == QStyle.CE_HeaderLabel
+            and isinstance(option, QStyleOptionHeader)
+            and option.sortIndicator != QStyleOptionHeader.SortIndicator.None_
+            and _is_themed(widget)
+        ):
+            option = QStyleOptionHeader(option)
+            option.palette.setColor(
+                QPalette.ColorRole.ButtonText, QColor(colors().text_strong))
+        super().drawControl(element, option, painter, widget)
 
     # Set while the sheet is asked for a cell's rects, which it may ask back.
     _asking_sheet = False
@@ -3335,6 +3707,8 @@ class _FocusVisibility(QObject):
                     _ResizeMark.watch(watched)
             elif isinstance(watched, QTabBar):
                 _fit_close_buttons(watched)
+            elif isinstance(watched, QSplitter):
+                _SplitterMark.watch(watched)
             elif isinstance(watched, QDialogButtonBox):
                 _rank_dialog_buttons(watched)
             elif isinstance(watched, QGraphicsView):
@@ -3388,15 +3762,134 @@ class _FocusVisibility(QObject):
 
     @staticmethod
     def _mark(widget: QWidget, visible: bool) -> None:
+        # A focus event can reach a widget whose window is being deleted.
+        if not _compat.is_valid(widget):
+            return
         if bool(widget.property(FOCUS_VISIBLE_PROPERTY)) == visible:
             return
         widget.setProperty(FOCUS_VISIBLE_PROPERTY, visible)
         # Only fxgui's own sheet reads it; a host's widgets keep their polish.
         if _is_themed(widget):
             fxutils.repolish(widget)
+            _FocusRing.show_on(widget, visible)
 
 
 _focus_visibility: Optional[_FocusVisibility] = None
+
+# What takes a focus ring: inputs ring in the accent, buttons in the text.
+_RING_ACCENT_KINDS = (
+    QLineEdit, QAbstractSpinBox, QComboBox, QPlainTextEdit, QTextEdit)
+_RING_KINDS = _RING_ACCENT_KINDS + (QPushButton, QToolButton)
+
+# The keyboard focus ring outside a control, as the web look's: this wide,
+# at this share of its ink, round the control's own 1 px accent edge.
+FOCUS_RING_WIDTH = 3
+FOCUS_RING_ALPHA = 0.25
+
+
+class _FocusRing(QWidget):
+    """A ring drawn outside the control that has keyboard focus.
+
+    A sibling over the control, grown by `FOCUS_RING_WIDTH` each side: a
+    sheet cannot draw outside a widget. Inputs and primary buttons ring in
+    the accent, other buttons in the text's ink, each at
+    `FOCUS_RING_ALPHA`. The parent's edge clips it, as a web page's overflow
+    does; the control's own accent edge still shows focus there.
+    """
+
+    _shown: "Optional[_FocusRing]" = None
+
+    def __init__(self, target: QWidget):
+        super().__init__(target.parentWidget())
+        self._target = target
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WA_NoSystemBackground)
+        self.setFocusPolicy(Qt.NoFocus)
+        target.installEventFilter(self)
+        # Gone with the control, never left standing over its place.
+        target.destroyed.connect(self.deleteLater)
+        self._follow()
+
+    @classmethod
+    def show_on(cls, widget: QWidget, visible: bool) -> None:
+        """Ring `widget` when its focus came by keyboard; else drop the ring."""
+        target = _ring_target(widget) if _compat.is_valid(widget) else None
+        ring = cls._shown
+        if ring is not None and _compat.is_valid(ring):
+            if visible and ring._target is target:
+                return
+            if not visible and ring._target is not target:
+                return
+            ring.deleteLater()
+            ring.hide()
+        cls._shown = None
+        if visible and target is not None:
+            cls._shown = cls(target)
+            cls._shown.show()
+
+    def _follow(self) -> None:
+        """Stand over the target, grown by the ring, above it."""
+        grow = FOCUS_RING_WIDTH
+        self.setGeometry(self._target.geometry().adjusted(-grow, -grow, grow, grow))
+        self.raise_()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        kind = event.type()
+        if kind in (QEvent.Move, QEvent.Resize):
+            self._follow()
+        elif kind == QEvent.Hide:
+            self.hide()
+        elif kind == QEvent.Show:
+            self.show()
+            self._follow()
+        return False
+
+    def paintEvent(self, event) -> None:
+        theme = colors()
+        target = self._target
+        accent = isinstance(target, _RING_ACCENT_KINDS) or (
+            target.property("fxRole") == "primary"
+            or type(target).__name__ == "FXPrimaryButton")
+        ink = QColor(theme.accent_primary if accent else theme.text)
+        ink.setAlphaF(FOCUS_RING_ALPHA)
+        height = target.height()
+        radius = (
+            height / 2 if target.property("fxSize") else
+            min(BUTTON_RADIUS, height / 2))
+        half = FOCUS_RING_WIDTH / 2
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(QPen(ink, FOCUS_RING_WIDTH))
+        painter.setBrush(Qt.NoBrush)
+        painter.drawRoundedRect(
+            QRectF(self.rect()).adjusted(half, half, -half, -half),
+            radius + half, radius + half)
+        painter.end()
+
+
+def _ring_target(widget: QWidget) -> Optional[QWidget]:
+    """Return the control a focus ring goes round, or None for no ring.
+
+    A combo box's or spin box's own line edit rings its box; a widget at a
+    window's top level, or in an item view, a menu or a popup, has none.
+    """
+    parent = widget.parentWidget()
+    if isinstance(parent, (QComboBox, QAbstractSpinBox)):
+        widget, parent = parent, parent.parentWidget()
+    if parent is None or widget.isWindow():
+        return None
+    if not isinstance(widget, _RING_KINDS):
+        return None
+    probe = parent
+    while probe is not None:
+        if isinstance(probe, (QAbstractItemView, QMenu)) or (
+            probe.isWindow() and probe.windowType() == Qt.Popup
+        ):
+            return None
+        if probe.isWindow():
+            break
+        probe = probe.parentWidget()
+    return widget
 
 
 def _drop_in(popup: QWidget) -> None:

@@ -59,7 +59,18 @@ def test_a_popup_is_a_surface_card_at_the_card_radius(popup):
     assert "border: 1px solid @border;" in body
 
 
-_OWN_SIZES = ("FXEmojiPicker", "FXTagChip QLabel", "FXEmptyState QLabel#")
+_OWN_SIZES = (
+    "FXEmojiPicker",
+    "FXTagChip QLabel",
+    "FXEmptyState QLabel#",
+    # A filter field's small text and a composer's large one.
+    "FXSearchBar",
+    "FXMentionEdit",
+    # The palette's 16 px field and 14 px rows, as the web look's.
+    "FXCommandPalette QLineEdit#",
+    "FXCommandPalette QTreeView",
+    "FXSummaryRow QLabel",
+)
 
 
 def test_no_fragment_sets_a_third_weight_or_a_point_size():
@@ -67,9 +78,10 @@ def test_no_fragment_sets_a_third_weight_or_a_point_size():
     for names, body in _rules():
         assert "font-weight: bold" not in body, names
         assert not re.search(r"font-size:\s*[0-9.]+pt", body), names
-        # An emoji is a picture, sized as one; a chip's small text and an
-        # empty state's scale are the look's own; other text takes the
-        # root font.
+        # An emoji is a picture, sized as one; a chip's and a summary
+        # row's small text, an empty state's scale and the command
+        # palette's 16 px field and 14 px rows are the look's own; other
+        # text takes the root font.
         if not all(n.startswith(_OWN_SIZES) for n in names):
             assert "font-size" not in body, names
 

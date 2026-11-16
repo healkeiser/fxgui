@@ -33,9 +33,29 @@ def _palette(qtbot, commands):
     return window, palette
 
 
-def _labels(palette):
+# A group's label row carries this role; a row to pick does not.
+_HEADER_ROLE = Qt.UserRole + 1
+
+
+def _items(palette, headers=False):
+    """The rows shown, the groups' labels left out unless `headers`."""
     rows = palette.rows
-    return [rows.topLevelItem(i).text(0) for i in range(rows.topLevelItemCount())]
+    items = [rows.topLevelItem(i) for i in range(rows.topLevelItemCount())]
+    return [
+        item for item in items
+        if headers or item.data(0, _HEADER_ROLE) is None
+    ]
+
+
+def _labels(palette):
+    return [item.text(0) for item in _items(palette)]
+
+
+def _headers(palette):
+    return [
+        item.text(0) for item in _items(palette, headers=True)
+        if item.data(0, _HEADER_ROLE) is not None
+    ]
 
 
 def _type(palette, text):
@@ -320,11 +340,11 @@ def test_open_rows_take_a_theme_switch(qtbot):
     fxstyle.apply_theme("light")
     colors = fxstyle.colors()
 
-    labels = _labels(palette)
-    assert _ink(palette, 0, 1) == colors.text_muted.lower()
-    assert _ink(palette, labels.index("Blocked"), 0) == (
-        colors.text_disabled.lower()
-    )
+    # Model rows, the groups' labels among them.
+    at = {item.text(0): palette.rows.indexOfTopLevelItem(item)
+          for item in _items(palette)}
+    assert _ink(palette, at["Collapse all"], 2) == colors.text_muted.lower()
+    assert _ink(palette, at["Blocked"], 0) == colors.text_disabled.lower()
     assert not hasattr(palette, "_items") and not hasattr(palette, "_shown")
 
 
@@ -342,8 +362,6 @@ def _text_left(palette, row):
 
 
 def test_a_command_s_icon_shows_left_of_its_label_in_the_icon_ink(qtbot):
-    from qtpy.QtWidgets import QStyle
-
     from _helpers import inks
 
     commands = [
@@ -354,15 +372,14 @@ def test_a_command_s_icon_shows_left_of_its_label_in_the_icon_ink(qtbot):
     rows = palette.rows
     # Row 1 is not current, so its icon wears the normal ink.
     band = rows.visualItemRect(rows.topLevelItem(1))
-    side = rows.style().pixelMetric(QStyle.PM_SmallIconSize)
     image = palette.grab().toImage()
     at = rows.viewport().mapTo(palette, band.topLeft())
     icon = image.copy(at.x(), at.y(), _text_left(palette, 1) - band.left(),
                       band.height())
 
-    assert rows.iconSize().width() == side == 16
+    assert rows.iconSize().width() == FXCommandPalette.ICON_SIZE == 20
     assert fxstyle.colors().icon.lower() in inks(icon)
-    assert _text_left(palette, 0) == _text_left(palette, 1) > band.left() + 16
+    assert _text_left(palette, 0) == _text_left(palette, 1) > band.left() + 20
 
 
 def _hint_gaps(palette):
@@ -479,8 +496,7 @@ def test_a_library_icon_shows_and_a_missing_one_falls_back(qtbot):
 
 
 def _sections(palette):
-    rows = palette.rows
-    return [rows.topLevelItem(i).text(1) for i in range(rows.topLevelItemCount())]
+    return [item.text(1) for item in _items(palette)]
 
 
 def test_the_command_run_last_comes_first_next_time(qtbot):
@@ -494,7 +510,8 @@ def test_the_command_run_last_comes_first_next_time(qtbot):
     palette.open_commands()
 
     assert _labels(palette)[0] == "Keyboard shortcuts"
-    assert _sections(palette)[0] == "recently used"
+    assert _sections(palette)[0] == "Recently used"
+    assert _headers(palette) == ["Recently used", "View"]
     assert _sections(palette)[1:] == ["View", "View"], "the rest keep theirs"
     assert told == [["Keyboard shortcuts"]]
 
@@ -555,3 +572,172 @@ def test_go_to_rows_are_not_remembered(qtbot):
     QTest.keyClick(palette.field, Qt.Key_Return)
 
     assert palette.recent == []
+
+
+# Carmen's palette: grouped rows, its ground and hover row, its measures.
+
+
+def _grouped(qtbot, ran=None):
+    ran = [] if ran is None else ran
+
+    def run(name):
+        return lambda: ran.append(name)
+
+    return _palette(qtbot, [
+        FXCommand("Go to", run("go"), "Ctrl+P", "Actions", icon="arrow-right"),
+        FXCommand("Copy link", run("copy"), section="Actions", icon="link"),
+        FXCommand("Filter", run("filter"), "/", "Navigate"),
+        FXCommand("Refresh", run("refresh"), section="Act"),
+    ])
+
+
+def test_rows_are_grouped_under_their_section_s_label(qtbot):
+    _window_, palette = _grouped(qtbot)
+
+    assert _headers(palette) == ["Actions", "Navigate", "Act"]
+    assert [item.text(0) for item in _items(palette, headers=True)] == [
+        "Actions", "Go to", "Copy link", "Navigate", "Filter", "Act",
+        "Refresh",
+    ]
+
+
+def test_a_search_keeps_the_groups_in_the_order_their_best_row_ranks(qtbot):
+    _window_, palette = _grouped(qtbot)
+
+    # "r" starts Refresh's first word and sits inside Filter.
+    _type(palette, "r")
+
+    assert _labels(palette) == ["Refresh", "Filter"]
+    assert _headers(palette) == ["Act", "Navigate"]
+
+
+def test_rows_with_no_section_take_no_label(qtbot):
+    window = _window(qtbot)
+    palette = FXCommandPalette(window, lambda: _commands([]))
+    palette.open_go_to(
+        lambda landed: landed([("a", "sh0010"), ("b", "sh0020")]),
+        lambda _row: None,
+    )
+
+    assert _headers(palette) == []
+    assert _labels(palette) == ["sh0010", "sh0020"]
+
+
+def test_a_group_s_label_is_a_heading_no_row_picks(qtbot):
+    ran = []
+    _window_, palette = _grouped(qtbot, ran)
+    rows = palette.rows
+    header = _items(palette, headers=True)[0]
+
+    assert not header.flags() & Qt.ItemIsSelectable
+    assert header.flags() & Qt.ItemIsEnabled
+    assert header.data(0, Qt.AccessibleDescriptionRole) == "Heading"
+    assert rows.currentItem().text(0) == "Go to"
+    QTest.mouseClick(
+        rows.viewport(), Qt.LeftButton, pos=rows.visualItemRect(header).center()
+    )
+    assert rows.currentItem().text(0) == "Go to"
+    assert palette.isVisible() and ran == []
+
+
+def test_the_arrows_pass_over_the_groups_labels(qtbot):
+    ran = []
+    _window_, palette = _grouped(qtbot, ran)
+
+    def current():
+        return palette.rows.currentItem().text(0)
+
+    QTest.keyClick(palette.field, Qt.Key_Down)
+    QTest.keyClick(palette.field, Qt.Key_Down)
+    assert current() == "Filter"
+    QTest.keyClick(palette.field, Qt.Key_Up)
+    assert current() == "Copy link"
+    QTest.keyClick(palette.field, Qt.Key_PageDown)
+    assert current() == "Refresh"
+    QTest.keyClick(palette.field, Qt.Key_PageUp)
+    assert current() == "Go to"
+    QTest.keyClick(palette.field, Qt.Key_Up)
+    assert current() == "Go to", "the first row stays the first"
+    QTest.keyClick(palette.field, Qt.Key_PageDown)
+    QTest.keyClick(palette.field, Qt.Key_Up)
+    QTest.keyClick(palette.field, Qt.Key_Return)
+    assert ran == ["filter"]
+
+
+def test_the_pointer_s_row_becomes_the_current_one(qtbot):
+    _window_, palette = _grouped(qtbot)
+    rows = palette.rows
+    filter_row = _items(palette)[2]
+
+    QTest.mouseMove(rows.viewport(), rows.visualItemRect(filter_row).center())
+
+    qtbot.waitUntil(lambda: rows.currentItem() is filter_row)
+
+
+def test_the_palette_wears_carmen_s_measures(qtbot):
+    _window_, palette = _grouped(qtbot)
+
+    assert palette.width() == FXCommandPalette.WIDTH == 768
+    assert palette.field.height() == FXCommandPalette.FIELD_HEIGHT == 48
+    assert palette.field.font().pixelSize() == 16
+    assert palette.rows.font().pixelSize() == 14
+    assert palette.field.placeholderText() == "Search, or type a command…"
+
+
+@pytest.mark.parametrize("size", ["small", "big"])
+def test_rows_are_32_px_whatever_the_row_size(qtbot, set_row_size, size):
+    set_row_size(size)
+    _window_, palette = _grouped(qtbot)
+    rows = palette.rows
+    headers = [
+        item for item in _items(palette, headers=True)
+        if item.data(0, _HEADER_ROLE) is not None
+    ]
+
+    assert {rows.visualItemRect(item).height() for item in _items(palette)} == {
+        FXCommandPalette.ROW_HEIGHT
+    } == {32}
+    # The first label 28 px; the next ones 4 px, a rule, 4 px, then 28 px.
+    assert [rows.visualItemRect(item).height() for item in headers] == [
+        28, 37, 37]
+    # Every row shows: the list holds them all, and 4 px above and below.
+    assert rows.height() == 28 + 2 * 37 + 4 * 32 + 2 * 4
+
+
+@pytest.mark.parametrize("theme", ["dark", "light"])
+def test_the_ground_is_the_surface_and_the_current_row_the_hover_fill(
+    qtbot, theme
+):
+    from qtpy.QtCore import QPoint
+
+    from _helpers import inks
+
+    fxstyle.apply_theme(theme)
+    _window_, palette = _grouped(qtbot)
+    colors = fxstyle.colors()
+    rows = palette.rows
+    image = palette.grab().toImage()
+    middle = rows.viewport().width() // 2
+
+    def ink(item, dy=0):
+        rect = rows.visualItemRect(item)
+        point = rows.viewport().mapTo(
+            palette, QPoint(middle, rect.center().y() + dy))
+        return image.pixelColor(point).name()
+
+    go_to, copy_link = _items(palette)[:2]
+    assert rows.currentItem() is go_to
+    assert ink(go_to) == colors.state_hover.lower()
+    assert colors.state_hover.lower() != colors.selection.lower()
+    assert ink(copy_link) == colors.surface.lower()
+    # The field and the space under the last row are the ground too.
+    assert image.pixelColor(palette.width() - 24, 24).name() == (
+        colors.surface.lower())
+    assert image.pixelColor(middle, palette.height() - 3).name() == (
+        colors.surface.lower())
+    # A later group's label sits under a hairline, in the muted ink.
+    navigate = _items(palette, headers=True)[3]
+    rect = rows.visualItemRect(navigate)
+    assert ink(navigate, 4 - rect.height() // 2) == colors.border.lower()
+    label = rows.viewport().grab(rect.adjusted(0, 9, 0, 0))
+    assert colors.text_muted.lower() in inks(label)

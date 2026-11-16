@@ -110,8 +110,9 @@ fonts:
 #   surface_sunken    - Input fields, lists, menus, status bar
 #   frame             - (Optional) Chrome around the panes of a framed window, auto-computed if omitted
 #   well              - (Optional) Lists and logs set into a pane, auto-computed if omitted
+#   card              - (Optional) A raised card (a progress card, a comment); a step off surface toward text on a dark theme, surface on a light one, if omitted
 #   pane_border       - (Optional) 1 px edge of a pane on the frame, auto-computed if omitted
-#   splitter_mark     - (Optional) Dots on a marked splitter handle, auto-computed if omitted
+#   splitter_mark     - (Optional) Kept for callers; fxgui no longer draws it, auto-computed if omitted
 #   tooltip           - Fills on a tooltip, itself a surface card: a keycap, a code block
 #
 # Border Colors:
@@ -124,6 +125,8 @@ fonts:
 #   text_muted        - Secondary text and inactive tabs; held to 4.5:1 as text is, except on state_pressed
 #   text_disabled     - Disabled widget text
 #   text_strong       - (Optional) A row's name; text stepped 60% toward black or white if omitted
+#   text_toned        - (Optional) A task's name, a pane's values; halfway from text to text_muted if omitted
+#   text_dimmed       - (Optional) Chevrons, separators, dates, an empty cell; half a step past text_muted if omitted. Both held to 4.5:1 as text is
 #   text_on_accent_primary   - (Optional) Text on accent_primary backgrounds, auto-computed if omitted
 #   text_on_accent_secondary - (Optional) Text on accent_secondary backgrounds, auto-computed if omitted
 #
@@ -143,6 +146,8 @@ fonts:
 #   shadow            - Colour of a floating card's drop shadow, #AARRGGBB
 #   shadow_blur       - Its blur radius in pixels
 #   scrim             - Fill dimming a pane behind a loading overlay, #AARRGGBB
+#   modal_scrim       - (Optional) Fill dimming a window behind a modal dialog, #AARRGGBB; black at 60%
+#                       on a dark theme, #F3F3F5 at 75% on a light one if omitted
 #
 # Scrollbar Colors:
 #   scrollbar_track       - Scrollbar track/gutter

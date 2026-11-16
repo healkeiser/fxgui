@@ -9,7 +9,15 @@ from typing import Callable, List, Optional, Sequence, Tuple
 
 # Third-party
 from qtpy.QtCore import QPoint, QRect, QSize, Qt, Signal
-from qtpy.QtGui import QColor, QIcon, QKeyEvent, QKeySequence, QPalette, QPixmap
+from qtpy.QtGui import (
+    QColor,
+    QFont,
+    QIcon,
+    QKeyEvent,
+    QKeySequence,
+    QPalette,
+    QPixmap,
+)
 from qtpy.QtWidgets import (
     QFrame,
     QHeaderView,
@@ -29,14 +37,57 @@ from fxgui._compat import is_valid
 
 fxstyle.register_widget_style(
     """
-    /* A popup's frame, as a menu's. */
+    /* A popup's frame, as a menu's, on the surface: Carmen's palette. */
     FXCommandPalette {
         background-color: @surface;
         border: 1px solid @border;
         border-radius: @card_radius;
     }
+    /* Carmen's field: 48 px, no frame of its own, 16 px text, a hairline
+       under it. Under keyboard focus the hairline takes the focus ink. */
+    FXCommandPalette QLineEdit#fxPaletteField {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid @border;
+        border-radius: 0px;
+        padding: 0px 8px;
+        font-size: 16px;
+        min-height: 47px;
+        max-height: 47px;
+    }
+    /* The rows sit on the palette's own ground, 4 px from its edges. */
+    FXCommandPalette QTreeView {
+        background-color: @surface;
+        border: none;
+        padding: 4px 0px;
+        font-size: 14px;
+    }
+    FXCommandPalette QTreeView::item {
+        padding: 0px 5px;
+        border-radius: @small_radius;
+    }
+    FXCommandPalette QTreeView::item:first,
+    FXCommandPalette QTreeView::item:only-one {
+        margin-left: 4px;
+    }
+    FXCommandPalette QTreeView::item:last,
+    FXCommandPalette QTreeView::item:only-one {
+        margin-right: 4px;
+    }
+    /* The current row is the pointer's: the neutral fill, not a selection. */
+    FXCommandPalette QTreeView::item:hover,
+    FXCommandPalette QTreeView::item:pressed,
+    FXCommandPalette QTreeView::item:selected,
+    FXCommandPalette QTreeView::item:selected:active,
+    FXCommandPalette QTreeView::item:selected:!active,
+    FXCommandPalette QTreeView::item:selected:hover {
+        background: @state_hover;
+        color: @text;
+    }
     FXCommandPalette QLabel#fxPaletteHint {
         color: @text_muted;
+        border-top: 1px solid @border;
+        padding: 8px 12px;
     }
     /* Rounded per cell, a selected row shows a notch at each column. */
     FXCommandPalette QTreeView::item:first {
@@ -62,8 +113,8 @@ class FXCommand:
         label: What the row reads.
         run: Called when the row is picked; unused where `choices` is set.
         keys: Its shortcut, as `QKeySequence` reads it, shown at the right.
-        section: The group it belongs to, shown beside the label and
-            matched by the search.
+        section: The group it is listed under, below a label of that name,
+            and matched by the search.
         enabled: False shows the row greyed; picking it shows `tip`.
         tip: Shown under the list while the row is current.
         icon: An icon's name, drawn left of the label: one of the default library, or
@@ -90,16 +141,39 @@ GoTo = Callable[[Callable[[List[Tuple[str, str]]], None]], None]
 
 # The FXCommand a row stands for, on its first column.
 _COMMAND_ROLE = Qt.UserRole
+# On a group's label row: True where a rule parts it from the group above.
+_HEADER_ROLE = Qt.UserRole + 1
+
+# Carmen's measures: a 28 px label, 32 px rows, a group set 4 px in.
+_LABEL_HEIGHT = 28
+_ROW_HEIGHT = 32
+_GROUP_PAD = 4
+# Text 8 px in from a group's edge, as a row's icon.
+_TEXT_INSET = _GROUP_PAD + 8
+# The least room the palette keeps from its window's edges.
+_EDGE = 8
+
+
+def _header_height(text: str, ruled: bool) -> int:
+    """A label row's height: the rule and its padding, then the label."""
+    return (2 * _GROUP_PAD + 1 if ruled else 0) + (_LABEL_HEIGHT if text else 0)
 
 
 class _RowInk(QStyledItemDelegate):
-    """Draw the section and keys muted, a disabled row disabled, when shown."""
+    """Draw the keys muted, a disabled row disabled, and the group labels."""
 
     def initStyleOption(self, option, index) -> None:
         """Give the cell the theme's ink of the moment."""
         super().initStyleOption(option, index)
-        entry = index.siblingAtColumn(0).data(_COMMAND_ROLE)
+        first = index.siblingAtColumn(0)
+        entry = first.data(_COMMAND_ROLE)
         if entry is None:
+            # "Nothing matches" and "Loading" read muted, in the middle.
+            if first.data(_HEADER_ROLE) is None:
+                option.displayAlignment = Qt.AlignCenter
+                option.palette.setColor(
+                    QPalette.Text, QColor(fxstyle.colors().text_muted)
+                )
             return
         if not entry.enabled:
             token = "text_disabled"
@@ -111,13 +185,56 @@ class _RowInk(QStyledItemDelegate):
             QPalette.Text, QColor(getattr(fxstyle.colors(), token))
         )
 
+    def sizeHint(self, option, index) -> QSize:
+        """Rows are 32 px whatever the row size; a label row its own."""
+        size = super().sizeHint(option, index)
+        # The sheet's margin to the group's edge is not in Qt's measure.
+        size.setWidth(size.width() + _GROUP_PAD)
+        first = index.siblingAtColumn(0)
+        ruled = first.data(_HEADER_ROLE)
+        if ruled is None:
+            size.setHeight(_ROW_HEIGHT)
+        else:
+            size.setHeight(_header_height(first.data(Qt.DisplayRole), ruled))
+        return size
+
+    def paint(self, painter, option, index) -> None:
+        """Paint a group's label: 12 px, strong, muted; a rule above it."""
+        ruled = index.siblingAtColumn(0).data(_HEADER_ROLE)
+        if ruled is None:
+            super().paint(painter, option, index)
+            return
+        colors = fxstyle.colors()
+        rect = QRect(option.rect)
+        painter.save()
+        if ruled:
+            line = rect.top() + _GROUP_PAD
+            painter.fillRect(
+                QRect(rect.left(), line, rect.width(), 1), QColor(colors.border)
+            )
+            rect.setTop(line + 1 + _GROUP_PAD)
+        font = QFont(option.font)
+        font.setPixelSize(12)
+        font.setWeight(QFont.Weight(fxstyle.drawn_weight(fxstyle.STRONG_WEIGHT)))
+        painter.setFont(font)
+        painter.setPen(QColor(colors.text_muted))
+        painter.drawText(
+            rect.adjusted(_TEXT_INSET, 0, -_TEXT_INSET, 0),
+            Qt.AlignLeft | Qt.AlignVCenter,
+            index.data(Qt.DisplayRole),
+        )
+        painter.restore()
+
 
 class FXCommandPalette(QFrame):
     """A frameless popup over `window`'s commands; Enter runs, Escape closes.
 
     Every typed word must appear, in order, in a row's label and section.
     Rows run lately come first, the latest on top, as in VS Code; then
-    rows where the words start words.
+    rows where the words start words. Rows are grouped under a label per
+    section, as in Carmen: "Recently used" first, then each section in
+    the order its best row ranks. A label is no row: the arrows, Enter and
+    the counts pass it by.
 
     Args:
         window: The window the palette opens over.
@@ -137,8 +254,14 @@ class FXCommandPalette(QFrame):
 
     # Rows drawn per keystroke; thousands of rows stay typeable.
     SHOWN = 200
-    WIDTH = 640
+    WIDTH = 768
+    # The list grows to this many 32 px rows' height, then scrolls.
     ROWS = 12
+    FIELD_HEIGHT = 48
+    ROW_HEIGHT = _ROW_HEIGHT
+    ICON_SIZE = 20
+    # The group label the rows run lately are listed under.
+    RECENT_LABEL = "Recently used"
     POSITIONS = ("top", "center", "bottom")
     # Keys remembered; a longer list orders nothing a person returns to.
     RECENT = 50
@@ -170,9 +293,10 @@ class FXCommandPalette(QFrame):
         # The key of each choice step taken to reach the rows shown.
         self._steps: List[str] = []
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(fxstyle.PANE_GAP)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         self.field = QLineEdit()
+        self.field.setObjectName("fxPaletteField")
         self.field.addAction(
             fxicons.get_icon("search"), QLineEdit.LeadingPosition
         )
@@ -182,16 +306,23 @@ class FXCommandPalette(QFrame):
         self.rows.setColumnCount(3)
         self.rows.setHeaderHidden(True)
         self.rows.setRootIsDecorated(False)
-        self.rows.setUniformRowHeights(True)
+        # A group's label row is shorter or taller than a row.
+        self.rows.setUniformRowHeights(False)
         self.rows.setFocusPolicy(Qt.NoFocus)
-        # A host's style gives a list 24 px icons.
-        self.rows.setIconSize(QSize(16, 16))
+        # The pointer's row is the current one, as in Carmen.
+        self.rows.setMouseTracking(True)
+        self.rows.itemEntered.connect(self._pointed)
+        # Set, since a host's style gives a list 24 px icons.
+        self.rows.setIconSize(QSize(self.ICON_SIZE, self.ICON_SIZE))
         self.rows.setItemDelegate(_RowInk(self.rows))
         header = self.rows.header()
         header.setStretchLastSection(False)
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         for column in (1, 2):
             header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
+        # The section is a group's label now, not a column; the column keeps
+        # its text for code that reads it.
+        self.rows.setColumnHidden(1, True)
         self.rows.currentItemChanged.connect(self._followed)
         self.rows.itemClicked.connect(self._run)
         self.hint = QLabel()
@@ -225,7 +356,9 @@ class FXCommandPalette(QFrame):
         )
 
     def open_commands(
-        self, placeholder: str = "Type a command", position: str = "center"
+        self,
+        placeholder: str = "Search, or type a command…",
+        position: str = "center",
     ) -> None:
         """Open on the window's commands, at `position` in the window.
 
@@ -293,8 +426,7 @@ class FXCommandPalette(QFrame):
         self.field.blockSignals(True)
         self.field.clear()
         self.field.blockSignals(False)
-        margin = self.layout().contentsMargins().left()
-        width = min(self.WIDTH, self._window.width() - 4 * margin)
+        width = min(self.WIDTH, self._window.width() - 4 * _EDGE)
         self.resize(width, self.height())
         self._filter("")
         self.show()
@@ -302,11 +434,18 @@ class FXCommandPalette(QFrame):
 
     def _filter(self, text: str) -> None:
         self._fill(text)
-        # The list is as tall as its rows, up to `ROWS`; the top stays put.
-        row = self.rows.sizeHintForRow(0)
-        count = min(max(1, self.rows.topLevelItemCount()), self.ROWS)
-        self.rows.setFixedHeight(
-            max(row, 1) * count + 2 * self.rows.frameWidth()
+        # The list is as tall as its rows, up to `ROWS` rows; the top stays put.
+        rows = self.rows
+        content = sum(
+            rows.sizeHintForRow(at) for at in range(rows.topLevelItemCount())
+        )
+        # The sheet's 4 px above and below the rows, once it has set them.
+        rows.ensurePolished()
+        margins = rows.contentsMargins()
+        frame = margins.top() + margins.bottom()
+        rows.setFixedHeight(
+            min(max(content, self.ROW_HEIGHT), self.ROWS * self.ROW_HEIGHT)
+            + frame
         )
         self._fit()
 
@@ -315,13 +454,21 @@ class FXCommandPalette(QFrame):
         layout.activate()
         # At the real width: a wrapped tip's size hint guesses a narrower
         # one, and the label then centres the text in the extra height.
-        self.resize(self.width(), layout.totalHeightForWidth(self.width()))
+        height = layout.totalHeightForWidth(self.width())
+        # In a small window the list gives up height, and scrolls.
+        over = height - (self._window.height() - 2 * _EDGE)
+        if over > 0:
+            rows = self.rows
+            rows.setFixedHeight(max(self.ROW_HEIGHT, rows.minimumHeight() - over))
+            layout.activate()
+            height = layout.totalHeightForWidth(self.width())
+        self.resize(self.width(), height)
         self._place()
 
     def _place(self) -> None:
         """Centre across the window, at `_position` in its content area."""
         window = self._window
-        gap = self.layout().contentsMargins().left()
+        gap = _EDGE
         # Below the menu and the command rows, above the status bar.
         central = getattr(window, "centralWidget", lambda: None)()
         area = central.geometry() if central is not None else window.rect()
@@ -353,9 +500,8 @@ class FXCommandPalette(QFrame):
         query = text[1:] if text.startswith(">") else text
         source = self._command_rows if commands else self._go_to
         scope = "" if self._going and text.startswith(">") else self._scope
-        # A row to go to has no section and no key.
-        for column in (1, 2):
-            self.rows.setColumnHidden(column, not commands)
+        # A row to go to has no key.
+        self.rows.setColumnHidden(2, not commands)
         self.rows.clear()
         if source is None:
             self._placeholder(self._loading)
@@ -379,6 +525,11 @@ class FXCommandPalette(QFrame):
             return
         shown = [source[index] for *_order, index in ranked[: self.SHOWN]]
         recent_count = sum(order < never for order, *_rest in ranked)
+        # Each section gathers its rows, in the order its best row ranks.
+        groups = {}
+        for at, entry in enumerate(shown):
+            group = self.RECENT_LABEL if at < recent_count else entry.section
+            groups.setdefault(group, []).append(entry)
         # A row with no icon keeps its label in line with those that have one.
         blank = None
         if any(entry.icon for entry in shown):
@@ -387,20 +538,42 @@ class FXCommandPalette(QFrame):
             pixmap.fill(Qt.transparent)
             blank = QIcon(pixmap)
         items = []
-        for at, entry in enumerate(shown):
-            keys = QKeySequence(entry.keys).toString(QKeySequence.NativeText)
-            section = "recently used" if at < recent_count else entry.section
-            item = QTreeWidgetItem([entry.label, section, keys])
-            item.setData(0, _COMMAND_ROLE, entry)
-            item.setTextAlignment(2, Qt.AlignRight | Qt.AlignVCenter)
-            if blank is not None:
-                item.setIcon(0, self._icon(entry.icon) if entry.icon else blank)
-            if entry.tip:
-                for column in range(3):
-                    item.setToolTip(column, entry.tip)
-            items.append(item)
+        for group, entries in groups.items():
+            # The first group needs no rule, nor a label where it has none.
+            if items or group:
+                items.append(self._header(group, ruled=bool(items)))
+            for entry in entries:
+                keys = QKeySequence(entry.keys).toString(
+                    QKeySequence.NativeText
+                )
+                item = QTreeWidgetItem([entry.label, group, keys])
+                item.setData(0, _COMMAND_ROLE, entry)
+                item.setTextAlignment(2, Qt.AlignRight | Qt.AlignVCenter)
+                if blank is not None:
+                    item.setIcon(
+                        0, self._icon(entry.icon) if entry.icon else blank
+                    )
+                if entry.tip:
+                    for column in range(3):
+                        item.setToolTip(column, entry.tip)
+                items.append(item)
         self.rows.addTopLevelItems(items)
-        self.rows.setCurrentItem(items[0])
+        for item in items:
+            if item.data(0, _HEADER_ROLE) is not None:
+                item.setFirstColumnSpanned(True)
+        self.rows.setCurrentItem(
+            next(item for item in items if self._entry(item) is not None)
+        )
+
+    @staticmethod
+    def _header(text: str, ruled: bool) -> QTreeWidgetItem:
+        """A group's label: no row to pick, read out as a heading."""
+        item = QTreeWidgetItem([text])
+        item.setData(0, _HEADER_ROLE, ruled)
+        # Enabled, so a reader does not call it unavailable; not selectable.
+        item.setFlags(Qt.ItemIsEnabled)
+        item.setData(0, Qt.AccessibleDescriptionRole, "Heading")
+        return item
 
     @staticmethod
     def _key(scope: str, entry: FXCommand) -> str:
@@ -435,9 +608,25 @@ class FXCommandPalette(QFrame):
         self.rows.addTopLevelItem(item)
         self._tell("")
 
-    def _followed(self, item: Optional[QTreeWidgetItem], *_) -> None:
+    def _followed(
+        self,
+        item: Optional[QTreeWidgetItem],
+        previous: Optional[QTreeWidgetItem] = None,
+    ) -> None:
+        # A click on a group's label makes it current: keep the row instead.
+        if (
+            item is not None
+            and item.data(0, _HEADER_ROLE) is not None
+            and self._entry(previous) is not None
+        ):
+            self.rows.setCurrentItem(previous)
+            return
         entry = self._entry(item)
         self._tell(entry.tip if entry is not None else "")
+
+    def _pointed(self, item: QTreeWidgetItem, _column: int = 0) -> None:
+        if self._entry(item) is not None:
+            self.rows.setCurrentItem(item)
 
     def _entry(self, item: Optional[QTreeWidgetItem]) -> Optional[FXCommand]:
         return None if item is None else item.data(0, _COMMAND_ROLE)
@@ -480,14 +669,18 @@ class FXCommandPalette(QFrame):
         self._filter("")
 
     def _step(self, by: int) -> None:
-        current = self.rows.currentItem()
+        """Move `by` rows, passing over the groups' labels."""
+        rows = self.rows
+        current = rows.currentItem()
         if self._entry(current) is None:
             return
-        now = self.rows.indexOfTopLevelItem(current)
-        last = self.rows.topLevelItemCount() - 1
-        self.rows.setCurrentItem(
-            self.rows.topLevelItem(max(0, min(last, now + by)))
-        )
+        picks = [
+            item
+            for item in map(rows.topLevelItem, range(rows.topLevelItemCount()))
+            if self._entry(item) is not None
+        ]
+        now = picks.index(current)
+        rows.setCurrentItem(picks[max(0, min(len(picks) - 1, now + by))])
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Move with the arrows and pages; Escape closes."""

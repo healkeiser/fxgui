@@ -70,14 +70,18 @@ from fxgui.fxwidgets._severity import (
 )
 from fxgui.fxwidgets._single_instance import FXSingleInstance
 from fxgui.fxwidgets._singleton import FXSingleton
+from fxgui.fxwidgets._skeleton import FXSkeleton
 from fxgui.fxwidgets._splash_screen import FXSplashScreen
 from fxgui.fxwidgets._status_bar import FXStatusBar, FXStatusItem
 from fxgui.fxwidgets._status_dot import FXStatusDot
+from fxgui.fxwidgets._summary_row import FXSummaryRow
 from fxgui.fxwidgets._system_tray import FXSystemTray
+from fxgui.fxwidgets._meter_bar import FXMeterBar, FXMeterShare
 from fxgui.fxwidgets._tag_input import FXTagChip, FXTagInput
 from fxgui.fxwidgets._timeline_slider import FXTimelineSlider
 from fxgui.fxwidgets._tips import FXKeycap, apply_tip, keycap, tip
 from fxgui.fxwidgets._toggle_switch import FXToggleSwitch
+from fxgui.fxwidgets._top_progress import FXTopProgress
 from fxgui.fxwidgets._tree_items import FXSortedTreeWidgetItem
 from fxgui.fxwidgets._validators import (
     FXCamelCaseValidator,
@@ -130,6 +134,8 @@ __all__ = [
     "FXLowerCaseValidator",
     "FXMainWindow",
     "FXMentionEdit",
+    "FXMeterBar",
+    "FXMeterShare",
     "FXNotificationBanner",
     "FXOutputLogHandler",
     "FXOutputLogWidget",
@@ -145,12 +151,14 @@ __all__ = [
     "FXSeating",
     "FXSingleInstance",
     "FXSingleton",
+    "FXSkeleton",
     "FXSortedTreeWidgetItem",
     "FXSplashScreen",
     "FXSplitButton",
     "FXStatusBar",
     "FXStatusDot",
     "FXStatusItem",
+    "FXSummaryRow",
     "FXSystemTray",
     "FXTagChip",
     "FXTagInput",
@@ -158,6 +166,7 @@ __all__ = [
     "FXThumbnailDelegate",
     "FXTimelineSlider",
     "FXToggleSwitch",
+    "FXTopProgress",
     "FXValidatedLineEdit",
     "grab_screen_region",
     "INFO",

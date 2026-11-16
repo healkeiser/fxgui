@@ -939,7 +939,7 @@ import PySide6QtAds as ads
 image = window.grab().toImage()
 ratio = image.devicePixelRatio()
 frame = QColor(fxstyle.colors().frame).name()
-ink = QColor(fxstyle.colors().splitter_mark).name()
+ink = QColor(fxstyle.colors().accent_primary).name()
 areas = [a for a in docks.manager().findChildren(ads.CDockAreaWidget)
          if a.isVisible()]
 for area in areas:
@@ -949,24 +949,37 @@ for area in areas:
 handles = [s.handle(i) for s in docks.manager().findChildren(ads.CDockSplitter)
            for i in range(1, s.count()) if s.handle(i).isVisible()]
 assert handles
-for handle in handles:
+
+
+def inked(handle):
+    # Each pixel inside `handle` that is not the frame, with its colour.
+    image = window.grab().toImage()
     holder = handle.parentWidget()
     box = handle.geometry().translated(
         holder.mapTo(window, holder.rect().topLeft()))
-    inked = [
-        (x, y)
+    return {
+        (x, y): QColor(image.pixel(x, y)).name()
         for x in range(int(box.left() * ratio) + 1,
                        int((box.right() + 1) * ratio) - 1)
         for y in range(int(box.top() * ratio) + 1,
                        int((box.bottom() + 1) * ratio) - 1)
-        if QColor(image.pixel(x, y)).name() != frame]
-    assert inked, "a mark at this scale"
-    assert all(QColor(image.pixel(x, y)).name() == ink for x, y in inked)
+        if QColor(image.pixel(x, y)).name() != frame}
+
+
+for handle in handles:
+    assert inked(handle) == {}, "a handle at rest is the frame alone"
+    fxstyle._SplitterMark._light(handle, True)
+    lit = inked(handle)
+    assert set(lit.values()) == {ink}, set(lit.values())
+    vertical = handle.width() < handle.height()
+    across = {x if vertical else y for x, y in lit}
+    assert len(across) == 2, "1 px at 150 % is 2 whole device pixels"
+    fxstyle._SplitterMark._light(handle, False)
 print("ratio", ratio)
 """
 
 
-def test_corners_and_the_mark_hold_at_150_percent(tmp_path):
+def test_corners_and_the_lit_line_hold_at_150_percent(tmp_path):
     env = dict(os.environ, QT_SCALE_FACTOR="1.5", QT_QPA_PLATFORM="offscreen",
                PYTHONPATH=os.pathsep.join(sys.path), APPDATA=str(tmp_path))
     done = subprocess.run(

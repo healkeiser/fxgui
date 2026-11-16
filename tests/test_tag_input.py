@@ -49,7 +49,7 @@ def test_chips_style_through_the_theme_sheet(qtbot, qapp):
     assert chip.styleSheet() == "" and chip.label.styleSheet() == ""
     assert tags._input.styleSheet() == ""
     sheet = fxstyle._build_stylesheet()
-    ink = fxstyle.colors().text_on_accent_primary
+    ink = fxstyle.colors().text
     assert f"FXTagChip QLabel {{\n    color: {ink};" in sheet
 
 
@@ -72,12 +72,13 @@ def test_a_chip_has_a_border_at_the_theme_radius(qtbot, theme, removable):
         return image.pixelColor(x, y).name()
 
     middle = chip.height() // 2
+    # A neutral hairline chip on the page's fill, as the web look's.
     for edge in (at(radius + 2, 0), at(0, middle), at(chip.width() - 1, middle)):
-        assert edge == colors.border_light.lower()
+        assert edge == colors.border.lower()
     # Rounded at the theme's radius: the corner pixel is not the border.
-    assert at(0, 0) != colors.border_light.lower()
+    assert at(0, 0) != colors.border.lower()
     # In the fill, short of the text 10 px in.
-    assert at(4, middle) == colors.primary_button.lower()
+    assert at(4, middle) == colors.surface.lower()
 
 
 def test_a_chip_is_28_px_tall_its_x_square_in_its_end(app_root):

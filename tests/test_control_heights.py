@@ -29,7 +29,6 @@ from fxgui.fxwidgets import (
 _INPUTS = {
     "QSpinBox": QSpinBox,
     "FXFilePathWidget": FXFilePathWidget,
-    "FXSearchBar": FXSearchBar,
     # Its spin boxes set the row.
     "FXTimelineSlider": FXTimelineSlider,
     # Its field is the whole widget until a tag is added.
@@ -65,6 +64,12 @@ def test_a_control_is_a_line_and_a_half_plus_its_box(qapp, pixels, height):
 def test_an_input_is_as_tall_as_a_line_edit(qtbot, name):
     height, line_edit = _heights(qtbot, _INPUTS[name], QLineEdit)
     assert height == line_edit
+
+
+def test_a_filter_field_is_a_step_under_a_line_edit(qtbot):
+    """28 px beside a 32 px control, as the web look's filter field."""
+    height, line_edit = _heights(qtbot, FXSearchBar, QLineEdit)
+    assert height == line_edit - fxstyle.FILTER_DROP
 
 
 

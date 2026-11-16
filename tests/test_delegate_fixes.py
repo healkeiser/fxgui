@@ -157,7 +157,7 @@ def test_a_row_reads_its_description_once_per_paint(qtbot, monkeypatch):
     item.setData(0, FXThumbnailDelegate.STATUS_LABEL_TEXT_ROLE, "WIP")
     item.setData(0, FXThumbnailDelegate.STATUS_LABEL_COLOR_ROLE, "#ff8800")
     QTreeWidgetItem(item, ["child"])
-    monkeypatch.setattr(fxstyle, "row_height", lambda: 48)
+    monkeypatch.setattr(fxstyle, "row_height", lambda view=None: 48)
     index = tree.model().index(0, 0)
     option = QStyleOptionViewItem()
     option.rect = QRect(0, 0, 300, 48)

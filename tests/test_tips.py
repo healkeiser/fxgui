@@ -26,8 +26,14 @@ from fxgui import fxstyle
 from fxgui.fxwidgets import _tips
 
 
-def _title(text: str) -> str:
-    """Return the markup `tip` gives `text` as its title: medium weight."""
+def _title(text: str, rich: bool = False) -> str:
+    """Return the markup `tip` gives `text` as its title.
+
+    A plain tip's title is the body's weight, as the web look's one-line
+    tip; over facts, code or a hint it is emphasised.
+    """
+    if not rich:
+        return text
     return f'<span style="font-weight:{fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)};">{text}</span>'
 
 
@@ -58,10 +64,11 @@ def test_title_only(qtbot):
     # No body row and no keycap when only a title was given.
     assert "margin-top" not in html
     assert "background:" not in html
-    # Qt reads the weight as the face's medium, not as bold.
+    # One line at the body's weight: no weight of its own.
+    assert "font-weight" not in html
     document = QTextDocument()
     document.setHtml(html)
-    assert document.begin().begin().fragment().charFormat().fontWeight() == fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)
+    assert document.toPlainText() == "Back"
 
 
 def test_title_and_body(qtbot):
@@ -79,8 +86,9 @@ def test_title_and_shortcut(qtbot):
 
     assert _title("Save") in html
     assert "background:" in html
-    # Title and keycap share one line, the cap pushed right by a cell.
-    assert 'align="right"' in html
+    # Title and keycaps share one line, the keys after a middle dot.
+    assert "&nbsp;·&nbsp;" in html
+    assert 'align="right"' not in html
     assert "margin-top" not in html
 
 
@@ -89,7 +97,7 @@ def test_title_body_and_shortcut(qtbot):
 
     assert _title("Save") in html
     assert "Write the scene to disk" in html
-    assert 'align="right"' in html
+    assert "&nbsp;·&nbsp;" in html
     assert "margin-top" in html
 
 
@@ -104,9 +112,8 @@ def test_no_fixed_width_is_imposed(qtbot):
         ("Publish", "word " * 200, "Ctrl+Shift+P"),
     ):
         html = _tips.tip(*args)
-        # The only table is the one that right-aligns the keycap, and it is
-        # relative, so it inherits whatever width the popup settles on.
-        assert 'width="100%"' in html or "<table" not in html, args
+        # No table at all in a plain tip: nothing to fix its width.
+        assert "<table" not in html, args
 
 
 def test_tooltip_grows_with_its_content(qtbot):
@@ -128,9 +135,8 @@ def test_tooltip_grows_with_its_content(qtbot):
     assert title_only < 100
 
 
-def test_keycap_is_right_aligned(themed_app, qtbot):
-    """The keycap must sit at the tooltip's right edge in both regimes,
-    capped and shrink-to-content."""
+def test_keycaps_follow_the_title_one_per_key(themed_app, qtbot):
+    """The keys follow the words after a dot, one cap per key."""
     from qtpy.QtGui import QColor
     from qtpy.QtWidgets import QLabel
 
@@ -160,8 +166,6 @@ def test_keycap_is_right_aligned(themed_app, qtbot):
         ]
 
         assert xs, f"no keycap drawn for {args}"
-        # Flush right: the last cap reaches the last pixel column.
-        assert max(xs) >= image.width() - 2, args
         # One cap per key, not one band: the fill breaks between keys.
         row = sorted(set(xs))
         runs = 1 + sum(1 for a, b in zip(row, row[1:]) if b - a > 1)

@@ -13,7 +13,7 @@ import logging
 
 # Third-party
 from qtpy.QtCore import QRect, Qt
-from qtpy.QtGui import QCursor
+from qtpy.QtGui import QCursor, QStandardItem, QStandardItemModel
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -35,8 +35,10 @@ from qtpy.QtWidgets import (
     QSlider,
     QSpinBox,
     QSplitter,
+    QTabBar,
     QTabWidget,
     QTextEdit,
+    QTreeView,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -354,6 +356,30 @@ def _display_page() -> QWidget:
     def toggle_overlay():
         overlay.setVisible(not overlay.isVisible())
 
+    loading = QTreeWidget()
+    loading.setHeaderLabels(["Name", "Status", "Updated"])
+    loading.setFixedHeight(180)
+    fxwidgets.FXSkeleton.cover(loading)
+
+    def toggle_skeleton():
+        if loading.topLevelItemCount() == 0:
+            fxwidgets.FXSkeleton.uncover(loading)
+            loading.addTopLevelItem(
+                QTreeWidgetItem(["sh0010", "To review", "Today"]))
+        else:
+            loading.clear()
+            fxwidgets.FXSkeleton.cover(loading)
+
+    cards = fxwidgets.FXSkeleton(kind="cards", count=3)
+    cards.setFixedHeight(152)
+    lines = fxwidgets.FXSkeleton(kind="lines", count=4)
+    lines.setFixedHeight(80)
+
+    pane = QTextEdit("A pane with a line along its top while it works.")
+    pane.setFixedHeight(60)
+    progress = fxwidgets.FXTopProgress(pane)
+    progress.start()
+
     flow_box = QWidget()
     flow = fxwidgets.FXFlowLayout(flow_box)
     for tag in (
@@ -403,6 +429,22 @@ def _display_page() -> QWidget:
             _row(_button("Toggle the overlay", toggle_overlay)),
         ),
         _section(
+            "FXSkeleton",
+            loading,
+            _row(_button("Load the rows", toggle_skeleton)),
+            cards,
+            lines,
+        ),
+        _section(
+            "FXTopProgress",
+            pane,
+            _row(
+                _button("Start", progress.start),
+                _button("40 %", lambda: progress.set_value(0.4)),
+                _button("Finish", progress.finish),
+            ),
+        ),
+        _section(
             "FXProgressCard / QProgressBar",
             fxwidgets.FXProgressCard(
                 title="Rendering sh0010",
@@ -411,6 +453,18 @@ def _display_page() -> QWidget:
                 icon="film",
             ),
             bar,
+        ),
+        _section(
+            "FXMeterBar / FXMeterShare",
+            fxwidgets.FXMeterBar(
+                [
+                    fxwidgets.FXMeterShare(5, "feedback_success_foreground"),
+                    fxwidgets.FXMeterShare(3, "feedback_warning_foreground"),
+                    fxwidgets.FXMeterShare(2, "accent_primary", faint=True),
+                ],
+                maximum=16,
+            ),
+            fxwidgets.FXMeterBar([40], maximum=100, compact=True),
         ),
         _section("FXFlowLayout", flow_box),
         _section("FXThreadLine", _thread()),
@@ -421,6 +475,29 @@ def _display_page() -> QWidget:
     # start() shows the spinner: on one not yet in a layout, a window.
     spinner.start()
     return page
+
+
+def _segmented_tabs() -> QWidget:
+    """Return a view switch, the same with counts, and plain tabs counted."""
+    views = QTabBar()
+    for name in ("Table", "Gantt", "Board"):
+        views.addTab(name)
+    fxstyle.mark_as_segmented(views)
+    filters = QTabBar()
+    plain = QTabBar()
+    for bar in (filters, plain):
+        for index, (name, count) in enumerate(
+            (("All", 26), ("Pipeline", 5), ("Farm", 2))
+        ):
+            bar.addTab(name)
+            fxstyle.set_tab_count(bar, index, count)
+    fxstyle.mark_as_segmented(filters)
+    box = QWidget()
+    layout = QVBoxLayout(box)
+    layout.setContentsMargins(0, 0, 0, 0)
+    for bar in (views, filters, plain):
+        layout.addLayout(_row(bar))
+    return box
 
 
 def _containers_page() -> QWidget:
@@ -453,6 +530,11 @@ def _containers_page() -> QWidget:
     scroll.setWidget(rows)
 
     return _page(
+        _section(
+            "Segmented tabs and tab counts (fxstyle.mark_as_segmented, "
+            "fxstyle.set_tab_count)",
+            _segmented_tabs(),
+        ),
         _section("FXAccordion", accordion),
         _section("FXCollapsibleWidget", collapsible),
         _section("FXResizedScrollArea", scroll),
@@ -499,6 +581,46 @@ def _thumbnail_tree() -> QTreeWidget:
     return tree
 
 
+def _summary_table() -> QTreeView:
+    """Return a shot list whose totals sit in an `FXSummaryRow` below it."""
+    shots = [
+        (f"sh{index * 10:04d}", index % 3 == 0, 7, 24 + index * 4, 0.0125)
+        for index in range(1, 10)
+    ]
+    model = QStandardItemModel(0, 4)
+    model.setHorizontalHeaderLabels(["Shot", "Tasks", "Frames", "Time spent"])
+    right = Qt.AlignRight | Qt.AlignVCenter
+    for column in (2, 3):
+        model.setHeaderData(
+            column, Qt.Horizontal, int(right), Qt.TextAlignmentRole)
+    for name, done, tasks, frames, days in shots:
+        row = [
+            QStandardItem(name),
+            QStandardItem(f"{int(done)}/{tasks} done"),
+            QStandardItem(str(frames)),
+            QStandardItem(f"{days:.2f} d"),
+        ]
+        for item in row[2:]:
+            item.setTextAlignment(right)
+        model.appendRow(row)
+    table = QTreeView()
+    table.setRootIsDecorated(False)
+    table.setModel(model)
+    table.setColumnWidth(1, 160)
+    table.setFixedHeight(220)
+
+    # The consumer counts; the row only shows what it is handed.
+    summary = fxwidgets.FXSummaryRow(table)
+    done = sum(shot[1] for shot in shots)
+    summary.set_texts([
+        f"{len(shots)} shots",
+        f"{done}/{sum(shot[2] for shot in shots)} tasks done",
+        str(sum(shot[3] for shot in shots)),
+    ])
+    summary.set_text(3, f"{sum(shot[4] for shot in shots):.1f} d", strong=True)
+    return table
+
+
 def _lists_page() -> QWidget:
     filtered = fxwidgets.FXFilteredTree(placeholder="Filter, or type on the tree")
     filtered.tree.setHeaderHidden(True)
@@ -534,6 +656,7 @@ def _lists_page() -> QWidget:
         _section("FXFilteredTree / FXKeyboardTree", filtered),
         _section("FXSortedTreeWidgetItem", sorted_tree),
         _section("FXThumbnailDelegate", _thumbnail_tree()),
+        _section("FXSummaryRow", _summary_table()),
         _section("QListWidget", icon_list),
     )
 
@@ -669,12 +792,13 @@ def _open_floating(gallery: QWidget) -> None:
     dialog.show_under_cursor()
 
 
-def _open_confirm(gallery: QWidget) -> None:
+def _open_confirm(gallery: QWidget, typing: bool = False) -> None:
     fxwidgets.FXConfirmDeleteDialog(
         gallery,
-        title="Delete beauty v004",
-        body="The render and its frames go. This cannot be undone.",
-        confirm_word="beauty",
+        title="Delete SH010?",
+        body="Its tasks and comments go with it.",
+        confirm_word="SH010",
+        require_typing=typing,
     ).open()
 
 
@@ -761,7 +885,7 @@ def _windows_page(window: fxwidgets.FXMainWindow) -> QWidget:
                 section="Log",
             ),
             fxwidgets.FXCommand(
-                "Publish", lambda: None, enabled=False,
+                "Publish", lambda: None, section="Log", enabled=False,
                 tip="Nothing to publish", icon="upload",
             ),
         ],
@@ -809,6 +933,10 @@ def _windows_page(window: fxwidgets.FXMainWindow) -> QWidget:
             _row(
                 _button("Floating dialog", lambda: _open_floating(window)),
                 _button("Confirm a delete", lambda: _open_confirm(window)),
+                _button(
+                    "Confirm by typing the name",
+                    lambda: _open_confirm(window, typing=True),
+                ),
             ),
         ),
         _section(

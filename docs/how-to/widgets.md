@@ -76,16 +76,16 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXAccordion` | Collapsible sections stacked; one open at a time unless `exclusive=False` |
 | `FXApplication` | The `QApplication` that themes every window it owns |
 | `FXAvatar` | Round avatar: a photo, or initials on a disc coloured by the name |
-| `FXBreadcrumb` | Clickable breadcrumb trail; double-click it to type a path. `back_button` and `forward_button` name its navigation buttons (None without `show_navigation`) |
+| `FXBreadcrumb` | Clickable breadcrumb trail; double-click it to type a path. Its parts are parted by a 14 px chevron in `text_dimmed` (`separator="/"` for a slash). `back_button` and `forward_button` name its navigation buttons (None without `show_navigation`) |
 | `FXCamelCaseValidator` | Accepts camelCase letters only |
 | `FXCapitalizedLetterValidator` | Accepts a name starting with a capital letter |
 | `FXCheckableComboBox` | Combo box whose popup stays open while several rows are ticked |
 | `FXCodeBlock` | Read-only code with syntax highlighting |
 | `FXCollapsibleWidget` | A titled section that opens and shuts its content |
-| `FXCommand` | One row of an `FXCommandPalette`: a label, a callable or a list of choices, keys, a section |
-| `FXCommandPalette` | Popup search over a window's commands, or over rows to go to; the commands run lately come first |
+| `FXCommand` | One row of an `FXCommandPalette`: a label, a callable or a list of choices, keys, the section it is grouped under |
+| `FXCommandPalette` | Popup search over a window's commands, grouped by section, or over rows to go to; the commands run lately come first |
 | `FXCommandRow` | A toolbar fixed in place, whose margins survive style changes |
-| `FXConfirmDeleteDialog` | Asks for a name typed exactly before an act with no undo; Enter never deletes |
+| `FXConfirmDeleteDialog` | Asks before an act with no undo: a card with the question, Cancel then a red Delete, focus on Cancel; Enter never deletes, and the window behind dims. `require_typing=True` (on when a `confirm_word` is given) waits for the name typed exactly |
 | `FXDropZone` | Drop target for files or folders, with a browse button and a file list |
 | `FXElidedLabel` | Label that cuts its text with "..." when it does not fit |
 | `FXEmojiButton` | Round icon button that opens an `FXEmojiPicker` and can insert into an editor |
@@ -108,6 +108,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXMainWindow` | Main window with menus, toolbar, status bar and a theme menu |
 | `FXMentionEdit` | Text box that offers people by name after an @ and lists who it names |
 | `FXNotificationBanner` | Card with a message that slides in from a window's right edge. `severity()`, `timeout()`, `action_buttons()` and `is_placed()` (it stands at its slot, no slide running) read it back |
+| `FXMeterBar` | A quiet meter: one fill or several coloured shares (`FXMeterShare(value, color, faint)`), 6 px or 4 px compact |
 | `FXOutputLogHandler` | Logging handler that writes records into an `FXOutputLogWidget` |
 | `FXOutputLogWidget` | Read-only log display with search. It writes queued records on a throttle; `flush()` writes them all now |
 | `FXPasswordLineEdit` | Password field with a show/hide eye icon |
@@ -122,19 +123,22 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXSeating` | Seats a tray panel in the screen corner nearest its icon and slides it in |
 | `FXSingleInstance` | Lock on a local socket name; a second start wakes the first |
 | `FXSingleton` | Metaclass for Qt classes that have one instance |
+| `FXSkeleton` | Grey blocks in the shape of a list, cards or text while they load, a light sweeping across (see [Loading](#loading)) |
 | `FXSortedTreeWidgetItem` | Tree row that sorts numbers in text naturally (v2 before v10) |
 | `FXSplashScreen` | Splash screen with a title, a text and a progress bar |
 | `FXSplitButton` | Split button whose click and dropdown both have keys |
 | `FXStatusBar` | Status bar with an accent line, messages, items and a busy line |
 | `FXStatusDot` | Small clickable circle in a feedback colour, grey for no state |
 | `FXStatusItem` | Icon and word on a status bar, lit when clickable |
+| `FXSummaryRow` | Totals row pinned under a tree or table view, lined up with its columns (see [Summary Rows](#summary-rows)) |
 | `FXSystemTray` | System tray icon with a menu |
-| `FXTagChip` | One tag, removable or not |
+| `FXTagChip` | One tag, removable or not: a neutral hairline chip; `color=` adds an 8 px dot (a token name or a colour) |
 | `FXTagInput` | Field that turns what you type into `FXTagChip`s |
 | `FXThreadLine` | Line over a comment thread, from the comment's face into each reply's |
-| `FXThumbnailDelegate` | Item delegate with thumbnails, status dots, labels and stars |
+| `FXThumbnailDelegate` | Item delegate with thumbnails, status dots, labels and stars. The child count follows a row's name; `GROUP_ROW_ROLE` draws a group header row (12 px, emphasised, toned); an item's own `Qt.FontRole` weight sets its title's; `Qt.TextAlignmentRole` aligns a cell; `align_column(view, column, alignment, tabular)` aligns a column and its header, `TABULAR_FIGURES_ROLE` or `tabular=True` lines its digits up; `THUMBNAIL_SIZES` gives the picture per row height (32 x 18, 44 x 24, 72 x 40) |
 | `FXTimelineSlider` | Timeline with playback, keyframes, markers and a loop region. `show_track=False` hides the track; `marker_frames(name)`, `region(name)` and `tick_positions(width, first, last)` read back what it draws, and `mark_in_button`, `mark_out_button`, `go_to_start_button`, `go_to_end_button` and `frame_field` name its widgets |
-| `FXToggleSwitch` | On/off switch that slides |
+| `FXToggleSwitch` | On/off switch that slides: a dimmed grey track off, the accent on, a page-coloured knob |
+| `FXTopProgress` | A 2 px accent line along a widget's top edge while it works (see [Loading](#loading)) |
 | `FXValidatedLineEdit` | Line edit that shakes and flashes when its validator refuses a key |
 
 `fxdocking.FXDockArea` docks named panes around a body; it needs
@@ -265,6 +269,37 @@ typing, even though Windows reports AltGr as Ctrl+Alt.
     wins over typing on the tree. So keep single-character shortcuts off
     windows that hold a filtered tree, or use a chord such as `Ctrl+F`.
 
+## Summary Rows
+
+`FXSummaryRow` pins one row of totals under a `QTreeView` or a
+`QTableView`, such as "9 shots | 5/63 tasks done | 300 | 0.1 d". You
+count the totals; the row shows the text you hand it.
+
+``` python
+from qtpy.QtCore import Qt
+from fxgui.fxwidgets import FXSummaryRow
+
+summary = FXSummaryRow(view)
+summary.set_texts(["9 shots", "5/63 tasks done", "300"])
+summary.set_text(3, "0.1 d", Qt.AlignRight, strong=True)
+# Recount and call set_text or set_texts again when the rows change.
+```
+
+- It is not a model row. It sits in the view's bottom margin, so it
+  stays in place while the rows scroll. It is never selected and never
+  takes focus.
+- Each cell stays over its column when a column is resized, hidden,
+  moved or scrolled sideways.
+- A cell takes its own `alignment`, else the column header's alignment
+  (`headerData` with `Qt.TextAlignmentRole`), else the left.
+- The text is a step below the body and muted. `strong=True` draws it
+  in the body colour.
+- It is as tall as a row at the current row size (36 px at "normal")
+  and follows `fxstyle.apply_row_size`.
+- `text(column)` reads a cell back, `clear()` empties every cell, and
+  `setVisible(False)` hides the row and gives its room back to the rows.
+- Screen readers read it as "Summary", and each cell as static text.
+
 ## Empty Panes
 
 A pane with nothing to show yet says what to do next. `FXEmptyState`
@@ -286,6 +321,71 @@ icon muted, so a pane switched off still reads its ask.
 scroll area's viewport, where it cuts its content off, and hides once the
 area is scrolled to the end or has nothing to scroll. It reads the
 theme's `shadow` and `border` each time it paints.
+
+## Loading
+
+A list or a pane waiting for its data shows its own shape, greyed, rather
+than an empty page or a spinner. `FXSkeleton` draws rows (a row's height,
+a thumbnail slot and text bars), cards or lines of text, in a grey a
+touch off the ground, with one light sweeping across every 1.6 s:
+
+``` python
+from fxgui.fxwidgets import FXSkeleton, FXTopProgress
+
+FXSkeleton.cover(tree)            # Over the rows; the header stays.
+...                               # The data arrives.
+FXSkeleton.uncover(tree)
+
+cards = FXSkeleton(kind="cards", count=6)   # Or "rows", "lines".
+```
+
+`cover` puts the skeleton inside a list's, tree's or table's frame and
+keeps it the view's size; `count=None` fills the height.
+
+`FXTopProgress(widget)` runs a 2 px accent line along the widget's top
+edge, over its content, letting the mouse through. `start()` shows a wait
+of unknown length: past 150 ms the line creeps toward 90 % until
+`finish()` runs it to the end and fades it. `set_value(0.4)` shows a
+known share instead.
+
+Screen readers hear "Loading" from both; the line is a progress bar with
+its value. Under reduced motion (`FXGUI_REDUCED_MOTION=1`) the skeleton's
+light stays still, a wait is a still, full line, and `finish()` hides it
+at once.
+
+## Segmented Tabs and Tab Counts
+
+A view switch (Table | Gantt | Board) is a tab bar marked segmented: the
+tabs sit side by side on a track, and the picked one is a raised chip
+that slides to the tab you pick. It stays a `QTabBar`, so its signals,
+keyboard and `currentIndex` are Qt's own. Mark a bar or a whole
+`QTabWidget`:
+
+``` python
+from qtpy.QtWidgets import QTabBar
+from fxgui import fxstyle
+
+views = QTabBar()
+for name in ("Table", "Gantt", "Board"):
+    views.addTab(name)
+fxstyle.mark_as_segmented(views)
+views.currentChanged.connect(show_view)
+```
+
+`fxstyle.mark_as_segmented(views, False)` gives the plain tab look back.
+
+A count after a tab's label works on any fxgui tab bar, segmented or
+plain. Pass None to remove it. A screen reader reads the tab as
+"Pipeline, 5".
+
+``` python
+fxstyle.set_tab_count(views, 0, 26)
+fxstyle.set_tab_count(views, 0, None)
+```
+
+On a closable bar whose close buttons stand on the right, the count
+stands before the label. Set the count again after renaming a tab, so the
+name a reader hears follows. The gallery's Containers page shows both.
 
 ## Tab Order
 

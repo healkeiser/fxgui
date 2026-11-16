@@ -66,7 +66,7 @@ class FXEmptyState(QWidget):
         self.icon = FXIconLabel(size=_ICON_PIXELS)
         self.action = QLabel()
         self.action.setObjectName("fxEmptyAction")
-        fxstyle.ink(self.action, "text")
+        fxstyle.ink(self.action, "text_strong")
         self.detail = QLabel()
         self.detail.setObjectName("fxEmptyDetail")
         fxstyle.ink(self.detail, "text_muted")

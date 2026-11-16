@@ -64,7 +64,9 @@ def test_the_thumbnail_is_16_9_and_fits_the_row(qtbot, set_row_size, name):
     tree, delegate, item = delegate_tree(qtbot, ["Asset"])
     item.setData(0, FXThumbnailDelegate.THUMBNAIL_VISIBLE_ROLE, True)
     width, height = delegate._THUMBNAIL_WIDTH, delegate._THUMBNAIL_HEIGHT
-    assert abs(width - height * 16 / 9) <= 0.5
+    # The web look's sizes per row: 32 x 18, 44 x 24, 72 x 40.
+    assert (width, height) == FXThumbnailDelegate.THUMBNAIL_SIZES[
+        fxstyle.row_height()]
     outer = height + delegate._THUMBNAIL_BORDER
     assert outer + delegate._THUMBNAIL_MARGIN * 2 <= fxstyle.row_height()
     index = tree.model().index(0, 0)
@@ -126,7 +128,7 @@ def test_a_big_row_without_thumbnail_centres_its_status(qtbot, set_row_size):
         assert abs(_centre(ys) - middle) <= 1.5, (color.name(), ys, middle)
 
 
-def test_a_big_row_without_thumbnail_centres_its_child_count(
+def test_a_big_row_s_child_count_follows_its_name_centred(
     qtbot, set_row_size
 ):
     set_row_size("big")
@@ -134,21 +136,21 @@ def test_a_big_row_without_thumbnail_centres_its_child_count(
     QTreeWidgetItem(parent, ["child"])
     bare, _ = _plain_tree(qtbot)
     row = counted.visualItemRect(parent)
-    strip = QRect(row.right() - 40, row.top(), 40, row.height())
     shown = counted.viewport().grab().toImage()
     plain = bare.viewport().grab().toImage()
-    ys = sorted(
-        {
-            y
-            for y in range(strip.top(), strip.bottom() + 1)
-            for x in range(strip.left(), strip.right() + 1)
-            if shown.pixel(x, y) != plain.pixel(x, y)
-        }
-    )
-    # The digits' ink sits inside the centred text box, not the bottom one.
-    box = FXThumbnailDelegate._CHILD_COUNT_HEIGHT
-    top = row.top() + (row.height() - box) // 2
-    assert ys and top <= ys[0] and ys[-1] < top + box, (ys, top)
+    changed = {
+        (x, y)
+        for y in range(row.top(), row.bottom() + 1)
+        for x in range(row.left(), row.right() + 1)
+        if shown.pixel(x, y) != plain.pixel(x, y)
+    }
+    xs = sorted(x for x, _ in changed)
+    ys = sorted(y for _, y in changed)
+    # Right after the name, as the web look's tree: not at the row's end.
+    assert xs and xs[-1] < row.left() + row.width() // 2, (xs, row)
+    # Centred on the name's line.
+    middle = row.top() + row.height() / 2
+    assert abs((ys[0] + ys[-1]) / 2 - middle) <= 2, (ys, middle)
 
 
 def test_the_overlay_stays_inside_a_small_thumbnail(qtbot, set_row_size):

@@ -202,7 +202,7 @@ class FXFilteredTree(QWidget):
     def __init__(
         self,
         tree: Optional[FXKeyboardTree] = None,
-        placeholder: str = "Filter...",
+        placeholder: str = "Filter",
         actions: Optional[QLayout] = None,
         parent: Optional[QWidget] = None,
     ):

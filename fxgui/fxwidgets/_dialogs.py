@@ -142,6 +142,8 @@ class FXFloatingDialog(QDialog):
             fxutils.add_shadow(self._container)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.resize(200, 40)
+        # Run modal (show_under_cursor), it dims its window; a popup does not.
+        fxutils.dim_behind(self)
 
         # Inside a DCC the host application carries no fxgui sheet.
         fxstyle.register_themed_root(self)

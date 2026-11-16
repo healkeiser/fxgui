@@ -64,8 +64,9 @@ def test_the_bar_is_the_base_sheet_s_flat_pill(qtbot):
 
     assert image.pixelColor(filled).name() == QColor(
         fxstyle.colors().accent_primary).name()
+    # The track is the web look's meter: the text at 8 % over the pane.
     assert image.pixelColor(empty).name() == QColor(
-        fxstyle.colors().control_edge).name()
+        fxstyle._token_map(fxstyle.get_theme())["@meter_track"]).name()
 
 
 def test_the_task_icon_wears_the_icon_token(qtbot):

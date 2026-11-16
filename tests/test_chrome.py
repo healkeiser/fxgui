@@ -96,7 +96,8 @@ def test_a_tree_draws_chevrons_and_no_branch_lines(qtbot, theme):
     opened, closed, leaf = (tree.topLevelItem(row) for row in range(3))
     for item in (opened, closed):
         inks = _pixels(image, _branch(tree, item))
-        assert min(_distance(ink, colors.icon) for ink in inks) <= 24, inks
+        # The chevrons wear the dimmed ink, as the web look's.
+        assert min(_distance(ink, colors.text_dimmed) for ink in inks) <= 24, inks
     # A leaf, a child and the column under an open parent are bare, but for
     # the row's rule, which runs on under the indentation along the bottom.
     sunken = colors.surface_sunken.lower()
@@ -113,7 +114,7 @@ def test_a_tree_draws_chevrons_and_no_branch_lines(qtbot, theme):
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
-def test_a_nav_list_s_current_row_is_a_neutral_chip_in_the_nav_ink(
+def test_a_nav_list_s_current_row_is_the_pressed_chip_in_the_nav_ink(
     qtbot, theme
 ):
     pages = QListWidget()
@@ -134,12 +135,15 @@ def test_a_nav_list_s_current_row_is_a_neutral_chip_in_the_nav_ink(
     # Past the text: the chip's own fill, a resting row none.
     middle = current.center().y()
     assert image.pixelColor(current.right() - 8, middle).name() == (
-        colors.state_hover.lower())
+        colors.state_pressed.lower())
     assert image.pixelColor(rest.right() - 8, rest.center().y()).name() != (
-        colors.state_hover.lower())
+        colors.state_pressed.lower())
     # Set in from the side and rounded: the row's corner is not the chip.
     assert image.pixelColor(current.topLeft()).name() != (
-        colors.state_hover.lower())
+        colors.state_pressed.lower())
+    # An idle row reads in the muted ink.
+    idle = _pixels(image, rest)
+    assert min(_distance(pixel, colors.text_muted) for pixel in idle) <= 24
     ink = fxstyle._token_map(theme)["@nav_ink"]
     inks = _pixels(image, current)
     assert min(_distance(pixel, ink) for pixel in inks) <= 24, inks
@@ -211,7 +215,7 @@ def test_every_arrow_in_the_sheet_is_a_chevron(theme):
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
-def test_combo_and_header_arrows_wear_the_icon_token(qtbot, theme):
+def test_combo_arrow_wears_the_icon_token_a_sort_mark_the_strong_ink(qtbot, theme):
     holder = QWidget()
     column = QVBoxLayout(holder)
     combo = QComboBox()
@@ -238,7 +242,8 @@ def test_combo_and_header_arrows_wear_the_icon_token(qtbot, theme):
     # The sort mark sits right after the label, in the section's first half.
     left = header.sectionViewportPosition(0)
     mark = QRect(left, 0, header.sectionSize(0) // 2, header.height())
-    assert _ink_near(image, mapped(header, mark), icon) <= 40
+    # The sorted section's mark and label wear the strong ink.
+    assert _ink_near(image, mapped(header, mark), fxstyle.colors().text_strong) <= 40
 
 
 # (4) A group box's title sits above a whole rounded card.
@@ -1003,8 +1008,11 @@ def test_the_gaps_around_and_between_tab_pills_are_one_size(qtbot):
     window.deleteLater()
     QApplication.processEvents()
 
-    # A sunken body, so the gap below the pill ends at the content's edge.
-    docks = _paired_docks(QTreeWidget())
+    # A sunken body, so the gap below the pill ends at the content's edge;
+    # no header, which is transparent: the body is flush in its pane.
+    body = QTreeWidget()
+    body.setHeaderHidden(True)
+    docks = _paired_docks(body)
     holder = themed_window(qtbot, "dark", docks, size=(600, 400))
     _current_one(docks)
     manager = docks.manager()

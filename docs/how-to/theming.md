@@ -51,8 +51,9 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 | `frame` | The chrome around the panes of a framed window (optional) |
 | `well` | Lists and logs set into a pane (optional) |
 | `pane_border` | The 1 px edge of a pane on the frame (optional) |
-| `splitter_mark` | The dots on a marked splitter's handles (optional) |
+| `splitter_mark` | Kept for themes and callers; fxgui no longer draws it, as a splitter handle is blank at rest (optional) |
 | `tooltip` | Tooltip popup backgrounds |
+| `card` | A raised card: `FXProgressCard`, a comment (optional). Omitted, `surface` stepped `fxstyle.CARD_STEP` (0.035, OKLab) toward `text` on a dark theme, `surface` itself on a light one |
 
 `frame`, `well`, `pane_border` and `splitter_mark` are computed when a theme leaves them out, and a theme that states one keeps its own value:
 
@@ -77,11 +78,15 @@ Each theme defines semantic color roles. All names are designed to clearly indic
 | `text` | Primary text for all widgets |
 | `text_muted` | Secondary text: placeholders, secondary labels, headers, the tabs that are not current |
 | `text_disabled` | Disabled widget text |
-| `text_strong` | *(Optional)* A row's name. Omitted, `text` moved 60% of the way to black or white (`fxstyle.STRONG_STEP`) |
+| `text_strong` | *(Optional)* A row's name, a select's value, a sorted header, an empty state's title, a tooltip. Omitted, `text` moved 60% of the way to black or white (`fxstyle.STRONG_STEP`) |
+| `text_toned` | *(Optional)* A task's name, a pane's values, a group header row. Omitted, half-way from `text` to `text_muted` (OKLab) |
+| `text_dimmed` | *(Optional)* Chevrons, breadcrumb separators, dates, an empty cell's dash. Omitted, half a step past `text_muted`; never louder than `text_muted` |
 | `text_on_accent_primary` | *(Optional)* Text on `accent_primary` backgrounds (e.g., selected items). Auto-computed if omitted |
 | `text_on_accent_secondary` | *(Optional)* Text on `accent_secondary` backgrounds (a hovered primary button). Auto-computed if omitted |
 
 `text` and `text_muted` are held to 4.5:1 (`fxstyle.TEXT_CONTRAST`, WCAG AA) on every surface they sit on: `surface`, `surface_sunken`, `surface_alt`, `well`, `frame`, `tooltip` and `state_hover`, and `text` on `state_pressed` and `state_checked_hover` too. A theme's value that misses it is darkened or lightened until it reads, so `fxstyle.colors().text` can differ from the file. `text` then moves on until it stands 1.5:1 off `text_muted` (`fxstyle.MUTED_STEP`), so the two always read as two ranks; where `text` is already black or white, `text_muted` steps back toward the surface instead, as far as it still reads at 4.5:1.
+
+`text_toned` and `text_dimmed` are held to 4.5:1 on the same grounds (and on `card`): where `text_muted` already sits at that floor, `text_dimmed` comes to `text_muted`.
 
 An omitted `text_on_accent_*` is black or white, whichever reads better on the accent.
 
@@ -131,6 +136,7 @@ reads the alpha.
 | `shadow` | Colour of a floating card's drop shadow, `#AARRGGBB` (dark `#50000000`, light `#28000000`) |
 | `shadow_blur` | Its blur radius in pixels (16) |
 | `scrim` | Fill dimming a pane behind `FXLoadingOverlay`, `#AARRGGBB` (`#80000000`) |
+| `modal_scrim` | *(Optional)* Fill dimming a window behind a modal dialog (`fxutils.dim_behind`), `#AARRGGBB`. Black at 60 % on a dark theme, `#F3F3F5` at 75 % on a light one if omitted |
 
 ### Icon Color
 
@@ -416,6 +422,9 @@ reuses them, so it looks like it belongs.
 | Menu row | 24 px at the 12 px body font | `QMenu::item` padding |
 | Tool button | a 22 px box around a 16 px icon | `QToolButton` margin 2 px, padding 2 px, a reserved 1 px edge |
 | Tab | one 4 px gap above, below and between pills | tab margin `4px 2px`, the same for `QTabBar` and QtAds tabs |
+| Segmented tab (`mark_as_segmented`) | 28 px tabs side by side on a 36 px track: 4 px padding, 12 px corners | tab margin `4px 0`, the first and last 4 px off the track's ends |
+| Tab count (`set_tab_count`) | a 20 px badge, 4 px after the label, 10 px text at weight 500 | `QTabBar QLabel#fxTabCount`, `@small_radius` |
+| Splitter handle | an 8 px hit area, or the width `setHandleWidth` gives a marked one | `QSplitter::handle` width |
 | Border | 1 px, solid | Every control |
 
 No rule names a 2, 4 or 8 px radius in pixels. Two shapes do keep pixels:
@@ -473,6 +482,28 @@ layout.setContentsMargins(fxstyle.DIALOG_GUTTER, fxstyle.DIALOG_EDGE,
 layout.setSpacing(fxstyle.DIALOG_GAP)
 ```
 
+### The web look's parts
+
+| Part | Value | Name |
+|------|-------|------|
+| A compact button, in a row or a panel | 24 px, small text, 16 px icon | `fxstyle.mark_compact(button)`, `fxstyle.COMPACT_HEIGHT` |
+| A filter field | 28 px, small text, its text 32 px in | `FXSearchBar`, `fxstyle.FILTER_DROP` (4 px under a control) |
+| A navigation tree's rows | one row size under the one in force | `fxstyle.mark_dense(view)`, `fxstyle.row_height(view)` |
+| A view that fills its pane | no frame of its own | `fxstyle.mark_flush(view)`; `FXDockArea` marks a pane whose body is a view |
+| A reading pane (a task's details) | content 24 px in, blocks 24 px apart | `fxstyle.READING_INSET` |
+| Column rules | after the first column always; every column when chosen (Window > Column lines) | `fxstyle.column_lines()`, `fxstyle.apply_column_lines(on)`, `fxstyle.draw_column_rule(...)` for a delegate of your own |
+| A meter's track | the text at 8 % over the pane (9 % light), held so the fill reads at 3:1 | `@meter_track`, `FXMeterBar` |
+| A sorted header section | its label and arrow in `text_strong` | drawn by `FXProxyStyle` |
+| A select | its value in `text_strong`, a 20 px chevron in `text_dimmed` | `QComboBox` |
+| A tooltip | `text_strong`; one line at the body's weight, keys after a middle dot | `tip()`, `apply_tip()` |
+| Keyboard focus | the control's 1 px accent edge plus a 3 px ring outside it at 25 %: the accent round inputs and primary buttons, the text round other buttons | `fxstyle.FOCUS_RING_WIDTH`, `fxstyle.FOCUS_RING_ALPHA` |
+
+The focus ring is a sibling drawn over the control, grown by 3 px: a sheet
+cannot draw outside a widget. It shows only for focus that came by
+keyboard, and the parent's edge clips it, as a web page's overflow does;
+the control's own accent edge still shows focus there. Check boxes, radio
+buttons, switches and rows keep their own focus marks.
+
 ### Fills and edges by state
 
 One rule under every row of the table: **the accent marks keyboard
@@ -493,6 +524,10 @@ looks like the focused one.
 A primary button (`FXPrimaryButton`) is filled `@primary_button`, hovers
 `@primary_button_hover` and presses `@primary_button_pressed`; its focus
 edge is `@text`, and disabled it is `@surface_alt` with `@text_disabled`.
+A button with `fxRole="danger"` (the verb of `FXConfirmDeleteDialog`) is
+filled the same way from `@feedback_error_foreground`: `@danger_button`,
+`@danger_button_hover`, `@danger_button_pressed`, its text
+`@text_on_danger`, the pole that reads on it at 4.5:1.
 Text edits and views do not change on hover. A menu is the one place the
 pointer moves the current item, so there alone hover is the accent.
 
@@ -546,11 +581,12 @@ shape is the only thing you see (a switch, a slider handle) needs more.
 
 | Part | Token | Rule |
 |------|-------|------|
-| Edge of a switch or a slider handle, and a slider's empty groove | `@control_edge` | `border_strong`, darkened or lightened until it reads at 3:1 on `@surface` |
+| Edge of a slider handle, and a slider's empty groove | `@control_edge` | `border_strong`, darkened or lightened until it reads at 3:1 on `@surface` |
 | Text of a tab that is not the current one | `@text_muted` | 4.5:1 on `@surface`, as every text ink is |
 | Current tab | A `@state_pressed` pill with `@text`, no edge | The same look on `QTabBar` and QtAds pane tabs. A hovered tab shows a lighter `@state_hover` pill, its text still `@text_muted`; a hovered current tab keeps its `@state_pressed` fill. The two fills stand at least 1.2:1 apart |
 | Filled part of a slider | `@accent_primary` | Reads at 3:1 on `@surface`; told from the groove by its hue and the handle |
-| Thumb of a switch | `@text_muted` off, `@text_on_accent_primary` on | Pushed to 3:1 on the track |
+| Track of a switch, off | `@text_dimmed` | 4.5:1 on `@surface`, as every text ink is |
+| Thumb of a switch | `@surface`, on and off | Pushed to 3:1 on the track |
 | Moving part of a spinner | `@accent_primary` | Over a `@border_light` track |
 
 A slider's groove and span both read at 3:1 on `@surface`, so they cannot
@@ -586,9 +622,27 @@ two apart.
   tree follows its header hidden or shown at any time. Rows run to the
   frame's sides, and a scroll bar's thumb sits centred between the rows
   and the frame.
-- A splitter handle and the gap between dock widgets show nothing until
-  the pointer finds them, then fill with `@accent_primary`. A splitter
-  marked with `mark_as_frame` keeps its painted dots.
+- A splitter handle and the gap between dock widgets show nothing at
+  rest: a plain one is clear, one marked with `mark_as_frame` (as the
+  dock gaps are) is the frame. Under the pointer, and for as long as it
+  is dragged, a 1 px `@accent_primary` line lights down its middle,
+  fading in over `MOTION_FAST` (150 ms; at once under reduced motion).
+  The handle keeps its whole width as the hit area and its resize
+  cursor. A splitter never takes keyboard focus, so the handle has no
+  focus look: the keyboard never used the old dot grip either.
+- A segmented bar (`fxstyle.mark_as_segmented(tabs)`) is for a view
+  switch, as Table | Gantt. Its tabs sit side by side on a
+  `@state_pressed` track; the current one is a chip in `@surface` with a
+  1 px `@border` ring and a faint drop, its text `@text_strong`, the
+  others `@text_muted`, turning `@text` under the pointer. The chip
+  slides to a newly picked tab on the spring over `MOTION_SPRING`
+  (400 ms), from wherever it is, or jumps under reduced motion. A plain
+  bar keeps the pill look and its gaps.
+- A tab's count (`fxstyle.set_tab_count(tabs, index, count)`) is a
+  20 px badge 4 px after the label: 10 px `@text` at weight 500 on
+  `@surface`, a 1 px `@border_light` ring. A screen reader reads the tab
+  as "Label, N". On a plain or a segmented bar; on a closable bar whose
+  close buttons stand on the right, the count stands before the label.
 - A progress bar is a 4 px pill: a `@control_edge` track and an
   `@accent_primary` chunk, no text unless you turn it on with
   `setTextVisible(True)`. It is the slider's groove.
@@ -610,6 +664,15 @@ two apart.
 A shadow reads its colour and blur from the theme each time it draws, so
 it follows a switch with no call.
 
+A modal dialog dims the window behind it. `FXConfirmDeleteDialog` and
+`FXFloatingDialog` do it on their own; any other dialog opts in with
+`fxutils.dim_behind(dialog)`. While the dialog is up through `exec()`,
+`open()` or `setModal(True)`, its parent's window wears `@modal_scrim`,
+faded in over `fxstyle.MOTION_BASE` (at once under reduced motion). The
+veil takes no clicks, follows the window's size and lifts when the
+dialog hides. A dialog with no parent, a modeless one and a popup dim
+nothing.
+
 `FXCommandPalette` opens centred across its window. `position` puts it
 at `"top"` (under the menu bar and the command rows), `"center"` (the
 default) or `"bottom"` (over the status bar). It stays inside a window
@@ -621,8 +684,8 @@ too small for it. Anything else raises `ValueError`.
 |---------|------|-------|-------|----------|
 | `QSlider` handle | fill `@surface`, edge `@accent_primary` | a thicker edge | edge `@text` | fill `@surface`, edge `@border` |
 | `QSlider`, `FXRangeSlider` groove and span | groove `@control_edge`, span `@accent_primary` | | | span `@border_strong` |
-| `FXToggleSwitch` off | fill `@surface_sunken`, edge `@control_edge` | fill `@state_hover`, edge kept | edge `@accent_primary` | fill `@surface`, edge `@border` |
-| `FXToggleSwitch` on | fill `@accent_primary` | fill `@primary_button_hover` | edge `@text` | fill `@surface_alt`, edge `@border` |
+| `FXToggleSwitch` off | fill `@text_dimmed`, no edge | fill `@text_toned` | edge `@accent_primary` | fill `@surface`, edge `@border` |
+| `FXToggleSwitch` on | fill `@accent_primary`, no edge | fill `@primary_button_hover` | edge `@text` | fill `@surface_alt`, edge `@border` |
 
 The switch's fills are pushed to 3:1 on `@surface` when a theme's own
 accent misses it.
@@ -786,6 +849,7 @@ class MyStatusChip(QWidget):
 Every role in the tables at the top of this page is a token: `@surface`
 in QSS, `fxstyle.colors().surface` in code. So are the computed ones:
 `@text_on_accent_primary`, `@icon_on_accent_primary`, `@primary_button`,
+`@danger_button`, `@text_on_danger`, `@modal_scrim`,
 `@control_edge`, `@card_radius`, `@shadow`, `@shadow_blur`,
 the flattened feedback colours (`@feedback_error_foreground`,
 `@feedback_info_background`, ...), `@button_radius` and the

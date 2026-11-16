@@ -105,8 +105,8 @@ def test_a_hidden_child_count_paints_no_badge(qtbot):
     QTreeWidgetItem(other, ["child"])
     other.setData(0, FXThumbnailDelegate.CHILD_COUNT_VISIBLE_ROLE, False)
     bare, _, _ = _tree_row(qtbot)
-    rect = shown.visualItemRect(parent)
-    corner = QRect(rect.right() - 30, rect.bottom() - 20, 30, 20)
+    # The count follows the name: the whole row tells it.
+    corner = shown.visualItemRect(parent)
 
     def region(tree):
         image = tree.viewport().grab().toImage()

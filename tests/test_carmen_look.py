@@ -1,0 +1,201 @@
+"""The web look's details that fxgui takes from the studio's tracker."""
+
+# Third-party
+import pytest
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QColor, QFont
+from qtpy.QtTest import QTest
+from qtpy.QtWidgets import (
+    QComboBox,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QStyleOptionViewItem,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QWidget,
+    QHBoxLayout,
+)
+
+# Internal
+from fxgui import fxstyle
+from fxgui.fxwidgets import (
+    FXKeycap,
+    FXMeterBar,
+    FXMeterShare,
+    FXTagChip,
+    FXThumbnailDelegate,
+)
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+def test_toned_and_dimmed_read_and_rank_between_text_and_muted(theme):
+    tokens = fxstyle._token_map(theme)
+    surface = tokens["@surface"]
+    ratio = fxstyle.get_contrast_ratio
+    text, toned = tokens["@text"], tokens["@text_toned"]
+    muted, dimmed = tokens["@text_muted"], tokens["@text_dimmed"]
+    for ink in (toned, dimmed):
+        assert ratio(ink, surface) >= fxstyle.TEXT_CONTRAST, (theme, ink)
+    # Text, toned, muted, dimmed: each no louder than the one before.
+    assert ratio(text, surface) >= ratio(toned, surface) >= ratio(muted, surface)
+    assert ratio(muted, surface) >= ratio(dimmed, surface)
+
+
+@pytest.mark.parametrize("theme", fxstyle.get_available_themes())
+def test_a_meter_s_fill_reads_at_3_to_1_on_its_track(theme):
+    tokens = fxstyle._token_map(theme)
+    assert fxstyle.get_contrast_ratio(
+        tokens["@accent_primary"], tokens["@meter_track"]) >= 2.99
+
+
+def test_a_dark_card_is_raised_a_light_one_is_the_pane():
+    dark, light = fxstyle._token_map("dark"), fxstyle._token_map("light")
+    assert dark["@card"] != dark["@surface"]
+    assert light["@card"] == light["@surface"]
+
+
+# The windows a test shows, held until the test ends.
+_HELD = []
+
+
+@pytest.fixture(autouse=True)
+def _release():
+    yield
+    _HELD.clear()
+
+
+def _shown(qtbot, *widgets):
+    window = QWidget()
+    _HELD.append(window)
+    fxstyle.register_themed_root(window)
+    row = QHBoxLayout(window)
+    for widget in widgets:
+        row.addWidget(widget)
+    qtbot.addWidget(window)
+    window.show()
+    qtbot.waitExposed(window)
+    return window
+
+
+def test_a_compact_button_is_24_px_with_small_text(qtbot):
+    button = QPushButton("Reply")
+    fxstyle.mark_compact(button)
+    _shown(qtbot, button)
+    assert button.height() == fxstyle.COMPACT_HEIGHT
+    assert button.font().pixelSize() == fxstyle.FONT_SIZE - 1
+
+
+def test_a_keycap_is_20_px_tall_and_a_lone_key_square(qtbot):
+    cap = FXKeycap("K")
+    _shown(qtbot, cap)
+    label = cap.findChild(QLabel)
+    assert (label.width(), label.height()) == (20, 20)
+
+
+def test_a_dense_tree_is_one_row_size_under(qtbot):
+    fxstyle.apply_row_size("normal", save=False)
+    dense, plain = QTreeWidget(), QTreeWidget()
+    for tree in (dense, plain):
+        QTreeWidgetItem(tree, ["shot"])
+    fxstyle.mark_dense(dense)
+    _shown(qtbot, dense, plain)
+    height = lambda tree: tree.visualItemRect(tree.topLevelItem(0)).height()  # noqa: E731
+    assert (height(dense), height(plain)) == (28, 36)
+    assert fxstyle.row_height(dense) == 28 and fxstyle.row_height() == 36
+
+
+def test_a_flush_view_draws_no_frame(qtbot):
+    tree = QTreeWidget()
+    fxstyle.mark_flush(tree)
+    _shown(qtbot, tree)
+    assert tree.frameWidth() == 0
+
+
+def test_column_lines_rule_the_first_column_always_the_rest_on_demand(qtbot):
+    tree = QTreeWidget()
+    tree.setColumnCount(3)
+    _shown(qtbot, tree)
+    try:
+        fxstyle.apply_column_lines(False, save=False)
+        assert [fxstyle._column_ruled(tree, c) for c in range(3)] == [
+            True, False, False]
+        fxstyle.apply_column_lines(True, save=False)
+        assert [fxstyle._column_ruled(tree, c) for c in range(3)] == [
+            True, True, False]
+    finally:
+        fxstyle.apply_column_lines(False, save=False)
+
+
+def test_a_select_s_value_reads_in_the_strong_ink(qtbot):
+    combo = QComboBox()
+    combo.addItems(["HHHHHH"])
+    _shown(qtbot, combo)
+    image = combo.grab().toImage()
+    brightest = max(
+        QColor(image.pixel(x, y)).lightness()
+        for y in range(image.height()) for x in range(8, 60))
+    assert brightest == QColor(fxstyle.colors().text_strong).lightness()
+
+
+def test_a_chip_is_neutral_with_an_optional_dot(qtbot):
+    plain = FXTagChip("comp", removable=False)
+    dotted = FXTagChip("WIP", color="feedback_warning_foreground")
+    _shown(qtbot, plain, dotted)
+    assert plain.dot is None and dotted.dot is not None
+    assert dotted.dot.size().width() == 8
+
+
+def test_a_meter_splits_its_shares_and_stops_full():
+    bar = FXMeterBar([FXMeterShare(5), FXMeterShare(3, faint=True)], maximum=16)
+    assert bar.fractions() == [5 / 16, 3 / 16]
+    assert FXMeterBar([30], maximum=20).fractions() == [1.0]
+    assert FXMeterBar(compact=True).height() == 4
+
+
+def _thumbnail_tree(qtbot):
+    tree = QTreeWidget()
+    tree.setColumnCount(2)
+    delegate = FXThumbnailDelegate(tree)
+    tree.setItemDelegate(delegate)
+    item = QTreeWidgetItem(tree, ["sh0010", "1001"])
+    _shown(qtbot, tree)
+    return tree, delegate, item
+
+
+def test_a_row_s_own_weight_beats_the_emphasis(qtbot):
+    tree, delegate, item = _thumbnail_tree(qtbot)
+    index = tree.model().index(0, 0)
+    option = QStyleOptionViewItem()
+    option.font = tree.font()
+    emphasis = fxstyle.drawn_weight(fxstyle.EMPHASIS_WEIGHT)
+    assert delegate._title_font(option, index).weight() == emphasis
+    light = QFont(tree.font())
+    light.setWeight(QFont.Weight(fxstyle.drawn_weight(fxstyle.BODY_WEIGHT)))
+    item.setFont(0, light)
+    assert delegate._title_font(option, index).weight() == (
+        fxstyle.drawn_weight(fxstyle.BODY_WEIGHT))
+
+
+def test_align_column_aligns_the_cells_and_the_header(qtbot):
+    tree, delegate, _item = _thumbnail_tree(qtbot)
+    delegate.align_column(tree, 1, Qt.AlignRight, tabular=True)
+    header = tree.model().headerData(1, Qt.Horizontal, Qt.TextAlignmentRole)
+    assert int(header) & int(Qt.AlignHorizontal_Mask) == int(Qt.AlignRight)
+    assert 1 in delegate._tabular_columns
+
+
+def test_a_focus_ring_shows_for_the_keyboard_only(qtbot):
+    field, button = QLineEdit(), QPushButton("Cancel")
+    window = _shown(qtbot, field, button)
+    window.activateWindow()
+    qtbot.waitUntil(window.isActiveWindow)
+    fxstyle.focus_visible(field)
+    field.setFocus()
+    QTest.keyClick(window, Qt.Key_Tab)
+    ring = fxstyle._FocusRing._shown
+    assert ring is not None and ring._target is button
+    grow = fxstyle.FOCUS_RING_WIDTH
+    assert ring.geometry() == button.geometry().adjusted(-grow, -grow, grow, grow)
+    QTest.mouseClick(field, Qt.LeftButton)
+    assert fxstyle._FocusRing._shown is None

@@ -30,6 +30,7 @@ from qtpy.QtCore import (
 )
 from qtpy.QtGui import QAction, QColor, QIcon, QShortcut
 from qtpy.QtWidgets import (
+    QAbstractScrollArea,
     QLabel,
     QMainWindow,
     QSizePolicy,
@@ -454,6 +455,9 @@ class FXDockArea(QWidget):
         held = self._docks.centralWidget()
         old = held.takeWidget()
         held.setWidget(widget, _NO_SCROLL)
+        # A view that is the whole pane needs no frame inside the pane's.
+        if isinstance(widget, QAbstractScrollArea):
+            fxstyle.mark_flush(widget)
         held.dockAreaWidget().setVisible(True)
         self._placeholder = False
         if old is not None:
@@ -489,6 +493,9 @@ class FXDockArea(QWidget):
         held = ads.CDockWidget(self._docks, title)
         held.setObjectName(name)
         held.setWidget(widget, _NO_SCROLL)
+        # A view that is the whole pane needs no frame inside the pane's.
+        if isinstance(widget, QAbstractScrollArea):
+            fxstyle.mark_flush(widget)
         # A pane picked by its tab rises in; one a person opens grows
         # open. `triggered`, not `viewToggled`: a window building or
         # restoring its layout toggles every pane, and none may grow.

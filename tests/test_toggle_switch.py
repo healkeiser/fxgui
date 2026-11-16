@@ -132,14 +132,32 @@ def test_hover_and_focus_change_the_switch(qtbot, theme, checked):
 
 @pytest.mark.parametrize("theme", ["dark", "light"])
 def test_a_hovered_switch_is_not_dressed_as_focused(qtbot, theme):
-    """Hover fills the off track with the hover fill and keeps its edge;
-    only keyboard focus recolours the edge."""
-    rest = _grab(qtbot, theme, False)
+    """Hover steps the off track up to the toned text and draws no ring;
+    only keyboard focus rings the track."""
     hover = _grab(qtbot, theme, False, "hover")
     focus = _grab(qtbot, theme, False, "focus")
-    assert hover[1] == fxstyle.colors().state_hover.lower()
-    assert hover[2] == rest[2]
-    assert hover[2] != focus[2]
+    assert hover[1] == fxstyle.colors().text_toned.lower()
+    assert hover[2] == hover[1]
+    assert focus[2] != focus[1]
+
+
+@pytest.mark.parametrize("theme", _THEMES)
+@pytest.mark.parametrize("checked", [False, True])
+def test_the_switch_wears_the_web_look(qtbot, theme, checked):
+    """Off: the dimmed grey, knob in the page colour; on: the accent. No
+    edge at rest: the track's top is its fill."""
+    thumb, track, edge, surface = _grab(qtbot, theme, checked)
+    colors = fxstyle.colors()
+    if checked:
+        assert track == fxstyle.readable_ink(
+            surface, colors.accent_primary, fxstyle.CONTROL_CONTRAST)
+    else:
+        assert track == colors.text_dimmed.lower()
+        # The off track holds 3:1 on the page in every theme.
+        assert _read((colors.text_dimmed, surface)) >= 3
+    assert thumb == fxstyle.readable_ink(
+        track, surface, fxstyle.CONTROL_CONTRAST)
+    assert edge == track
 
 
 @pytest.mark.parametrize("theme", ["dark", "light"])

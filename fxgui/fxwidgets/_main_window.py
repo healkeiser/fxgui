@@ -315,6 +315,14 @@ class FXMainWindow(QMainWindow):
             sizes.addAction(action)
             self.row_size_actions[size] = action
 
+        self.column_lines_action = fxutils.create_action(
+            self,
+            "Column lines",
+            trigger=lambda checked=False: fxstyle.apply_column_lines(checked),
+            checkable=True,
+        )
+        self.column_lines_action.setChecked(fxstyle.column_lines())
+
         self.open_documentation_action = fxutils.create_action(
             self,
             "Documentation",
@@ -351,12 +359,13 @@ class FXMainWindow(QMainWindow):
             theme_menu.addAction(action)
         window_menu.addMenu(theme_menu)
         size_menu = menu(
-            "Row size", _MENU_NAMES["row_size_menu"], window_menu
+            "Row height", _MENU_NAMES["row_size_menu"], window_menu
         )
         fxicons.set_icon(size_menu, "rows-3")
         for action in self.row_size_actions.values():
             size_menu.addAction(action)
         window_menu.addMenu(size_menu)
+        window_menu.addAction(self.column_lines_action)
         bar.addMenu(window_menu)
 
         help_menu = menu("Help", _MENU_NAMES["help_menu"], bar)

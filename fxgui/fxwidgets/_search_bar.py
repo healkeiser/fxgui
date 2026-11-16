@@ -9,8 +9,23 @@ from qtpy.QtGui import QResizeEvent
 from qtpy.QtWidgets import QWidget
 
 # Internal
+from fxgui import fxstyle
 from fxgui.fxwidgets._inputs import FXIconLineEdit
 from fxgui.fxwidgets._tips import FXKeycap
+
+# A filter field, as the web look's: 28 px, small text, the text 32 px in
+# (the icon sits by the field's own rect, so the left padding moves only
+# the text).
+fxstyle.register_widget_style(
+    """
+    FXSearchBar {
+        font-size: @font_size_small;
+        padding: 4px 10px 4px 2px;
+        min-height: @filter_inner;
+        max-height: @filter_inner;
+    }
+    """
+)
 
 # The sheet draws a bar marked so as a ghost field: no edge, filled on hover.
 GHOST_PROPERTY = "fxGhost"

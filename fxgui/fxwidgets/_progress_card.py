@@ -24,7 +24,7 @@ from fxgui.fxwidgets._severity import SEVERITIES, severity_icon
 fxstyle.register_widget_style(
     """
     FXProgressCard {
-        background-color: @surface;
+        background-color: @card;
         border: 1px solid @border;
         border-radius: @card_radius;
     }

@@ -4,7 +4,8 @@
 from qtpy.QtCore import Qt
 
 # One range, so no two roles can share a number and FIRST_FREE is always
-# the first one past them. A role added here goes before SORT.
+# the first one past them. A role added here goes before FIRST_FREE, so
+# the roles already published keep their numbers.
 (
     THUMBNAIL_VISIBLE,
     THUMBNAIL_PATH,
@@ -21,5 +22,7 @@ from qtpy.QtCore import Qt
     STATUS_LABEL_ICON,
     SORT,
     STATUS_LABEL_UPPERCASE,
+    GROUP_ROW,
+    TABULAR_FIGURES,
     FIRST_FREE,
-) = range(int(Qt.UserRole) + 1, int(Qt.UserRole) + 17)
+) = range(int(Qt.UserRole) + 1, int(Qt.UserRole) + 19)

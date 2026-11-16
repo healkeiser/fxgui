@@ -1,4 +1,4 @@
-"""The splitter mark and the flat icon button, as a caller opts in."""
+"""The splitter handle's lit line and the flat icon button."""
 
 # Built-in
 import json
@@ -8,8 +8,9 @@ import sys
 
 # Third-party
 import pytest
-from qtpy.QtCore import QPoint, QRect, Qt
+from qtpy.QtCore import QEvent, QPoint, QRect, Qt
 from qtpy.QtGui import QColor, QPixmap
+from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
     QApplication,
     QPushButton,
@@ -90,25 +91,43 @@ def test_a_marked_splitter_keeps_the_handle_width_it_was_given(
         assert second.top() - first.bottom() - 1 == gap
 
 
+def _lit(handle):
+    """Light `handle` as the pointer does; at once, as motion is off."""
+    fxstyle._SplitterMark._light(handle, True)
+
+
+def _colors(image):
+    return {image.pixelColor(x, y).name()
+            for x in range(image.width()) for y in range(image.height())}
+
+
 @pytest.mark.parametrize("theme", THEMES)
 @pytest.mark.parametrize("orientation", ORIENTATIONS)
-def test_the_mark_is_five_dots_centred_in_the_gap(qtbot, orientation, theme):
+def test_a_marked_handle_is_the_frame_alone_at_rest(qtbot, orientation, theme):
     host, splitter = _splitter(qtbot, orientation, theme)
+
+    assert _colors(_handle_image(host, splitter)) == {_color("frame")}
+
+
+@pytest.mark.parametrize("theme", ["dark", "github_light"])
+@pytest.mark.parametrize("orientation", ORIENTATIONS)
+def test_a_lit_handle_draws_a_centred_accent_line(qtbot, orientation, theme):
+    host, splitter = _splitter(qtbot, orientation, theme)
+    _lit(splitter.handle(1))
     image = _handle_image(host, splitter)
     box, count = _mark(image, _color("frame"))
 
-    assert box is not None, "no mark drawn"
-    assert count == 5 * 2 * 2, "five 2 px dots, drawn once"
-    assert {image.pixelColor(x, y).name()
-            for x in range(box.left(), box.right() + 1)
-            for y in range(box.top(), box.bottom() + 1)} == {
-        _color("splitter_mark"), _color("frame")}
+    assert _colors(image) == {_color("frame"), _color("accent_primary")}
     across = orientation == Qt.Vertical
-    length = box.width() if across else box.height()
-    assert length == 18
-    # Centred both ways: equal room on each side of the mark.
-    assert box.left() == image.width() - 1 - box.right()
-    assert abs(box.top() - (image.height() - 1 - box.bottom())) <= 1
+    length, thick = (box.width(), box.height()) if across else (
+        box.height(), box.width())
+    assert thick == 1
+    assert length == (image.width() if across else image.height())
+    assert count == length, "one line, drawn once"
+    # Centred across the gap, an even gap's extra pixel after it.
+    near = box.top() if across else box.left()
+    side = image.height() if across else image.width()
+    assert near == (side - 1) // 2
 
 
 _SCREEN_PROBE = r"""
@@ -130,6 +149,7 @@ host.resize(300, 200)
 host.show()
 for _ in range(5):
     app.processEvents()
+fxstyle._SplitterMark._light(splitter.handle(1), True)
 image = splitter.handle(1).grab().toImage()
 frame = fxstyle.colors().frame.lower()
 ink = [(x, y) for x in range(image.width()) for y in range(image.height())
@@ -143,7 +163,7 @@ print(json.dumps({"size": [image.width(), image.height()],
 
 @pytest.mark.parametrize("scale", ["1", "1.5", "2"])
 @pytest.mark.parametrize("orientation", ["h", "v"])
-def test_the_mark_is_exact_in_device_pixels_on_a_scaled_screen(
+def test_the_line_is_exact_in_device_pixels_on_a_scaled_screen(
     tmp_path, orientation, scale
 ):
     """On a real scaled screen, not a pixmap: QT_SCALE_FACTOR in its own
@@ -155,33 +175,65 @@ def test_the_mark_is_exact_in_device_pixels_on_a_scaled_screen(
         env=env, capture_output=True, text=True, timeout=60, check=True)
     probe = json.loads(result.stdout.strip().splitlines()[-1])
     ratio = float(scale)
-    dot = round(2 * ratio)
+    line = max(1, round(ratio))
     width, height = probe["size"]
     left, top, right, bottom = probe["box"]
     across = orientation == "v"
     run, thick = (right - left + 1, bottom - top + 1) if across else (
         bottom - top + 1, right - left + 1)
-    side = height if across else width
+    side, length = (height, width) if across else (width, height)
 
     assert side == round(6 * ratio), "the handle keeps its width"
-    assert probe["count"] == 5 * dot * dot, "five whole dots, drawn once"
-    assert thick == dot
-    assert run == 9 * dot
+    assert thick == line, "whole device pixels"
+    assert run == length, "the handle's whole length"
+    assert probe["count"] == line * length, "drawn once"
     near, far = (top, height - 1 - bottom) if across else (
         left, width - 1 - right)
     assert abs(near - far) <= 1, "centred across the gap"
 
 
-def test_a_handle_added_after_marking_gets_the_mark(qtbot):
+def test_a_handle_added_after_marking_lights(qtbot):
     host, splitter = _splitter(qtbot, Qt.Horizontal)
     splitter.addWidget(QWidget())
     qtbot.wait(10)
     handle = splitter.handle(2)
+    _lit(handle)
     pixmap = QPixmap(handle.size())
     handle.render(pixmap)
     box, count = _mark(pixmap.toImage(), _color("frame"))
 
-    assert count == 5 * 2 * 2
+    assert count == handle.height()
+
+
+def test_the_pointer_lights_a_handle_and_a_drag_holds_it(qtbot):
+    host, splitter = _splitter(qtbot, Qt.Horizontal, gap=8)
+    handle = splitter.handle(1)
+    hover(qtbot, handle)
+
+    assert handle.property("fxSplitterGlow") == 1.0
+    assert handle.cursor().shape() == Qt.SplitHCursor, "the cursor stays"
+
+    QTest.mousePress(handle, Qt.LeftButton, Qt.NoModifier,
+                     handle.rect().center())
+    QApplication.sendEvent(handle, QEvent(QEvent.Leave))
+    assert handle.property("fxSplitterGlow") == 1.0, "held while dragged"
+
+    QTest.mouseRelease(handle, Qt.LeftButton, Qt.NoModifier,
+                       QPoint(-20, handle.height() // 2))
+    assert handle.property("fxSplitterGlow") == 0.0, "dark, let go off it"
+    assert _colors(_handle_image(host, splitter)) == {_color("frame")}
+
+
+def test_the_line_fades_in_over_the_fast_motion(qtbot, motion):
+    host, splitter = _splitter(qtbot, Qt.Horizontal)
+    handle = splitter.handle(1)
+    _lit(handle)
+    qtbot.wait(fxstyle.MOTION_FAST // 3)
+    midway = handle.property("fxSplitterGlow")
+
+    assert 0.0 < midway < 1.0
+    qtbot.waitUntil(lambda: handle.property("fxSplitterGlow") == 1.0,
+                    timeout=fxstyle.MOTION_FAST * 4)
 
 
 def test_marking_writes_no_file(qtbot, tmp_path, monkeypatch):
@@ -206,15 +258,14 @@ def test_marking_writes_no_file(qtbot, tmp_path, monkeypatch):
     assert "splitter_mark" not in fxstyle._build_stylesheet()
 
 
-def test_the_mark_follows_a_theme_switch(qtbot):
+def test_the_lit_line_follows_a_theme_switch(qtbot):
     host, splitter = _splitter(qtbot, Qt.Horizontal)
+    _lit(splitter.handle(1))
     fxstyle.apply_theme("github_light")
     qtbot.wait(10)
-    image = _handle_image(host, splitter)
-    colors = {image.pixelColor(x, y).name()
-              for x in range(image.width()) for y in range(image.height())}
 
-    assert colors == {_color("frame"), _color("splitter_mark")}
+    assert _colors(_handle_image(host, splitter)) == {
+        _color("frame"), _color("accent_primary")}
 
 
 def test_an_unmarked_splitter_is_untouched(qtbot):
@@ -229,10 +280,30 @@ def test_an_unmarked_splitter_is_untouched(qtbot):
     qtbot.waitExposed(host)
 
     image = _handle_image(host, splitter)
-    colors = {image.pixelColor(x, y).name()
-              for x in range(image.width()) for y in range(image.height())}
 
-    assert _color("frame") not in colors
+    assert _color("frame") not in _colors(image)
+    assert _color("accent_primary") not in _colors(image)
+
+
+def test_an_unmarked_splitter_lights_an_8px_handle_under_the_pointer(qtbot):
+    fxstyle.apply_theme("dark")
+    host = QWidget()
+    fxstyle.register_themed_root(host)
+    splitter = QSplitter(Qt.Horizontal, host)
+    splitter.addWidget(QWidget())
+    splitter.addWidget(QWidget())
+    splitter.resize(300, 200)
+    qtbot.addWidget(host)
+    host.show()
+    qtbot.waitExposed(host)
+    handle = splitter.handle(1)
+    hover(qtbot, handle)
+    image = _handle_image(host, splitter)
+
+    assert handle.width() == 8, "the hit area"
+    lit = [x for x in range(image.width())
+           if image.pixelColor(x, 0).name() == _color("accent_primary")]
+    assert lit == [3], "one 1 px line, centred"
 
 
 def _flat(qtbot, theme="dark", on_frame=False, enabled=True):
@@ -334,8 +405,9 @@ def test_a_marked_splitter_wrapped_in_another_marks_both(qtbot):
     qtbot.wait(10)
 
     for splitter in (inner, outer):
+        _lit(splitter.handle(1))
         box, _count = _mark(_handle_image(host, splitter), _color("frame"))
-        assert box is not None, f"no mark on {splitter.orientation()}"
+        assert box is not None, f"no line on {splitter.orientation()}"
 
 
 def test_a_theme_switch_survives_a_dropped_handle_wrapper(qtbot):
