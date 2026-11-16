@@ -113,13 +113,17 @@ def _control_row() -> QHBoxLayout:
     slider.setFixedWidth(80)
     dot = fxwidgets.FXStatusDot()
     dot.set_feedback("success")
+    # Squeezed, the field scrolls its text; a scroll offset Qt keeps across a
+    # font change (a theme's weight), so it stays at the start.
+    shot = QLineEdit("sh0010")
+    shot.setCursorPosition(0)
     row = QHBoxLayout()
     for widget in (
         QPushButton("Cancel"),
         fxwidgets.FXIconButton("smile"),
         split,
         joined,
-        QLineEdit("sh0010"),
+        shot,
         combo,
         QSpinBox(),
         QCheckBox("Notify"),
