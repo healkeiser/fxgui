@@ -3,10 +3,10 @@
 `apply_tip` is fxgui's one tooltip. A useful tooltip answers three things
 at once: what the control is, what it does to the user's data, and how to
 reach it without the mouse. Every string goes through `tip`, so the layout
-is the same everywhere: title in the primary text, body dimmed, shortcut on
-the right as keycaps, one per key. A tip about a thing rather than a
-control adds labelled facts, a code line (a path, a key, a command) and a
-closing hint.
+is the same everywhere: title in the primary text, body dimmed, shortcut
+after the title and a middle dot as keycaps, one per key. A tip about a
+thing rather than a control adds labelled facts, a code line (a path, a
+key, a command) and a closing hint.
 
 `tip` writes the current theme's colours into the HTML, so `apply_tip`
 rebuilds it each time Qt is about to show it: a tip set in one theme shows

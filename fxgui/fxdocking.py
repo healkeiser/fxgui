@@ -20,6 +20,7 @@ import PySide6QtAds as ads
 from qtpy.QtCore import (
     QByteArray,
     QEvent,
+    QMargins,
     QObject,
     QPoint,
     QRect,
@@ -325,6 +326,8 @@ class _PaneEdges(QObject):
         self._held = held
         self._body = body
         self._chain: List[QWidget] = []
+        # Containers padded for a flush view, with their own margins.
+        self._padded: Dict[QWidget, QMargins] = {}
         self._busy = False
         body._fx_pane_edges = self
         body.installEventFilter(self)
@@ -341,6 +344,13 @@ class _PaneEdges(QObject):
                 tree, QAbstractItemView
             ) and not tree.property(fxstyle.FLUSH_PROPERTY):
                 fxstyle.mark_flush(tree)
+        # Undo the last scan's padding: a view unmarked or marked again
+        # since must not keep the gap a former state gave it.
+        self._held.layout().setContentsMargins(0, 0, 0, 0)
+        for padded, margins in self._padded.items():
+            if _compat.is_valid(padded):
+                padded.setContentsMargins(margins)
+        self._padded = {}
         if _flush_view(body):
             body.setContentsMargins(0, 0, 0, 0)
             self._chain = []
@@ -367,6 +377,7 @@ class _PaneEdges(QObject):
                     chain.append(link)
                     link.installEventFilter(self)
                 if parent is not body and parent not in chain:
+                    self._padded.setdefault(parent, parent.contentsMargins())
                     parent.setContentsMargins(gap, 0, gap, gap)
                 link = parent
         self._chain = chain

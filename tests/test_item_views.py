@@ -472,7 +472,6 @@ def test_a_status_label_is_a_coloured_mark_and_muted_words(qtbot):
     font.setBold(True)
     painter = QPainter(canvas)
     delegate._INDICATOR_BAND_HEIGHT = 40
-    delegate._INDICATOR_BAND_TOP = 0
     try:
         delegate._draw_status_label(
             painter, QRect(0, 0, 200, 40), 0, 200, 0, color, "HHHH", font

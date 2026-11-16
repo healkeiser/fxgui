@@ -671,12 +671,10 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     # edge: the dot _INDICATOR_RIGHT_MARGIN in, the label
     # _INDICATOR_SPACING left of it, or at the margin when there is no dot.
     # The band centres in the row.
-    _INDICATOR_BAND_TOP = 4
     _INDICATOR_BAND_HEIGHT = 14
     _INDICATOR_RIGHT_MARGIN = 6
     _INDICATOR_SPACING = 8
     _DOT_SIZE = 8
-    _LABEL_PADDING = 4
     # It rules its rows itself, under the indentation too: fxstyle marks a
     # view showing it, so the sheet's branch rule stands down there.
     _FX_RULES_ITS_ROWS = True

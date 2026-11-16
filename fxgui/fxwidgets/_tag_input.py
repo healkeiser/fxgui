@@ -71,7 +71,6 @@ class FXTagChip(QFrame):
     ):
         super().__init__(parent)
         self._text = text
-        self._removable = removable
 
         self.setFrameShape(QFrame.StyledPanel)
 
