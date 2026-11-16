@@ -325,10 +325,19 @@ def _digit_widths(metrics: QFontMetricsF, text: str) -> List[float]:
     ]
 
 
+def _advance(font: QFont, text: str) -> int:
+    """Return `text`'s width in whole pixels, rounded up.
+
+    Elision compares the exact width: an integer advance rounded down
+    (QFontMetrics) can leave a fractional pixel short, and the text cuts.
+    """
+    return math.ceil(QFontMetricsF(font).horizontalAdvance(text))
+
+
 def _text_width(font: QFont, text: str, tabular: bool) -> int:
     """Return the width `_draw_text` lays `text` in, tabular or not."""
     if not tabular:
-        return QFontMetrics(font).horizontalAdvance(text)
+        return _advance(font, text)
     font = _tabular_font(font)
     metrics = QFontMetricsF(font)
     if _HAS_TNUM:
@@ -952,14 +961,12 @@ class FXThumbnailDelegate(QStyledItemDelegate):
     ) -> int:
         """Return the width the stacked title and description want."""
         title = index.data(Qt.DisplayRole) or ""
-        width = QFontMetrics(title_font).horizontalAdvance(str(title))
+        width = _advance(title_font, str(title))
         description = self._description(index)
         if description:
             width = max(
                 width,
-                QFontMetrics(
-                    self._description_font(option)
-                ).horizontalAdvance(description),
+                _advance(self._description_font(option), description),
             )
         return width
 
@@ -1188,7 +1195,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             - (label_inset + 1)
             - self._text_left(option, index, has_thumbnail)
         )
-        return room < QFontMetrics(title_font).horizontalAdvance(title)
+        return room < _advance(title_font, title)
 
     def _indicator_insets(
         self, label_width: int, dot_width: int
@@ -1933,7 +1940,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             # Right after the name, as the web look's tree: the right limit
             # already keeps its room, so an elided name stops short of it.
             drawn = min(
-                QFontMetrics(title_font).horizontalAdvance(title),
+                _advance(title_font, title),
                 title_rect.width(),
             )
             count_rect = QRect(

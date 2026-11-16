@@ -343,3 +343,64 @@ def test_a_confirm_card_moves_by_its_title_and_stays_owned(qtbot):
     QTest.mouseRelease(title, Qt.LeftButton, pos=QPoint(70, 45))
     assert dialog.pos() != start
     dialog.close()
+
+
+def test_a_breadcrumb_segment_shows_an_ampersand_as_text(qtbot):
+    from qtpy.QtGui import QFontMetrics, QKeySequence
+    from qtpy.QtWidgets import QPushButton
+
+    from fxgui.fxwidgets import FXBreadcrumb
+
+    crumb = FXBreadcrumb()
+    _shown(qtbot, crumb)
+    crumb.set_path(["Projects", "R&D"])
+    segment = [
+        button for button in crumb.findChildren(QPushButton)
+        if button.objectName() == "fxBreadcrumbSegment"
+    ][-1]
+    # Escaped for Qt: no mnemonic, so no Alt+D and room for the "&".
+    assert segment.text() == "R&&D"
+    assert QKeySequence.mnemonic(segment.text()).isEmpty()
+    metrics = QFontMetrics(segment.font())
+    assert segment.sizeHint().width() >= metrics.horizontalAdvance("R&D")
+
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+@pytest.mark.parametrize("checkable", [False, True])
+def test_column_0_sized_to_its_contents_draws_its_title_whole(
+    qtbot, app_root, theme, checkable
+):
+    """Each title alone in its column: its width rounds its own way."""
+    fxstyle.apply_theme(theme, save=False)
+    app_root.resize(700, 300)
+    app_root.show()
+    titles = ["Shadow", "A much longer item name", "Lighting pass 2",
+              "beauty_v004", "Rim light", "Character seq010", "Episode edit",
+              "Matte painting", "Fog volume", "Ambient occlusion"]
+    for title in titles:
+        tree = QTreeWidget()
+        tree.setColumnCount(2)
+        tree.setItemDelegate(FXThumbnailDelegate(tree))
+        parent = QTreeWidgetItem(tree, ["G"])
+        item = QTreeWidgetItem(parent, [title])
+        if checkable:
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(0, Qt.Checked)
+        tree.expandAll()
+        app_root.layout().addWidget(tree)
+        qtbot.waitExposed(tree)
+        header = tree.header()
+        header.setStretchLastSection(False)
+        tree.resizeColumnToContents(0)
+        width = header.sectionSize(0)
+        row = tree.visualItemRect(item)
+
+        def cell(tree=tree, row=row, width=width):
+            image = tree.viewport().grab().toImage()
+            # Short of the column rule at the cell's right edge.
+            return image.copy(0, row.top(), width - 3, row.height())
+
+        fitted = cell()
+        tree.setColumnWidth(0, width + 80)
+        assert cell() == fitted, title
+        tree.setParent(None)

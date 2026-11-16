@@ -188,7 +188,9 @@ class _Segment(QPushButton):
             if not self._current and not self.underMouse():
                 ink = fxstyle.colors().text_muted
             painter.setPen(QColor(ink))
-            painter.drawText(contents, Qt.AlignCenter, self.text())
+            # Shows the escaped "&&" as the "&" it stands for.
+            painter.drawText(
+                contents, Qt.AlignCenter | Qt.TextShowMnemonic, self.text())
         else:
             box = QRect(contents.topLeft(), self.iconSize())
             box.moveCenter(contents.center())
@@ -621,7 +623,8 @@ class FXBreadcrumb(QWidget):
             fxicons.set_icon(button, self._home_icon)
             button.setToolTip(text)
         else:
-            button.setText(text)
+            # Plain text: a "&" is a letter, never a mnemonic or a shortcut.
+            button.setText(text.replace("&", "&&"))
 
         if not is_last:
             if is_home:
