@@ -3828,7 +3828,12 @@ class _FocusVisibility(QObject):
         widget.setProperty(FOCUS_VISIBLE_PROPERTY, visible)
         # Only fxgui's own sheet reads it; a host's widgets keep their polish.
         if _is_themed(widget):
-            fxutils.repolish(widget)
+            try:
+                fxutils.repolish(widget)
+            except RuntimeError:
+                # PySide6 6.5: a C++-made button losing focus inside its
+                # window's destructor passes is_valid, then refuses calls.
+                return
             _FocusRing.show_on(widget, visible)
 
 
@@ -3848,22 +3853,28 @@ FOCUS_RING_ALPHA = 0.25
 class _FocusRing(QWidget):
     """A ring drawn outside the control that has keyboard focus.
 
-    A sibling over the control, grown by `FOCUS_RING_WIDTH` each side: a
-    sheet cannot draw outside a widget. Inputs and primary buttons ring in
-    the accent, other buttons in the text's ink, each at
-    `FOCUS_RING_ALPHA`. The parent's edge clips it, as a web page's overflow
-    does; the control's own accent edge still shows focus there.
+    Over the control, grown by `FOCUS_RING_WIDTH` each side: a sheet
+    cannot draw outside a widget. Inputs and primary buttons ring in the
+    accent, other buttons in the text's ink, each at `FOCUS_RING_ALPHA`.
+    It is a child of the nearest parent with room for it, so a flush
+    composite (a button box, a path field) does not cut it; a scroll
+    area's viewport or the window clips it, as a web page's overflow does.
     """
 
     _shown: "Optional[_FocusRing]" = None
 
     def __init__(self, target: QWidget):
-        super().__init__(target.parentWidget())
+        super().__init__(_ring_room(target))
         self._target = target
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.setAttribute(Qt.WA_NoSystemBackground)
         self.setFocusPolicy(Qt.NoFocus)
-        target.installEventFilter(self)
+        # The target and each parent up to the ring's: any of them moving,
+        # resizing or hiding moves or hides the ring.
+        widget = target
+        while widget is not None and widget is not self.parentWidget():
+            widget.installEventFilter(self)
+            widget = widget.parentWidget()
         # Gone with the control, never left standing over its place.
         target.destroyed.connect(self.deleteLater)
         self._follow()
@@ -3888,7 +3899,9 @@ class _FocusRing(QWidget):
     def _follow(self) -> None:
         """Stand over the target, grown by the ring, above it."""
         grow = FOCUS_RING_WIDTH
-        self.setGeometry(self._target.geometry().adjusted(-grow, -grow, grow, grow))
+        target = self._target
+        place = QRect(target.mapTo(self.parentWidget(), QPoint()), target.size())
+        self.setGeometry(place.adjusted(-grow, -grow, grow, grow))
         self.raise_()
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
@@ -3897,7 +3910,7 @@ class _FocusRing(QWidget):
             self._follow()
         elif kind == QEvent.Hide:
             self.hide()
-        elif kind == QEvent.Show:
+        elif kind == QEvent.Show and self._target.isVisible():
             self.show()
             self._follow()
         return False
@@ -3907,7 +3920,7 @@ class _FocusRing(QWidget):
         target = self._target
         accent = isinstance(target, _RING_ACCENT_KINDS) or (
             target.property("fxRole") == "primary"
-            or type(target).__name__ == "FXPrimaryButton")
+            or type(target).__name__ in ("FXPrimaryButton", "FXJoinedGroup"))
         ink = QColor(theme.accent_primary if accent else theme.text)
         ink.setAlphaF(FOCUS_RING_ALPHA)
         height = target.height()
@@ -3925,11 +3938,30 @@ class _FocusRing(QWidget):
         painter.end()
 
 
+def _ring_room(target: QWidget) -> QWidget:
+    """Return the nearest parent of `target` its whole ring fits in.
+
+    Never past a scroll area's viewport, which clips what it scrolls, nor
+    past the window.
+    """
+    grow = FOCUS_RING_WIDTH
+    parent = target.parentWidget()
+    place = target.geometry().adjusted(-grow, -grow, grow, grow)
+    while not parent.rect().contains(place) and not parent.isWindow():
+        above = parent.parentWidget()
+        if isinstance(above, QAbstractScrollArea) and parent is above.viewport():
+            break
+        place.translate(parent.pos())
+        parent = above
+    return parent
+
+
 def _ring_target(widget: QWidget) -> Optional[QWidget]:
     """Return the control a focus ring goes round, or None for no ring.
 
-    A combo box's or spin box's own line edit rings its box; a widget at a
-    window's top level, or in an item view, a menu or a popup, has none.
+    A combo box's or spin box's own line edit rings its box, a joined
+    group's child its group; a widget at a window's top level, or in an
+    item view, a menu or a popup, has none.
     """
     parent = widget.parentWidget()
     if isinstance(parent, (QComboBox, QAbstractSpinBox)):
@@ -3938,6 +3970,10 @@ def _ring_target(widget: QWidget) -> Optional[QWidget]:
         return None
     if not isinstance(widget, _RING_KINDS):
         return None
+    if widget.property("fxJoined"):
+        widget, parent = parent, parent.parentWidget()
+        if parent is None or widget.isWindow():
+            return None
     probe = parent
     while probe is not None:
         if isinstance(probe, (QAbstractItemView, QMenu)) or (
