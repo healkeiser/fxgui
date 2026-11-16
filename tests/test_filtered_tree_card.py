@@ -73,3 +73,43 @@ def test_the_actions_are_the_cards_footer(qtbot, theme, summary):
     assert near(
         pixel(window, tree, placed.center().x(), tree.height() - 1),
         colors.border, 2)
+
+
+@pytest.mark.parametrize("summary", [True, False])
+def test_the_scroll_bars_scroll_the_rows_and_end_above_the_footer(
+    qtbot, summary
+):
+    from qtpy.QtWidgets import QApplication
+
+    filtered, window = _filtered(
+        qtbot, summary=summary, button=QPushButton("Open"))
+    tree = filtered.tree
+    for row in range(40):
+        QTreeWidgetItem(tree, [f"sh{row:03d}0", "WIP"])
+    # Wider than the card: both bars show.
+    tree.header().resizeSection(0, 900)
+    for _ in range(3):
+        QApplication.processEvents()
+    footer = tree.findChild(QFrame, "fxTreeActions")
+    horizontal = tree.horizontalScrollBar()
+    vertical = tree.verticalScrollBar()
+    assert horizontal.isVisible() and vertical.isVisible()
+    bar = QRect(horizontal.mapTo(tree, QPoint(0, 0)), horizontal.size())
+    side = QRect(vertical.mapTo(tree, QPoint(0, 0)), vertical.size())
+    above = tree.findChild(FXSummaryRow) if summary else tree.viewport()
+    frame = tree.frameWidth()
+
+    # Rows, summary, the bar right under them, then the footer at the foot.
+    assert bar.top() == above.geometry().bottom() + 1
+    assert footer.geometry().top() == bar.bottom() + 1
+    assert footer.geometry().bottom() == tree.height() - frame - 1
+    # The footer spans the card; the side bar ends with the summary.
+    assert footer.geometry().right() == tree.width() - frame - 1
+    assert side.bottom() == above.geometry().bottom()
+
+    # Narrow again: no bar, the footer right under the summary or rows.
+    tree.header().resizeSection(0, 60)
+    for _ in range(3):
+        QApplication.processEvents()
+    assert not horizontal.isVisible()
+    assert footer.geometry().top() == above.geometry().bottom() + 1

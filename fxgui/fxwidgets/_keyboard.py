@@ -5,7 +5,7 @@ import contextlib
 from typing import Callable, Iterator, Optional
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject, QSize, Qt, Slot
+from qtpy.QtCore import QEvent, QObject, QRect, QSize, Qt, Slot
 from qtpy.QtGui import QKeyEvent, QKeySequence
 from qtpy.QtWidgets import (
     QFrame,
@@ -320,7 +320,9 @@ class _TreeFooter(QFrame):
     """A tree card's footer: a row of actions under the rows and summary.
 
     It sits in the tree's bottom margin, under any `FXSummaryRow`, so the
-    card's edge and round corners frame it with the rows.
+    card's edge and round corners frame it with the rows. The scroll bars
+    scroll the rows and the summary, so they end above it: Qt lays the
+    horizontal one under the whole margin, and the footer moves it up.
     """
 
     def __init__(self, view: QTreeView, actions: QLayout):
@@ -332,8 +334,11 @@ class _TreeFooter(QFrame):
         gap = fxstyle.PANE_GAP
         actions.setContentsMargins(lead, gap, lead, gap)
         self.setLayout(actions)
-        # The view resets its viewport margins on every geometry update.
+        # The view resets its viewport margins on every geometry update,
+        # and puts its scroll bars back wherever it lays itself out.
         view.viewport().installEventFilter(self)
+        for bar in (view.horizontalScrollBar(), view.verticalScrollBar()):
+            _bar_box(bar).installEventFilter(self)
         fxstyle.theme_changed.connect(self._fit)
         # Under the frame's round corners, which the theme draws on top.
         self.lower()
@@ -348,8 +353,10 @@ class _TreeFooter(QFrame):
         return handled
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Keep the bottom margin and the footer under the summary."""
-        if event.type() in (QEvent.Resize, QEvent.Move, QEvent.Show):
+        """Keep the bottom margin, the scroll bars and the footer in place."""
+        if event.type() in (
+            QEvent.Resize, QEvent.Move, QEvent.Show, QEvent.Hide
+        ):
             self._fit()
         return False
 
@@ -369,6 +376,29 @@ class _TreeFooter(QFrame):
             view.setViewportMargins(
                 margins.left(), margins.top(), margins.right(), above + height)
         viewport = view.viewport().geometry()
-        self.setGeometry(
-            viewport.x(), viewport.bottom() + 1 + above,
-            viewport.width(), height)
+        under = viewport.bottom() + 1 + above
+        # Rows, summary, then the horizontal bar; the footer last, at the
+        # card's foot across its whole width, the vertical bar beside the
+        # rows and summary only.
+        horizontal = _bar_box(view.horizontalScrollBar())
+        if horizontal is not view and horizontal.isVisible():
+            _place(horizontal, horizontal.x(), under,
+                   horizontal.width(), horizontal.height())
+            under += horizontal.height()
+        vertical = _bar_box(view.verticalScrollBar())
+        if vertical is not view and vertical.isVisible():
+            _place(vertical, vertical.x(), vertical.y(), vertical.width(),
+                   viewport.bottom() + 1 + above - vertical.y())
+        _place(self, viewport.x(), under,
+               view.width() - view.frameWidth() - viewport.x(), height)
+
+
+def _bar_box(bar: QWidget) -> QWidget:
+    """Return what a scroll area lays a scroll bar out in: its container."""
+    return bar.parentWidget()
+
+
+def _place(widget: QWidget, x: int, y: int, width: int, height: int) -> None:
+    """Set `widget`'s geometry when it differs: each set re-enters `_fit`."""
+    if widget.geometry() != QRect(x, y, width, height):
+        widget.setGeometry(x, y, width, height)
