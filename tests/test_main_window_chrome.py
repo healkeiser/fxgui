@@ -196,7 +196,6 @@ def test_the_window_menu_draws_its_chosen_glyphs(qtbot, qapp):
     window = FXMainWindow()
     qtbot.addWidget(window)
     for action, name in [
-        (window.window_on_top_action, "pin"),
         (window.minimize_window_action, "minus"),
         (window.maximize_window_action, "square"),
     ]:

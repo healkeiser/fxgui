@@ -175,11 +175,26 @@ def test_the_strip_lights_on_enter_and_drops_on_leave(qtbot, qapp):
 
     assert _strip_fill(crumb) is None
 
-    QApplication.sendEvent(crumb, _enter_event(crumb))
+    path = crumb._scroll_area
+    QApplication.sendEvent(path, _enter_event(path))
     assert _strip_fill(crumb) == lit, "lit while pointed at"
 
-    QApplication.sendEvent(crumb, QEvent(QEvent.Type.Leave))
+    QApplication.sendEvent(path, QEvent(QEvent.Type.Leave))
     assert _strip_fill(crumb) is None, "and bare again on leaving"
+
+
+def test_the_back_button_does_not_light_the_path(qtbot, qapp):
+    from fxgui.fxwidgets import FXBreadcrumb
+
+    crumb = FXBreadcrumb(show_navigation=True)
+    qtbot.addWidget(crumb)
+    crumb.set_path(PATH)
+    crumb.show()
+    qtbot.waitExposed(crumb)
+    # Pointing at Back enters the breadcrumb, never its path.
+    QApplication.sendEvent(crumb, _enter_event(crumb))
+    QApplication.sendEvent(crumb.back_button, _enter_event(crumb.back_button))
+    assert _strip_fill(crumb) is None
 
 
 def test_a_theme_change_keeps_the_segments_and_their_tint(qtbot, qapp):

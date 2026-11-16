@@ -8,7 +8,7 @@ __email__ = "valentin.onze@gmail.com"
 from typing import Dict, Optional, Sequence
 
 # Third-party
-from qtpy.QtCore import QEvent, QMetaObject, QObject, Qt, Slot
+from qtpy.QtCore import QEvent, QMetaObject, QObject, QRect, Qt, Slot
 from qtpy.QtGui import QColor, QPainter, QPaintEvent
 from qtpy.QtWidgets import (
     QAbstractItemView,
@@ -187,6 +187,17 @@ class FXSummaryRow(QWidget):
         painter.fillRect(
             self.rect(), QColor(fxstyle.depth_shade(theme.surface, 1)))
         painter.fillRect(0, 0, self.width(), 1, QColor(theme.border))
+        # The column rules run on through the summary, as through the rows.
+        view = self._view
+        header = view.header() if hasattr(view, "header") else (
+            view.horizontalHeader())
+        for column in range(header.count()):
+            if header.isSectionHidden(column):
+                continue
+            right = (header.sectionViewportPosition(column)
+                     + header.sectionSize(column))
+            fxstyle.draw_column_rule(
+                painter, QRect(0, 1, right, self.height() - 1), view, column)
 
     ###### Private
 

@@ -8,7 +8,9 @@ from qtpy.QtWidgets import QTreeWidget
 from fxgui import fxstyle
 
 
-def test_no_divider_stands_between_sections(qtbot, app_root):
+def test_only_the_first_column_s_rule_runs_through_the_header(
+    qtbot, app_root
+):
     tree = QTreeWidget()
     tree.setHeaderLabels(["Name", "Version", "Artist"])
     tree.header().setStretchLastSection(False)
@@ -27,7 +29,9 @@ def test_no_divider_stands_between_sections(qtbot, app_root):
 
     for section in range(3):
         at = shot.pixelColor(edge(section), middle).name()
-        assert at != border
-        assert at == shot.pixelColor(edge(section) - 2, middle).name()
+        beside = shot.pixelColor(edge(section) - 2, middle).name()
+        # The first column's rule runs on through the header, as through
+        # its rows; no other section stands a divider.
+        assert (at != beside) == (section == 0)
         assert shot.pixelColor(edge(section), header.height() - 1).name() == (
             border)

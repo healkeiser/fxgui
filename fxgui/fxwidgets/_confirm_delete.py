@@ -2,17 +2,20 @@
 
 # Built-in
 import html
-from typing import Optional
+from typing import Optional, Sequence
 
 # Third-party
 from qtpy.QtCore import QEvent, QObject, QPoint, Qt
+from qtpy.QtGui import QKeySequence, QShortcut
 from qtpy.QtWidgets import (
     QApplication,
+    QComboBox,
     QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPlainTextEdit,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -215,6 +218,13 @@ class FXConfirmDialog(QDialog):
         guard.addWidget(self.hint)
         self._guard.setVisible(require_typing)
         card.addWidget(self._guard)
+        # A subclass's field (FXInputDialog): hidden until one is given.
+        self._slot = QWidget(self._card)
+        slot = QVBoxLayout(self._slot)
+        slot.setContentsMargins(0, fxstyle.DIALOG_GAP, 0, 0)
+        slot.setSpacing(0)
+        self._slot.setVisible(False)
+        card.addWidget(self._slot)
 
         card.addSpacing(8)
         buttons = QHBoxLayout()
@@ -377,3 +387,100 @@ class FXConfirmDeleteDialog(FXConfirmDialog):
         )
         #: The red Delete button (`verb_button`), by its old name.
         self.delete_button = self.verb_button
+
+
+class FXInputDialog(FXConfirmDialog):
+    """Ask for one value, as the confirm card asks a question.
+
+    The card of `FXConfirmDialog`, with one field between the words and the
+    buttons: a line, a few lines of text, or a pick from a list. Enter
+    takes the verb (Ctrl+Enter in a text field, where Enter breaks the
+    line); Escape cancels. The field has the focus when the card opens,
+    its text selected.
+
+    Args:
+        parent: Parent widget; its window is dimmed while the dialog is up.
+        title: The question, shown in the card and as the window title.
+        body: What the value is for.
+        kind: "line" (one line), "text" (several lines) or "choice" (a
+            pick from `choices`).
+        value: The value the field starts with.
+        choices: What "choice" offers, in order.
+        placeholder: The hint an empty field shows.
+        verb: The act's button, such as "Rename". Defaults to "OK".
+        tone: "plain" or "danger", as in `FXConfirmDialog`.
+        required: Keep the verb shut while the field is empty.
+
+    Raises:
+        ValueError: If `kind` is unknown, or "choice" has no `choices`.
+
+    Examples:
+        >>> ask = FXInputDialog(window, title="Rename sh0010",
+        ...                     value="sh0010", verb="Rename", required=True)
+        >>> if ask.exec() == FXInputDialog.VERB:
+        ...     rename(ask.value())
+    """
+
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        *,
+        title: str,
+        body: str = "",
+        kind: str = "line",
+        value: str = "",
+        choices: Sequence[str] = (),
+        placeholder: str = "",
+        verb: str = "OK",
+        tone: str = "plain",
+        required: bool = False,
+    ):
+        if kind not in ("line", "text", "choice"):
+            raise ValueError(f"No kind {kind!r}: 'line', 'text' or 'choice'")
+        if kind == "choice" and not choices:
+            raise ValueError("kind 'choice' needs choices")
+        super().__init__(
+            parent, title=title, body=body, verb=verb, tone=tone,
+            default="verb")
+        self._kind = kind
+        self._required = required
+        if kind == "line":
+            self.field = QLineEdit(value)
+            self.field.setPlaceholderText(placeholder)
+            self.field.textChanged.connect(self._on_value)
+            self.field.selectAll()
+        elif kind == "text":
+            self.field = QPlainTextEdit(value)
+            self.field.setPlaceholderText(placeholder)
+            self.field.setTabChangesFocus(True)
+            self.field.textChanged.connect(self._on_value)
+            self.field.selectAll()
+            accept = QShortcut(QKeySequence("Ctrl+Return"), self.field)
+            accept.activated.connect(self._take)
+        else:
+            self.field = QComboBox()
+            self.field.addItems(list(choices))
+            if value in choices:
+                self.field.setCurrentText(value)
+        self._slot.layout().addWidget(self.field)
+        self._slot.setVisible(True)
+        self._on_value()
+        self.field.setFocus()
+
+    def value(self) -> str:
+        """Return the field's value as it stands."""
+        if self._kind == "line":
+            return self.field.text()
+        if self._kind == "text":
+            return self.field.toPlainText()
+        return self.field.currentText()
+
+    def _on_value(self, _text: str = "") -> None:
+        """Shut the verb while a required field is empty."""
+        if self._required:
+            self.verb_button.setEnabled(bool(self.value().strip()))
+
+    def _take(self) -> None:
+        """Take the verb, when it is open."""
+        if self.verb_button.isEnabled():
+            self.accept()

@@ -37,7 +37,12 @@ def test_a_records_block_hangs_at_its_own_message_column(qtbot):
 
     (block,) = _blocks(panel)
     metrics = QFontMetricsF(panel.output_area.font())
-    expected = metrics.horizontalAdvance(" " * len(header))
+    expected = min(
+        metrics.horizontalAdvance(" " * len(header)),
+        metrics.horizontalAdvance(" " * panel.HANG_COLUMNS),
+        panel.output_area.viewport().width() / 3
+        if panel.output_area.viewport().width() > 0 else float("inf"),
+    )
     fmt = block.blockFormat()
     assert fmt.leftMargin() == expected
     assert fmt.textIndent() == -expected

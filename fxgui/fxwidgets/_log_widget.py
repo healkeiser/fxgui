@@ -169,6 +169,8 @@ class FXOutputLogWidget(QWidget):
     # Signal for thread-safe log message delivery
     log_message = Signal(str, int)
 
+    #: The most characters a wrapped line hangs under its header.
+    HANG_COLUMNS = 24
     # Records per flush: 1000 take about 8.5 ms, inside the 16 ms tick.
     MAX_RECORDS_PER_FLUSH = 1000
 
@@ -512,12 +514,18 @@ class FXOutputLogWidget(QWidget):
         """Indent each block from `first` on under its header's end."""
         document = self.output_area.document()
         metrics = QFontMetricsF(self.output_area.font())
+        # Capped, so a long header never leaves a narrow pane one letter a
+        # line: HANG_COLUMNS characters, and a third of the pane once shown.
+        cap = metrics.horizontalAdvance(" " * self.HANG_COLUMNS)
+        shown = self.output_area.viewport().width()
+        if shown > 0:
+            cap = min(cap, shown / 3)
         for number in range(first, document.blockCount()):
             block = document.findBlockByNumber(number)
             match = self._hang.match(block.text())
             if match is None:
                 continue
-            indent = metrics.horizontalAdvance(" " * match.end())
+            indent = min(metrics.horizontalAdvance(" " * match.end()), cap)
             block_format = block.blockFormat()
             block_format.setLeftMargin(indent)
             block_format.setTextIndent(-indent)

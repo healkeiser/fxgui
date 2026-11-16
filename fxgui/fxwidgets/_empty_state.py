@@ -75,8 +75,14 @@ class FXEmptyState(QWidget):
         stack.setContentsMargins(*(fxstyle.PANE_GAP,) * 4)
         stack.addStretch(1)
         stack.addWidget(self.icon)
+        self._texts = {self.action: "", self.detail: ""}
         for label in (self.action, self.detail):
+            label.installEventFilter(self)
             label.setWordWrap(True)
+            # A wrapping label never shrinks under its longest word, so it
+            # stood wider than the pane, clipped at both sides; it may
+            # shrink, and _fit_words cuts that word instead.
+            label.setMinimumWidth(1)
             label.setAlignment(Qt.AlignCenter)
             label.setMaximumWidth(_TEXT_WIDTH)
             # Centred by stretches: the label's far larger stretch gives it
@@ -104,9 +110,38 @@ class FXEmptyState(QWidget):
             color="text_muted",
             inks={"disabled": "text_muted"},
         )
-        self.action.setText(action)
-        self.detail.setText(detail)
+        self._texts = {self.action: action, self.detail: detail}
+        for label in (self.action, self.detail):
+            self._fit_words(label)
         self.detail.setVisible(bool(detail))
+
+    def eventFilter(self, watched, event) -> bool:
+        """Fit a label's words again when its width or font changes."""
+        if watched in getattr(self, "_texts", {}) and event.type() in (
+            QEvent.Resize, QEvent.FontChange
+        ):
+            self._fit_words(watched)
+        return super().eventFilter(watched, event)
+
+    def _fit_words(self, label: QLabel) -> None:
+        """Wrap at spaces; a single word wider than the label is cut in its
+        middle, its whole text then in the tooltip, never clipped at both
+        sides."""
+        text = self._texts.get(label, "")
+        width = label.contentsRect().width()
+        metrics = label.fontMetrics()
+        if width > 0:
+            words = [
+                word if metrics.horizontalAdvance(word) <= width
+                else metrics.elidedText(word, Qt.ElideMiddle, width)
+                for word in text.split(" ")
+            ]
+            shown = " ".join(words)
+        else:
+            shown = text
+        if label.text() != shown:
+            label.setText(shown)
+        label.setToolTip(text if shown != text else "")
 
     def prompt(self) -> Tuple[str, str]:
         """Return the action and the detail shown."""

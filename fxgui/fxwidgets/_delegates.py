@@ -57,14 +57,13 @@ from qtpy.QtWidgets import (
 )
 
 # Internal
-from fxgui import _compat, fxconstants, fxicons, fxstyle, fxutils
+from fxgui import _compat, fxicons, fxstyle, fxutils
 from fxgui.fxwidgets import _roles
 
 # On a view whose rows this delegate rules itself, under the indentation
 # too: the sheet's branch rule stands down there.
 RULES_ROWS_PROPERTY = "fxRulesRows"
 
-_FALLBACK_THUMBNAIL = fxconstants.IMAGES_ROOT / "missing_image.png"
 
 # A thumbnail's mtime is trusted this long before the share is asked again.
 _STAT_SECONDS = 2.0
@@ -156,7 +155,9 @@ def _read_thumbnail(
         reader.setScaledSize(stored.scaled(box, box, Qt.KeepAspectRatio))
     image = reader.read()
     if image.isNull():
-        image = QImage(str(_FALLBACK_THUMBNAIL))
+        # Unreadable: no picture, so the themed placeholder shows, as for
+        # a row with none (a fixed bitmap reads wrong in a light theme).
+        return stamp, None
     # The format a QPixmap holds it in, so it scales as one would.
     image = image.convertToFormat(
         QImage.Format_ARGB32_Premultiplied

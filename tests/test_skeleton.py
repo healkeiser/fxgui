@@ -33,7 +33,7 @@ def _children(view):
 
 def test_an_unknown_kind_is_refused():
     with pytest.raises(ValueError):
-        FXSkeleton(kind="grid")
+        FXSkeleton(kind="table")
 
 
 def test_screen_readers_hear_loading(qtbot):

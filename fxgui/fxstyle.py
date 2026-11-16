@@ -2899,6 +2899,19 @@ class FXProxyStyle(QProxyStyle):
                 option.palette.setColor(
                     QPalette.ColorRole.ButtonText,
                     QColor(getattr(colors(), token)))
+            # The column rules run on through the header, as Carmen's.
+            view = widget.parentWidget()
+            if (
+                isinstance(widget, QHeaderView)
+                and widget.orientation() == Qt.Horizontal
+                and view is not None
+            ):
+                section = option.section
+                right = (widget.sectionViewportPosition(section)
+                         + widget.sectionSize(section))
+                draw_column_rule(
+                    painter, QRect(0, 0, right, widget.height()), view,
+                    section)
         super().drawControl(element, option, painter, widget)
 
     # Set while the sheet is asked for a cell's rects, which it may ask back.

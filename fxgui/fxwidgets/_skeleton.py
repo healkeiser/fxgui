@@ -13,7 +13,10 @@ from qtpy.QtWidgets import QAbstractScrollArea, QWidget
 from fxgui import _compat, fxstyle
 
 # The layouts a skeleton draws.
-_KINDS = ("rows", "cards", "lines")
+_KINDS = ("rows", "cards", "lines", "grid")
+# A grid's name column at most, and a cell's bar at most, in px.
+_GRID_NAME = 200
+_GRID_CELL = 40
 # How far the blocks' grey and the sweep's light stand from the ground: the
 # text at 5 % over it, as the web kit's elevated fill.
 _GREY = 0.05
@@ -48,19 +51,21 @@ class FXSkeleton(QWidget):
 
     Shown while a list or a pane waits for its data, instead of an empty
     page or a spinner. `kind` picks the shape: ``"rows"`` (a list row's
-    height, a thumbnail slot and text bars), ``"cards"`` (a grid of cards)
-    or ``"lines"`` (a paragraph). The light sweeps across every 1.6 s while
+    height, a thumbnail slot and text bars), ``"cards"`` (a grid of cards),
+    ``"lines"`` (a paragraph) or ``"grid"`` (a name column, then `columns`
+    narrow ones: a week, a spreadsheet). The light sweeps across every 1.6 s while
     the skeleton shows; under reduced motion it stays still. Screen readers
     hear "Loading".
 
     Args:
         parent: Parent widget.
-        kind: ``"rows"``, ``"cards"`` or ``"lines"``.
+        kind: ``"rows"``, ``"cards"``, ``"lines"`` or ``"grid"``.
         count: How many rows, cards or lines. None fills the height.
         thumbnail: Whether a row has a thumbnail slot.
+        columns: How many narrow columns a ``"grid"`` has.
 
     Raises:
-        ValueError: If `kind` is not one of the three.
+        ValueError: If `kind` is not one of the four.
 
     Examples:
         >>> skeleton = FXSkeleton(kind="cards", count=6)
@@ -74,6 +79,7 @@ class FXSkeleton(QWidget):
         kind: str = "rows",
         count: Optional[int] = None,
         thumbnail: bool = True,
+        columns: int = 7,
     ):
         super().__init__(parent)
         if kind not in _KINDS:
@@ -81,6 +87,7 @@ class FXSkeleton(QWidget):
         self._kind = kind
         self._count = count
         self._thumbnail = thumbnail
+        self._columns = max(1, columns)
         # Set by cover(): the skeleton fills the ground of what it covers.
         self._covering = False
         self._sweep = 0.0
@@ -96,7 +103,7 @@ class FXSkeleton(QWidget):
 
     @property
     def kind(self) -> str:
-        """The layout drawn: ``"rows"``, ``"cards"`` or ``"lines"``."""
+        """The layout drawn: ``"rows"``, ``"cards"``, ``"lines"`` or ``"grid"``."""
         return self._kind
 
     @classmethod
@@ -106,6 +113,7 @@ class FXSkeleton(QWidget):
         kind: str = "rows",
         count: Optional[int] = None,
         thumbnail: bool = True,
+        columns: int = 7,
     ) -> "FXSkeleton":
         """Cover `view` with a skeleton until `uncover`; return the skeleton.
 
@@ -115,9 +123,10 @@ class FXSkeleton(QWidget):
 
         Args:
             view: The widget waiting for its data.
-            kind: ``"rows"``, ``"cards"`` or ``"lines"``.
+            kind: ``"rows"``, ``"cards"``, ``"lines"`` or ``"grid"``.
             count: How many rows, cards or lines. None fills the height.
             thumbnail: Whether a row has a thumbnail slot.
+            columns: How many narrow columns a ``"grid"`` has.
 
         Returns:
             The skeleton over `view`.
@@ -126,7 +135,7 @@ class FXSkeleton(QWidget):
         found = _covering(target)
         if found is not None:
             return found
-        skeleton = cls(target, kind, count, thumbnail)
+        skeleton = cls(target, kind, count, thumbnail, columns)
         skeleton._covering = True
         # A view's viewport is made by Qt, which keeps it past Python.
         _compat.hold(skeleton)
@@ -196,6 +205,8 @@ class FXSkeleton(QWidget):
         painter.setBrush(grey)
         if self._kind == "rows":
             self._paint_rows(painter)
+        elif self._kind == "grid":
+            self._paint_grid(painter)
         elif self._kind == "cards":
             self._paint_cards(painter, QColor(colors.border))
         else:
@@ -244,6 +255,25 @@ class FXSkeleton(QWidget):
                     break
                 painter.drawRoundedRect(QRectF(x, middle - 6, width, 12), 6, 6)
                 x += width + _GAP
+
+    def _paint_grid(self, painter: QPainter) -> None:
+        """A name bar, then one short bar centred in each narrow column."""
+        height = fxstyle.row_height()
+        width = self._extent.width()
+        name = min(_GRID_NAME, (width - _ROW_INSET * 2) * 0.3)
+        left = _ROW_INSET + name + _GAP
+        column = max(1.0, (width - _ROW_INSET - left) / self._columns)
+        cell = min(_GRID_CELL, column * 0.6)
+        for index in range(1, self._how_many(height) + 1):
+            painter.setOpacity(_fade(index))
+            middle = (index - 1) * height + height / 2
+            painter.drawRoundedRect(
+                QRectF(_ROW_INSET, middle - 6,
+                       name * _width(index, 60, 100) / 100, 12), 6, 6)
+            for slot in range(self._columns):
+                x = left + slot * column + (column - cell) / 2
+                painter.drawRoundedRect(
+                    QRectF(x, middle - 6, cell, 12), 6, 6)
 
     def _paint_cards(self, painter: QPainter, edge: QColor) -> None:
         columns = max(1, min(3, self._extent.width() // _CARD_COLUMN + 1))

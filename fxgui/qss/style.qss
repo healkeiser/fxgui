@@ -375,6 +375,15 @@ QAbstractItemView QLineEdit
     max-height: 16777215px;
 }
 
+/* An editable combo's field is its box's text, not a field in it: no
+   padding or edge of its own, so its descenders are not cut. */
+QComboBox QLineEdit
+{
+    padding: 0px;
+    border: none;
+    background: transparent;
+}
+
 /* A search bar is Lumen's ghost field: no edge, filled while hovered or
    typed in. */
 QLineEdit[fxGhost="true"]
@@ -1021,7 +1030,7 @@ QTabBar QToolButton::left-arrow:disabled {
 /* The glyph keeps its button's left: the button widens to the left.
    20 px is Fusion's close button; a smaller style's shrinks the glyph. */
 QTabBar::close-button  {
-    image: url(~icons/close.svg, 20);
+    image: ~icon(x, icon, 20);
     image-position: left;
     background: transparent;
 }
@@ -1188,9 +1197,9 @@ QTableView::item {
     padding: 0px @cell_padding;
 }
 
+/* 28 px at least; a wrapping list's row grows with its lines. */
 QListView::item {
     min-height: 28px;
-    max-height: 28px;
 }
 
 /* A canvas is framed as a list is: one hairline, the control's corner.
@@ -1284,6 +1293,11 @@ QTreeView[fxNav="true"]::item:!selected:hover,
 QListView[fxNav="true"]::item:!selected:hover {
     background: @state_hover;
     color: @text;
+}
+
+QTreeView[fxNav="true"]::item:disabled,
+QListView[fxNav="true"]::item:disabled {
+    color: @text_disabled;
 }
 
 QTreeView[fxNav="true"]::item:selected,
@@ -1731,6 +1745,14 @@ QMainWindow[fxFrame="true"] > QToolBar > QToolButton:disabled
 {
     background-color: transparent;
     border-color: transparent;
+}
+
+/* A split button keeps its edge and its divider when disabled, there as
+   everywhere: one without the other reads as a stray line. */
+*[fxFrame="true"] > QToolButton[popupMode="1"]:disabled,
+QMainWindow[fxFrame="true"] > QToolBar > QToolButton[popupMode="1"]:disabled
+{
+    border-color: @border;
 }
 
 /* The handle is the gap: no border, margin or padding, so it is exactly as

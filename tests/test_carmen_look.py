@@ -6,6 +6,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QFont
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
+    QApplication,
     QComboBox,
     QLabel,
     QLineEdit,
@@ -405,3 +406,234 @@ def test_column_0_sized_to_its_contents_draws_its_title_whole(
         assert cell() == fitted, title
         # Hidden, not unparented: freed mid-show, its header crashes Qt 6.5.
         tree.hide()
+
+
+def test_an_empty_state_cuts_a_long_word_in_its_middle(qtbot):
+    from fxgui.fxwidgets import FXEmptyState
+
+    word = "sh0010_comp_lighting_v004_final"
+    empty = FXEmptyState("inbox", word, "Its files show here")
+    window = _shown(qtbot, empty)
+    window.resize(220, 300)
+    QApplication = __import__("qtpy.QtWidgets", fromlist=["QApplication"]).QApplication
+    for _ in range(3):
+        QApplication.processEvents()
+    shown = empty.action.text()
+    metrics = empty.action.fontMetrics()
+    assert "…" in shown
+    assert metrics.horizontalAdvance(shown) <= empty.action.contentsRect().width()
+    assert empty.action.toolTip() == word
+    # Room again: the whole word, no tip.
+    window.resize(900, 300)
+    for _ in range(3):
+        QApplication.processEvents()
+    assert empty.action.text() == word and empty.action.toolTip() == ""
+
+
+def test_the_first_column_rule_runs_through_header_and_summary(qtbot):
+    from fxgui.fxwidgets import FXSummaryRow
+
+    tree = QTreeWidget()
+    tree.setColumnCount(3)
+    tree.setHeaderLabels(["Name", "Frames", "Size"])
+    for n in range(3):
+        QTreeWidgetItem(tree, [f"sh00{n}0", "1001", "2"])
+    summary = FXSummaryRow(tree)
+    summary.set_texts(["3 shots", "3003", "6"])
+    _shown(qtbot, tree)
+    header = tree.header()
+    x = header.sectionViewportPosition(0) + header.sectionSize(0) - 1
+    ink = QColor(fxstyle.colors().border)
+    ink.setAlphaF(fxstyle._TABLE_RULE_ALPHA)
+
+    def ruled(widget, y):
+        image = widget.grab().toImage()
+        here = QColor(image.pixel(x, y))
+        beside = QColor(image.pixel(x - 4, y))
+        return here != beside
+
+    assert ruled(header, header.height() // 2)
+    assert ruled(summary, summary.height() // 2)
+    # Not after the last column.
+    last = header.sectionViewportPosition(2) + header.sectionSize(2) - 1
+    image = header.grab().toImage()
+    assert QColor(image.pixel(last, header.height() // 2)) == QColor(
+        image.pixel(last - 4, header.height() // 2))
+
+
+def test_an_editable_combo_s_field_holds_its_descenders(qtbot):
+    """Its text's ink is as tall as the same words in a label: nothing cut."""
+    text = "jgpq_yyy"
+    combo = QComboBox()
+    combo.setEditable(True)
+    combo.setEditText(text)
+    label = QLabel(text)
+    _shown(qtbot, combo, label)
+    field = combo.lineEdit()
+    field.setCursorPosition(0)
+    field.deselect()
+    label.setFont(field.font())
+    QApplication.processEvents()
+
+    def ink_rows(widget):
+        image = widget.grab().toImage()
+        ground = QColor(image.pixel(1, image.height() // 2))
+        rows = [
+            y for y in range(image.height())
+            if any(
+                abs(QColor(image.pixel(x, y)).lightness() - ground.lightness())
+                > 60
+                for x in range(4, min(image.width(), 80))
+            )
+        ]
+        return rows[-1] - rows[0] + 1 if rows else 0
+
+    tight = field.fontMetrics().tightBoundingRect(text).height()
+    assert ink_rows(field) >= tight - 1
+
+
+def test_always_on_top_shows_its_check():
+    from fxgui.fxwidgets import FXMainWindow
+
+    window = FXMainWindow(title="Top")
+    action = window.window_on_top_action
+    assert action.isCheckable() and action.icon().isNull()
+    window.deleteLater()
+
+
+def test_a_disabled_split_button_on_a_frame_keeps_its_edge(qtbot):
+    from fxgui.fxwidgets import FXSplitButton
+
+    row = QWidget()
+    fxstyle.mark_as_frame(row)
+    split = FXSplitButton()
+    split.setText("Publish")
+    QHBoxLayout(row).addWidget(split)
+    split.setEnabled(False)
+    _shown(qtbot, row)
+    image = split.grab().toImage()
+    middle = split.height() // 2
+    assert QColor(image.pixel(0, middle)).name() == fxstyle.colors().border.lower()
+
+
+def test_a_disabled_nav_row_reads_disabled(qtbot):
+    from qtpy.QtWidgets import QListWidget
+
+    pages = QListWidget()
+    pages.addItems(["Shots", "Assets"])
+    pages.item(1).setFlags(Qt.NoItemFlags)
+    fxstyle.mark_as_nav(pages)
+    _shown(qtbot, pages)
+    image = pages.viewport().grab().toImage()
+    rect = pages.visualItemRect(pages.item(1))
+    inks = {
+        QColor(image.pixel(x, y)).name()
+        for x in range(rect.left(), rect.right())
+        for y in range(rect.top(), rect.bottom())
+    }
+    assert fxstyle.colors().text_disabled.lower() in inks
+    assert fxstyle.colors().text_muted.lower() not in inks
+
+
+def test_a_wrapping_list_row_grows_past_28_px(qtbot):
+    from qtpy.QtWidgets import QListWidget
+
+    listed = QListWidget()
+    listed.setWordWrap(True)
+    listed.addItem("A long change note " * 8)
+    window = _shown(qtbot, listed)
+    window.resize(220, 300)
+    QApplication.processEvents()
+    listed.doItemsLayout()
+    QApplication.processEvents()
+    assert listed.visualItemRect(listed.item(0)).height() > 28
+
+
+def test_a_log_s_hanging_indent_is_capped(qtbot):
+    from fxgui.fxwidgets import FXOutputLogWidget
+
+    log = FXOutputLogWidget(hang_indent=r"^\S+\s+\S+\s+\S+\s+")
+    _shown(qtbot, log)
+    header = "12:00:01 INFO ls_pascal.adapters.kitsu.client_and_more:355 "
+    log.append_log(header + "the message " * 20)
+    log.flush()
+    block = log.output_area.document().firstBlock()
+    space = log.output_area.fontMetrics().horizontalAdvance(" ")
+    assert block.blockFormat().leftMargin() <= space * log.HANG_COLUMNS + 1
+
+
+def test_the_emoji_button_is_a_control_s_height(qtbot):
+    from fxgui.fxwidgets import FXEmojiButton, FXIconButton
+
+    emoji, icon = FXEmojiButton(), FXIconButton("smile")
+    _shown(qtbot, emoji, icon)
+    assert emoji.size() == icon.size()
+
+
+def _input(qtbot, **options):
+    from fxgui.fxwidgets import FXInputDialog
+
+    dialog = FXInputDialog(title="Rename sh0010", **options)
+    qtbot.addWidget(dialog)
+    dialog.show()
+    dialog.activateWindow()
+    qtbot.waitUntil(dialog.isActiveWindow)
+    return dialog
+
+
+def test_an_input_card_takes_its_value_on_enter(qtbot):
+    dialog = _input(qtbot, value="sh0010", verb="Rename")
+    assert dialog.focusWidget() is dialog.field
+    dialog.field.setText("sh0020")
+    QTest.keyClick(dialog.field, Qt.Key_Return)
+    assert dialog.choice() == "verb" and dialog.value() == "sh0020"
+
+
+def test_a_required_input_shuts_its_verb_while_empty(qtbot):
+    dialog = _input(qtbot, value="", required=True)
+    assert not dialog.verb_button.isEnabled()
+    dialog.field.setText("x")
+    assert dialog.verb_button.isEnabled()
+
+
+def test_a_text_input_breaks_lines_on_enter_and_takes_on_ctrl_enter(qtbot):
+    dialog = _input(qtbot, kind="text", value="")
+    QTest.keyClicks(dialog.field, "one")
+    QTest.keyClick(dialog.field, Qt.Key_Return)
+    QTest.keyClicks(dialog.field, "two")
+    assert dialog.isVisible() and dialog.value() == "one\ntwo"
+    QTest.keyClick(dialog.field, Qt.Key_Return, Qt.ControlModifier)
+    assert dialog.choice() == "verb"
+
+
+def test_a_choice_input_reads_its_pick_and_refuses_no_choices():
+    from fxgui.fxwidgets import FXInputDialog
+
+    dialog = FXInputDialog(title="?", kind="choice", choices=["a", "b"],
+                           value="b")
+    assert dialog.value() == "b"
+    for options in ({"kind": "pick"}, {"kind": "choice"}):
+        with pytest.raises(ValueError):
+            FXInputDialog(title="?", **options)
+
+
+def test_a_grid_skeleton_draws_a_name_column_and_its_narrow_columns(qtbot):
+    from fxgui.fxwidgets import FXSkeleton
+
+    sheet = QWidget()
+    window = _shown(qtbot, sheet)
+    window.resize(700, 200)
+    skeleton = FXSkeleton.cover(sheet, "grid", columns=7)
+    skeleton._animation.stop()
+    QApplication.processEvents()
+    image = skeleton.grab().toImage()
+    ground = QColor(image.pixel(2, 2))
+    y = fxstyle.row_height() // 2
+    runs, inside = 0, False
+    for x in range(image.width()):
+        bar = QColor(image.pixel(x, y)) != ground
+        if bar and not inside:
+            runs += 1
+        inside = bar
+    assert skeleton.kind == "grid"
+    assert runs == 1 + 7, runs

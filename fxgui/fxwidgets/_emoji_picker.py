@@ -242,7 +242,8 @@ class FXEmojiButton(FXIconButton):
     Args:
         parent: Parent widget.
         emojis: The emoji to offer. Defaults to `DEFAULT_EMOJIS`.
-        size: The circle's diameter, in logical pixels.
+        size: The circle's diameter, in logical pixels. None (the
+            default) is a push button's height, as `FXIconButton`'s.
 
     Signals:
         emoji_picked(str): The emoji picked.
@@ -258,7 +259,7 @@ class FXEmojiButton(FXIconButton):
         self,
         parent: Optional[QWidget] = None,
         emojis: Optional[Sequence[str]] = None,
-        size: int = 28,
+        size: Optional[int] = None,
     ):
         super().__init__(
             "smile-plus", parent, tip="Insert an emoji", size=size

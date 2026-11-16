@@ -378,20 +378,14 @@ class FXBreadcrumb(QWidget):
         """Set the hint the path editor shows while it is empty."""
         self._line_edit.setPlaceholderText(text)
 
-    def enterEvent(self, event) -> None:
+    def _light(self, lit: bool) -> None:
         """Brighten the strip while the pointer is anywhere over the path.
 
         Not a `:hover` rule: once the path is drawn, the widget directly
-        under the pointer is a segment, never the strip.
+        under the pointer is a segment, never the strip. The path's own
+        area tells it, so the back and forward buttons beside it do not.
         """
-        super().enterEvent(event)
-        self._lit = True
-        self._container.update()
-
-    def leaveEvent(self, event) -> None:
-        """Return the strip to its resting fill."""
-        super().leaveEvent(event)
-        self._lit = False
+        self._lit = lit
         self._container.update()
 
     def eventFilter(self, obj, event):
@@ -400,6 +394,10 @@ class FXBreadcrumb(QWidget):
         While the editor is up this widget also filters the application: a
         press on a heading or a window's background moves no focus.
         """
+        if obj is self._scroll_area and event.type() in (
+            QEvent.Type.Enter, QEvent.Type.Leave
+        ):
+            self._light(event.type() == QEvent.Type.Enter)
         if event.type() == QEvent.Type.MouseButtonDblClick and (
             obj in (self._scroll_area, self._container)
             or (isinstance(obj, QWidget) and obj.parent() is self._container)

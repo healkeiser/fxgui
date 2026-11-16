@@ -271,8 +271,9 @@ class FXMainWindow(QMainWindow):
             "Always on Top",
             trigger=self._toggle_window_on_top,
             shortcut="Ctrl+Shift+t",
+            # No icon: a menu shows a checkable action's state in place of
+            # its icon, and an icon would hide the check.
             checkable=True,
-            icon_name="pin",
         )
         self.minimize_window_action = fxutils.create_action(
             self,

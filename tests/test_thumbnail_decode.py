@@ -109,14 +109,24 @@ def test_an_exif_portrait_comes_out_upright(tmp_path):
     assert image.size() == QSize(45, 90)
 
 
-def test_an_unreadable_file_falls_back_to_the_missing_picture(tmp_path):
+def test_an_unreadable_file_gives_no_picture_so_the_placeholder_shows(
+    qtbot, tmp_path
+):
+    """No fixed bitmap: the themed checker, as for a row with no picture."""
+    from qtpy.QtGui import QColor
+
+    from fxgui import fxstyle
+    from fxgui.fxwidgets import FXThumbnailDelegate
+
     broken = tmp_path / "broken.png"
     broken.write_bytes(b"not an image")
-
-    image = _delegates._read_thumbnail(str(broken), None, (160, 90))[1]
-    fallback = _delegates._read_thumbnail(
-        str(_delegates._FALLBACK_THUMBNAIL), None, (160, 90)
-    )[1]
-
-    assert not image.isNull()
-    assert image.size() == fallback.size()
+    stamp, image = _delegates._read_thumbnail(str(broken), None, (160, 90))
+    assert stamp is not None and image is None
+    for theme in ("dark", "light"):
+        fxstyle.apply_theme(theme, save=False)
+        delegate = FXThumbnailDelegate()
+        bad = delegate._bordered_thumbnail(str(broken), 1.0).toImage()
+        none = delegate._bordered_thumbnail(None, 1.0).toImage()
+        assert bad == none, theme
+        middle = QColor(bad.pixel(bad.width() // 2, bad.height() // 2))
+        assert middle.alpha() == 255

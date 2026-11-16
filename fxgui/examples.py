@@ -802,6 +802,17 @@ def _open_confirm(gallery: QWidget, typing: bool = False) -> None:
     ).open()
 
 
+def _open_input(gallery: QWidget) -> None:
+    fxwidgets.FXInputDialog(
+        gallery,
+        title="Rename sh0010",
+        body="The new name shows on every page.",
+        value="sh0010",
+        verb="Rename",
+        required=True,
+    ).open()
+
+
 def _open_ask(gallery: QWidget) -> None:
     fxwidgets.FXConfirmDialog(
         gallery,
@@ -940,10 +951,12 @@ def _windows_page(window: fxwidgets.FXMainWindow) -> QWidget:
             ),
         ),
         _section(
-            "FXFloatingDialog / FXConfirmDialog / FXConfirmDeleteDialog",
+            "FXFloatingDialog / FXConfirmDialog / FXConfirmDeleteDialog"
+            " / FXInputDialog",
             _row(
                 _button("Floating dialog", lambda: _open_floating(window)),
                 _button("Ask before closing", lambda: _open_ask(window)),
+                _button("Ask for a name", lambda: _open_input(window)),
                 _button("Confirm a delete", lambda: _open_confirm(window)),
                 _button(
                     "Confirm by typing the name",
