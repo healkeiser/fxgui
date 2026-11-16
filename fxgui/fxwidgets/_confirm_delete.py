@@ -5,7 +5,7 @@ import html
 from typing import Optional
 
 # Third-party
-from qtpy.QtCore import QEvent, QObject, Qt
+from qtpy.QtCore import QEvent, QObject, QPoint, Qt
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
@@ -176,6 +176,7 @@ class FXConfirmDialog(QDialog):
         self.title_label.setObjectName("fxConfirmTitle")
         self.title_label.setTextFormat(Qt.PlainText)
         self.title_label.setWordWrap(True)
+        self._drag_from: Optional[QPoint] = None
         # Clear of the X, which stands nearer the edge than the gutter.
         self.title_label.setContentsMargins(
             0, 0, _CLOSE_SIZE + _CLOSE_INSET - gutter + 8, 0)
@@ -259,6 +260,9 @@ class FXConfirmDialog(QDialog):
             "x", self._card, tip="Close", size=_CLOSE_SIZE)
         self.close_button.clicked.connect(self.reject)
         self._card.installEventFilter(self)
+        # A frameless card has no title bar: its title moves it instead, so
+        # what it covers can be read.
+        self.title_label.installEventFilter(self)
 
         layout = QVBoxLayout(self)
         # Room for the shadow, which falls 6 px down.
@@ -280,7 +284,10 @@ class FXConfirmDialog(QDialog):
         QApplication.clipboard().setText(self._word)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Copy the word when its label is clicked; keep the X in its corner."""
+        """Copy the word when its label is clicked; keep the X in its corner;
+        move the card by its title."""
+        if watched is self.title_label and self._drag(event):
+            return True
         if (
             watched is self.word_label
             and event.type() == QEvent.MouseButtonPress
@@ -291,6 +298,21 @@ class FXConfirmDialog(QDialog):
             self.close_button.move(
                 self._card.width() - _CLOSE_INSET - _CLOSE_SIZE, _CLOSE_INSET)
         return super().eventFilter(watched, event)
+
+    def _drag(self, event: QEvent) -> bool:
+        """Move the dialog while its title is held; True when it was used."""
+        kind = event.type()
+        if kind == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
+            self._drag_from = (
+                event.globalPosition().toPoint() - self.frameGeometry().topLeft())
+            return True
+        if kind == QEvent.MouseMove and self._drag_from is not None:
+            self.move(event.globalPosition().toPoint() - self._drag_from)
+            return True
+        if kind == QEvent.MouseButtonRelease and self._drag_from is not None:
+            self._drag_from = None
+            return True
+        return False
 
     def _on_typed(self, text: str) -> None:
         """Open Delete only on an exact, case-sensitive match."""

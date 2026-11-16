@@ -320,3 +320,26 @@ def test_a_column_sized_to_its_contents_draws_its_text_whole(qtbot, tabular):
     option.rect = tree.visualRect(index)
     needed = delegate._text_cell_width(option, index)
     assert tree.columnWidth(1) >= needed
+
+
+def test_a_confirm_card_moves_by_its_title_and_stays_owned(qtbot):
+    from qtpy.QtCore import QPoint
+
+    from fxgui.fxwidgets import FXConfirmDeleteDialog
+
+    parent = QWidget()
+    parent.resize(800, 600)
+    qtbot.addWidget(parent)
+    parent.show()
+    dialog = FXConfirmDeleteDialog(parent, title="Delete SH010?")
+    dialog.show()
+    qtbot.waitExposed(dialog)
+    # Owned by its parent's window: on Windows it stays above that window.
+    assert dialog.windowHandle().transientParent() is parent.windowHandle()
+    title = dialog.title_label
+    start = dialog.pos()
+    QTest.mousePress(title, Qt.LeftButton, pos=QPoint(10, 5))
+    QTest.mouseMove(title, QPoint(70, 45))
+    QTest.mouseRelease(title, Qt.LeftButton, pos=QPoint(70, 45))
+    assert dialog.pos() != start
+    dialog.close()
