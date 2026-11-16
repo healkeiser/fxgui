@@ -3047,6 +3047,8 @@ class FXProxyStyle(QProxyStyle):
             widget.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         if isinstance(widget, QMenu):
             widget.installEventFilter(_menu_badges())
+        if isinstance(widget, QTableView):
+            widget.viewport().installEventFilter(_row_hover())
 
 
 #: Set on a menu action by `set_menu_badge`: the text of its pill.
@@ -3126,6 +3128,68 @@ class _MenuBadges(QObject):
             painter.drawText(pill, Qt.AlignCenter, str(text))
         painter.end()
         return True
+
+
+# The row under the pointer, on a table's viewport.
+_HOVER_ROW = "_fxHoverRow"
+
+
+class _RowHover(QObject):
+    """Lights the whole row under the pointer in a table that selects rows.
+
+    A QTableView lights only the cell under the pointer, a QTreeView its
+    row: a table that selects rows lights its row too, under the cells.
+    """
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Track the row under the pointer; fill it before the cells."""
+        view = watched.parentWidget()
+        if not isinstance(view, QTableView) or view.viewport() is not watched:
+            return False
+        kind = event.type()
+        if kind in (QEvent.HoverEnter, QEvent.HoverMove, QEvent.MouseMove):
+            self._light(view, view.rowAt(int(event.position().y())))
+        elif kind in (QEvent.HoverLeave, QEvent.Leave):
+            self._light(view, -1)
+        elif kind == QEvent.Paint:
+            row = watched.property(_HOVER_ROW)
+            if (
+                row is not None and row >= 0
+                and view.selectionBehavior() == QTableView.SelectRows
+                and view.isEnabled()
+            ):
+                painter = QPainter(watched)
+                painter.fillRect(
+                    _row_rect(view, row), QColor(colors().state_hover))
+                painter.end()
+        return False
+
+    @staticmethod
+    def _light(view: QTableView, row: int) -> None:
+        """Move the lit row to `row`, repainting the one it leaves."""
+        viewport = view.viewport()
+        old = viewport.property(_HOVER_ROW)
+        if old == row:
+            return
+        viewport.setProperty(_HOVER_ROW, row)
+        if view.selectionBehavior() != QTableView.SelectRows:
+            return
+        for each in (old, row):
+            if each is not None and each >= 0:
+                viewport.update(_row_rect(view, each))
+
+
+def _row_rect(view: QTableView, row: int) -> QRect:
+    """Return `row`'s band in `view`'s viewport, as far as its columns."""
+    right = view.horizontalHeader().length() - view.horizontalOffset()
+    return QRect(0, view.rowViewportPosition(row),
+                 min(right, view.viewport().width()), view.rowHeight(row))
+
+
+@lru_cache(maxsize=1)
+def _row_hover() -> _RowHover:
+    """Return the one row lighter every table shares."""
+    return _RowHover()
 
 
 @lru_cache(maxsize=1)

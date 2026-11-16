@@ -637,3 +637,23 @@ def test_a_grid_skeleton_draws_a_name_column_and_its_narrow_columns(qtbot):
         inside = bar
     assert skeleton.kind == "grid"
     assert runs == 1 + 7, runs
+
+
+@pytest.mark.parametrize("rows", [True, False])
+def test_a_table_selecting_rows_lights_the_row_under_the_pointer(qtbot, rows):
+    from qtpy.QtWidgets import QAbstractItemView, QTableWidget
+
+    from _helpers import hover, pixel, themed_window
+
+    table = QTableWidget(3, 3)
+    if rows:
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
+    window = themed_window(qtbot, "dark", table, size=(400, 240))
+    viewport = table.viewport()
+    cell = lambda row, column: table.visualRect(  # noqa: E731
+        table.model().index(row, column)).center()
+    hover(qtbot, viewport, cell(1, 0))
+    hovered = fxstyle.colors().state_hover
+
+    assert (pixel(window, viewport, cell(1, 2)) == hovered) is rows
+    assert pixel(window, viewport, cell(0, 2)) != hovered
