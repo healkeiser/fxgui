@@ -84,7 +84,7 @@ def _strip_colors(ground: str, resting: str, hovered: str):
     """
     colors = fxstyle.colors()
     return _worked_out(
-        getattr(colors, ground),
+        fxstyle.qcolor(ground).name(),
         getattr(colors, resting),
         colors.surface,
         getattr(colors, hovered),
@@ -130,8 +130,7 @@ class _Strip(QWidget):
         window's colour, a square on a bar of another.
         """
         painter = QPainter(self)
-        ground = getattr(fxstyle.colors(), _ground(self._crumb))
-        painter.fillRect(self.rect(), QColor(ground))
+        painter.fillRect(self.rect(), self._crumb._ground_color())
         if not self._crumb._lit:
             return
         _rest, hover, _edge, _ink = self._crumb._colors()
@@ -370,10 +369,17 @@ class FXBreadcrumb(QWidget):
         self._stacked.setFixedHeight(side)
         self.setFixedHeight(side)
 
+    def _ground_color(self) -> QColor:
+        """Return the colour under the bar: a card or a pane, not only the
+        frame or surface; the theme's guess for a bar no theme reaches."""
+        if fxstyle._is_themed(self):
+            return fxstyle._ground(self)
+        return QColor(getattr(fxstyle.colors(), _ground(self)))
+
     def _colors(self):
         """Return the strip's rest fill, hover fill, edge and ink, now."""
         return _strip_colors(
-            _ground(self),
+            self._ground_color().name(),
             self.STRIP_RESTING_TOKEN,
             self.STRIP_HOVERED_TOKEN,
         )
