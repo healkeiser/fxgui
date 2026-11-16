@@ -138,9 +138,17 @@ class FXSplitButton(QToolButton):
         self.setPopupMode(QToolButton.MenuButtonPopup)
 
     def sizeHint(self) -> QSize:
-        """Return Qt's width at a push button's height."""
+        """Return Qt's width at a push button's height, or a compact one's."""
+        width = super().sizeHint().width()
+        if (self.toolButtonStyle() == Qt.ToolButtonTextBesideIcon
+                and self.text() and not self.icon().isNull()):
+            # Qt pads the text by two spaces: centred on a text-only button,
+            # all after it beside an icon, against the arrow's divider.
+            width -= 2 * self.fontMetrics().horizontalAdvance(" ")
         # Qt's stylesheet style adds 3 px to every QToolButton's height.
-        return QSize(super().sizeHint().width(), fxstyle.control_height(self))
+        if self.property(fxstyle.COMPACT_PROPERTY):
+            return QSize(width, fxstyle.COMPACT_HEIGHT)
+        return QSize(width, fxstyle.control_height(self))
 
     @classmethod
     def dropdown_hint(cls) -> str:

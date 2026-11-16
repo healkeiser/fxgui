@@ -1131,18 +1131,21 @@ def mark_as_title(
 
 
 def mark_compact(widget: QWidget, compact: bool = True) -> None:
-    """Make a push or tool button the compact size: `COMPACT_HEIGHT` tall.
+    """Make a button or a combo box the compact size: `COMPACT_HEIGHT` tall.
 
-    For a button in a row or a panel, as the web look's extra-small one:
-    24 px, small text, a 16 px icon. A round `FXIconButton` takes its own
-    ``size`` argument instead.
+    For a control in a row or a panel, as the web look's extra-small one:
+    24 px, small text, a 16 px icon. A push button, a tool button (a split
+    one keeps its arrow's segment square) and a combo box, which then hugs
+    its contents and draws a 16 px chevron, line up side by side. A round
+    `FXIconButton` takes its own ``size`` argument instead.
 
     Args:
-        widget: The button.
+        widget: The `QPushButton`, `QToolButton` or `QComboBox`.
         compact: False gives it the control height back. Defaults to True.
 
     Examples:
         >>> fxstyle.mark_compact(reply_button)
+        >>> fxstyle.mark_compact(status_combo)
     """
     widget.setProperty(COMPACT_PROPERTY, bool(compact))
     fxutils.repolish(widget)
