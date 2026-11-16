@@ -56,4 +56,5 @@ tests = {
 
 
 def commands():
-    env.PYTHONPATH.append("{root}/python")
+    # `env` is Rez's, given to commands() when it runs.
+    env.PYTHONPATH.append("{root}/python")  # noqa: F821
