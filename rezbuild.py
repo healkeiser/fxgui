@@ -2,6 +2,7 @@
 
 # Built-in
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -18,9 +19,16 @@ def build(source_path: str, build_path: str, install_path: str) -> None:
     # Imported here so tests load this file where `ls_rez` is not installed.
     from ls_rez.build import RezBuilder
 
+    tracked = _tracked(Path(source_path), "fxgui")
+
     class Builder(RezBuilder):
         def should_ignore(self, path: Path) -> bool:
-            return super().should_ignore(path) or path.suffix in _NOT_SHIPPED
+            return (
+                super().should_ignore(path)
+                or path.suffix in _NOT_SHIPPED
+                # The copy walks the disk: a gitignored leftover stays out.
+                or (path.is_file() and path.resolve() not in tracked)
+            )
 
     python = Path(install_path) / "python"
     Builder(
@@ -35,6 +43,18 @@ def build(source_path: str, build_path: str, install_path: str) -> None:
         f"Metadata-Version: 2.1\nName: fxgui\nVersion: {version}\n",
         encoding="utf-8",
     )
+
+
+def _tracked(root: Path, folder: str) -> set:
+    """Return the resolved paths git tracks under `root / folder`."""
+    names = subprocess.run(
+        ["git", "ls-files", "-z", "--", folder],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.split("\0")
+    return {(root / name).resolve() for name in names if name}
 
 
 if __name__ == "__main__":
