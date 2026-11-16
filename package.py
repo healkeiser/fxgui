@@ -11,7 +11,7 @@ lays the wheel out: `{root}/python/fxgui`.
 name = "fxgui"
 
 # The last version released, to PyPI or a tier; `lsd release` bumps it.
-version = "15.4.0"
+version = "15.4.1"
 
 description = """
     Custom Python classes and utilities tailored for Qt built UI, in
