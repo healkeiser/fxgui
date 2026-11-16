@@ -802,6 +802,17 @@ def _open_confirm(gallery: QWidget, typing: bool = False) -> None:
     ).open()
 
 
+def _open_ask(gallery: QWidget) -> None:
+    fxwidgets.FXConfirmDialog(
+        gallery,
+        title="Close sh0010?",
+        body="Its edits are not saved.",
+        verb="Save",
+        alternative="Discard",
+        alternative_tone="danger",
+    ).open()
+
+
 def _open_splash(gallery: QWidget) -> None:
     # No parent: a splash is its own window, so the gallery holds it.
     gallery.splash = splash = fxwidgets.FXSplashScreen(
@@ -929,9 +940,10 @@ def _windows_page(window: fxwidgets.FXMainWindow) -> QWidget:
             ),
         ),
         _section(
-            "FXFloatingDialog / FXConfirmDeleteDialog",
+            "FXFloatingDialog / FXConfirmDialog / FXConfirmDeleteDialog",
             _row(
                 _button("Floating dialog", lambda: _open_floating(window)),
+                _button("Ask before closing", lambda: _open_ask(window)),
                 _button("Confirm a delete", lambda: _open_confirm(window)),
                 _button(
                     "Confirm by typing the name",

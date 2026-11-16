@@ -18,7 +18,7 @@ from fxgui.fxwidgets._code_block import (
 from fxgui.fxwidgets._collapsible import FXCollapsibleWidget
 from fxgui.fxwidgets._command_palette import FXCommand, FXCommandPalette
 from fxgui.fxwidgets._comments import FXMentionEdit, FXThreadLine
-from fxgui.fxwidgets._confirm_delete import FXConfirmDeleteDialog
+from fxgui.fxwidgets._confirm_delete import FXConfirmDeleteDialog, FXConfirmDialog
 from fxgui.fxwidgets._delegates import FXThumbnailDelegate
 from fxgui.fxwidgets._dialogs import FXFloatingDialog
 from fxgui.fxwidgets._drop_zone import FXDropZone
@@ -113,6 +113,7 @@ __all__ = [
     "FXCommandPalette",
     "FXCommandRow",
     "FXConfirmDeleteDialog",
+    "FXConfirmDialog",
     "FXDropZone",
     "FXElidedLabel",
     "FXEmojiButton",

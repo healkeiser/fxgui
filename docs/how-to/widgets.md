@@ -85,6 +85,7 @@ The [fxwidgets](../technical/fxgui/fxwidgets/index.md) module holds these classe
 | `FXCommand` | One row of an `FXCommandPalette`: a label, a callable or a list of choices, keys, the section it is grouped under |
 | `FXCommandPalette` | Popup search over a window's commands, grouped by section, or over rows to go to; the commands run lately come first |
 | `FXCommandRow` | A toolbar fixed in place, whose margins survive style changes |
+| `FXConfirmDialog` | The same card for any confirm: `verb`, `tone="plain"` (a primary verb) or `"danger"` (red), an optional `alternative` (with `alternative_tone`) at the left, and `default` (the choice Enter takes: the verb when plain, Cancel when danger). `exec()` returns `VERB`, `CANCEL` or `ALTERNATIVE`; `choice()` names it. Escape cancels |
 | `FXConfirmDeleteDialog` | Asks before an act with no undo: a card with the question, Cancel then a red Delete, focus on Cancel; Enter never deletes, and the window behind dims. `require_typing=True` (on when a `confirm_word` is given) waits for the name typed exactly |
 | `FXDropZone` | Drop target for files or folders, with a browse button and a file list |
 | `FXElidedLabel` | Label that cuts its text with "..." when it does not fit |

@@ -251,3 +251,72 @@ def test_an_elided_label_at_its_size_hint_shows_its_whole_text(qtbot):
     assert label.elided_text() == label.text()
     label.resize(label.sizeHint().width() - 20, label.height())
     assert label.elided_text() != label.text()
+
+
+def _ask(qtbot, **options):
+    from fxgui.fxwidgets import FXConfirmDialog
+
+    dialog = FXConfirmDialog(title="Close sh0010?", **options)
+    qtbot.addWidget(dialog)
+    dialog.show()
+    dialog.activateWindow()
+    qtbot.waitUntil(dialog.isActiveWindow)
+    return dialog
+
+
+def test_a_plain_confirm_takes_its_verb_on_enter(qtbot):
+    dialog = _ask(qtbot, verb="Save", alternative="Discard",
+                  alternative_tone="danger")
+    assert dialog.verb_button.property("fxRole") == "primary"
+    assert dialog.alternative_button.property("fxRole") == "danger"
+    # The verb at the right end, the alternative at the left.
+    assert dialog.alternative_button.x() < dialog.cancel_button.x() < (
+        dialog.verb_button.x())
+    QTest.keyClick(dialog.focusWidget(), Qt.Key_Return)
+    assert dialog.result() == dialog.VERB and dialog.choice() == "verb"
+
+
+def test_a_third_choice_closes_with_its_own_answer(qtbot):
+    dialog = _ask(qtbot, verb="Save", alternative="Discard")
+    dialog.alternative_button.click()
+    assert dialog.result() == dialog.ALTERNATIVE
+    assert dialog.choice() == "alternative"
+
+
+def test_a_danger_confirm_takes_cancel_on_enter_and_escape(qtbot):
+    dialog = _ask(qtbot, verb="Replace", tone="danger")
+    QTest.keyClick(dialog.focusWidget(), Qt.Key_Return)
+    assert dialog.choice() == "cancel"
+    other = _ask(qtbot, verb="Replace")
+    QTest.keyClick(other, Qt.Key_Escape)
+    assert other.choice() == "cancel"
+
+
+def test_a_confirm_refuses_an_unknown_tone_or_default():
+    from fxgui.fxwidgets import FXConfirmDialog
+
+    for options in ({"tone": "loud"}, {"default": "maybe"},
+                    {"default": "alternative"}):
+        with pytest.raises(ValueError):
+            FXConfirmDialog(title="?", **options)
+
+
+@pytest.mark.parametrize("tabular", [True, False])
+def test_a_column_sized_to_its_contents_draws_its_text_whole(qtbot, tabular):
+    tree = QTreeWidget()
+    tree.setColumnCount(2)
+    tree.setHeaderLabels(["Shot", "Frames"])
+    delegate = FXThumbnailDelegate(tree)
+    tree.setItemDelegate(delegate)
+    for text in ("1001-1002", "88888"):
+        QTreeWidgetItem(tree, ["sh0010", text])
+    delegate.align_column(tree, 1, Qt.AlignRight, tabular=tabular)
+    _shown(qtbot, tree)
+    tree.header().setStretchLastSection(False)
+    tree.resizeColumnToContents(1)
+    index = tree.model().index(0, 1)
+    option = QStyleOptionViewItem()
+    option.font = tree.font()
+    option.rect = tree.visualRect(index)
+    needed = delegate._text_cell_width(option, index)
+    assert tree.columnWidth(1) >= needed

@@ -2,6 +2,7 @@
 
 # Built-in
 import functools
+import math
 import os
 import queue
 import threading
@@ -303,6 +304,38 @@ def _smaller(font: QFont, pixels: int) -> QFont:
     return font
 
 
+# Qt 6.7 and later set a face's OpenType features; 6.5 does not.
+_HAS_TNUM = hasattr(QFont, "setFeature") and hasattr(QFont, "Tag")
+
+
+def _tabular_font(font: QFont) -> QFont:
+    """Return `font` with tabular figures where Qt can turn them on."""
+    font = QFont(font)
+    if _HAS_TNUM:
+        font.setFeature(QFont.Tag("tnum"), 1)
+    return font
+
+
+def _digit_widths(metrics: QFontMetricsF, text: str) -> List[float]:
+    """Return each character's width, a digit's as wide as the widest."""
+    slot = max(metrics.horizontalAdvance(digit) for digit in "0123456789")
+    return [
+        slot if char.isdigit() else metrics.horizontalAdvance(char)
+        for char in text
+    ]
+
+
+def _text_width(font: QFont, text: str, tabular: bool) -> int:
+    """Return the width `_draw_text` lays `text` in, tabular or not."""
+    if not tabular:
+        return QFontMetrics(font).horizontalAdvance(text)
+    font = _tabular_font(font)
+    metrics = QFontMetricsF(font)
+    if _HAS_TNUM:
+        return math.ceil(metrics.horizontalAdvance(text))
+    return math.ceil(sum(_digit_widths(metrics, text)))
+
+
 def _draw_tabular(
     painter: QPainter, rect: QRect, alignment, text: str
 ) -> None:
@@ -311,18 +344,13 @@ def _draw_tabular(
     Qt 6.7 and later turn on the face's `tnum`; on older Qt (Houdini's
     6.5) each digit is centred in a slot as wide as the widest digit.
     """
-    font = QFont(painter.font())
-    if hasattr(font, "setFeature") and hasattr(QFont, "Tag"):
-        font.setFeature(QFont.Tag("tnum"), 1)
+    font = _tabular_font(painter.font())
+    if _HAS_TNUM:
         painter.setFont(font)
         _draw_elided(painter, rect, alignment, text)
         return
     metrics = QFontMetricsF(font)
-    slot = max(metrics.horizontalAdvance(digit) for digit in "0123456789")
-    widths = [
-        slot if char.isdigit() else metrics.horizontalAdvance(char)
-        for char in text
-    ]
+    widths = _digit_widths(metrics, text)
     total = sum(widths)
     if total > rect.width():
         _draw_elided(painter, rect, alignment, text)
@@ -1238,6 +1266,26 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         if not footprint:
             return content_left
         return content_left + self._CONTENT_SPACING + footprint
+
+    def _is_tabular(self, index: QModelIndex) -> bool:
+        """Whether a cell draws its digits at one width each."""
+        return (
+            index.data(self.TABULAR_FIGURES_ROLE) is True
+            or index.column() in self._tabular_columns
+        )
+
+    def _text_cell_width(
+        self, option: QStyleOptionViewItem, index: QModelIndex
+    ) -> int:
+        """Return the width `_draw_text` needs to draw the cell whole."""
+        text = str(index.data(Qt.DisplayRole) or "")
+        lead = self.ICON_MARGIN
+        if self._has_icon(option):
+            lead = self._icon_rect(QRect(0, 0, 1000, option.rect.height() or 28)
+                                   ).right() + 1 + self._ICON_GAP
+        width = _text_width(option.font, text, self._is_tabular(index))
+        # The text rect ends one pixel inside the cell, the inset before it.
+        return lead + width + self.ICON_MARGIN + 1
 
     def align_column(
         self,
@@ -2175,10 +2223,7 @@ class FXThumbnailDelegate(QStyledItemDelegate):
             option.rect.right() - text_x - right_inset,
             option.rect.height(),
         )
-        if (
-            index.data(self.TABULAR_FIGURES_ROLE) is True
-            or column in self._tabular_columns
-        ):
+        if self._is_tabular(index):
             _draw_tabular(painter, text_rect, alignment, str(text))
         else:
             _draw_elided(painter, text_rect, alignment, str(text))
@@ -2242,9 +2287,13 @@ class FXThumbnailDelegate(QStyledItemDelegate):
         # another column lays out a picker or plain text
         if index.column() != 0:
             picker = self._picker_rect(opt, index)
-            width = base.width()
             if picker is not None:
-                width = max(width, picker.width() + self._PICKER_RIGHT_MARGIN * 2)
+                width = max(
+                    base.width(),
+                    picker.width() + self._PICKER_RIGHT_MARGIN * 2)
+            else:
+                # What _draw_text draws, tabular digits and insets included.
+                width = max(base.width(), self._text_cell_width(opt, index))
             return QSize(width, height)
 
         has_thumbnail = self._has_thumbnail(index)
